@@ -514,6 +514,24 @@
    "inputs_modified_after_output_first_stored": [],
    "note": "As of 2026-11-25 09:55 UTC the sampler was still writing data/books/books.csv, and stops by itself at about 16:30 UTC. The summary stored here covers its first 34 minutes. The input fingerprint is added with --with-books once sampling ends, or as an interim one that says so."
   },
+  "platform_bars_crosscheck.json": {
+   "kind": "prices-no-rule",
+   "command": "python3 platform_bars_crosscheck.py",
+   "run_from": "research_rig/",
+   "code": [
+    "platform_bars_crosscheck.py"
+   ],
+   "raw_inputs": [
+    "data/platform_bars/1min/*.csv",
+    "data/platform_bars/1day/*.csv"
+   ],
+   "reads_stored_outputs": [],
+   "sha256": "e2124ea25b17ab10805cbd52378e8a6223f4ebe495395ae7f5589c14a392f97c",
+   "first_stored_in_commit": "90e1242 2026-11-25T12:56:08Z",
+   "last_changed_in_commit": "90e1242 2026-11-25T12:56:08Z",
+   "inputs_modified_after_output_first_stored": [],
+   "note": "For SPY and QQQ, how far the day's open, high, low and close rebuilt from the one-minute files sit from the daily file, in basis points, with counts and dates. No price is in it, no rule was run and no return over time was worked out. Both sets of files come from the same lookup, so this cannot show that either is right."
+  },
   "platform_bars_coverage.json": {
    "kind": "prices-no-rule",
    "command": "python3 platform_bars_integrity.py, then from the repo root python3 tools/bars_coverage.py --summarise",
@@ -528,11 +546,11 @@
     "data/platform_bars/1day/*.csv"
    ],
    "reads_stored_outputs": [],
-   "sha256": "d08df8ecde1bb0bbb9eaf25f7738653465d16873a4fda601f88b603218d0eb5b",
+   "sha256": "2c2476a46b0de977254860a05dcd0ce4f57217cd081213af4b7d031790c37188",
    "first_stored_in_commit": "3774837 2026-11-25T12:41:51Z",
-   "last_changed_in_commit": "3774837 2026-11-25T12:41:51Z",
+   "last_changed_in_commit": "90e1242 2026-11-25T12:56:08Z",
    "inputs_modified_after_output_first_stored": [],
-   "note": "Dates, counts and file fingerprints of the stock prices collected through the workspace's own price lookup on 2026-11-25. No price is in it, no rule was run and no return was worked out. The price files are on the research machine only and cannot be fetched by a script; whether they may be kept is item 6 of the morning list."
+   "note": "The check's full output (integrity.json) and the original pulls are on the research machine and are not fingerprinted here; only the joined price files are. Dates, counts and file fingerprints of the stock prices collected through the workspace's own price lookup on 2026-11-25. No price is in it, no rule was run and no return was worked out. The price files are on the research machine only and cannot be fetched by a script; whether they may be kept is item 6 of the morning list."
   }
  }
 }
