@@ -210,6 +210,17 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(summary["usage"]["boss"]["status"],"UNKNOWN")
         self.assertEqual(S.cent_lift(1000.0049,1000.005),.01)
 
+    def test_s02_legacy_tm07_prefix_is_not_reserved(self):
+        with patch.object(W,"is_weights",return_value=False), patch.object(W.S,"Session",return_value="legacy"):
+            self.assertEqual(W.open_session("TM07-legacy"),"legacy")
+        p = self.root / "TM07-legacy"
+        p.mkdir()
+        (p/"session.json").write_text("{}")
+        with patch.object(server.S,"runs_dir",return_value=self.root), patch.object(server,"tape",return_value=None), \
+             patch.object(server.W,"open_session") as opening:
+            opening.return_value.status.return_value = {"legacy":True}
+            self.assertEqual(server.handle("GET","/status",{"session":[p.name]},None),(200,{"legacy":True}))
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
@@ -346,7 +357,7 @@ class DeskTest(unittest.TestCase):
         s = self.create("A")
         with patch.dict("os.environ", TM07_RUNS_DIR=str(self.root)):
             with self.assertRaises(PermissionError):
-                W.open_session(s.sid)
+                W.open_session(s.sid, desk_token="wrong")
             with self.assertRaises(FileNotFoundError):
                 W.open_session("TM07-../../other", desk_token=TOKEN)
             self.assertEqual(W.open_session(s.sid, desk_token=TOKEN).sid, s.sid)
@@ -356,7 +367,7 @@ class DeskTest(unittest.TestCase):
         scout = self.create("scout")
         target = {"session": [s.sid]}
         auth = "Bearer " + TOKEN
-        with patch.dict("os.environ", TM07_RUNS_DIR=str(self.root)):
+        with patch.dict("os.environ", TM07_RUNS_DIR=str(self.root)), patch.object(server.S,"runs_dir",return_value=self.root):
             self.assertEqual(server.handle("GET","/next",target,None,auth)[0],404)
             self.assertEqual(server.handle("GET","/desk/next",target,None)[0],403)
             self.assertEqual(server.handle("GET","/desk/next",{"session":[scout.sid]},None,auth)[0],403)

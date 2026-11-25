@@ -527,7 +527,7 @@ def fast_tape():
 
 def open_session(session_id, tape=None, *, desk_token=None):
     """Open a regular session or an authenticated, separately stored TM07 desk."""
-    if session_id.startswith("TM07-"):
+    if desk_token is not None:
         from timemachine.desk import open_desk
         return open_desk(session_id, token=desk_token)
     if is_weights(session_id):

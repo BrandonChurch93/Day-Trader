@@ -98,10 +98,12 @@ def handle(method, path, q, body, authorization=None):
     sid = (q.get("session") or [""])[0]
     if not sid:
         return 400, dict(ok=False, error="session=... is needed")
-    if path.startswith("/desk/") or sid.startswith("TM07-"):
-        if not (path.startswith("/desk/") and sid.startswith("TM07-")):
+    if path.startswith("/desk/"):
+        if not sid.startswith("TM07-"):
             return 404, dict(ok=False, error="unknown route")
         return handle_desk(method, path, sid, body, authorization)
+    if sid.startswith("TM07-") and not (S.runs_dir() / sid / "session.json").is_file():
+        return 404, dict(ok=False, error="unknown legacy session")
     slot = get_session(sid)
     with slot[0]:
         if slot[1] is None:
