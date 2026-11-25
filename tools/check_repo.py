@@ -46,7 +46,7 @@ for f in ["README.md", "AGENTS.md", "docs/STATUS.md", "docs/INDEX.md", "docs/GLO
         if (f, p) in NOT_IN_REPO: continue
         cands = [p, os.path.join(os.path.dirname(f), p), os.path.join("research_rig", p), os.path.join("docs", p)] + [os.path.join("docs", d, p) for d in ("research", "decisions", "playbook", "quality")]
         if any(os.path.exists(c) for c in cands): continue
-        if any(subprocess.run(["git", "check-ignore", "-q", c.rstrip("/")]).returncode == 0 for c in cands): continue  # a local-only path that git ignores, such as research_rig/data/
+        if any(subprocess.run(["git", "check-ignore", "-q", x]).returncode == 0 for c in cands for x in {c, c.rstrip("/")}): continue  # a local-only path that git ignores, such as research_rig/data/
         bad.append(f"{f} names a path that does not exist: {p}")
 keys = set(re.findall(r"^([a-z0-9_]+):", open("config/thresholds.yaml").read(), re.M))
 pref = ("backtest_", "replay_", "paper_", "live_", "moonshot_", "api_model_", "cost_model_", "shadow_", "intraday_trend_", "research_run_", "scale_live_", "max_kelly", "drawdown_derisk")
