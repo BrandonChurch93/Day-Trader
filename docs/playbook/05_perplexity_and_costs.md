@@ -16,7 +16,7 @@ Run market data, state, risk and paper execution in a deterministic service. Use
 - Treat Coinbase as viewing and IBKR as draft-for-review only; don't rely on native Alpaca paper support until verified (our recommendation; research §1) [STATED]
 - Build on a permitted fallback rather than assume Fable 5.2 access. Agent API requires non-zero-data-retention access by request for Fable; keep broker/account data out of research payloads (our recommendation; research §2) [STATED]
 - Do not rely on Claude consumer access to buy/sell securities or for securities advice; automated access requires an Anthropic API key or explicit permission. Anthropic's AUP requires qualified review before personalized investment recommendations (including digital assets) are delivered or implemented, and disclosure of AI use (research §3) [MEASURED]
-- Plan for Perplexity's January 1, 2027 AUP version, which requires human oversight for consequential automated financial decisions about individuals (research §3) [MEASURED]
+- Perplexity's AUP in force today (July 8, 2025 version) bars automated decisions that materially impact individuals' finances with no human-oversight exception; the January 1, 2027 version bars them "without human oversight". Plan for both (research §3, research 09) [MEASURED]
 - Treat the provision's applicability to personal self-trading as unverified, not permission for unattended live trading (research §3) [UNKNOWN]
 
 ## Key numbers

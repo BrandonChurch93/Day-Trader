@@ -27,7 +27,7 @@ Paper-test low-turnover BTC/ETH spot trend first; observe fully collateralized, 
 | Binance.US, most spot pairs | 4 bps taker round trip, fee only | Nov 24, 2026 | MEASURED | [Binance.US fees](https://www.binance.us/fees) |
 | Alpaca spot entry | 50 bps taker round trip, fee only | Nov 24, 2026 | MEASURED | [Alpaca fees](https://docs.alpaca.markets/us/docs/crypto-fees) |
 | Kraken Pro spot entry | 160 bps taker round trip, fee only | Nov 24, 2026 | MEASURED | [Kraken Pro fees](https://www.kraken.com/pro/fees) |
-| Coinbase Advanced spot | Signed-in tier and preview authoritative; public entry rate unverified | Nov 24, 2026 | UNKNOWN | [Coinbase Advanced fees](https://help.coinbase.com/en/coinbase/trading-and-funding/advanced-trade/advanced-trade-fees) |
+| Coinbase Advanced spot entry | 180 bps taker round trip, fee only (0.50% maker, 0.90% taker) | Sep 16, 2026 | MEASURED | [Coinbase announcement](https://www.coinbase.com/blog/were-lowering-fees-for-many-active-traders-on-coinbase-advanced) |
 | Robinhood Exchange Routing spot entry | 190 bps taker round trip, fee only | Nov 24, 2026 | MEASURED | [Robinhood fee schedule](https://cdn.robinhood.com/assets/robinhood/legal/rhc-fee-schedule.pdf) |
 | Gemini ActiveTrader spot entry | 240 bps taker round trip, fee only | Sep 1, 2026 | MEASURED | [Gemini fee schedule](https://www.gemini.com/fees/activetrader-fee-schedule) |
 | IBKR spot commission | 0.12%–0.18% per order; $1.75 minimum capped at 1% | Nov 24, 2026 | MEASURED | [IBKR commissions](https://portal.interactivebrokers.com/en/pricing/commissions-cryptocurrencies.php) |

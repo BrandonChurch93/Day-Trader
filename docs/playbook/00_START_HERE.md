@@ -40,7 +40,7 @@ A Claude subscription is not a clean alternative: Anthropic's consumer terms bar
 ## Provider policies shape the design
 
 - Anthropic's usage policy, effective November 12, 2026, treats a personalized recommendation to buy, sell, hold or allocate among specific investments, digital assets included, as high risk and requires a qualified person to review it before it is acted on ([Anthropic usage policy](https://www.anthropic.com/legal/aup)). MEASURED policy text.
-- Perplexity's acceptable use policy dated January 1, 2027 bars consequential automated decisions about individuals' finances without human oversight ([Perplexity AUP](https://www.perplexity.ai/hub/legal/aup)). MEASURED policy text; how it applies to trading your own account is UNKNOWN.
+- Perplexity's acceptable use policy in force today is the July 8, 2025 version. It bars automated decisions about individuals that materially impact them, finances included, and has no human-oversight exception ([current Perplexity AUP](https://www.perplexity.ai/hub/legal/aup-prior-2025-07-08)). The version effective January 1, 2027 adds the words "without human oversight" ([next Perplexity AUP](https://www.perplexity.ai/hub/legal/aup)). MEASURED policy text; how either applies to trading your own account is UNKNOWN.
 - This is a second reason, on top of the performance evidence, that models here produce research and tags while fixed rules make the trade decision, and that going live needs your written approval.
 
 ## Build phases and gates

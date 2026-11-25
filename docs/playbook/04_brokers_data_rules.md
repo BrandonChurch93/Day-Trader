@@ -1,7 +1,7 @@
 # Brokers, Data, Compliance and Tax Rules
 
-Source: docs/research/04_brokers_data_compliance.md
-Last verified: 2026-11-24
+Source: docs/research/04_brokers_data_compliance.md and docs/research/09_brokers_and_venues.md
+Last verified: 2026-11-24. Corrected 2026-11-25 after the broker research and its fresh check (`docs/decisions/0004-broker-research-2026-11-25.md`).
 
 ## Bottom line
 Run deterministic strategy code on Alpaca paper with free IEX data, then a ring-fenced live cash account after a written owner decision. The $25k PDT rule was replaced on 2026-06-04; settlement, fees, and short-term tax are the real constraints. You are legally responsible for every order, so only deterministic code places orders, through a risk engine.
@@ -12,9 +12,9 @@ Run deterministic strategy code on Alpaca paper with free IEX data, then a ring-
 - Default to cash accounts; track T+1 settled cash to avoid good-faith violations. [MEASURED] (research §4)
 - Check shortable status and Reg SHO Rule 201 before shorting; treat LULD halts as unfillable and assume stops gap. [MEASURED] (research §4)
 - Enforce in code: max daily loss, orders/minute, notional per symbol, cancel-to-fill cap, and cross-account self-trade prevention (our recommendation). [STATED] (research §5, §7)
-- Use trade-only keys with IP allowlists, held only by the execution service; keep secrets out of prompts, logs, and model context (our recommendation). [STATED] (research §7)
+- Use trade-only keys with IP allowlists where the venue has them, held only by the execution service; keep secrets out of prompts, logs, and model context (our recommendation). Alpaca personal keys have neither feature, so on Alpaca the protection is that keys cannot move money out (research 09). [STATED] (research §7)
 - Run a dead-man's switch: Kraken CancelAllOrdersAfter natively, elsewhere a heartbeat watchdog that cancels all orders. [MEASURED] (research §7)
-- Fund live trading only via a dedicated account or sub-account (single-portfolio Coinbase key for crypto) holding money you can lose entirely (our recommendation). [STATED] (research §7, Recommended stacks)
+- Fund live trading only via a dedicated account or sub-account (single-portfolio Coinbase key for crypto) holding money you can lose entirely (our recommendation). Kraken spot sub-accounts are for managed institutional clients only, so they are not an option for an individual (research 09). [STATED] (research §7, Recommended stacks)
 - Add modeled fees and slippage to paper fills; treat IEX as plumbing-only and buy SIP ($99/mo) before trading spread, volume, or breakout signals; check history for survivorship bias (our recommendation). [STATED] (research §3, Recommended stacks)
 - Paper gate: at least `paper_min_trading_days` trading days AND `paper_min_closed_trades` closed trades with models off, then shadow (values in `config/thresholds.yaml`); live promotion needs a written owner decision in docs/decisions/; scaling past tiny capital needs `scale_live_evidence_months` months live evidence (our recommendation, D2/D3). [STATED] (Implications)
 - Log every fill (time, venue, lot, fees): wash sales span accounts including IRAs, and 1099-DA basis is required only for covered digital assets, so our ledger is the Form 8949 record. [MEASURED] (research §6)
@@ -29,7 +29,10 @@ Run deterministic strategy code on Alpaca paper with free IEX data, then a ring-
 | Alpaca Trading API rate limit | 200 requests/min per key | 2026-11 | MEASURED | [Alpaca docs](https://github.com/alpacahq/alpaca-docs/blob/master/content/api-references/crypto-api/_index.md) |
 | Alpaca crypto fees, entry tier | 0.15% maker / 0.25% taker | 2026-11 | MEASURED | [Alpaca crypto fees](https://docs.alpaca.markets/us/docs/crypto-fees) |
 | Kraken spot fees, Tier 1 | 0.40% maker / 0.80% taker | 2026-10-30 | MEASURED | [Kraken fee tiers](https://support.kraken.com/articles/cross-platform-fee-tier-changes) |
-| Coinbase fees, entry tier | 0.60% maker / 1.20% taker | 2026-11 | STATED | [APIs.io Coinbase plans](https://apis.io/plans/coinbase/coinbase-plans-pricing/) |
+| Coinbase Advanced fees, entry tier | 0.50% maker / 0.90% taker (180 bps taker round trip). Lower tiers start at $10,000 of qualifying volume | 2026-09-16 | MEASURED | [Coinbase announcement](https://www.coinbase.com/blog/were-lowering-fees-for-many-active-traders-on-coinbase-advanced) |
+| Binance.US spot fees, most pairs | 0% maker / 0.02% taker (4 bps taker round trip) | 2026-11-24 | MEASURED | [Binance.US fees](https://www.binance.us/fees) |
+| Alpaca duplicate order id | HTTP 422, code 40010001, "client_order_id must be unique", documented for another active order. After an unclear reply, look the id up; do not resend | 2026-11-24 | MEASURED | [Alpaca errors guide](https://alpaca.markets/learn/how-to-fix-common-trading-api-errors-at-alpaca) |
+| Alpaca personal keys | No documented expiry, trade-only scope or address allowlist. Keys cannot move cash by ACH or wire. The crypto withdrawal call was removed after 2026-10-09 | 2026-11-24 | MEASURED | [Alpaca key security guide](https://alpaca.markets/learn/api-key-security-best-practices-for-alpaca-builders), [Alpaca changelog](https://docs.alpaca.markets/us/changelog/2026-10-22-crypto-withdrawals-276facd) |
 | IBKR Autonomous AI limits | Cash only, stocks/equity options only, no shorts/fractional, day orders, 10 human-approved trades over 2 weeks | 2026-11 | MEASURED | [IBKR AI integrations](https://portal.interactivebrokers.com/en/trading/ai-integrations.php) |
 | Federal short-term gains tax | Ordinary rates; single: 24% over $105,700, 32% over $201,775 | 2026 | MEASURED | [IRS 2026 adjustments](https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill) |
 | Idaho income tax | Flat 5.3% | 2025-01-01 | MEASURED | [Idaho Tax Commission](https://tax.idaho.gov/wp-content/uploads/forms/EIN00046/EIN00046_03-02-2026.pdf) |
@@ -42,7 +45,7 @@ Run deterministic strategy code on Alpaca paper with free IEX data, then a ring-
 - Do not execute via broker agent products (Robinhood MCP, IBKR Autonomous, trade-capable Alpaca MCP) (D1); Robinhood MCP approvals default off, and revoking IBKR AI access does not cancel open orders.
 - Do not treat crypto as SIPC-protected.
 - Do not rely on crypto loss harvesting; pending H.R. 10357 would apply wash sales to sales after 2026-09-14 [STATED].
-- Do not day trade crypto on Coinbase, Gemini, tastytrade, or Webull entry tiers (about 2%+ round trip).
+- Do not trade crypto often on Kraken, Coinbase Advanced, Robinhood, Gemini, tastytrade or Webull entry tiers (160 bps or more for a taker round trip; research 09). Our own replay shows a daily trend rule turning the account over about 18 times a year, which these fees do not survive (research 12).
 - Do not promote to live automatically (D2).
 - Do not use TradingView as a data or signal source for the service. Its terms rule out automated use, and webhook delivery is not guaranteed (research 07). [MEASURED]
 
