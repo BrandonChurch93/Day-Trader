@@ -811,14 +811,14 @@ replay_13_plan:
 replay_16_plan:
   value: {start: "2020-01-01", end: "2026-11-24", held_rank_from: 51, held_rank_to: 100, long_share: 0.5, cost_low: [5, 5, 2], cost_judged: [15, 10, 5], cost_high: [30, 20, 10], min_basket_names: 10, live_funding_lookback_hours: 24, short_stop_pct: 80, random_draws: 1000, seed: 16, random_percentile: 75, min_years_above: 5, min_falling_years: 2, max_year_loss_pct: 25, max_missing_hours: 6, max_flagged_week_share_pct: 5}
   status: builder
-  note: Draft plan 16, written 2026-11-25 19.42 UTC, the hot five held long on spot with a same-size short on futures, weekly, judged on a held-back list of the next 50 coins down. Round figures set before any futures price was read. Draft until frozen.
-  source: research_rig/PREREG_16_hot_five_hedged_DRAFT.md
+  note: Plan 16, frozen 2026-11-25, written 2026-11-25 19.42 UTC, the hot five held long on spot with a same-size short on futures, weekly, judged on a held-back list of the next 50 coins down. Round figures set before any futures price was read.
+  source: research_rig/PREREG_16_hot_five_hedged.md
 
 replay_17_plan:
   value: {hot_n: 5, rise_days: 7, dip_pct: 5, dip_lookback_hours: 24, take_pct: 5, stop_pct: 5, max_hold_hours: 24, cost_bps_per_side: 10, other_costs_bps: [5, 20], us_costs_bps: [38, 80], shown_leverage: 3, forced_close_rise_pct: 30, random_draws: 200, seed: 17, min_years_above: 5, min_rising_years: 2, min_trades_per_year: 10, max_flagged_share_pct: 5}
   status: builder
-  note: Draft plan 17, written 2026-11-25 19.52 UTC, the trigger of plan 13's rule B taken short on perpetual futures, on the held-back coin list of plan 16. Same round figures as plan 13, not tuned. Dates, lists and funding rules come from replay_16_plan. Draft until frozen.
-  source: research_rig/PREREG_17_short_the_peak_DRAFT.md
+  note: Plan 17, frozen 2026-11-25, written 2026-11-25 19.52 UTC, the trigger of plan 13's rule B taken short on perpetual futures, on the held-back coin list of plan 16. Same round figures as plan 13, not tuned. Dates, lists and funding rules come from replay_16_plan.
+  source: research_rig/PREREG_17_short_the_peak.md
 
 replay_14_plan:
   value: {start: "2016-01-04", end: "2026-11-24", lookback_months: 12, skip_months: 1, n_small: 10, n_wide: 50, cost_bps_per_side: 5, random_draws: 1000, seed: 14, random_percentile: 95, first_half_end: "2021-12-31", new_trials: 2}

@@ -1,6 +1,6 @@
 # Pre-registration 17: the short side of the owner's method
 
-Status: DRAFT written 2026-11-25 19:52 UTC, before any futures price or funding rate was read and before any price of a coin on the held-back list was read. Ledger rows 150 and 151. Not frozen. Nothing is run until the code has been read by two other models and this file is renamed without DRAFT. This plan and `research_rig/PREREG_16_hot_five_hedged_DRAFT.md` are both frozen before either is run, because they share the held-back list.
+Status: frozen 2026-11-25 22:47 UTC. Written 2026-11-25 19:52 UTC, before any futures price or funding rate was read and before any price of a coin on the held-back list was read. Ledger rows 150 and 151. Frozen after code audits by two other models and re-checks of the fixes by one of them, on made-up prices and on dates, volumes and file facts only; no return of a rule or a yardstick on real prices had been worked out. Nothing in this file changes after this line was set. This plan and `research_rig/PREREG_16_hot_five_hedged.md` are frozen together and sealed with one record before either is run, because they share the held-back list.
 
 ## The question
 
@@ -51,7 +51,7 @@ A support would mean: worth a second test on the coins a US venue lists, then a 
 
 ## Definitions fixed before the run
 
-- Lists, coin identity, years, ties, what is known at an hour, and missing bars follow `research_rig/PREREG_13_year_or_method.md`. Contract identity, the definition of a live contract, the funding rules, the contract that stops paying, the order inside an hour, and the archive-only funding source follow `research_rig/PREREG_16_hot_five_hedged_DRAFT.md`.
+- Lists, coin identity, years, ties, what is known at an hour, and missing bars follow `research_rig/PREREG_13_year_or_method.md`. Contract identity, the definition of a live contract, the funding rules, the contract that stops paying, the order inside an hour, and the archive-only funding source follow `research_rig/PREREG_16_hot_five_hedged.md`.
 - Signals and fills use the contract's own trade bars. Spot bars rank the coins on Monday and make the all-coins figure; they give the rule no signal and no fill.
 - The 7-day comparison inside the rule uses the contract's close 168 hours before the signal close. A contract with less history than that gives no signal.
 - A short's loss is not capped at its part at 1x. A loss beyond the part is taken from the rest of the account. If the account reaches zero the year ends there.

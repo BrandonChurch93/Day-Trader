@@ -1,6 +1,6 @@
 # Pre-registration 16: the hot five with the market taken out
 
-Status: DRAFT written 2026-11-25 19:42 UTC, before any futures price or funding rate was read and before any price of a coin outside plan 13's list was read. Ledger rows 148 and 149. Not frozen. Nothing is run until the code has been read by two other models and this file is renamed without DRAFT.
+Status: frozen 2026-11-25 22:47 UTC. Written 2026-11-25 19:42 UTC, before any futures price or funding rate was read and before any price of a coin outside plan 13's list was read. Ledger rows 148 and 149. Frozen after code audits by two other models and re-checks of the fixes by one of them, on made-up prices and on dates, volumes and file facts only; no return of a rule or a yardstick on real prices had been worked out. Nothing in this file changes after this line was set. This plan and `research_rig/PREREG_17_short_the_peak.md` are frozen together and sealed with one record before either is run, because they share the held-back list.
 
 ## The question
 
