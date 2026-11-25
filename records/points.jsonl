@@ -2,3 +2,4 @@
 {"hold": {"P1-BTC": 996.72, "T1-VTI": 1003.53}, "hold_value_usd": 2000.25, "traders": {"P1-BTC": 1000.0, "T1-VTI": 1003.39}, "utc": "2026-11-25T17:00:22Z", "value_usd": 2003.39}
 {"hold": {"P1-BTC": 1017.54, "T1-VTI": 1017.84}, "hold_value_usd": 2035.38, "traders": {"P1-BTC": 1000.0, "T1-VTI": 1017.71}, "utc": "2026-11-25T18:08:05Z", "value_usd": 2017.71}
 {"hold": {"P1-BTC": 1018.89, "T1-VTI": 1025.93}, "hold_value_usd": 2044.82, "traders": {"P1-BTC": 1000.0, "T1-VTI": 1025.79}, "utc": "2026-11-25T19:08:15Z", "value_usd": 2025.79}
+{"hold": {"P1-BTC": 1019.6, "T1-VTI": 1024.45}, "hold_value_usd": 2044.04, "traders": {"P1-BTC": 1000.0, "T1-VTI": 1024.31}, "utc": "2026-11-25T20:08:27Z", "value_usd": 2024.31}
