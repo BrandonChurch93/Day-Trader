@@ -1,13 +1,13 @@
 {
  "account": {
-  "gain_pct": 0.012089999999999934,
-  "gain_usd": 24.18,
+  "gain_pct": 0.010480000000000045,
+  "gain_usd": 20.96,
   "pretend_start_usd": 2000.0,
-  "value_usd": 2024.18
+  "value_usd": 2020.96
  },
  "closed": [],
- "last_check_utc": "2026-11-25T20:28:30Z",
- "made_utc": "2026-11-25T20:28:30Z",
+ "last_check_utc": "2026-11-25T20:38:31Z",
+ "made_utc": "2026-11-25T20:38:31Z",
  "notes": {
   "fee": "The fee on crypto fills is added by this program from config/thresholds.yaml (practice_crypto_fee_bps_added).",
   "gap": "Gap is how far the fill was from the newest price the program had read when it sent the order, in basis points. Plus means the fill was worse for the account.",
@@ -103,12 +103,12 @@
    "cash_usd": 0.01,
    "closed_trades": 0,
    "fees_added_usd": 0.0,
-   "gain_pct": 0.024181608012865174,
-   "gain_usd": 24.18,
+   "gain_pct": 0.020961261894774985,
+   "gain_usd": 20.96,
    "halt_reason": null,
    "halted": false,
-   "hold_gain_pct": 0.024315580251570434,
-   "hold_value_usd": 1024.32,
+   "hold_gain_pct": 0.021094781435431642,
+   "hold_value_usd": 1021.09,
    "id": "T1-VTI",
    "kind": "rule",
    "label": "not passed",
@@ -122,19 +122,19 @@
     {
      "cost_usd": 999.99,
      "exit": null,
-     "gain_usd": 24.18,
+     "gain_usd": 20.96,
      "opened_utc": "2026-11-25T16:31:55.81403Z",
-     "price": 353.015,
+     "price": 351.905,
      "qty": 2.901212719,
      "symbol": "VTI",
-     "value_usd": 1024.17
+     "value_usd": 1020.95
     }
    ],
    "realised_usd": 0,
    "start_usd": 1000.0,
    "started": true,
    "target_weight": 1.0,
-   "value_usd": 1024.18,
+   "value_usd": 1020.96,
    "win_rate": null,
    "wins": 0
   },
@@ -147,8 +147,8 @@
    "gain_usd": 0.0,
    "halt_reason": null,
    "halted": false,
-   "hold_gain_pct": 0.020186564191054135,
-   "hold_value_usd": 1020.19,
+   "hold_gain_pct": 0.020461606599659676,
+   "hold_value_usd": 1020.46,
    "id": "P1-BTC",
    "kind": "rule",
    "label": "not passed",
