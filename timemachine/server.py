@@ -68,10 +68,40 @@ def done_answer(sess):
     return 200, dict(status="DONE", done=True, session=sess.meta["session"], result=str(sess.dir / "result.json"))
 
 
-def handle(method, path, q, body):
+def handle_desk(method, path, sid, body, authorization):
+    actions = {("GET", "/desk/next"): "next", ("GET", "/desk/status"): "status",
+               ("POST", "/desk/look"): "look", ("POST", "/desk/notes"): "notes",
+               ("POST", "/desk/pick"): "pick", ("POST", "/desk/usage"): "usage"}
+    action = actions.get((method, path))
+    if not action:
+        return 404, dict(ok=False, error="unknown desk route")
+    prefix = "Bearer "
+    if not isinstance(authorization, str) or not authorization.startswith(prefix):
+        return 403, dict(ok=False, error="desk access denied")
+    try:
+        token = authorization[len(prefix):]
+        sess = W.open_session(sid, desk_token=token)
+        role = sess.authenticate(token)
+        if role is None:
+            raise PermissionError
+        obj = json.loads(body) if body else {}
+        if not isinstance(obj, dict):
+            raise ValueError("expected a JSON object")
+        return 200, sess.handle(role, action, obj)
+    except (PermissionError, FileNotFoundError):
+        return 403, dict(ok=False, error="desk access denied")
+    except (ValueError, TypeError) as exc:
+        return 400, dict(ok=False, error=str(exc)[:300])
+
+
+def handle(method, path, q, body, authorization=None):
     sid = (q.get("session") or [""])[0]
     if not sid:
         return 400, dict(ok=False, error="session=... is needed")
+    if path.startswith("/desk/") or sid.startswith("TM07-"):
+        if not (path.startswith("/desk/") and sid.startswith("TM07-")):
+            return 404, dict(ok=False, error="unknown route")
+        return handle_desk(method, path, sid, body, authorization)
     slot = get_session(sid)
     with slot[0]:
         if slot[1] is None:
@@ -121,9 +151,13 @@ def compact(q):
 class H(BaseHTTPRequestHandler):
     def _go(self, method):
         u = urllib.parse.urlparse(self.path); q = urllib.parse.parse_qs(u.query)
-        body = self.rfile.read(int(self.headers.get("Content-Length") or 0)) if method == "POST" else None
+        size = int(self.headers.get("Content-Length") or 0) if method == "POST" else 0
+        if u.path.startswith("/desk/") and not 0 <= size <= 65536:
+            self.send_error(413)
+            return
+        body = self.rfile.read(size) if method == "POST" else None
         try:
-            code, obj = handle(method, u.path, q, body); trim_caches()
+            code, obj = handle(method, u.path, q, body, self.headers.get("Authorization")); trim_caches()
         except Exception as e:
             traceback.print_exc(); code, obj = 500, dict(ok=False, error=f"{type(e).__name__}: {str(e)[:300]}")
         data = (json.dumps(obj, separators=(",", ":"), sort_keys=True) if compact(q) else json.dumps(obj, indent=1, sort_keys=True)).encode()

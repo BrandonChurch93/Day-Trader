@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from timemachine import desk as D, desk_orders as O, perp as P, perp_fast as F, score_tm07 as S, tm06, weights as W
+from timemachine import desk as D, desk_orders as O, perp as P, perp_fast as F, score_tm07 as S, server, tm06, weights as W
 
 A, B, BTC = "AAA/USD", "BBB/USD", "BTC/USD"
 T = 1784505600  # hourly anchor; prices and headlines below are invented
@@ -202,6 +202,21 @@ class DeskTest(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 W.open_session("TM07-../../other", desk_token=TOKEN)
             self.assertEqual(W.open_session(s.sid, desk_token=TOKEN).sid, s.sid)
+
+    def test_guarded_routes_and_no_sibling_access(self):
+        s = self.create("A")
+        scout = self.create("scout")
+        target = {"session": [s.sid]}
+        auth = "Bearer " + TOKEN
+        with patch.dict("os.environ", TM07_RUNS_DIR=str(self.root)):
+            self.assertEqual(server.handle("GET","/next",target,None,auth)[0],404)
+            self.assertEqual(server.handle("GET","/desk/next",target,None)[0],403)
+            self.assertEqual(server.handle("GET","/desk/next",{"session":[scout.sid]},None,auth)[0],403)
+            status,packet = server.handle("GET","/desk/next",target,None,auth)
+            self.assertEqual(status,200)
+            self.assertEqual(packet["role"],"boss")
+            obj = D.encode({"wake_key":packet["wake_key"],"notes":[]})
+            self.assertEqual(server.handle("POST","/desk/notes",target,obj,auth)[0],403)
 
     def test_sign_mark_gate_and_fixed_weeks(self):
         self.assertEqual(len(S.EXTENSION),17)
