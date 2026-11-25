@@ -265,7 +265,7 @@ Left as they are, with the reason: the reading order in `AGENTS.md` still points
 
 What this test does and does not show. Three fresh models found the right answer to sixteen set questions from the repo address alone (MEASURED as above). It does not show that a model would follow the rules under pressure, or find what the questions did not ask about. Every round of outside reading so far has found a real fault, this one included.
 
-## Eleventh addendum, 2026-11-25 12:55 UTC: a second check on the collected stock prices, and the faults an outside check found in the first
+## Eleventh addendum, 2026-11-25 12:55, added to at 13:04 UTC: a second check on the collected stock prices, and the faults an outside check found in the first
 
 This is a record of what research did. It is not an owner decision.
 
@@ -276,25 +276,35 @@ What was run, under the same overnight latitude as the collection itself:
 
 What the comparison showed, in words (the figures are in the tables in `docs/research/10_historical_data_and_practice.md`; MEASURED, on files only the research machine has):
 
-- The two sets of files look to be adjusted the same way. This is research's reading. It does not say which way.
-- The one-minute files hold some bad bars. On some days a one-minute high is above the daily high or a one-minute low is below the daily low, which cannot be if both are right.
+- The yearly middle gap between the two closes stays small. Research's reading, not a measurement: the two sets of files look to be adjusted the same way. It does not say which way.
+- On some days a one-minute high is above the daily high or a one-minute low is below the daily low, which cannot be if both files are right. Which file is wrong is not shown.
 - Both sets come from the same lookup, so none of this shows that either is right.
 
 An outside model read the commits that added the coverage work (a832c01 to f5079be). What it found, and what was done:
 
 - The pages said the daily files cover the funds named in the two draft stock plans, with a typed count. Wrong: only the draft fund plan names funds, and it names fewer than were collected. Reworded with no count in document 10, the morning list, the ninth addendum and the rig's README.
 - "No repeated or broken rows" said too much: there are rows with no volume and rows not on a whole minute. Reworded to what was counted.
-- The check's calendar had three days as both a holiday and an early close, and missed one early close in December 2003. Fixed in the script. The December 2003 close is from the exchange's own record of special closings, linked in document 10. Research then compared the script's early closes with that record for September 2003 to December 2007: they match. MEASURED. After 2007 the calendar is still unchecked.
-- The two days with no SPY one-minute data were trading days, and several short days tie to known halts. The sources are in document 10.
+- The check's calendar had some days as both a holiday and an early close, and missed one early close in December 2003. Fixed in the script. The December 2003 close is from the exchange's own record of special closings, linked in document 10. Research then compared the script's early closes with that record for September 2003 to December 2007: they match. MEASURED. After 2007 the calendar is still unchecked.
+- The days with no SPY one-minute data were trading days, and some short days fall on days of known halts. The sources are in document 10.
 - The script that keeps the tables in step with the summary looked at the first block only. It now requires exactly one block. The repo check now also fails if the file fingerprints in the summary do not add up to the two in `research_rig/provenance.json`.
 - The repo check counted a file as listed if it was named in any table on the index page, the task table included. Now only a row in a file table counts.
 - `research_rig/check_data.py` looked for two of the price files. It now looks for every file the summary names.
 - Several sentences gave a cause, a judgment or a typed time as if measured. Reworded or labelled.
 - The join script has limits that cannot be fixed without collecting again. They are now listed in document 10 and not fixed.
 
-Added by research while fixing these: the gap check now also counts rows without six fields and values that are not a number or are below zero. It found none. MEASURED.
+Added by research while fixing these: the gap check now also counts rows without six fields and values that are not finite or are below zero. It found none. MEASURED.
 
-What changed for the owner: item 6 of "Things only you can do" now says the one-minute files hold some bad bars. The draft plan for the day trading test says a rule for bad bars has to be written before it is frozen.
+What changed for the owner: item 6 of "Things only you can do" now says the two sets of files disagree on some days. The draft plan for the day trading test says a rule for those days has to be written before it is frozen.
+
+A second outside model then read these fixes (commits 22b0f2a to afbe506). It opened all five linked sources and found each supports its sentence, tried four ways to break the repo check and failed, and found the calendar right for the span of the data. STATED by that checker. It also found faults, now fixed:
+
+- Research had written that the one-minute files hold bad bars, as if measured. The comparison shows only that the two files disagree in a way that cannot be if both are right. Reworded everywhere, with research's view labelled as a view.
+- The script wrote "does not grow going back in time" into the table text with nothing computing it. The script now states only the yearly figures. The reading is in the prose, labelled as a reading.
+- The comparison did not leave out short days, where a gap is to be expected. The table text now counts how many of the large gaps fall on short days, and the prose says so.
+- The new count of rows without six fields would have stopped with an error on a short row. Fixed and tried on made-up rows. MEASURED.
+- A sentence gave a wrong last year for the early closes that run past 13:00, and the halt on June 1, 2005 was given as the cause of a short day whose data stops before the halt. Both reworded.
+- Two limits listed as not fixable were limits of the gap check, which can be rerun. Both are now fixed and the check was run again.
+- Smaller ones: a script listed twice in the index, a docstring that named a price the file does not hold, and typed counts in two sentences.
 
 Not done, STATED by research: no rule was run on these prices and no return over time was worked out from them.
 

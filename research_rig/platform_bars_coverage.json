@@ -7,6 +7,8 @@
    "trading_days": 5838,
    "rows": 2264958,
    "days_with_390_rows": 5759,
+   "days_with_exactly_the_390_expected_minutes": 5759,
+   "weekend_days": [],
    "days_with_fewer": 75,
    "days_with_more": 4,
    "short_days_not_known_early_close": [
@@ -405,6 +407,8 @@
    "trading_days": 3943,
    "rows": 1531562,
    "days_with_390_rows": 3880,
+   "days_with_exactly_the_390_expected_minutes": 3880,
+   "weekend_days": [],
    "days_with_fewer": 62,
    "days_with_more": 1,
    "short_days_not_known_early_close": [

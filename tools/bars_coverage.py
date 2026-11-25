@@ -7,8 +7,8 @@
 The tables also take the one-minute against daily comparison from research_rig/platform_bars_crosscheck.json (written by
 research_rig/platform_bars_crosscheck.py).
 Runs no rule. --write and the plain check read the two summary files only, which hold no price. --summarise loads the whole of
-integrity.json, which does hold a few prices (the first and last close of each file), and copies none of them.
-tools/check_repo.py calls in_sync()."""
+integrity.json, which does hold a few prices (the first close of each daily file), and copies none of them.
+tools/check_repo.py calls in_sync() and fingerprints_agree()."""
 import json, os, re, sys
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COV = os.path.join(R, "research_rig", "platform_bars_coverage.json"); XC = os.path.join(R, "research_rig", "platform_bars_crosscheck.json"); DOC = os.path.join(R, "docs", "research", "10_historical_data_and_practice.md")
@@ -20,7 +20,8 @@ def summarise():
     for s, v in I["one_minute"].items():
         out["one_minute"][s] = {
             "first_date": v["first_date"], "last_date": v["last_date"], "trading_days": v["trading_days"], "rows": v["rows"],
-            "days_with_390_rows": v["days_with_390_rows"], "days_with_fewer": len(v["days_with_fewer"]), "days_with_more": len(v["days_with_more"]),
+            "days_with_390_rows": v["days_with_390_rows"], "days_with_exactly_the_390_expected_minutes": v["days_with_exactly_the_390_expected_minutes"],
+            "weekend_days": v["weekend_days"], "days_with_fewer": len(v["days_with_fewer"]), "days_with_more": len(v["days_with_more"]),
             "short_days_not_known_early_close": [[x["date"], x["rows"]] for x in v["days_fewer_not_known_early_close"]],
             "weekdays_without_data_not_calendar_holiday": v["weekdays_without_data_not_calendar_holiday"],
             "timestamps_not_on_whole_minute": v["timestamps_not_on_whole_minute"], "duplicate_timestamps": v["duplicate_timestamps"],
@@ -47,9 +48,9 @@ def summarise():
 def block():
     C = json.load(open(COV)); M, D = C["one_minute"], C["daily"]; n = lambda x: f"{x:,}"
     L = [A, "", "One-minute prices, regular session only:", "",
-         "| Fund | First day | Last day | Trading days | Rows | Days with all 390 minutes | Short days that are not a known early close | Weekdays with no data that are not a holiday | Repeated times |", "|---|---|---|---|---|---|---|---|---|"]
+         "| Fund | First day | Last day | Trading days | Rows | Days with 390 different times | Days with exactly the 390 minutes of a full session | Short days that are not a known early close | Weekdays with no data that are not a holiday | Repeated times |", "|---|---|---|---|---|---|---|---|---|---|"]
     for s, v in M.items():
-        L.append(f"| {s} | {v['first_date']} | {v['last_date']} | {n(v['trading_days'])} | {n(v['rows'])} | {n(v['days_with_390_rows'])} | {len(v['short_days_not_known_early_close'])} | {len(v['weekdays_without_data_not_calendar_holiday'])} | {v['duplicate_timestamps']} |")
+        L.append(f"| {s} | {v['first_date']} | {v['last_date']} | {n(v['trading_days'])} | {n(v['rows'])} | {n(v['days_with_390_rows'])} | {n(v['days_with_exactly_the_390_expected_minutes'])} | {len(v['short_days_not_known_early_close'])} | {len(v['weekdays_without_data_not_calendar_holiday'])} | {v['duplicate_timestamps']} |")
     L += ["", "Daily prices:", "", "| Fund | First day | Last day | Rows | Weekdays with no row that are not a holiday | Repeated days | Days with zero volume | Days where two pulls disagreed |", "|---|---|---|---|---|---|---|---|"]
     for s, v in D.items():
         L.append(f"| {s} | {v['first_date']} | {v['last_date']} | {n(v['rows'])} | {len(v['weekdays_without_row_not_calendar_holiday'])} | {v['duplicate_dates']} | {v['zero_volume_rows']} | {v['conflicts_between_pulls']} |")
@@ -60,6 +61,7 @@ def block():
         if sd: L.append(f"- {s} one-minute: {len(sd)} short days that are not a known early close, the first on {sd[0][0]} with {sd[0][1]} rows and the last on {sd[-1][0]} with {sd[-1][1]}. Every date is in `research_rig/platform_bars_coverage.json`.")
         if v["timestamps_not_on_whole_minute"]: L.append(f"- {s} one-minute: rows that are not on a whole minute: {len(v['timestamps_not_on_whole_minute'])}. Days with more than 390 rows: {v['days_with_more']}.")
         if v["zero_volume_rows"]: L.append(f"- {s} one-minute: rows with zero volume: {n(v['zero_volume_rows'])}.")
+        if v["weekend_days"]: L.append(f"- {s} one-minute: data on weekend days: {', '.join(v['weekend_days'])}.")
         if v["other_value_faults"]: L.append(f"- {s} one-minute: other value faults: {json.dumps(v['other_value_faults'])}.")
         lb = v["days_last_bar_not_at_expected_time"]
         if lb: L.append(f"- {s} one-minute: days whose last bar is not at the expected time (15:59 New York time, or 12:59 on a day the check's calendar has as an early close): {len(lb)}. Every date is in the same file.")
@@ -73,13 +75,13 @@ def block():
             L.append(f"- {s} daily: weekdays missing {v['weekdays_without_row_not_calendar_holiday']}, weekend rows {v['weekend_rows']}, value faults {json.dumps(v['other_value_faults'])}.")
     cz = [s for s, v in D.items() if v["conflicts_between_pulls"]]
     if cz: L.append(f"- Daily: two pulls of the same day gave different values for {', '.join(cz)}. The join script kept the row from the file written last. Nothing checked that the later one is the right one.")
-    clean = all(v["duplicate_timestamps"] == 0 and not v["other_value_faults"] and v["days_with_bars_outside_regular_hours"] == 0 for v in M.values()) and all(v["duplicate_dates"] == 0 and not v["other_value_faults"] and not v["weekend_rows"] for v in D.values())
-    if clean: L += ["", "What the check counted and found none of: a repeated time in a one-minute file, a repeated day or a weekend row in a daily file, a missing or zero price, a high below a low, an open or close outside the bar's high and low, a row without six fields, a value that is not a number or is below zero, or a one-minute bar outside the regular session."]
+    clean = all(v["duplicate_timestamps"] == 0 and not v["other_value_faults"] and v["days_with_bars_outside_regular_hours"] == 0 and not v["weekend_days"] for v in M.values()) and all(v["duplicate_dates"] == 0 and not v["other_value_faults"] and not v["weekend_rows"] for v in D.values())
+    if clean: L += ["", "What the check counted and found none of: a repeated time in a one-minute file, a repeated day in a daily file, a weekend row in any file, a missing or zero price (text that is not a number counts as missing), a high below a low, an open or close outside the bar's high and low, a row without six fields, a value that is not finite or is below zero, or a one-minute bar outside the regular session."]
     L += cross() + ["", B]
     return "\n".join(L)
 
 def cross():
-    X = json.load(open(XC)); bands = X["bands_bps"]; top = bands[-1]; n = lambda x: f"{x:,}"
+    X = json.load(open(XC)); C = json.load(open(COV)); bands = X["bands_bps"]; top = bands[-1]; n = lambda x: f"{x:,}"
     head = ["Up to %d bps" % bands[0]] + ["Over %d, up to %d bps" % (a, b) for a, b in zip(bands, bands[1:])] + ["Over %d bps" % top, "Largest gap"]
     L = ["", "Do the one-minute files and the daily files agree with each other? For every day in both, the day's open, high, low and close were rebuilt from the one-minute bars and compared with the daily row. The gap is in basis points of the daily figure (1 bps is 0.01%). Each cell is a count of days:", "",
          "| Fund | Figure | Days compared | " + " | ".join(head) + " |", "|---|---|---|" + "---|" * len(head)]
@@ -90,8 +92,11 @@ def cross():
     L += ["", "What that comparison found:", ""]
     for s, v in X["funds"].items():
         ys = v["median_close_gap_bps_by_year"]; lo = min(ys, key=ys.get); hi = max(ys, key=ys.get)
-        L.append(f"- {s}: the middle close gap for each year lies between {ys[lo]:+.2f} bps ({lo}) and {ys[hi]:+.2f} bps ({hi}). It does not grow going back in time.")
-        L.append(f"- {s}: days where the one-minute high is above the daily high by more than 1 bps: {v['days_one_minute_high_above_daily_high_by_over_1_bps']}. Days where the one-minute low is below the daily low by more than 1 bps: {v['days_one_minute_low_below_daily_low_by_over_1_bps']}. Neither can happen if both files are right.")
+        far = max(ys, key=lambda y: abs(ys[y]))
+        L.append(f"- {s}: the middle close gap for each year lies between {ys[lo]:+.2f} bps ({lo}) and {ys[hi]:+.2f} bps ({hi}). The year furthest from zero is {far}.")
+        L.append(f"- {s}: days where the one-minute high is above the daily high by more than 1 bps: {v['days_one_minute_high_above_daily_high_by_over_1_bps']}. Days where the one-minute low is below the daily low by more than 1 bps: {v['days_one_minute_low_below_daily_low_by_over_1_bps']}. Neither can happen if both files are right. The comparison does not show which file is wrong.")
+        short = {d for d, _ in C["one_minute"][s]["short_days_not_known_early_close"]}
+        L.append(f"- {s}: the comparison did not leave out short days, where the one-minute files do not cover the whole day and a gap is to be expected. Days over {top} bps that are short days in the gap check: " + ", ".join(f"{f} {sum(1 for d, _ in x[f'dates_over_{top}_bps'] if d in short)} of {x[f'days_over_{top}_bps']}" for f, x in v["fields"].items()) + ".")
         if v["days_in_one_minute_only"]: L.append(f"- {s}: days in the one-minute files and not in the daily file: {len(v['days_in_one_minute_only'])}.")
     L.append(f"- Every date with a gap over {top} bps is in `research_rig/platform_bars_crosscheck.json`, with the gap and no price.")
     return L

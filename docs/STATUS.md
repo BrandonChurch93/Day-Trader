@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-25 12:55 UTC
+Last updated: 2026-11-25 13:04 UTC
 
 This page is the current state of the project. It is the second thing to read, after `AGENTS.md`. If another page disagrees with this one about a result or about where things stand, this page stands. The map of every file is `docs/INDEX.md`. Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
 
@@ -113,7 +113,7 @@ Things only he can do:
 3. Say whether Kraken's published files may be the main crypto history.
 4. Say whether the order-book sampler may run again on Kraken's public price feed.
 5. Say whether `AGENTS.md` and `docs/quality/00_READ_FIRST.md` may be changed so that they point to this page and to `docs/INDEX.md`. The morning list names each line and the proposed wording.
-6. Say whether stock prices from the workspace's own built-in price history may be kept and used for tests. The collection is finished. A gap check found some missing and short days, and a comparison of its one-minute files with its daily files found some bad one-minute bars (MEASURED, on files only the research machine has). STATED by research: no rule has been run on it (`docs/research/10_historical_data_and_practice.md`, "What was collected, and what a gap check found").
+6. Say whether stock prices from the workspace's own built-in price history may be kept and used for tests. The collection is finished. A gap check found some missing and short days, and a comparison of its one-minute files with its daily files found days where the two cannot both be right (MEASURED, on files only the research machine has). STATED by research: no rule has been run on it (`docs/research/10_historical_data_and_practice.md`, "What was collected, and what a gap check found").
 
 Open owner numbers, with no value yet: `live_starting_capital_usd`, `live_max_position_usd`, `live_max_daily_loss_usd`, `live_max_total_loss_usd`, `moonshot_sleeve_share`, `moonshot_max_position_share`, `api_model_spend_cap_usd_month`. Nothing may assume a value for any of them. Two more have no key yet, because what they measure is not defined: the allowed slippage and error rate in the practice gate, and how closely live results must track practice results (question 17).
 

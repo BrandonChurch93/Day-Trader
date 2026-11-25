@@ -56,14 +56,15 @@ def early_closes(y):
     for d, n in [(dt.date(y, 12, 24), "Christmas Eve"), (dt.date(y, 7, 3), "July 3")]:
         if d.weekday() < 5:
             e[d] = n
-    hol = holidays(y)   # added after an outside check: a day the market is shut is not an early close (2020-07-03, 2021-12-24, 2026-07-03)
+    hol = holidays(y)   # added after an outside check: a day the market is shut is not an early close (for example 2020-07-03)
     return {d: n for d, n in e.items() if d not in hol}
 
 
 HOL, EARLY = {}, {}
 for y in range(1990, 2028):
     HOL.update(holidays(y)); EARLY.update(early_closes(y))
-# Added after an outside check. One early close the rules above miss, from the exchange's own record of special closings
+# Added after an outside check: a holiday is not an early close (the rule above had some days as both, 2020-07-03 among them).
+# One early close the rules above miss, from the exchange's own record of special closings
 # (https://www.ltadvisors.net/Info/research/closings.pdf, "closed at 1:00 pm, Friday after Christmas Day").
 # That record runs to December 2007. For September 2003 to December 2007 the rules above now give the same early closes as it does.
 # After 2007 the early closes here are still from memory.
@@ -89,12 +90,13 @@ def value_checks(rows):
     """rows: list of [ts, o, h, l, c, v] strings. Returns counts and examples."""
     c = Counter(); ex = defaultdict(list)
     for r in rows:
-        o, h, l, cl, v = (num(x) for x in r[1:6])
+        o, h, l, cl, v = (num(x) for x in (list(r[1:6]) + [None] * 5)[:5])   # a short row is counted below, not a crash
         def flag(k):
             c[k] += 1
             if len(ex[k]) < 20: ex[k].append(r[0])
         if len(r) != 6: flag("row_without_six_fields")
-        if any(x is not None and (not math.isfinite(x) or x < 0) for x in (o, h, l, cl, v)): flag("value_not_a_number_or_below_zero")
+        # text that is not a number at all is counted as missing, below. This line counts NaN, infinity and anything below zero
+        if any(x is not None and (not math.isfinite(x) or x < 0) for x in (o, h, l, cl, v)): flag("value_not_finite_or_below_zero")
         if any(x is None for x in (o, h, l, cl)): flag("price_missing")
         elif any(x == 0 for x in (o, h, l, cl)): flag("price_zero")
         if v is None: flag("volume_missing")
@@ -137,6 +139,9 @@ def check_1min(sym):
         per_day[dt.date.fromisoformat(t[:10])].append(t)
     days = sorted(per_day)
     eq, fewer, more = 0, [], []
+    FULL = {f"{h:02d}:{m:02d}:00" for h in range(9, 16) for m in range(60) if (h, m) >= (9, 30)}   # the 390 minutes of a full session, New York time
+    assert len(FULL) == 390
+    exact_full = 0
     off_hours_days, first_not_0930, last_not_1559 = [], [], []
     first_utc = {}
     off_minute = [t for t in ts if not t.endswith(":00") or len(t) != 19]
@@ -146,6 +151,7 @@ def check_1min(sym):
         elif n < 390: fewer.append({"date": str(d), "rows": n, "known_early_close": EARLY.get(d)})
         else: more.append({"date": str(d), "rows": n})
         loc = [dt.datetime.fromisoformat(t).replace(tzinfo=UTC).astimezone(NY) for t in L]
+        if {x.strftime("%H:%M:%S") for x in loc} == FULL: exact_full += 1
         if any(not (dt.time(9, 30) <= x.time() <= dt.time(15, 59)) or x.date() != d for x in loc):
             off_hours_days.append(str(d))
         if loc[0].time() != dt.time(9, 30): first_not_0930.append({"date": str(d), "first_ny": loc[0].strftime("%H:%M")})
@@ -167,7 +173,9 @@ def check_1min(sym):
     gl = [{"date": str(g), "calendar_holiday": HOL.get(g)} for g in gaps]
     vc, vex = value_checks(rows)
     return {"first_date": str(days[0]), "last_date": str(days[-1]), "trading_days": len(days), "rows": len(rows),
-            "days_with_390_rows": eq, "days_with_fewer": fewer, "days_with_more": more,
+            "days_with_390_rows": eq, "days_with_exactly_the_390_expected_minutes": exact_full,
+            "weekend_days": [str(d) for d in days if d.weekday() >= 5],
+            "days_with_fewer": fewer, "days_with_more": more,
             "days_fewer_not_known_early_close": [x for x in fewer if not x["known_early_close"]],
             "weekdays_without_data": gl,
             "weekdays_without_data_not_calendar_holiday": [x["date"] for x in gl if not x["calendar_holiday"]],
