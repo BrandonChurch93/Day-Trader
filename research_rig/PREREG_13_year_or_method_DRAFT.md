@@ -74,7 +74,7 @@ Added 2026-11-25 19:03 UTC after a second model read the code against this plan.
 - Stop and take are judged on hourly closes only, as written above. A bar that touched both levels inside the hour counts by its close.
 - Financing at 3x is charged by the hour held: one eighth of `replay_13_plan.financing_bps_per_8h` per hour on the borrowed part.
 - A sale that a missing bar delays past a year's end counts in the year the position was opened. The check of bar times found no such case.
-- "Bars stop for good" is read from the whole file. It changes no decision: the position is valued at its last close either way.
+- A position whose sale is waiting on a missing bar frees no money until a real bar fills it. If no bar ever comes, it is valued at its last close in the year's figure and its money takes no part in any later re-split of that year. That way nothing decided on a Monday depends on bars after that Monday.
 - A part of the account in a week is flagged when the coin list was carried from an earlier snapshot, when its coin has a missing hourly bar in that week, when its sale was delayed by a missing bar, or when it was sold at a last close because bars stopped. A part left in cash because fewer than `replay_13_plan.hot_n` coins could be ranked is counted and not flagged.
 - Years that cannot count toward the mark are also left out when choosing between the three findings.
 - Every yardstick is worked out at each cost level, not only the judged one. The 3x figures are shown at the judged cost only.

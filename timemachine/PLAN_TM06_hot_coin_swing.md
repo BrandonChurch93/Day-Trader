@@ -43,7 +43,7 @@ Yardsticks, all with the same costs and the same trading time:
 
 1. All the coins in equal parts, held.
 2. Plain rule: the `tm06_plan.picker_max_names` coins that rose most over the last `tm06_plan.picker_rise_days` days, renamed every day.
-3. Plain rule: the coins whose attention count rose most.
+3. Plain rule: the `tm06_plan.picker_max_names` coins whose attention count rose most, taking the last daily count known at the wake against the mean of the seven days before it (`tm06_attention_rule`). A coin with a missing count is left out; no coins means cash.
 4. Random picks: `tm_weights_twin_draws` runs that swap as many names each day as the model did, drawn at random from the list.
 5. Bitcoin held, for scale only.
 
@@ -61,12 +61,13 @@ What would count, fixed now. For one model, its eight months joined end to end: 
 | 2026-10-05 to 2026-10-12 | -3.9% | AAVE, ADA, BNB, HBAR, XLM |
 
 - One wake every `tm06_plan.swing_wake_minutes` minutes, day and night. At each wake the model sets how much of the account is in each of the five coins: long or nothing, adding up to at most `tm06_plan.swing_max_gross`x. It may set a stop and a target on each.
-- The packet shows recent one-minute and hourly bars for the five coins, volume against usual, funding, and the account.
+- The packet shows, for the five coins, the last 24 hourly bars and the last 30 one-minute bars, volume against usual, funding, and the account. The model can ask to look at more bars up to the wake.
 
 Yardsticks:
 
 1. The five coins in equal parts, held for the week.
 2. The model's own answers with their order shuffled within the week, `tm_weights_twin_draws` times. This keeps how much it held and how often it traded and breaks only the timing. In a falling week a trader that sits in cash beats holding without any skill; this yardstick is the one that takes that away.
+3. Bitcoin held, for scale only.
 
 What would count, fixed now. For one model, its four weeks joined end to end at `tm06_plan.main_fee_bps` basis points: the gain is above yardstick 1 and above the `tm_weights_pass_percentile`th percentile of yardstick 2. For the method: at least `tm06_plan.method_min_models_above_median` of six models end above the middle of their shuffled runs and at least `tm06_plan.method_min_models_above_percentile` clear both marks. Fewer, and it is reported as not shown. Reported beside it and not judged: rising weeks and falling weeks apart, the number of trades, the share of time in the market, the result at each fee level, and the carried 2x and 3x results with any forced close-out.
 
@@ -82,8 +83,8 @@ A pass in either part earns a longer test of that part on dates not used here, a
 - Four weeks is a small sample for part S, even with 168 answers a week. A pass there is a reason for a longer test and no more.
 - The owner watched charts and acted when he saw the shape. The model acts once an hour and fills at the next minute. A method that needs to act inside the hour is not tested here.
 - The futures price is taken to be the spot price. Funding comes from the venues the second price store could collect, and for some coins that is a stand-in venue. Real futures can trade away from spot when it matters most.
-- Spreads for the smaller coins were sampled on one day. Fast markets have wider spreads than that.
+- Spreads were sampled on one calm day in November 2026, not in the test weeks. Each coin is charged twice the larger of its sampled futures half spread and its sampled cost for a 1,500 dollar spot order, rounded up, at least 2 basis points (`tm_perp_half_spread_bps`), fixed before any session. Fast markets can be wider than that.
 - Attention counts are partly dated by an assumed delay, not a proven one (`docs/research/45_attention_feed_measured.md`).
 - A forced close-out in the time machine stops the loss at the deposit. A real venue can leave a debt (`docs/research/40_leverage_venues_checked.md`).
-- A week of hourly answers may be too long for one agent. If a session has to be split between agents, the hand-over note is the only thing the second one gets, and the split is recorded in the session.
+- A week of hourly answers is too long for one agent. Fixed 2026-11-25 19:05 UTC, before any session: each swing week is split at the same day boundaries for every model, 24 wakes to an agent, and a picker month is split in two at day 15 when it does not fit. The next agent gets the same brief, the packet, and a copy of the earlier agent's own notes as they stood at the hand-over, nothing else. The split is recorded in the session.
 - The no-web rule is an instruction and is not enforced.

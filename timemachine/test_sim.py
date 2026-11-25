@@ -1136,24 +1136,24 @@ ok(abs(oi - ((1000 + h1) / (1000 + h1 - 24) - 1) * 100) < 1e-9 and T6.oi_change_
    "tm06: open interest change is over 24 hours to the latest row known tm_fast_oi_known_after_hours before the wake; none when the coin has no rows")
 
 # 3. picker sessions
-real_fc = T6.full_config; T6.full_config = lambda: dict(real_fc(), tm06_pick_max_names=2)
+real_fc = T6.full_config; T6.full_config = lambda: (lambda c: dict(c, tm06_plan=dict(c["tm06_plan"], picker_max_names=2)))(real_fc())
 try:
     T6.create_picker("f6_pick", "FP", "script", "x.md", "2026-06-09", "2026-06-11", attention_db=ADB)
 finally:
     T6.full_config = real_fc
 pk6 = WW.open_session("f6_pick", tape=WT); m6 = pk6.meta
-ok(isinstance(pk6, T6.PickerSession) and pk6.tape.readonly and m6["long_only"] and [w[11:] for w in m6["wakes"]] == ["%02d:00:00Z" % int(C6["tm06_pick_wake_hour_utc"])] * 3,
-   "tm06 picker: one wake a day at tm06_pick_wake_hour_utc, long only, on the fast tape")
+ok(isinstance(pk6, T6.PickerSession) and pk6.tape.readonly and m6["long_only"] and [w[11:] for w in m6["wakes"]] == ["%02d:00:00Z" % T6.plan(C6)["wake_hour"]] * 3,
+   "tm06 picker: one wake a day at tm06_plan.picker_wake_hour_utc, long only, on the fast tape")
 pa = pk6.packet(); ca = pa["coins"]["A/USD"]
 ok(pa["list"] == ["A/USD", "B/USD", "C/USD", "BTC/USD"] and "D/USD" not in pa["coins"], "tm06 picker: the list is the coins with a minute in the last tm06_pick_listed_hours; a coin without minutes is left off")
 ok(set(ca) == {"price", "change_pct", "volume", "funding_latest", "open_interest_change_24h_pct", "attention", "headlines"} and sorted(ca["change_pct"]) == ["168h", "1h", "24h", "720h"]
-   and ca["attention"]["wikipedia_daily"][-1][0] <= "2026-06-07" and ca["funding_latest"]["stamped_utc"] <= pa["utc"] and pa["coins"]["C/USD"]["attention"] == {},
+   and ca["attention"]["wikipedia_daily"][-1][0] == (S.parse(pa["utc"]) - dt.timedelta(hours=36)).strftime("%Y-%m-%d") and ca["funding_latest"]["stamped_utc"] <= pa["utc"] and pa["coins"]["C/USD"]["attention"] == {},
    "tm06 picker: each coin shows price, its changes over 1h, 24h, 7d, 30d, volume, funding, open interest change, attention known at the wake, headlines")
-wa = int(U(2026, 6, 9).timestamp())
+wa = int(S.parse(pa["utc"]).timestamp())
 ok(abs(ca["change_pct"]["24h"] - (fpx("A/USD", wa - 60) / fpx("A/USD", wa - 86400 - 60) - 1) * 100) < 1e-9 and abs(ca["volume"]["usd_24h"] - sum(10 * fpx("A/USD", wa - 60 * j) for j in range(1, 1441))) < 1e-6
    and ca["volume"]["usual_usd_per_day"] == 9000.0, "tm06 picker: changes from finished minutes only; volume over the last 24 hours against the mean of 1Day bars before")
 rj = lambda b: (not b["ok"]) and pk6.prog["k"] == 0
-ok(rj(pk6.submit({"coins": ["A/USD", "B/USD", "C/USD"], "reasons": {c: "r" for c in ("A/USD", "B/USD", "C/USD")}, "why": "x"})), "tm06 picker: more than tm06_pick_max_names names is refused")
+ok(rj(pk6.submit({"coins": ["A/USD", "B/USD", "C/USD"], "reasons": {c: "r" for c in ("A/USD", "B/USD", "C/USD")}, "why": "x"})), "tm06 picker: more than tm06_plan.picker_max_names names is refused")
 ok(rj(pk6.submit({"coins": ["D/USD"], "reasons": {"D/USD": "r"}, "why": "x"})), "tm06 picker: a coin not on the list at this wake is refused")
 ok(rj(pk6.submit({"coins": ["A/USD"], "reasons": {}, "why": "x"})) and rj(pk6.submit({"coins": ["A/USD"], "reasons": {"A/USD": "two\nlines"}, "why": "x"})),
    "tm06 picker: a missing or many-line reason is refused")
@@ -1190,8 +1190,8 @@ ok(T6.swap_twin(sws, ls6, random.Random(3)) == T6.swap_twin(sws, ls6, random.Ran
 # 5. swing sessions
 T6.create_swing("f6_swing", "FS", "script", "x.md", "2026-06-09", "2026-06-09", ["A/USD", "C/USD"])
 sg = WW.open_session("f6_swing", tape=WT); pg = sg.packet()
-ok(sg.meta["long_only"] and len(sg.meta["wakes"]) == 24 and sg.max_gross == float(C6["tm06_swing_max_gross"]) if hasattr(sg, "max_gross") else len(sg.meta["wakes"]) == 24,
-   "tm06 swing: hourly wakes on the coins given, long only, gross at most tm06_swing_max_gross")
+ok(sg.meta["long_only"] and len(sg.meta["wakes"]) == 24 and sg.max_gross == T6.plan(C6)["swing_max_gross"] if hasattr(sg, "max_gross") else len(sg.meta["wakes"]) == 24,
+   "tm06 swing: hourly wakes on the coins given, long only, gross at most tm06_plan.swing_max_gross")
 bad = sg.submit({"weights": {"A/USD": 0.5, "C/USD": -0.5}, "why": "x"})
 ok(not bad["ok"] and sg.prog["k"] == 0 and any("negative" in e or "long" in e for e in bad.get("errors", [json.dumps(bad)])), "tm06 swing: --long-only refuses a negative weight")
 ok(PP.check_answer({"weights": {"A/USD": -0.5}, "why": "x"}, ["A/USD"], C6, 1.0, {"A/USD": 10.0}, long_only=False) == [], "tm06 swing: without long_only the book takes a short")
@@ -1200,7 +1200,7 @@ while not sg.done():
     pg = sg.packet(); px = pg["symbols"]["A/USD"]["price"]
     body = {"weights": {"A/USD": 0.5, "C/USD": 0.5} if i6 % 4 < 2 else {"A/USD": 1.0}, "exits": {"A/USD": {"stop": px * 0.9}}, "why": "x"} if i6 % 3 == 0 else {"no_change": True, "why": "x"}
     ok(sg.submit(body)["ok"], "tm06 swing: a scripted answer is taken"); i6 += 1
-sc6 = T6.score_swing("f6_swing", draws=5); mults6 = ["1x"] + [f"{m:g}x" for m in C6["tm06_carry_multiples"]]
+sc6 = T6.score_swing("f6_swing", draws=5); mults6 = ["1x"] + [f"{m:g}x" for m in T6.plan(C6)["carried"]]
 ok(list(sc6["by_multiple"]) == mults6 and all(list(v) == [f"{f:g}" for f in C6["tm_perp_fee_levels_bps"]] for v in sc6["by_multiple"].values())
    and all(set(b["yardsticks"]) == {"equal_hold_2", "hold_long_BTC/USD"} and b["shuffled_order_twins"]["final_gain_pct"]["n"] == 5 for v in sc6["by_multiple"].values() for b in v.values()),
    "tm06 swing score: equal hold, hold long and the shuffled-order twins at 1x and each carried multiple, at each fee level")
@@ -1224,6 +1224,23 @@ ok(isinstance(cx6["mins"], PP.Minutes) and abs(fa - fb) < 1e-9 and bk_a["held_se
 ok(set(pp6["source"]) == {"A/USD", "C/USD", "BTC/USD"} and "kraken_futures_pf" in pp6["source"]["A/USD"] and "fallback" in pp6["source"]["C/USD"] and set(pp6["hours"].values()) == {1},
    "tm06: the session says where each coin's funding came from (the benchmark too), charged hourly")
 
+# the plan's numbers are read once, from tm06_plan; an older session's own tm06_reversal still scores it
+pl6 = T6.plan(C6); tp6 = C6["tm06_plan"]
+ok(pl6["max_names"] == tp6["picker_max_names"] and pl6["wake_hour"] == tp6["picker_wake_hour_utc"] and pl6["rise_hours"] == 24 * tp6["picker_rise_days"]
+   and pl6["move_pct"] == tp6["control_move_bps"] / 100 and pl6["carried"] == tp6["carried_leverage"] and pl6["control_leverage"] == tp6["control_leverage"]
+   and pl6["swing_minutes"] == tp6["swing_wake_minutes"] and pl6["main_fee_bps"] == tp6["main_fee_bps"] and len(pl6["coins"]) == len(tp6["coins"])
+   and not any(k in C6 for k in ("tm06_pick_max_names", "tm06_pick_wake_hour_utc", "tm06_swing_max_gross", "tm06_carry_multiples")),
+   "tm06: every number the plan fixes is read from tm06_plan, and the old duplicate keys are gone")
+old6 = T6.plan(dict(tm06_reversal=dict(symbol="BTC/USD", minutes=15, move_pct=0.3, multiples=[1, 3])))
+ok(old6["move_pct"] == 0.3 and old6["control_leverage"] == [1, 3] and T6.main_fee(dict(cfg={"tm06_reversal": dict(move_pct=0.3, multiples=[1])}, levels=[1, 12, 25])) == 12,
+   "tm06: a control made before tm06_plan was read keeps its own rule, judged at the middle fee level")
+caught = False
+try:
+    T6.main_fee(dict(cfg=dict(C6, tm06_plan=dict(tp6, main_fee_bps=7)), levels=[1, 12, 25]))
+except AssertionError:
+    caught = True
+ok(caught, "tm06: a judged fee that is not one of the fee levels stops the scorer")
+
 # 7. the negative control
 rv = C.reversal("BTC/USD", 0.5, 15); now_ = "2026-06-09T10:15:00Z"; mkp = lambda o, c, t="2026-06-09T10:00:00Z": {"utc": now_, "symbols": {"BTC/USD": {"bars": [[t, o, o, o, c, 1]]}}}
 ok(rv(mkp(100, 101), None)["weights"] == {"BTC/USD": -1.0} and rv(mkp(100, 99), None)["weights"] == {"BTC/USD": 1.0} and rv(mkp(100, 100.4), None)["weights"] == {}
@@ -1232,7 +1249,7 @@ T6.create_control("f6_ctl", "2026-06-09", "2026-06-09"); rc6 = T6.run_control("f
 ok(len(rc6["steps"]) == 96 and st6["2026-06-09T10:15:00Z"] == {"BTC/USD": -1.0} and st6["2026-06-09T10:30:00Z"] == {} and sum(1 for st in rc6["steps"] if st["trades"]) == 2,
    "tm06 control: the rule shorts for 15 minutes after the step up and is flat otherwise")
 scc6 = T6.score_control("f6_ctl")
-ok(list(scc6["by_multiple"]) == [f"{m:g}x" for m in C6["tm06_reversal"]["multiples"]] and all(list(v) == [f"{f:g}" for f in C6["tm_perp_fee_levels_bps"]] for v in scc6["by_multiple"].values())
+ok(list(scc6["by_multiple"]) == [f"{m:g}x" for m in T6.plan(C6)["control_leverage"]] and all(list(v) == [f"{f:g}" for f in C6["tm_perp_fee_levels_bps"]] for v in scc6["by_multiple"].values())
    and all(v[f]["final_gain_pct"] < 0 for v in scc6["by_multiple"].values() for f in v) and set(scc6["hold_long"]) == set(scc6["by_multiple"]["1x"]),
    "tm06 control: at each multiple and fee level; a rule with no edge loses its costs")
 

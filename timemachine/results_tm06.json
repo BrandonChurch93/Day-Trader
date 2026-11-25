@@ -19,10 +19,220 @@
   "The fast tape's funding is from Kraken's non-US perps by default; a US venue's rates may differ. Before a coin's first stored rate the fixed fallback is charged.",
   "Open interest and attention counts are shown as they were known at the wake; the store does not always say when a value was first published, so attention uses the reader's assumed lag."
  ],
- "main_line": [],
+ "main_line": [
+  {
+   "1x": {
+    "closeouts": 0,
+    "gain_pct": -99.90481054958403,
+    "trades": 3701
+   },
+   "3x": {
+    "closeouts": 0,
+    "gain_pct": -99.9999999277975,
+    "trades": 3701
+   },
+   "part": "C",
+   "session": "TM06-0-control"
+  }
+ ],
  "plan": "TM06",
  "scorer": "timemachine/score_tm06.py",
- "scores": {},
- "sessions": [],
+ "scores": {
+  "TM06-0-control": {
+   "by_multiple": {
+    "1x": {
+     "1": {
+      "closeouts": 0,
+      "costs_paid_usd": 896.641086147056,
+      "exits_hit": 0,
+      "fallback_hours": 0,
+      "fee_usd": 149.44018533613715,
+      "final_gain_pct": -92.27821174153458,
+      "final_value_usd": 77.21788258465428,
+      "funding_usd": -0.07314225517482674,
+      "largest_drop_pct": -92.44815216673108,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "spread_usd": 747.2009008109188,
+      "time_in_market_share": 0.10147972339428035,
+      "traded_usd": 1494401.8016218327,
+      "trades": 3701,
+      "wakes_trading": 3701
+     },
+     "12": {
+      "closeouts": 0,
+      "costs_paid_usd": 986.8444993930275,
+      "exits_hit": 0,
+      "fallback_hours": 0,
+      "fee_usd": 696.5961195443864,
+      "final_gain_pct": -99.90481054958403,
+      "final_value_usd": 0.9518945041596208,
+      "funding_usd": -0.022278202626268808,
+      "largest_drop_pct": -99.90499909659543,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "spread_usd": 290.24837984864104,
+      "time_in_market_share": 0.10147972339428035,
+      "traded_usd": 580496.7596972844,
+      "trades": 3701,
+      "wakes_trading": 3701
+     },
+     "25": {
+      "closeouts": 0,
+      "costs_paid_usd": 981.6157876939778,
+      "exits_hit": 0,
+      "fallback_hours": 0,
+      "fee_usd": 818.0131602442273,
+      "final_gain_pct": -99.9994798597974,
+      "final_value_usd": 0.005201402026018603,
+      "funding_usd": -0.012153379572307227,
+      "largest_drop_pct": -99.99948064255858,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "spread_usd": 163.60262744975054,
+      "time_in_market_share": 0.10147972339428035,
+      "traded_usd": 327205.25489949994,
+      "trades": 3701,
+      "wakes_trading": 3701
+     }
+    },
+    "3x": {
+     "1": {
+      "closeouts": 0,
+      "costs_paid_usd": 954.9416836818683,
+      "exits_hit": 0,
+      "fallback_hours": 0,
+      "fee_usd": 159.15694919487922,
+      "final_gain_pct": -99.95846832472462,
+      "final_value_usd": 0.41531675275374713,
+      "funding_usd": -0.062142834537380204,
+      "largest_drop_pct": -99.96110096596432,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "spread_usd": 795.7847344869891,
+      "time_in_market_share": 0.10147972339428035,
+      "traded_usd": 1591569.4689739866,
+      "trades": 3701,
+      "wakes_trading": 3701
+     },
+     "12": {
+      "closeouts": 0,
+      "costs_paid_usd": 936.6599932622496,
+      "exits_hit": 0,
+      "fallback_hours": 0,
+      "fee_usd": 661.1717711323749,
+      "final_gain_pct": -99.9999999277975,
+      "final_value_usd": 7.220249500834072e-07,
+      "funding_usd": -0.027781198339013737,
+      "largest_drop_pct": -99.99999992822627,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "spread_usd": 275.48822212987466,
+      "time_in_market_share": 0.10147972339428035,
+      "traded_usd": 550976.444259751,
+      "trades": 3701,
+      "wakes_trading": 3701
+     },
+     "25": {
+      "closeouts": 0,
+      "costs_paid_usd": 945.2958806193064,
+      "exits_hit": 0,
+      "fallback_hours": 0,
+      "fee_usd": 787.746578584798,
+      "final_gain_pct": -100.0,
+      "final_value_usd": 0.0,
+      "funding_usd": -0.02568777981752226,
+      "largest_drop_pct": -99.9999999999665,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "spread_usd": 157.54930203450843,
+      "time_in_market_share": 0.07902015939990624,
+      "traded_usd": 315098.60406901606,
+      "trades": 2901,
+      "wakes_trading": 2901
+     }
+    }
+   },
+   "fee_levels_bps": [
+    1,
+    12,
+    25
+   ],
+   "funding_source": {
+    "BTC/USD": "fast tape funding, kraken_futures_pf, every 1 h, first rate read 2026-03-31T16:00:00Z; before it and in any gap tm_perp_fallback_rate_per_day"
+   },
+   "half_spread_bps": {
+    "BTC/USD": 5.0
+   },
+   "hold_long": {
+    "1": {
+     "closeouts": 0,
+     "costs_paid_usd": 0.60005,
+     "exits_hit": 0,
+     "fallback_hours": 2,
+     "fee_usd": 0.10005,
+     "final_gain_pct": -13.274689565084463,
+     "final_value_usd": 867.2531043491554,
+     "funding_usd": 29.073255140826312,
+     "largest_drop_pct": -38.61306440139434,
+     "penalty_usd": 0.0,
+     "shortfall_usd": 0.0,
+     "spread_usd": 0.5,
+     "time_in_market_share": 1.0,
+     "traded_usd": 1000.0,
+     "trades": 1,
+     "wakes_trading": 1
+    },
+    "12": {
+     "closeouts": 0,
+     "costs_paid_usd": 1.7005999999999997,
+     "exits_hit": 0,
+     "fallback_hours": 2,
+     "fee_usd": 1.2005999999999997,
+     "final_gain_pct": -13.38474456508446,
+     "final_value_usd": 866.1525543491554,
+     "funding_usd": 29.073255140826312,
+     "largest_drop_pct": -38.646598987803316,
+     "penalty_usd": 0.0,
+     "shortfall_usd": 0.0,
+     "spread_usd": 0.5,
+     "time_in_market_share": 1.0,
+     "traded_usd": 1000.0,
+     "trades": 1,
+     "wakes_trading": 1
+    },
+    "25": {
+     "closeouts": 0,
+     "costs_paid_usd": 3.0012499999999998,
+     "exits_hit": 0,
+     "fallback_hours": 2,
+     "fee_usd": 2.5012499999999998,
+     "final_gain_pct": -13.514809565084462,
+     "final_value_usd": 864.8519043491553,
+     "funding_usd": 29.073255140826312,
+     "largest_drop_pct": -38.68630594560008,
+     "penalty_usd": 0.0,
+     "shortfall_usd": 0.0,
+     "spread_usd": 0.5,
+     "time_in_market_share": 1.0,
+     "traded_usd": 1000.0,
+     "trades": 1,
+     "wakes_trading": 1
+    }
+   },
+   "main_fee_bps": 12,
+   "part": "C",
+   "rule": "timemachine/code_traders.py#reversal(BTC/USD, 0.3)",
+   "session": "TM06-0-control",
+   "wakes": 22752,
+   "window": {
+    "end": "2026-11-23",
+    "start": "2026-04-01"
+   }
+  }
+ },
+ "sessions": [
+  "TM06-0-control"
+ ],
  "twin_draws": 1000
 }

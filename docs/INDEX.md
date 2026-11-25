@@ -134,6 +134,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/49_governance_votes_look.md` | A first look at coin returns around governance votes: 945 votes, nearly all on one coin, nothing after costs; parked | CURRENT |
 | `docs/research/50_public_filers_evidence_checked.md` | Copying other public filers after the public date (fund holdings, large-stake filings, ARK, short sellers, lobbying and contracts, analysts) and drift after earnings: the reading with every source checked, and what it changes in the queue | CURRENT |
 | `docs/research/51_stock_swing_evidence_checked.md` | Buy-only methods for single stocks held weeks to months: the reading with every source checked, and eight real-money funds measured against SPY from our own feed | CURRENT |
+| `docs/research/53_prediction_markets_checked.md` | Prediction markets (Kalshi, Polymarket US, Interactive Brokers): fees, free history, AI forecasters against market prices, who makes money, what can be tested honestly; every source checked | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -195,6 +196,9 @@ Working papers.
 | `research_rig/test_12.py` | Plan 12 tests on made-up data, with a planted-edge check and a no-edge check | CURRENT |
 | `research_rig/report_12.py` | Writes the Replay 12 page (research doc 47) from the stored summaries and results; reads no price | CURRENT |
 | `research_rig/missing_tickers_12.md` | Plan 12: what the tickers with no prices are, and a seeded look at 40 of them | CURRENT |
+| `research_rig/renames_12.csv` | Plan 12 rename list, frozen with the plan: old ticker, new ticker, date, public source and status (mapped, left_out, reuse_seen) | CURRENT |
+| `research_rig/noedge_12.py` | Plan 12: runs the block bootstrap mark on 1,000 made-up data sets with no edge and writes the pass rates | CURRENT |
+| `research_rig/noedge_12.json` | Plan 12: the measured no-edge pass rates of mark 2 at each hold, quoted by report_12.py | CURRENT |
 | `research_rig/PREREG_13_year_or_method_DRAFT.md` | Draft plan: a fixed dip-and-peak rule on the hottest coins, scored year by year from 2020 to 2026, to tell the owner's method from the year he traded in | DRAFT |
 | `research_rig/PREREG_14_large_stock_momentum_DRAFT.md` | Draft plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |

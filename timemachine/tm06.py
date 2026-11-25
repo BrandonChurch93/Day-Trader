@@ -16,17 +16,20 @@ The fast tape
                after its stamp.
   attention    timemachine/attention.py get_attention(coin, wake, days): only values known at the wake.
 
-Part P, the picker (PickerSession): one wake a day at tm06_pick_wake_hour_utc. The answer is
+Part P, the picker (PickerSession): one wake a day at tm06_plan.picker_wake_hour_utc. The answer is
     {"coins": ["SOL/USD", "ZEC/USD"], "reasons": {"SOL/USD": "one plain line", "ZEC/USD": "one plain line"}, "why": "..."}
-with 0 to tm06_pick_max_names coins from the list as of the wake (a coin with a recorded minute in the tm06_pick_listed_hours
+with 0 to tm06_plan.picker_max_names coins from the list as of the wake (a coin with a recorded minute in the tm06_pick_listed_hours
 before it). The desk holds the named coins in equal parts adding up to 1x, long only, on the futures book. Naming the same
 coins again trades nothing; a changed list moves every coin to its equal part, trading only the difference (perp.p_step,
 with tm_perp_min_change). No coins means cash.
 
-Part S, swing sessions: an hourly perp session on a fixed set of coins, long or flat (long_only), gross at most
-tm06_swing_max_gross, stops and targets as the book has them.
+Part S, swing sessions: a perp session waking every tm06_plan.swing_wake_minutes on a fixed set of coins, long or flat
+(long_only), gross at most tm06_plan.swing_max_gross, stops and targets as the book has them.
 
-Negative control: code_traders.reversal on tm06_reversal's symbol, every tm06_reversal minutes, through a perp session.
+Negative control: code_traders.reversal on tm06_reversal's symbol, every tm06_reversal minutes, after a move of more than
+tm06_plan.control_move_bps, through a perp session.
+
+Every number the plan fixes is read from tm06_plan (plan(cfg)); the tm06_ keys hold only what the plan leaves to the tool.
 
 Scoring (score_picker, score_swing, score_control) replays the session to the cent, then runs the same answers and every
 yardstick through the same book at each fee in tm_perp_fee_levels_bps. timemachine/score_tm06.py collects them.
@@ -48,9 +51,8 @@ from timemachine.attention import get_attention
 
 UTC = S.UTC
 iso, parse = S.iso, S.parse
-T_KEYS = ["tm_fast_funding_venue", "tm_fast_oi_venue", "tm_fast_oi_known_after_hours", "tm06_pick_max_names", "tm06_pick_wake_hour_utc",
-          "tm06_pick_change_hours", "tm06_pick_volume_usual_days", "tm06_pick_listed_hours", "tm06_pick_attention_days", "tm06_attention_rule",
-          "tm06_swing_max_gross", "tm06_carry_multiples", "tm06_reversal"]
+T_KEYS = ["tm_fast_funding_venue", "tm_fast_oi_venue", "tm_fast_oi_known_after_hours", "tm06_pick_change_hours", "tm06_pick_volume_usual_days",
+          "tm06_pick_listed_hours", "tm06_pick_attention_days", "tm06_attention_rule", "tm06_reversal", "tm06_plan"]
 LIMITS = P.LIMITS + [
     "The fast tape's funding is from Kraken's non-US perps by default; a US venue's rates may differ. Before a coin's first stored rate the fixed fallback is charged.",
     "Open interest and attention counts are shown as they were known at the wake; the store does not always say when a value was first published, so attention uses the reader's assumed lag."]
@@ -63,6 +65,25 @@ def t_config(path=ROOT / "config" / "thresholds.yaml"):
 
 def full_config():
     cfg = P.full_config(); cfg.update(t_config()); return cfg
+
+
+def plan(cfg):
+    """The plan's own numbers, each read from tm06_plan (timemachine/PLAN_TM06_hot_coin_swing.md governs). A session made
+    before the tool read tm06_plan (the control TM06-0-control) carries its rule in tm06_reversal and is scored from that."""
+    p = cfg.get("tm06_plan"); r = cfg["tm06_reversal"]
+    if not p:
+        return dict(move_pct=float(r["move_pct"]), control_leverage=list(r["multiples"]), main_fee_bps=None)
+    return dict(coins=[f"{c}/USD" for c in p["coins"]], wake_hour=int(p["picker_wake_hour_utc"]), max_names=int(p["picker_max_names"]),
+                rise_hours=24 * float(p["picker_rise_days"]), swing_weeks=p["swing_weeks"], swing_minutes=int(p["swing_wake_minutes"]),
+                swing_max_gross=float(p["swing_max_gross"]), main_fee_bps=float(p["main_fee_bps"]), carried=list(p["carried_leverage"]),
+                move_pct=float(p["control_move_bps"]) / 100, control_leverage=list(p["control_leverage"]))
+
+
+def main_fee(cx):
+    """The judged fee: tm06_plan.main_fee_bps, which must be one of tm_perp_fee_levels_bps (the middle level for an older session)."""
+    f = plan(cx["cfg"])["main_fee_bps"]; lv = cx["levels"]
+    assert f is None or f in lv, "tm06_plan.main_fee_bps is not one of tm_perp_fee_levels_bps"
+    return lv[len(lv) // 2] if f is None else f
 
 
 def ep(t):
@@ -197,31 +218,31 @@ def tape_coins(tape):
 
 
 def create_picker(session_id, trader_id, model, method_path, start_date, end_date, tape=None, coins=None, attention_db=None, note=None):
-    tape = tape or W.fast_tape(); cfg = full_config(); coins = list(coins or tape_coins(tape)); assert coins, "no coin list (meta coins_json on the fast tape)"
+    tape = tape or W.fast_tape(); cfg = full_config(); pl = plan(cfg); coins = list(coins or tape_coins(tape)); assert coins, "no coin list (meta coins_json on the fast tape)"
     db = str(attention_db or default_attention_db())
     return P.create(session_id, trader_id, model, method_path, start_date, end_date, coins, max_gross=1.0,
-                    rules=[dict(every="day", utc_hours=[int(cfg["tm06_pick_wake_hour_utc"])])], tape=tape, note=note, benchmark="BTC/USD", long_only=True,
-                    extra=dict(tm06=dict(part="P", max_names=int(cfg["tm06_pick_max_names"]), attention_db=db, config={k: cfg[k] for k in T_KEYS})))
+                    rules=[dict(every="day", utc_hours=[pl["wake_hour"]])], tape=tape, note=note, benchmark="BTC/USD", long_only=True,
+                    extra=dict(tm06=dict(part="P", max_names=pl["max_names"], attention_db=db, config={k: cfg[k] for k in T_KEYS})))
 
 
 def create_swing(session_id, trader_id, model, method_path, start_date, end_date, symbols, tape=None, note=None, news=False):
-    tape = tape or W.fast_tape(); cfg = full_config()
-    return P.create(session_id, trader_id, model, method_path, start_date, end_date, symbols, max_gross=float(cfg["tm06_swing_max_gross"]),
-                    rules=[dict(every="minutes", step=60)], tape=tape, note=note, news=news, benchmark="BTC/USD", long_only=True,
+    tape = tape or W.fast_tape(); cfg = full_config(); pl = plan(cfg)
+    return P.create(session_id, trader_id, model, method_path, start_date, end_date, symbols, max_gross=pl["swing_max_gross"],
+                    rules=[dict(every="minutes", step=pl["swing_minutes"])], tape=tape, note=note, news=news, benchmark="BTC/USD", long_only=True,
                     extra=dict(tm06=dict(part="S", config={k: cfg[k] for k in T_KEYS})))
 
 
 def create_control(session_id, start_date, end_date, tape=None, note=None):
-    tape = tape or W.fast_tape(); cfg = full_config(); r = cfg["tm06_reversal"]
-    return P.create(session_id, "RULE", "none (code trader)", f"timemachine/code_traders.py#reversal({r['symbol']}, {r['move_pct']})", start_date, end_date,
+    tape = tape or W.fast_tape(); cfg = full_config(); r = cfg["tm06_reversal"]; mv = plan(cfg)["move_pct"]
+    return P.create(session_id, "RULE", "none (code trader)", f"timemachine/code_traders.py#reversal({r['symbol']}, {mv:g})", start_date, end_date,
                     [r["symbol"]], max_gross=1.0, rules=[dict(every="minutes", step=int(r["minutes"]))], tape=tape, note=note, benchmark=r["symbol"],
                     extra=dict(tm06=dict(part="C", config={k: cfg[k] for k in T_KEYS})))
 
 
 def run_control(session_id, tape=None):
     from timemachine import code_traders as C, run_code_trader as RC
-    meta = json.loads((S.runs_dir() / session_id / "session.json").read_text()); r = meta["tm06"]["config"]["tm06_reversal"]
-    return RC.run_weights_fast(session_id, C.reversal(r["symbol"], r["move_pct"], int(r["minutes"])), tape or W.session_tape(meta))
+    meta = json.loads((S.runs_dir() / session_id / "session.json").read_text()); c = meta["tm06"]["config"]; r = c["tm06_reversal"]
+    return RC.run_weights_fast(session_id, C.reversal(r["symbol"], plan(c)["move_pct"], int(r["minutes"])), tape or W.session_tape(meta))
 
 
 def check_pick(body, listed_now, max_names, cfg):
@@ -236,7 +257,7 @@ def check_pick(body, listed_now, max_names, cfg):
     if not isinstance(coins, list) or not all(isinstance(c, str) for c in coins) or len(set(coins)) != len(coins):
         return errs + ["coins is a list of different coin names such as \"SOL/USD\"."]
     if len(coins) > max_names:
-        errs.append(f"At most {max_names} coins (tm06_pick_max_names).")
+        errs.append(f"At most {max_names} coins (tm06_plan.picker_max_names).")
     bad = [c for c in coins if c not in listed_now]
     if bad:
         errs.append(f"Not on the list at this wake: {', '.join(bad)}. The list is: {', '.join(listed_now)}.")
@@ -361,7 +382,7 @@ def score_picker(session_id, tape=None, draws=None, seed=None):
             named[k] = named[k - 1] if k else []
     mom, att = [], []
     for k, w in enumerate(wakes):
-        r7 = {s: change_pct(tp, s, w, 168) for s in lists[k]}; top = sorted((s for s in r7 if r7[s] is not None), key=lambda s: (-r7[s], s))[:N]
+        r7 = {s: change_pct(tp, s, w, plan(cfg)["rise_hours"]) for s in lists[k]}; top = sorted((s for s in r7 if r7[s] is not None), key=lambda s: (-r7[s], s))[:N]
         mom.append((eq(top), None))
         ra = {s: attention_rise(s.split("/")[0], w, cfg, db) for s in lists[k]}; top = sorted((s for s in ra if ra[s] is not None), key=lambda s: (-ra[s], s))[:N]
         att.append((eq(top), None))
@@ -370,7 +391,7 @@ def score_picker(session_id, tape=None, draws=None, seed=None):
     ys = dict(equal_all_held=hold(n, eq(lists[0])), top_7d_rise=mom, top_attention_rise=att, btc_held=hold(n, {"BTC/USD": 1.0}))
     out = dict(session=session_id, part="P", model=meta["model"], trader=meta["trader"], window=meta["window"], wakes=n, funding_source=cx["pp"]["source"],
                half_spread_bps={s: cx["pp"]["hs"][s] * 1e4 for s in cx["syms"]}, session_value_usd=cx["res"]["final"]["value_usd"], fee_levels_bps=cx["levels"],
-               main_fee_bps=cx["levels"][len(cx["levels"]) // 2], names_per_wake=[len(x) for x in named], swaps=swaps, list_size_per_wake=[len(x) for x in lists],
+               main_fee_bps=main_fee(cx), names_per_wake=[len(x) for x in named], swaps=swaps, list_size_per_wake=[len(x) for x in lists],
                attention_rule_left_out_per_wake=[len(lists[k]) - sum(1 for s in lists[k] if attention_rise(s.split("/")[0], wakes[k], cfg, db) is not None) for k in range(n)],
                twin_draws=draws, by_fee={})
     for f in cx["levels"]:
@@ -399,7 +420,7 @@ def shuffle_answers(answers, trows, rng):
 
 
 def swing_runs(cx, answers, pp, mult, twins):
-    meta = cx["meta"]; n = len(answers); g = float(cx["cfg"]["tm06_swing_max_gross"]); syms = meta["symbols"]
+    meta = cx["meta"]; n = len(answers); g = plan(cx["cfg"])["swing_max_gross"]; syms = meta["symbols"]
     m, _, mf = run(cx, times(answers, mult), pp)
     blk = dict(model=m, yardsticks={})
     for name, a in ((f"equal_hold_{len(syms)}", hold(n, {s: g / len(syms) for s in syms})), (f"hold_long_{meta['benchmark']}", hold(n, {meta["benchmark"]: 1.0}))):
@@ -413,26 +434,26 @@ def swing_runs(cx, answers, pp, mult, twins):
 
 def score_swing(session_id, tape=None, draws=None, seed=None):
     """Part S: the model, equal hold of its coins, its own answers in shuffled order, hold long; at 1x and at each
-    tm06_carry_multiples (item 6, a replay and not a session), at each fee level."""
+    tm06_plan.carried_leverage (a replay and not a session), at each fee level."""
     cx = load(session_id, tape); cfg = cx["cfg"]; meta = cx["meta"]
     draws = int(draws if draws is not None else cfg["tm_weights_twin_draws"]); seed = int(seed if seed is not None else cfg["tm_weights_twin_seed"])
     twins = [shuffle_answers(cx["answers"], cx["table"]["rows"], random.Random(f"tm06_shuffle:{seed}:{session_id}:{i}")) for i in range(draws)]
-    mults = [1] + [m for m in cfg["tm06_carry_multiples"] if m != 1]
+    mults = [1] + [m for m in plan(cfg)["carried"] if m != 1]
     out = dict(session=session_id, part="S", model=meta["model"], trader=meta["trader"], window=meta["window"], wakes=len(cx["answers"]), symbols=meta["symbols"],
                funding_source=cx["pp"]["source"], half_spread_bps={s: cx["pp"]["hs"][s] * 1e4 for s in cx["syms"]}, session_value_usd=cx["res"]["final"]["value_usd"],
-               fee_levels_bps=cx["levels"], main_fee_bps=cx["levels"][len(cx["levels"]) // 2], multiples=mults, twin_draws=draws, by_multiple={})
+               fee_levels_bps=cx["levels"], main_fee_bps=main_fee(cx), multiples=mults, twin_draws=draws, by_multiple={})
     for m in mults:
         out["by_multiple"][f"{m:g}x"] = {f"{f:g}": swing_runs(cx, cx["answers"], P.with_fee(cx["pp"], f), m, twins) for f in cx["levels"]}
     return out
 
 
 def score_control(session_id, tape=None):
-    """The negative control: the rule's own answers at each multiple in tm06_reversal and each fee level."""
+    """The negative control: the rule's own answers at each leverage in tm06_plan.control_leverage and each fee level."""
     cx = load(session_id, tape); r = cx["cfg"]["tm06_reversal"]
     out = dict(session=session_id, part="C", rule=cx["meta"]["method"], window=cx["meta"]["window"], wakes=len(cx["answers"]), funding_source=cx["pp"]["source"],
-               half_spread_bps={s: cx["pp"]["hs"][s] * 1e4 for s in cx["syms"]}, fee_levels_bps=cx["levels"], main_fee_bps=cx["levels"][len(cx["levels"]) // 2],
+               half_spread_bps={s: cx["pp"]["hs"][s] * 1e4 for s in cx["syms"]}, fee_levels_bps=cx["levels"], main_fee_bps=main_fee(cx),
                by_multiple={})
-    for m in r["multiples"]:
+    for m in plan(cx["cfg"])["control_leverage"]:
         out["by_multiple"][f"{m:g}x"] = {f"{f:g}": run(cx, times(cx["answers"], m), P.with_fee(cx["pp"], f))[0] for f in cx["levels"]}
     hb = hold(len(cx["answers"]), {r["symbol"]: 1.0})
     out["hold_long"] = {f"{f:g}": run(cx, hb, P.with_fee(cx["pp"], f), opening_cash=True)[0] for f in cx["levels"]}

@@ -1,13 +1,13 @@
 """Plan TM06's scorer. Reads only finished TM06 sessions (session.json with tm06, and result.json) under $TM_RUNS and writes
 timemachine/results_tm06.json with every figure the write-up needs. It starts no session and changes no session folder.
 
-For each session, at each fee per side in tm_perp_fee_levels_bps (the middle one is the main line):
+For each session, at each fee per side in tm_perp_fee_levels_bps (tm06_plan.main_fee_bps is the main line):
   part P (picker)   the model's gain, largest drop, costs, funding, trades, time in market and forced close-outs; yardsticks
                     (a) equal_all_held, (b) top_7d_rise, (c) top_attention_rise, (e) btc_held, each with model_above; and
                     (d) random_swap_twins (tm_weights_twin_draws seeded draws) with the model's percentile.
-  part S (swing)    the same at 1x and at each tm06_carry_multiples (a replay, not a session), with equal_hold, hold_long and
+  part S (swing)    the same at 1x and at each tm06_plan.carried_leverage (a replay, not a session), with equal_hold, hold_long and
                     shuffled_order_twins (the session's own answers in shuffled order) carried at the same multiple.
-  part C (control)  the reversal rule at each multiple in tm06_reversal, and its symbol held.
+  part C (control)  the reversal rule at each leverage in tm06_plan.control_leverage, and its symbol held.
 Each session's replay must match its recorded final value to the cent, or the scorer stops.
 
 python3 timemachine/score_tm06.py [--only PREFIX] [--draws N] [--out FILE] [--check]
