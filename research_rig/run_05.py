@@ -7,6 +7,8 @@ F = os.environ.get("FRENCH_DIR", "/home/user/workspace/rig/stocks_free/french/cl
 PPY = 252; NSHUF = 1000; N_TRIALS = 44; COSTS = {"low": 2, "base": 5, "high": 10}
 SL = {"dev": (None, "2006-05-31"), "held": ("2006-06-01", "2026-06-30"), "post": ("2026-07-01", "2026-09-30"), "all": (None, "2026-09-30"),
       "y2008": ("2008-01-01", "2008-12-31"), "y2020": ("2020-01-01", "2020-12-31"), "y2022": ("2022-01-01", "2022-12-31")}
+POOL = os.environ.get("R05_POOL") == "1"   # AMENDMENT_05_I2_equal_thirds.md: split into equal thirds again on re-entry from all cash
+OUT = "results_05b.json" if POOL else "results_05.json"
 START = "1927-08-01"; NAMES = ["T1", "T2", "T3", "T4", "T5", "V1", "I1", "I2"]
 
 # ------------------------------------------------------------------ data
@@ -41,14 +43,17 @@ def sim_ret(ra, rc, target, cost_bps, band=0.10, lag=1, sides=2, start=1.0):
         eq[t] = S + C; wt[t] = S / eq[t]
     return eq, wt, tr
 
-def sim_slots(RA, rc, assign, cost_bps, lag=1, sides=2):
+def sim_slots(RA, rc, assign, cost_bps, lag=1, sides=2, pool=None):
     """Slot engine. RA: days x assets returns. assign[t, s]: asset index held by slot s as decided at the close of
-    day t (-1 is cash). Each slot starts with an equal share in cash. A slot trades only when its asset changes."""
+    day t (-1 is cash). Each slot starts with an equal share in cash. A slot trades only when its asset changes.
+    pool: when every slot is in cash and at least one is about to buy, the cash is first split equally again."""
+    if pool is None: pool = POOL
     n, ns = assign.shape; val = np.full(ns, 1.0 / ns); cur = np.full(ns, -1); eq = np.empty(n); wt = np.empty(n); tr = np.zeros(n); c = cost_bps / 1e4 * sides
     for t in range(n):
         for s in range(ns): val[s] *= 1 + (rc[t] if cur[s] < 0 else RA[t, cur[s]])
         if t - lag >= 0:
             want = assign[t - lag]
+            if pool and (cur < 0).all() and (want >= 0).any(): val[:] = val.sum() / ns
             for s in range(ns):
                 if want[s] != cur[s]:
                     tr[t] += val[s]; val[s] *= (1 - c) if want[s] < 0 else 1 / (1 + c); cur[s] = want[s]
@@ -174,6 +179,12 @@ def fixtures():
     a = sim_slots(RA, rc, asg, 5.0)[0]; b = sim_slots(RA, rc, asg, 5.0)[0]
     one = sim_slots(RA, rc, np.zeros((600, 1), int), 5.0)[0]; ref = sim_ret(RA[:, 0], rc, np.ones(600), 5.0)[0]
     check("R5 slot engine matches the plain engine and repeats", np.array_equal(a, b) and abs(one[-1] / ref[-1] - 1) < 1e-12)
+    # R6, hand-worked: three thirds in stocks for 3 days (+10%, 0, -10% a day), out, in again, then the first asset gains 50% in one day.
+    # Thirds before re-entry: 1.331/3, 1/3, 0.729/3 (sum 1.02). Pooled: 0.34 each, so 0.34 * 1.5 + 0.68 = 1.19. Not pooled: 1.331/3 * 1.5 + 1/3 + 0.729/3.
+    RA6 = np.zeros((9, 3)); RA6[2:5, 0] = 0.10; RA6[2:5, 2] = -0.10; RA6[7, 0] = 0.5; asg6 = np.array([[0, 1, 2]] * 3 + [[-1, -1, -1]] * 2 + [[0, 1, 2]] * 4)
+    e_p = sim_slots(RA6, np.zeros(9), asg6, 0.0, pool=True)[0][-1]; e_u = sim_slots(RA6, np.zeros(9), asg6, 0.0, pool=False)[0][-1]
+    check("R6 thirds are equal again on re-entry from cash when pooling is on, and drift when it is off",
+          abs(e_p - 1.19) < 1e-12 and abs(e_u - (1.331 / 3 * 1.5 + 1 / 3 + 0.729 / 3)) < 1e-12, f"pooled {e_p:.6f} expected 1.190000, not pooled {e_u:.6f} expected {1.331 / 3 * 1.5 + 1 / 3 + 0.729 / 3:.6f}")
     return ok
 
 if __name__ == "__main__":
@@ -188,6 +199,7 @@ if __name__ == "__main__":
         for n in NAMES:
             x = o["rules"][n]; x["marks"] = R.five_marks(x["held"], o["bench"][BENCH[n]]["held"], be[n]["vs_bench"], c, x["dsr"], o["pbo"]["pbo"], x["shuffle_pct"])
         out["costs"][lab] = dict(o, cost_bps_per_side=c)
-    json.dump(out, open("results_05.json", "w"), indent=1, default=float); print("done")
+    out["i2_pooled_on_reentry"] = POOL
+    json.dump(out, open(OUT, "w"), indent=1, default=float); print("done", OUT)
 else:
     pass
