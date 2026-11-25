@@ -2,7 +2,7 @@
 
 The work list for the builder and its helpers. Take the top item that is not blocked, write its ledger row (`research_rig/TRIAL_LEDGER.md`), run it, put the result in `docs/STATUS.md`, then move the item to "Done" with one line saying what happened. Add new ideas at the bottom of "Ideas" with where the idea came from. Anyone may add an idea. Nothing here needs the owner's yes.
 
-Last changed: 2026-11-25 16:12 UTC
+Last changed: 2026-11-25 16:20 UTC
 
 ## Running now
 
@@ -17,7 +17,6 @@ Last changed: 2026-11-25 16:12 UTC
 
 | # | What | Needs | Blocked by |
 |---|---|---|---|
-| 7 | Buy bitcoin or ether when the cost of holding futures has been sharply negative for a day, sell when it turns positive. A fixed rule on one year of free Kraken futures history | Kraken futures funding history | nothing |
 | 8 | Start the practice desk with the two fixed rules and the first AI traders | practice account key in the repo's secrets | the owner's key |
 | 9 | AI sessions on single stocks in the time machine, June to November 2026, with company filings and headlines. Plan and ledger row first | the stock tooling in row 3 | row 3 |
 | 9b | An AI reads each earnings release the minute it is filed and says buy or skip for the next open; judged against random picks among the same releases and against buying every release. Plan and ledger row first | free SEC filings, daily stock prices from the built-in history | nothing |
@@ -66,6 +65,7 @@ The results of everything run before 2026-11-25 15:00 UTC are in the table in `d
 | - | Replay 07: eight day trading rules on SPY and QQQ one-minute prices | Run once 2026-11-25. No rule passed on either fund (`docs/research/27_replay_07_intraday_spy_qqq.md`). Follow-up worth doing: measure the real cost of a round trip in QQQ at the practice desk, since one rule beats holding only below about 1.8 hundredths of a percent |
 | - | Replay 09: seven crypto methods not tried before, at Alpaca's fees | Run once 2026-11-25 and checked by a second model. None passed (`docs/research/28_replay_09_crypto_methods.md`) |
 | - | Tape: crypto prices further back, and dated headlines that need no key | Done 2026-11-25. Days from 2024, minutes from 2026-01-01, headlines from 2026-06-01 from three sites. Headline dates checked (`timemachine/news_date_check.json`). SPY, QQQ and 22 funds added from the built-in price history |
+| - | Buy spot after a day of negative perpetual funding | Closed without a run, 2026-11-25. Binance funding history 2020 to 2026 is complete, but in four design years the signal fired 1 to 11 times per version. Too few to judge (`research_rig/PREREG_10_negative_funding.md`) |
 | - | Measure each model's knowledge line | Done 2026-11-25. None of the six models could give a month-end price for any replay month; the latest any knows is about February 2026 (`docs/research/31_model_knowledge_lines.md`) |
 | - | Tape: single stocks and company filings | Done 2026-11-25. 56 stocks and funds minute by minute from 2026-06-01 (99.99% of minutes present), 275 company filings stamped to the second, 537 headlines from one site. On the research machine only |
 | - | A "why" record for every replay trade | Built 2026-11-25 into the scoring script. One row per buy: what the trader looked up, its reason, the headlines it named, how the trade ended (`docs/research/29_time_machine_tm01_crypto_price_only.md`, `docs/research/30_time_machine_tm02_crypto_with_news.md`) |

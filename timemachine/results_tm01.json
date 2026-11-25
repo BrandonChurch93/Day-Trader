@@ -657,8 +657,138 @@
      "wins": 5
     },
     "08": {
-     "finished": false,
-     "session": "TM01-B01-KIMI-2026-08"
+     "benchmark_shown": "BTC/USD",
+     "buys": 6,
+     "closed": 5,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 8.95,
+     "finished": true,
+     "fund_mover_wakes": 32,
+     "gain_usd": 22.28,
+     "git_dirty": true,
+     "hold_gain_usd": 245.33,
+     "lookups": 20,
+     "losses": 2,
+     "max_drop": -0.0244,
+     "model": "kimi_k3",
+     "news_on": false,
+     "refused_attempts": 0,
+     "session": "TM01-B01-KIMI-2026-08",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 50,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-08-10T15:50:00Z",
+       "exit_reason": "Exit set in pick 20260807T1200Z: the stop price was reached.",
+       "gain_pct": 0.0215,
+       "gain_usd": 6.47,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Double-defended support at 62.2-62.4k; buying the range-low defense with stop just below the lows.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC tested the 62.2-62.4k support zone twice in 36 hours (62,404 on Jul 31, 62,217 on Aug 1) and buyers defended it both times, recovering to 62.7k. Inside a month-long 59.5-67k range, this is a swing long at range support with a tight invalidation below the probe lows, aiming back at range high. Risk about 1.4% for roughly 5% potential.",
+       "usd": 300,
+       "wake_utc": "2026-08-02T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-12T22:00:00Z",
+       "exit_reason": "Exit set in pick 20260812T1200Z: the stop price was reached.",
+       "gain_pct": -0.0319,
+       "gain_usd": -9.59,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Breakout leader: base breakout plus July-high clearance, stair-step continuation under way.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "LINK is the clear leader of this tape: a 10-day low-volume base at 8.06-8.39, a breakout candle on doubled volume on Aug 11, follow-through through the July highs, and shallow pullbacks on the hourly stair-step. While BTC chops mid-range, money is rotating into strength. Buying the grind with a stop under the hourly support shelf at 8.65, target the measured move from the base around 9.30.",
+       "usd": 300,
+       "wake_utc": "2026-08-12T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-19T15:30:00Z",
+       "exit_reason": "Exit set in pick 20260819T1200Z: the target price was reached.",
+       "gain_pct": 0.0521,
+       "gain_usd": 13.07,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Bull-flag continuation entry mid-flag at 9.41 with stop outside all flag lows.",
+       "result": "win",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "LINK is the only coin on the tape in an uptrend: new high 9.619 on Aug 15 followed by an orderly flag down to 9.32 and recovery attempts this morning. Last time my stop sat inside noise; this time the stop goes under every flag low at 9.20, accepting wider risk for a target at a measured continuation around 9.90. Smaller size than max because the run is extended.",
+       "usd": 250,
+       "wake_utc": "2026-08-16T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-23T05:15:00Z",
+       "exit_reason": "Exit set in pick 20260822T0000Z: the stop price was reached.",
+       "gain_pct": 0.0321,
+       "gain_usd": 12.87,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1
+       },
+       "news_looked": 0,
+       "reason": "Volume-confirmed range breakout on continuation day; trend-following entry with structural stop.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC broke a 19-day range on record volume (4.9 then 6.0 vs a ~1.2 norm) and day two of the breakout is a continuation day, not a stalling doji. Volume-confirmed range breakouts usually travel; the risk in waiting for a retest that never comes now outweighs the risk of entering with structure. Max-size buy with the stop under the post-breakout shelf at 68,850, no fixed target, trailed manually on strength.",
+       "usd": 400,
+       "wake_utc": "2026-08-21T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-28T16:20:00Z",
+       "exit_reason": "Exit set in pick 20260828T0000Z: the stop price was reached.",
+       "gain_pct": -0.0024,
+       "gain_usd": -0.83,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Trend re-entry after instantly-absorbed dip, stop under the dip low.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "My 76k stop was tagged on an overnight dip to ~75.85k that buyers immediately absorbed, sending price back to 77.3k. In this trend every dip has been bought within hours. Re-entering long with the stop under the dip low at 75,400: the trade only fails if the dip-buying pattern itself fails. Slightly smaller than max size to protect booked gains.",
+       "usd": 350,
+       "wake_utc": "2026-08-23T12:00:00Z"
+      },
+      {
+       "closed_utc": null,
+       "exit_reason": null,
+       "gain_pct": null,
+       "gain_usd": null,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Failed breakdown back above the 78.4k floor in an intact uptrend.",
+       "result": "still held at the end or not filled",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "The dip below the 78.4k consolidation floor failed and price reclaimed it within a day, the same dip-buying behavior that has defined this whole advance. Re-entering long with the stop under the dip low at 77,200: the trade only fails if the reclaim itself fails.",
+       "usd": 350,
+       "wake_utc": "2026-08-30T00:00:00Z"
+      }
+     ],
+     "wins": 3
     },
     "09": {
      "finished": false,
@@ -938,13 +1068,15 @@
    "verdict": "not finished"
   },
   "NEON": {
+   "beats_hold": false,
+   "beats_twins": true,
    "months": {
     "07": {
      "benchmark_shown": "BTC/USD",
      "buys": 7,
      "closed": 5,
      "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
-     "counts": false,
+     "counts": true,
      "edited_later_news_seen": 0,
      "fees_usd": 9.37,
      "finished": true,
@@ -967,7 +1099,12 @@
       "13": -39.17,
       "14": -5.75,
       "15": -37.75,
+      "16": 63.23,
+      "17": 41.13,
+      "18": 44.52,
+      "19": 6.92,
       "2": -8.35,
+      "20": -25.63,
       "3": 2.47,
       "4": 10.47,
       "5": -27.6,
@@ -976,7 +1113,10 @@
       "8": -26.35,
       "9": -34.38
      },
-     "twins_done": 15,
+     "twin_median_usd": -6.56,
+     "twin_p80_usd": 32.76,
+     "twins_beaten": 18,
+     "twins_done": 20,
      "wakes": 62,
      "wakes_no_pick": 49,
      "wakes_unseen": 0,
@@ -1132,8 +1272,18 @@
      "news_on": false,
      "refused_attempts": 0,
      "session": "TM01-B01-NEON-2026-08",
-     "twin_gains": {},
-     "twins_done": 0,
+     "twin_gains": {
+      "1": 138.29,
+      "2": 88.51,
+      "3": 64.7,
+      "4": 90.95,
+      "5": 38.91,
+      "6": 15.28,
+      "7": 168.64,
+      "8": 93.36,
+      "9": 45.23
+     },
+     "twins_done": 9,
      "wakes": 62,
      "wakes_no_pick": 46,
      "wakes_unseen": 0,
@@ -1705,8 +1855,14 @@
      "session": "TM01-B01-NEON-2026-11"
     }
    },
-   "months_counted": [],
+   "months_counted": [
+    "07"
+   ],
    "name": "Gemini Neon",
+   "sum_gain_usd": 57.38,
+   "sum_hold_usd": 69.81,
+   "sum_twin_p80_usd": 32.76,
+   "sum_twins_beaten": 18,
    "verdict": "not finished"
   },
   "OPUS": {
@@ -2480,8 +2636,233 @@
      "wins": 0
     },
     "11": {
-     "finished": false,
-     "session": "TM01-B01-OPUS-2026-11"
+     "benchmark_shown": "BTC/USD",
+     "buys": 11,
+     "closed": 11,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 13.17,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": -45.01,
+     "git_dirty": true,
+     "hold_gain_usd": -231.1,
+     "lookups": 36,
+     "losses": 8,
+     "max_drop": -0.0694,
+     "model": "claude_opus_5_5",
+     "news_on": false,
+     "refused_attempts": 0,
+     "session": "TM01-B01-OPUS-2026-11",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 48,
+     "wakes_no_pick": 38,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-11-03T00:00:00Z",
+       "exit_reason": "The 77k base I bought on has broken; thesis invalid.",
+       "gain_pct": -0.0267,
+       "gain_usd": -8.02,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Small bounce try after two days of base-building above 77k; risk about 2.3 percent to make about 3.3 percent.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "After the Oct 29-30 drop, BTC has held 77k for two days and is edging up (78.2k now) with higher hourly lows. I take a small long for a bounce toward the old 80-81k shelf, with a stop under the post-drop range.",
+       "usd": 300,
+       "wake_utc": "2026-11-02T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-04T15:05:00Z",
+       "exit_reason": "Exit set in pick 20261104T1200Z: the target price was reached.",
+       "gain_pct": 0.0406,
+       "gain_usd": 12.2,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Leader of the reversal off a swept low; risk about 3 percent to 2255, aim for 2420 near the late-Oct shelf.",
+       "result": "win",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "Overnight BTC swept just under the Oct 30 low (75.6k vs 75.8k) and snapped back 3.7 percent with eight hours of higher highs. That stop-run-and-reverse is the turn I was waiting for. ETH is leading the bounce (+2.3 percent on the day, steady hourly climb). I buy ETH as the main position and a smaller BTC, with stops below the reversal's first leg.",
+       "usd": 300,
+       "wake_utc": "2026-11-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-04T22:45:00Z",
+       "exit_reason": "Exit set in pick 20261104T1200Z: the target price was reached.",
+       "gain_pct": 0.0248,
+       "gain_usd": 4.98,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Failed breakdown below 75.8k and V reversal; risk about 2 percent to 76.8k, aim for 80.8k.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Overnight BTC swept just under the Oct 30 low (75.6k vs 75.8k) and snapped back 3.7 percent with eight hours of higher highs. That stop-run-and-reverse is the turn I was waiting for. ETH is leading the bounce (+2.3 percent on the day, steady hourly climb). I buy ETH as the main position and a smaller BTC, with stops below the reversal's first leg.",
+       "usd": 200,
+       "wake_utc": "2026-11-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-05T14:40:00Z",
+       "exit_reason": "Exit set in pick 20261105T0000Z: the stop price was reached.",
+       "gain_pct": -0.0249,
+       "gain_usd": -6.25,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Breakout from range holding above 80k; risk about 1.8 percent to 79k, aim 83k (+3.2 percent).",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Both bounce trades hit their targets. BTC broke out of the 76-78.7k range, spiked to 81.1k and has held 79.9-80.9k for eight hours instead of giving the move back. Holding above the old shelf suggests continuation toward the Oct 21-22 area near 83-84k. I re-enter BTC with a modest size and a stop under the consolidation.",
+       "usd": 250,
+       "wake_utc": "2026-11-05T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-10T13:35:00Z",
+       "exit_reason": "Exit set in pick 20261110T0000Z: the stop price was reached.",
+       "gain_pct": -0.025,
+       "gain_usd": -6.27,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Double low at 73.5k and steady climb; risk about 1.8 percent to 73.9k, aim 77.6k (+3.1 percent).",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC made a double low at 73.5-73.6k after the Sunday flush and has climbed steadily for twelve hours with higher hourly lows, now 75.3k. It looks like the flush is being bought, like the Nov 4 turn. ETH fell harder in the flush and has recovered less, so it has room to fill back toward its pre-flush 2220-2230 level. I take two modest longs with stops under the bounce base.",
+       "usd": 250,
+       "wake_utc": "2026-11-10T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-10T13:35:00Z",
+       "exit_reason": "Exit set in pick 20261110T0000Z: the stop price was reached.",
+       "gain_pct": -0.0386,
+       "gain_usd": -9.66,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Laggard after the flush; risk about 2.7 percent to 2075, aim 2220 (+4.1 percent) where it sat before the drop.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "BTC made a double low at 73.5-73.6k after the Sunday flush and has climbed steadily for twelve hours with higher hourly lows, now 75.3k. It looks like the flush is being bought, like the Nov 4 turn. ETH fell harder in the flush and has recovered less, so it has room to fill back toward its pre-flush 2220-2230 level. I take two modest longs with stops under the bounce base.",
+       "usd": 250,
+       "wake_utc": "2026-11-10T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-14T07:20:00Z",
+       "exit_reason": "Exit set in pick 20261113T1200Z: the stop price was reached.",
+       "gain_pct": -0.0559,
+       "gain_usd": -11.22,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Held its range and rose on a day BTC fell 3 percent; risk about 4.5 percent to 8.00, aim 9.00 (+7.4 percent).",
+       "result": "loss",
+       "sources": [],
+       "symbol": "AVAX/USD",
+       "thesis": "BTC dropped 5 percent overnight to 67.6k and every major pair fell with it, except AVAX, which is up on the day and has held its 7.8-9.1 range for three weeks while BTC lost 15 percent. That relative strength in a sell-off is the one sign of real buying I can see. I buy a small AVAX position for a move back to the top of its range, stop just under today's low. I stay out of BTC and ETH until they stop falling.",
+       "usd": 200,
+       "wake_utc": "2026-11-13T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-17T15:55:00Z",
+       "exit_reason": "Exit set in pick 20261115T1200Z: the stop price was reached.",
+       "gain_pct": -0.037,
+       "gain_usd": -11.11,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Capitulation wick to 62k, higher low 63.7k, higher high 66.1k; risk about 2.8 percent to 63.5k, aim 69k (+5.6 percent).",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "After a 20 percent fall from 77k, BTC flushed to 62.0k overnight and snapped back, then retested at 63.7k, held a higher low, and made a higher high at 66.1k. Every pair is up 2-5 percent on the day. This looks more like a capitulation low than the earlier weak bounces, and relief rallies after a fall this big tend to be large. I buy BTC as the main trade and a smaller ETH, stops under the higher low, aiming for a partial retrace.",
+       "usd": 300,
+       "wake_utc": "2026-11-15T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-17T15:50:00Z",
+       "exit_reason": "Exit set in pick 20261115T1200Z: the stop price was reached.",
+       "gain_pct": -0.0402,
+       "gain_usd": -6.05,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Same reversal shape from 1711; risk about 3.2 percent to 1765, aim 1930 (+5.9 percent).",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "After a 20 percent fall from 77k, BTC flushed to 62.0k overnight and snapped back, then retested at 63.7k, held a higher low, and made a higher high at 66.1k. Every pair is up 2-5 percent on the day. This looks more like a capitulation low than the earlier weak bounces, and relief rallies after a fall this big tend to be large. I buy BTC as the main trade and a smaller ETH, stops under the higher low, aiming for a partial retrace.",
+       "usd": 150,
+       "wake_utc": "2026-11-15T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-19T21:20:00Z",
+       "exit_reason": "Exit set in pick 20261118T0000Z: the stop price was reached.",
+       "gain_pct": -0.0576,
+       "gain_usd": -14.45,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Second higher low held and recovered fast; wider stop under 62k so ordinary noise does not stop me out. Risk 4.8 percent, aim 69.5k (+7 percent).",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "My last stops sat just under an obvious low and were taken by a one-hour dip to 63.26k that fully recovered within eight hours. BTC has now made a second higher low (62.0k, then 63.3k) and is back at 64.9k, while SOL and XRP are leading higher. The base still looks good, so I re-enter BTC smaller, with the stop below the capitulation low at 62k where a hit would really mean the base failed.",
+       "usd": 250,
+       "wake_utc": "2026-11-18T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-23T14:00:00Z",
+       "exit_reason": "Exit set in pick 20261123T0000Z: the target price was reached.",
+       "gain_pct": 0.0541,
+       "gain_usd": 10.84,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "V from 55.1k with ten hours holding near 60k; risk about 2.8 percent to 58.4k, aim 63.5k (+5.7 percent).",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC flushed to 55.1k on Nov 21, bounced, held 57.3k, then pushed to 60.8k and has held 59.6-60.4k for ten hours instead of fading. That is a V bottom with a consolidation above, the shape that worked on Nov 4. My bounce trades have mostly failed this month, so this is a small position with a stop under the consolidation and a time limit before the session ends.",
+       "usd": 200,
+       "wake_utc": "2026-11-22T00:00:00Z"
+      }
+     ],
+     "wins": 3
     }
    },
    "months_counted": [

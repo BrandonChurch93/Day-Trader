@@ -16,6 +16,7 @@ Commands:
   crypto-news --from D --to D [--sources cryptoslate,cryptopotato,newsbtc]
   load-csv    --tf 1Min|1Day (--file PATH --symbol SYM | --dir PATH) [--from D] [--to D]
   sessions-from-tape [--symbol SPY] --from D --to D
+  stock-news  --symbols A,B --from D --to D [--sources sec_edgar,finbold]
 """
 import argparse, csv, datetime as dt, hashlib, html, json, math, re, statistics, sys, time
 import urllib.error, urllib.parse, urllib.request
@@ -46,7 +47,13 @@ TM_KEYS = [
     "tm_record_batch_size",
     "tm_keyless_news_max_rpm",
     "tm_keyless_news_per_page",
+    "tm_sec_edgar_max_rpm",
 ]
+
+SEC_USER_AGENT = "Day-Trader research modernsoftworks@gmail.com"
+SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
+SEC_SUBMISSIONS_BASE = "https://data.sec.gov/submissions"
+FINBOLD_WP_BASE = "https://finbold.com/wp-json/wp/v2/posts"
 
 
 def config(path=ROOT / "config" / "thresholds.yaml"):
@@ -74,8 +81,12 @@ class HttpError(Exception):
         self.headers = headers or {}
 
 
-def default_http_get(url, timeout=30):
-    req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": USER_AGENT}, method="GET")
+def default_http_get(url, timeout=30, user_agent=None):
+    req = urllib.request.Request(
+        url,
+        headers={"Accept": "application/json", "User-Agent": user_agent or USER_AGENT},
+        method="GET",
+    )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.status, resp.read().decode("utf-8", errors="replace"), dict(resp.headers)
@@ -91,9 +102,14 @@ def default_http_get(url, timeout=30):
 class Client:
     """Rate-limited GET-only HTTP client with 429/5xx backoff."""
 
-    def __init__(self, max_rpm=150, http_get=None, sleep_fn=None, now_fn=None, max_retries=5):
+    def __init__(self, max_rpm=150, http_get=None, sleep_fn=None, now_fn=None, max_retries=5, user_agent=None):
         self.min_interval = 60.0 / max(1.0, float(max_rpm))
-        self.http_get = http_get or default_http_get
+        if http_get is not None:
+            self.http_get = http_get
+        elif user_agent is not None:
+            self.http_get = lambda url: default_http_get(url, user_agent=user_agent)
+        else:
+            self.http_get = default_http_get
         self.sleep_fn = sleep_fn or time.sleep
         self.now_fn = now_fn or time.monotonic
         self.max_retries = max_retries
@@ -707,6 +723,267 @@ def derive_sessions_from_tape(tape, start_d, end_d, symbol="SPY"):
     return n
 
 
+SEC_8K_ITEM_NAMES = {
+    "1.01": "Material Agreement",
+    "1.02": "Termination of Material Agreement",
+    "1.05": "Cybersecurity Incident",
+    "2.01": "Acquisition/Disposition",
+    "2.02": "Results of Operations",
+    "2.03": "Direct Financial Obligation",
+    "2.05": "Exit/Disposal Costs",
+    "2.06": "Material Impairments",
+    "3.02": "Unregistered Equity Sales",
+    "4.01": "Auditor Change",
+    "4.02": "Non-Reliance on Financials",
+    "5.02": "Officer/Director Changes",
+    "5.03": "Bylaws/Charter Amendments",
+    "5.07": "Shareholder Vote",
+    "7.01": "Reg FD Disclosure",
+    "8.01": "Other Events",
+    "9.01": "Exhibits",
+}
+
+STOCK_NAME_KEYWORDS = {
+    "AAPL": ("apple",),
+    "AMD": ("advanced micro devices",),
+    "AMGN": ("amgen",),
+    "AMZN": ("amazon",),
+    "AVGO": ("broadcom",),
+    "AXP": ("american express",),
+    "BA": ("boeing",),
+    "CAT": ("caterpillar",),
+    "COIN": ("coinbase",),
+    "CRM": ("salesforce",),
+    "CSCO": ("cisco",),
+    "CVX": ("chevron",),
+    "DIS": ("disney", "walt disney"),
+    "GOOGL": ("alphabet", "google"),
+    "GS": ("goldman sachs",),
+    "HD": ("home depot",),
+    "HON": ("honeywell",),
+    "IBM": ("international business machines",),
+    "JNJ": ("johnson & johnson", "johnson and johnson"),
+    "JPM": ("jpmorgan", "jp morgan"),
+    "KO": ("coca-cola", "coca cola"),
+    "MCD": ("mcdonald's", "mcdonalds"),
+    "META": ("meta platforms",),
+    "MMM": ("3m company",),
+    "MRK": ("merck",),
+    "MSFT": ("microsoft",),
+    "MSTR": ("microstrategy",),
+    "NFLX": ("netflix",),
+    "NKE": ("nike",),
+    "NVDA": ("nvidia",),
+    "PG": ("procter & gamble", "procter and gamble"),
+    "PLTR": ("palantir",),
+    "SHW": ("sherwin-williams", "sherwin williams"),
+    "TRV": ("travelers companies",),
+    "TSLA": ("tesla",),
+    "UNH": ("unitedhealth",),
+    "V": ("visa inc",),
+    "WMT": ("walmart",),
+}
+
+
+def _format_8k_items(raw_items):
+    if isinstance(raw_items, (list, tuple)):
+        codes = [str(x).strip() for x in raw_items if str(x).strip()]
+    else:
+        codes = [x.strip() for x in str(raw_items or "").split(",") if x.strip()]
+    if not codes:
+        return "unspecified"
+    parts = [f"{c} {SEC_8K_ITEM_NAMES[c]}" if c in SEC_8K_ITEM_NAMES else c for c in codes]
+    return ", ".join(parts)
+
+
+def _extract_sec_8k_rows(sym, cik, company_title, block, sd_str, ed_str):
+    forms = block.get("form") or []
+    accs = block.get("acceptanceDateTime") or []
+    items_col = block.get("items") or []
+    acc_nums = block.get("accessionNumber") or []
+    prim_docs = block.get("primaryDocument") or []
+    filing_dates = block.get("filingDate") or []
+    report_dates = block.get("reportDate") or []
+    out = []
+    for i, form in enumerate(forms):
+        if form not in ("8-K", "8-K/A"):
+            continue
+        acc_dt = (accs[i] if i < len(accs) else "") or ""
+        if not acc_dt or len(acc_dt) < 10:
+            continue
+        day_str = acc_dt[:10]
+        if day_str < sd_str or day_str > ed_str:
+            continue
+        ts = to_epoch(_ensure_utc_iso(acc_dt))
+        acc_num = acc_nums[i] if i < len(acc_nums) else ""
+        prim_doc = prim_docs[i] if i < len(prim_docs) else ""
+        acc_nodash = acc_num.replace("-", "")
+        if acc_nodash and prim_doc:
+            url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{acc_nodash}/{prim_doc}"
+        else:
+            url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={int(cik):010d}&type=8-K&acc={acc_num}"
+        raw_items = items_col[i] if i < len(items_col) else ""
+        items_label = _format_8k_items(raw_items)
+        headline = f"{sym} Form {form} (Items {items_label}): {company_title}"
+        item = {
+            "id": _keyless_news_id("sec_edgar", url),
+            "headline": headline,
+            "summary": f"SEC EDGAR {form} filed by {company_title} ({sym}), accepted {acc_dt}. Items: {items_label}.",
+            "source": "sec_edgar",
+            "url": url,
+            "created_at": _ensure_utc_iso(acc_dt),
+            "updated_at": _ensure_utc_iso(acc_dt),
+            "symbols": [sym],
+            "form": form,
+            "items": raw_items,
+            "accession_number": acc_num,
+            "filing_date": filing_dates[i] if i < len(filing_dates) else "",
+            "report_date": report_dates[i] if i < len(report_dates) else "",
+            "cik": f"{int(cik):010d}",
+        }
+        out.append(item)
+    return out
+
+
+def record_sec_news(tape, client, symbols, start_d, end_d, cfg=None):
+    """Record dated SEC EDGAR 8-K / 8-K/A filings using acceptanceDateTime (UTC to the second)."""
+    sd_str, ed_str = _parse_date(start_d).isoformat(), _parse_date(end_d).isoformat()
+    tickers_raw = json.loads(client.get_text(SEC_TICKERS_URL))
+    by_sym = {}
+    for rec in tickers_raw.values():
+        t = str(rec.get("ticker") or "").upper()
+        if t and t not in by_sym:
+            by_sym[t] = (int(rec["cik_str"]), str(rec.get("title") or t))
+
+    total = 0
+    for sym in symbols:
+        sym_u = sym.upper()
+        if sym_u not in by_sym:
+            continue
+        cik, company_title = by_sym[sym_u]
+        sub_url = f"{SEC_SUBMISSIONS_BASE}/CIK{cik:010d}.json"
+        try:
+            sub = json.loads(client.get_text(sub_url))
+        except HttpError as e:
+            print(f"[stock-news:sec_edgar] {sym_u} HTTP {e.code} skipped", flush=True)
+            continue
+        filings = sub.get("filings") or {}
+        recent = filings.get("recent") or {}
+        rows = _extract_sec_8k_rows(sym_u, cik, company_title, recent, sd_str, ed_str)
+        # Follow archive files if recent does not reach back to sd_str
+        rec_dates = recent.get("filingDate") or []
+        oldest_recent = rec_dates[-1] if rec_dates else "9999-12-31"
+        if oldest_recent > sd_str:
+            for meta in filings.get("files") or []:
+                f_from = str(meta.get("filingFrom") or "")
+                f_to = str(meta.get("filingTo") or "")
+                fname = meta.get("name") or ""
+                if not fname or (f_to and f_to < sd_str) or (f_from and f_from > ed_str):
+                    continue
+                try:
+                    arch = json.loads(client.get_text(f"{SEC_SUBMISSIONS_BASE}/{fname}"))
+                except HttpError:
+                    continue
+                rows.extend(_extract_sec_8k_rows(sym_u, cik, company_title, arch, sd_str, ed_str))
+        if rows:
+            n = tape.add_news(rows)
+            total += n
+            print(f"[stock-news:sec_edgar] {sym_u} (CIK {cik:010d}): +{n} 8-K filings", flush=True)
+    return total
+
+
+def _tag_stock_symbols(headline, summary, allowed_symbols):
+    """Tag stock/ETF symbols mentioned in headline or summary.
+
+    Uses case-sensitive whole-word ticker matching (excluding ambiguous 1-2 char tickers
+    unless prefixed with `$` or parenthesized) plus exact company-name keyword matching.
+    """
+    text_raw = f"{headline} {summary}"
+    text_low = text_raw.lower()
+    found = set()
+    for sym in allowed_symbols:
+        su = sym.upper()
+        if len(su) <= 2:
+            if re.search(rf"(?:\${re.escape(su)}\b|\({re.escape(su)}\)|\b(?:NYSE|NASDAQ):\s*{re.escape(su)}\b)", text_raw):
+                found.add(su)
+        else:
+            if re.search(rf"(?<![A-Za-z0-9]){re.escape(su)}(?![A-Za-z0-9])", text_raw):
+                found.add(su)
+        for kw in STOCK_NAME_KEYWORDS.get(su, ()):
+            if re.search(rf"(?<![a-z0-9]){re.escape(kw)}(?![a-z0-9])", text_low):
+                found.add(su)
+                break
+    return sorted(found)
+
+
+def record_finbold_stock_news(tape, client, symbols, start_d, end_d, cfg):
+    """Record dated stock headlines from Finbold's public WordPress REST API."""
+    sd, ed = _parse_date(start_d), _parse_date(end_d)
+    per_page = int(cfg["tm_keyless_news_per_page"])
+    allowed = [s.upper() for s in symbols]
+    total = 0
+    for c_start, c_end in _date_chunks(sd, ed, 14):
+        after = f"{c_start.isoformat()}T00:00:00Z"
+        before = f"{c_end.isoformat()}T23:59:59Z"
+        page = 1
+        chunk_rows = []
+        while True:
+            params = {
+                "after": after,
+                "before": before,
+                "per_page": per_page,
+                "page": page,
+                "orderby": "date",
+                "order": "asc",
+                "_fields": "id,date_gmt,modified_gmt,link,title,excerpt",
+            }
+            try:
+                posts, headers = client.get_json_with_headers(FINBOLD_WP_BASE, "", params)
+            except HttpError as e:
+                if e.code == 400:
+                    break
+                raise
+            if not posts:
+                break
+            for p in posts:
+                link = p.get("link") or ""
+                if not link:
+                    continue
+                headline = _clean_html((p.get("title") or {}).get("rendered", ""))
+                summary = _clean_html((p.get("excerpt") or {}).get("rendered", ""))
+                if not headline:
+                    continue
+                syms = _tag_stock_symbols(headline, summary, allowed)
+                if not syms:
+                    continue
+                pub_iso = _ensure_utc_iso(p.get("date_gmt") or "")
+                mod_iso = _ensure_utc_iso(p.get("modified_gmt") or pub_iso)
+                created = to_epoch(pub_iso)
+                updated = to_epoch(mod_iso)
+                edited_later = (updated - created) > 3600
+                item = {
+                    "id": _keyless_news_id("finbold", link),
+                    "headline": headline,
+                    "summary": summary,
+                    "source": "finbold",
+                    "url": link,
+                    "created_at": pub_iso,
+                    "updated_at": mod_iso,
+                    "symbols": syms,
+                    "wp_id": p.get("id"),
+                    "edited_later": edited_later,
+                }
+                chunk_rows.append(item)
+            total_pages = int(headers.get("X-WP-TotalPages") or headers.get("x-wp-totalpages") or 1)
+            if page >= total_pages:
+                break
+            page += 1
+        n = tape.add_news(chunk_rows)
+        total += n
+        print(f"[stock-news:finbold] {c_start}..{c_end}: +{n} articles", flush=True)
+    return total
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Record historical Alpaca market data into the time-machine tape.")
     ap.add_argument("--db", default=None, help="Path to tape.sqlite (default: $TM_STORE/tape.sqlite)")
@@ -735,6 +1012,12 @@ def main(argv=None):
     p_st.add_argument("--symbol", default="SPY")
     p_st.add_argument("--from", dest="start", required=True)
     p_st.add_argument("--to", dest="end", required=True)
+
+    p_sn = sub.add_parser("stock-news")
+    p_sn.add_argument("--symbols", required=True, help="Comma-separated stock/ETF symbols")
+    p_sn.add_argument("--from", dest="start", required=True)
+    p_sn.add_argument("--to", dest="end", required=True)
+    p_sn.add_argument("--sources", default="sec_edgar,finbold", help="Comma-separated sources: sec_edgar,finbold")
 
     for name in ("minutes", "crypto"):
         p = sub.add_parser(name)
@@ -782,6 +1065,15 @@ def main(argv=None):
                 ap.error("load-csv requires --file or --dir")
         elif args.cmd == "sessions-from-tape":
             derive_sessions_from_tape(tape, args.start, args.end, symbol=args.symbol)
+        elif args.cmd == "stock-news":
+            syms = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
+            srcs = [s.strip().lower() for s in args.sources.split(",") if s.strip()]
+            if "sec_edgar" in srcs:
+                sec_client = Client(max_rpm=cfg["tm_sec_edgar_max_rpm"], user_agent=SEC_USER_AGENT)
+                record_sec_news(tape, sec_client, syms, args.start, args.end, cfg)
+            if "finbold" in srcs:
+                fb_client = Client(max_rpm=cfg["tm_keyless_news_max_rpm"])
+                record_finbold_stock_news(tape, fb_client, syms, args.start, args.end, cfg)
     finally:
         tape.close()
 

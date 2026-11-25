@@ -69,6 +69,18 @@ Folders.
 - `python3 practice/test_trader.py` still passes with no change to `practice/`. MEASURED.
 - A full real month (hold, BTC/USD, October 2026) ran end to end on the recorded tape. MEASURED: the books from `practice/books.py` matched the broker's cash and holding to the cent. The wall time and tick counts are in `run_facts` in that session's `result.json`.
 
+## What the tape holds
+
+The live research tape (`$TM_STORE/tape.sqlite`) holds both crypto and US stock/ETF history (all counts MEASURED):
+
+- Crypto bars (8 pairs: `BTC/USD, ETH/USD, SOL/USD, XRP/USD, DOGE/USD, AVAX/USD, LINK/USD, LTC/USD`): `1Day` from `2024-01-01..2026-11-24` (`SOL/USD` from `2024-08-26`, 8,234 bars) and `1Min` from `2026-01-01..2026-11-24` (2,835,321 bars), recorded keyless from Alpaca crypto endpoints (`record.py crypto`).
+- Crypto news (`2026-06-01..2026-11-24`, 5,941 dated headlines): public WordPress REST endpoints of `cryptopotato` (2,498), `cryptoslate` (2,058), and `newsbtc` (1,385) via `record.py crypto-news`.
+- Stock and ETF bars (the stock list was chosen on 2026-11-25 — today's Dow 30 plus 8 names picked today: `AMD, AVGO, COIN, META, MSTR, NFLX, PLTR, TSLA` — so it leans toward companies that did well; plus 18 funds `SPY, QQQ, IWM, DIA, VTI, TLT, GLD` and 11 sector ETFs, plus 5 extra on-disk daily ETFs `BIL, DBC, EFA, IEF, VNQ`):
+  - `1Day` (`2024-01-02..2026-11-24`): 61 symbols, 728/728 trading days each (44,408 bars, 0 gaps).
+  - `1Min` (`2026-06-01..2026-11-24`, plus `SPY` and `QQQ` from `2026-01-02`): 56 symbols, 2,787,415 bars, covering all 124/124 NYSE regular sessions in `2026-06-01..2026-11-24` with 303 scattered single-minute gaps out of 2,708,160 expected minutes (99.9888% complete; full per-symbol report in `rig/stock_coverage_report.md`). Loaded via `record.py load-csv`.
+- Stock session calendar (`sessions`): 226 NYSE sessions (`2026-01-02..2026-11-24`), including 124 sessions in `2026-06-01..2026-11-24`, derived from `SPY` `1Min` bars via `record.py sessions-from-tape`. Daily liquid `universe` covers 61 stock/ETF symbols per session across `2026-06-01..2026-11-24`.
+- Stock news (`2026-06-01..2026-11-24`, 812 dated items via `record.py stock-news`): `sec_edgar` (275 Form 8-K / 8-K/A filings across 39 issuers, stamped to the second with UTC `acceptanceDateTime`, 0 post-acceptance edits) and `finbold` (537 dated stock headlines; 37/537 = 6.9% edited >1h after publish; Finbold headlines are tagged only by name matching).
+
 ## Honest limits
 
 - Fills are assumed from recorded minute bars. They are not real fills. Real spreads and queue position are UNKNOWN.

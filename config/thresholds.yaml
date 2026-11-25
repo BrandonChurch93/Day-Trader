@@ -106,6 +106,34 @@ replay_09_statistics:
   status: builder
   source: research_rig/PREREG_09_crypto_methods.md
 
+replay_10_dates:
+  value: {start: "2021-01-02", end: "2026-10-31", held_fraction: 0.30, pbo_later_starts: ["2022-01-01", "2023-01-01"]}
+  status: builder
+  note: UTC. Held days are the ceiling of the fraction times inclusive calendar days. The rest are design. Start is also the first PBO start.
+  source: research_rig/PREREG_10_negative_funding.md
+
+replay_10_funding:
+  value: {symbols: {BTCUSDT: BTC-USD, ETHUSDT: ETH-USD}, settlement_hours: 8, timestamp_tolerance_ms: 100, fill_lag_hours: 1}
+  status: builder
+  source: research_rig/PREREG_10_negative_funding.md
+
+replay_10_rules:
+  value: {lookback_hours: 24, entry_bps: [-5, -10, -20], positive_exit_bps: 0, max_hold_hours: 48, min_design_entries: 30}
+  status: builder
+  source: research_rig/PREREG_10_negative_funding.md
+
+replay_10_kraken_spot_taker_bps:
+  value: 80
+  status: builder
+  note: Entry tier. Fee sensitivity only, with the same assumed half spread and Alpaca price bars.
+  source: https://support.kraken.com/articles/cross-platform-fee-tier-changes
+
+replay_10_statistics:
+  value: {first_trial_id: 108, previous_trials: 116}
+  status: builder
+  note: Add every symbol and entry-band pairing to previous_trials. Use replay_09_statistics for PBO blocks, matched draws and seed.
+  source: research_rig/PREREG_10_negative_funding.md
+
 replay_max_drop_ratio_vs_hold:
   value: 0.6
   status: builder
@@ -431,6 +459,12 @@ tm_keyless_news_per_page:
   value: 100
   status: builder
   note: Number of articles requested per page from public WordPress REST endpoints (WordPress maximum is 100).
+  source: timemachine/record.py
+
+tm_sec_edgar_max_rpm:
+  value: 300
+  status: builder
+  note: Maximum requests per minute to SEC EDGAR submissions endpoints (5 req/s, half of SEC's 10 req/s fair-access limit).
   source: timemachine/record.py
 tm_knowledge_hit_within:
   value: 0.10

@@ -166,6 +166,8 @@ Working papers.
 | `research_rig/alpaca_coverage_09.json` | Full-hourly coverage and comparison with the original replay inputs; no rule rerun | CURRENT |
 | `research_rig/build_doc28.py` | Writes the replay 09 report from stored results, without replaying any price | CURRENT |
 | `research_rig/results_09.json` | Replay 09 results, input fingerprints and coverage snapshot | CURRENT |
+| `research_rig/PREREG_10_negative_funding.md` | Fixed plan for a spot rule using negative perpetual funding. Not run: too few events in the design years | RECORD |
+| `research_rig/count_10_design.py`, `research_rig/design_counts_10.json` | Funding coverage audit and design-only entry counts for replay 10. No price returns or held-back signals | CURRENT |
 | `research_rig/run_v2.py`, `research_rig/compare_v1_v2.py`, `research_rig/noise_pbo.py`, `research_rig/build_doc16.py`, `research_rig/results_v2.json`, `research_rig/compare_v1_v2.json`, `research_rig/noise_pbo.json`, `research_rig/venue_price_gap.json` | The rerun after the audits and its outputs | CURRENT |
 | `research_rig/run_04.py`, `research_rig/results_04.json`, `research_rig/build_doc23.py`, `research_rig/NOTES_04_builder.md` | Replay 04 | CURRENT |
 | `research_rig/run_05.py`, `research_rig/AMENDMENT_05_I2_equal_thirds.md`, `research_rig/results_05.json`, `research_rig/results_05b.json`, `research_rig/build_doc22.py`, `research_rig/i2_2020_note.py`, `research_rig/i2_2020_note.json`, `research_rig/data_notes_french.md` | Replay 05: script, the correction to rule I2, first-run output, corrected-run output | CURRENT |

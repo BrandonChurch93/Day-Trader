@@ -368,6 +368,123 @@ while not sw.done() and not sw.packet()["feed"]["news"]:
 ok(not sw.done() and sw.packet()["feed"]["news"] and sn.now == sw.now and sn.packet()["feed"]["news"] == [], "price-only session: the packet has no headlines at a time when a news session has some")
 lk = sn.look("news", symbols="BTC/USD", days=5); ok(not lk["ok"] and "no news" in lk["error"] and sn.looks_left() == CFG["tm_max_looks_per_wake"], "price-only session: a news lookup is refused and not counted")
 
+# ---- crypto sessions never see stock symbols, stock movers, or sec_edgar/finbold news even with stocks on the tape
+ISO_T = Tape(TMP + "/tape_iso.sqlite")
+ISO_T.add_sessions([("2026-10-01", U(2026, 10, 1, 13, 30), U(2026, 10, 1, 20, 0)),
+                    ("2026-10-02", U(2026, 10, 2, 13, 30), U(2026, 10, 2, 20, 0))])
+ISO_T.add_universe("2026-10-01", ["SPY", "AAPL"])
+ISO_T.add_universe("2026-10-02", ["SPY", "AAPL"])
+ISO_T.add_bars(
+    [("BTC/USD", "1Min", U(2026, 10, 1, 0) + dt.timedelta(minutes=m), 100.0, 101.0, 99.0, 100.5, 5.0) for m in range(24 * 60)]
+    + [("BTC/USD", "1Day", U(2026, 9, 30, 0), 99.0, 101.0, 98.0, 100.0, 500.0),
+       ("SPY", "1Day", U(2026, 9, 30, 4), 500.0, 502.0, 499.0, 501.0, 1e6),
+       ("AAPL", "1Day", U(2026, 9, 30, 4), 200.0, 205.0, 199.0, 204.0, 1e6)]
+    + [("SPY", "1Min", U(2026, 10, 1, 13, 30) + dt.timedelta(minutes=m), 501.0, 502.0, 500.0, 501.5, 1000.0) for m in range(180)]
+    + [("AAPL", "1Min", U(2026, 10, 1, 13, 30) + dt.timedelta(minutes=m), 205.0, 210.0, 204.0, 209.0, 2000.0) for m in range(180)]
+)
+ISO_T.add_news([
+    dict(id=9001, created=U(2026, 10, 1, 11, 0), updated=U(2026, 10, 1, 11, 0),
+         headline="8-K AAPL Item 2.02", summary="SEC filing", source="sec_edgar", url="https://sec.gov/1", symbols=["AAPL"]),
+    dict(id=9002, created=U(2026, 10, 1, 11, 30), updated=U(2026, 10, 1, 11, 30),
+         headline="Apple stock surges", summary="Finbold story", source="finbold", url="https://finbold.com/1", symbols=["AAPL", "SPY"]),
+    dict(id=9003, created=U(2026, 10, 1, 11, 45), updated=U(2026, 10, 1, 11, 45),
+         headline="Bitcoin holds steady", summary="Crypto story", source="cryptoslate", url="https://cryptoslate.com/1", symbols=["BTC/USD"]),
+])
+sc_iso = S.Session(S.create("iso_crypto", "C1", "m", "practice/traders/B01_crypto_swing_price_only.md",
+                            "2026-10-01", "2026-10-01", market="crypto", watch=["BTC/USD"], news=True, tape=ISO_T).name, tape=ISO_T)
+sc_iso.submit({"no_pick": True, "why": "advance to 12:00 UTC"})
+pk_iso = sc_iso.packet()
+ok(pk_iso["feed"]["movers"]["gainers"] == [] and pk_iso["feed"]["movers"]["losers"] == [] and pk_iso["feed"]["most_active"] == [],
+   "crypto packet blanks stock movers and most_active even with stocks on the tape")
+ok(all("/" in sym for sym in pk_iso["feed"]["prices"]), "crypto packet prices contain only crypto symbols")
+ok(all(a.get("source") not in ("sec_edgar", "finbold") and all("/" in sym for sym in a.get("symbols", [])) for a in pk_iso["feed"]["news"]),
+   "crypto packet news contains no sec_edgar/finbold items or stock symbols")
+ok(len(pk_iso["feed"]["news"]) == 1 and pk_iso["feed"]["news"][0]["headline"] == "Bitcoin holds steady",
+   "crypto packet still includes matching crypto news")
+looks0 = sc_iso.looks_left()
+ok(not sc_iso.look("bars", symbol="SPY", timeframe="1Min")["ok"] and not sc_iso.look("price", symbols="AAPL")["ok"] and not sc_iso.look("news", symbols="AAPL")["ok"],
+   "crypto session refuses stock bars, price, and news lookups")
+ok(sc_iso.looks_left() == looks0, "refused stock lookups in a crypto session do not spend a lookup")
+ln_iso = sc_iso.look("news", days=2)
+ok(ln_iso["ok"] and len(ln_iso["data"]) == 1 and ln_iso["data"][0]["source"] == "cryptoslate"
+   and all(a["source"] not in ("sec_edgar", "finbold") and all("/" in sym for sym in a["symbols"]) for a in ln_iso["data"]),
+   "crypto no-symbol news lookup returns only session-coin news and never sec_edgar or finbold")
+
+# ---- stock session: early-close wakes, finished minutes only, 1Day only after close, 30Min/1Hour from 1Min, half-spread fills, regular-hours only
+STK_T = Tape(TMP + "/tape_stock_checks.sqlite")
+STK_T.add_sessions([
+    ("2026-07-02", U(2026, 7, 2, 13, 30), U(2026, 7, 2, 20, 0)),   # regular day (09:30-16:00 NY)
+    ("2026-07-03", U(2026, 7, 3, 13, 30), U(2026, 7, 3, 17, 0)),   # early close (09:30-13:00 NY)
+])
+STK_T.add_universe("2026-07-02", ["SPY", "STK"])
+STK_T.add_universe("2026-07-03", ["SPY", "STK"])
+# 1Day bars for 2026-07-01 (prior), 2026-07-02 (regular, inflated high/close to detect any pre-close leak), 2026-07-03 (early close)
+STK_T.add_bars([
+    ("SPY", "1Day", U(2026, 7, 1, 4), 500.0, 501.0, 499.0, 500.0, 1e6),
+    ("STK", "1Day", U(2026, 7, 1, 4), 100.0, 101.0, 99.0, 100.0, 1e6),
+    ("SPY", "1Day", U(2026, 7, 2, 4), 500.0, 505.0, 498.0, 504.0, 1e6),
+    ("STK", "1Day", U(2026, 7, 2, 4), 100.0, 999.0, 10.0, 888.0, 1e6),
+    ("SPY", "1Day", U(2026, 7, 3, 4), 504.0, 506.0, 503.0, 505.0, 1e6),
+    ("STK", "1Day", U(2026, 7, 3, 4), 110.0, 115.0, 109.0, 114.0, 1e6),
+])
+# 1Min bars on 2026-07-02 (09:30-15:59 NY = 390 mins): 100.0 through 12:29 NY, then 500.0 from 12:30 NY onward
+stk_mins = []
+for m in range(390):
+    t = U(2026, 7, 2, 13, 30) + dt.timedelta(minutes=m)
+    px = 100.0 if m < 180 else (200.0 if m == 180 else 250.0)
+    stk_mins.append(("STK", "1Min", t, px, px + 1.0, px - 1.0, px, 10000.0))
+    stk_mins.append(("SPY", "1Min", t, 500.0, 501.0, 499.0, 500.0, 10000.0))
+for m in range(210):
+    t = U(2026, 7, 3, 13, 30) + dt.timedelta(minutes=m)
+    stk_mins.append(("STK", "1Min", t, 110.0, 111.0, 109.0, 110.0, 10000.0))
+    stk_mins.append(("SPY", "1Min", t, 504.0, 505.0, 503.0, 504.0, 10000.0))
+STK_T.add_bars(stk_mins)
+ss_chk = S.Session(S.create("stk_chk", "S1", "m", "practice/traders/A01_stock_news_catalyst.md",
+                            "2026-07-02", "2026-07-03", market="stocks", benchmark="SPY", watch=["STK", "SPY"], tape=STK_T).name, tape=STK_T)
+ok(ss_chk.meta["wakes"] == ["2026-07-02T14:00:00Z", "2026-07-02T16:30:00Z", "2026-07-02T19:30:00Z",
+                            "2026-07-03T14:00:00Z", "2026-07-03T16:30:00Z"],
+   "stock wakes drop 15:30 NY on an early-close day (13:00 NY close)")
+ss_chk.submit({"no_pick": True, "why": "advance to 12:30 NY"})
+pk_mid = ss_chk.packet()
+ok(pk_mid["utc"] == "2026-07-02T16:30:00Z" and pk_mid["feed"]["prices"]["STK"]["price"] == 100.0
+   and pk_mid["feed"]["prices"]["STK"]["day_high"] == 101.0 and pk_mid["feed"]["prices"]["STK"]["day_low"] == 99.0,
+   "stock packet at 12:30 NY uses only finished minutes (<= 12:29 NY) and never today's 1Day bar or the 12:30 minute")
+l_1m = ss_chk.look("bars", symbol="STK", timeframe="1Min", days=1)
+ok(l_1m["ok"] and l_1m["data"][-1]["t"] == "2026-07-02T16:29:00Z" and all(b["c"] == 100.0 for b in l_1m["data"]),
+   "stock 1Min lookup at 12:30 NY ends at 12:29 NY")
+l_1d = ss_chk.look("bars", symbol="STK", timeframe="1Day", days=5)
+ok(l_1d["ok"] and [b["t"] for b in l_1d["data"]] == ["2026-07-01T04:00:00Z"],
+   "stock 1Day lookup before the close hides today's daily bar")
+l_30m = ss_chk.look("bars", symbol="STK", timeframe="30Min", days=1)
+l_1h = ss_chk.look("bars", symbol="STK", timeframe="1Hour", days=1)
+ok(l_30m["ok"] and l_30m["data"][-1]["t"] == "2026-07-02T16:00:00Z" and l_1h["ok"] and l_1h["data"][-1]["t"] == "2026-07-02T15:00:00Z",
+   "stock 30Min and 1Hour lookups build finished buckets from 1Min bars when 30Min bars are absent")
+ok(STK_T.bars("STK", "1Day", U(2026, 7, 1, 0), U(2026, 7, 2, 20, 5))[-1]["t"] == U(2026, 7, 2, 4),
+   "stock 1Day bar becomes visible after the session close")
+# Direct SimBroker check: fill at next minute's open +/- tm_stock_half_spread_bps (zero fee), and refusal outside regular hours
+clk_stk = [U(2026, 7, 2, 16, 29, 30)]
+sb_stk = SimBroker(STK_T, lambda: clk_stk[0], CFG, TMP + "/acct_stk_chk.json")
+sb_stk.submit("STK", "buy", "day", "stk-b1", notional=500.0)
+clk_stk[0] = U(2026, 7, 2, 16, 31, 0)
+ob1 = sb_stk.order_by_cid("stk-b1")
+ok(ob1["status"] == "filled" and ob1["filled_at"] == "2026-07-02T16:30:00Z"
+   and abs(float(ob1["filled_avg_price"]) - 200.0 * (1 + HS_S)) < 1e-6 and ob1["sim"]["fee_usd"] == 0.0,
+   "stock buy fills at the next minute's open plus tm_stock_half_spread_bps with zero fee")
+sb_stk.submit("STK", "sell", "day", "stk-s1", qty=float(ob1["filled_qty"]))
+clk_stk[0] = U(2026, 7, 2, 16, 32, 0)
+os1 = sb_stk.order_by_cid("stk-s1")
+ok(os1["status"] == "filled" and os1["filled_at"] == "2026-07-02T16:31:00Z"
+   and abs(float(os1["filled_avg_price"]) - 250.0 * (1 - HS_S)) < 1e-6 and os1["sim"]["fee_usd"] == 0.0,
+   "stock sell fills at the next minute's open minus tm_stock_half_spread_bps with zero fee")
+for bad_t, label in [(U(2026, 7, 2, 13, 25), "pre-market"), (U(2026, 7, 2, 20, 0), "after regular close"), (U(2026, 7, 3, 17, 0), "after early close")]:
+    clk_stk[0] = bad_t
+    refused_closed = False
+    try:
+        sb_stk.submit("STK", "buy", "day", f"closed-{label}", notional=100.0)
+    except B.Refused as e:
+        refused_closed = "closed" in str(e)
+    ok(refused_closed, f"stock order outside regular hours ({label}) is refused")
+
 n_log = len(Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines())
 ok(n_log == log0 + len([d for d in p.iterdir() if (d / "session.json").exists()]), "every session made is one line in the sessions log")
 

@@ -1,0 +1,158 @@
+{
+  "design": [
+    "2021-01-02",
+    "2025-01-30"
+  ],
+  "held_unread": [
+    "2025-01-31",
+    "2026-10-31"
+  ],
+  "calendar_days": 2129,
+  "design_days": 1490,
+  "held_days": 639,
+  "min_design_entries": 30,
+  "rule_trial_count": 122,
+  "costs_bps_per_side": {
+    "assumed_half_spread": 10,
+    "alpaca_taker": 25,
+    "alpaca_total": 35,
+    "kraken_taker": 80,
+    "kraken_total": 90
+  },
+  "funding_timestamp_coverage": {
+    "Kraken PF_XBTUSD": {
+      "rows": 8907,
+      "first_utc": "2025-11-19T09:00:00+00:00",
+      "last_utc": "2026-11-25T16:00:00+00:00",
+      "duplicate_timestamps": 0,
+      "gaps_seconds": {
+        "3600": 8901,
+        "7200": 5
+      }
+    },
+    "Kraken PF_ETHUSD": {
+      "rows": 8907,
+      "first_utc": "2025-11-19T09:00:00+00:00",
+      "last_utc": "2026-11-25T16:00:00+00:00",
+      "duplicate_timestamps": 0,
+      "gaps_seconds": {
+        "3600": 8901,
+        "7200": 5
+      }
+    },
+    "Kraken PI_XBTUSD": {
+      "rows": 8283,
+      "first_utc": "2025-11-19T09:00:00+00:00",
+      "last_utc": "2026-10-30T16:00:00+00:00",
+      "duplicate_timestamps": 0,
+      "gaps_seconds": {
+        "3600": 8277,
+        "7200": 5
+      }
+    },
+    "Kraken PI_ETHUSD": {
+      "rows": 8283,
+      "first_utc": "2025-11-19T09:00:00+00:00",
+      "last_utc": "2026-10-30T16:00:00+00:00",
+      "duplicate_timestamps": 0,
+      "gaps_seconds": {
+        "3600": 8277,
+        "7200": 5
+      }
+    },
+    "Binance BTCUSDT": {
+      "rows": 7488,
+      "first_utc": "2020-01-01T00:00:00+00:00",
+      "last_utc": "2026-10-31T16:00:00+00:00",
+      "duplicate_timestamps": 0,
+      "gaps_seconds": {
+        "28800": 7487
+      },
+      "monthly_files": 82,
+      "max_abs_settlement_offset_ms": 47,
+      "first_raw_utc": "2020-01-01T00:00:00+00:00",
+      "last_raw_utc": "2026-10-31T16:00:00+00:00"
+    },
+    "Binance ETHUSDT": {
+      "rows": 7488,
+      "first_utc": "2020-01-01T00:00:00+00:00",
+      "last_utc": "2026-10-31T16:00:00+00:00",
+      "duplicate_timestamps": 0,
+      "gaps_seconds": {
+        "28800": 7487
+      },
+      "monthly_files": 82,
+      "max_abs_settlement_offset_ms": 47,
+      "first_raw_utc": "2020-01-01T00:00:00+00:00",
+      "last_raw_utc": "2026-10-31T16:00:00+00:00"
+    }
+  },
+  "design_signal_counts": [
+    {
+      "id": 108,
+      "symbol": "BTC-USD",
+      "entry_bps": -5,
+      "threshold_crossings": 7,
+      "beyond_max_hold_boundary": 0,
+      "in_position": 0,
+      "no_traded_entry_bar": 0,
+      "entries": 7,
+      "completed": 7
+    },
+    {
+      "id": 109,
+      "symbol": "BTC-USD",
+      "entry_bps": -10,
+      "threshold_crossings": 2,
+      "beyond_max_hold_boundary": 0,
+      "in_position": 0,
+      "no_traded_entry_bar": 0,
+      "entries": 2,
+      "completed": 2
+    },
+    {
+      "id": 110,
+      "symbol": "BTC-USD",
+      "entry_bps": -20,
+      "threshold_crossings": 1,
+      "beyond_max_hold_boundary": 0,
+      "in_position": 0,
+      "no_traded_entry_bar": 0,
+      "entries": 1,
+      "completed": 1
+    },
+    {
+      "id": 111,
+      "symbol": "ETH-USD",
+      "entry_bps": -5,
+      "threshold_crossings": 12,
+      "beyond_max_hold_boundary": 0,
+      "in_position": 1,
+      "no_traded_entry_bar": 0,
+      "entries": 11,
+      "completed": 11
+    },
+    {
+      "id": 112,
+      "symbol": "ETH-USD",
+      "entry_bps": -10,
+      "threshold_crossings": 5,
+      "beyond_max_hold_boundary": 0,
+      "in_position": 1,
+      "no_traded_entry_bar": 0,
+      "entries": 4,
+      "completed": 4
+    },
+    {
+      "id": 113,
+      "symbol": "ETH-USD",
+      "entry_bps": -20,
+      "threshold_crossings": 2,
+      "beyond_max_hold_boundary": 0,
+      "in_position": 0,
+      "no_traded_entry_bar": 0,
+      "entries": 2,
+      "completed": 2
+    }
+  ]
+}

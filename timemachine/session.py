@@ -375,6 +375,8 @@ class Session:
                 rows = built_bars(self.tape, symbol, 1800 if timeframe == "30Min" else 3600, start, self.now, int(self.cfg["tm_look_max_bars"]))
             else:
                 rows = self.tape.bars(symbol, "30Min" if timeframe == "1Hour" else timeframe, start, self.now, limit=int(self.cfg["tm_look_max_bars"]))
+                if not rows and timeframe in ("30Min", "1Hour"):
+                    rows = built_bars(self.tape, symbol, 1800 if timeframe == "30Min" else 3600, start, self.now, int(self.cfg["tm_look_max_bars"]))
             data = [dict(b, t=iso(b["t"])) for b in rows]
         elif what == "news" and not self.meta.get("news"):
             return dict(ok=False, error="This session has no news. It trades from prices alone.")

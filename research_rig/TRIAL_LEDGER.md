@@ -25,6 +25,7 @@ Read this before the table:
 
 | 101 to 107 | 2026-11-25 15:09 UTC | PREREG_09_crypto_methods.md | Seven Alpaca crypto rule trials: ASIA, WKND, MOM, REV, LEAD, VOL, CAP. Replay 09 starts at id 101 to leave room for replay 07. | Five marks fixed in plan. Pushed in 74ad30c before the run. Run once on held-back dates. Results in docs/research/28. |
 | 56 to 71 | 2026-11-25 15:14 | PREREG_07_intraday_spy_qqq.md | N1 to N8 on SPY (56 to 63) and on QQQ (64 to 71), one-minute bars from the workspace's own price lookup, costs 2 and 5 bps per side judged, 0.5 bps reported | logged before any rule was run on these prices, in the same change as the frozen plan. Deflated Sharpe count 116: the 93 below, the 7 of frozen plan 09 (no rows yet) and these 16 |
+| 108 to 113 | 2026-11-25 16:14 UTC | PREREG_10_negative_funding.md | The three funding thresholds on BTC, then the same three on ETH, in config order. Binance funding, Alpaca spot. | not run. Counting entries in the design years only (no price looked at) gave 1 to 11 entries per version against the 30 the plan asks for (`research_rig/design_counts_10.json`). Held-back days never opened. Not added to the count of trials |
 
 ## Reruns and how they are counted
 

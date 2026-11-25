@@ -533,6 +533,142 @@ def test_recorder_fixtures():
         t.close()
 
 
+def test_stock_csv_and_news_fixtures():
+    cfg = R.config()
+    ok("tm_sec_edgar_max_rpm" in cfg and cfg["tm_sec_edgar_max_rpm"] <= 600, "tm_sec_edgar_max_rpm <= 600 (under 10 req/s)")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_p = Path(tmp)
+        d1m = tmp_p / "1min"
+        d1d = tmp_p / "1day"
+        d1m.mkdir()
+        d1d.mkdir()
+        # 1Min CSV: normal day 2026-07-02 (09:30..15:59 NY), early close 2026-07-03 (09:30..12:59 NY),
+        # plus premarket (ignored by sessions) and one malformed row (high < low, skipped)
+        (d1m / "SPY_1min_2026.csv").write_text(
+            "date,open,high,low,close,volume\n"
+            "2026-07-02T12:00:00,500,501,499,500.5,100\n"
+            "2026-07-02T13:30:00,500,501,499,500.5,1000\n"
+            "2026-07-02T19:59:00,501,502,500,501.5,1000\n"
+            "2026-07-03T13:30:00,502,503,501,502.5,1000\n"
+            "2026-07-03T16:59:00,502.5,503,502,502.8,1000\n"
+            "2026-07-03T16:58:00,502,500,505,502,100\n"
+        )
+        # 1Day CSV: winter EST (2026-01-05) and summer EDT (2026-07-02)
+        (d1d / "SPY_1day.csv").write_text(
+            "date,open,high,low,close,volume\n"
+            "2026-01-05,480,485,479,484,50000000\n"
+            "2026-07-02,500,502,499,501.5,60000000\n"
+            "2026-07-03,502,503,501,502.8,30000000\n"
+        )
+
+        t = Tape(tmp_p / "stock_test.sqlite")
+        try:
+            n1m = R.load_csv_dir(t, d1m, "1Min", start_d="2026-07-01", end_d="2026-07-05")
+            ok(n1m == 5, f"load_csv_dir 1Min loads 5 valid bars and skips h<l row (got {n1m})")
+            n1d = R.load_csv_dir(t, d1d, "1Day", start_d="2026-01-01", end_d="2026-07-05")
+            ok(n1d == 3, f"load_csv_dir 1Day loads 3 daily bars (got {n1d})")
+
+            ns = R.derive_sessions_from_tape(t, "2026-07-01", "2026-07-05", symbol="SPY")
+            ok(ns == 2, f"derive_sessions_from_tape builds 2 sessions (got {ns})")
+            s_full = t.session("2026-07-02")
+            s_half = t.session("2026-07-03")
+            ok(s_full[0].hour == 13 and s_full[0].minute == 30 and s_full[1].hour == 20 and s_full[1].minute == 0, "full session 13:30..20:00 UTC")
+            ok(s_half[0].hour == 13 and s_half[0].minute == 30 and s_half[1].hour == 17 and s_half[1].minute == 0, "early-close session 13:30..17:00 UTC")
+
+            # As-of check: at 2026-07-02T15:00:00Z, 2026-07-02 1Day bar must NOT leak (close is 20:00Z)
+            sim_mid = SimData(t, lambda: _iso("2026-07-02T15:00:00Z"))
+            dbars_mid = sim_mid.get(M.DATA, "/v2/stocks/bars", {"symbols": "SPY", "timeframe": "1Day", "start": "2026-01-01", "end": "2026-07-03"})["bars"]["SPY"]
+            ok(len(dbars_mid) == 1 and dbars_mid[0]["t"] == "2026-01-05T05:00:00Z", f"1Day CSV bar hidden before close & EST=05:00Z (got {dbars_mid})")
+            sim_after = SimData(t, lambda: _iso("2026-07-02T20:00:00Z"))
+            dbars_after = sim_after.get(M.DATA, "/v2/stocks/bars", {"symbols": "SPY", "timeframe": "1Day", "start": "2026-01-01", "end": "2026-07-03"})["bars"]["SPY"]
+            ok(len(dbars_after) == 2 and dbars_after[-1]["t"] == "2026-07-02T04:00:00Z", f"1Day CSV bar visible at close & EDT=04:00Z (got {dbars_after})")
+
+            # SEC EDGAR 8-K fixture (includes recent + archive file fallback + non-8-K filter)
+            sec_tickers = {"0": {"cik_str": 320193, "ticker": "AAPL", "title": "Apple Inc."}}
+            sec_sub = {
+                "filings": {
+                    "recent": {
+                        "form": ["8-K", "10-Q", "8-K/A"],
+                        "acceptanceDateTime": ["2026-07-30T20:30:28.000Z", "2026-07-31T20:00:00.000Z", "2026-08-05T21:00:00.000Z"],
+                        "items": [["2.02", "9.01"], [], "5.02"],
+                        "accessionNumber": ["0000320193-26-000018", "0000320193-26-000019", "0000320193-26-000020"],
+                        "primaryDocument": ["aapl-8k.htm", "aapl-10q.htm", "aapl-8ka.htm"],
+                        "filingDate": ["2026-07-30", "2026-07-31", "2026-08-05"],
+                        "reportDate": ["2026-07-30", "2026-06-30", "2026-08-05"],
+                    },
+                    "files": [{"name": "CIK0000320193-submissions-001.json", "filingFrom": "2026-05-01", "filingTo": "2026-07-29"}],
+                }
+            }
+            sec_arch = {
+                "form": ["8-K"],
+                "acceptanceDateTime": ["2026-06-15T14:15:00.000Z"],
+                "items": ["8.01"],
+                "accessionNumber": ["0000320193-26-000010"],
+                "primaryDocument": ["aapl-june.htm"],
+                "filingDate": ["2026-06-15"],
+                "reportDate": ["2026-06-15"],
+            }
+
+            def fake_sec(url):
+                if url.endswith("company_tickers.json"):
+                    return 200, json.dumps(sec_tickers), {}
+                if url.endswith("CIK0000320193.json"):
+                    return 200, json.dumps(sec_sub), {}
+                if url.endswith("CIK0000320193-submissions-001.json"):
+                    return 200, json.dumps(sec_arch), {}
+                raise R.HttpError(404, "not found")
+
+            cli_sec = R.Client(max_rpm=300, http_get=fake_sec, sleep_fn=lambda _: None, now_fn=lambda: 0.0)
+            n_sec = R.record_sec_news(t, cli_sec, ["AAPL", "SPY"], "2026-06-01", "2026-08-01", cfg)
+            ok(n_sec == 2, f"record_sec_news loads 1 recent + 1 archive 8-K in range and skips 10-Q/out-of-range/ETF (got {n_sec})")
+            # As-of check: at 2026-07-30T20:30:27Z (1 second before acceptance), July 30 8-K is hidden; at 20:30:28Z visible!
+            nw_before = t.news("2026-07-30T20:30:27Z", symbols=["AAPL"])
+            nw_at = t.news("2026-07-30T20:30:28Z", symbols=["AAPL"])
+            ok(len(nw_before) == 1 and len(nw_at) == 2, f"SEC 8-K visibility exact to the second (before={len(nw_before)}, at={len(nw_at)})")
+            ok("2.02 Results of Operations" in nw_at[0]["headline"], f"SEC 8-K headline formats item label ({nw_at[0]['headline']})")
+
+            # Finbold stock-news fixture (ticker/name tagging + short ticker guard + edited_later)
+            fb_posts = [
+                {
+                    "id": 10,
+                    "date_gmt": "2026-07-10T12:00:00",
+                    "modified_gmt": "2026-07-10T12:00:05",
+                    "link": "https://finbold.com/apple-nvda-rally/",
+                    "title": {"rendered": "Apple and NVDA lead tech rebound"},
+                    "excerpt": {"rendered": "<p>Strong volume in mega-cap tech.</p>"},
+                },
+                {
+                    "id": 11,
+                    "date_gmt": "2026-07-10T13:00:00",
+                    "modified_gmt": "2026-07-10T16:30:00",
+                    "link": "https://finbold.com/visa-gs-note/",
+                    "title": {"rendered": "Analysts weigh in on $V after earnings"},
+                    "excerpt": {"rendered": "<p>Unrelated letter V should not match without dollar sign.</p>"},
+                },
+                {
+                    "id": 12,
+                    "date_gmt": "2026-07-10T14:00:00",
+                    "modified_gmt": "2026-07-10T14:00:00",
+                    "link": "https://finbold.com/unrelated-v-story/",
+                    "title": {"rendered": "Chapter V of the macro playbook"},
+                    "excerpt": {"rendered": "<p>No stocks mentioned here.</p>"},
+                },
+            ]
+            cli_fb = R.Client(
+                max_rpm=30,
+                http_get=lambda url: (200, json.dumps(fb_posts), {"X-WP-TotalPages": "1"}),
+                sleep_fn=lambda _: None,
+                now_fn=lambda: 0.0,
+            )
+            n_fb = R.record_finbold_stock_news(t, cli_fb, ["AAPL", "NVDA", "V", "GS"], "2026-07-10", "2026-07-10", cfg)
+            ok(n_fb == 2, f"record_finbold_stock_news tags 2 matching posts and ignores Roman numeral V (got {n_fb})")
+            v_news = t.news("2026-07-10T15:00:00Z", symbols=["V"])
+            ok(len(v_news) == 1 and v_news[0]["source"] == "finbold", f"$V matched exactly once (got {len(v_news)})")
+        finally:
+            t.close()
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         t = build_synthetic_tape(Path(tmp) / "test.sqlite")
@@ -544,6 +680,7 @@ def main():
         finally:
             t.close()
     test_recorder_fixtures()
+    test_stock_csv_and_news_fixtures()
     print(f"test_tape: {PASS} passed, {FAIL} failed")
     sys.exit(1 if FAIL else 0)
 
