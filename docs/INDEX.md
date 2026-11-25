@@ -185,6 +185,7 @@ Working papers.
 | `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, decisions 1a and 1b, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |
 | `research_rig/PREREG_11_earnings_release_reader.md` | Frozen plan for an AI that reads each earnings release and says buy or skip for the next open: 4,285 releases from large, mid and small companies, six set-ups, two holds, pass marks and costs fixed before any reader ran. Ledger rows 121 to 134. Queue row 9b | CURRENT |
 | `research_rig/PREREG_12_congress_followers_DRAFT.md` | Draft plan for following stock purchases disclosed by members of Congress: bought after the filing, three groups, three holds, design half chooses, held-back half judges once | DRAFT |
+| `research_rig/PREREG_13_year_or_method_DRAFT.md` | Draft plan: a fixed dip-and-peak rule on the hottest coins, scored year by year from 2020 to 2026, to tell the owner's method from the year he traded in | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
 | `research_rig/common_11.py` | Plan 11 shared paths, calendar, event ids and the price-file map for renamed tickers | CURRENT |

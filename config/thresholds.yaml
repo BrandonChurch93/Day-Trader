@@ -765,9 +765,9 @@ tm06_pick_attention_days:
   note: Plan TM06 part P. Days of daily attention counts per coin and source shown in the packet, from timemachine/attention.py as known at the wake.
   source: timemachine/tm06.py
 tm06_attention_rule:
-  value: {source: wikipedia_daily, before_days: 7}
+  value: {source: wikipedia_daily, before_days: 7, lookback_days: 11}
   status: builder
-  note: Plan TM06 yardstick (c). Rise in attention is the latest daily count of this source known at the wake against the mean of the before_days days before it. A coin without all of those counts is left out.
+  note: Plan TM06 yardstick (c). Rise in attention is the latest daily count of this source known at the wake against the mean of the before_days days before it. A coin without all of those counts is left out. lookback_days is how far back the reader is asked; it must cover before_days plus one plus the reader's assumed lag (36 hours for wikipedia_daily).
   source: timemachine/tm06.py
 tm06_swing_max_gross:
   value: 1
@@ -801,3 +801,9 @@ replay_12_plan:
   status: builder
   note: Draft plan 12, following disclosed stock buys of members of Congress. Filed dates split the record into a design half and a held-back half. holds_days are trading days from the entry open. large_buy_min_usd is the low end of the reported value range. proven_* define the point-in-time list of members whose earlier finished buys did best. late_entry_* are the later entries used because the filing day is not proof of the day the public could see it. new_trials is 3 groups times 3 holds. Draft until frozen.
   source: research_rig/PREREG_12_congress_followers_DRAFT.md
+
+replay_13_plan:
+  value: {start: "2020-01-01", end: "2026-11-24", universe_top_n: 50, rise_days: 7, dip_pct: 5, dip_lookback_hours: 24, take_pct: 5, stop_pct: 5, max_hold_hours: 24, cost_bps_per_side: 15, other_costs_bps: [5, 30], shown_leverage: 3, liquidation_drop_pct: 30, financing_bps_per_8h: 3, random_draws: 200, seed: 13, min_years_above: 5, new_trials: 2}
+  status: builder
+  note: Draft plan 13, a fixed dip-and-peak rule on the hottest coins scored year by year from 2020 to 2026, to separate the method from the year the owner traded in. All settings are round figures fixed before any price was read. cost_bps_per_side is 10 for the venue fee plus 5 for half the spread. Draft until frozen.
+  source: research_rig/PREREG_13_year_or_method_DRAFT.md
