@@ -62,7 +62,7 @@ Every AI trader gets two twins that cost almost nothing to run: one that holds i
 
 - Long only. No short sales, margin, options or futures.
 - Stocks trade only in regular hours, with market orders in dollar amounts.
-- Exits are checked about every thirty minutes (every ten until 2026-11-25 16:36 UTC), and GitHub's timer can run late. A stop can be filled well past its price.
+- Exits are checked about every thirty minutes (every ten until 2026-11-25 16:34 UTC), and GitHub's timer can run late. A stop can be filled well past its price.
 - One practice account is shared by every trader, so two traders cannot have open orders in the same symbol at the same moment.
 - Crypto fees: the program adds `practice_crypto_fee_bps_added` to each crypto trade in the books until the first real fill shows how the practice account charges them.
 - The desk does not run the AI traders. Each one runs as an agent on a schedule and pushes picks. That scheduling is set up when the first AI trader joins.
