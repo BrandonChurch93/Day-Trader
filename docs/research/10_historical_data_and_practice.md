@@ -77,8 +77,74 @@ What is UNKNOWN:
 
 - Who the data comes from, and how it is adjusted.
 - What its terms say about keeping copies and using them for tests. Research found no terms for it. The owner works at Perplexity and can ask. This is item 6 of "Things only you can do" in `docs/decisions/morning_list_2026-11-25.md`.
-- The first day of one-minute data for QQQ. A request for March 2004 to March 2005 returned nothing in range.
-- Whether it has gaps, repeated bars or wrong prices. As of 2026-11-25 09:55 UTC a collection with a gap check was running on the research machine. Nothing from it is in the repo. When it finishes, its coverage table is added below this line by a script from the check's own output file, with nothing typed. Until that table is here, treat coverage as UNKNOWN.
+- Whether the prices are right. The check below looks for gaps and broken rows. It does not compare a price with a second source, and nothing has.
+- Whether a day the check calls a holiday really was one. The check's holiday calendar was written from memory by the collecting agent, not taken from the exchange.
+
+### What was collected, and what a gap check found
+
+Added 2026-11-25 after the collection finished. Research collected one-minute prices for SPY and QQQ and daily prices for 22 funds, all the funds named in the two draft stock plans. The files are on the research machine and not in the repo. No rule has been run on them and no return has been worked out from them.
+
+How the tables below are made: `research_rig/platform_bars_consolidate.py` joined the pulls into one file per fund, and `research_rig/platform_bars_integrity.py` checked them. `tools/bars_coverage.py` copied the dates and counts from that check into `research_rig/platform_bars_coverage.json`, which holds no price, and wrote the tables from it. Nothing in them is typed. All MEASURED by that check, on files only the research machine has.
+
+<!-- bars:start (written by tools/bars_coverage.py, do not edit by hand) -->
+
+One-minute prices, regular session only:
+
+| Fund | First day | Last day | Trading days | Rows | Days with all 390 minutes | Short days that are not a known early close | Weekdays with no data that are not a holiday | Repeated times |
+|---|---|---|---|---|---|---|---|---|
+| SPY | 2003-09-10 | 2026-11-24 | 5,838 | 2,264,958 | 5,759 | 27 | 2 | 0 |
+| QQQ | 2011-03-23 | 2026-11-24 | 3,943 | 1,531,562 | 3,880 | 29 | 0 | 0 |
+
+Daily prices:
+
+| Fund | First day | Last day | Rows | Weekdays with no row that are not a holiday | Repeated days | Days with zero volume | Days where two pulls disagreed |
+|---|---|---|---|---|---|---|---|
+| SPY | 1993-01-29 | 2026-11-24 | 8,514 | 0 | 0 | 0 | 1 |
+| QQQ | 1999-03-10 | 2026-11-24 | 6,972 | 0 | 0 | 0 | 0 |
+| EFA | 2001-08-17 | 2026-11-24 | 6,355 | 0 | 0 | 0 | 0 |
+| IEF | 2002-07-30 | 2026-11-24 | 6,121 | 0 | 0 | 0 | 0 |
+| VNQ | 2004-09-29 | 2026-11-24 | 5,575 | 0 | 0 | 0 | 0 |
+| DBC | 2006-02-03 | 2026-11-24 | 5,235 | 0 | 0 | 0 | 0 |
+| BIL | 2007-05-30 | 2026-11-24 | 4,905 | 0 | 0 | 0 | 0 |
+| GLD | 2004-11-18 | 2026-11-24 | 5,539 | 0 | 0 | 0 | 0 |
+| TLT | 2002-07-30 | 2026-11-24 | 6,121 | 0 | 0 | 0 | 0 |
+| VTI | 2001-05-31 | 2026-11-24 | 6,410 | 0 | 0 | 0 | 0 |
+| IWM | 2000-05-26 | 2026-11-24 | 6,664 | 0 | 0 | 0 | 0 |
+| XLB | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 0 | 0 |
+| XLE | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 0 | 0 |
+| XLF | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 0 | 0 |
+| XLI | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 1 | 0 |
+| XLK | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 0 | 0 |
+| XLP | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 0 | 0 |
+| XLU | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 0 | 0 |
+| XLV | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 0 | 0 |
+| XLY | 1998-12-22 | 2026-11-24 | 7,024 | 0 | 0 | 0 | 0 |
+| XLC | 2018-06-19 | 2026-11-24 | 2,121 | 0 | 0 | 0 | 0 |
+| XLRE | 2015-10-08 | 2026-11-24 | 2,799 | 0 | 0 | 5 | 0 |
+
+What the check found that looks wrong:
+
+- SPY one-minute: no data on 2004-12-31, 2010-12-31, which the check's calendar has as trading days.
+- SPY one-minute: 27 short days that are not a known early close, the first on 2003-09-12 with 150 rows and the last on 2026-03-09 with 389. Every date is in `research_rig/platform_bars_coverage.json`.
+- SPY one-minute: rows that are not on a whole minute: 4. Days with more than 390 rows because of it: 4.
+- SPY one-minute: rows with zero volume: 164.
+- SPY one-minute: 19 requests returned no row inside the dates asked for. Of those, 17 were for dates before the first day in the table.
+- QQQ one-minute: 29 short days that are not a known early close, the first on 2011-04-25 with 389 rows and the last on 2026-02-09 with 389. Every date is in `research_rig/platform_bars_coverage.json`.
+- QQQ one-minute: rows that are not on a whole minute: 1. Days with more than 390 rows because of it: 1.
+- QQQ one-minute: rows with zero volume: 456.
+- QQQ one-minute: days that do not start at 09:30 New York time: 1.
+- QQQ one-minute: 20 requests returned no row inside the dates asked for. Of those, 20 were for dates before the first day in the table.
+- Daily: two pulls of the same day gave different values for SPY. The later pull was kept.
+
+What the check did not find in any file: a repeated time or day, a missing or zero price, a high below a low, a weekend row, or a bar outside the regular session.
+
+<!-- bars:end -->
+
+How to read this:
+
+- A first day in the one-minute table is the first day this lookup returned, not the fund's first trading day. Earlier requests came back empty.
+- A short day that is not a known early close may be a real gap in the data or a trading halt. Nobody has checked which.
+- The data is good enough to draft and debug a test on. It is not good enough to trust a result from, until a second source agrees with it.
 
 What it changes, as a proposal:
 

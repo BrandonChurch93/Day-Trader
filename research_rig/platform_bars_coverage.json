@@ -1,0 +1,821 @@
+{
+ "made_from": "integrity.json, written by research_rig/platform_bars_integrity.py",
+ "one_minute": {
+  "SPY": {
+   "first_date": "2003-09-10",
+   "last_date": "2026-11-24",
+   "trading_days": 5838,
+   "rows": 2264958,
+   "days_with_390_rows": 5759,
+   "days_with_fewer": 75,
+   "days_with_more": 4,
+   "short_days_not_known_early_close": [
+    [
+     "2003-09-12",
+     150
+    ],
+    [
+     "2003-09-15",
+     150
+    ],
+    [
+     "2003-09-17",
+     150
+    ],
+    [
+     "2003-09-18",
+     150
+    ],
+    [
+     "2003-09-19",
+     150
+    ],
+    [
+     "2003-09-22",
+     150
+    ],
+    [
+     "2003-09-23",
+     150
+    ],
+    [
+     "2003-09-24",
+     150
+    ],
+    [
+     "2003-09-25",
+     150
+    ],
+    [
+     "2003-09-26",
+     150
+    ],
+    [
+     "2003-09-29",
+     150
+    ],
+    [
+     "2003-09-30",
+     150
+    ],
+    [
+     "2003-12-26",
+     225
+    ],
+    [
+     "2004-10-11",
+     389
+    ],
+    [
+     "2004-12-23",
+     210
+    ],
+    [
+     "2005-04-05",
+     389
+    ],
+    [
+     "2005-06-01",
+     379
+    ],
+    [
+     "2006-12-27",
+     389
+    ],
+    [
+     "2014-10-30",
+     361
+    ],
+    [
+     "2019-08-12",
+     381
+    ],
+    [
+     "2020-03-09",
+     376
+    ],
+    [
+     "2020-03-12",
+     376
+    ],
+    [
+     "2020-03-16",
+     376
+    ],
+    [
+     "2020-03-18",
+     376
+    ],
+    [
+     "2021-05-05",
+     385
+    ],
+    [
+     "2023-06-05",
+     386
+    ],
+    [
+     "2026-03-09",
+     389
+    ]
+   ],
+   "weekdays_without_data_not_calendar_holiday": [
+    "2004-12-31",
+    "2010-12-31"
+   ],
+   "timestamps_not_on_whole_minute": [
+    "2023-12-05T19:54:18",
+    "2023-12-11T20:36:37",
+    "2023-12-26T18:07:34",
+    "2023-12-29T17:44:52"
+   ],
+   "duplicate_timestamps": 0,
+   "zero_volume_rows": 164,
+   "other_value_faults": {},
+   "days_with_bars_outside_regular_hours": 0,
+   "days_first_bar_not_0930": 0,
+   "requests_with_no_rows_in_range": 19,
+   "of_those_before_first_day": 17,
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1min/SPY_1min_2003.csv",
+     "21484e0e7c0e8ba64b06881c6cb0a8325147d0c13e7fd7a439a2efc37f0a5c4c"
+    ],
+    [
+     "1min/SPY_1min_2004.csv",
+     "ea90eb194159f9e569d6d7941296909216f2e43fe47afd7430f0e01d5147faed"
+    ],
+    [
+     "1min/SPY_1min_2005.csv",
+     "4b9820b86a41e079119a9549c0ade7f6e1a77e2855582b8bc28fd8f949ba5360"
+    ],
+    [
+     "1min/SPY_1min_2006.csv",
+     "f05df7397cc5c24d4ca6c7a8a8acffa1507d5b03d4a40372463604981dba05d2"
+    ],
+    [
+     "1min/SPY_1min_2007.csv",
+     "cf66d4a8f15cef1cef440cd883452f35035da556409e947a7cb652698a8e1274"
+    ],
+    [
+     "1min/SPY_1min_2008.csv",
+     "c5d731ca6b72eb34e88a76fd1cdac3bd69af3ac8946f4ea4460e77f7f00840ff"
+    ],
+    [
+     "1min/SPY_1min_2009.csv",
+     "38c3a0e0f634229f3c18c127e9b86072a4851c13e745e31b7cf6b67973b0393a"
+    ],
+    [
+     "1min/SPY_1min_2010.csv",
+     "f25bb9b063edc9b11481c51408318c475bf58a8a6ecd90ff48fc9eb4747ca275"
+    ],
+    [
+     "1min/SPY_1min_2011.csv",
+     "46caa12ea931089a6ca399a39c7dff4c72f8e3bf9f1c6a814894a481775f6737"
+    ],
+    [
+     "1min/SPY_1min_2012.csv",
+     "3f00e4e3bf62848ade80b785624e4e55c0f806208ce8f34ae44d672f579a4d0c"
+    ],
+    [
+     "1min/SPY_1min_2013.csv",
+     "c419469a86bde29e07bb465031280dfe42a5e5930e6567d03be73e850095a495"
+    ],
+    [
+     "1min/SPY_1min_2014.csv",
+     "c7e35a2ca3fc35102877c6b2df0a3fc047bddbffbe6b595de3d5a88ab2be6f09"
+    ],
+    [
+     "1min/SPY_1min_2015.csv",
+     "d04a5ac13f7ec08a9ec388df94ca7a04b3ce01e1b1814514d4b5a7568d65753b"
+    ],
+    [
+     "1min/SPY_1min_2016.csv",
+     "ab430aab73cbea259d0854c8cd0647568946f42e6f186d3d0ab475e48ec6907a"
+    ],
+    [
+     "1min/SPY_1min_2017.csv",
+     "e4e3989ecba095191c4aed46e25d200112904026f3a160c9db75ac2ed6970651"
+    ],
+    [
+     "1min/SPY_1min_2018.csv",
+     "41c345b0c31948783dc64790cc4c1a162405244bccff3fdc9d35a8f3aec72c34"
+    ],
+    [
+     "1min/SPY_1min_2019.csv",
+     "24526d8ec6269383ae237e7d2d42219fcc28cc5e6b7a9def1d557aa9e88c090c"
+    ],
+    [
+     "1min/SPY_1min_2020.csv",
+     "7d16ff1189d83109679c5f07d4aec6452bcf465dbb1f762d81589510e083370c"
+    ],
+    [
+     "1min/SPY_1min_2021.csv",
+     "e8bbe47ec5abcef94410238d62a217c2c3767d99773f7838f34e81fe7a4d34d8"
+    ],
+    [
+     "1min/SPY_1min_2022.csv",
+     "7740a3498bd1c2c5eb13671524c55fa397648c51e8bbd69da98261a028387efa"
+    ],
+    [
+     "1min/SPY_1min_2023.csv",
+     "f867c66d70eb874fdaaf488c4cf01b9467e79a027b5c7221b78a4003172c64e8"
+    ],
+    [
+     "1min/SPY_1min_2024.csv",
+     "8f05985822c98940120d29bfe2a6412f555d21a670dfe63fa9723baea17d0b68"
+    ],
+    [
+     "1min/SPY_1min_2025.csv",
+     "09ba03bb68d44371de05987a9d0778384e85f2c7e6e7ce6ce131f451d8a57708"
+    ],
+    [
+     "1min/SPY_1min_2026.csv",
+     "3e9301141df1d43b725accf00d9acc2b62c982b06a0cd81fbd07545d8c595511"
+    ]
+   ]
+  },
+  "QQQ": {
+   "first_date": "2011-03-23",
+   "last_date": "2026-11-24",
+   "trading_days": 3943,
+   "rows": 1531562,
+   "days_with_390_rows": 3880,
+   "days_with_fewer": 62,
+   "days_with_more": 1,
+   "short_days_not_known_early_close": [
+    [
+     "2011-04-25",
+     389
+    ],
+    [
+     "2011-05-27",
+     389
+    ],
+    [
+     "2011-06-16",
+     389
+    ],
+    [
+     "2012-01-13",
+     389
+    ],
+    [
+     "2012-08-09",
+     388
+    ],
+    [
+     "2012-08-10",
+     389
+    ],
+    [
+     "2012-08-14",
+     389
+    ],
+    [
+     "2012-08-27",
+     389
+    ],
+    [
+     "2012-09-21",
+     389
+    ],
+    [
+     "2013-01-03",
+     376
+    ],
+    [
+     "2013-01-30",
+     389
+    ],
+    [
+     "2013-03-14",
+     389
+    ],
+    [
+     "2013-03-25",
+     389
+    ],
+    [
+     "2013-03-26",
+     389
+    ],
+    [
+     "2013-03-28",
+     389
+    ],
+    [
+     "2013-04-08",
+     389
+    ],
+    [
+     "2013-07-02",
+     389
+    ],
+    [
+     "2013-07-22",
+     389
+    ],
+    [
+     "2013-08-22",
+     216
+    ],
+    [
+     "2013-09-24",
+     389
+    ],
+    [
+     "2013-09-27",
+     389
+    ],
+    [
+     "2013-12-30",
+     388
+    ],
+    [
+     "2014-06-11",
+     389
+    ],
+    [
+     "2014-07-09",
+     389
+    ],
+    [
+     "2020-03-09",
+     376
+    ],
+    [
+     "2020-03-12",
+     376
+    ],
+    [
+     "2020-03-16",
+     376
+    ],
+    [
+     "2020-03-18",
+     376
+    ],
+    [
+     "2026-02-09",
+     389
+    ]
+   ],
+   "weekdays_without_data_not_calendar_holiday": [],
+   "timestamps_not_on_whole_minute": [
+    "2023-12-28T18:41:53"
+   ],
+   "duplicate_timestamps": 0,
+   "zero_volume_rows": 456,
+   "other_value_faults": {},
+   "days_with_bars_outside_regular_hours": 0,
+   "days_first_bar_not_0930": 1,
+   "requests_with_no_rows_in_range": 20,
+   "of_those_before_first_day": 20,
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1min/QQQ_1min_2011.csv",
+     "9c321bc5659d82435277559f57ea2048461d13246b75c271a5ba6ab0388c6118"
+    ],
+    [
+     "1min/QQQ_1min_2012.csv",
+     "0c76edec859920c12835d7818a443adfb6ae1a61638508bac896c8a304ab2a65"
+    ],
+    [
+     "1min/QQQ_1min_2013.csv",
+     "8e0fa1fca3a952825dd35f0b380a67d5731a8988dde39be6352df3e8f5c48354"
+    ],
+    [
+     "1min/QQQ_1min_2014.csv",
+     "e40671d1abc2dcead884f3d5abec205fc71f0fbb226579a4ee2d25476d392fc0"
+    ],
+    [
+     "1min/QQQ_1min_2015.csv",
+     "cf308675f55ff55c9145e6ae8eb1132d6a912bbaecc757ca04b5ebe5858ab666"
+    ],
+    [
+     "1min/QQQ_1min_2016.csv",
+     "25efbd4b0a4c1724dfe86f38836dc159aa2e032b76945a05396efef4a7351e09"
+    ],
+    [
+     "1min/QQQ_1min_2017.csv",
+     "67e28d2549977873dd12a608d38a4602ab7aec02e9ef7720d0486b4125d3ea3c"
+    ],
+    [
+     "1min/QQQ_1min_2018.csv",
+     "4c8af59b0d1cd0719048b42bd2174fbf0c6e2b71c0e59d66b5a444f662433352"
+    ],
+    [
+     "1min/QQQ_1min_2019.csv",
+     "0cf4742ef840816dcbf638bde307db0820f22d6b1a0b7679740bc3c1e0e943f1"
+    ],
+    [
+     "1min/QQQ_1min_2020.csv",
+     "be5eacccdb5d707281e15bb44c5ea6582187394adeee4f6241b1eb31783fc498"
+    ],
+    [
+     "1min/QQQ_1min_2021.csv",
+     "7ac67492740ea8a2bcb64c060cc355cd1aa89583d1cfe075821596bad9aecd76"
+    ],
+    [
+     "1min/QQQ_1min_2022.csv",
+     "fa22587bd2237e5c193dd39fb81a210786838575c9b9cc5d155c55f4edd45130"
+    ],
+    [
+     "1min/QQQ_1min_2023.csv",
+     "d60ac88c6516952170e123372f0cedf46768861fb56e56bb07c37089ea54e6a0"
+    ],
+    [
+     "1min/QQQ_1min_2024.csv",
+     "12e021f52d30c486db7ee9484829bf460d1f39dafdc3859e88ee758412f9e6e3"
+    ],
+    [
+     "1min/QQQ_1min_2025.csv",
+     "790ae16665b90b0411d08d89812f68be0b64690b58b2e4cdfadace4531a7d7a2"
+    ],
+    [
+     "1min/QQQ_1min_2026.csv",
+     "af8f2d8449fa5d4ff65d13fa15a225f6625efa6da46c588be132e31a5704e596"
+    ]
+   ]
+  }
+ },
+ "daily": {
+  "SPY": {
+   "first_date": "1993-01-29",
+   "last_date": "2026-11-24",
+   "rows": 8514,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 1,
+   "files": [
+    [
+     "1day/SPY_1day.csv",
+     "a60e3f0a8b061694f7b74ff51f94ea6be1189af377b8122f75c41c490d141322"
+    ]
+   ]
+  },
+  "QQQ": {
+   "first_date": "1999-03-10",
+   "last_date": "2026-11-24",
+   "rows": 6972,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/QQQ_1day.csv",
+     "1dea779b86dcd729b7f27032f73894cfdb3429dfd3ea997e682df80cd00a7573"
+    ]
+   ]
+  },
+  "EFA": {
+   "first_date": "2001-08-17",
+   "last_date": "2026-11-24",
+   "rows": 6355,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/EFA_1day.csv",
+     "b1b38b3171456c726565baf250b288add6edc58b10068b03ace0bd0b6c7be713"
+    ]
+   ]
+  },
+  "IEF": {
+   "first_date": "2002-07-30",
+   "last_date": "2026-11-24",
+   "rows": 6121,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/IEF_1day.csv",
+     "09ec40b71f0b0b7c3ada630cab1cd8816c58f199a84180562e82288c74f11a87"
+    ]
+   ]
+  },
+  "VNQ": {
+   "first_date": "2004-09-29",
+   "last_date": "2026-11-24",
+   "rows": 5575,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/VNQ_1day.csv",
+     "5b9077fcbb13a09162bdab61e2e24414509095e428c9faca97be53ca9ffa8005"
+    ]
+   ]
+  },
+  "DBC": {
+   "first_date": "2006-02-03",
+   "last_date": "2026-11-24",
+   "rows": 5235,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/DBC_1day.csv",
+     "988079dc53c7e7232bf69b7a179cfbf28ae3dc0259dce36134261c31a1c25e8e"
+    ]
+   ]
+  },
+  "BIL": {
+   "first_date": "2007-05-30",
+   "last_date": "2026-11-24",
+   "rows": 4905,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/BIL_1day.csv",
+     "1c72a48c4b0e3c5b7b767aca7066c6bbbcf21e4f7b5ca06c22af4ef2f40ae082"
+    ]
+   ]
+  },
+  "GLD": {
+   "first_date": "2004-11-18",
+   "last_date": "2026-11-24",
+   "rows": 5539,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/GLD_1day.csv",
+     "d0af6dbdb04bf57865d18e88e2bbd18caedb2b2e1df33f338a3a5f6196f5665d"
+    ]
+   ]
+  },
+  "TLT": {
+   "first_date": "2002-07-30",
+   "last_date": "2026-11-24",
+   "rows": 6121,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/TLT_1day.csv",
+     "2804939f9a08bed54e337933802348962901061fe069f889bb6588da840229b1"
+    ]
+   ]
+  },
+  "VTI": {
+   "first_date": "2001-05-31",
+   "last_date": "2026-11-24",
+   "rows": 6410,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/VTI_1day.csv",
+     "6356db96873065b11cdd1ae2add7de3961978e53fadae7c7d3e5bc0c5c95269d"
+    ]
+   ]
+  },
+  "IWM": {
+   "first_date": "2000-05-26",
+   "last_date": "2026-11-24",
+   "rows": 6664,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/IWM_1day.csv",
+     "d52a5662af8612fb1dc2f64629b06067b148a13003967d45eaf9a7d1eec84a9c"
+    ]
+   ]
+  },
+  "XLB": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLB_1day.csv",
+     "37313b3063981d6f11ff9564c4aa34d978d6e7ccff07235c06832fe87b6ef4e1"
+    ]
+   ]
+  },
+  "XLE": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLE_1day.csv",
+     "03e2c988ffa1820354a51de98a1854b5722c5d697423306ee74922eb298ebe84"
+    ]
+   ]
+  },
+  "XLF": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLF_1day.csv",
+     "b45d7162c433c6e80dfeb1e3fadfbadb0901e4da99a5a32aca2150ca34e9fc25"
+    ]
+   ]
+  },
+  "XLI": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 1,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLI_1day.csv",
+     "c22fd70f82772800d472f534799ef790f18dfd2c61046272f037d978db2b3c7e"
+    ]
+   ]
+  },
+  "XLK": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLK_1day.csv",
+     "868f40522b593f378708260aa6705c8dad73a98aca8598adc4d6f84ef4cc403a"
+    ]
+   ]
+  },
+  "XLP": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLP_1day.csv",
+     "adfe5efaa68c7c1241d68a727fa4cdb1cf6fe7ea6ebee6f2a3570cff915540ad"
+    ]
+   ]
+  },
+  "XLU": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLU_1day.csv",
+     "6f960fb907dd81f9c63d17220e8e1ae3f60f48b443aa6f44c45bea8a512c534d"
+    ]
+   ]
+  },
+  "XLV": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLV_1day.csv",
+     "2d2c01f4e4d129c2d681b76370d8eb5701d626326d7f5f60930e9539c2fc6927"
+    ]
+   ]
+  },
+  "XLY": {
+   "first_date": "1998-12-22",
+   "last_date": "2026-11-24",
+   "rows": 7024,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLY_1day.csv",
+     "b35dfab82b8f2317571313839a6f660aa814a16038904eaa92d0fa133b434e0a"
+    ]
+   ]
+  },
+  "XLC": {
+   "first_date": "2018-06-19",
+   "last_date": "2026-11-24",
+   "rows": 2121,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 0,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLC_1day.csv",
+     "0afbeb882149fbf564040f993ff3b4c179240690d327b96036e98586c12d0e72"
+    ]
+   ]
+  },
+  "XLRE": {
+   "first_date": "2015-10-08",
+   "last_date": "2026-11-24",
+   "rows": 2799,
+   "weekdays_without_row_not_calendar_holiday": [],
+   "weekend_rows": 0,
+   "duplicate_dates": 0,
+   "zero_volume_rows": 5,
+   "other_value_faults": {},
+   "conflicts_between_pulls": 0,
+   "files": [
+    [
+     "1day/XLRE_1day.csv",
+     "6f9b557c5a5527938cdebbd65e38a4a13937b6c5ad4e9e0c9855ef943f4c08b3"
+    ]
+   ]
+  }
+ }
+}

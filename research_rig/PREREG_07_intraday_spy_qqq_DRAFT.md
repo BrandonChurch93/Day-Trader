@@ -45,6 +45,8 @@ Each rule is compared with holding the fund.
 
 To settle before this plan is frozen: if a rule is added or dropped, the rule list, the trial count, the fixtures and the set of rules that mark 4 is worked out over are all rewritten here first. No rule is added or dropped to change how likely a tie is in mark 4.
 
+To settle before this plan is frozen: on the workspace's own price history, one-minute data for QQQ starts years later than for SPY (`docs/research/10_historical_data_and_practice.md`, "What was collected, and what a gap check found"). If that source is used, the plan has to say first whether the QQQ rules are judged on their own shorter development slice or left out. The short days and missing days that the gap check lists also have to be handled by a rule written here, not case by case.
+
 ## Pass marks
 
 The five marks used in the other replays, numbers read from `config/thresholds.yaml`, with the methods of `AMENDMENT_2026-11-25_audit_fixes.md`. Shuffle for these rules: the rule's daily profit or loss is kept and the days it traded are redrawn at random with the same count, 1,000 times, seed 7. Trials counted in the deflated Sharpe ratio: every rule trial in the ledger on the day this is frozen, reruns included, plus these 14. Today that count is the one `TRIAL_LEDGER.md` gives under "Reruns and how they are counted"; the six AI model runs in rows 21 to 26 are scored a different way and are not in it. This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/STATUS.md`, "Next in the queue").

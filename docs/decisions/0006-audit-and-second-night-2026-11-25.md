@@ -231,3 +231,23 @@ Three fresh models, from three makers, were each given only the repo address and
 A researcher read what came after the 2012 paper on insider buying, and research opened the main sources again (`docs/research/26_insider_buying_evidence.md`). The case is weaker than decision 11 made it sound, and decision 11 now says so. One figure in the researcher's notes was wrong and was corrected before it reached the page. A draft plan that runs nothing is `research_rig/PREREG_08_insider_buying_DRAFT.md`.
 
 Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold. No rule was run and no price data was downloaded for the insider idea.
+
+## Ninth addendum, 2026-11-25 12:41 UTC: the stock price collection finished and was gap-checked
+
+This is a record of what research did. It is not an owner decision.
+
+The pull of stock prices from the workspace's own price history, started overnight under the owner's latitude, finished. It holds one-minute prices for SPY and QQQ and daily prices for the 22 funds named in the two draft stock plans. The files are on the research machine only.
+
+What was added to the repo:
+
+- The two scripts that joined the pulls and checked them for gaps (`research_rig/platform_bars_consolidate.py`, `research_rig/platform_bars_integrity.py`). The check was run again from the repo copy and gave the same output file, byte for byte. MEASURED.
+- A summary with dates, counts and file fingerprints and no price (`research_rig/platform_bars_coverage.json`), and a script that writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from it (`tools/bars_coverage.py`). `tools/check_repo.py` now fails if those tables are not what the script writes.
+- The price files are in `research_rig/provenance.json` by fingerprint and in `research_rig/check_data.py` as a data set that a script cannot fetch.
+
+What the check showed, in words (the figures are in the tables): no repeated or broken rows; some short days and two missing days in the SPY one-minute files; one-minute history for QQQ starts years after SPY's. The draft plan for the day trading test now names that as a point to settle before it is frozen.
+
+What is still UNKNOWN: whether the prices are right (nothing has compared them with a second source), whether the check's holiday calendar is right (the collecting agent wrote it from memory), who the data comes from, how it is adjusted, and what its terms say about keeping copies.
+
+Not done: no rule was run on these prices, no return was worked out from them, and no price was committed. Item 6 of "Things only you can do" in the morning list asks the owner whether the files may be kept, and says research deletes them if he says no.
+
+Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold.

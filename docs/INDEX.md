@@ -46,6 +46,7 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 | `config/thresholds.yaml` | Every threshold and every owner number, once. Documents name the key and never repeat the value | CURRENT |
 | `tools/check_repo.py` | Checks this index, the paths named in the map files and in every page under `docs/decisions/`, `docs/playbook/` and `docs/research/`, the config keys named in documents, the results table in the status page, the number tables in the morning list, and the stored outputs against `research_rig/provenance.json`. Run before every commit. With `--builders` it also runs every document builder and fails if a built page changes | CURRENT |
 | `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from the output files | CURRENT |
+| `tools/bars_coverage.py` | Writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from `research_rig/platform_bars_coverage.json`, so no figure there is typed | CURRENT |
 | `tools/owner_numbers.py` | Writes the two number tables in the morning list from `config/thresholds.yaml`, so no value on the owner's list is typed | CURRENT |
 
 ## docs/
@@ -188,6 +189,7 @@ Working papers.
 | `research_rig/pilot/`, `research_rig/score_02.py`, `research_rig/results_02.json`, `research_rig/build_doc14.py` | Pilot 02: the server that released one day at a time, every answer the models gave, and the scoring | CURRENT |
 | `research_rig/check_data.py`, `research_rig/fetch.py`, `research_rig/fetch_kraken_archive.py`, `research_rig/fetch_french.py`, `research_rig/build_kraken_daily.py`, `research_rig/kraken_daily_build.json` | Say which raw data is present, and download and prepare public price history into `research_rig/data/`, a local folder that git ignores. The table of data sets is in `research_rig/README.md` | CURRENT |
 | `research_rig/books_summary.py`, `research_rig/books_summary.json`, `research_rig/build_doc24.py` | Order-book cost samples | CURRENT |
+| `research_rig/platform_bars_consolidate.py`, `research_rig/platform_bars_integrity.py`, `research_rig/platform_bars_coverage.json` | How the stock prices collected through the workspace's own price lookup were joined and checked for gaps, and the dates and counts that check gave. No price is in the repo and no rule was run. Whether the files may be kept is item 6 of the morning list | CURRENT |
 | `research_rig/feeds/` | Collector of public context readings, its source notes and a trimmed sample | CURRENT |
 | `research_rig/export_dashboard.py` | Builds the data file for the owner's screen | CURRENT |
 

@@ -31,6 +31,8 @@ INPUTS = {
     "FRENCH_DIR/F-F_Research_Data_Factors_daily__main.csv": f"{F}/F-F_Research_Data_Factors_daily__main.csv",
     "FRENCH_DIR/12_Industry_Portfolios_Daily__0_Average_Value_Weighted_Returns_Daily.csv": f"{F}/12_Industry_Portfolios_Daily__0_Average_Value_Weighted_Returns_Daily.csv",
     "data/books/books.csv": f"{D}/books/books.csv",
+    "data/platform_bars/1min/*.csv": os.path.join(os.environ.get("PLATFORM_BARS_DIR", f"{D}/platform_bars"), "1min", "*.csv"),
+    "data/platform_bars/1day/*.csv": os.path.join(os.environ.get("PLATFORM_BARS_DIR", f"{D}/platform_bars"), "1day", "*.csv"),
 }
 BD, BH = ["data/bitstamp_BTCUSD.csv", "data/bitstamp_ETHUSD.csv"], ["data/bitstamp_BTCUSD_1h.csv", "data/bitstamp_ETHUSD_1h.csv"]
 KA, KF = ["data/kraken_BTCUSD.csv", "data/kraken_ETHUSD.csv"], ["data/krakenfull_BTCUSD.csv", "data/krakenfull_ETHUSD.csv"]
@@ -63,6 +65,7 @@ OUTPUTS = {
     "noise_pbo.json": ("no-rule", "python3 noise_pbo.py", ["noise_pbo.py", "rig2.py"], [], []),
     "ledger_count_check.json": ("no-rule", "python3 ledger_count_check.py", ["ledger_count_check.py", "rig2.py"], [], ["results_v2.json", "results_04.json", "results_05.json", "results_05b.json"]),
     "books_summary.json": ("no-rule", "python3 books_summary.py", ["books_summary.py"], ["data/books/books.csv"], []),
+    "platform_bars_coverage.json": ("prices-no-rule", "python3 platform_bars_integrity.py, then from the repo root python3 tools/bars_coverage.py --summarise", ["platform_bars_integrity.py", "platform_bars_consolidate.py", "../tools/bars_coverage.py"], ["data/platform_bars/1min/*.csv", "data/platform_bars/1day/*.csv"], []),
 }
 NOTES = {
     "results_v2.json": "The hourly part (R03) stopped twice on program errors and was started again (docs/research/16_rig_audit.md). Its returns cache data/v2_r01_returns.json is local and not fingerprinted.",
@@ -70,6 +73,7 @@ NOTES = {
     "results_05b.json": "Corrected run, ledger row R2. The fault was in the rule code, not in the engine.",
     "i2_2020_note.json": "Multiplies up each industry group's daily returns for 2020, a held-back year. No rule, no pass mark, not a trial. Run once more after its data path line changed in commit c7956c4, so the second run was not of unchanged code; output identical; not counted. Research keeps it on the do-not-run list all the same (README.md, \"Held-back scripts\").",
     "venue_price_gap.json": "Written by build_doc16.py only when both price files are present. Otherwise the stored file is read.",
+    "platform_bars_coverage.json": "Dates, counts and file fingerprints of the stock prices collected through the workspace's own price lookup on 2026-11-25. No price is in it, no rule was run and no return was worked out. The price files are on the research machine only and cannot be fetched by a script; whether they may be kept is item 6 of the morning list.",
     "books_summary.json": "As of 2026-11-25 09:55 UTC the sampler was still writing data/books/books.csv, and stops by itself at about 16:30 UTC. The summary stored here covers its first 34 minutes. The input fingerprint is added with --with-books once sampling ends, or as an interim one that says so.",
     "results_01.json": "v1 engine. Kept as the record. Superseded by results_v2.json.",
     "pilot/decisions.jsonl": "Pilot 02. The server gave each model one day of prices at a time, 2026-06-30 to 2026-11-23, and logged its call. Run once. The models' replies cannot be made again from this record.",
