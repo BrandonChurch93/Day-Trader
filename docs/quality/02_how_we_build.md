@@ -45,7 +45,7 @@ How kit files are written:
 - Every gate line can be checked with evidence. Every gate line that depends on a loop ends "or its limit was reached".
 - One vocabulary table and one "which file wins" table, both in `kit/00-README.md`.
 
-TRANSLATED: this repo already has `AGENTS.md` as its top rule file and `docs/playbook/` as its evidence layer. A kit sits beside them and `AGENTS.md` stays on top. Where the kit lives is a planning call.
+OWNER, confirmed 2026-11-24: this repo already has `AGENTS.md` as its top rule file and `docs/playbook/` as its evidence layer. A kit sits beside them and `AGENTS.md` stays on top. The kit lives in `kit/` at the repo root.
 
 ## Rules every kit encodes
 
@@ -132,7 +132,7 @@ Three kinds. The kind decides what a red result means.
 - `BUILD COMPLETE`, and the budget report.
 - Everything else the Builder decides and logs under "Decisions made by the Builder".
 - Every stop message is written out in the kit, with the exact prompt that resumes from it.
-- TRANSLATED: the stop-and-ask list in `AGENTS.md` sits on top of these: live accounts, keys, money, risk limits and changes to `AGENTS.md`. A kit for this project gathers everything that needs Brandon into as few stops as possible and places them after everything that can be built without him.
+- OWNER, confirmed 2026-11-24 with a change: the stop-and-ask list in `AGENTS.md` sits on top of these: live accounts, keys, money, risk limits and changes to `AGENTS.md`. The build has one planned stop, for paper keys, placed after everything that can be built without him. The live go is not a build stop. It comes after `BUILD COMPLETE`, as an evidence gate, on a written owner decision.
 
 ### Showing the work
 
@@ -145,7 +145,7 @@ Brandon must never be left looking at a silent run.
 - If he writes in the thread he is steering. Apply it, log it under "Notes from Brandon" and carry on.
 - Commit and push with every status.
 - A status is not a question and not a pause.
-- TRANSLATED: here the pictures are charts, tables and screenshots: an equity curve, a cost table, a screen as it is being built.
+- OWNER, confirmed 2026-11-24: here the pictures are charts, tables and screenshots: an equity curve, a cost table, a screen as it is being built.
 
 ### Spend, secrets and git
 
@@ -178,7 +178,7 @@ Order: once yourself, then a fresh agent, fix every finding, then one more fresh
 Read every kit file fully. Do not edit anything. Report only issues that would (a) stall the unattended Builder or let any loop or wait run without a limit, (b) let it declare done falsely or report a limit reached as a pass, (c) lower the quality bar without saying so, (d) contradict another file in a number, name, count, path or phase, or (e) rely on a tool or platform behavior that is wrong or cannot be verified as written. Walk the build order once assuming every critic fails every round and say where the walk gets stuck. Ignore style and any judgment call the Builder is allowed to make. Numbered list, file, exact phrase, why in one line, one-line fix, most severe first, at most 25. End with the single most dangerous issue for an unattended run.
 ```
 
-TRANSLATED additions for this repo: (f) any path by which model output could reach an order, against `AGENTS.md` rule 1, (g) a gate that can pass with a wrong backtester or a rerun held-back test, (h) a money number that the owner did not set.
+OWNER, confirmed 2026-11-24 with one addition, for this repo: (f) any path by which model output could reach an order, against `AGENTS.md` rule 1, (g) a gate that can pass with a wrong backtester or a rerun held-back test, (h) a money number that the owner did not set, (i) any way to switch from paper to live without a decision record.
 
 ## Prompt patterns
 
@@ -214,6 +214,6 @@ Each rule above was paid for by a build that went wrong without it.
 | A critic faulted work that matched the approved reference | The approved reference outranks every critic |
 | A run regenerated one image for one critic for most of its time and showed nothing for ninety minutes | A take limit per item, and each item posted as it finishes |
 | Brandon went most of a day without pictures, and what was shared had to be downloaded | Inline pictures at least every 30 minutes |
-| A plan alone took over eight hours | TRANSLATED: research and planning runs carry a time limit too, the way reference runs already do |
+| A plan alone took over eight hours | OWNER, confirmed 2026-11-24: research and planning runs carry a time limit too, the way reference runs already do. The cap is `research_run_cap_hours` in `config/thresholds.yaml` |
 | A stand-in could be logged away and the build still called complete | The stand-in check cannot be met by logging it |
 | An unattended app build sent every screenshot back to fresh critics again and again. A day and a half in, it was a third of the way through | Critic rounds are bounded per item. As good as possible without taking forever |

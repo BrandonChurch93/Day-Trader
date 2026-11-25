@@ -49,7 +49,7 @@ How Brandon wants to be worked with. Every line is OWNER unless marked TRANSLATE
 ## In his name
 
 - Anything sent, posted or submitted in his name gets his yes first.
-- TRANSLATED: in this repo that includes every record in `docs/decisions/` that says the owner decided something. Write "owner decision" only for what he actually said, with the date.
+- OWNER, confirmed 2026-11-24: in this repo that includes every record in `docs/decisions/` that says the owner decided something. Write "owner decision" only for what he actually said, with the date.
 
 ## What still stops for him
 

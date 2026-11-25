@@ -1,0 +1,132 @@
+# Every project threshold and every owner number, once.
+# Documents name the key. They never repeat the value.
+#
+# status:
+#   owner     set by the owner, with the date he said it
+#   proposed  a research recommendation the owner has not confirmed. Use it for planning only
+#   open      an owner number with no value. Nothing may assume one. `recommended` is a suggestion to put to him, never a value to use
+#
+# Changing any value here needs a dated note in docs/decisions/.
+
+research_run_cap_hours:
+  value: 2
+  status: owner
+  set: 2026-11-24
+  note: Cap on working time for one research or planning run. At the cap the run stops and reports.
+
+paper_min_trading_days:
+  value: 60
+  status: proposed
+  source: docs/decisions/0001-starting-decisions.md row 9
+
+paper_min_closed_trades:
+  value: 100
+  status: proposed
+  source: docs/decisions/0001-starting-decisions.md row 9
+
+scale_live_evidence_months:
+  value: [6, 12]
+  status: proposed
+  note: Months of live evidence before scaling past tiny capital. Low end is the minimum.
+  source: docs/decisions/0001-starting-decisions.md row 9
+
+live_tracks_paper_months:
+  value: 3
+  status: proposed
+  note: Months that tiny-live results must track paper within tolerance.
+  source: docs/playbook/00_START_HERE.md build phases
+
+backtest_max_pbo:
+  value: 0.25
+  status: proposed
+  note: Probability of backtest overfitting. A project heuristic, not a published cutoff.
+  source: docs/playbook/06_architecture_and_build.md
+
+backtest_min_breakeven_cost_multiple:
+  value: 2
+  status: proposed
+  note: A strategy is rejected if its break-even cost is under this multiple of modeled cost.
+  source: docs/playbook/01_stocks_what_works.md
+
+cost_model_bps_per_side_liquid_etf:
+  value: [2, 5]
+  status: proposed
+  note: Modeled spread plus slippage per side for liquid ETFs. Single stocks are higher.
+  source: docs/playbook/01_stocks_what_works.md
+
+max_kelly_fraction:
+  value: 0.25
+  status: proposed
+  note: Largest share of the Kelly size used for the stress-tested edge. A house number. The cited papers give the idea, not the value.
+  source: docs/playbook/01_stocks_what_works.md
+
+drawdown_derisk_band:
+  value: [0.15, 0.20]
+  status: proposed
+  note: Exposure is cut as drawdown approaches this band. A house number.
+  source: docs/playbook/01_stocks_what_works.md
+
+intraday_trend_max_round_trip_bps:
+  value: 1
+  status: proposed
+  note: SPY/QQQ intraday trend stays experimental unless actual round-trip cost is well below this. Tightened from 2 on 2026-11-24. The cited reproduction puts break-even below about 1 bp round trip.
+  source: docs/playbook/01_stocks_what_works.md
+
+shadow_min_escalated_events:
+  value: 100
+  status: proposed
+  source: docs/playbook/06_architecture_and_build.md
+
+shadow_min_schema_validity:
+  value: 0.995
+  status: proposed
+  source: docs/playbook/06_architecture_and_build.md
+
+shadow_max_injection_escapes:
+  value: 0
+  status: proposed
+  source: docs/playbook/06_architecture_and_build.md
+
+# Owner numbers. All open.
+
+live_starting_capital_usd:
+  value: null
+  status: open
+  recommended: 1000
+  note: Research 06 suggested 500 to 2000.
+
+live_max_position_usd:
+  value: null
+  status: open
+  recommended: 100
+  note: Research 06 suggested 100 to 200.
+
+live_max_daily_loss_usd:
+  value: null
+  status: open
+  recommended: 25
+  note: Research 06 suggested 25 to 50.
+
+live_max_total_loss_usd:
+  value: null
+  status: open
+  recommended: 200
+  note: The most the live account may lose in total before it stops and waits for the owner. No research figure. A suggestion only.
+
+moonshot_sleeve_share:
+  value: null
+  status: open
+  recommended: 0.10
+  note: Share of the trading account. Suggested range was 0.05 to 0.10.
+
+moonshot_max_position_share:
+  value: null
+  status: open
+  recommended: 0.02
+  note: Share of the trading account in one moonshot.
+
+api_model_spend_cap_usd_month:
+  value: null
+  status: open
+  recommended: 25
+  note: Hard cap on API-billed model spend by the running service. The working is in docs/playbook/05_perplexity_and_costs.md.

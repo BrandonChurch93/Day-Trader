@@ -16,7 +16,7 @@ Report §7 (line 100) notes that revoking IBKR AI Partition access does NOT canc
 
 Suggested replacement for `## Rules for the build` bullet 7 (line 16):
 ```markdown
-- Fund live bots only via a dedicated account or sub-account (Robinhood MCP account — approvals OFF by default; IBKR AI Partition — revoking access does not cancel open orders; single-portfolio Coinbase key). [MEASURED] (research §1, §7)
+- Fund live bots only via a dedicated account or sub-account (Robinhood MCP account, approvals OFF by default; IBKR AI Partition, revoking access does not cancel open orders; single-portfolio Coinbase key). [MEASURED] (research §1, §7)
 ```
 And add to `## Do not do` (or fold into bullet 3):
 ```markdown

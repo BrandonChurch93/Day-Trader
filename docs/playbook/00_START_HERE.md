@@ -33,7 +33,7 @@ Details: `05_perplexity_and_costs.md`.
 
 ## Cost picture
 
-Illustrative list-price arithmetic, not a forecast: scanning every 15 minutes with a cheap model plus 60 top-model deep dives a month comes to about $14.80, against about $88.74 if the top model handled every scan. At one-minute scanning the gap is about $68 against about $1,177. Letting plain code do the scanning and calling models only on triggers brings the model bill to about $11. Hosting adds about $6 a month. Computer usage for briefs and build work is on top and has to be observed, not estimated.
+Cheap-model screening with rare top-model escalation costs a small fraction of running the top model on every scan, and letting plain code do the scanning costs less again. The figures and their working live once, in `05_perplexity_and_costs.md` under "Key numbers" and in `docs/research/05_perplexity_platform_options.md`. They are list-price arithmetic, not a forecast. Computer usage for briefs and build work is on top and has to be observed, not estimated.
 
 A Claude subscription is not a clean alternative: Anthropic's consumer terms bar automated access outside its API and bar relying on the service to buy or sell securities ([consumer terms](https://www.anthropic.com/legal/consumer-terms)). MEASURED policy text.
 
@@ -48,13 +48,13 @@ A Claude subscription is not a clean alternative: Anthropic's consumer terms bar
 | Phase | Work | Gate to pass |
 |---|---|---|
 | 0 | Write one strategy spec per candidate, with costs and kill criteria, before any code | Owner approves specs and risk limits |
-| 1 | Data, backtests with realistic costs, trial ledger | Deflated Sharpe significant, overfitting probability under 0.25, break-even cost at least 2x modeled cost |
-| 2 | Paper trading, models off | At least 60 trading days and 100 closed paper trades; slippage and errors within tolerance |
+| 1 | Data, backtests with realistic costs, trial ledger | Deflated Sharpe significant, overfitting probability under `backtest_max_pbo`, break-even cost at least `backtest_min_breakeven_cost_multiple` times modeled cost |
+| 2 | Paper trading, models off | At least `paper_min_trading_days` trading days and `paper_min_closed_trades` closed paper trades; slippage and errors within tolerance |
 | 3 | Add the model tiers in shadow mode: their tags and flags are logged, nothing consumes them | Rules that use the model outputs beat the rules-only baseline after token cost, on forward data only |
-| 4 | Tiny live capital, ring-fenced account, hard daily loss cut-off. Starts only on the owner's written go | Live results track paper within tolerance for 3 months |
-| 5 | Scale slowly | Only on 6 to 12 months of live evidence |
+| 4 | Tiny live capital, ring-fenced account, hard daily loss cut-off. Starts only on the owner's written go | Live results track paper within tolerance for `live_tracks_paper_months` months |
+| 5 | Scale slowly | Only on `scale_live_evidence_months` months of live evidence |
 
-The three reports suggested different paper-trading lengths (4 to 8 weeks, 60 to 90 trading days, 6 to 12 months). The table reconciles them: the shorter figure gates tiny live capital, the longer one gates scaling. Recorded in `docs/decisions/0001-starting-decisions.md`.
+Every threshold above is a key in `config/thresholds.yaml`, which is the only place its value lives. The three reports suggested different paper-trading lengths. The config reconciles them: the shorter figure gates tiny live capital, the longer one gates scaling. Recorded in `docs/decisions/0001-starting-decisions.md`. The phases are evidence gates, not deferred scope: the software that runs every one of them is finished in v1.
 
 ## Rules that protect you
 

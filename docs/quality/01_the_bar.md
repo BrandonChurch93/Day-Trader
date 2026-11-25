@@ -38,7 +38,7 @@ The target is not an improvement on average. It is a new level: something he is 
 - No misalignment, uneven spacing, clipped or overflowing text, or overlapping panels.
 - Screens are judged from screenshots that are opened and looked at, each with a written verdict against a checklist. Shots are named, deterministic and repeatable, and a script enforces the list.
 - Anything made for him to read as a designed page (a report, a brief) uses a warm off-white background with charcoal text, not black on white.
-- TRANSLATED: in this project the surfaces are whatever the owner watches and touches: a dashboard, alerts, a daily brief, a trade journal, a pause or kill control. A stock monitoring board or an admin template is a stand-in, not the product.
+- OWNER, confirmed 2026-11-24 with a change: in this project the surfaces are whatever the owner watches and touches. Which surfaces those are is provisional until the owner's-seat research is done and he has picked from it. A stock monitoring board or an admin template is a stand-in, not the product.
 
 ### 3D and cinematic motion, only if a surface uses it
 
@@ -61,7 +61,7 @@ The target is not an improvement on average. It is a new level: something he is 
 - Every constant appears once and is imported everywhere.
 - Logic that can be pure is pure, with no interface code in it, and is tested.
 - Almost no code comments. Keep one only when it explains a non-obvious reason that someone could otherwise undo.
-- TRANSLATED: these conventions were written for his web builds. For a Python service the same intent is the strictest type checking the toolchain offers, typed data models, one config module that holds every constant, and pure tested logic for risk and sizing. `docs/research/06_architecture_and_build_process.md` section 4 already proposes `mypy --strict`, Pydantic models and full branch coverage on the risk engine, which fits.
+- OWNER, confirmed 2026-11-24: these conventions were written for his web builds. For a Python service the same intent is the strictest type checking the toolchain offers, typed data models, one config module that holds every constant, and pure tested logic for risk and sizing. `docs/research/06_architecture_and_build_process.md` section 4 already proposes `mypy --strict`, Pydantic models and full branch coverage on the risk engine, which fits.
 
 ### Documents and kits
 
@@ -73,7 +73,7 @@ The target is not an improvement on average. It is a new level: something he is 
 
 ### Numbers and results
 
-TRANSLATED, all of this section. In a trading system the numbers are the product, so this is where the bar bites hardest.
+OWNER, confirmed 2026-11-24, all of this section. In a trading system the numbers are the product, so this is where the bar bites hardest. It applies to our own results. A figure cited from a source keeps its evidence label and its link.
 
 - A result is a file that a script produced, stored with the command and the commit that made it. No result is typed into a document by hand.
 - A gate must not be passable while the product is wrong. The backtester proves itself on fixtures with known answers before any strategy result counts: a price series with profit worked out by hand, a rule that peeks at the future and must be caught, a cost model checked against a published fee table.
@@ -94,7 +94,7 @@ OWNER, from the showcase kit, with its film terms generalized. The Builder never
 - ships a stand-in
 - reports a limit reached as a pass
 
-TRANSLATED for this repo. The Builder also never changes a threshold, a cost assumption or a held-back test window after seeing a result, never runs the held-back slice a second time, and never counts a result that has no trial ledger entry.
+OWNER, confirmed 2026-11-24 with a change, for this repo. The Builder also never changes a threshold, a cost assumption or a held-back test window after seeing a result, never runs the held-back slice a second time for the same strategy version, and never counts a result that has no trial ledger entry. One defined case: when a machine check proves the engine itself was wrong, the slice is rerun once the fix is in. That rerun is written in the trial ledger, counted as a trial and reported as a rerun.
 
 ## The decision rule
 
@@ -107,7 +107,7 @@ OWNER, from the PC builder kit, with its subject generalized. When the kit does 
 
 Never decide by picking what is faster. Never resolve a difficulty by removing a feature, lowering a count, loosening a limit or weakening a gate.
 
-TRANSLATED: this rule sits under `AGENTS.md`. Anything on its stop-and-ask list is never the Builder's call.
+OWNER, confirmed 2026-11-24: this rule sits under `AGENTS.md`. Anything on its stop-and-ask list is never the Builder's call.
 
 ## What done means
 
@@ -121,4 +121,4 @@ TRANSLATED: this rule sits under `AGENTS.md`. Anything on its stop-and-ask list 
 |---|---|
 | Build effort (tokens, agent time on his plans) | Not a constraint. Never a reason to cut scope or swap a technique for a cheaper one. Loops are still bounded so a build finishes |
 | API-billed runtime spend | A hard cap, a projection gate before any expensive run, a ledger, and scripts started with the remaining budget inline. Running out of credit is a blocker, never data |
-| TRANSLATED: trading capital and risk limits | The owner's numbers only. No agent sets, raises or assumes one. `AGENTS.md` governs |
+| Trading capital and risk limits (OWNER, confirmed 2026-11-24) | The owner's numbers only. No agent sets, raises or assumes one. `AGENTS.md` governs |

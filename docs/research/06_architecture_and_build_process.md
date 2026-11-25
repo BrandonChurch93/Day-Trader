@@ -38,6 +38,9 @@ For a solo developer targeting both US equities and crypto, three architectural 
 
 ## 2. Reference Architecture for an AI-Assisted Trading System
 
+> Superseded 2026-11-24. The diagram and text below show a model returning a `TradeIntent`. Models never emit orders or trade intents; deterministic strategy code produces every `TradeIntent`. The current diagram is in `docs/playbook/06_architecture_and_build.md`. `AGENTS.md` and `docs/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
+
+
 An LLM should never hold broker credentials or directly invoke `submit_order`. LLMs are non-deterministic, vulnerable to prompt injection from external market news ([OWASP Prompt Injection Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html)) (MEASURED), and prone to overconfident narrative bias ([Evaluating LLMs in Finance 2026](https://arxiv.org/html/2602.14233)) (MEASURED). Instead, the system should be built as a deterministic event-driven pipeline where the LLM operates as an advisory analyst that outputs strictly typed JSON trade intents validated by a deterministic risk engine.
 
 ```
@@ -107,6 +110,9 @@ An LLM should never hold broker credentials or directly invoke `submit_order`. L
 ---
 
 ## 3. Harness vs. Application: Concrete Split
+
+> Superseded 2026-11-24. The harness described below returns a `TradeIntent`. It returns only evidence tags, watchlist candidates and pause or veto flags. `AGENTS.md` and `docs/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
+
 
 Conflating the agent harness with the trading application is a common architectural mistake. Define them strictly:
 
@@ -204,12 +210,15 @@ A trading bot needs persistent WebSocket connections, stable outbound IP address
 
 ## 6. Phased Build Plan and Go/No-Go Gates
 
+> Superseded 2026-11-24. The sample sizes, the Phase 1 Sharpe and profit-factor gates, the Phase 3 `TradeIntent` wording and the live money figures in this table are replaced by the keys in `config/thresholds.yaml`. Live capital and loss limits are owner numbers and are open. Build durations were removed on 2026-11-24 because agent time estimates are not used here; sample sizes stay as evidence. `AGENTS.md` and `docs/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
+
+
 Never jump from an idea to live autonomous trading. Each phase requires pre-registered exit criteria written before the phase starts to prevent moving the goalposts.
 
 | Phase | Scope | Minimum Duration / Sample | Concrete Go/No-Go Exit Criteria |
 |---|---|---|---|
-| **Phase 0: Research and Strategy Spec** | Define universe, timeframe, holding period, deterministic entry/exit rules, cost assumptions, and exact role of LLM tier. | 1-2 weeks | Signed strategy spec in `docs/research/`; explicit fee/spread/slippage model; zero code written for live execution yet. |
-| **Phase 1: Data and Backtesting** | Build point-in-time data pipeline and deterministic backtests with realistic fees, spread, slippage, and borrow/funding costs. Validate via walk-forward and Combinatorial Purged Cross-Validation (CPCV). | 2-4 weeks; multi-regime history (bull, bear, high-vol) | Out-of-sample net Sharpe > 1.0 (STATED heuristic), Deflated Sharpe Ratio (DSR) statistically significant after trial-count adjustment ([Bailey & Lopez de Prado 2014](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551)) (MEASURED), Probability of Backtest Overfitting (PBO) < 0.25 ([Bailey et al. 2015](https://papers.ssrn.com/sol3/Delivery.cfm?abstractid=2326253)) (MEASURED), profit factor > 1.3, max drawdown within risk budget. |
+| **Phase 0: Research and Strategy Spec** | Define universe, timeframe, holding period, deterministic entry/exit rules, cost assumptions, and exact role of LLM tier. | No minimum sample | Signed strategy spec in `docs/research/`; explicit fee/spread/slippage model; zero code written for live execution yet. |
+| **Phase 1: Data and Backtesting** | Build point-in-time data pipeline and deterministic backtests with realistic fees, spread, slippage, and borrow/funding costs. Validate via walk-forward and Combinatorial Purged Cross-Validation (CPCV). | Multi-regime history (bull, bear, high-vol) | Out-of-sample net Sharpe > 1.0 (STATED heuristic), Deflated Sharpe Ratio (DSR) statistically significant after trial-count adjustment ([Bailey & Lopez de Prado 2014](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551)) (MEASURED), Probability of Backtest Overfitting (PBO) < 0.25 ([Bailey et al. 2015](https://papers.ssrn.com/sol3/Delivery.cfm?abstractid=2326253)) (MEASURED), profit factor > 1.3, max drawdown within risk budget. |
 | **Phase 2: Deterministic Paper Trading** | Deploy the always-on Python service (LLM disabled) against Alpaca paper and crypto sandbox/paper feeds. | 4-8 weeks and >= 100 closed trades | Zero unhandled crashes or duplicate orders; realized slippage within 1.5x of backtest cost model; paper equity curve and win rate consistent with out-of-sample backtest distribution. |
 | **Phase 3: LLM Tier in Shadow Mode** | Enable Tier 1 + Tier 2 LLM harness in parallel. The deterministic baseline still trades paper; the LLM logs structured `TradeIntent` verdicts without executing. | 4-8 weeks and >= 100 escalated events | Schema validity >= 99.5%; zero prompt-injection escapes in red-team tests; shadow LLM portfolio outperforms deterministic baseline net of LLM API token costs and realistic decision-latency slippage. |
 | **Phase 4: Tiny Live Capital** | Switch to a ring-fenced live account ($500-$2,000 total; max $100-$200 per position; hard $25-$50 daily loss kill switch). | 4-8 weeks and >= 50 live trades | Realized live slippage, fill rate, and net expectancy match Phase 2/3 paper results within pre-set tolerance (e.g., within 20% of expected cost/slippage); zero risk-engine bypasses. |
@@ -260,6 +269,9 @@ Prompt injection is ranked as the #1 risk in the OWASP Top 10 for LLM Applicatio
 ---
 
 ## Implications for Our Build
+
+> Superseded 2026-11-24. Durations in this list are superseded by `config/thresholds.yaml`. `AGENTS.md` and `docs/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
+
 
 1. **Start with a thin Python service over `alpaca-py` (US equities) and `CCXT` (crypto), paired with `vectorbt` for fast offline research.** Avoid Backtrader (frozen since 2023) and avoid heavy multi-language frameworks like LEAN or NautilusTrader v2 RC until a deterministic strategy proves positive net expectancy in paper trading. If you later need IBKR execution, build on `ib_async` 3.0 (`next-protobuf`) for IBKR's mandatory December 2026 protocol change.
 2. **Build the deterministic system first and treat the LLM as a guilty-until-proven-innocent plugin.** Run the deterministic baseline in Phase 2 paper trading for at least 4-8 weeks, then add the cheap-triage-to-frontier LLM harness in Phase 3 shadow mode. Keep the LLM only if forward, post-cutoff shadow results beat the deterministic baseline net of API token costs and inference latency.

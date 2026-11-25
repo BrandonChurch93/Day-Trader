@@ -16,14 +16,14 @@ Paper-test low-turnover BTC/ETH spot trend first; observe fully collateralized, 
 - Screen pairs by verified book depth, not printed volume; handle venue maintenance and weekend/overnight derivatives margin changes explicitly. (Our recommendation; research: What U.S. retail can access; Risks that change the build.) [STATED]
 - Log timestamped fills, fees, USD values, wallet/account lots, funding and transfer IDs; reconcile wallet and broker records. Separate futures/funding from spot for tax. (Our recommendation; research: U.S. tax and records.) [STATED]
 - Treat crypto-for-crypto investment swaps as generally taxable recognition events. (Research: U.S. tax and records.) [MEASURED]
-- Require at least 60 trading days and 100 closed paper trades with models off, then shadow before tiny live capital. Require 6–12 months of live evidence to scale beyond tiny capital. (Our recommendation; D3.) [STATED]
+- Require at least `paper_min_trading_days` trading days and `paper_min_closed_trades` closed paper trades with models off, then shadow before tiny live capital. Require `scale_live_evidence_months` months of live evidence to scale beyond tiny capital. Values: `config/thresholds.yaml`. (Our recommendation; D3.) [STATED]
 - Never promote automatically. Require a written owner decision in `docs/decisions/` before going live or scaling. (Our recommendation; D2.) [STATED]
 
 ## Key numbers
 
 | Item | Value | As of | Tag | Source |
 |---|---|---|---|---|
-| Historical BTC intraday timing | ~10 bps unlevered break-even cost | Data through Dec 2020 | MEASURED | [University of Reading manuscript](https://centaur.reading.ac.uk/100181/3/21Sep2021Bitcoin%20Intraday%20Time-Series%20Momentum.R2.pdf) |
+| Historical BTC intraday timing | ~10 bps unlevered break-even cost for the best of three variants (others 3 and 7). The paper does not say one-way or round trip, so do not compare it with the fee rows below. The authors call it unprofitable at the venue's 25 bps fee | Data through Dec 2020 | MEASURED | [University of Reading manuscript](https://centaur.reading.ac.uk/100181/3/21Sep2021Bitcoin%20Intraday%20Time-Series%20Momentum.R2.pdf) |
 | Binance.US, most spot pairs | 4 bps taker round trip, fee only | Nov 24, 2026 | MEASURED | [Binance.US fees](https://www.binance.us/fees) |
 | Alpaca spot entry | 50 bps taker round trip, fee only | Nov 24, 2026 | MEASURED | [Alpaca fees](https://docs.alpaca.markets/us/docs/crypto-fees) |
 | Kraken Pro spot entry | 160 bps taker round trip, fee only | Nov 24, 2026 | MEASURED | [Kraken Pro fees](https://www.kraken.com/pro/fees) |
@@ -31,7 +31,7 @@ Paper-test low-turnover BTC/ETH spot trend first; observe fully collateralized, 
 | Robinhood Exchange Routing spot entry | 190 bps taker round trip, fee only | Nov 24, 2026 | MEASURED | [Robinhood fee schedule](https://cdn.robinhood.com/assets/robinhood/legal/rhc-fee-schedule.pdf) |
 | Gemini ActiveTrader spot entry | 240 bps taker round trip, fee only | Sep 1, 2026 | MEASURED | [Gemini fee schedule](https://www.gemini.com/fees/activetrader-fee-schedule) |
 | IBKR spot commission | 0.12%–0.18% per order; $1.75 minimum capped at 1% | Nov 24, 2026 | MEASURED | [IBKR commissions](https://portal.interactivebrokers.com/en/pricing/commissions-cryptocurrencies.php) |
-| Kraken U.S. BTC perp sizing | 0.0001 BTC minimum | Nov 23, 2026 | MEASURED | [Kraken fractional perps](https://blog.kraken.com/product/kraken-derivatives/us-fractional-crypto-perps) |
+| Kraken U.S. BTC perp sizing | 0.0001 BTC minimum, from a Kraken announcement and not the contract specification page. Not offered in Maine or New York | Nov 23, 2026 | MEASURED | [Kraken fractional perps](https://blog.kraken.com/product/kraken-derivatives/us-fractional-crypto-perps) |
 | Custodial broker 1099-DA, 2025 | Gross proceeds from reportable sales; basis optional | Tax year 2025 | MEASURED | [IRS 2025 Form 1099-DA instructions](https://www.irs.gov/pub/irs-prior/i1099da--2025.pdf) |
 | Custodial broker 1099-DA, 2026 onward | Gross proceeds on reportable sales; mandatory basis only for covered assets acquired after 2025 and held in the same custodial account until sale | Apr 30, 2026 | MEASURED | [IRS 2026 Form 1099-DA instructions](https://www.irs.gov/instructions/i1099da) |
 

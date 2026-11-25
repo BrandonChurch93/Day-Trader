@@ -8,8 +8,8 @@ An AI-assisted trading system for US stocks and crypto. Status: research complet
 2. `docs/playbook/00_START_HERE.md` - the whole picture in about two pages.
 3. `docs/quality/00_READ_FIRST.md` - the owner's quality bar and build method.
 4. `docs/playbook/01..06` - condensed decisions per topic. This is the layer agents load by default.
-5. `docs/research/01..06` - full reports with every source. Open only when a playbook line points there.
-6. `docs/decisions/` - dated record of choices and the audits of the playbook.
+5. `docs/research/01..08` - full reports with every source. Open only when a playbook line points there.
+6. `docs/decisions/` - dated record of choices, the audits of the playbook and the source checks.
 
 ## What the evidence says, in five lines
 
@@ -17,7 +17,7 @@ An AI-assisted trading system for US stocks and crypto. Status: research complet
 - The ideas with the best evidence are slower than day trading: multi-day trend following with volatility-based sizing, held overnight.
 - Language models are useful for reading news, filings and transcripts, for writing and reviewing strategy code, and for reviewing trades. They are poor at predicting prices from numbers.
 - So the product is a small always-on rules-based trading service. The AI sits beside it as a researcher and reviewer and never touches the order path.
-- Cheap-model screening with rare escalation to a top model is the right cost design. Illustrative list-price arithmetic puts it near 15 dollars a month against near 89 for running the top model on every scan.
+- Cheap-model screening with rare escalation to a top model is the right cost design. The list-price comparison lives in `docs/playbook/05_perplexity_and_costs.md`.
 
 ## Layout
 
@@ -25,6 +25,7 @@ An AI-assisted trading system for US stocks and crypto. Status: research complet
 Day-Trader/
 ├── AGENTS.md              rules for agents
 ├── README.md
+├── config/                every threshold and owner number, once
 └── docs/
     ├── playbook/          condensed, decision-only (default reading)
     ├── quality/           the owner's quality bar and build method

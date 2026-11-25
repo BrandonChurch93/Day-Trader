@@ -22,10 +22,12 @@ If this folder and `AGENTS.md` ever disagree, `AGENTS.md` wins and the conflict 
 
 A line with no label is OWNER.
 
+On 2026-11-24 Brandon confirmed every TRANSLATED line in files 00 to 04, five of them with changes. Those lines are now rules and read "OWNER, confirmed 2026-11-24". The record is `docs/decisions/0003-quality-bar-adopted.md`. A TRANSLATED line added after that date is a proposal again. File 05 stays TRANSLATED: it is a list of observations, and its status table says what was done about each.
+
 ## The bar in one page
 
 1. **Built once, built premium.** The target is a finished product Brandon is proud of and never has to rework. Quality comes before speed, always. No phase is left at good enough, and the harder right way beats a cheaper fallback.
-2. **The whole product in v1.** Scope it start to finish. No "later" phases, no timelines, no week estimates. He does not ship halfway. TRANSLATED: the playbook's capital gates (paper, shadow, tiny live, scale) are evidence gates, not deferred scope. The software that runs every one of them is finished in v1.
+2. **The whole product in v1.** Scope it start to finish. No "later" phases, no timelines, no week estimates. He does not ship halfway. OWNER, confirmed 2026-11-24: the playbook's capital gates (paper, shadow, tiny live, scale) are evidence gates, not deferred scope. The software that runs every one of them is finished in v1. Live order code is tested on paper only and is reported as an open item until he approves live.
 3. **Targets before work.** Nothing is built until he has approved something concrete to build toward: a reference image or working prototype for anything visual, a written spec with its numbers for anything else. Agents iterate well against a target and badly against a description.
 4. **A floor, a ceiling and a bar that never touch.** The floor is the work that must be done before anything may call itself complete. The ceiling is the counts, clocks and spend caps that bound every loop. The bar is the pass criteria, and it never moves. When a limit is reached, the open issues are reported as open. They are never called a pass.
 5. **Written for a model with no memory.** Everything an agent needs is in the repo. Every number lives once and is named everywhere else. No two files disagree. A progress file is the Builder's memory.
@@ -35,7 +37,7 @@ A line with no label is OWNER.
 9. **Every loop and every wait has a limit.** Nothing runs forever, nothing blocks a build from finishing, and nothing lowers the bar to finish sooner.
 10. **What he looks at is designed.** He is equal parts designer and engineer. Any surface a person sees is a designed product at the level of his best work, never a default template.
 11. **Plain and honest with him.** Say what the evidence says, what a choice costs and exactly what he is approving. Lists over paragraphs. No hype and no time predictions.
-12. **Three kinds of cost, three rules.** Build effort is never a reason to cut quality. API-billed runtime spend has a hard cap, a projection before any expensive run, and a ledger. TRANSLATED: trading capital and risk limits are the owner's numbers only, as `AGENTS.md` already says.
+12. **Three kinds of cost, three rules.** Build effort is never a reason to cut quality. API-billed runtime spend has a hard cap, a projection before any expensive run, and a ledger. OWNER, confirmed 2026-11-24: trading capital and risk limits are the owner's numbers only, as `AGENTS.md` already says.
 
 ## Files
 
@@ -61,10 +63,4 @@ Those kits are about 3D and film. Take the method from them, not the subject.
 
 ## Wiring this folder in
 
-Nothing outside `docs/quality/` was changed when this folder was added. Two small edits make future agents find it. `AGENTS.md` says any change to it needs the owner's yes, so make them only when Brandon tells you to.
-
-1. In `AGENTS.md`, under "How to use the docs", add:
-   `- Read docs/quality/00_READ_FIRST.md before planning, building or reviewing anything. It is the owner's standard for finished work and for how builds are run. Open the other files in docs/quality/ when their topic comes up.`
-2. In `README.md`, add `docs/quality/00_READ_FIRST.md` to "Read in this order" after item 2, and add `quality/` to the layout tree.
-
-Then add a dated note in `docs/decisions/` saying the folder was adopted and which TRANSLATED lines Brandon confirmed, changed or declined.
+Done on 2026-11-24 with Brandon's yes. `AGENTS.md` points here under "How to use the docs", and `README.md` lists this folder in its reading order and its layout tree. The adoption record is `docs/decisions/0003-quality-bar-adopted.md`.

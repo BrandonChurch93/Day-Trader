@@ -13,8 +13,8 @@ Build a deterministic Python daemon over `alpaca-py`, `CCXT`, and `vectorbt`. Mo
 - Pin the paper endpoint for the MVP and verify account/mode at startup and before every submission; reject live flags/keys, separate secret stores, and require a written `docs/decisions/` approval for live deployment (our recommendation) [STATED] (research §4, §8).
 - Run on a static-egress Linux VPS with `chrony` UTC sync, reconnect/backfill, and startup broker reconciliation; halt new entries and alert on state mismatches, stale quotes, or sustained broker failure (our recommendation) [STATED] (research §2, §5).
 - Persist one `client_order_id` UUID per attempt and disable auto-retries; on ambiguous submission, reconcile the original ID and halt/alert if unresolved rather than resubmit (our recommendation) [STATED] (research §5).
-- Pre-register costs, walk-forward/CPCV, trial-adjusted DSR, and a project PBO heuristic (< 0.25); require >=60 trading days AND >=100 closed paper trades (models off, then shadow) before tiny live capital ($500-$2,000; $25-$50 daily cap), and 6-12 months live before scaling (our recommendation) [STATED] (research §6).
-- Gate Phase 3 shadow on >=100 escalated events, >=99.5% schema validity, zero injection escapes in red-team tests, and post-cutoff ablation net of token costs and latency (our recommendation) [STATED] (research §6, §7).
+- Pre-register costs, walk-forward/CPCV, trial-adjusted DSR, and a project PBO heuristic (under `backtest_max_pbo`); require at least `paper_min_trading_days` trading days AND `paper_min_closed_trades` closed paper trades (models off, then shadow) before tiny live capital, and `scale_live_evidence_months` months live before scaling. Live capital and loss limits are owner numbers and are open: `live_starting_capital_usd`, `live_max_position_usd`, `live_max_daily_loss_usd`, `live_max_total_loss_usd`. No agent may assume a value for them. All keys: `config/thresholds.yaml` (our recommendation) [STATED] (research §6).
+- Gate Phase 3 shadow on `shadow_min_escalated_events` escalated events, `shadow_min_schema_validity` schema validity, `shadow_max_injection_escapes` injection escapes in red-team tests, and post-cutoff ablation net of token costs and latency (our recommendation) [STATED] (research §6, §7).
 - Disable withdrawal scopes, use IP-allowlisted least-privilege keys on a ring-fenced sub-account, isolate untrusted text in a tool-less extractor, and red-team injection resistance ourselves (our recommendation) [STATED] (research §8).
 
 ```text
@@ -39,7 +39,7 @@ Build a deterministic Python daemon over `alpaca-py`, `CCXT`, and `vectorbt`. Mo
 
 | Item | Value | As of | Tag | Source |
 |---|---|---|---|---|
-| PBO methodology | CSCV estimates overfitting probability; project <0.25 threshold is our heuristic, not a universal paper cutoff | 2015 | MEASURED | [Bailey et al. 2015](https://papers.ssrn.com/sol3/Delivery.cfm?abstractid=2326253) |
+| PBO methodology | CSCV estimates overfitting probability; the project threshold `backtest_max_pbo` is our heuristic, not a universal paper cutoff | 2015 | MEASURED | [Bailey et al. 2015](https://papers.ssrn.com/sol3/Delivery.cfm?abstractid=2326253) |
 | Static-egress VPS | Verify checkout region, SKU, egress IP, and backup cost before committing; comparison prices are not deployment quotes | 2026-11-24 | UNKNOWN | [xCloud 2026](https://xcloud.host/best-docker-hosting-providers/) |
 | LLM trading paper audit | 38/75 trading tests deduct no costs; 50/51 known-or-possible overlap tests lack specified chronological controls | 2026-11 | MEASURED | [Zhang 2026](https://arxiv.org/html/2611.18934v1) |
 | CaMeL injection benchmark | 77% tasks solved with 0 policy violations under CaMeL's stated AgentDojo threat model; not validation of our harness | 2025-03 | MEASURED | [Debenedetti et al. 2025](https://arxiv.org/html/2503.18813) |

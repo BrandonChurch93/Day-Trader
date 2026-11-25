@@ -16,7 +16,7 @@ Run deterministic strategy code on Alpaca paper with free IEX data, then a ring-
 - Run a dead-man's switch: Kraken CancelAllOrdersAfter natively, elsewhere a heartbeat watchdog that cancels all orders. [MEASURED] (research §7)
 - Fund live trading only via a dedicated account or sub-account (single-portfolio Coinbase key for crypto) holding money you can lose entirely (our recommendation). [STATED] (research §7, Recommended stacks)
 - Add modeled fees and slippage to paper fills; treat IEX as plumbing-only and buy SIP ($99/mo) before trading spread, volume, or breakout signals; check history for survivorship bias (our recommendation). [STATED] (research §3, Recommended stacks)
-- Paper gate: at least 60 trading days AND 100 closed trades with models off, then shadow; live promotion needs a written owner decision in docs/decisions/; scaling past tiny capital needs 6-12 months live evidence (our recommendation, D2/D3). [STATED] (Implications)
+- Paper gate: at least `paper_min_trading_days` trading days AND `paper_min_closed_trades` closed trades with models off, then shadow (values in `config/thresholds.yaml`); live promotion needs a written owner decision in docs/decisions/; scaling past tiny capital needs `scale_live_evidence_months` months live evidence (our recommendation, D2/D3). [STATED] (Implications)
 - Log every fill (time, venue, lot, fees): wash sales span accounts including IRAs, and 1099-DA basis is required only for covered digital assets, so our ledger is the Form 8949 record. [MEASURED] (research §6)
 - Check each vendor's license before sending feeds to hosted LLMs. [UNKNOWN] (research §3)
 
@@ -44,6 +44,7 @@ Run deterministic strategy code on Alpaca paper with free IEX data, then a ring-
 - Do not rely on crypto loss harvesting; pending H.R. 10357 would apply wash sales to sales after 2026-09-14 [STATED].
 - Do not day trade crypto on Coinbase, Gemini, tastytrade, or Webull entry tiers (about 2%+ round trip).
 - Do not promote to live automatically (D2).
+- Do not use TradingView as a data or signal source for the service. Its terms rule out automated use, and webhook delivery is not guaranteed (research 07). [MEASURED]
 
 ## Must measure ourselves
 - API uptime, latency, and reject rates.

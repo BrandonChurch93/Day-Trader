@@ -2,7 +2,7 @@
 
 Research is step 1 of the method in `02_how_we_build.md`: settle the product. It is finished when a kit can be written with nothing left only in a chat.
 
-This file is TRANSLATED from start to finish. It applies Brandon's kit method to this project. Each row names the OWNER rule it comes from. Put the list to him before treating it as a requirement.
+This file applies Brandon's kit method to this project. It was written as TRANSLATED. He confirmed it on 2026-11-24 with one addition, row 11, so it is now a requirement. Each row names the OWNER rule it comes from.
 
 ## What research hands over
 
@@ -20,6 +20,7 @@ A kit cannot be written, and no build starts, until each of these exists in the 
 | 8 | The stops | The few places the build needs Brandon, gathered together and placed after everything that can be built without him. Each with its exact message and its resume prompt | At most one planned stop, plus true blockers only |
 | 9 | The spend rules | A cap for API-billed spend, a projection before any expensive run, a ledger | A hard spend cap, a projection gate, a ledger |
 | 10 | Who the Builder is and where it runs | The agent, the machine and the permissions it has. The rule file and the stop conditions are written for that environment and measured again in the first phase | The kit is written for the Builder that will run it |
+| 11 | A fresh check of the sources | Agents that did not write the research check the figures each scope decision rests on against their primary sources, before he locks that decision. Results are kept in `docs/decisions/` | Your first verdict on your own work is too kind |
 
 Then the kit is written, audited as `02_how_we_build.md` describes, and handed off with one kickoff prompt.
 
@@ -32,7 +33,7 @@ Then the kit is written, audited as `02_how_we_build.md` describes, and handed o
 | Recommend, do not just list | A finding ends in a recommendation and its reason. An open question for the owner arrives with the option you would pick |
 | Say what could not be verified | UNKNOWN is a result. A thing that could not be checked is listed as a thing to test, not smoothed over |
 | Show the work as it comes | Post findings as they land. Do not go quiet for hours and deliver one large report |
-| Bound every run | A research run has a time limit. A tool that fails three times is skipped, noted and moved past |
+| Bound every run | A research run has a time limit, `research_run_cap_hours` in `config/thresholds.yaml`. A tool that fails three times is skipped, noted and moved past |
 | No time predictions | Phases are defined by what they produce and by their evidence, not by weeks |
 | No scope decided for him | A finding that changes what he asked for is a decision for him, put plainly, not a default the research adopts |
 
