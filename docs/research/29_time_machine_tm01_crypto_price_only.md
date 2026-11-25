@@ -16,7 +16,7 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 
 | Model | Months counted | Gain summed | Holding bitcoin, same months | 80th percentile of twins | Twins beaten | Verdict |
 |---|---|---|---|---|---|---|
-| Claude Opus 5.5 | 1 of 5 | -$61.35 | -$76.42 | -$41.50 | 11 of 20 | not finished |
+| Claude Opus 5.5 | 3 of 5 | -$69.01 | $238.72 | -$83.74 | 17 of 20 | not finished |
 | GPT-6.2 Sol | 1 of 5 | -$32.50 | -$76.42 | -$21.92 | 0 of 20 | not finished |
 | Gemini Neon | 5 of 5 | $12.96 | $67.51 | $38.86 | 12 of 20 | has shown nothing |
 | Claude Sonnet 5.5 | 1 of 5 | -$88.92 | -$76.42 | -$64.07 | 0 of 20 | not finished |
@@ -27,19 +27,19 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 
 | Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups | Wakes that showed stock fund movers | Wakes answered unseen |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| July | Claude Opus 5.5 | -$50.63 | $69.81 | n/a | n/a of 1 | 10 | 3 | 6 | $14.66 | -8.3% | 44 of 62 | 18 | 28 of 62 | 0 |
+| July | Claude Opus 5.5 | -$50.63 | $69.81 | -$40.63 | 9 of 20 | 10 | 3 | 6 | $14.66 | -8.3% | 44 of 62 | 18 | 28 of 62 | 0 |
 | July | GPT-6.2 Sol | -$2.78 | $69.81 | n/a | n/a of 0 | 5 | 2 | 3 | $6.16 | -1.9% | 57 of 62 | 92 | 10 of 62 | 0 |
 | July | Gemini Neon | $57.38 | $69.81 | $32.76 | 18 of 20 | 7 | 4 | 1 | $9.37 | -6.0% | 49 of 62 | 36 | 37 of 62 | 0 |
 | July | Claude Sonnet 5.5 | -$25.70 | $69.81 | n/a | n/a of 0 | 3 | 0 | 3 | $4.45 | -2.9% | 58 of 62 | 20 | 0 of 62 | 0 |
 | July | Kimi K3 | -$24.12 | $69.81 | -$14.96 | 9 of 20 | 12 | 5 | 7 | $15.23 | -4.5% | 47 of 62 | 22 | 36 of 62 | 1 |
 | July | Grok 4.7 | -$9.66 | $69.81 | n/a | n/a of 0 | 8 | 3 | 5 | $12.66 | -3.5% | 54 of 62 | 93 | 31 of 62 | 0 |
-| August | Claude Opus 5.5 | $42.97 | $245.33 | n/a | n/a of 0 | 8 | 5 | 3 | $11.39 | -3.5% | 46 of 62 | 24 | 23 of 62 | 0 |
+| August | Claude Opus 5.5 | $42.97 | $245.33 | $27.21 | 20 of 20 | 8 | 5 | 3 | $11.39 | -3.5% | 46 of 62 | 24 | 23 of 62 | 0 |
 | August | GPT-6.2 Sol | $4.17 | $245.33 | n/a | n/a of 0 | 3 | 1 | 2 | $3.87 | -1.2% | 59 of 62 | 31 | 0 of 62 | 0 |
 | August | Gemini Neon | $157.01 | $245.33 | $143.87 | 17 of 20 | 9 | 5 | 3 | $13.84 | -5.1% | 46 of 62 | 66 | 34 of 62 | 0 |
 | August | Claude Sonnet 5.5 | $51.44 | $245.33 | n/a | n/a of 0 | 6 | 4 | 2 | $7.15 | -1.5% | 51 of 62 | 53 | 10 of 62 | 0 |
 | August | Kimi K3 | $22.28 | $245.33 | n/a | n/a of 0 | 6 | 3 | 2 | $8.95 | -2.4% | 50 of 62 | 20 | 32 of 62 | 0 |
 | August | Grok 4.7 | -$1.60 | $245.33 | n/a | n/a of 0 | 3 | 1 | 2 | $4.76 | -1.9% | 57 of 62 | 60 | 30 of 62 | 0 |
-| September | Claude Opus 5.5 | -$34.87 | $59.89 | n/a | n/a of 0 | 11 | 4 | 7 | $15.45 | -7.0% | 47 of 60 | 25 | 44 of 60 | 0 |
+| September | Claude Opus 5.5 | -$34.87 | $59.89 | n/a | n/a of 2 | 11 | 4 | 7 | $15.45 | -7.0% | 47 of 60 | 25 | 44 of 60 | 0 |
 | September | GPT-6.2 Sol | $6.89 | $59.89 | n/a | n/a of 0 | 5 | 3 | 2 | $5.53 | -0.5% | 55 of 60 | 90 | 60 of 60 | 0 |
 | September | Gemini Neon | $45.43 | $59.89 | $87.67 | 9 of 20 | 11 | 5 | 4 | $14.23 | -7.0% | 47 of 60 | 55 | 24 of 60 | 0 |
 | September | Claude Sonnet 5.5 | -$0.27 | $59.89 | n/a | n/a of 0 | 3 | 2 | 1 | $3.51 | -1.8% | 56 of 60 | 39 | 55 of 60 | 1 |

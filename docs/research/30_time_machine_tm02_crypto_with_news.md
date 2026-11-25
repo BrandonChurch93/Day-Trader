@@ -33,8 +33,8 @@ From the plan: the news helped only if all six models gained more with it than w
 | GPT-6.2 Sol | 5 of 5 | -$28.00 | -$34.23 | yes |
 | Gemini Neon | 5 of 5 | $29.59 | $12.96 | yes |
 | Claude Sonnet 5.5 | 5 of 5 | -$10.18 | -$63.38 | yes |
-| Kimi K3 | 1 of 5 | -$69.90 | -$110.50 | yes |
-| Grok 4.7 | 4 of 5 | $13.62 | -$71.94 | yes |
+| Kimi K3 | 4 of 5 | -$154.30 | -$154.19 | no |
+| Grok 4.7 | 5 of 5 | $2.96 | -$71.28 | yes |
 
 Verdict: not finished.
 
@@ -52,14 +52,14 @@ Verdict: not finished.
 | August | GPT-6.2 Sol | $22.36 | $245.33 | n/a | n/a of 0 | 5 | 4 | 1 | $4.52 | -0.4% | 57 of 62 | 64 | 0 of 62 | 0 |
 | August | Gemini Neon | $175.27 | $245.33 | n/a | n/a of 0 | 9 | 7 | 2 | $15.28 | -4.1% | 51 of 62 | 48 | 0 of 62 | 0 |
 | August | Claude Sonnet 5.5 | $15.87 | $245.33 | n/a | n/a of 0 | 5 | 3 | 2 | $7.06 | -1.9% | 55 of 62 | 10 | 0 of 62 | 0 |
-| August | Kimi K3 | not finished | | | | | | | | | | | | |
+| August | Kimi K3 | $7.29 | $245.33 | n/a | n/a of 0 | 7 | 3 | 4 | $9.29 | -1.3% | 49 of 62 | 16 | 0 of 62 | 0 |
 | August | Grok 4.7 | $17.07 | $245.33 | n/a | n/a of 0 | 1 | 1 | 0 | $1.55 | -0.3% | 61 of 62 | 22 | 0 of 62 | 0 |
 | September | Claude Opus 5.5 | -$28.24 | $59.89 | n/a | n/a of 0 | 11 | 3 | 7 | $13.72 | -4.7% | 47 of 60 | 28 | 0 of 60 | 0 |
 | September | GPT-6.2 Sol | -$4.18 | $59.89 | n/a | n/a of 0 | 8 | 3 | 5 | $7.86 | -1.3% | 52 of 60 | 58 | 0 of 60 | 0 |
 | September | Gemini Neon | $9.80 | $59.89 | n/a | n/a of 0 | 11 | 6 | 3 | $16.85 | -6.9% | 50 of 60 | 34 | 0 of 60 | 0 |
 | September | Claude Sonnet 5.5 | -$22.02 | $59.89 | n/a | n/a of 0 | 5 | 2 | 3 | $6.46 | -2.9% | 51 of 60 | 18 | 0 of 60 | 0 |
-| September | Kimi K3 | not finished | | | | | | | | | | | | |
-| September | Grok 4.7 | not finished | | | | | | | | | | | | |
+| September | Kimi K3 | -$18.51 | $59.89 | n/a | n/a of 0 | 17 | 5 | 10 | $12.31 | -4.5% | 37 of 60 | 5 | 0 of 60 | 0 |
+| September | Grok 4.7 | -$10.66 | $59.89 | n/a | n/a of 0 | 2 | 0 | 2 | $2.73 | -1.1% | 57 of 60 | 23 | 0 of 60 | 0 |
 | October | Claude Opus 5.5 | -$47.25 | -$76.42 | n/a | n/a of 0 | 6 | 1 | 5 | $8.40 | -5.7% | 53 of 62 | 17 | 21 of 62 | 0 |
 | October | GPT-6.2 Sol | -$18.97 | -$76.42 | n/a | n/a of 0 | 3 | 0 | 3 | $3.24 | -2.2% | 59 of 62 | 58 | 30 of 62 | 0 |
 | October | Gemini Neon | -$95.97 | -$76.42 | n/a | n/a of 0 | 6 | 0 | 6 | $8.78 | -9.7% | 59 of 62 | 24 | 13 of 62 | 0 |
@@ -70,7 +70,7 @@ Verdict: not finished.
 | November 1 to 24 | GPT-6.2 Sol | -$30.61 | -$231.10 | n/a | n/a of 0 | 4 | 0 | 4 | $5.56 | -3.1% | 44 of 48 | 33 | 0 of 48 | 0 |
 | November 1 to 24 | Gemini Neon | -$83.36 | -$231.10 | n/a | n/a of 0 | 11 | 1 | 10 | $15.33 | -12.2% | 34 of 48 | 25 | 0 of 48 | 0 |
 | November 1 to 24 | Claude Sonnet 5.5 | $22.22 | -$231.10 | n/a | n/a of 0 | 2 | 1 | 1 | $3.31 | -1.1% | 44 of 48 | 13 | 0 of 48 | 0 |
-| November 1 to 24 | Kimi K3 | not finished | | | | | | | | | | | | |
+| November 1 to 24 | Kimi K3 | -$73.18 | -$231.10 | n/a | n/a of 0 | 5 | 0 | 5 | $4.33 | -7.3% | 43 of 48 | 206 | 0 of 48 | 0 |
 | November 1 to 24 | Grok 4.7 | $0.00 | -$231.10 | n/a | n/a of 0 | 0 | 0 | 0 | $0.00 | 0.0% | 48 of 48 | 8 | 0 of 48 | 0 |
 
 ## Why each trade was made, and how it ended
@@ -171,6 +171,18 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-08-23 12:00 | BTC/USD | packet only | Headline 'Institutional Demand Is Back: Bitcoin and Ethereum ETF Inflows Reached 10-Month High' (2026-08-23T11:02:27Z) plus a two-day hold at 77k; target 81k (+4.8%) vs stop 74.8k (-3.2%). | Institutional Demand Is Back: Bitcoin and Ethereum ETF Inflows Reached 10-Month High (2026-08-23T11:02:27Z) | time limit 2026-08-26 12:00 | win $2.09 (+0.8%) |
 | 2026-08-28 00:00 | BTC/USD | packet only | Price holds above the 80k resistance after a retest; target 84k (+4.6%) vs stop 77.8k (-3.1%). No headline used. | none | stop reached 2026-08-28 16:20 | loss -$11.91 (-4.0%) |
 
+### August, Kimi K3
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-08-03 00:00 | BTC/USD | 1Hour bars x1 | Double bottom at 62.2-62.4k held twice, war de-escalation catalyst (headline 'Bitcoin Price Rebounds as Trump Calls Off Iran Strikes and Hints at a Deal', 2026-08-02T04:13:52Z), price reclaiming the underside of the broken floor; half-size starter with tight stop. | https://cryptopotato.com/bitcoin-price-rebounds-as-trump-calls-off-iran-strikes-and-hints-at-a-deal/ | stop reached 2026-08-03 03:50 | loss -$3.48 (-1.7%) |
+| 2026-08-05 12:00 | BTC/USD | packet only | Triple bottom held plus 24h acceptance at 64k; ETF inflows returned (headline 'seven different Bitcoin ETFs simultaneously roar back to life', 2026-08-05T08:36:33Z) and a Hormuz deal is expected today (headline 'BTC Reclaims $64K Ahead of Expected Iran-US-Oman Hormuz Deal Today', 2026-08-05T05:28:43Z). | https://cryptoslate.com/after-suffering-a-brutal-265-million-mass-exit-seven-different-bitcoin-etfs-simultaneously-roar-back-to-life/; https://cryptopotato.com/btc-reclaims-64k-ahead-of-expected-iran-us-oman-hormuz-deal-today-report/ | stop reached 2026-08-10 15:25 | loss -$0.99 (-0.3%) |
+| 2026-08-15 12:00 | LINK/USD | packet only | Three-week base breakout on leadership strength: cleared July supply and pressing 9.30; catalysts: 'LINK could be next in line after Standard Chartered targets' (2026-08-11T08:16:41Z), 'LINK flashes rare signal linked to triple-digit rallies' (2026-08-14T06:57:20Z), 'Biggest exchange outflow since June' (2026-08-05T22:25:17Z). | https://cryptopotato.com/link-could-be-next-in-line-after-standard-chartereds-uni-and-aave-targets-sparked-sharp-repricings/; https://cryptopotato.com/chainlink-link-flashes-a-rare-signal-linked-to-triple-digit-rallies/; https://cryptoslate.com/chainlink-just-saw-its-biggest-exchange-outflow-since-june-bulls-are-watching/ | stop reached 2026-08-18 01:56 | win $2.23 (+0.7%) |
+| 2026-08-19 00:00 | LINK/USD | packet only | Re-entry: new-high press (9.53 vs 9.55 trigger) with higher low held at ~9.43 Tuesday; catalysts: 'LINK could be next in line after Standard Chartered targets' (2026-08-11T08:16:41Z) and 'LINK flashes rare signal linked to triple-digit rallies' (2026-08-14T06:57:20Z). | https://cryptopotato.com/link-could-be-next-in-line-after-standard-chartereds-uni-and-aave-targets-sparked-sharp-repricings/; https://cryptopotato.com/chainlink-link-flashes-a-rare-signal-linked-to-triple-digit-rallies/ | target reached 2026-08-19 15:30 | win $11.31 (+3.8%) |
+| 2026-08-20 12:00 | BTC/USD | 1Hour bars x1 | Second-flag entry in a repricing regime: 'US doubled Treasury buybacks' (2026-08-19T15:37:42Z), 'Bitcoin grabs 77% of $1.3B fund surge' (2026-08-20T10:40:17Z), '$1B in liquidations as BTC clears 69k' (2026-08-19T15:35:30Z). | https://cryptoslate.com/bitcoin-price-hits-69500-because-us-just-doubled-treasury-buybacks-to-crush-long-term-yields/; https://cryptoslate.com/bitcoin-grabs-77-of-1-3-billion-crypto-fund-surge-as-blackrock-leads-the-rebound/; https://cryptopotato.com/over-1b-in-liquidations-as-bitcoin-surges-to-2-month-high-above-69k/ | target reached 2026-08-21 01:50 | win $11.12 (+4.4%) |
+| 2026-08-22 00:00 | BTC/USD | 1Hour bars x1 | Flag breakout entry: 12h base 76.2-77.9k breaking up on volume; flows: 'ETFs pull $825M as institutional demand returns' (2026-08-21T14:30:00Z) and 'Upbit volume jumps 273%' (2026-08-21T13:45:00Z). | https://www.newsbtc.com/news/bitcoin-ethereum-etfs-825m-institutional-demand/; https://www.newsbtc.com/news/upbit-volume-jumps-273-bitcoin-rally-korean-traders/ | stop reached 2026-08-23 05:15 | loss -$9.59 (-3.8%) |
+| 2026-08-25 12:00 | BTC/USD | 1Hour bars x2 | Held-flag entry after 81.2k spike: 8h shelf 78.9-79.9k intact (09:00Z low 78,856); fuel = Treasury $950B buyback headline (2026-08-25T09:20:40Z) and $260M shorts wiped (2026-08-25T04:48:58Z). | https://cryptoslate.com/bitcoin-tops-80000-as-treasury-weighs-950-billion-cash-pile-for-bond-buybacks/; https://cryptopotato.com/bitcoin-smashes-80k-as-260m-in-shorts-get-wiped-out-here-are-the-next-targets/ | stop reached 2026-08-25 13:30 | loss -$3.30 (-1.3%) |
+
 ### August, Grok 4.7
 
 | Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
@@ -231,6 +243,35 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-09-17 00:00 | BTC/USD | 1Day bars x1, 1Hour bars x1 | Technical: support at 75k held on two tests through CLARITY failure and the Fed; stop 74,600 (about 2% risk) against a 79,500 target (about 4.5%), larger than the roughly 0.7% round-trip cost. No headline is part of the reason. | none | target reached 2026-09-18 13:50 | win $12.77 (+4.2%) |
 | 2026-09-21 00:00 | ETH/USD | 1Day bars x1 | Technical: three consecutive daily closes above the 2.55k range top after a held pullback test near 2565; stop 2520 about 4.7% below, target 2900 about 9.7%, well above the roughly 0.7% round-trip cost. | none | stop reached 2026-09-23 14:15 | win $1.10 (+0.4%) |
 | 2026-09-25 12:00 | LINK/USD | 1Day bars x1, 1Hour bars x1 | Technical: rising daily closes and a break of the 13.5 high with a held base at 13.2-13.4 overnight; stop 13.15 about 7% below, target 15.5 about 10% above, above the roughly 0.7% round-trip cost. | none | stop reached 2026-09-28 09:10 | loss -$8.44 (-4.2%) |
+
+### September, Kimi K3
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-09-01 00:00 | ETH/USD | 1Day bars x4 | ETH rallied 1900 to 2560 and is holding a 2400-2560 consolidation above its breakout; headline 'BitMine Buys Another 53,501 ETH as Ethereum Stash Blows Past 5.9M' (2026-08-31T12:46:41Z) confirms ongoing large treasury accumulation, and ETH ETF inflow streak continues per 2026-08-29 crypto ETF flows piece. Stop below the 2388-2400 support shelf. | https://cryptopotato.com/bitmine-buys-another-53501-eth-as-ethereum-stash-blows-past-5-9m/; https://www.newsbtc.com/news/charles-schwab-expands-crypto-platform-solana-avalanche-chainlink/ | stop reached 2026-09-02 09:35 | loss -$10.96 (-4.4%) |
+| 2026-09-01 00:00 | SOL/USD | 1Day bars x4 | SOL is the best weekly performer among top coins per 2026-08-31T15:03:25Z CryptoPotato piece and pulled back to 103 near its breakout base; headline 'Charles Schwab Expands Crypto Platform Beyond Bitcoin And Ethereum' adding Solana support (2026-08-31T13:00:00Z) is a fresh adoption catalyst. Stop under the 99-100 swing low. | https://cryptopotato.com/bitmine-buys-another-53501-eth-as-ethereum-stash-blows-past-5-9m/; https://www.newsbtc.com/news/charles-schwab-expands-crypto-platform-solana-avalanche-chainlink/ | stop reached 2026-09-01 18:40 | loss -$7.40 (-4.9%) |
+| 2026-09-01 12:00 | XRP/USD | packet only | XRP momentum narrative is building: headline 'Largest XRP ETF Crosses $500 Million in Assets Just 9 Months After Launch' (2026-09-01T06:03:40Z) plus 'Ripple (XRP) Breakout Confirmed? Analyst Sets the Next Big Target' (2026-09-01T04:00:13Z), while the price holds above the 1.336 weekend low after a 30% August surge. Stop just under that low. | https://cryptopotato.com/xrp-etf-largest-500-million-assets/; https://cryptopotato.com/ripple-xrp-breakout-confirmed-analyst-sets-the-next-big-target/ | stop reached 2026-09-02 01:55 | loss -$6.33 (-4.2%) |
+| 2026-09-03 00:00 | XRP/USD | 1Hour bars x1 | Hourly bars show a stop-run to 1.3116 (2026-09-02 10:00Z) followed by higher lows back above 1.34; headline 'XRP's $2.14 bull case just met a $474 million ETF tailwind' (2026-09-02T23:40:10Z) keeps the flow narrative alive. Stop sits under the flush low this time. | https://cryptoslate.com/xrps-2-14-bull-case-just-met-a-474-million-etf-tailwind/ | target reached 2026-09-03 15:05 | win $8.13 (+5.8%) |
+| 2026-09-04 12:00 | BTC/USD | packet only | BTC broke and held the 80K roadblock for a full day after short-covering drove it off the 76K low; headline 'Bitcoin just crossed the line that ended 4 out of 5 bear markets' (2026-09-04T09:50:34Z) marks this as a structurally important level. Stop on a loss of 79K treats a failed breakout as the exit signal. | https://cryptoslate.com/bitcoin-just-crossed-the-line-that-ended-4-out-of-5-bear-markets-but-one-deadly-historical-trap-could-still-trigger-a-crash-to-62000/ | stop reached 2026-09-04 14:50 | loss -$7.65 (-3.8%) |
+| 2026-09-06 00:00 | XRP/USD | packet only | XRP consolidation holds above the 1.38-1.40 shelf that bulls defended this week, and headline 'BIS Tests XRP Ledger to Anchor Official Statistics On-Chain in Proof-of-Concept Paper' (2026-09-05T21:52:49Z) adds a real institutional adoption catalyst while alt momentum builds. Stop under the shelf, target the 1.55 resistance. | https://cryptopotato.com/bis-tests-xrp-ledger-to-anchor-official-statistics-on-chain-in-proof-of-concept-paper/ | stop reached 2026-09-09 22:55 | loss -$3.80 (-2.7%) |
+| 2026-09-11 00:00 | BTC/USD | packet only | Price sits exactly on the multi-tested 76.5K range floor; the trade is plain range logic with a hard stop, sized small because a second inflation print is due within 12 hours and the outcome is unknown. | none | stop reached 2026-09-15 13:55 | loss -$1.76 (-1.2%) |
+| 2026-09-12 00:00 | ETH/USD | packet only | ETH taps an 8-month high per 'BTC Volatility Returns, ETH Taps 8-Month High' (2026-09-11T15:11:25Z) on the week both CPI and PPI ran hot - resilience to bad news - while 'Ethereum Targets October 6 for Glamsterdam Sepolia Fork' (2026-09-11T21:56:49Z) gives a dated catalyst. Stop under 2420 puts price back inside the old range, which is where the trade is wrong. | https://cryptopotato.com/btc-volatility-returns-eth-taps-8-month-high-while-cpi-sets-the-stage-for-the-fed-weekly-recap/; https://cryptopotato.com/ethereum-targets-october-6-for-glamsterdam-sepolia-fork/ | stop reached 2026-09-15 13:40 | loss -$5.60 (-3.7%) |
+| 2026-09-14 12:00 | XRP/USD | packet only | XRP jumps 4% and breaks its lower-highs pattern into today's CLARITY Act vote; headline 'Ripple on the Move: Is XRP Ready for a Double-Digit Pump?' (2026-09-14T10:58:08Z). Binary catalyst means small size and a stop just under today's base. | https://cryptopotato.com/ripple-on-the-move-is-xrp-ready-for-a-double-digit-pump/ | stop reached 2026-09-15 18:45 | loss -$6.18 (-6.2%) |
+| 2026-09-17 00:00 | BTC/USD | packet only | Fed hike of 25 bps is confirmed (2026-09-16T18:15:16Z) and CLARITY failed two days ago, yet BTC holds 76K - the market absorbed both; buying the reaction after bad news stops working is the textbook base-building sign. Stop under the post-vote panic low. | none | target reached 2026-09-18 13:55 | win $10.86 (+4.3%) |
+| 2026-09-17 00:00 | SOL/USD | packet only | SOL keeps defending the 100 line (headline 2026-09-16T20:49:52Z says bulls aren't giving up) and trades at 98.6 with network upgrades landing; stop under 95 caps it small if the market rolls. | none | target reached 2026-09-18 08:25 | win $7.00 (+7.0%) |
+| 2026-09-18 12:00 | XRP/USD | packet only | XRP open interest fell 23% (leverage washed out) and headline 'Ripple (XRP) Prints an Extremely Bullish Signal: Is This the Perfect Buying Opportunity?' (2026-09-18T04:04:51Z) flags the reset; price sits at 1.32, far under pre-CLARITY levels, so the risk-reward back toward 1.42 is attractive with a stop under 1.27. | https://cryptopotato.com/ripple-xrp-prints-an-extremely-bullish-signal-is-this-the-perfect-buying-opportunity/ | target reached 2026-09-21 22:05 | win $17.46 (+17.4%) |
+| 2026-09-20 00:00 | ETH/USD | packet only | ETH broke out of its two-month range past 2600 with confirmation in headline 'ETH Breaks Out as Whales Wake Up and Ethereum Wallets Hit Record High' (2026-09-19T13:03:36Z); trend trades get paid even after the move when the breakout is flow-backed. Stop back under the breakout shelf at 2520 defines the invalidation. | https://cryptopotato.com/eth-breaks-out-as-whales-wake-up-and-ethereum-wallets-hit-record-high/ | stop reached 2026-09-23 14:15 | win $1.48 (+1.0%) |
+| 2026-09-22 00:00 | BTC/USD | packet only | BTC reclaimed 85,000 for the first time in eight months (2026-09-21T21:30:00Z) after a $1B short wipeout, with Strategy buying 950 BTC and Strive 1,355 BTC overnight (2026-09-21T23:30:00Z and 22:30:00Z); unlike the failed 80-82K pops, this one has the 50-week MA reclaimed and persistent spot accumulation. Stop under 83K makes a failed reclaim my exit. | none | stop reached 2026-09-24 09:35 | loss -$9.75 (-4.9%) |
+| 2026-09-24 12:00 | BTC/USD | packet only | BTC holds the 83-84K retest zone after whales bought the dip (2026-09-24T07:08:23Z) and even the bearish-pressure press concedes the bullish trend is intact; higher-low trade with a tight stop under the breakout shelf. | none | open at the end | still held at the end or not filled |
+| 2026-09-25 12:00 | ETH/USD | packet only | ETH supply is leaving exchanges at the fastest pace of the month (headline 'Ethereum Is Disappearing From Exchanges Fast' 2026-09-25T08:57:51Z) while price rebuilds above 2700 after the 2680 shakeout; supply drain plus 3K-side analyst calls favor another leg. Stop under 2620 sits below the last two higher lows. | https://cryptopotato.com/ethereum-is-disappearing-from-exchanges-fast-heres-where-all-the-eth-is-going/ | sold by the trader 2026-09-28 12:00 | loss -$3.08 (-2.6%) |
+| 2026-09-29 00:00 | XRP/USD | packet only | XRP tests the 50-week EMA barrier per 'XRP Eyes $1.80 to $1.90 If It Clears 50-Week EMA' (2026-09-28T17:48:57Z) with whale accumulation and ten green ETF weeks behind it; small defined-risk long aimed at 1.60 with a stop under the 1.45 pivot. | https://cryptopotato.com/xrp-eyes-1-80-to-1-90-if-it-clears-50-week-ema-analyst/ | open at the end | still held at the end or not filled |
+
+### September, Grok 4.7
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-09-02 00:00 | BTC/USD | 1Day bars x1, 1Hour bars x1 | Flush to 76379 and reclaim of 77.4k, with the headline Bitcoin ETFs Add $142M As September Trading Opens With Inflows at 2026-09-01T19:15:00Z. | https://www.newsbtc.com/news/bitcoin-etfs-add-142m-september-trading-inflows/ | sold by the trader 2026-09-02 12:00 | loss -$4.53 (-1.5%) |
+| 2026-09-04 00:00 | BTC/USD | 1Hour bars x1 | Break of the August high to 82233 and a pullback that is still holding above 80900 and the 80k break. | none | stop reached 2026-09-04 12:35 | loss -$6.13 (-2.5%) |
 
 ### October, Claude Opus 5.5
 
@@ -335,6 +376,16 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 |---|---|---|---|---|---|---|
 | 2026-11-08 12:00 | BTC/USD | 1Hour bars x1 | Price-only: repeated hold of 75.5-76K support after a wick to 74.8K, sentiment washed out; target gain about 3.9 percent vs round-trip cost well under half of that. | none | stop reached 2026-11-08 22:00 | loss -$9.29 (-3.1%) |
 | 2026-11-21 12:00 | BTC/USD | 1Hour bars x1 | Price-based: capitulation wick to 55.1K and six hours of hold above 57.7K; target 62K is about 6.7 percent above, risk about 3 percent to the stop, round-trip cost about 0.7 percent. | none | target reached 2026-11-23 14:00 | win $31.50 (+9.0%) |
+
+### November 1 to 24, Kimi K3
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-11-10 12:00 | XRP/USD | price x1 | Trigger: 7-day daily-close drop of -12.0% on Nov 9 close. Catalyst: 'Coinbase Joins Ripple as OCC Gives Green Light to Trust Bank Charter' published 2026-11-09T22:40Z (desk news, cryptopotato). Buy near 1.0779 with stop ~6.8% under and target 25% above per method. | https://cryptopotato.com/coinbase-joins-ripple-as-occ-gives-green-light-to-trust-bank-charter/ | stop reached 2026-11-13 03:55 | loss -$15.50 (-7.7%) |
+| 2026-11-12 12:00 | ETH/USD | 1Day bars x8, price x1 | Trigger: 7-day daily-close drop -15.2% at Nov 11 close. Catalyst: 'Standard Chartered Expands Prime Brokerage Partnership With 24X to Cover BTC and ETH', 2026-11-11T00:00Z (newsbtc). Entry ~2020, stop 1905 (-5.7%), target 2525 (+25%). | https://www.newsbtc.com/business/standard-chartered-24x-bitcoin-ether-prime-brokerage/ | stop reached 2026-11-14 02:30 | loss -$14.28 (-7.1%) |
+| 2026-11-14 00:00 | SOL/USD | 1Day bars x8, price x1 | Trigger: 7-day daily-close drop -13.2% at Nov 13 close. Catalyst: 'Helius Launches Solana Privacy Rings With Confidential Balances and Transfers', 2026-11-13T07:00Z (newsbtc). Entry ~78.1, stop 69.0 (-11.6%, below the 77 day-low and the round 70), target 97.6 (+25%). | https://www.newsbtc.com/news/solana/helius-solana-privacy-rings-confidential-balances-transfers/ | stop reached 2026-11-15 01:10 | loss -$25.43 (-12.7%) |
+| 2026-11-15 00:00 | LINK/USD | 1Day bars x8, news x1 | Trigger: 7-day daily-close drop -17.9% at Nov 14 close (8.880). Catalyst: 'Chainlink and Moody's Complete Testnet Pilot for Cross-Chain Credit Ratings', 2026-11-13T08:00Z (newsbtc, plain). Stop 8.15 below the 8.575 day low; target 11.10 (+25%). | https://www.newsbtc.com/news/chainlink/chainlink-moodys-testnet-pilot-cross-chain-credit-ratings/ | time limit 2026-11-20 12:00 | loss -$2.74 (-1.8%) |
+| 2026-11-16 00:00 | SOL/USD | 1Day bars x8 | Trigger: 7-day daily-close drop -15.8% at Nov 15 close (72.72). Catalyst: 'DTCC Adds Solana to Wall Street Tokenization Plans, Targeting 2027', 2026-11-15T23:51Z (newsbtc, plain). Re-entry allowed: price 72.72 is back above the prior 69.0 stop. Stop 66.0 below weekend low 67.39; target 90.90 (+25%). | https://www.newsbtc.com/news/solana/dtcc-adds-solana-to-wall-street-tokenization-plans-targeting-2027/ | stop reached 2026-11-21 03:55 | loss -$15.23 (-10.1%) |
 
 ## What this does not show
 
