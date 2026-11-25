@@ -133,7 +133,9 @@ def deflated_sharpe(r, n_trials, sr_trials_std):
 def pbo_cscv(R, S=16, drop="earliest"):
     """Probability of backtest overfitting, combinatorially symmetric cross-validation with equal blocks (A05).
     Rows that do not fill a block are dropped from the start (drop='earliest') or the end (drop='latest').
-    A rule with no variation inside a half gets Sharpe 0 there, and the count of such cases is returned (A06)."""
+    A rule with no variation inside a half gets Sharpe 0 there, and the count of such cases is returned (A06).
+    pbo counts a split where the in-sample winner lands exactly on the out-of-sample median as overfit (the first
+    run's reading, used for verdicts). pbo_strict leaves those splits out. pbo_half counts them as one half (B01)."""
     T, N = R.shape; B = T // S; used = B * S
     R = R[T - used:] if drop == "earliest" else R[:used]
     X = R.reshape(S, B, N); bs = X.sum(1); bq = (X ** 2).sum(1); n = (S // 2) * B
@@ -148,7 +150,9 @@ def pbo_cscv(R, S=16, drop="earliest"):
         sa = sh(s_in, q_in); sb = sh(tot_s - s_in, tot_q - q_in)
         best = int(np.argmax(sa)); w = stats.rankdata(sb)[best] / (N + 1); lam.append(math.log(w / (1 - w)))
     lam = np.array(lam)
-    return dict(pbo=float((lam <= 0).mean()), rows_used=int(used), rows_dropped=int(T - used), zero_variance_cases=int(zero))
+    tie = np.abs(lam) < 1e-12; below = (lam < 0) & ~tie
+    return dict(pbo=float((below | tie).mean()), pbo_strict=float(below.mean()), pbo_half=float(below.mean() + 0.5 * tie.mean()),
+                tie_share=float(tie.mean()), rows_used=int(used), rows_dropped=int(T - used), zero_variance_cases=int(zero))
 
 def block_bootstrap_sharpe_diff(ra, rb, block=30, draws=2000, seed=7, ppy=365):
     rng = np.random.default_rng(seed); n = len(ra); nb = math.ceil(n / block); out = np.empty(draws)

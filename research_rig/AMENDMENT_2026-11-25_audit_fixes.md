@@ -1,6 +1,6 @@
 # Amendment, 2026-11-25: fixes after the code audit, written before any rerun
 
-Written 2026-11-25 07:40 UTC. Pushed before `run_v2.py` is run. Not edited after the rerun except to add a dated note at the bottom.
+Written 2026-11-25 07:38 UTC. Pushed before `run_v2.py` is run. Not edited after the rerun except to add a dated note at the bottom.
 
 Status: research rig, not the product. Proposed by research. No owner decision is recorded here.
 
@@ -36,6 +36,7 @@ Honest limit: these fixes are made after the first results were seen. To keep th
 | A15 checks | A failed check printed FAIL but did not stop anything | `fixtures2.py` exits with an error on any failure, `run_v2.py` runs it first and stops if it fails. Added checks: the fast engine equals the general engine on 1,000 random inputs, with and without bars that cannot fill; the shuffles keep trade count and time held; equal-block overfitting estimate on a hand-made case; break-even search on a known function. The fast engine refuses missing targets |
 | A16 thresholds | Typed into each script | Read from `config/thresholds.yaml` at run time and written into the output |
 | A17 inputs | Order, gaps and duplicates were assumed | Checked before any signal is worked out. The run stops if a check fails |
+| B01 overfitting estimate, ties (second auditor, received 07:39 UTC, before the rerun) | With 9 rules, a split where the in-sample winner lands exactly on the out-of-sample median (rank 5 of 9) was counted as overfit. The [paper](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf) says "below the median" and does not say what to do with an exact tie | The verdict keeps the first run's reading (a tie counts as overfit), because the other readings are more lenient and were seen to turn fails into passes. The estimate is also reported with ties left out and with ties counted as one half. `backtest_max_pbo` is not changed. Which reading to use from now on is put to the owner as a question |
 | A18 labels | Deflated Sharpe, overfitting estimate, shuffle and bootstrap in `results_01.json` were at Alpaca cost without saying so | Every figure is stored under its venue. The bootstrap range is worked out at every venue |
 
 ## What is rerun
