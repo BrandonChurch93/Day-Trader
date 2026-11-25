@@ -44,7 +44,7 @@ class Replay17Test(unittest.TestCase):
         S.validate(p,p13,p16)
         self.assertEqual(p["cost_bps_per_side"],10)
         self.assertEqual(p["us_costs_bps"],[38,80])
-        for bad in (None,(38,80),[38],["38",80],[True,80],[10,80],[38,float("inf")]):
+        for bad in (None,(38,80),[38],["38",80],[True,80],[10,80],[38,float("inf")],[38,38],[80,38],[38,10000],[38,10**400],[38,float("nan")]):
             with self.subTest(fees=bad),self.assertRaisesRegex(S.S.Refused,"US fees"):
                 S.validate(p|{"us_costs_bps":bad},p13,p16)
 

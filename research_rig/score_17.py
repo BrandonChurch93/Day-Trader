@@ -1,7 +1,6 @@
 """One-shot Replay 17. The selftest only uses invented bars."""
 import argparse
 import json
-import math
 import sys
 
 try:
@@ -36,8 +35,9 @@ def validate(p,p13,p16):
         raise S.Refused("invalid Replay 17 parameters or changed Rule B trigger")
     fees = p["us_costs_bps"]
     if (not isinstance(fees,list) or len(fees)!=2 or
-        not all(type(x) in (int,float) and p["cost_bps_per_side"]<x<math.inf for x in fees)):
-        raise S.Refused("Replay 17 US fees must be a list of two numbers above the judged cost")
+        not all(type(x) in (int,float) for x in fees) or
+        not p["cost_bps_per_side"]<fees[0]<fees[1]<10000):
+        raise S.Refused("Replay 17 US fees must be two rising numbers above the judged cost and below 10000")
     A.validate(p16,p13)
 
 
