@@ -2,7 +2,8 @@
 Post numbers on these sites rise as posts are made. A story dated early but numbered far above
 stories dated days later was made later and given an old date. Writes timemachine/news_date_check.json: counts and post numbers only, no story text.
 
-python3 timemachine/check_news_dates.py"""
+python3 timemachine/check_news_dates.py
+Covers stories from 2026-04-01 on (from 2026-06-01 until 2026-11-25 16:44 UTC, when the tape was pushed back two months)."""
 import json, time, urllib.request, urllib.parse, bisect, datetime as dt
 from pathlib import Path
 UA = "Day-Trader research modernsoftworks@gmail.com"
@@ -11,7 +12,7 @@ out = {}
 for name, host in SITES.items():
     posts, page = [], 1
     while True:
-        q = urllib.parse.urlencode({"per_page": 100, "page": page, "after": "2026-05-31T23:59:59", "before": "2026-11-25T00:00:00",
+        q = urllib.parse.urlencode({"per_page": 100, "page": page, "after": "2026-03-31T23:59:59", "before": "2026-11-25T00:00:00",
                                     "orderby": "date", "order": "asc", "_fields": "id,date_gmt,modified_gmt,link"})
         req = urllib.request.Request(f"https://{host}/wp-json/wp/v2/posts?{q}", headers={"User-Agent": UA})
         try:

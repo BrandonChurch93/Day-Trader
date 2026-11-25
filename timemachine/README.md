@@ -74,12 +74,71 @@ Folders.
 The live research tape (`$TM_STORE/tape.sqlite`) holds both crypto and US stock/ETF history (all counts MEASURED):
 
 - Crypto bars (8 pairs: `BTC/USD, ETH/USD, SOL/USD, XRP/USD, DOGE/USD, AVAX/USD, LINK/USD, LTC/USD`): `1Day` from `2024-01-01..2026-11-24` (`SOL/USD` from `2024-08-26`, 8,234 bars) and `1Min` from `2026-01-01..2026-11-24` (2,835,321 bars), recorded keyless from Alpaca crypto endpoints (`record.py crypto`).
-- Crypto news (`2026-06-01..2026-11-24`, 5,941 dated headlines): public WordPress REST endpoints of `cryptopotato` (2,498), `cryptoslate` (2,058), and `newsbtc` (1,385) via `record.py crypto-news`.
+- Crypto news (`2026-04-01..2026-11-24`, 8,395 dated headlines): public WordPress REST endpoints of `cryptopotato` (3,283), `cryptoslate` (2,435), and `newsbtc` (2,677) via `record.py crypto-news`.
 - Stock and ETF bars (the stock list was chosen on 2026-11-25 — today's Dow 30 plus 8 names picked today: `AMD, AVGO, COIN, META, MSTR, NFLX, PLTR, TSLA` — so it leans toward companies that did well; plus 18 funds `SPY, QQQ, IWM, DIA, VTI, TLT, GLD` and 11 sector ETFs, plus 5 extra on-disk daily ETFs `BIL, DBC, EFA, IEF, VNQ`):
   - `1Day` (`2024-01-02..2026-11-24`): 61 symbols, 728/728 trading days each (44,408 bars, 0 gaps).
-  - `1Min` (`2026-06-01..2026-11-24`, plus `SPY` and `QQQ` from `2026-01-02`): 56 symbols, 2,787,415 bars, covering all 124/124 NYSE regular sessions in `2026-06-01..2026-11-24` with 303 scattered single-minute gaps out of 2,708,160 expected minutes (99.9888% complete; full per-symbol report in `rig/stock_coverage_report.md`). Loaded via `record.py load-csv`.
-- Stock session calendar (`sessions`): 226 NYSE sessions (`2026-01-02..2026-11-24`), including 124 sessions in `2026-06-01..2026-11-24`, derived from `SPY` `1Min` bars via `record.py sessions-from-tape`. Daily liquid `universe` covers 61 stock/ETF symbols per session across `2026-06-01..2026-11-24`.
-- Stock news (`2026-06-01..2026-11-24`, 812 dated items via `record.py stock-news`): `sec_edgar` (275 Form 8-K / 8-K/A filings across 39 issuers, stamped to the second with UTC `acceptanceDateTime`, 0 post-acceptance edits) and `finbold` (537 dated stock headlines; 37/537 = 6.9% edited >1h after publish; Finbold headlines are tagged only by name matching).
+  - `1Min` (`2026-04-01..2026-11-24`, plus `SPY` and `QQQ` from `2026-01-02`): 56 symbols, 3,649,989 bars total — April–May 2026 pulled from Alpaca SIP (`894,554 / 895,440` regular-hours minutes = 99.9011% complete across 41 sessions), June–November 2026 from built-in history (`2,787,415` bars including `SPY`/`QQQ` Jan–May; 99.9888% complete across 124 sessions; full June–Nov report in `rig/stock_coverage_report.md`).
+- Stock session calendar (`sessions`): 226 NYSE sessions (`2026-01-02..2026-11-24`), including 165 sessions in `2026-04-01..2026-11-24`, derived from `SPY` `1Min` bars via `record.py sessions-from-tape`. Daily liquid `universe` covers 61 stock/ETF symbols per session across `2026-04-01..2026-11-24`.
+- Stock news (`2026-04-01..2026-11-24`, 12,958 dated items): `alpaca` (`2026-04-29..2026-11-24`, 11,726 items, 0.0% edited after publish), `sec_edgar` (`2026-04-01..2026-11-24`, 506 filings — 386 Form 8-K, 5 Form 8-K/A with item numbers in the headline, 105 Form 10-Q, 1 Form 10-Q/A, 8 Form 10-K, 1 Form 10-K/A with filing index links and no body text — stamped to the second with UTC `acceptanceDateTime`, 0.0% edited), and `finbold` (`2026-04-01..2026-11-24`, 726 dated stock headlines; 6.6% edited >1h after publish; Finbold headlines are tagged only by name matching).
+
+## Weights sessions
+
+A second kind of session. The trader does not pick trades. At each wake it says what share of the book to hold in each allowed symbol. The rest is cash. Long only.
+
+- Code: `weights.py` (the session, the book, the packet), `score_weights.py` (the scorer and the twins), `TRADER_BRIEF_WEIGHTS.md` (the exact text given to the trader).
+- The same server serves both kinds. It opens a weights session when `session.json` has kind `weights`. Pick sessions are unchanged.
+- Make a crypto session that starts fully in bitcoin: `python3 timemachine/weights.py new --trader T01 --model MODEL --method practice/traders/D01_bitcoin_dial.md --market crypto --symbols BTC/USD --from 2026-04-01 --to 2026-04-30 --open '{"BTC/USD": 1}' --wakes daily`
+- Make a stock session, weekly, starting in cash, with a basket of 8 and news: `python3 timemachine/weights.py new --trader T02 --model MODEL --method practice/traders/D02_stock_basket.md --market stocks --symbols NVDA,JPM,... --from 2026-06-05 --to 2026-11-20 --wakes weekly --basket-size 8 --news`
+- Other options: `--open cash` (the default), `--wakes` as a JSON list of wake rules, `--benchmark SYMBOL` (default BTC/USD for crypto, SPY for stocks), `--session ID`, `--note TEXT`.
+- Start the server: `TM_PORT=PORT python3 timemachine/server.py`. The trader calls `/next`, `/look`, `/pick` and `/status` with `?session=ID`, as the brief says.
+- Score it: `python3 timemachine/score_weights.py ID` (add `--json` for the full output).
+
+Wakes.
+
+- Crypto daily: at the hours in `tm_crypto_wake_hours_utc`.
+- Stocks daily: at the times in `tm_stock_wake_times_ny` on session days.
+- Weekly: `tm_weights_weekly_weekday` at `tm_weights_weekly_time_ny` New York time. If that day is not a session day, the last session day before it in that week is used.
+- The rules are stored in `session.json` as a list, so a session can have its own.
+- A session may span many months. The wake list is made once, when the session is made.
+
+Fill model.
+
+- The book moves to the target at the open of the first recorded minute after the wake. For stocks closed at the wake, at the next regular open. Fills stop at the next wake.
+- Weights are shares of the book valued at those opens. Only the difference is traded. Sells go first. Buys are scaled down if cash is short.
+- Costs: `tm_crypto_half_spread_bps` plus `practice_crypto_fee_bps_added` for crypto, `tm_stock_half_spread_bps` for stocks.
+- A change smaller than `tm_weights_min_change` is skipped. A move to zero is always made.
+- No answer, `no_change`, or the same weights as last time trade nothing. Drift is not rebalanced.
+- A move with no recorded minute before the next wake is not filled. It is tried again at the next wake.
+- An opening book (`--open`) is bought at the first minute of the first wake, with costs.
+
+Records, in the same run folder layout.
+
+- `progress.json` holds the book and every step: the weights asked for, the weights held after fills, the book value, the trades, the skips, the why, and the driver and reasons if given.
+- `picks/<TRADER>/<wake>.json` keeps each answer as sent. `packets/<n>.json` keeps each packet. `records/wakes.jsonl` and `account.json` are rewritten after each step.
+- `result.json` is written at the end. One line goes in `SESSIONS.jsonl` with kind `weights`.
+
+Twins, in `score_weights.py`. All run through the same book function, without the server, `tm_weights_twin_draws` draws each.
+
+- `shuffle`: the model's target at every wake, in a random order across the same wakes.
+- `shuffle_decisions`: only the model's new targets, in a random order across the wakes where it set them.
+- `shuffle_runs`: the model's runs (wakes in a row with one target, the first starting at the opening wake) in a random order, each keeping its length. Same targets for the same number of wakes, different timing. A model with one run gets "no timing to judge" and no percentile. When the number of distinct orders is under the draw count, it is printed.
+- `random_basket` (stocks): the same number of names at random, swapping as many names each wake as the model did.
+- `hold_<benchmark>` and `hold_equal_weight`: fixed weights from the first wake.
+- The model's percentile is the share of draws strictly below it. A tie counts against the model.
+- Draws are seeded from `tm_weights_twin_seed` and the session id.
+- Sum one model's sessions: `python3 timemachine/score_weights.py --sum ID1 ID2 ...`. It adds the model's gains, adds each twin set's gains draw by draw (draw i of each session), and gives the percentile of the summed model gain.
+- The scorer reads the tape again, checks it gives the prices the session recorded, and checks the replay of the model's answers gives the recorded final value to the cent. It stops if not.
+
+MEASURED, scripted answers, temp folders.
+
+- A crypto session from 2026-04-01 to 2026-11-23 with 8 coins has 474 wakes. The answer loop took about 17 seconds. Scoring with 1,000 draws took 18 to 28 seconds.
+- A server smoke test on a spare port, crypto for 5 days and stocks for a month, ran all calls in about 1 second. Scoring each took under half a second.
+
+Limits of weights sessions.
+
+- The book is marked at the last price with no cost to sell. Largest drop is measured at the wakes and the end only.
+- There is no volume cap on fills.
+- The `shuffle` twin moves at more wakes than a model that rarely changes, so it pays more costs. That makes the model look better against it. `shuffle_decisions` keeps the number of moves the same. Its costs are printed next to each set.
 
 ## Honest limits
 

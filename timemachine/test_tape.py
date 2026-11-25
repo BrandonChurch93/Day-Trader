@@ -584,30 +584,30 @@ def test_stock_csv_and_news_fixtures():
             dbars_after = sim_after.get(M.DATA, "/v2/stocks/bars", {"symbols": "SPY", "timeframe": "1Day", "start": "2026-01-01", "end": "2026-07-03"})["bars"]["SPY"]
             ok(len(dbars_after) == 2 and dbars_after[-1]["t"] == "2026-07-02T04:00:00Z", f"1Day CSV bar visible at close & EDT=04:00Z (got {dbars_after})")
 
-            # SEC EDGAR 8-K fixture (includes recent + archive file fallback + non-8-K filter)
+            # SEC EDGAR 8-K/10-Q/10-K fixture (includes recent + archive file fallback + non-target form filter)
             sec_tickers = {"0": {"cik_str": 320193, "ticker": "AAPL", "title": "Apple Inc."}}
             sec_sub = {
                 "filings": {
                     "recent": {
-                        "form": ["8-K", "10-Q", "8-K/A"],
-                        "acceptanceDateTime": ["2026-07-30T20:30:28.000Z", "2026-07-31T20:00:00.000Z", "2026-08-05T21:00:00.000Z"],
-                        "items": [["2.02", "9.01"], [], "5.02"],
-                        "accessionNumber": ["0000320193-26-000018", "0000320193-26-000019", "0000320193-26-000020"],
-                        "primaryDocument": ["aapl-8k.htm", "aapl-10q.htm", "aapl-8ka.htm"],
-                        "filingDate": ["2026-07-30", "2026-07-31", "2026-08-05"],
-                        "reportDate": ["2026-07-30", "2026-06-30", "2026-08-05"],
+                        "form": ["8-K", "10-Q", "4", "8-K/A"],
+                        "acceptanceDateTime": ["2026-07-30T20:30:28.000Z", "2026-07-31T20:00:00.000Z", "2026-07-31T21:00:00.000Z", "2026-08-05T21:00:00.000Z"],
+                        "items": [["2.02", "9.01"], [], [], "5.02"],
+                        "accessionNumber": ["0000320193-26-000018", "0000320193-26-000019", "0000320193-26-000021", "0000320193-26-000020"],
+                        "primaryDocument": ["aapl-8k.htm", "aapl-10q.htm", "form4.xml", "aapl-8ka.htm"],
+                        "filingDate": ["2026-07-30", "2026-07-31", "2026-07-31", "2026-08-05"],
+                        "reportDate": ["2026-07-30", "2026-06-30", "2026-07-31", "2026-08-05"],
                     },
                     "files": [{"name": "CIK0000320193-submissions-001.json", "filingFrom": "2026-05-01", "filingTo": "2026-07-29"}],
                 }
             }
             sec_arch = {
-                "form": ["8-K"],
-                "acceptanceDateTime": ["2026-06-15T14:15:00.000Z"],
-                "items": ["8.01"],
-                "accessionNumber": ["0000320193-26-000010"],
-                "primaryDocument": ["aapl-june.htm"],
-                "filingDate": ["2026-06-15"],
-                "reportDate": ["2026-06-15"],
+                "form": ["8-K", "10-K"],
+                "acceptanceDateTime": ["2026-06-15T14:15:00.000Z", "2026-06-20T20:05:11.000Z"],
+                "items": ["8.01", []],
+                "accessionNumber": ["0000320193-26-000010", "0000320193-26-000011"],
+                "primaryDocument": ["aapl-june.htm", "aapl-10k.htm"],
+                "filingDate": ["2026-06-15", "2026-06-20"],
+                "reportDate": ["2026-06-15", "2026-05-31"],
             }
 
             def fake_sec(url):
@@ -621,12 +621,15 @@ def test_stock_csv_and_news_fixtures():
 
             cli_sec = R.Client(max_rpm=300, http_get=fake_sec, sleep_fn=lambda _: None, now_fn=lambda: 0.0)
             n_sec = R.record_sec_news(t, cli_sec, ["AAPL", "SPY"], "2026-06-01", "2026-08-01", cfg)
-            ok(n_sec == 2, f"record_sec_news loads 1 recent + 1 archive 8-K in range and skips 10-Q/out-of-range/ETF (got {n_sec})")
+            ok(n_sec == 4, f"record_sec_news loads 8-K, 10-Q, 10-K in range and skips Form 4/out-of-range/ETF (got {n_sec})")
             # As-of check: at 2026-07-30T20:30:27Z (1 second before acceptance), July 30 8-K is hidden; at 20:30:28Z visible!
             nw_before = t.news("2026-07-30T20:30:27Z", symbols=["AAPL"])
             nw_at = t.news("2026-07-30T20:30:28Z", symbols=["AAPL"])
-            ok(len(nw_before) == 1 and len(nw_at) == 2, f"SEC 8-K visibility exact to the second (before={len(nw_before)}, at={len(nw_at)})")
+            ok(len(nw_before) == 2 and len(nw_at) == 3, f"SEC 8-K visibility exact to the second (before={len(nw_before)}, at={len(nw_at)})")
             ok("2.02 Results of Operations" in nw_at[0]["headline"], f"SEC 8-K headline formats item label ({nw_at[0]['headline']})")
+            nw_all = t.news("2026-08-01T00:00:00Z", symbols=["AAPL"])
+            ok(len(nw_all) == 4 and nw_all[0]["url"].endswith("0000320193-26-000019-index.htm") and "Form 10-Q" in nw_all[0]["headline"],
+               f"SEC 10-Q stores filing index link and form type ({nw_all[0]['url']})")
 
             # Finbold stock-news fixture (ticker/name tagging + short ticker guard + edited_later)
             fb_posts = [

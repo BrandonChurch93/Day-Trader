@@ -502,11 +502,6 @@ tm_knowledge_hit_within:
   note: A model's remembered month-end price counts as close when it is within this fraction of the tape's price. Used only by the memory test of the models.
   source: timemachine/knowledge_line.py
 
-tm_weights_min_change:
-  value: 0.05
-  status: builder
-  note: In a weights session, a change in one symbol's weight smaller than this share of the book is not traded. A move to zero weight is always traded.
-  source: timemachine/weights.py
 tm_weights_sum_tolerance:
   value: 0.000001
   status: builder
@@ -527,10 +522,10 @@ tm_weights_weekly_time_ny:
   status: builder
   note: New York time of the weekly wake in a weights session, in hours (15.5 is 15:30).
   source: timemachine/weights.py
-tm_weights_max_headlines:
-  value: 20
+tm_weights_max_headlines_per_symbol:
+  value: 40
   status: builder
-  note: At most this many headlines since the last wake in a weights packet (newest first), for a session with news.
+  note: In a weights packet with news, at most this many headlines per allowed symbol since the last wake (newest first); SEC filings are always all shown, and the packet counts what was left out. MEASURED 2026-11-25 on the tape - the 38 stocks of tm04_plan get a median of about 400 items a week, BTC/USD a median of 14 a day.
   source: timemachine/weights.py
 tm_weights_news_first_wake_hours:
   value: 24
@@ -542,11 +537,6 @@ tm_weights_why_max_chars:
   status: builder
   note: Longest "why" text a weights answer may carry.
   source: timemachine/weights.py
-tm_weights_twin_draws:
-  value: 1000
-  status: builder
-  note: Number of random draws for each random twin set (shuffle, random basket) in timemachine/score_weights.py.
-  source: timemachine/score_weights.py
 tm_weights_twin_seed:
   value: 1
   status: builder

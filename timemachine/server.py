@@ -6,6 +6,8 @@
   GET  /look?session=S&what=price&symbols=A,B
   POST /pick?session=S       body: a pick, or {"no_pick": true, "why": "..."}. Answers with a receipt, then the clock moves.
   GET  /status?session=S     step k of N, done or not
+A weights session (timemachine/weights.py) uses the same addresses; its /pick body is {"weights": {...}, "why": "..."}
+or {"no_change": true, "why": "..."}.
 When the last wake is done the session writes result.json and every later call answers DONE.
 Each session has its own lock; many sessions can run at once. All state is in the session folder, so a restarted server
 carries on where it stopped. Run: python3 timemachine/server.py. Standard library only."""
@@ -18,6 +20,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from timemachine import session as S
 from timemachine.tape import Tape
+from timemachine import weights as W
 
 _tape = None; _reg = threading.Lock(); _sessions = {}
 
@@ -48,7 +51,7 @@ def handle(method, path, q, body):
     with slot[0]:
         if slot[1] is None:
             try:
-                slot[1] = S.Session(sid, tape=tape())  # carries on any desk runs a stopped server left half done
+                slot[1] = W.open_session(sid, tape=tape())  # a weights or a pick session; carries on any desk runs a stopped server left half done
             except KeyError:
                 return 404, dict(ok=False, error=f"no session {sid}")
         sess = slot[1]

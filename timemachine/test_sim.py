@@ -485,6 +485,265 @@ for bad_t, label in [(U(2026, 7, 2, 13, 25), "pre-market"), (U(2026, 7, 2, 20, 0
         refused_closed = "closed" in str(e)
     ok(refused_closed, f"stock order outside regular hours ({label}) is refused")
 
+# ---- weights sessions (timemachine/weights.py): the trader answers with target weights; one book function for session, twins and scorer
+import re
+from timemachine import weights as W, score_weights as SW
+WCFG = W.full_config(); MC = WCFG["tm_weights_min_change"]
+ok(all(k in WCFG for k in W.W_KEYS) and 0 < MC < 1, "set-up: every tm_weights_ key is in config/thresholds.yaml")
+WD0 = U(2026, 9, 1)
+def wbtc(i):  # every minute has its own price, so the fill minute can be told from the bar before it
+    return 100.0 + i * 0.0001
+def weth(i):
+    return 50.0 - i * 0.0001
+def make_wtape(path):
+    tp = Tape(path); rows = []
+    for i in range(10 * 1440):
+        t = WD0 + dt.timedelta(minutes=i)
+        if t == U(2026, 9, 3, 12):
+            continue  # a gap: no BTC trade in this minute
+        rows.append(("BTC/USD", "1Min", t, wbtc(i), wbtc(i), wbtc(i), wbtc(i), 10.0))
+        rows.append(("ETH/USD", "1Min", t, weth(i), weth(i), weth(i), weth(i), 10.0))
+    for j in range(-120, 10):  # daily closes: BTC 1000 + j, ETH 500 - j
+        rows.append(("BTC/USD", "1Day", WD0 + dt.timedelta(days=j), 1.0, 1.0, 1.0, 1000.0 + j, 1.0))
+        rows.append(("ETH/USD", "1Day", WD0 + dt.timedelta(days=j), 1.0, 1.0, 1.0, 500.0 - j, 1.0))
+    days = ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09", "2026-09-10"]  # no 09-07 (holiday), no 09-11
+    sess = [(d, dt.datetime.fromisoformat(d + "T13:30:00+00:00"), dt.datetime.fromisoformat(d + "T20:00:00+00:00")) for d in days]
+    tp.add_sessions(sess)
+    for n, (d, op, cl) in enumerate(sess):
+        tp.add_universe(d, ["AAA", "BBB", "SPY"]); t = op - dt.timedelta(minutes=30); m = 0
+        while t < cl + dt.timedelta(minutes=30):  # extended-hours minutes too, which must never fill
+            for k, sym in enumerate(("AAA", "BBB", "SPY")):
+                px = 10.0 * (k + 1) + n + m * 0.001; rows.append((sym, "1Min", t, px, px, px, px, 1e6))
+            m += 1; t += dt.timedelta(minutes=1)
+    for j in range(-120, 12):
+        for k, sym in enumerate(("AAA", "BBB", "SPY")):
+            rows.append((sym, "1Day", WD0 + dt.timedelta(days=j, hours=4), 1.0, 1.0, 1.0, 10.0 * (k + 1) + j * 0.1, 1e6))
+    tp.add_bars(rows)
+    tp.add_news([dict(id=101, created=U(2026, 9, 1, 3), updated=U(2026, 9, 1, 3), headline="BTC story one", summary="a", source="x", url="https://example.com/101", symbols=["BTCUSD"]),
+                 dict(id=102, created=U(2026, 9, 1, 4), updated=U(2026, 9, 1, 4), headline="Other coin story", summary="b", source="x", url="https://example.com/102", symbols=["ZZZUSD"]),
+                 dict(id=103, created=U(2026, 9, 1, 13), updated=U(2026, 9, 5), headline="BTC story two", summary="c", source="x", url="https://example.com/103", symbols=["BTCUSD"])])
+    return tp
+WT = make_wtape(TMP + "/wtape.sqlite")
+def wmk(sid, syms=("BTC/USD", "ETH/USD"), start="2026-09-01", end="2026-09-03", **kw):
+    W.create(sid, "W01", "script", "timemachine/TRADER_BRIEF_WEIGHTS.md", start, end, list(syms), tape=WT, **kw); return W.WSession(sid, tape=WT)
+def ans(w=None, why="scripted"):
+    return {"no_change": True, "why": why} if w is None else {"weights": w, "why": why}
+def go(s, body):
+    s.packet(); return s.submit(body)
+
+# wakes
+s = wmk("w_basic")
+ok(s.meta["wakes"] == [S.iso(U(2026, 9, d, h)) for d in (1, 2, 3) for h in (0, 12)] and s.meta["end_utc"] == "2026-09-04T00:00:00Z",
+   "a crypto weights session wakes at tm_crypto_wake_hours_utc each day and ends at midnight after the last day")
+ws, we = W.make_wakes(WT, "stocks", "2026-09-01", "2026-09-11", W.default_rules("stocks", "weekly", WCFG))
+ok(ws == [U(2026, 9, 4, 19, 30), U(2026, 9, 10, 19, 30)] and we == U(2026, 9, 10, 20),
+   "weekly stock wakes: Friday 15:30 New York, or the last session day before it when Friday has no session; the session ends at the last close")
+wl2, _ = W.make_wakes(WT, "crypto", "2026-04-01", "2026-11-23", W.default_rules("crypto", "daily", WCFG))
+ok(len(wl2) == 2 * 237, "a session may span many months (April to November, two wakes a day)")
+ok(W.make_wakes(WT, "crypto", "2026-09-01", "2026-09-03", [dict(every="day", utc_hours=[0]), dict(every="week", weekday=2, ny_time=12.0)])[0]
+   == [U(2026, 9, 1), U(2026, 9, 2), U(2026, 9, 2, 16), U(2026, 9, 3)], "a list of wake rules is merged into one schedule")
+
+# refused answers: nothing moves
+pk0 = s.packet()
+for bad, what in [(ans({"BTC/USD": 1.2}), "a weight over 1"), (ans({"BTC/USD": -0.1}), "a negative weight"), (ans({"BTC/USD": 0.6, "ETH/USD": 0.5}), "weights adding up to more than 1"),
+                  (ans({"DOGE/USD": 0.1}), "a symbol not allowed"), (ans({"BTC/USD": True}), "a weight that is not a number"), ({"weights": {"BTC/USD": 0.5}}, "an answer with no why"),
+                  ({"weights": {"BTC/USD": 0.5}, "why": "x", "stop": 90}, "an answer with a stop in it"), ([0.5], "a body that is not an object")]:
+    r = s.submit(bad); ok(not r["ok"] and s.prog["k"] == 0 and s.prog["book"]["cash"] == WCFG["tm_account_start_usd"], f"refused, nothing traded, the clock did not move: {what}")
+ok(s.prog["bad"]["0"] == 8 and s.packet() == pk0, "refused answers are counted and the packet is unchanged")
+
+# fills at the next minute's open with costs
+r = go(s, ans({"BTC/USD": 0.5}, "half in"))
+t0 = r["trades"][0]; o0 = wbtc(0)
+ok(r["ok"] and t0["fill_utc"] == "2026-09-01T00:00:00Z" and t0["open"] == o0 and abs(t0["price"] - o0 * (1 + HS_C)) < 1e-12,
+   "a crypto answer at a wake fills at the open of the minute that starts at the wake, plus tm_crypto_half_spread_bps")
+ok(abs(t0["qty"] - 500.0 / o0) < 1e-12 and abs(s.prog["book"]["cash"] - (1000.0 - 500.0 * (1 + HS_C) * (1 + FEE))) < 1e-9 and abs(t0["fee_usd"] - 500.0 * (1 + HS_C) * FEE) < 1e-9,
+   "a weight is a share of the book at the fill minute's open; cash pays the spread and practice_crypto_fee_bps_added on top")
+ok(t0["fill_utc"] >= s.meta["wakes"][0] and S.parse(t0["fill_utc"]) + dt.timedelta(minutes=1) <= s.wakes[1], "the fill minute starts at or after the wake and ends before the next wake")
+r = go(s, ans({"BTC/USD": 0.5 + MC / 2}, "a small nudge"))
+ok(r["ok"] and r["changed"] and not r["trades"] and r["skipped"] and "tm_weights_min_change" in r["skipped"][0]["why"] and s.prog["book"]["target"] == {"BTC/USD": 0.5 + MC / 2},
+   "a change smaller than tm_weights_min_change is not traded (and the reason is recorded)")
+r = go(s, ans(None, "keep")); ok(r["ok"] and not r["changed"] and not r["trades"], "no_change trades nothing")
+r = go(s, ans({"BTC/USD": 0.5 + MC / 2}, "same again")); ok(r["ok"] and not r["changed"] and not r["trades"], "a repeated answer trades nothing")
+cash_before = s.prog["book"]["cash"]; qb = s.prog["book"]["qty"]["BTC/USD"]
+r = go(s, ans({"ETH/USD": 0.3}, "switch"))   # wake 2026-09-03 00:00
+ts = {t["symbol"]: t for t in r["trades"]}; i = int((U(2026, 9, 3) - WD0).total_seconds() // 60)
+ok(list(ts) == ["BTC/USD", "ETH/USD"] and ts["BTC/USD"]["side"] == "sell" and abs(ts["BTC/USD"]["qty"] - qb) < 1e-12 and ts["BTC/USD"]["open"] == wbtc(i)
+   and abs(ts["BTC/USD"]["price"] - wbtc(i) * (1 - HS_C)) < 1e-12 and ts["ETH/USD"]["open"] == weth(i) and "BTC/USD" not in s.prog["book"]["qty"],
+   "a switch sells first (the whole holding when the weight goes to zero), then buys, both at the next minute's open with the spread")
+V = cash_before + qb * wbtc(i); proceeds = qb * wbtc(i) * (1 - HS_C) * (1 - FEE); qe = 0.3 * V / weth(i)
+ok(abs(ts["ETH/USD"]["qty"] - qe) < 1e-9 and abs(s.prog["book"]["cash"] - (cash_before + proceeds - 0.3 * V * (1 + HS_C) * (1 + FEE))) < 1e-9,
+   "the new weight is a share of the book valued at the fill minute's opens, and cash is what is left after spread and fee")
+r = go(s, ans({"ETH/USD": 0.3, "BTC/USD": 0.2}, "gap"))  # wake 2026-09-03 12:00: BTC has no bar in that minute
+tb = [t for t in r["trades"] if t["symbol"] == "BTC/USD"]
+ok(tb and tb[0]["fill_utc"] == "2026-09-03T12:01:00Z" and tb[0]["open"] == wbtc(2 * 1440 + 721), "a gap in the minutes: the fill waits for the next recorded minute")
+book_mid = json.loads(json.dumps(s.prog["book"]))
+mc_cfg = dict(WCFG, tm_weights_min_change=0.5); b2 = W.new_book(1000.0); b2["qty"] = {"ETH/USD": 1.0}; b2["cash"] = 950.0; b2["target"] = {"ETH/USD": 0.05}
+rr = W.step_book(b2, {}, dict(fills={"ETH/USD": ["2026-09-01T00:00:00Z", 50.0]}, marks={"ETH/USD": 50.0}), mc_cfg, False)
+ok(rr["trades"] and rr["trades"][0]["side"] == "sell" and "ETH/USD" not in b2["qty"], "a move to zero weight is always traded, even when smaller than tm_weights_min_change")
+ok(s.done() and (s.dir / "result.json").exists(), "the session finishes after the last wake")
+res = json.loads((s.dir / "result.json").read_text()); em = res["end_marks"]
+ok(abs(res["final"]["value_usd"] - (res["final"]["cash_usd"] + sum(q * em[k] for k, q in res["final"]["holdings"].items()))) < 1e-9,
+   "the final value is cash plus each holding at the tape's last price at the end")
+lines = [json.loads(x) for x in (s.dir / "records" / "wakes.jsonl").read_text().splitlines()]
+ok(len(lines) == 6 and all(set(("asked", "weights_after", "value_before", "value_after_fill", "why")) <= set(x) for x in lines) and lines[0]["why"] == "half in"
+   and lines[2]["asked"] is None, "every wake is recorded: weights asked, weights held after fills, book value, and the why text")
+ok(sorted(f.name for f in (s.dir / "picks" / "W01").iterdir())[0] == "20260901T0000Z.json", "each answer is kept as sent, in picks/<TRADER>/<wake id>.json")
+logw = [json.loads(x) for x in Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines() if '"w_basic"' in x]
+ok(len(logw) == 1 and logw[0]["kind"] == "weights" and logw[0]["wakes"]["count"] == 6 and logw[0]["symbols"] == ["BTC/USD", "ETH/USD"], "the session is one line in SESSIONS.jsonl with kind weights")
+
+# no bar after the wake is ever visible
+s = wmk("w_peek", news=True); script = [ans({"BTC/USD": 0.4}), ans(None), ans({"ETH/USD": 0.5}), ans(None), ans({"BTC/USD": 0.1, "ETH/USD": 0.1}), ans(None)]
+src_db = sqlite3.connect(TMP + "/wtape.sqlite")
+for k in range(6):
+    pk = s.packet(); w = s.wakes[k]; we_ = int(w.timestamp())
+    dst = TMP + f"/wtape_peek{k}.sqlite"; dst_db = sqlite3.connect(dst); src_db.backup(dst_db)
+    dst_db.execute("UPDATE bars SET o=o*2, h=h*2, l=l*2, c=c*2 WHERE (tf='1Min' AND t > ?) OR (tf='1Day' AND symbol LIKE '%/%' AND t > ?)", (we_ - 60, we_ - 86400))
+    dst_db.execute("UPDATE news SET headline = headline || ' CHANGED' WHERE created > ?", (we_,)); dst_db.commit(); dst_db.close()
+    peek = W.WSession("w_peek", tape=Tape(dst)).packet(fresh=True)
+    ok(peek == pk, f"wake {k}: the packet is the same when every bar and story after the wake is changed")
+    stamps = re.findall(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ", json.dumps({x: v for x, v in pk.items() if x != "next_wake_utc"}))
+    ok(stamps and max(stamps) <= S.iso(w), f"wake {k}: no time in the packet is after the wake")
+    if k == 1:
+        lk = s.look("bars", symbol="BTC/USD", timeframe="1Min", days=1)
+        ok(lk["ok"] and lk["data"] and max(S.parse(b["t"]) for b in lk["data"]) + dt.timedelta(minutes=1) <= w, "a lookup of minute bars ends at the last minute finished by the wake")
+    s.submit(script[k])
+src_db.close()
+pk1 = json.loads((s.dir / "packets" / "1.json").read_text()); pk2 = json.loads((s.dir / "packets" / "2.json").read_text())
+ok([n["headline"] for n in pk1["news"]] == ["BTC story one"] and [n["headline"] for n in pk2["news"]] == ["BTC story two"] and pk2["news"][0]["edited_later"],
+   "news: only headlines since the last wake, only for the session's symbols, marked when edited later")
+ok(W.WSession("w_basic", tape=WT).meta["news"] is False and json.loads((S.runs_dir() / "w_basic" / "packets" / "1.json").read_text())["news"] is None, "a session without news shows none")
+WT.add_news([dict(id=200 + i, created=U(2026, 9, 6, 1 + i), updated=U(2026, 9, 6, 1 + i), headline=f"capped {i}", summary="s", source="sec_edgar" if i == 3 else "x",
+                  url=f"https://example.com/c{i}", symbols=["BTCUSD"]) for i in range(4)])
+sc_ = wmk("w_cap", start="2026-09-06", end="2026-09-06", news=True); go(sc_, ans(None)); sc_.cfg["tm_weights_max_headlines_per_symbol"] = 1
+pkc = sc_.packet(fresh=True)
+ok([n["headline"] for n in pkc["news"]] == ["capped 3", "capped 2"] and pkc["news_left_out"] == {"BTC/USD": 2},
+   "news: at most the cap of headlines per symbol, newest first, every filing kept, and the count left out is shown")
+r2 = pk2["symbols"]["BTC/USD"]  # wake 2026-09-02 00:00: the last closed daily bar is 2026-09-01 (close 1000)
+ok(r2["last_daily_bar"] == "2026-09-01T00:00:00Z" and abs(r2["return_1d"] - (1000.0 / 999.0 - 1)) < 1e-12 and abs(r2["return_91d"] - (1000.0 / 909.0 - 1)) < 1e-12,
+   "trailing returns come from closed 1Day bars only, over tm_weights_return_days")
+
+# the same answers twice give the same result; a restart loses nothing
+def wrun(sid, stop_at=None, **kw):
+    s = wmk(sid, **kw)
+    for k, b in enumerate(script):
+        if stop_at is not None and k == stop_at:
+            s = W.WSession(sid, tape=WT)  # as if the server stopped and a new one opened the folder
+        go(s, b)
+    return json.loads((s.dir / "result.json").read_text())
+strip = lambda r: (r["steps"], r["final"])
+ra, rb = wrun("w_twice_a"), wrun("w_twice_b")
+ok(strip(ra) == strip(rb), "a second run with the same answers gives the same steps, fills and final value")
+ok(strip(wrun("w_restart", stop_at=3)) == strip(ra), "a session reopened mid-way carries on with the same result")
+
+# a session that starts long equals hold when the weights never change
+s = wmk("w_long", opening={"BTC/USD": 1.0})
+ok(s.packet()["book"]["target_now"] == {"BTC/USD": 1.0}, "the opening target is shown at the first wake")
+for _ in range(6):
+    go(s, ans(None))
+rl = json.loads((s.dir / "result.json").read_text()); qh = 1000.0 / (1 + FEE) / (wbtc(0) * (1 + HS_C))
+ok(abs(rl["final"]["holdings"]["BTC/USD"] - qh) < 1e-12 and abs(rl["final"]["value_usd"] - qh * rl["end_marks"]["BTC/USD"]) < 1e-9,
+   "a session that starts long buys at the first minute with costs, and with no change it is just holding")
+s = wmk("w_long_same", opening={"BTC/USD": 1.0})
+for _ in range(6):
+    go(s, ans({"BTC/USD": 1.0}))
+ok(json.loads((s.dir / "result.json").read_text())["final"] == rl["final"], "answering the same weights every wake equals no change")
+sc = SW.score("w_long", tape=WT, draws=20)
+ok(abs(sc["twins"]["hold_BTC/USD"]["stats"]["final_value_usd"] - rl["final"]["value_usd"]) < 1e-9 and sc["twins"]["shuffle"]["model_percentile"] == 0.0
+   and not sc["twins"]["shuffle"]["model_above_median"], "the scorer's bitcoin hold equals a long session that never changes; its shuffles tie with it, and a tie counts against the model")
+tw1 = sc["twins"]["shuffle_runs"]
+ok(tw1["runs"] == 1 and tw1["note"] == "no timing to judge" and tw1["model_percentile"] is None and tw1["final_gain_pct"]["low"] == tw1["final_gain_pct"]["high"] == sc["model_stats"]["final_gain_pct"],
+   "shuffle_runs: a model with one run gets twins identical to itself, and the scorer says no timing to judge instead of a percentile")
+
+# the scorer: numbers only from the records and the tape, seeded
+sc1, sc2 = SW.score("w_twice_a", tape=WT, draws=30), SW.score("w_twice_a", tape=WT, draws=30)
+ok(sc1 == sc2 and sc1["twins"]["shuffle"]["final_gain_pct"]["n"] == 30 and 0 <= sc1["twins"]["shuffle"]["model_percentile"] <= 100 and "hold_equal_weight" in sc1["twins"],
+   "score_weights.py: the same twins every time with the same seed")
+ok(abs(sc1["model_stats"]["final_value_usd"] - ra["final"]["value_usd"]) < 1e-9 and sc1["model_stats"]["trade_wakes"] == sum(1 for x in ra["steps"] if x["trades"]),
+   "score_weights.py replays the model's answers through the same book function and gets the recorded value")
+def wcount(series):
+    c = {}
+    for t in series:
+        c[json.dumps(W.norm(t) if t else {}, sort_keys=True)] = c.get(json.dumps(W.norm(t) if t else {}, sort_keys=True), 0) + 1
+    return c
+def twin_held(sid, draws):
+    """For each shuffle_runs draw, the targets the book held wake by wake (as recorded by the same book function)."""
+    m = json.loads((S.runs_dir() / sid / "session.json").read_text()); rr = json.loads((S.runs_dir() / sid / "result.json").read_text())
+    tb = W.price_table(WT, m); rs = SW.runs_of([x["target"] for x in rr["steps"]])
+    return [x["target"] for x in rr["steps"]], rs, [[r["target"] for r in W.run_answers(m, tb, SW.shuffle_runs_series(rs, rr["config"]["tm_weights_twin_seed"], sid, i), rr["config"])[1]] for i in range(draws)]
+for sid in ("w_twice_a", "w_long"):
+    mt, rs_, held = twin_held(sid, 30)
+    ok(all(wcount(h) == wcount(mt) for h in held) and all(len(h) == len(mt) for h in held),
+       f"shuffle_runs ({sid}): every draw holds each target for the same total number of wakes as the model")
+mt, rs_, held = twin_held("w_twice_a", 30)
+ok(len(rs_) > 1 and sc1["twins"]["shuffle_runs"]["runs"] == len(rs_) and all(len(SW.runs_of(h)) <= len(rs_) for h in held) and any(h != mt for h in held),
+   "shuffle_runs: the same number of changes or fewer, at different times")
+ok(SW.distinct_orders([({"A": 1}, 2), ({"B": 1}, 1), ({"A": 1}, 2)]) == 3 and SW.distinct_orders([({"A": 1}, 2), ({"A": 1}, 1)]) == 2,
+   "shuffle_runs: the count of distinct orders treats runs with the same target and length as one")
+pubj = json.loads(json.dumps(SW.public(sc1)))
+ok(set(pubj["twins"]) == {"shuffle", "shuffle_decisions", "shuffle_runs", "hold_BTC/USD", "hold_equal_weight"} and not any(k.startswith("_") for v in pubj["twins"].values() for k in v),
+   "the json output names the sets shuffle, shuffle_decisions, shuffle_runs and hold_*, without the per-draw lists")
+sm = SW.sum_sessions(["w_twice_a", "w_long"], tape=WT, draws=30); scl = SW.score("w_long", tape=WT, draws=30)
+xs = [a_ + b_ for a_, b_ in zip(sc1["twins"]["shuffle_runs"]["_draw_gains_pct"], scl["twins"]["shuffle_runs"]["_draw_gains_pct"])]
+ok(abs(sm["model_gain_pct_sum"] - (sc1["model_stats"]["final_gain_pct"] + scl["model_stats"]["final_gain_pct"])) < 1e-9 and sm["sets"]["shuffle_runs"]["n"] == 30
+   and abs(sm["sets"]["shuffle_runs"]["low"] - min(xs)) < 1e-9 and sm["sets"]["shuffle_runs"]["model_percentile"] == SW.pct_below(sm["model_gain_pct_sum"], xs),
+   "--sum: the model's gains added up, each twin set's gains added draw by draw, and the percentile of the summed model gain")
+ok(sm["sets"]["shuffle_runs"].get("note") is None and abs(sm["sets"]["hold_BTC/USD"]["gain_pct_sum"] - sc1["twins"]["hold_BTC/USD"]["stats"]["final_gain_pct"] - scl["twins"]["hold_BTC/USD"]["stats"]["final_gain_pct"]) < 1e-9,
+   "--sum: a month with no timing still adds to the sum, and the holds are summed too")
+dst_db = sqlite3.connect(TMP + "/wtape_bad.sqlite"); src_db = sqlite3.connect(TMP + "/wtape.sqlite"); src_db.backup(dst_db); src_db.close()
+dst_db.execute("UPDATE bars SET o=o*2 WHERE symbol='ETH/USD' AND tf='1Min'"); dst_db.commit(); dst_db.close()
+try:
+    SW.score("w_twice_a", tape=Tape(TMP + "/wtape_bad.sqlite"), draws=5); caught = False
+except AssertionError:
+    caught = True
+ok(caught, "score_weights.py stops when the tape no longer gives the prices the session recorded")
+
+# stocks: answers outside regular hours fill at the next regular open; weekly wakes
+s = wmk("w_stk", syms=("AAA", "BBB", "SPY"), start="2026-09-01", end="2026-09-02", market="stocks", rules=[dict(every="session_day", ny_times=[9.0])])
+ok(s.meta["wakes"] == ["2026-09-01T13:00:00Z", "2026-09-02T13:00:00Z"], "stock wake rules may name times outside regular hours")
+r = go(s, ans({"AAA": 0.5}, "before the open"))
+ok(r["trades"][0]["fill_utc"] == "2026-09-01T13:30:00Z" and abs(r["trades"][0]["open"] - 10.03) < 1e-9 and abs(r["trades"][0]["price"] - 10.03 * (1 + HS_S)) < 1e-9 and r["trades"][0]["fee_usd"] == 0.0,
+   "a stock answer before the open fills at the regular open (not in extended hours), plus tm_stock_half_spread_bps, no fee")
+r = go(s, ans({}, "all cash"))
+ok(s.done() and [t["side"] for t in r["trades"]] == ["sell"] and not s.prog["book"]["qty"], "an empty weights answer sells everything to cash")
+s = wmk("w_stk2", syms=("AAA", "BBB", "SPY"), start="2026-09-01", end="2026-09-03", market="stocks", rules=[dict(every="session_day", ny_times=[17.0])])
+ok(s.meta["wakes"] == ["2026-09-01T21:00:00Z", "2026-09-02T21:00:00Z"], "no wake after the last close of the window")
+r = go(s, ans({"BBB": 0.25}, "after the close"))
+ok(r["trades"][0]["fill_utc"] == "2026-09-02T13:30:00Z" and abs(r["trades"][0]["open"] - 21.03) < 1e-9, "a stock answer after the close fills at the next day's regular open")
+s = wmk("w_stk3", syms=("AAA", "BBB", "SPY"), start="2026-09-01", end="2026-09-02", market="stocks", rules=[dict(every="session_day", ny_times=[9.0, 17.0])])
+go(s, ans(None)); r = go(s, ans({"BBB": 0.25}, "after the close, next wake before the open"))
+ok(not r["trades"] and r["skipped"][0]["why"].startswith("no recorded minute") and s.prog["book"]["target"] == {"BBB": 0.25},
+   "a stock answer whose next wake comes before the next open does not fill there")
+r = go(s, ans(None, "keep"))
+ok([t["symbol"] for t in r["trades"]] == ["BBB"] and r["trades"][0]["fill_utc"] == "2026-09-02T13:30:00Z", "the unfilled move is tried again at the next wake, even with no change")
+s = wmk("w_stk_week", syms=("AAA", "BBB"), start="2026-09-01", end="2026-09-11", market="stocks", wake_kind="weekly", basket_size=1)
+ok(s.meta["benchmark"] == "SPY" and not s.submit(ans({"AAA": 0.5, "BBB": 0.5}))["ok"] and not s.submit(ans({"AAA": 0.5}))["ok"] and s.prog["k"] == 0,
+   "a session with a basket size refuses answers that do not name exactly that many symbols in equal shares")
+r = go(s, dict(ans({"AAA": 1.0}, "weekly"), driver="price", reasons={"AAA": "added: steady"}))
+ok(s.meta["wakes"][0] == "2026-09-04T19:30:00Z" and r["trades"][0]["fill_utc"] == "2026-09-04T19:30:00Z", "the weekly Friday 15:30 decision fills at that minute")
+ok(not s.submit(dict(ans(None), driver="a hunch"))["ok"], "a driver outside the list is refused")
+go(s, dict(ans({"BBB": 1.0}, "swap"), driver="news")); scs = SW.score("w_stk_week", tape=WT, draws=20)
+ok(s.prog["steps"][0]["driver"] == "price" and s.prog["steps"][0]["reasons"] == {"AAA": "added: steady"}, "the driver and the reasons are recorded with the step")
+ok("random_basket" in scs["twins"] and scs["twins"]["random_basket"]["final_gain_pct"]["n"] == 20 and "hold_SPY" in scs["twins"] and "hold_BTC/USD" not in scs["twins"],
+   "stock sessions get a random basket twin set and a SPY hold, even when SPY is not on the allowed list")
+mt, rs_, held = twin_held("w_stk_week", 30)
+ok(len(rs_) == 2 and all(wcount(h) == wcount(mt) for h in held), "shuffle_runs on stocks: whole baskets, each held for the same number of weeks as the model")
+
+# the server serves weights sessions on the same addresses
+SV._tape = WT; SV._sessions.clear(); srv = SV.serve(0); port = srv.server_address[1]; threading.Thread(target=srv.serve_forever, daemon=True).start()
+wmk("w_http")
+code, r = call("/pick?session=w_http", ans({"BTC/USD": 0.5})); ok(code == 409, "a weights answer before /next is refused, as in pick sessions")
+code, pk = call("/next?session=w_http"); ok(code == 200 and pk["kind"] == "weights" and pk["step"] == 1 and pk["allowed"] == ["BTC/USD", "ETH/USD"], "GET /next gives the weights packet")
+code, r = call("/pick?session=w_http", ans({"BTC/USD": 2})); ok(code == 400 and not r["ok"], "a bad weights answer answers 400")
+code, r = call("/pick?session=w_http", ans({"BTC/USD": 0.5})); ok(code == 200 and r["ok"] and call("/status?session=w_http")[1]["step"] == 2, "POST /pick with weights moves the clock")
+code, r = call("/look?session=w_http&what=bars&symbol=BTC/USD&timeframe=1Day&days=5"); ok(code == 200 and r["ok"], "lookups work in a weights session")
+srv.shutdown(); srv.server_close(); SV._sessions.clear()
+srv = SV.serve(0); port = srv.server_address[1]; threading.Thread(target=srv.serve_forever, daemon=True).start()
+ok(call("/status?session=w_http")[1]["step"] == 2 and call("/status?session=w_http")[1]["kind"] == "weights", "a new server carries on the weights session at the same step")
+for _ in range(5):
+    call("/next?session=w_http"); call("/pick?session=w_http", ans(None))
+ok(call("/next?session=w_http")[1]["status"] == "DONE", "after the last wake the server answers DONE")
+srv.shutdown(); srv.server_close(); SV._sessions.clear()
+
 n_log = len(Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines())
 ok(n_log == log0 + len([d for d in p.iterdir() if (d / "session.json").exists()]), "every session made is one line in the sessions log")
 
