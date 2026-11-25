@@ -1,0 +1,2000 @@
+{
+ "made_by": "research_rig/score_11.py --design",
+ "made_utc": "2026-11-25 18:11",
+ "answers_hashes": {
+  "phase": "design",
+  "made_utc": "2026-11-25 18:10",
+  "instruction_sha256": "9f67db815f2c01d519b88510cad82b1ec129942919456cb7df6b41b1f4201407",
+  "usable_file_sha256": "8cb81857456659e90eee43ffdb7814415eb7eff4c753e7f37947912c0c36be05",
+  "files": {
+   "answers_11_design_claude_opus_5_5.jsonl": {
+    "sha256": "b541be21ea2bcc6fdf157cc9f736c1b592554dc43e719d748488afe7edf05064",
+    "answers": 450,
+    "set_to_zero": 0,
+    "remembered_set_to_zero": 2,
+    "short_reason": 0
+   },
+   "answers_11_design_claude_sonnet_5_5.jsonl": {
+    "sha256": "e1a6fea0f9f12ff274119a92f266c04c6b3dcbb4854684cd8b7a18916d8941ae",
+    "answers": 450,
+    "set_to_zero": 0,
+    "remembered_set_to_zero": 0,
+    "short_reason": 0
+   },
+   "answers_11_design_grok_4_7.jsonl": {
+    "sha256": "80fb81d3c2b6d04b957cc0b7498d203398591dd4c171b47206bfa3c4ab3bcf30",
+    "answers": 450,
+    "set_to_zero": 0,
+    "remembered_set_to_zero": 0,
+    "short_reason": 0
+   },
+   "answers_11_design_kimi_k3.jsonl": {
+    "sha256": "992f88eac5b2e0111e4dc83b556b8c6c3fbd778acc06a53296289f1772f27577",
+    "answers": 450,
+    "set_to_zero": 0,
+    "remembered_set_to_zero": 0,
+    "short_reason": 0
+   }
+  }
+ },
+ "config": {
+  "replay_11_events": {
+   "start": "2026-04-01",
+   "end": "2026-11-20",
+   "lists": [
+    "500",
+    "400",
+    "600"
+   ],
+   "min_text_chars": 1500,
+   "min_days_between": 20
+  },
+  "replay_11_costs": {
+   "bps_per_side": {
+    "500": 5,
+    "400": 10,
+    "600": 20
+   },
+   "sensitivity_multiples": [
+    0,
+    0.5,
+    2
+   ]
+  },
+  "replay_11_readers": {
+   "small_models": [
+    "claude_sonnet_5_5",
+    "grok_4_7",
+    "kimi_k3"
+   ],
+   "strong_model": "claude_opus_5_5",
+   "batch_max": 20,
+   "text_cap_chars": 20000,
+   "audit_share": 0.1
+  },
+  "replay_11_design": {
+   "sample_per_list": 150,
+   "buy_share_min": 0.2,
+   "buy_share_max": 0.6,
+   "setups": [
+    "claude_sonnet_5_5",
+    "grok_4_7",
+    "kimi_k3",
+    "claude_opus_5_5",
+    "middle",
+    "cascade"
+   ]
+  },
+  "replay_11_gap": {
+   "min_up_pct": 2.0
+  },
+  "replay_11_statistics": {
+   "draws": 1000,
+   "seed": 11,
+   "min_buys": 100,
+   "holds": {
+    "H1": 1,
+    "H5": 5
+   },
+   "main_hold": "H5",
+   "new_trials": 14,
+   "extraction_check": 20
+  },
+  "replay_11_overnight": {
+   "ratio_min": 0.7,
+   "ratio_max": 1.45
+  }
+ },
+ "agreement": {
+  "unanimous_buy_or_skip": 0.7511111111111111,
+  "fleiss_kappa_buy_skip": 0.6651377873846419,
+  "sent_to_strong": 0.2577777777777778,
+  "buy_share": {
+   "claude_sonnet_5_5": 0.44222222222222224,
+   "grok_4_7": 0.5711111111111111,
+   "kimi_k3": 0.6288888888888889,
+   "claude_opus_5_5": 0.4488888888888889
+  },
+  "spearman": {
+   "claude_sonnet_5_5~grok_4_7": 0.8194237088502173,
+   "claude_sonnet_5_5~kimi_k3": 0.7892270816499226,
+   "claude_sonnet_5_5~claude_opus_5_5": 0.8486589875440853,
+   "grok_4_7~kimi_k3": 0.8516262508573449,
+   "grok_4_7~claude_opus_5_5": 0.804660388181074,
+   "kimi_k3~claude_opus_5_5": 0.7363875940744223
+  },
+  "strong_agrees_with_agreed_small": 0.9431137724550899,
+  "strong_agreed_events_compared": 334
+ },
+ "remembered_set_to_zero": {
+  "answers_11_design_claude_opus_5_5.jsonl": 2,
+  "answers_11_design_claude_sonnet_5_5.jsonl": 0,
+  "answers_11_design_grok_4_7.jsonl": 0,
+  "answers_11_design_kimi_k3.jsonl": 0
+ },
+ "remembered_zeroed_events": {
+  "claude_sonnet_5_5": [],
+  "grok_4_7": [],
+  "kimi_k3": [],
+  "claude_opus_5_5": [
+   "b8456f135474",
+   "f1ba6e49ce33"
+  ]
+ },
+ "prices_read": {
+  "files": 412,
+  "sha256": "837fc412f179979bebbe720198a79b8ac499326901514d3cf7b46a86ddb96828"
+ },
+ "setups": {
+  "claude_sonnet_5_5": {
+   "H1": {
+    "buys": 199,
+    "events": 450,
+    "buy_share": 0.4422,
+    "mean": -3.606380945096402e-05,
+    "mean_all_a": -0.00019293008072397965,
+    "minus_a": 0.00015686627127301563,
+    "random_p95_b": 0.004153330489465128,
+    "share_of_draws_beaten": 0.502,
+    "minus_spy": -0.00196139709583203,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 199,
+     "events": 450,
+     "mean": -3.606380945096402e-05,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.00015686627127301563,
+     "random_p95_b": 0.004153330489465128
+    },
+    "without_stopped_not_judged": {
+     "buys": 199,
+     "events": 450,
+     "mean": -3.606380945096402e-05,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.00015686627127301563,
+     "random_p95_b": 0.004153330489465128
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 74,
+      "events": 150,
+      "buy_share": 0.4933,
+      "mean": -0.000577162273565561,
+      "mean_all_a": -0.00013762387806948902,
+      "minus_a": -0.00043953839549607204,
+      "random_p95_b": 0.004693900503973908,
+      "share_of_draws_beaten": 0.455,
+      "minus_spy": -0.0019096342273858858,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 74,
+       "events": 150,
+       "mean": -0.000577162273565561,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": -0.00043953839549607204,
+       "random_p95_b": 0.004693900503973908
+      },
+      "without_stopped_not_judged": {
+       "buys": 74,
+       "events": 150,
+       "mean": -0.000577162273565561,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": -0.00043953839549607204,
+       "random_p95_b": 0.004693900503973908
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 61,
+      "events": 150,
+      "buy_share": 0.4067,
+      "mean": -0.005317665684023007,
+      "mean_all_a": -0.0018175456530951006,
+      "minus_a": -0.003500120030927906,
+      "random_p95_b": 0.005972152364073838,
+      "share_of_draws_beaten": 0.207,
+      "minus_spy": -0.007628121750639493,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 61,
+       "events": 150,
+       "mean": -0.005317665684023007,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.003500120030927906,
+       "random_p95_b": 0.005972152364073838
+      },
+      "without_stopped_not_judged": {
+       "buys": 61,
+       "events": 150,
+       "mean": -0.005317665684023007,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.003500120030927906,
+       "random_p95_b": 0.005972152364073838
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 64,
+      "events": 150,
+      "buy_share": 0.4267,
+      "mean": 0.005623608076383017,
+      "mean_all_a": 0.0013763792889926506,
+      "minus_a": 0.004247228787390366,
+      "random_p95_b": 0.011908725637145989,
+      "share_of_draws_beaten": 0.733,
+      "minus_spy": 0.0033798490241404786,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 64,
+       "events": 150,
+       "mean": 0.005623608076383017,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.004247228787390366,
+       "random_p95_b": 0.011908725637145989
+      },
+      "without_stopped_not_judged": {
+       "buys": 64,
+       "events": 150,
+       "mean": 0.005623608076383017,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.004247228787390366,
+       "random_p95_b": 0.011908725637145989
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 9.795212441161046e-05,
+     "0.5": 0.00012743909317806945,
+     "2": 0.00021554188993817358
+    },
+    "scores_as_given_not_judged": {
+     "buys": 199,
+     "mean": -3.606380945096402e-05,
+     "minus_a": 0.00015686627127301563
+    }
+   },
+   "H5": {
+    "buys": 199,
+    "events": 450,
+    "buy_share": 0.4422,
+    "mean": 0.011438957076902404,
+    "mean_all_a": 0.0017297210627307878,
+    "minus_a": 0.009709236014171617,
+    "random_p95_b": 0.008051142247039239,
+    "share_of_draws_beaten": 0.993,
+    "minus_spy": -0.005786030703493556,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 199,
+     "events": 450,
+     "mean": 0.011438957076902404,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.009709236014171617,
+     "random_p95_b": 0.008051142247039239
+    },
+    "without_stopped_not_judged": {
+     "buys": 199,
+     "events": 450,
+     "mean": 0.011438957076902404,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.009709236014171617,
+     "random_p95_b": 0.008051142247039239
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 74,
+      "events": 150,
+      "buy_share": 0.4933,
+      "mean": 0.014910108553098074,
+      "mean_all_a": 0.008298751866353203,
+      "minus_a": 0.0066113566867448716,
+      "random_p95_b": 0.01633476772102808,
+      "share_of_draws_beaten": 0.91,
+      "minus_spy": 0.0007690907449852079,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 74,
+       "events": 150,
+       "mean": 0.014910108553098074,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.0066113566867448716,
+       "random_p95_b": 0.01633476772102808
+      },
+      "without_stopped_not_judged": {
+       "buys": 74,
+       "events": 150,
+       "mean": 0.014910108553098074,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.0066113566867448716,
+       "random_p95_b": 0.01633476772102808
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 61,
+      "events": 150,
+      "buy_share": 0.4067,
+      "mean": 0.010360636967153655,
+      "mean_all_a": 0.0017065087839342923,
+      "minus_a": 0.008654128183219364,
+      "random_p95_b": 0.012669110669188018,
+      "share_of_draws_beaten": 0.906,
+      "minus_spy": -0.008574563200346906,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 61,
+       "events": 150,
+       "mean": 0.010360636967153655,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.008654128183219364,
+       "random_p95_b": 0.012669110669188018
+      },
+      "without_stopped_not_judged": {
+       "buys": 61,
+       "events": 150,
+       "mean": 0.010360636967153655,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.008654128183219364,
+       "random_p95_b": 0.012669110669188018
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 64,
+      "events": 150,
+      "buy_share": 0.4267,
+      "mean": 0.008453212037155437,
+      "mean_all_a": -0.004816097462095131,
+      "minus_a": 0.013269309499250568,
+      "random_p95_b": 0.009823316026183082,
+      "share_of_draws_beaten": 0.928,
+      "minus_spy": -0.010707569842233778,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 64,
+       "events": 150,
+       "mean": 0.008453212037155437,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.013269309499250568,
+       "random_p95_b": 0.009823316026183082
+      },
+      "without_stopped_not_judged": {
+       "buys": 64,
+       "events": 150,
+       "mean": 0.008453212037155437,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.013269309499250568,
+       "random_p95_b": 0.009823316026183082
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.009672460596094737,
+     "0.5": 0.009690870061153182,
+     "2": 0.009745837852280307
+    },
+    "scores_as_given_not_judged": {
+     "buys": 199,
+     "mean": 0.011438957076902404,
+     "minus_a": 0.009709236014171617
+    }
+   }
+  },
+  "grok_4_7": {
+   "H1": {
+    "buys": 257,
+    "events": 450,
+    "buy_share": 0.5711,
+    "mean": 0.001079714383414081,
+    "mean_all_a": -0.00019293008072397965,
+    "minus_a": 0.0012726444641380605,
+    "random_p95_b": 0.003588375604099354,
+    "share_of_draws_beaten": 0.7,
+    "minus_spy": -0.0006077435412916893,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 257,
+     "events": 450,
+     "mean": 0.001079714383414081,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0012726444641380605,
+     "random_p95_b": 0.003588375604099354
+    },
+    "without_stopped_not_judged": {
+     "buys": 257,
+     "events": 450,
+     "mean": 0.001079714383414081,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0012726444641380605,
+     "random_p95_b": 0.003588375604099354
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 96,
+      "events": 150,
+      "buy_share": 0.64,
+      "mean": 0.0006601680427459587,
+      "mean_all_a": -0.00013762387806948902,
+      "minus_a": 0.0007977919208154477,
+      "random_p95_b": 0.0037009134287175074,
+      "share_of_draws_beaten": 0.64,
+      "minus_spy": -0.00030974735352528915,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 96,
+       "events": 150,
+       "mean": 0.0006601680427459587,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": 0.0007977919208154477,
+       "random_p95_b": 0.0037009134287175074
+      },
+      "without_stopped_not_judged": {
+       "buys": 96,
+       "events": 150,
+       "mean": 0.0006601680427459587,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": 0.0007977919208154477,
+       "random_p95_b": 0.0037009134287175074
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 88,
+      "events": 150,
+      "buy_share": 0.5867,
+      "mean": -0.006217504855135041,
+      "mean_all_a": -0.0018175456530951006,
+      "minus_a": -0.0043999592020399405,
+      "random_p95_b": 0.003197714852057908,
+      "share_of_draws_beaten": 0.111,
+      "minus_spy": -0.008238606544177891,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 88,
+       "events": 150,
+       "mean": -0.006217504855135041,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.0043999592020399405,
+       "random_p95_b": 0.003197714852057908
+      },
+      "without_stopped_not_judged": {
+       "buys": 88,
+       "events": 150,
+       "mean": -0.006217504855135041,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.0043999592020399405,
+       "random_p95_b": 0.003197714852057908
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 73,
+      "events": 150,
+      "buy_share": 0.4867,
+      "mean": 0.010428094406653293,
+      "mean_all_a": 0.0013763792889926506,
+      "minus_a": 0.009051715117660643,
+      "random_p95_b": 0.009797104791697523,
+      "share_of_draws_beaten": 0.958,
+      "minus_spy": 0.008199219612522164,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 73,
+       "events": 150,
+       "mean": 0.010428094406653293,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.009051715117660643,
+       "random_p95_b": 0.009797104791697523
+      },
+      "without_stopped_not_judged": {
+       "buys": 73,
+       "events": 150,
+       "mean": 0.010428094406653293,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.009051715117660643,
+       "random_p95_b": 0.009797104791697523
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.0011407833901222156,
+     "0.5": 0.0012067987440484299,
+     "2": 0.0014038291660854194
+    },
+    "scores_as_given_not_judged": {
+     "buys": 257,
+     "mean": 0.001079714383414081,
+     "minus_a": 0.0012726444641380605
+    }
+   },
+   "H5": {
+    "buys": 257,
+    "events": 450,
+    "buy_share": 0.5711,
+    "mean": 0.009066041291657981,
+    "mean_all_a": 0.0017297210627307878,
+    "minus_a": 0.0073363202289271935,
+    "random_p95_b": 0.006863437282378219,
+    "share_of_draws_beaten": 0.991,
+    "minus_spy": -0.007434970541768332,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 257,
+     "events": 450,
+     "mean": 0.009066041291657981,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.0073363202289271935,
+     "random_p95_b": 0.006863437282378219
+    },
+    "without_stopped_not_judged": {
+     "buys": 257,
+     "events": 450,
+     "mean": 0.009066041291657981,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.0073363202289271935,
+     "random_p95_b": 0.006863437282378219
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 96,
+      "events": 150,
+      "buy_share": 0.64,
+      "mean": 0.015676436189769594,
+      "mean_all_a": 0.008298751866353203,
+      "minus_a": 0.0073776843234163916,
+      "random_p95_b": 0.014766477419116132,
+      "share_of_draws_beaten": 0.976,
+      "minus_spy": 0.0008721432744070642,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 96,
+       "events": 150,
+       "mean": 0.015676436189769594,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.0073776843234163916,
+       "random_p95_b": 0.014766477419116132
+      },
+      "without_stopped_not_judged": {
+       "buys": 96,
+       "events": 150,
+       "mean": 0.015676436189769594,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.0073776843234163916,
+       "random_p95_b": 0.014766477419116132
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 88,
+      "events": 150,
+      "buy_share": 0.5867,
+      "mean": 0.002263046527215769,
+      "mean_all_a": 0.0017065087839342923,
+      "minus_a": 0.0005565377432814769,
+      "random_p95_b": 0.008841142504000192,
+      "share_of_draws_beaten": 0.558,
+      "minus_spy": -0.015649525043126944,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 88,
+       "events": 150,
+       "mean": 0.002263046527215769,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.0005565377432814769,
+       "random_p95_b": 0.008841142504000192
+      },
+      "without_stopped_not_judged": {
+       "buys": 88,
+       "events": 150,
+       "mean": 0.002263046527215769,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.0005565377432814769,
+       "random_p95_b": 0.008841142504000192
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 73,
+      "events": 150,
+      "buy_share": 0.4867,
+      "mean": 0.008573789634838798,
+      "mean_all_a": -0.004816097462095131,
+      "minus_a": 0.01338988709693393,
+      "random_p95_b": 0.0076158080626582995,
+      "share_of_draws_beaten": 0.96,
+      "minus_spy": -0.008456917531265323,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 73,
+       "events": 150,
+       "mean": 0.008573789634838798,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.01338988709693393,
+       "random_p95_b": 0.0076158080626582995
+      },
+      "without_stopped_not_judged": {
+       "buys": 73,
+       "events": 150,
+       "mean": 0.008573789634838798,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.01338988709693393,
+       "random_p95_b": 0.0076158080626582995
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.007216881526853536,
+     "0.5": 0.007276681402090705,
+     "2": 0.007455116814642985
+    },
+    "scores_as_given_not_judged": {
+     "buys": 257,
+     "mean": 0.009066041291657981,
+     "minus_a": 0.0073363202289271935
+    }
+   }
+  },
+  "kimi_k3": {
+   "H1": {
+    "buys": 283,
+    "events": 450,
+    "buy_share": 0.6289,
+    "mean": 0.0021197688371532826,
+    "mean_all_a": -0.00019293008072397965,
+    "minus_a": 0.0023126989178772622,
+    "random_p95_b": 0.0028929025507955894,
+    "share_of_draws_beaten": 0.874,
+    "minus_spy": 0.0004017297524209093,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 283,
+     "events": 450,
+     "mean": 0.0021197688371532826,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0023126989178772622,
+     "random_p95_b": 0.0028929025507955894
+    },
+    "without_stopped_not_judged": {
+     "buys": 283,
+     "events": 450,
+     "mean": 0.0021197688371532826,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0023126989178772622,
+     "random_p95_b": 0.0028929025507955894
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 103,
+      "events": 150,
+      "buy_share": 0.6867,
+      "mean": -0.00033025455043372143,
+      "mean_all_a": -0.00013762387806948902,
+      "minus_a": -0.0001926306723642324,
+      "random_p95_b": 0.003538539271997423,
+      "share_of_draws_beaten": 0.459,
+      "minus_spy": -0.0015297019944596013,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 103,
+       "events": 150,
+       "mean": -0.00033025455043372143,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": -0.0001926306723642324,
+       "random_p95_b": 0.003538539271997423
+      },
+      "without_stopped_not_judged": {
+       "buys": 103,
+       "events": 150,
+       "mean": -0.00033025455043372143,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": -0.0001926306723642324,
+       "random_p95_b": 0.003538539271997423
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 97,
+      "events": 150,
+      "buy_share": 0.6467,
+      "mean": -0.0034201803313675537,
+      "mean_all_a": -0.0018175456530951006,
+      "minus_a": -0.001602634678272453,
+      "random_p95_b": 0.0025713737596286734,
+      "share_of_draws_beaten": 0.296,
+      "minus_spy": -0.005175122961855983,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 97,
+       "events": 150,
+       "mean": -0.0034201803313675537,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.001602634678272453,
+       "random_p95_b": 0.0025713737596286734
+      },
+      "without_stopped_not_judged": {
+       "buys": 97,
+       "events": 150,
+       "mean": -0.0034201803313675537,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.001602634678272453,
+       "random_p95_b": 0.0025713737596286734
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 83,
+      "events": 150,
+      "buy_share": 0.5533,
+      "mean": 0.011634557731948252,
+      "mean_all_a": 0.0013763792889926506,
+      "minus_a": 0.010258178442955602,
+      "random_p95_b": 0.008932978082828905,
+      "share_of_draws_beaten": 0.983,
+      "minus_spy": 0.009316093405596224,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 83,
+       "events": 150,
+       "mean": 0.011634557731948252,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.010258178442955602,
+       "random_p95_b": 0.008932978082828905
+      },
+      "without_stopped_not_judged": {
+       "buys": 83,
+       "events": 150,
+       "mean": 0.011634557731948252,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.010258178442955602,
+       "random_p95_b": 0.008932978082828905
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.0022123227413595593,
+     "0.5": 0.002262576841211632,
+     "2": 0.002412548700875277
+    },
+    "scores_as_given_not_judged": {
+     "buys": 283,
+     "mean": 0.0021197688371532826,
+     "minus_a": 0.0023126989178772622
+    }
+   },
+   "H5": {
+    "buys": 283,
+    "events": 450,
+    "buy_share": 0.6289,
+    "mean": 0.009169509034859469,
+    "mean_all_a": 0.0017297210627307878,
+    "minus_a": 0.007439787972128681,
+    "random_p95_b": 0.006071177944714391,
+    "share_of_draws_beaten": 0.997,
+    "minus_spy": -0.007163856957129189,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 283,
+     "events": 450,
+     "mean": 0.009169509034859469,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.007439787972128681,
+     "random_p95_b": 0.006071177944714391
+    },
+    "without_stopped_not_judged": {
+     "buys": 283,
+     "events": 450,
+     "mean": 0.009169509034859469,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.007439787972128681,
+     "random_p95_b": 0.006071177944714391
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 103,
+      "events": 150,
+      "buy_share": 0.6867,
+      "mean": 0.0124769198586502,
+      "mean_all_a": 0.008298751866353203,
+      "minus_a": 0.004178167992296998,
+      "random_p95_b": 0.01360883788279765,
+      "share_of_draws_beaten": 0.891,
+      "minus_spy": -0.0022472912204090974,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 103,
+       "events": 150,
+       "mean": 0.0124769198586502,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.004178167992296998,
+       "random_p95_b": 0.01360883788279765
+      },
+      "without_stopped_not_judged": {
+       "buys": 103,
+       "events": 150,
+       "mean": 0.0124769198586502,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.004178167992296998,
+       "random_p95_b": 0.01360883788279765
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 97,
+      "events": 150,
+      "buy_share": 0.6467,
+      "mean": 0.005387551775914191,
+      "mean_all_a": 0.0017065087839342923,
+      "minus_a": 0.003681042991979899,
+      "random_p95_b": 0.008383270339281605,
+      "share_of_draws_beaten": 0.825,
+      "minus_spy": -0.010858986617735203,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 97,
+       "events": 150,
+       "mean": 0.005387551775914191,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.003681042991979899,
+       "random_p95_b": 0.008383270339281605
+      },
+      "without_stopped_not_judged": {
+       "buys": 97,
+       "events": 150,
+       "mean": 0.005387551775914191,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.003681042991979899,
+       "random_p95_b": 0.008383270339281605
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 83,
+      "events": 150,
+      "buy_share": 0.5533,
+      "mean": 0.009485009507958822,
+      "mean_all_a": -0.004816097462095131,
+      "minus_a": 0.014301106970053953,
+      "random_p95_b": 0.005649883827937619,
+      "share_of_draws_beaten": 0.986,
+      "minus_spy": -0.008946732786085647,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 83,
+       "events": 150,
+       "mean": 0.009485009507958822,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.014301106970053953,
+       "random_p95_b": 0.005649883827937619
+      },
+      "without_stopped_not_judged": {
+       "buys": 83,
+       "events": 150,
+       "mean": 0.009485009507958822,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.014301106970053953,
+       "random_p95_b": 0.005649883827937619
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.007350700392594339,
+     "0.5": 0.007395306169854187,
+     "2": 0.007528381269899734
+    },
+    "scores_as_given_not_judged": {
+     "buys": 283,
+     "mean": 0.009169509034859469,
+     "minus_a": 0.007439787972128681
+    }
+   }
+  },
+  "claude_opus_5_5": {
+   "H1": {
+    "buys": 202,
+    "events": 450,
+    "buy_share": 0.4489,
+    "mean": 0.002656675906277869,
+    "mean_all_a": -0.00019293008072397965,
+    "minus_a": 0.0028496059870018486,
+    "random_p95_b": 0.004168498848199853,
+    "share_of_draws_beaten": 0.852,
+    "minus_spy": 0.0006238483552492255,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 202,
+     "events": 450,
+     "mean": 0.002656675906277869,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0028496059870018486,
+     "random_p95_b": 0.004168498848199853
+    },
+    "without_stopped_not_judged": {
+     "buys": 202,
+     "events": 450,
+     "mean": 0.002656675906277869,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0028496059870018486,
+     "random_p95_b": 0.004168498848199853
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 72,
+      "events": 150,
+      "buy_share": 0.48,
+      "mean": 0.006397847086803317,
+      "mean_all_a": -0.00013762387806948902,
+      "minus_a": 0.0065354709648728065,
+      "random_p95_b": 0.005209166058706517,
+      "share_of_draws_beaten": 0.972,
+      "minus_spy": 0.005253740081815791,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 72,
+       "events": 150,
+       "mean": 0.006397847086803317,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": 0.0065354709648728065,
+       "random_p95_b": 0.005209166058706517
+      },
+      "without_stopped_not_judged": {
+       "buys": 72,
+       "events": 150,
+       "mean": 0.006397847086803317,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": 0.0065354709648728065,
+       "random_p95_b": 0.005209166058706517
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 66,
+      "events": 150,
+      "buy_share": 0.44,
+      "mean": -0.010145259523652984,
+      "mean_all_a": -0.0018175456530951006,
+      "minus_a": -0.008327713870557883,
+      "random_p95_b": 0.005713322386375528,
+      "share_of_draws_beaten": 0.034,
+      "minus_spy": -0.012630558586416266,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 66,
+       "events": 150,
+       "mean": -0.010145259523652984,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.008327713870557883,
+       "random_p95_b": 0.005713322386375528
+      },
+      "without_stopped_not_judged": {
+       "buys": 66,
+       "events": 150,
+       "mean": -0.010145259523652984,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.008327713870557883,
+       "random_p95_b": 0.005713322386375528
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 64,
+      "events": 150,
+      "buy_share": 0.4267,
+      "mean": 0.011649854240302931,
+      "mean_all_a": 0.0013763792889926506,
+      "minus_a": 0.010273474951310282,
+      "random_p95_b": 0.011533084763541458,
+      "share_of_draws_beaten": 0.951,
+      "minus_spy": 0.009083827321454378,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 64,
+       "events": 150,
+       "mean": 0.011649854240302931,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.010273474951310282,
+       "random_p95_b": 0.011533084763541458
+      },
+      "without_stopped_not_judged": {
+       "buys": 64,
+       "events": 150,
+       "mean": 0.011649854240302931,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.010273474951310282,
+       "random_p95_b": 0.011533084763541458
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.00280322550759573,
+     "0.5": 0.002826443790477596,
+     "2": 0.002895762792724272
+    },
+    "scores_as_given_not_judged": {
+     "buys": 202,
+     "mean": 0.002656675906277869,
+     "minus_a": 0.0028496059870018486
+    }
+   },
+   "H5": {
+    "buys": 202,
+    "events": 450,
+    "buy_share": 0.4489,
+    "mean": 0.009850411911446349,
+    "mean_all_a": 0.0017297210627307878,
+    "minus_a": 0.008120690848715561,
+    "random_p95_b": 0.007986307164750073,
+    "share_of_draws_beaten": 0.983,
+    "minus_spy": -0.007673347690792578,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 202,
+     "events": 450,
+     "mean": 0.009850411911446349,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.008120690848715561,
+     "random_p95_b": 0.007986307164750073
+    },
+    "without_stopped_not_judged": {
+     "buys": 202,
+     "events": 450,
+     "mean": 0.009850411911446349,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.008120690848715561,
+     "random_p95_b": 0.007986307164750073
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 72,
+      "events": 150,
+      "buy_share": 0.48,
+      "mean": 0.012552025654502303,
+      "mean_all_a": 0.008298751866353203,
+      "minus_a": 0.0042532737881491,
+      "random_p95_b": 0.016929186546225408,
+      "share_of_draws_beaten": 0.798,
+      "minus_spy": -0.002174099364137822,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 72,
+       "events": 150,
+       "mean": 0.012552025654502303,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.0042532737881491,
+       "random_p95_b": 0.016929186546225408
+      },
+      "without_stopped_not_judged": {
+       "buys": 72,
+       "events": 150,
+       "mean": 0.012552025654502303,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.0042532737881491,
+       "random_p95_b": 0.016929186546225408
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 66,
+      "events": 150,
+      "buy_share": 0.44,
+      "mean": 0.003574532637562357,
+      "mean_all_a": 0.0017065087839342923,
+      "minus_a": 0.0018680238536280648,
+      "random_p95_b": 0.010469544351732306,
+      "share_of_draws_beaten": 0.636,
+      "minus_spy": -0.015277830465942962,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 66,
+       "events": 150,
+       "mean": 0.003574532637562357,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.0018680238536280648,
+       "random_p95_b": 0.010469544351732306
+      },
+      "without_stopped_not_judged": {
+       "buys": 66,
+       "events": 150,
+       "mean": 0.003574532637562357,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.0018680238536280648,
+       "random_p95_b": 0.010469544351732306
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 64,
+      "events": 150,
+      "buy_share": 0.4267,
+      "mean": 0.013283096951701268,
+      "mean_all_a": -0.004816097462095131,
+      "minus_a": 0.0180991944137964,
+      "random_p95_b": 0.00897655753950428,
+      "share_of_draws_beaten": 0.989,
+      "minus_spy": -0.006017879196405347,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 64,
+       "events": 150,
+       "mean": 0.013283096951701268,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.0180991944137964,
+       "random_p95_b": 0.00897655753950428
+      },
+      "without_stopped_not_judged": {
+       "buys": 64,
+       "events": 150,
+       "mean": 0.013283096951701268,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.0180991944137964,
+       "random_p95_b": 0.00897655753950428
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.008090661347184329,
+     "0.5": 0.008105697395206987,
+     "2": 0.008150550501034436
+    },
+    "scores_as_given_not_judged": {
+     "buys": 202,
+     "mean": 0.009850411911446349,
+     "minus_a": 0.008120690848715561
+    }
+   }
+  },
+  "middle": {
+   "H1": {
+    "buys": 247,
+    "events": 450,
+    "buy_share": 0.5489,
+    "mean": 0.0016611655169773312,
+    "mean_all_a": -0.00019293008072397965,
+    "minus_a": 0.0018540955977013108,
+    "random_p95_b": 0.003535625646623765,
+    "share_of_draws_beaten": 0.804,
+    "minus_spy": 7.732962069272217e-05,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 247,
+     "events": 450,
+     "mean": 0.0016611655169773312,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0018540955977013108,
+     "random_p95_b": 0.003535625646623765
+    },
+    "without_stopped_not_judged": {
+     "buys": 247,
+     "events": 450,
+     "mean": 0.0016611655169773312,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0018540955977013108,
+     "random_p95_b": 0.003535625646623765
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 93,
+      "events": 150,
+      "buy_share": 0.62,
+      "mean": 0.00150929367883219,
+      "mean_all_a": -0.00013762387806948902,
+      "minus_a": 0.001646917556901679,
+      "random_p95_b": 0.0037444408558123953,
+      "share_of_draws_beaten": 0.732,
+      "minus_spy": 0.0004427912594747658,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 93,
+       "events": 150,
+       "mean": 0.00150929367883219,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": 0.001646917556901679,
+       "random_p95_b": 0.0037444408558123953
+      },
+      "without_stopped_not_judged": {
+       "buys": 93,
+       "events": 150,
+       "mean": 0.00150929367883219,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": 0.001646917556901679,
+       "random_p95_b": 0.0037444408558123953
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 84,
+      "events": 150,
+      "buy_share": 0.56,
+      "mean": -0.0053469233289828895,
+      "mean_all_a": -0.0018175456530951006,
+      "minus_a": -0.0035293776758877887,
+      "random_p95_b": 0.004093709493153872,
+      "share_of_draws_beaten": 0.161,
+      "minus_spy": -0.007137591441614004,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 84,
+       "events": 150,
+       "mean": -0.0053469233289828895,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.0035293776758877887,
+       "random_p95_b": 0.004093709493153872
+      },
+      "without_stopped_not_judged": {
+       "buys": 84,
+       "events": 150,
+       "mean": -0.0053469233289828895,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.0035293776758877887,
+       "random_p95_b": 0.004093709493153872
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 70,
+      "events": 150,
+      "buy_share": 0.4667,
+      "mean": 0.010272644717093854,
+      "mean_all_a": 0.0013763792889926506,
+      "minus_a": 0.008896265428101204,
+      "random_p95_b": 0.01081198212476175,
+      "share_of_draws_beaten": 0.941,
+      "minus_spy": 0.008249693003936078,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 70,
+       "events": 150,
+       "mean": 0.010272644717093854,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.008896265428101204,
+       "random_p95_b": 0.01081198212476175
+      },
+      "without_stopped_not_judged": {
+       "buys": 70,
+       "events": 150,
+       "mean": 0.010272644717093854,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.008896265428101204,
+       "random_p95_b": 0.01081198212476175
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.001718697060873217,
+     "0.5": 0.0017864831394292964,
+     "2": 0.001988801859646362
+    },
+    "scores_as_given_not_judged": {
+     "buys": 247,
+     "mean": 0.0016611655169773312,
+     "minus_a": 0.0018540955977013108
+    }
+   },
+   "H5": {
+    "buys": 247,
+    "events": 450,
+    "buy_share": 0.5489,
+    "mean": 0.010576899894494214,
+    "mean_all_a": 0.0017297210627307878,
+    "minus_a": 0.008847178831763426,
+    "random_p95_b": 0.006777280611008023,
+    "share_of_draws_beaten": 0.998,
+    "minus_spy": -0.005755756232862925,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 247,
+     "events": 450,
+     "mean": 0.010576899894494214,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.008847178831763426,
+     "random_p95_b": 0.006777280611008023
+    },
+    "without_stopped_not_judged": {
+     "buys": 247,
+     "events": 450,
+     "mean": 0.010576899894494214,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.008847178831763426,
+     "random_p95_b": 0.006777280611008023
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 93,
+      "events": 150,
+      "buy_share": 0.62,
+      "mean": 0.01798877076302531,
+      "mean_all_a": 0.008298751866353203,
+      "minus_a": 0.009690018896672108,
+      "random_p95_b": 0.014435377832896982,
+      "share_of_draws_beaten": 0.996,
+      "minus_spy": 0.003706925783552596,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 93,
+       "events": 150,
+       "mean": 0.01798877076302531,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.009690018896672108,
+       "random_p95_b": 0.014435377832896982
+      },
+      "without_stopped_not_judged": {
+       "buys": 93,
+       "events": 150,
+       "mean": 0.01798877076302531,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.009690018896672108,
+       "random_p95_b": 0.014435377832896982
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 84,
+      "events": 150,
+      "buy_share": 0.56,
+      "mean": 0.0038591087461410313,
+      "mean_all_a": 0.0017065087839342923,
+      "minus_a": 0.002152599962206739,
+      "random_p95_b": 0.009084866970180539,
+      "share_of_draws_beaten": 0.676,
+      "minus_spy": -0.01356702102033896,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 84,
+       "events": 150,
+       "mean": 0.0038591087461410313,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.002152599962206739,
+       "random_p95_b": 0.009084866970180539
+      },
+      "without_stopped_not_judged": {
+       "buys": 84,
+       "events": 150,
+       "mean": 0.0038591087461410313,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.002152599962206739,
+       "random_p95_b": 0.009084866970180539
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 70,
+      "events": 150,
+      "buy_share": 0.4667,
+      "mean": 0.008791049404326722,
+      "mean_all_a": -0.004816097462095131,
+      "minus_a": 0.013607146866421853,
+      "random_p95_b": 0.008597685007809658,
+      "share_of_draws_beaten": 0.952,
+      "minus_spy": -0.008954087452558018,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 70,
+       "events": 150,
+       "mean": 0.008791049404326722,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.013607146866421853,
+       "random_p95_b": 0.008597685007809658
+      },
+      "without_stopped_not_judged": {
+       "buys": 70,
+       "events": 150,
+       "mean": 0.008791049404326722,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.013607146866421853,
+       "random_p95_b": 0.008597685007809658
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.008725681104394227,
+     "0.5": 0.008786512083636335,
+     "2": 0.00896802174797454
+    },
+    "scores_as_given_not_judged": {
+     "buys": 247,
+     "mean": 0.010576899894494214,
+     "minus_a": 0.008847178831763426
+    }
+   }
+  },
+  "cascade": {
+   "H1": {
+    "buys": 217,
+    "events": 450,
+    "buy_share": 0.4822,
+    "mean": 0.0009934358228991318,
+    "mean_all_a": -0.00019293008072397965,
+    "minus_a": 0.0011863659036231114,
+    "random_p95_b": 0.004070907304611209,
+    "share_of_draws_beaten": 0.689,
+    "minus_spy": -0.0009635848659408108,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 217,
+     "events": 450,
+     "mean": 0.0009934358228991318,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0011863659036231114,
+     "random_p95_b": 0.004070907304611209
+    },
+    "without_stopped_not_judged": {
+     "buys": 217,
+     "events": 450,
+     "mean": 0.0009934358228991318,
+     "mean_all_a": -0.00019293008072397965,
+     "minus_a": 0.0011863659036231114,
+     "random_p95_b": 0.004070907304611209
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 81,
+      "events": 150,
+      "buy_share": 0.54,
+      "mean": 0.0007214822543247639,
+      "mean_all_a": -0.00013762387806948902,
+      "minus_a": 0.0008591061323942529,
+      "random_p95_b": 0.004750165209519676,
+      "share_of_draws_beaten": 0.585,
+      "minus_spy": -0.0003925666425130594,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 81,
+       "events": 150,
+       "mean": 0.0007214822543247639,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": 0.0008591061323942529,
+       "random_p95_b": 0.004750165209519676
+      },
+      "without_stopped_not_judged": {
+       "buys": 81,
+       "events": 150,
+       "mean": 0.0007214822543247639,
+       "mean_all_a": -0.00013762387806948902,
+       "minus_a": 0.0008591061323942529,
+       "random_p95_b": 0.004750165209519676
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 69,
+      "events": 150,
+      "buy_share": 0.46,
+      "mean": -0.008344923542066876,
+      "mean_all_a": -0.0018175456530951006,
+      "minus_a": -0.0065273778889717755,
+      "random_p95_b": 0.0056198882313962415,
+      "share_of_draws_beaten": 0.057,
+      "minus_spy": -0.010782067843178337,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 69,
+       "events": 150,
+       "mean": -0.008344923542066876,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.0065273778889717755,
+       "random_p95_b": 0.0056198882313962415
+      },
+      "without_stopped_not_judged": {
+       "buys": 69,
+       "events": 150,
+       "mean": -0.008344923542066876,
+       "mean_all_a": -0.0018175456530951006,
+       "minus_a": -0.0065273778889717755,
+       "random_p95_b": 0.0056198882313962415
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 67,
+      "events": 150,
+      "buy_share": 0.4467,
+      "mean": 0.010939331871215227,
+      "mean_all_a": 0.0013763792889926506,
+      "minus_a": 0.009562952582222575,
+      "random_p95_b": 0.011974742098231895,
+      "share_of_draws_beaten": 0.936,
+      "minus_spy": 0.008457651691249362,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 67,
+       "events": 150,
+       "mean": 0.010939331871215227,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.009562952582222575,
+       "random_p95_b": 0.011974742098231895
+      },
+      "without_stopped_not_judged": {
+       "buys": 67,
+       "events": 150,
+       "mean": 0.010939331871215227,
+       "mean_all_a": 0.0013763792889926506,
+       "minus_a": 0.009562952582222575,
+       "random_p95_b": 0.011974742098231895
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.0011049789944277823,
+     "0.5": 0.0011457194857189333,
+     "2": 0.0012673776299163856
+    },
+    "scores_as_given_not_judged": {
+     "buys": 217,
+     "mean": 0.0009934358228991318,
+     "minus_a": 0.0011863659036231114
+    }
+   },
+   "H5": {
+    "buys": 217,
+    "events": 450,
+    "buy_share": 0.4822,
+    "mean": 0.010554018675325147,
+    "mean_all_a": 0.0017297210627307878,
+    "minus_a": 0.008824297612594359,
+    "random_p95_b": 0.007517718527977772,
+    "share_of_draws_beaten": 0.996,
+    "minus_spy": -0.006536450212369852,
+    "stopped": 0,
+    "overnight_flagged": 0,
+    "without_overnight_flagged_not_judged": {
+     "buys": 217,
+     "events": 450,
+     "mean": 0.010554018675325147,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.008824297612594359,
+     "random_p95_b": 0.007517718527977772
+    },
+    "without_stopped_not_judged": {
+     "buys": 217,
+     "events": 450,
+     "mean": 0.010554018675325147,
+     "mean_all_a": 0.0017297210627307878,
+     "minus_a": 0.008824297612594359,
+     "random_p95_b": 0.007517718527977772
+    },
+    "overnight_flagged_trades": {},
+    "by_list": {
+     "500": {
+      "buys": 81,
+      "events": 150,
+      "buy_share": 0.54,
+      "mean": 0.013403505454529542,
+      "mean_all_a": 0.008298751866353203,
+      "minus_a": 0.005104753588176339,
+      "random_p95_b": 0.01590139968829483,
+      "share_of_draws_beaten": 0.879,
+      "minus_spy": -0.0013264012326637618,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 81,
+       "events": 150,
+       "mean": 0.013403505454529542,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.005104753588176339,
+       "random_p95_b": 0.01590139968829483
+      },
+      "without_stopped_not_judged": {
+       "buys": 81,
+       "events": 150,
+       "mean": 0.013403505454529542,
+       "mean_all_a": 0.008298751866353203,
+       "minus_a": 0.005104753588176339,
+       "random_p95_b": 0.01590139968829483
+      },
+      "overnight_flagged_trades": {}
+     },
+     "400": {
+      "buys": 69,
+      "events": 150,
+      "buy_share": 0.46,
+      "mean": 0.004847756956898192,
+      "mean_all_a": 0.0017065087839342923,
+      "minus_a": 0.0031412481729638994,
+      "random_p95_b": 0.010071541262061747,
+      "share_of_draws_beaten": 0.724,
+      "minus_spy": -0.013531934206733978,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 69,
+       "events": 150,
+       "mean": 0.004847756956898192,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.0031412481729638994,
+       "random_p95_b": 0.010071541262061747
+      },
+      "without_stopped_not_judged": {
+       "buys": 69,
+       "events": 150,
+       "mean": 0.004847756956898192,
+       "mean_all_a": 0.0017065087839342923,
+       "minus_a": 0.0031412481729638994,
+       "random_p95_b": 0.010071541262061747
+      },
+      "overnight_flagged_trades": {}
+     },
+     "600": {
+      "buys": 67,
+      "events": 150,
+      "buy_share": 0.4467,
+      "mean": 0.012985714637353561,
+      "mean_all_a": -0.004816097462095131,
+      "minus_a": 0.017801812099448693,
+      "random_p95_b": 0.00948265846909224,
+      "share_of_draws_beaten": 0.984,
+      "minus_spy": -0.005630861730952963,
+      "stopped": 0,
+      "overnight_flagged": 0,
+      "without_overnight_flagged_not_judged": {
+       "buys": 67,
+       "events": 150,
+       "mean": 0.012985714637353561,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.017801812099448693,
+       "random_p95_b": 0.00948265846909224
+      },
+      "without_stopped_not_judged": {
+       "buys": 67,
+       "events": 150,
+       "mean": 0.012985714637353561,
+       "mean_all_a": -0.004816097462095131,
+       "minus_a": 0.017801812099448693,
+       "random_p95_b": 0.00948265846909224
+      },
+      "overnight_flagged_trades": {}
+     }
+    },
+    "cost_sensitivity": {
+     "0": 0.008761685451056652,
+     "0.5": 0.008793031419985655,
+     "2": 0.00888659163094097
+    },
+    "scores_as_given_not_judged": {
+     "buys": 217,
+     "mean": 0.010554018675325147,
+     "minus_a": 0.008824297612594359
+    }
+   }
+  }
+ },
+ "gap_yardstick_c": {
+  "H1": {
+   "buys": 158,
+   "events": 450,
+   "buy_share": 0.3511,
+   "mean": 0.005115642910958541,
+   "mean_all_a": -0.00019293008072397965,
+   "minus_a": 0.005308572991682521,
+   "random_p95_b": 0.004955251529702773,
+   "share_of_draws_beaten": 0.954,
+   "minus_spy": 0.0029421666303409335,
+   "stopped": 0,
+   "overnight_flagged": 0,
+   "without_overnight_flagged_not_judged": {
+    "buys": 158,
+    "events": 450,
+    "mean": 0.005115642910958541,
+    "mean_all_a": -0.00019293008072397965,
+    "minus_a": 0.005308572991682521,
+    "random_p95_b": 0.004955251529702773
+   },
+   "without_stopped_not_judged": {
+    "buys": 158,
+    "events": 450,
+    "mean": 0.005115642910958541,
+    "mean_all_a": -0.00019293008072397965,
+    "minus_a": 0.005308572991682521,
+    "random_p95_b": 0.004955251529702773
+   },
+   "overnight_flagged_trades": {},
+   "by_list": {
+    "500": {
+     "buys": 51,
+     "events": 150,
+     "buy_share": 0.34,
+     "mean": 0.004269666818446797,
+     "mean_all_a": -0.00013762387806948902,
+     "minus_a": 0.004407290696516287,
+     "random_p95_b": 0.006810368773472208,
+     "share_of_draws_beaten": 0.835,
+     "minus_spy": 0.0029555474363727077,
+     "stopped": 0,
+     "overnight_flagged": 0,
+     "without_overnight_flagged_not_judged": {
+      "buys": 51,
+      "events": 150,
+      "mean": 0.004269666818446797,
+      "mean_all_a": -0.00013762387806948902,
+      "minus_a": 0.004407290696516287,
+      "random_p95_b": 0.006810368773472208
+     },
+     "without_stopped_not_judged": {
+      "buys": 51,
+      "events": 150,
+      "mean": 0.004269666818446797,
+      "mean_all_a": -0.00013762387806948902,
+      "minus_a": 0.004407290696516287,
+      "random_p95_b": 0.006810368773472208
+     },
+     "overnight_flagged_trades": {}
+    },
+    "400": {
+     "buys": 47,
+     "events": 150,
+     "buy_share": 0.3133,
+     "mean": -0.0007895012430784708,
+     "mean_all_a": -0.0018175456530951006,
+     "minus_a": 0.0010280444100166297,
+     "random_p95_b": 0.008007848777987025,
+     "share_of_draws_beaten": 0.563,
+     "minus_spy": -0.002721419007898897,
+     "stopped": 0,
+     "overnight_flagged": 0,
+     "without_overnight_flagged_not_judged": {
+      "buys": 47,
+      "events": 150,
+      "mean": -0.0007895012430784708,
+      "mean_all_a": -0.0018175456530951006,
+      "minus_a": 0.0010280444100166297,
+      "random_p95_b": 0.008007848777987025
+     },
+     "without_stopped_not_judged": {
+      "buys": 47,
+      "events": 150,
+      "mean": -0.0007895012430784708,
+      "mean_all_a": -0.0018175456530951006,
+      "minus_a": 0.0010280444100166297,
+      "random_p95_b": 0.008007848777987025
+     },
+     "overnight_flagged_trades": {}
+    },
+    "600": {
+     "buys": 60,
+     "events": 150,
+     "buy_share": 0.4,
+     "mean": 0.010460418843589182,
+     "mean_all_a": 0.0013763792889926506,
+     "minus_a": 0.00908403955459653,
+     "random_p95_b": 0.012251075711202004,
+     "share_of_draws_beaten": 0.914,
+     "minus_spy": 0.007367268361835126,
+     "stopped": 0,
+     "overnight_flagged": 0,
+     "without_overnight_flagged_not_judged": {
+      "buys": 60,
+      "events": 150,
+      "mean": 0.010460418843589182,
+      "mean_all_a": 0.0013763792889926506,
+      "minus_a": 0.00908403955459653,
+      "random_p95_b": 0.012251075711202004
+     },
+     "without_stopped_not_judged": {
+      "buys": 60,
+      "events": 150,
+      "mean": 0.010460418843589182,
+      "mean_all_a": 0.0013763792889926506,
+      "minus_a": 0.00908403955459653,
+      "random_p95_b": 0.012251075711202004
+     },
+     "overnight_flagged_trades": {}
+    }
+   }
+  },
+  "H5": {
+   "buys": 158,
+   "events": 450,
+   "buy_share": 0.3511,
+   "mean": 0.009590270271988374,
+   "mean_all_a": 0.0017297210627307878,
+   "minus_a": 0.007860549209257587,
+   "random_p95_b": 0.009727340003588929,
+   "share_of_draws_beaten": 0.942,
+   "minus_spy": -0.008810131898914655,
+   "stopped": 0,
+   "overnight_flagged": 0,
+   "without_overnight_flagged_not_judged": {
+    "buys": 158,
+    "events": 450,
+    "mean": 0.009590270271988374,
+    "mean_all_a": 0.0017297210627307878,
+    "minus_a": 0.007860549209257587,
+    "random_p95_b": 0.009727340003588929
+   },
+   "without_stopped_not_judged": {
+    "buys": 158,
+    "events": 450,
+    "mean": 0.009590270271988374,
+    "mean_all_a": 0.0017297210627307878,
+    "minus_a": 0.007860549209257587,
+    "random_p95_b": 0.009727340003588929
+   },
+   "overnight_flagged_trades": {},
+   "by_list": {
+    "500": {
+     "buys": 51,
+     "events": 150,
+     "buy_share": 0.34,
+     "mean": 0.018524927545104306,
+     "mean_all_a": 0.008298751866353203,
+     "minus_a": 0.010226175678751103,
+     "random_p95_b": 0.020853120225464043,
+     "share_of_draws_beaten": 0.913,
+     "minus_spy": 0.0031743972622464097,
+     "stopped": 0,
+     "overnight_flagged": 0,
+     "without_overnight_flagged_not_judged": {
+      "buys": 51,
+      "events": 150,
+      "mean": 0.018524927545104306,
+      "mean_all_a": 0.008298751866353203,
+      "minus_a": 0.010226175678751103,
+      "random_p95_b": 0.020853120225464043
+     },
+     "without_stopped_not_judged": {
+      "buys": 51,
+      "events": 150,
+      "mean": 0.018524927545104306,
+      "mean_all_a": 0.008298751866353203,
+      "minus_a": 0.010226175678751103,
+      "random_p95_b": 0.020853120225464043
+     },
+     "overnight_flagged_trades": {}
+    },
+    "400": {
+     "buys": 47,
+     "events": 150,
+     "buy_share": 0.3133,
+     "mean": 0.006642198567725457,
+     "mean_all_a": 0.0017065087839342923,
+     "minus_a": 0.004935689783791165,
+     "random_p95_b": 0.014006820393008544,
+     "share_of_draws_beaten": 0.728,
+     "minus_spy": -0.01123228045495033,
+     "stopped": 0,
+     "overnight_flagged": 0,
+     "without_overnight_flagged_not_judged": {
+      "buys": 47,
+      "events": 150,
+      "mean": 0.006642198567725457,
+      "mean_all_a": 0.0017065087839342923,
+      "minus_a": 0.004935689783791165,
+      "random_p95_b": 0.014006820393008544
+     },
+     "without_stopped_not_judged": {
+      "buys": 47,
+      "events": 150,
+      "mean": 0.006642198567725457,
+      "mean_all_a": 0.0017065087839342923,
+      "minus_a": 0.004935689783791165,
+      "random_p95_b": 0.014006820393008544
+     },
+     "overnight_flagged_trades": {}
+    },
+    "600": {
+     "buys": 60,
+     "events": 150,
+     "buy_share": 0.4,
+     "mean": 0.004305134424845786,
+     "mean_all_a": -0.004816097462095131,
+     "minus_a": 0.009121231886940917,
+     "random_p95_b": 0.010832454655418707,
+     "share_of_draws_beaten": 0.832,
+     "minus_spy": -0.017099631983673612,
+     "stopped": 0,
+     "overnight_flagged": 0,
+     "without_overnight_flagged_not_judged": {
+      "buys": 60,
+      "events": 150,
+      "mean": 0.004305134424845786,
+      "mean_all_a": -0.004816097462095131,
+      "minus_a": 0.009121231886940917,
+      "random_p95_b": 0.010832454655418707
+     },
+     "without_stopped_not_judged": {
+      "buys": 60,
+      "events": 150,
+      "mean": 0.004305134424845786,
+      "mean_all_a": -0.004816097462095131,
+      "minus_a": 0.009121231886940917,
+      "random_p95_b": 0.010832454655418707
+     },
+     "overnight_flagged_trades": {}
+    }
+   }
+  }
+ },
+ "qualified_setups": [
+  "claude_sonnet_5_5",
+  "grok_4_7",
+  "claude_opus_5_5",
+  "middle",
+  "cascade"
+ ],
+ "chosen_setup": "claude_sonnet_5_5"
+}
