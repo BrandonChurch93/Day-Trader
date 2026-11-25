@@ -116,6 +116,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/30_time_machine_tm02_crypto_with_news.md` | Results so far for the same six AI models with dated headlines added, the "did the news help" table, and the headlines each buy named | CURRENT |
 | `docs/research/31_model_knowledge_lines.md` | Where each model's memory of crypto prices stops, measured with one dated question, so the replay months can be read with that in mind | CURRENT |
 | `docs/research/32_exit_replay.md` | Exit replay (TMX1) of logged TM01 and TM02 AI and random-twin crypto buys under five fixed exit templates (A to E), written by `timemachine/exit_replay.py` | CURRENT |
+| `docs/research/33_ideas_round_2_and_3_checked.md` | Checked public AI trading results, twelve candidate ideas, and four published designs. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
 
@@ -156,7 +157,7 @@ Working papers.
 | `research_rig/engine.py`, `research_rig/fixtures.py`, `research_rig/common_01.py` | Engine v1 | RECORD. Use v2 |
 | `research_rig/PREREG_01_daily_crypto_trend.md`, `research_rig/PREREG_01_S1_fill_delay.md`, `research_rig/PREREG_01_X2_kraken_full_history.md`, `research_rig/PREREG_02_ai_calls_pilot.md`, `research_rig/PREREG_03_intraday_crypto.md`, `research_rig/PREREG_04_coin_basket_trend.md`, `research_rig/PREREG_05_stock_trend_free_data.md` | Plans written before each test. Not edited after the run | CURRENT |
 | `research_rig/AMENDMENT_2026-11-25_audit_fixes.md` | The audit fixes, written before the rerun | CURRENT |
-| `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md` | Plan for a stock fund test that waits for a data purchase | DRAFT |
+| `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md` | Plan for a stock fund test on Alpaca daily bars, awaiting adjustment reconciliation and owner approval | DRAFT |
 | `research_rig/PREREG_07_intraday_spy_qqq.md` | Frozen plan for replay 07, day trading rules on SPY and QQQ one-minute bars. Ledger rows 56 to 71 | CURRENT |
 | `research_rig/run_07.py`, `research_rig/results_07.json`, `research_rig/build_doc27.py` | Replay 07: script with its checks, output from the one held-back run, and the builder of document 27 | CURRENT |
 | `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, decisions 1a and 1b, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |

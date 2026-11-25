@@ -1,26 +1,32 @@
 {
- "checked_utc": "2026-11-25 15:39",
+ "checked_utc": "2026-11-25 16:49",
  "cryptopotato": {
-  "first": "2026-06-01T04:55:48",
+  "first": "2026-04-01T03:48:35",
   "flagged": [],
   "flagged_dated_early": 0,
   "last": "2026-11-24T22:33:21",
   "max_hours_modified_before_date": 19.1,
-  "modified_before_date": 1154,
-  "posts": 2863
+  "modified_before_date": 1441,
+  "posts": 3753
  },
  "cryptoslate": {
-  "first": "2026-06-01T08:53:28",
+  "first": "2026-04-01T09:06:10",
   "flagged": [],
   "flagged_dated_early": 0,
   "last": "2026-11-24T23:50:36",
   "max_hours_modified_before_date": 47.7,
-  "modified_before_date": 2050,
-  "posts": 2514
+  "modified_before_date": 2201,
+  "posts": 2916
  },
  "newsbtc": {
-  "first": "2026-06-01T02:48:52",
+  "first": "2026-04-01T00:30:41",
   "flagged": [
+   {
+    "date_gmt": "2026-05-23T14:22:19",
+    "id": 915640,
+    "later_median_id": 898280,
+    "link": "https://www.newsbtc.com/news/what-are-the-reasons-to-play-at-katana-spin-casino/"
+   },
    {
     "date_gmt": "2026-06-05T21:30:19",
     "id": 915639,
@@ -34,10 +40,10 @@
     "link": "https://www.newsbtc.com/news/experience-the-adventure-at-admiral-shark-casino/"
    }
   ],
-  "flagged_dated_early": 2,
+  "flagged_dated_early": 3,
   "last": "2026-11-24T20:05:15",
   "max_hours_modified_before_date": 71.9,
-  "modified_before_date": 1250,
-  "posts": 1587
+  "modified_before_date": 2287,
+  "posts": 2883
  }
 }

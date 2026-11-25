@@ -4,7 +4,7 @@ Every read takes `now_utc` and refuses to return any bar, quote, news item, or
 screener stat stamped after `now_utc`. Thread-safe via one SQLite connection per
 thread (WAL mode) and a write lock. Standard library only.
 """
-import time
+import bisect, time
 import datetime as dt, json, math, os, re, sqlite3, subprocess, sys, threading
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -128,10 +128,19 @@ class Tape:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._local = threading.local()
         self._write_lock = threading.Lock()
+        self._clear_cache()
         with self._write_lock:
             conn = self._conn()
             conn.executescript(SCHEMA)
             conn.commit()
+
+    def _clear_cache(self):
+        self._has_min_cache = {}
+        self._day_bars_cache = {}
+        self._prev_close_cache = {}
+        self._sessions_cache = None
+        self._universe_cache = {}
+        self._first_crypto = None
 
     def _conn(self):
         conn = getattr(self._local, "conn", None)
@@ -171,6 +180,7 @@ class Tape:
                 cleaned,
             )
             conn.commit()
+            self._clear_cache()
         return len(cleaned)
 
     def add_news(self, rows):
@@ -217,6 +227,7 @@ class Tape:
             conn = self._conn()
             conn.executemany("INSERT OR REPLACE INTO sessions (date, open_utc, close_utc) VALUES (?, ?, ?)", cleaned)
             conn.commit()
+            self._clear_cache()
         return len(cleaned)
 
     def add_universe(self, date_str, symbols):
@@ -228,6 +239,7 @@ class Tape:
             if syms:
                 conn.executemany("INSERT INTO universe (date, symbol) VALUES (?, ?)", [(date_str, s) for s in syms])
             conn.commit()
+            self._clear_cache()
         return len(syms)
 
     def set_meta(self, key, value):
@@ -277,9 +289,19 @@ class Tape:
         return from_epoch(row[0]) if row else None
 
     # ---- bar reads (strict as-of)
+    def _load_sessions(self):
+        c = self._sessions_cache
+        if c is None:
+            rows = self._conn().execute("SELECT date, open_utc, close_utc FROM sessions ORDER BY open_utc ASC").fetchall()
+            opens = [r[1] for r in rows]
+            by_date = {r[0]: r[2] for r in rows}
+            c = self._sessions_cache = (opens, rows, by_date)
+        return c
+
     def _stock_day_close_epoch(self, date_str):
-        row = self._conn().execute("SELECT close_utc FROM sessions WHERE date = ?", (date_str,)).fetchone()
-        return row[0] if row else _default_stock_close_epoch(date_str)
+        _, _, by_date = self._load_sessions()
+        close_utc = by_date.get(date_str)
+        return close_utc if close_utc is not None else _default_stock_close_epoch(date_str)
 
     def _bar_end_epoch(self, symbol, tf, t_epoch):
         if tf == "1Min":
@@ -349,12 +371,18 @@ class Tape:
         return {"t": from_epoch(row[0]), "o": row[1], "h": row[2], "l": row[3], "c": row[4], "v": row[5]} if row else None
 
     def has_minutes(self, symbol, date_str):
-        lo, hi = _day_bounds(symbol, str(date_str))
+        key = (symbol, str(date_str))
+        cached = self._has_min_cache.get(key)
+        if cached is not None:
+            return cached
+        lo, hi = _day_bounds(symbol, key[1])
         row = self._conn().execute(
             "SELECT 1 FROM bars WHERE symbol = ? AND tf = '1Min' AND t >= ? AND t < ? LIMIT 1",
             (symbol, lo, hi),
         ).fetchone()
-        return row is not None
+        res = row is not None
+        self._has_min_cache[key] = res
+        return res
 
     def has_symbol_as_of(self, symbol, now_utc):
         """True if the tape has any finished bar for `symbol` as of `now_utc`."""
@@ -382,15 +410,59 @@ class Tape:
             subprocess.run(cmd, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=180)
         except Exception:
             return False
+        self._clear_cache()
         return self.has_minutes(symbol, date_str)
 
     # ---- snapshot / screener / universe / news
     def _latest_session_on_or_before(self, now_ts):
-        row = self._conn().execute(
-            "SELECT date, open_utc, close_utc FROM sessions WHERE open_utc <= ? ORDER BY open_utc DESC LIMIT 1",
-            (now_ts,),
+        opens, rows, _ = self._load_sessions()
+        idx = bisect.bisect_right(opens, now_ts) - 1
+        return rows[idx] if idx >= 0 else None
+
+    def _day_bars(self, sym, tf, day_start, upper):
+        key = (sym, tf, day_start, upper)
+        cached = self._day_bars_cache.get(key)
+        if cached is not None:
+            return cached
+        rows = self._conn().execute(
+            "SELECT t, o, h, l, c, v FROM bars WHERE symbol = ? AND tf = ? AND t >= ? AND t < ? ORDER BY t ASC",
+            (sym, tf, day_start, upper),
+        ).fetchall()
+        if not rows:
+            res = ([], [], None, [], [], [])
+        else:
+            ts, closes, pref_h, pref_l, pref_v = [], [], [], [], []
+            open0 = rows[0][1]
+            hi = rows[0][2]
+            lo = rows[0][3]
+            vol = 0.0
+            for t, _o, h, l, c, v in rows:
+                if h > hi:
+                    hi = h
+                if l < lo:
+                    lo = l
+                vol += v
+                ts.append(t)
+                closes.append(c)
+                pref_h.append(hi)
+                pref_l.append(lo)
+                pref_v.append(vol)
+            res = (ts, closes, open0, pref_h, pref_l, pref_v)
+        self._day_bars_cache[key] = res
+        return res
+
+    def _prev_close_info(self, sym, day_date):
+        key = (sym, day_date)
+        if key in self._prev_close_cache:
+            return self._prev_close_cache[key]
+        day_lo, _ = _day_bounds(sym, day_date)
+        prev_row = self._conn().execute(
+            "SELECT t, c FROM bars WHERE symbol = ? AND tf = '1Day' AND t < ? ORDER BY t DESC LIMIT 1",
+            (sym, day_lo),
         ).fetchone()
-        return row
+        info = (prev_row[1], self._bar_end_epoch(sym, "1Day", prev_row[0])) if prev_row else None
+        self._prev_close_cache[key] = info
+        return info
 
     def snapshot(self, symbols, now_utc):
         """As-of snapshot from the finest finished bars. Missing symbols are omitted."""
@@ -398,46 +470,78 @@ class Tape:
         now_dt = from_epoch(now_ts)
         conn = self._conn()
         out = {}
-        sess = self._latest_session_on_or_before(now_ts)
+        opens, sess_rows, _ = self._load_sessions()
+        s_idx = bisect.bisect_right(opens, now_ts) - 1
+        sess = sess_rows[s_idx] if s_idx >= 0 else None
+        next_sess_open = sess_rows[s_idx + 1][1] if (s_idx >= 0 and s_idx + 1 < len(sess_rows)) else None
 
         for sym in dict.fromkeys(s for s in (symbols or ()) if isinstance(s, str) and s):
             is_crypto = "/" in sym
             if is_crypto:
                 day_start = int(dt.datetime(now_dt.year, now_dt.month, now_dt.day, tzinfo=UTC).timestamp())
                 day_date = now_dt.strftime("%Y-%m-%d")
+                day_upper = day_start + 86400
             else:
                 if sess:
                     day_date, day_start = sess[0], sess[1]
+                    day_upper = next_sess_open if next_sess_open is not None else (day_start + 86400)
                 else:
                     ny_d = now_dt.astimezone(NY)
                     day_date = ny_d.strftime("%Y-%m-%d")
                     day_start = int(dt.datetime(ny_d.year, ny_d.month, ny_d.day, tzinfo=NY).astimezone(UTC).timestamp())
+                    day_upper = day_start + 86400
 
             # Choose finest finished bar: 1Min if minutes exist for this symbol and day, else 30Min, else 1Day
-            chosen_tf, last_row = None, None
-            if self.has_minutes(sym, day_date):
-                r1 = conn.execute(
-                    "SELECT t, o, h, l, c, v FROM bars WHERE symbol = ? AND tf = '1Min' AND t <= ? ORDER BY t DESC LIMIT 1",
-                    (sym, now_ts - 60),
-                ).fetchone()
-                if r1:
-                    chosen_tf, last_row = "1Min", r1
-            if last_row is None:
-                r30 = conn.execute(
-                    "SELECT t, o, h, l, c, v FROM bars WHERE symbol = ? AND tf = '30Min' AND t <= ? ORDER BY t DESC LIMIT 1",
-                    (sym, now_ts - 1800),
-                ).fetchone()
-                if r30:
-                    chosen_tf, last_row = "30Min", r30
-            if last_row is None:
+            chosen_tf, last_t, last_c = None, None, None
+            day_open = day_high = day_low = day_vol = None
+            got_day_agg = False
+
+            has_min = self.has_minutes(sym, day_date)
+            if has_min:
+                max_t = now_ts - 60
+                if day_start <= max_t < day_upper:
+                    ts, closes, open0, pref_h, pref_l, pref_v = self._day_bars(sym, "1Min", day_start, day_upper)
+                    idx = bisect.bisect_right(ts, max_t) - 1
+                    if idx >= 0:
+                        chosen_tf, last_t, last_c = "1Min", ts[idx], closes[idx]
+                        day_open, day_high, day_low, day_vol = open0, pref_h[idx], pref_l[idx], pref_v[idx]
+                        got_day_agg = True
+                if chosen_tf is None:
+                    r1 = conn.execute(
+                        "SELECT t, o, h, l, c, v FROM bars WHERE symbol = ? AND tf = '1Min' AND t <= ? ORDER BY t DESC LIMIT 1",
+                        (sym, max_t),
+                    ).fetchone()
+                    if r1:
+                        chosen_tf, last_t, last_c = "1Min", r1[0], r1[4]
+                        if day_start <= max_t < day_upper:
+                            got_day_agg = True  # day bars checked above and none <= max_t
+            if chosen_tf is None:
+                max_t = now_ts - 1800
+                if day_start <= max_t < day_upper:
+                    ts, closes, open0, pref_h, pref_l, pref_v = self._day_bars(sym, "30Min", day_start, day_upper)
+                    idx = bisect.bisect_right(ts, max_t) - 1
+                    if idx >= 0:
+                        chosen_tf, last_t, last_c = "30Min", ts[idx], closes[idx]
+                        day_open, day_high, day_low, day_vol = open0, pref_h[idx], pref_l[idx], pref_v[idx]
+                        got_day_agg = True
+                if chosen_tf is None:
+                    r30 = conn.execute(
+                        "SELECT t, o, h, l, c, v FROM bars WHERE symbol = ? AND tf = '30Min' AND t <= ? ORDER BY t DESC LIMIT 1",
+                        (sym, max_t),
+                    ).fetchone()
+                    if r30:
+                        chosen_tf, last_t, last_c = "30Min", r30[0], r30[4]
+                        if day_start <= max_t < day_upper:
+                            got_day_agg = True
+            if chosen_tf is None:
                 # Fall back to any earlier finished 1Min bar if present (e.g. crypto with only 1Min recorded)
                 r1_any = conn.execute(
                     "SELECT t, o, h, l, c, v FROM bars WHERE symbol = ? AND tf = '1Min' AND t <= ? ORDER BY t DESC LIMIT 1",
                     (sym, now_ts - 60),
                 ).fetchone()
                 if r1_any:
-                    chosen_tf, last_row = "1Min", r1_any
-            if last_row is None:
+                    chosen_tf, last_t, last_c = "1Min", r1_any[0], r1_any[4]
+            if chosen_tf is None:
                 daily = self.bars(sym, "1Day", 0, now_ts, limit=1)
                 if not daily:
                     continue
@@ -459,42 +563,42 @@ class Tape:
                     }
                 continue
 
-            bar_end = from_epoch(last_row[0] + TF_SECS[chosen_tf])
-            # Aggregate current day OHLCV from finished bars of chosen_tf >= day_start
-            day_rows = conn.execute(
-                "SELECT o, h, l, c, v FROM bars WHERE symbol = ? AND tf = ? AND t >= ? AND t <= ? ORDER BY t ASC",
-                (sym, chosen_tf, day_start, now_ts - TF_SECS[chosen_tf]),
-            ).fetchall()
-            if day_rows:
-                day_open = day_rows[0][0]
-                day_high = max(r[1] for r in day_rows)
-                day_low = min(r[2] for r in day_rows)
-                day_vol = sum(r[4] for r in day_rows)
-            else:
-                day_open = day_high = day_low = day_vol = None
+            bar_end = from_epoch(last_t + TF_SECS[chosen_tf])
+            if not got_day_agg:
+                max_t = now_ts - TF_SECS[chosen_tf]
+                if max_t >= day_start:
+                    day_rows = conn.execute(
+                        "SELECT o, h, l, c, v FROM bars WHERE symbol = ? AND tf = ? AND t >= ? AND t <= ? ORDER BY t ASC",
+                        (sym, chosen_tf, day_start, max_t),
+                    ).fetchall()
+                    if day_rows:
+                        day_open = day_rows[0][0]
+                        day_high = max(r[1] for r in day_rows)
+                        day_low = min(r[2] for r in day_rows)
+                        day_vol = sum(r[4] for r in day_rows)
 
             # prev_close: latest finished 1Day bar strictly before day_date
-            day_lo, _ = _day_bounds(sym, day_date)
-            prev_row = conn.execute(
-                "SELECT t, c FROM bars WHERE symbol = ? AND tf = '1Day' AND t < ? ORDER BY t DESC LIMIT 1",
-                (sym, day_lo),
-            ).fetchone()
-            prev_close = None
-            if prev_row and self._bar_end_epoch(sym, "1Day", prev_row[0]) <= now_ts:
-                prev_close = prev_row[1]
+            pc = self._prev_close_info(sym, day_date)
+            prev_close = pc[0] if (pc is not None and pc[1] <= now_ts) else None
 
             out[sym] = {
-                "price": last_row[4], "t": bar_end, "prev_close": prev_close,
+                "price": last_c, "t": bar_end, "prev_close": prev_close,
                 "day_open": day_open, "day_high": day_high, "day_low": day_low, "day_volume": day_vol,
             }
         return out
 
     def universe(self, date_str):
+        key = str(date_str)
+        cached = self._universe_cache.get(key)
+        if cached is not None:
+            return list(cached)
         rows = self._conn().execute(
             "SELECT symbol FROM universe WHERE date = ? ORDER BY symbol ASC",
-            (str(date_str),),
+            (key,),
         ).fetchall()
-        return [r[0] for r in rows]
+        res = [r[0] for r in rows]
+        self._universe_cache[key] = res
+        return list(res)
 
     def _active_universe_date(self, now_ts):
         ny_date = from_epoch(now_ts).astimezone(NY).strftime("%Y-%m-%d")

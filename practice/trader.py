@@ -72,17 +72,29 @@ def floor_dp(x, dp):
 class Records:
     def __init__(self, folder):
         self.dir = Path(folder); self.dir.mkdir(parents=True, exist_ok=True)
+        self.defer_writes = False; self._mem = {}; self._last_run = None
 
     def add(self, name, row):
+        line = json.dumps(row, sort_keys=True) + "\n"
         with open(self.dir / (name + ".jsonl"), "a") as f:
-            f.write(json.dumps(row, sort_keys=True) + "\n")
+            f.write(line)
+        kept = self.__dict__.get("_kept")
+        if self.defer_writes and kept is not None and name in kept:
+            at, rows = kept[name]
+            rows.append(json.loads(line))
+            kept[name] = (at + len(line.encode()), rows)
 
     def rows(self, name):
         """Every row of one record file. The files only ever grow, so rows read before are kept and only new lines are parsed."""
+        kept = self.__dict__.setdefault("_kept", {})
+        if self.defer_writes and name in kept:
+            return kept[name][1]
         p = self.dir / (name + ".jsonl")
         if not p.exists():
+            if self.defer_writes:
+                kept[name] = (0, [])
             return []
-        kept = self.__dict__.setdefault("_kept", {}); at, rows = kept.get(name, (0, []))
+        at, rows = kept.get(name, (0, []))
         size = p.stat().st_size
         if size < at:
             at, rows = 0, []
@@ -92,9 +104,13 @@ class Records:
             end = chunk.rfind(b"\n") + 1                      # a half-written last line waits for the next read
             rows = rows + [json.loads(x) for x in chunk[:end].decode().split("\n") if x.strip()]
             at += end; kept[name] = (at, rows)
+        elif self.defer_writes:
+            kept[name] = (at, rows)
         return [dict(r) for r in rows]
 
     def load(self, name, default):
+        if self.defer_writes and name in self._mem:
+            return self._mem[name]
         p = self.dir / name
         try:
             return json.loads(p.read_text()) if p.exists() else default
@@ -102,7 +118,17 @@ class Records:
             return default
 
     def save(self, name, obj):
+        if self.defer_writes:
+            self._mem[name] = obj
+            return
         tmp = self.dir / (name + ".tmp"); tmp.write_text(json.dumps(obj, indent=1, sort_keys=True) + "\n"); os.replace(tmp, self.dir / name)
+
+    def flush(self):
+        if self._last_run is not None:
+            r = self._last_run; self._last_run = None
+            self._mem["summary.json"] = r.summary(None, None)
+        for name, obj in list(self._mem.items()):
+            tmp = self.dir / (name + ".tmp"); tmp.write_text(json.dumps(obj, indent=1, sort_keys=True) + "\n"); os.replace(tmp, self.dir / name)
 
 
 class Run:
@@ -141,9 +167,17 @@ class Run:
     def read_broker(self):
         orders, held = self.b.orders(), self.b.positions()
         self.held = held; ids = [t["id"] for t in self.traders]
+        if self.rec.defer_writes:
+            sig = (len(orders), tuple((o.get("id"), o.get("status"), o.get("filled_qty"), o.get("filled_avg_price")) for o in orders))
+            bc = getattr(self.rec, "_broker_cache", None)
+            if bc is not None and bc[0] == sig:
+                self.books, self.others, self.cids, self.by_cid = bc[1]
+                return
         self.books, self.others = books.derive(orders, ids, self.start, self.fee, bool(self.cfg["practice_crypto_fee_in_coin"]))
         self.cids = {o.get("client_order_id") for o in orders}
         self.by_cid = {o.get("client_order_id"): o for o in orders}
+        if self.rec.defer_writes:
+            self.rec._broker_cache = (sig, (self.books, self.others, self.cids, self.by_cid))
 
     def check_books(self):
         self.blocked, self.sym_blocked = {}, {}
@@ -215,18 +249,34 @@ class Run:
                 if r["outcome"] == "late":
                     self.late_picks.add((tid, pid))
             folder = self.picks_dir / "picks" / tid if self.picks_dir else None
+            sha_cache = self.rec.__dict__.setdefault("_pick_sha", {})
             for f in sorted(folder.glob("*.json")) if folder and folder.is_dir() else []:
                 pid = f.stem
+                if pid in out:
+                    if self.rec.defer_writes:
+                        st = f.stat(); key = (str(f), st.st_mtime_ns, st.st_size)
+                        sha = sha_cache.get(key)
+                        if sha is None:
+                            try:
+                                raw = f.read_bytes()
+                            except Exception:
+                                raw = b""
+                            sha = hashlib.sha256(raw).hexdigest()[:16]; sha_cache[key] = sha
+                    else:
+                        try:
+                            raw = f.read_bytes()
+                        except Exception:
+                            raw = b""
+                        sha = hashlib.sha256(raw).hexdigest()[:16]
+                    if kept[tid][pid].get("sha") != sha:
+                        self.problem(tid, f"Pick {pid} was changed after the desk first saw it. The first copy is the one in force. A change needs a new pick.", once_key=f"chg:{tid}:{pid}:{sha}")
+                    continue
                 try:
                     raw = f.read_bytes(); obj = json.loads(raw)
                     errs = picks.validate(obj, tid, pid, self.now, self.cfg["practice_pick_max_life_hours"], self.cfg["practice_pick_max_actions"])
                 except Exception:  # a file that cannot be read as a pick stops only itself
                     raw, obj, errs = b"", None, ["The file could not be read as a pick."]
                 sha = hashlib.sha256(raw).hexdigest()[:16]
-                if pid in out:
-                    if kept[tid][pid].get("sha") != sha:
-                        self.problem(tid, f"Pick {pid} was changed after the desk first saw it. The first copy is the one in force. A change needs a new pick.", once_key=f"chg:{tid}:{pid}:{sha}")
-                    continue
                 if errs:
                     out[pid] = (pid, obj, errs); continue
                 late = self.now > picks.parse_t(obj["expires_utc"])
@@ -637,7 +687,11 @@ class Run:
                                     traders=v, hold={k: (round(h, 2) if h else None) for k, h in hold.items()}))
 
     def finish(self, status, text):
-        self.rec.save("state.json", self.state); self.rec.save("summary.json", self.summary(status, text))
+        self.rec.save("state.json", self.state)
+        if self.rec.defer_writes and status is None:
+            self.rec._last_run = self
+        else:
+            self.rec.save("summary.json", self.summary(status, text))
         if self.checkpoint and status is None:
             try:
                 self.checkpoint()

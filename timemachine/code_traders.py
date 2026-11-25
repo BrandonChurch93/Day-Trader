@@ -31,6 +31,8 @@ def hold(symbol):
                         actions=[dict(symbol=symbol, side="buy", usd=packet["book"]["cash_usd"], reason="hold: buy once")])
         return {"no_pick": True, "why": "hold: never sells"}
     fn.label = f"hold({symbol})"
+    fn.needs_feed = False
+    fn.needs_book = True
     return fn
 
 
@@ -95,4 +97,6 @@ def random_twin(result_json, seed, tape=None):
             return {"no_pick": True, "why": "twin: no symbol with a price at this wake"}
         return dict(thesis=f"Random twin (seed {seed}) of session {result['session']['session']}.", actions=acts, exits=exits)
     fn.label = f"random_twin({result['session']['session']}, {seed})"
+    fn.needs_feed = False
+    fn.needs_book = False
     return fn
