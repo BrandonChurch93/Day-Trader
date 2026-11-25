@@ -1,6 +1,20 @@
 {
- "account_facts": null,
+ "account_facts": {
+  "account_blocked": false,
+  "crypto_status": "ACTIVE",
+  "currency": "USD",
+  "status": "ACTIVE",
+  "trading_blocked": false
+ },
+ "alarms": [],
+ "done": {
+  "P1-BTC": "20261124T0000"
+ },
  "key_refused": false,
+ "last_px": {
+  "BTC/USD": 58540.595,
+  "VTI": 344.635
+ },
  "rules": {
   "P1-BTC": {
    "cash": 1000.0,
@@ -33,5 +47,11 @@
    "target": null
   }
  },
- "started_utc": null
+ "said": {},
+ "started_utc": "2026-11-25T16:31:51Z",
+ "target": {
+  "P1-BTC": 0.0,
+  "T1-VTI": 1.0
+ },
+ "unread": 0
 }
