@@ -12,7 +12,6 @@ As of 2026-11-25 17:52 UTC. Plans TM01 to TM04 are finished and are in Done or i
 |---|---|---|---|
 | 9b | The earnings release reader. Design sample scored 2026-11-25 18:11 UTC and Claude Sonnet 5.5 alone chosen (`docs/research/44_replay_11_earnings_reader.md`). Now: that reader goes through the 2,146 held-back releases once. Then the answers are hashed and pushed. The held-back half is scored once, after the last five-day exits have traded and the daily prices are collected again | `research_rig/PREREG_11_earnings_release_reader.md`, ledger rows 121 to 134 | 2026-11-25 |
 | 9g | Fast lane, the owner's own method (`practice/traders/F01_hot_coin_swing.md`): a second price store from Coinbase minutes for smaller coins, and a futures book in the time machine that can go long or short with funding and forced close-out | plan TM06, written when both are in | 2026-11-25 |
-| - | Dated calls by the crypto callers the owner followed, Alex Becker first: what was said on what date and what the coin did after | reading, no plan | 2026-11-25 |
 | - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
 
 ## Next, in order
@@ -66,6 +65,9 @@ The results of everything run before 2026-11-25 15:00 UTC are in the table in `d
 
 | # | What | What happened |
 |---|---|---|
+| 9k | Dated calls by the crypto caller the owner followed, Alex Becker: what was said on what date and what the coin did after | Measured 2026-11-25 18:18 UTC (`docs/research/46_becker_calls_measured.md`): 1,591 priced calls on 186 coins; the middle call fell 30.6% in 90 days and 26% beat bitcoin; the coins had usually already risen before the video. Following a caller is not queued as a test. Three design points carried into plan TM06 |
+| 9l | A dated attention count per coin for the time machine | Built 2026-11-25 18:18 UTC (`timemachine/attention.py`, `docs/research/45_attention_feed_measured.md`): Wikipedia page views for 17 of 23 coins usable; attention rises showed no link to later returns |
+| 9m | Checked reading on dated crypto events | Done 2026-11-25 18:18 UTC (`docs/research/43_crypto_events_evidence_checked.md`): one cheap look kept (row 9j), the rest parked or dropped |
 | - | Build the time machine | Built and pushed 2026-11-25. Tape and recorder 65 checks, pretend broker and server 93 checks. A hold of bitcoin over October 2026 ran end to end and its books matched the pretend broker to the cent |
 | - | Outside review of the practice desk's order code | Three passes by a different model. Faults found and fixed: overspending across traders, selling a shared holding twice, a stock order sent after the close, a pick edited after it was seen. Three test files pass |
 | - | Replay 07: eight day trading rules on SPY and QQQ one-minute prices | Run once 2026-11-25. No rule passed on either fund (`docs/research/27_replay_07_intraday_spy_qqq.md`). Follow-up worth doing: measure the real cost of a round trip in QQQ at the practice desk, since one rule beats holding only below about 1.8 hundredths of a percent |

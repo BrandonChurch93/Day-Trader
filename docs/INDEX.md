@@ -128,6 +128,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/43_crypto_events_evidence_checked.md` | Checked reading on dated crypto events (listings, unlocks, governance votes, hacks, attention, sector moves): 14 claims confirmed, 6 wrong, 1 not found, and the builder's call on each of five proposed tests | CURRENT |
 | `docs/research/44_replay_11_earnings_reader.md` | Replay 11: an AI reads each earnings press release and says buy or skip. Design-sample table for six set-ups, reader agreement, the set-up chosen, and what is still to come. Held-back verdict is added when scored | CURRENT |
 | `docs/research/45_attention_feed_measured.md` | Which free attention counts per coin can be collected with honest dates (Wikipedia yes, Reddit partly, news counts and Trends no) and an after-the-fact look showing attention rises did not lead price | CURRENT |
+| `docs/research/46_becker_calls_measured.md` | 1,855 dated buy or hold mentions from Alex Becker's videos (2020 to 2025) set against prices before and after, other callers' records, what happened to AI and gaming coins after hot stretches, and free dated data for "what was hot" | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
