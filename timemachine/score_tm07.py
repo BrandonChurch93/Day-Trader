@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from math import comb, prod
 import json
+from pathlib import Path
 import random
 
 from timemachine import desk_orders as O, desk, perp as P, score_weights as SW, tm06
@@ -32,6 +33,9 @@ class Registration:
         self.hash = desk.digest(self.body)
         if self.body.get("version") != "TM07-v1" or not self.body.get("runner_id") or not self.body.get("ledger_ref"):
             raise ValueError("register the runner and ledger reference before launch")
+        self.root = Path(self.body.get("study_root",""))
+        if not self.root.is_absolute() or self.root != self.root.resolve():
+            raise ValueError("register one absolute canonical study root")
         models = self.body.get("builds",{})
         if set(models) != {*desk.BOSSES,"gemini_neon"} or any(not v.get("id") for v in models.values()):
             raise ValueError("register all exact model builds")
@@ -60,6 +64,36 @@ class Registration:
             if item["symbols"] != symbols:
                 raise ValueError("wrong registered tradable list")
 
+    def check_root(self,path):
+        path = Path(path)
+        if path.parent.resolve() != self.root or path.is_symlink():
+            raise ValueError("attempt is outside the registered study root")
+
+    def bind_neutral(self,week,sid,stream_hash):
+        if sid != self.weeks[week]["neutral_id"]:
+            raise ValueError("wrong registered neutral session")
+        record = [self.hash,week,sid,stream_hash]
+        with desk.study_ledger(self.root,write=True) as con:
+            attempt = con.execute("SELECT session FROM attempts WHERE reg=? AND week=? AND arm='scout'",
+                                  (self.hash,week)).fetchone()
+            if attempt != (sid,):
+                raise ValueError("no designated neutral scout attempt")
+            current = con.execute("SELECT session,hash,seal FROM neutral WHERE reg=? AND week=?",(self.hash,week)).fetchone()
+            signature = desk.seal(self._key,"neutral-binding",record)
+            if current is None:
+                con.execute("INSERT INTO neutral VALUES(?,?,?,?,?)",(*record,signature))
+            elif current != (sid,stream_hash,signature):
+                raise ValueError("registered neutral stream was already finalized")
+
+    def verify_neutral(self,week,sid,stream_hash):
+        if sid != self.weeks[week]["neutral_id"] or not stream_hash:
+            raise ValueError("wrong registered neutral session")
+        with desk.study_ledger(self.root) as con:
+            row = con.execute("SELECT session,hash,seal FROM neutral WHERE reg=? AND week=?",(self.hash,week)).fetchone()
+        if row is None or row[:2] != (sid,stream_hash):
+            raise ValueError("does not match the finalized registered neutral stream")
+        desk.verify_seal(self._key,"neutral-binding",[self.hash,week,sid,stream_hash],row[2])
+
     def validate(self,spec,manifest,sid):
         w = desk.wall(spec["wakes"][0]).date().isoformat()
         if w not in self.weeks or w != DIAGNOSTIC and w < self.earliest:
@@ -85,6 +119,8 @@ class Registration:
             raise ValueError("unregistered model build")
         if arm == "scout" and sid != item["neutral_id"] or arm in ("B","C") and scout["neutral_id"] != item["neutral_id"]:
             raise ValueError("arm did not use designated neutral scout")
+        if arm in ("B","C"):
+            self.verify_neutral(w,scout["neutral_id"],manifest["scout_hash"])
         from itertools import groupby
         good = {t//3600*3600 for t,rows in groupby(spec["minutes"],key=lambda r:r[0])
                 if set(spec["symbols"]) <= {r[1] for r in rows}}
@@ -258,6 +294,7 @@ def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None)
         if draws is not None:
             raise ValueError("cannot override registered twin draws")
         reg = Registration(registered,approval_key)
+        reg.check_root(sess.path)
         week = reg.validate(spec,sess.manifest,sess.sid)
         reg.verify_gate(week,sess.manifest["boss"],sess.arm,sess.manifest.get("gates"),approval_key)
     else:
@@ -339,7 +376,6 @@ def paired(scores, boss, arm, *, registration=None):
     if not isinstance(registration,Registration):
         raise ValueError("provide the registered TM07 manifest, not preview scores")
     grouped = {}
-    scouts = {}
     for s in scores:
         w = s["week"]
         desk.verify_seal(registration._key,"score",{k:v for k,v in s.items() if k != "attestation"},s.get("attestation"))
@@ -347,9 +383,7 @@ def paired(scores, boss, arm, *, registration=None):
                 or s["fixture"] != registration.weeks[w]["fixture"]):
             raise ValueError("unregistered score or fixture")
         if s["arm"] in ("B","C"):
-            if (not s.get("scout_hash") or s.get("neutral_id") != registration.weeks[w]["neutral_id"]
-                    or scouts.setdefault(w,s["scout_hash"]) != s["scout_hash"]):
-                raise ValueError("different neutral scout stream for the same week")
+            registration.verify_neutral(w,s.get("neutral_id"),s.get("scout_hash"))
         if not s.get("invalid") and len(s["main"]["twin"]) != DRAW_COUNT:
             raise ValueError("registered comparison needs 1,000 timing draws")
         if s["boss"] != boss or s["arm"] not in ("A", arm):

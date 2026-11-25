@@ -313,6 +313,7 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, app
     if registration is not None:
         from timemachine.score_tm07 import Registration
         reg = Registration(registration,approval_key)
+        reg.check_root(path)
         meta.update(registration=registration,model_build=model_build,gates=gates or [])
         week = reg.validate(spec,meta,path.name)
         reg.verify_gate(week,boss,arm,gates,approval_key)
@@ -332,12 +333,27 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, app
                     book=P.new_book(spec["cfg"]["tm_account_start_usd"], spec.get("opening")))),))
 
 
-def record_attempt(path,reg,week,boss,arm,gates):
-    target = path.parent/".registered_attempts.sqlite"
+@contextmanager
+def study_ledger(root,write=False):
+    target = Path(root)/".registered_attempts.sqlite"
+    if target.is_symlink() or not write and not target.is_file():
+        raise ValueError("canonical TM07 attempt ledger is missing or redirected")
     with closing(sqlite3.connect(target)) as con,con:
-        target.chmod(0o600)
-        con.execute("CREATE TABLE IF NOT EXISTS attempts (reg TEXT, week TEXT, boss TEXT, arm TEXT, session TEXT, gate_hash TEXT,"
-                    "PRIMARY KEY(reg,week,boss,arm))")
+        if write:
+            target.chmod(0o600)
+            con.executescript(
+                "CREATE TABLE IF NOT EXISTS attempts (reg TEXT, week TEXT, boss TEXT, arm TEXT, session TEXT UNIQUE, gate_hash TEXT,"
+                "PRIMARY KEY(reg,week,boss,arm));"
+                "CREATE TABLE IF NOT EXISTS neutral (reg TEXT, week TEXT, session TEXT UNIQUE, hash TEXT, seal TEXT,"
+                "PRIMARY KEY(reg,week));"
+                "CREATE TRIGGER IF NOT EXISTS neutral_no_update BEFORE UPDATE ON neutral BEGIN SELECT RAISE(ABORT,'append only'); END;"
+                "CREATE TRIGGER IF NOT EXISTS neutral_no_delete BEFORE DELETE ON neutral BEGIN SELECT RAISE(ABORT,'append only'); END;")
+            con.execute("BEGIN IMMEDIATE")
+        yield con
+
+
+def record_attempt(path,reg,week,boss,arm,gates):
+    with study_ledger(path.parent,write=True) as con:
         try:
             con.execute("INSERT INTO attempts VALUES(?,?,?,?,?,?)",(reg,week,boss or "scout",arm,path.name,digest(gates or [])))
         except sqlite3.IntegrityError as exc:
@@ -699,7 +715,13 @@ class DeskSession:
             usage = [(r, json.loads(x)) for r, x in con.execute("SELECT role, data FROM journal WHERE kind LIKE 'usage:%' ORDER BY id")]
             result = dict(fixture=self.manifest["fixture"],neutral_id=self.sid,wakes=items,usage=usage)
             result["seal"] = seal(approval_key,"scout",result)
-            return result
+        if self.manifest.get("registration") is not None:
+            from timemachine.score_tm07 import Registration
+            reg = Registration(self.manifest["registration"],approval_key)
+            reg.check_root(self.path)
+            week = reg.validate(self.spec,self.manifest,self.sid)
+            reg.bind_neutral(week,self.sid,digest(result))
+        return result
 
 
 def open_desk(sid, root=None, token=None):

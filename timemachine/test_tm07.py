@@ -64,7 +64,7 @@ def condition(wake, symbol=A, **kw):
     return O.normalize_conditions([item], {symbol:100}, [symbol], wake, wake+7200, 6, 1)
 
 
-def registered_fixture(spec=None):
+def registered_fixture(root,spec=None):
     weeks = {}
     for w in S.WEEKS:
         item = dict(fixture=D.digest(w),neutral_id="TM07-scout-"+w)
@@ -79,13 +79,17 @@ def registered_fixture(spec=None):
     if spec is not None:
         w = D.wall(spec["wakes"][0]).date().isoformat()
         weeks[w]["fixture"] = D.digest(D.json.loads(D.encode(spec)))
-    body = dict(version="TM07-v1",runner_id="toy-runner",ledger_ref="toy-no-run",
+    body = dict(version="TM07-v1",runner_id="toy-runner",ledger_ref="toy-no-run",study_root=str(root.resolve()),
                 builds={s:{"id":s+"-toy","first_after_cutoff":"2026-07-01"}
                         for s in (*D.BOSSES,"gemini_neon")},weeks=weeks)
     return S.Registration(dict(body=body,seal=D.seal(SEAL_KEY,"registration",body)),SEAL_KEY)
 
 
 def synthetic_scores(reg,boss,draws=1000):
+    for w in S.WEEKS:
+        sid = reg.weeks[w]["neutral_id"]
+        D.record_attempt(reg.root/sid,reg.hash,w,None,"scout",[])
+        reg.bind_neutral(w,sid,D.digest([w,"scout"]))
     return [dict(week=w,arm=a,boss=boss,fixture=reg.weeks[w]["fixture"],registration=reg.hash,
                  neutral_id=reg.weeks[w]["neutral_id"] if a=="B" else None,scout_hash=D.digest([w,"scout"]) if a=="B" else None,
                  main=dict(value=1000+5*(a=="B"),gain=.5,equal=0,twin=[0]*draws))
@@ -268,6 +272,20 @@ class DeskTest(unittest.TestCase):
             drops, = con.execute("SELECT data FROM journal WHERE kind='evidence_drops'").fetchall()
         self.assertEqual(D.json.loads(drops[0])["attention"],2)
 
+    def test_reaudit_opr_r3_standalone_boss_gates_cannot_split_neutral(self):
+        reg = registered_fixture(self.root)
+        good = [s for s in synthetic_scores(reg,D.BOSSES[0]) if s["week"] in S.SCREEN]
+        other = [dict(s,boss=D.BOSSES[1]) for s in good]
+        for s in other:
+            if s["arm"] == "B":
+                s["scout_hash"] = D.digest(["alternate",s["week"]])
+        S.seal_screen_gate([reg.attest_score(s) for s in good],D.BOSSES[0],"B",reg,SEAL_KEY)
+        with self.assertRaisesRegex(ValueError,"neutral"):
+            S.seal_screen_gate([reg.attest_score(s) for s in other],D.BOSSES[1],"B",reg,SEAL_KEY)
+        week = S.SCREEN[0]
+        with self.assertRaisesRegex(ValueError,"already finalized"):
+            reg.bind_neutral(week,reg.weeks[week]["neutral_id"],D.digest("other"))
+
     def test_b02_immediate_cannot_size_from_a_later_open(self):
         def execute(later):
             spec = world()
@@ -412,7 +430,7 @@ class DeskTest(unittest.TestCase):
                 for w in S.WEEKS for a in ("A","B")]
         with self.assertRaisesRegex(ValueError,"register|1,000"):
             S.paired(fake,boss,"B")
-        reg = registered_fixture()
+        reg = registered_fixture(self.root)
         with self.assertRaisesRegex(ValueError,"1,000"):
             S.paired([reg.attest_score(x) for x in synthetic_scores(reg,boss,draws=1)],boss,"B",registration=reg)
         with self.assertRaisesRegex(ValueError,"sealed"):
@@ -429,11 +447,15 @@ class DeskTest(unittest.TestCase):
                     evidence=[[] for _ in wakes],vendor_proofs={},params=P.p_params(priced,cfg,funding={}),
                     minutes=[(t,s,100,101,99,100) for t in wakes for s in priced],end_marks={s:100 for s in priced},
                     rows=[dict(marks={s:100 for s in priced}) for _ in wakes])
-        reg = registered_fixture(spec)
+        reg = registered_fixture(self.root,spec)
         envelope = dict(body=reg.body,seal=D.seal(SEAL_KEY,"registration",reg.body))
         boss = D.BOSSES[0]
         settings = dict(approval_key=SEAL_KEY,registration=envelope,model_build=boss+"-toy")
         D.create_desk(self.root/"TM07-registered",spec,"A",boss,D.issue_role_tokens("A"),**settings)
+        other_root = self.root/"other"
+        other_root.mkdir()
+        with self.assertRaisesRegex(ValueError,"study root"):
+            D.create_desk(other_root/"TM07-copied",spec,"A",boss,D.issue_role_tokens("A"),**settings)
         with self.assertRaisesRegex(ValueError,"already recorded"):
             D.create_desk(self.root/"TM07-repeat",spec,"A",boss,D.issue_role_tokens("A"),**settings)
         spec["end"] -= 60
@@ -641,7 +663,7 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(S.sign_mark(20),16)
         self.assertAlmostEqual(S.sign_tail(20,16),.005908966064453125)
         boss=D.BOSSES[1]
-        reg = registered_fixture()
+        reg = registered_fixture(self.root)
         specs = synthetic_scores(reg,boss)
         signed = [reg.attest_score(x) for x in specs]
         got=S.paired(signed,boss,"B",registration=reg)
