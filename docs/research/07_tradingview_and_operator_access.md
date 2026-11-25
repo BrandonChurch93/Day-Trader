@@ -43,4 +43,4 @@ Facts about the agents:
 - So this repo works in Claude Code as it stands. If a `CLAUDE.md` is ever added, it must import `AGENTS.md` or the hard rules stop loading.
 - Perplexity Computer can be called from Claude Code as an MCP server, so a task can be handed to it from there. STATED, from Perplexity's product documentation. Not tested by us.
 
-Open for the owner (hand-over 10 in `docs/quality/04_research_to_build.md`): which agent is the Builder for the unattended build, and on which machine it runs.
+Open for the owner (hand-over 10 in `archive/quality/04_research_to_build.md`): which agent is the Builder for the unattended build, and on which machine it runs.

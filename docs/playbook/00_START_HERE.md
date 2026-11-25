@@ -1,6 +1,6 @@
 # Start here
 
-> Note added 2026-11-25. This page was written from reading, before the project ran any test of its own. The current state, with the result of every test, is `docs/STATUS.md`. The map of every file is `docs/INDEX.md`. Where this page and the status page disagree, the status page stands. What our own tests have added so far: no rule has a clean pass, slow trend rules cut the worst drop and give up growth on both bitcoin and the US stock market, and no day trading rule tested on crypto passed: at every venue cost but the lowest, all of them lost money in the held-back years (corrected 08:55 UTC, the first wording said every rule lost to fees). "v1" on this page means the first version of the product, which is not built. It is not the v1 engine of the research rig. The reasons and the next tests are in `docs/research/25_what_the_evidence_supports.md`.
+> Note added 2026-11-25. This page was written from reading, before the project ran any test of its own. The current state, with the result of every test, is `docs/STATUS.md`. The map of every file is `docs/INDEX.md`. Where this page and the status page disagree, the status page stands. What our own tests have added so far: no rule has a clean pass, slow trend rules cut the worst drop and give up growth on both bitcoin and the US stock market, and no day trading rule tested on crypto passed: at every venue cost but the lowest, all of them lost money in the held-back years (corrected 08:55 UTC, the first wording said every rule lost to fees). "v1" on this page means the first version of the product, which is not built. It is not the v1 engine of the research rig. The reasons and the next tests are in `docs/research/25_what_the_evidence_supports.md`. On 2026-11-25 the owner decided that AI traders make the trade decisions with pretend money (`docs/DECISIONS.md`); where this page says otherwise, `AGENTS.md` stands.
 
 Last verified: 2026-11-24. This page is the whole project in two pages. Each section points to the playbook file that holds the rules, and each playbook file points to the full research.
 
@@ -56,9 +56,9 @@ A Claude subscription is not a clean alternative: Anthropic's consumer terms bar
 | 4 | Tiny live capital, ring-fenced account, hard daily loss cut-off. Starts only on the owner's written go | Live results track paper within tolerance for `live_tracks_paper_months` months |
 | 5 | Scale slowly | Only on `scale_live_evidence_months` months of live evidence |
 
-Every threshold above is a key in `config/thresholds.yaml`, which is the only place its value lives. The three reports suggested different paper-trading lengths. The config reconciles them: the shorter figure gates tiny live capital, the longer one gates scaling. Recorded in `docs/decisions/0001-starting-decisions.md`. The phases are evidence gates, not deferred scope: the software that runs every one of them is finished in v1.
+Every threshold above is a key in `config/thresholds.yaml`, which is the only place its value lives. The three reports suggested different paper-trading lengths. The config reconciles them: the shorter figure gates tiny live capital, the longer one gates scaling. Recorded in `archive/decisions/0001-starting-decisions.md`. The phases are evidence gates, not deferred scope: the software that runs every one of them is finished in v1.
 
-> Note added 2026-11-25. Two things about the table above. "Is finished in v1" is a rule about scope for a product that is not built yet. It does not report that anything is finished. And "within tolerance" in phases 2 and 4 has no number: no key for it exists in `config/thresholds.yaml`, so the sentence above is not yet true for those two gates. Nothing may be promoted on a tolerance that someone made up. The gap is put to the owner in `docs/decisions/morning_list_2026-11-25.md`, question 17.
+> Note added 2026-11-25. Two things about the table above. "Is finished in v1" is a rule about scope for a product that is not built yet. It does not report that anything is finished. And "within tolerance" in phases 2 and 4 has no number: no key for it exists in `config/thresholds.yaml`, so the sentence above is not yet true for those two gates. Nothing may be promoted on a tolerance that someone made up. The gap is put to the owner in `archive/decisions/morning_list_2026-11-25.md`, question 17. On 2026-11-25 the owner decided that AI traders make the trade decisions with pretend money (`docs/DECISIONS.md`); where this page says otherwise, `AGENTS.md` stands.
 
 ## Rules that protect you
 
@@ -71,12 +71,12 @@ Details: `04_brokers_data_rules.md`.
 
 ## Risk posture and historical testing
 
-The owner wants a middle risk level: rule-based core strategies plus a small capped sleeve for moonshots that each carry a written thesis. Historical data is used for all rule-based testing, and for model comparisons only on dates after each model's training cutoff. Details: `docs/decisions/0002-historical-testing-and-risk-posture.md`.
+The owner wants a middle risk level: rule-based core strategies plus a small capped sleeve for moonshots that each carry a written thesis. Historical data is used for all rule-based testing, and for model comparisons only on dates after each model's training cutoff. Details: `archive/decisions/0002-historical-testing-and-risk-posture.md`.
 
-> Correction added 2026-11-25 by research. The last part of that sentence was a proposal and conflicts with `AGENTS.md` hard rule 7, which says only forward paper or shadow results count for models. Hard rule 7 is in force. A replay of a model on past dates, whatever the cutoff, is not evidence of skill. Question 19 in `docs/decisions/morning_list_2026-11-25.md`.
+> Correction added 2026-11-25 by research. The last part of that sentence was a proposal and conflicts with `AGENTS.md` hard rule 7, which says only forward paper or shadow results count for models. Hard rule 7 is in force. A replay of a model on past dates, whatever the cutoff, is not evidence of skill. Question 19 in `archive/decisions/morning_list_2026-11-25.md`.
 
 ## What the owner still has to decide
 
-Capital and loss limits, brokers, spot-only crypto or not, hosting, Perplexity plan and API budget, and model policy. Listed in `docs/decisions/0001-starting-decisions.md`.
+Capital and loss limits, brokers, spot-only crypto or not, hosting, Perplexity plan and API budget, and model policy. Listed in `archive/decisions/0001-starting-decisions.md`.
 
-> Note added 2026-11-25. The current list of what waits on the owner, with research's recommendation for each, is `docs/decisions/morning_list_2026-11-25.md`. The file above is the first list, from before any test.
+> Note added 2026-11-25. The current list of what waits on the owner, with research's recommendation for each, is `archive/decisions/morning_list_2026-11-25.md`. The file above is the first list, from before any test. On 2026-11-25 the owner decided that AI traders make the trade decisions with pretend money (`docs/DECISIONS.md`); where this page says otherwise, `AGENTS.md` stands.

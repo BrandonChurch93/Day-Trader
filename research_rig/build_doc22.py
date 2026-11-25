@@ -110,7 +110,7 @@ doc = f"""# 22. Replay 05: slow trend rules on the US stock market, free data fr
 
 Status: research result. Proposed by research. No owner decision is recorded here.
 
-Note, 2026-11-25. Which of the two runs below counts is not settled. The corrected run fixed a fault in the code of one rule, not in the engine. The owner's rule allows a second run of the held-back slice only when the engine itself was wrong, so it may not cover this one. That is questions 18a and 18b in `docs/decisions/morning_list_2026-11-25.md`. The first run has a slip of its own: its ledger row was added after it started, and a short try with 3 shuffles came before it. Research recommends that no pass from either run is credited, that the fails stand, and that every figure below is kept as a measurement. The owner has not answered.
+Note, 2026-11-25. Which of the two runs below counts is not settled. The corrected run fixed a fault in the code of one rule, not in the engine. The owner's rule allows a second run of the held-back slice only when the engine itself was wrong, so it may not cover this one. That is questions 18a and 18b in `archive/decisions/morning_list_2026-11-25.md`. The first run has a slip of its own: its ledger row was added after it started, and a short try with 3 shuffles came before it. Research recommends that no pass from either run is credited, that the fails stand, and that every figure below is kept as a measurement. The owner has not answered.
 
 Date: 2026-11-25. Plan written and pushed before the run: `research_rig/PREREG_05_stock_trend_free_data.md`. Correction written and pushed before the corrected run: `research_rig/AMENDMENT_05_I2_equal_thirds.md`. Every number below is MEASURED by `research_rig/run_05.py` and placed here by `research_rig/build_doc22.py`, unless it says it is the auditor's.
 
@@ -119,7 +119,7 @@ Date: 2026-11-25. Plan written and pushed before the run: `research_rig/PREREG_0
 - Before the full run, the script was tried once with 3 shuffles at the middle cost to see that it worked. I saw rough results from that try. No rule or setting was changed afterwards.
 - Two full starts were lost to process problems on the test machine and were restarted unchanged. No result from them was read.
 - The first full run finished and is kept as `research_rig/results_05.json`.
-- An independent audit then found that the code for rule I2 did not do what the plan says (`audit/2026-11-25_replay_05_audit.md`, finding 1). The plan says one third in each of three industry groups. The code split the account in three once, in 1927, and never again. MEASURED by the auditor: by 2026-06-30 one third had grown to 87.8% of the account.
+- An independent audit then found that the code for rule I2 did not do what the plan says (`archive/audit/2026-11-25_replay_05_audit.md`, finding 1). The plan says one third in each of three industry groups. The code split the account in three once, in 1927, and never again. MEASURED by the auditor: by 2026-06-30 one third had grown to 87.8% of the account.
 - The correction was written down and pushed, then the run was repeated with only that change. It is kept as `research_rig/results_05b.json`.
 - The auditor had already measured what the correction would do before it was written down. So a pass that appears only in the corrected run is a pass after a correction whose effect was known. This page reports it as that.
 - The audit found no look-ahead in any of the eight rules, and its own separate rebuild of holding the market and of rule T1 from the raw file matched the rig exactly (MEASURED by the auditor).
@@ -213,12 +213,12 @@ Held-back Sharpe ratio at 5 bps a side, corrected run. Only the I2 row differs f
 - These are returns of an index that cannot be bought directly. A total market fund is the nearest thing. Fund fees and tracking gaps are left out for the rules and for holding alike.
 - The held-back slice holds 2008, 2020 and 2022. The table above shows each year one by one.
 - The three months after the designer's knowledge cutoff are far too short to mean anything and are in the output files only.
-- This is the cheap first look. A fair test of funds that can be bought needs daily fund prices with opening prices and dividend history. Dividend history is the part that still needs a purchase (`docs/decisions/morning_list_2026-11-25.md`, `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`).
+- This is the cheap first look. A fair test of funds that can be bought needs daily fund prices with opening prices and dividend history. Dividend history is the part that still needs a purchase (`archive/decisions/morning_list_2026-11-25.md`, `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`).
 
 ## Files
 
 - Plan: `research_rig/PREREG_05_stock_trend_free_data.md`. Correction: `research_rig/AMENDMENT_05_I2_equal_thirds.md`. Data notes: `research_rig/data_notes_french.md`
-- Audit: `audit/2026-11-25_replay_05_audit.md`, `audit/replay_05_probes.py`
+- Audit: `archive/audit/2026-11-25_replay_05_audit.md`, `archive/audit/replay_05_probes.py`
 - Code: `research_rig/run_05.py`, `rig2.py`, `build_doc22.py`, `i2_2020_note.py`. Output: `research_rig/results_05.json` (first run), `research_rig/results_05b.json` (corrected run, started with `R05_POOL=1`)
 - Trials counted in the deflated Sharpe formula: {r['n_trials']} (`research_rig/TRIAL_LEDGER.md`)
 

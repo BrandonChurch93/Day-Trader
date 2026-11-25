@@ -38,7 +38,7 @@ For a solo developer targeting both US equities and crypto, three architectural 
 
 ## 2. Reference Architecture for an AI-Assisted Trading System
 
-> Superseded 2026-11-24. The diagram and text below show a model returning a `TradeIntent`. Models never emit orders or trade intents; deterministic strategy code produces every `TradeIntent`. The current diagram is in `docs/playbook/06_architecture_and_build.md`. `AGENTS.md` and `docs/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
+> Superseded 2026-11-24. The diagram and text below show a model returning a `TradeIntent`. Models never emit orders or trade intents; deterministic strategy code produces every `TradeIntent`. The current diagram is in `docs/playbook/06_architecture_and_build.md`. `AGENTS.md` and `archive/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
 
 
 An LLM should never hold broker credentials or directly invoke `submit_order`. LLMs are non-deterministic, vulnerable to prompt injection from external market news ([OWASP Prompt Injection Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html)) (MEASURED), and prone to overconfident narrative bias ([Evaluating LLMs in Finance 2026](https://arxiv.org/html/2602.14233)) (MEASURED). Instead, the system should be built as a deterministic event-driven pipeline where the LLM operates as an advisory analyst that outputs strictly typed JSON trade intents validated by a deterministic risk engine.
@@ -111,7 +111,7 @@ An LLM should never hold broker credentials or directly invoke `submit_order`. L
 
 ## 3. Harness vs. Application: Concrete Split
 
-> Superseded 2026-11-24. The harness described below returns a `TradeIntent`. It returns only evidence tags, watchlist candidates and pause or veto flags. `AGENTS.md` and `docs/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
+> Superseded 2026-11-24. The harness described below returns a `TradeIntent`. It returns only evidence tags, watchlist candidates and pause or veto flags. `AGENTS.md` and `archive/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
 
 
 Conflating the agent harness with the trading application is a common architectural mistake. Define them strictly:
@@ -210,7 +210,7 @@ A trading bot needs persistent WebSocket connections, stable outbound IP address
 
 ## 6. Phased Build Plan and Go/No-Go Gates
 
-> Superseded 2026-11-24. The sample sizes, the Phase 1 Sharpe and profit-factor gates, the Phase 3 `TradeIntent` wording and the live money figures in this table are replaced by the keys in `config/thresholds.yaml`. Live capital and loss limits are owner numbers and are open. Build durations were removed on 2026-11-24 because agent time estimates are not used here; sample sizes stay as evidence. `AGENTS.md` and `docs/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
+> Superseded 2026-11-24. The sample sizes, the Phase 1 Sharpe and profit-factor gates, the Phase 3 `TradeIntent` wording and the live money figures in this table are replaced by the keys in `config/thresholds.yaml`. Live capital and loss limits are owner numbers and are open. Build durations were removed on 2026-11-24 because agent time estimates are not used here; sample sizes stay as evidence. `AGENTS.md` and `archive/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
 
 
 Never jump from an idea to live autonomous trading. Each phase requires pre-registered exit criteria written before the phase starts to prevent moving the goalposts.
@@ -270,7 +270,7 @@ Prompt injection is ranked as the #1 risk in the OWASP Top 10 for LLM Applicatio
 
 ## Implications for Our Build
 
-> Superseded 2026-11-24. Durations in this list are superseded by `config/thresholds.yaml`. `AGENTS.md` and `docs/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
+> Superseded 2026-11-24. Durations in this list are superseded by `config/thresholds.yaml`. `AGENTS.md` and `archive/decisions/0001-starting-decisions.md` win. This text is kept as the audit trail.
 
 
 1. **Start with a thin Python service over `alpaca-py` (US equities) and `CCXT` (crypto), paired with `vectorbt` for fast offline research.** Avoid Backtrader (frozen since 2023) and avoid heavy multi-language frameworks like LEAN or NautilusTrader v2 RC until a deterministic strategy proves positive net expectancy in paper trading. If you later need IBKR execution, build on `ib_async` 3.0 (`next-protobuf`) for IBKR's mandatory December 2026 protocol change.

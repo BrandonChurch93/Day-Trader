@@ -80,7 +80,7 @@ The five pass marks. A rule passes for a venue only if all five hold at that ven
 | 4 | Overfitting probability under the mark | `backtest_max_pbo` |
 | 5 | Shuffle percentile above the mark | `replay_min_shuffle_percentile` |
 
-Three of those keys are new house numbers that this replay proposed. They are in the config with status `proposed`.
+Three of those keys are new house numbers that this replay proposed. They are in the config with status `builder` (called `proposed` at the time).
 
 ## Engine checks that passed first
 
@@ -191,7 +191,7 @@ Update: research withdraws proposal 1 as worded here. The replacement is in `doc
 1. Carry three bitcoin rules into practice trading as candidates: P2, S50 and D20. They passed at Alpaca cost. P1 goes too, clearly labelled as having failed mark 1 at Alpaca cost, so its live behaviour can be compared.
 2. Run ether in practice for observation only, labelled as having failed the replay.
 3. Treat fees as part of the rule. At 85 bps a side and above, nothing passed. This supports not trading crypto on Kraken entry or Coinbase entry tiers, and keeps the live crypto venue question open until practice results exist.
-4. Keep the three new house numbers as proposed in the config until he confirms or changes them.
+4. At the time, the recommendation was to keep the three new house numbers as proposed in the config until the owner confirmed or changed them.
 5. Test next, each with its own written plan before it runs: intraday rules on hourly bars against each venue's fees. A slow trend rule on a wider basket of liquid coins, which needs price history that includes dead coins. Trend rules on stock funds, which needs a licensed data source (see research 10).
 
 ## How to reproduce

@@ -119,7 +119,7 @@ Hold bitcoin: 43.5% a year, Sharpe 1.00, drop -53.1%. Hold the basket: -1.4% a y
 
 ## After the independent audit (added 2026-11-25)
 
-The audit is `../audit/2026-11-25_replay_04_audit.md`. It has 15 findings. Its own rebuild matches K1, K4 and both benchmarks to about 1e-15. None of the changes it tested produced a pass against hold bitcoin. The lead decided not to change `basket.py` and not to rerun tonight. The result stands as run, and these faults are stated:
+The audit is `../archive/audit/2026-11-25_replay_04_audit.md`. It has 15 findings. Its own rebuild matches K1, K4 and both benchmarks to about 1e-15. None of the changes it tested produced a pass against hold bitcoin. The lead decided not to change `basket.py` and not to rerun tonight. The result stands as run, and these faults are stated:
 
 - 04-01: the forced-exit code uses each pair's last bar from the full archive, which is hindsight. It never fired (zero forced exits). It must be fixed before `basket.py` is used again.
 - 04-02: trade sizes use the account value before costs. The auditor measured that sizing on the value after costs changes things only slightly. Hold-the-basket held Sharpe goes from 0.328049 to 0.327906 and K1's from 0.258361 to 0.262360. K4's Binance.US deflated Sharpe goes from 0.9331335 to 0.9332411, still a fail.

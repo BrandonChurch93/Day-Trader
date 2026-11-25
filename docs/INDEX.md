@@ -2,14 +2,14 @@
 
 What this page is: the map of the repository. Every tracked file has its path in the first column of a table on this page, or sits under a folder that has its own row there with a trailing slash. `tools/check_repo.py` fails if that stops being true. A new file needs its own row unless it sits under a folder that has one. A folder named in passing, outside the first column, does not cover it.
 
-What this page is not: the current state of the project. That is `docs/STATUS.md`. Read it first.
+Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEUE.md` for what's next.
 
 ## How to use this page
 
 - Find your task in the first table and read only the files it names.
-- The State column says whether a file has been replaced. It does not say whether the owner has approved it or whether a result in it is proven. Many CURRENT files are proposals, first looks or dated audits, and each says so in its own text. What is approved is only what `docs/decisions/` records as an owner decision with a date.
+- The State column says whether a file has been replaced. It does not say whether the owner has approved it or whether a result in it is proven. Many CURRENT files are proposals, first looks or dated audits, and each says so in its own text. Standing owner decisions are recorded in `docs/DECISIONS.md`.
 - Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
-- `tools/check_repo.py` checks that every tracked file is listed here and that the paths and config keys named in the map files, decisions, playbook and research pages exist. It does not check paths in `docs/quality/`, `audit/`, the raw reports or the plans in `research_rig/`. It does not check that a file's State is right or that a claim is true.
+- `tools/check_repo.py` checks that every tracked file is listed here and that the paths and config keys named in the map files, playbook and research pages exist. It does not check paths in `archive/`, the raw reports or the plans in `research_rig/`. It does not check that a file's State is right or that a claim is true.
 
 | State | Meaning |
 |---|---|
@@ -22,19 +22,20 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 
 | If you are about to | Read, in this order |
 |---|---|
-| Do anything at all | `AGENTS.md`, then `docs/STATUS.md`. `AGENTS.md` still names the playbook as the second read; the playbook pages open with a note that sends you to the status page. A change to that line waits on the owner |
+| Do anything at all | `AGENTS.md`, then `docs/STATUS.md` and `docs/QUEUE.md` |
 | Understand a term, a test name or a rule name | `docs/GLOSSARY.md` |
-| Talk to the owner or hand work to him | `docs/quality/03_working_with_the_owner.md`, `docs/decisions/morning_list_2026-11-25.md` |
-| Plan, build or review anything | `docs/quality/00_READ_FIRST.md`, then the file it points to for your topic |
-| Use or change a number | `config/thresholds.yaml`. Then add a dated note in `docs/decisions/` |
-| Confirm a stored result, or asked to rerun a test | `research_rig/README.md`, "How each stored output was made". Short answer: do not run it. Check the stored output with `python3 tools/check_repo.py --builders` |
+| Work on the practice trader, or read what it did | `practice/README.md`, then `practice/PLAN_02_ai_desk.md` |
+| Talk to the owner or hand work to him | `AGENTS.md`, "Writing to the owner" and "Only the owner" |
+| Plan, build or review anything | `AGENTS.md`, "How the work goes", and `docs/QUEUE.md` |
+| Use or change a number | `config/thresholds.yaml` and `AGENTS.md`, "Honest testing" and "Only the owner" |
+| Confirm a stored result or plan a new attempt | `research_rig/README.md`, "How each stored output was made", and `AGENTS.md`, "Honest testing". Check stored output with `python3 tools/check_repo.py --builders` |
 | Add a new test on past prices | `research_rig/README.md`, then `research_rig/TRIAL_LEDGER.md`. `docs/research/16_rig_audit.md` for what the audits changed in the rig |
 | Judge whether a trading idea is worth testing | `docs/research/25_what_the_evidence_supports.md`, then the playbook page for that market |
 | Choose a broker, a venue or a data source | `docs/playbook/04_brokers_data_rules.md`, `docs/research/09_brokers_and_venues.md`, `docs/research/10_historical_data_and_practice.md` |
-| Put an AI model anywhere near a trading decision | `AGENTS.md` hard rules 1 and 7, `docs/playbook/03_role_of_ai.md`, `docs/research/11_ai_trader_experiment_design.md` |
-| Design the product | `docs/playbook/06_architecture_and_build.md`, `docs/quality/02_how_we_build.md`. Nothing is built yet and building has not been approved |
-| Reopen something already settled | `docs/decisions/` first |
-| Record something the owner decided | `docs/decisions/README.md` |
+| Put an AI model anywhere near a trading decision | `AGENTS.md`, "How a trader behaves" and "Honest testing", then `practice/traders/ROSTER.md` |
+| Design the product | `AGENTS.md`, `docs/QUEUE.md`, then `docs/playbook/06_architecture_and_build.md` for background |
+| Reopen something already settled | `docs/DECISIONS.md` for standing owner decisions, `docs/QUEUE.md` for test priorities |
+| Record something the owner decided | `docs/DECISIONS.md` |
 
 ## Top level
 
@@ -44,10 +45,9 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 | `README.md` | Front page. Points here and to the status page | CURRENT |
 | `.gitignore` | Keeps price files, logs and private data out of the repo | CURRENT |
 | `config/thresholds.yaml` | Every threshold and every owner number, once. Documents name the key and never repeat the value | CURRENT |
-| `tools/check_repo.py` | Checks this index, the paths named in the map files and in every page under `docs/decisions/`, `docs/playbook/` and `docs/research/`, the config keys named in documents, the results table in the status page, the number tables in the morning list, the coverage tables in `docs/research/10_historical_data_and_practice.md`, and the stored outputs against `research_rig/provenance.json`. Run before every commit. With `--builders` it also runs every document builder and fails if a built page changes | CURRENT |
+| `tools/check_repo.py` | Checks this index, paths named in the map, playbook and research pages, config keys named in documents, the results table in the status page, the coverage tables in `docs/research/10_historical_data_and_practice.md`, and stored outputs against `research_rig/provenance.json`. With `--builders` it also runs the document builders and fails if a built page changes | CURRENT |
 | `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from the output files | CURRENT |
 | `tools/bars_coverage.py` | With `--write`, writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from `research_rig/platform_bars_coverage.json` and `research_rig/platform_bars_crosscheck.json`, so no figure there is typed. With `--summarise`, on a machine that has the price files, rebuilds the first of those two files from the gap check's output | CURRENT |
-| `tools/owner_numbers.py` | Writes the two number tables in the morning list from `config/thresholds.yaml`, so no value on the owner's list is typed | CURRENT |
 
 ## docs/
 
@@ -56,19 +56,20 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 | `docs/STATUS.md` | Where the project stands today: what was tested, what passed, what waits on the owner, what is next | CURRENT |
 | `docs/INDEX.md` | This page | CURRENT |
 | `docs/GLOSSARY.md` | Plain definitions of the terms, test names and rule names used in the repo | CURRENT |
+| `docs/DECISIONS.md` | The owner's standing decisions in his words, with dates | CURRENT |
+| `docs/QUEUE.md` | What is running, what to test next, and what finished | CURRENT |
 
-## docs/quality/ (the owner's standard)
+## archive/ (historical records)
 
-Lines marked OWNER in these files are rules. Lines marked TRANSLATED are proposals. Every file in this folder is the owner's. Only he changes them. A change research wants is written as a proposal in `docs/decisions/`.
+`archive/` is history only, not in force. The current rules are in `AGENTS.md`.
 
-| File | What it is | State |
+| File or folder | What it is | State |
 |---|---|---|
-| `docs/quality/00_READ_FIRST.md` | Entry to the quality bar. Says which of the other files to open for which topic | CURRENT |
-| `docs/quality/01_the_bar.md` | What finished work has to look like | CURRENT |
-| `docs/quality/02_how_we_build.md` | The build method: plan once, build once, check against the plan | CURRENT |
-| `docs/quality/03_working_with_the_owner.md` | How to write to the owner and how decisions get made | CURRENT |
-| `docs/quality/04_research_to_build.md` | What has to be true before research turns into building | CURRENT |
-| `docs/quality/05_repo_review_2026-11-24.md` | A review of this repo against the bar on that date | RECORD. The repo has changed since. See `docs/STATUS.md`. `docs/quality/00_READ_FIRST.md` says to delete it when its items are closed. It is the owner's file, so whether it is deleted or kept is his call (morning list, question 21) |
+| `archive/README.md` | What is kept here and where the current rules and decisions are | RECORD |
+| `archive/quality/` | Old quality and build instructions | RECORD |
+| `archive/audit/` | Independent code audits and the auditors' scripts | RECORD |
+| `archive/decisions/` | Dated decisions, source checks, and the frozen morning list | RECORD |
+| `archive/practice_PLAN_01_two_rules_observation.md` | The first practice plan, two fixed rules and no AI traders. Replaced by `practice/PLAN_02_ai_desk.md` | RECORD |
 
 ## docs/playbook/ (short pages written before the tests)
 
@@ -83,23 +84,6 @@ Written 2026-11-24 from reading, before the project ran any test of its own. Whe
 | `docs/playbook/04_brokers_data_rules.md` | Brokers, data and the rules that apply to a small account | CURRENT |
 | `docs/playbook/05_perplexity_and_costs.md` | Which Perplexity pieces do which job, and list-price cost arithmetic | CURRENT |
 | `docs/playbook/06_architecture_and_build.md` | The shape of the product and the build phases | CURRENT |
-
-## docs/decisions/ (dated record)
-
-"Owner decision" is used only for something the owner said, with the date. Everything else is a proposal.
-
-| File | What it is | State |
-|---|---|---|
-| `docs/decisions/README.md` | What is in this folder, what counts as an owner decision, and how to record one | CURRENT |
-| `docs/decisions/morning_list_2026-11-25.md` | What the owner is being asked to do and decide next, one item at a time | CURRENT |
-| `docs/decisions/0001-starting-decisions.md` | The first list of open decisions and proposed starting values | CURRENT |
-| `docs/decisions/0002-historical-testing-and-risk-posture.md` | Owner direction on testing with past data and on a middle risk level with a small moonshot share | CURRENT |
-| `docs/decisions/0003-quality-bar-adopted.md` | The quality bar was adopted and wired into the repo | CURRENT |
-| `docs/decisions/0004-broker-research-2026-11-25.md` | What the broker research proposed | CURRENT |
-| `docs/decisions/0005-overnight-research-2026-11-25.md` | Record of the first overnight research run | RECORD. Its results are corrected by `docs/decisions/0006-audit-and-second-night-2026-11-25.md` |
-| `docs/decisions/0006-audit-and-second-night-2026-11-25.md` | Record of the code audits, the rerun, replays 04 and 05, the new research summaries and the repo map. Its addenda, in time order, record the outside reads and their fixes, the finding test, and the collection and checks of stock prices | CURRENT |
-| `docs/decisions/audit_01_stocks_what_works.md`, `docs/decisions/audit_02_crypto_what_works.md`, `docs/decisions/audit_03_role_of_ai.md`, `docs/decisions/audit_04_brokers_data_rules.md`, `docs/decisions/audit_05_perplexity_and_costs.md`, `docs/decisions/audit_06_architecture_and_build.md` | Line by line audits of the six playbook pages against their sources, done 2026-11-24 | RECORD |
-| `docs/decisions/source_check_2026-11-24.md`, `docs/decisions/source_check_2026-11-24_crypto.md`, `docs/decisions/source_check_2026-11-24_role_of_ai.md`, `docs/decisions/source_check_2026-11-24_stocks.md` | Checks of cited sources on that date | RECORD |
 
 ## docs/research/ (full reports with every source)
 
@@ -150,18 +134,6 @@ Working papers.
 | `docs/research/13_raw/` | Behind document 13 | RAW |
 | `docs/research/17_21_checklogs/` | Second-model check logs for documents 17 to 21 | RAW |
 
-## audit/ (the code audits)
-
-| File | What it is | State |
-|---|---|---|
-| `audit/README.md` | What the folder is, and why its scripts do not run on another machine as they stand | CURRENT |
-| `audit/2026-11-25_auditor_a.md` | First audit of the first rig's code, 18 findings | CURRENT |
-| `audit/2026-11-25_auditor_b.md` | Second audit, of the statistics, 11 findings. The paths in it are on the research machine. The auditor's own check scripts were kept there and not committed, so they cannot be rerun from the repo | CURRENT |
-| `audit/replay_independent.py`, `audit/diagnostics.py` | Auditor A's own separate replay and checks | CURRENT |
-| `audit/pbo_stability.json` | Auditor B's measurement of how much pass mark 4 moves | CURRENT |
-| `audit/2026-11-25_replay_04_audit.md`, `audit/replay_04_independent.py`, `audit/replay_04_probes.py` | Independent audit of replay 04, with its own rebuild from the raw files, 15 findings | CURRENT |
-| `audit/2026-11-25_replay_05_audit.md`, `audit/replay_05_probes.py` | Independent audit of replay 05, 5 findings. One led to a corrected run | CURRENT |
-
 ## research_rig/ (the test rig, not the product)
 
 `research_rig/README.md` is the map of this folder: which engine version to use, and for each test its plan, script, output and document.
@@ -180,7 +152,7 @@ Working papers.
 | `research_rig/AMENDMENT_2026-11-25_audit_fixes.md` | The audit fixes, written before the rerun | CURRENT |
 | `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`, `research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md` | Plans for two stock tests that wait for a data purchase | DRAFT |
 | `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, decisions 1a and 1b, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |
-| `research_rig/PRACTICE_01_two_rules_observation_DRAFT.md` | Draft plan for watching two rules in the practice account (decision 5): what is recorded, who may send the orders, and what is still to settle | DRAFT |
+| `research_rig/PREREG_09_crypto_methods.md` | Frozen plan for new long-only crypto rules at Alpaca cost | CURRENT |
 | `research_rig/run_v2.py`, `research_rig/compare_v1_v2.py`, `research_rig/noise_pbo.py`, `research_rig/build_doc16.py`, `research_rig/results_v2.json`, `research_rig/compare_v1_v2.json`, `research_rig/noise_pbo.json`, `research_rig/venue_price_gap.json` | The rerun after the audits and its outputs | CURRENT |
 | `research_rig/run_04.py`, `research_rig/results_04.json`, `research_rig/build_doc23.py`, `research_rig/NOTES_04_builder.md` | Replay 04 | CURRENT |
 | `research_rig/run_05.py`, `research_rig/AMENDMENT_05_I2_equal_thirds.md`, `research_rig/results_05.json`, `research_rig/results_05b.json`, `research_rig/build_doc22.py`, `research_rig/i2_2020_note.py`, `research_rig/i2_2020_note.json`, `research_rig/data_notes_french.md` | Replay 05: script, the correction to rule I2, first-run output, corrected-run output | CURRENT |
@@ -193,6 +165,34 @@ Working papers.
 | `research_rig/platform_bars_consolidate.py`, `research_rig/platform_bars_integrity.py`, `research_rig/platform_bars_coverage.json`, `research_rig/platform_bars_crosscheck.json` | How the stock prices collected through the workspace's own price lookup were joined, checked for gaps and compared with each other (one-minute files against daily files), and the dates and counts those checks gave. No price is in the repo and no rule was run. Whether the files may be kept is item 6 of the morning list | CURRENT |
 | `research_rig/feeds/` | Collector of public context readings, its source notes and a trimmed sample | CURRENT |
 | `research_rig/export_dashboard.py` | Builds the data file for the owner's screen | CURRENT |
+
+## practice/ (the practice desk: pretend money, live prices)
+
+| File | What it is | State |
+|---|---|---|
+| `practice/README.md` | Start here for the practice desk: what it is, the files, how to work on it, where its records are | CURRENT |
+| `practice/PLAN_02_ai_desk.md` | The plan in force: how a decision becomes an order, what is written down, when a trader stops, what the desk cannot do yet, what would count | CURRENT |
+| `practice/trader.py` | The program that places orders for every trader, keeps each inside its pretend budget, enforces exits and writes the records | CURRENT |
+| `practice/picks.py` | The form an AI trader's pick must take, and the check that it does | CURRENT |
+| `practice/books.py` | Works out each trader's cash, holdings, closed trades, wins and losses from the broker's order list | CURRENT |
+| `practice/broker.py`, `practice/market.py` | The only code that talks to the broker (practice address only, a short fixed list of actions), and the price reads | CURRENT |
+| `practice/rules.py` | The two fixed rules on the desk | CURRENT |
+| `practice/traders.json` | The traders on the desk now | CURRENT |
+| `practice/traders/` | `practice/traders/ROSTER.md` and one method card for each AI trader, A01 to A09 | CURRENT |
+| `practice/test_trader.py`, `practice/test_review.py`, `practice/test_market.py` | Checks with a pretend broker and no network. The timer runs them before every real run | CURRENT |
+| `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
+
+## timemachine/ (the time machine: pretend money, past days)
+
+| File | What it is | State |
+|---|---|---|
+| `timemachine/TRADER_BRIEF.md` | What an AI trader is told at the start of a replay | CURRENT |
+| `timemachine/tape.py`, `timemachine/record.py` | The store of recorded past prices and news, with reads that never return anything dated after the pretend now, and the recorder that fills it | CURRENT |
+| `timemachine/simdata.py`, `timemachine/simbroker.py` | Stand-ins for the price reads and the broker, so the practice desk's own order program runs unchanged on past days | CURRENT |
+| `timemachine/session.py`, `timemachine/server.py`, `timemachine/new_session.py` | One replay session, the local server a trader steps through, and the command that starts a session | CURRENT |
+| `timemachine/code_traders.py`, `timemachine/run_code_trader.py` | Traders that need no model (hold, random, the fixed rules), and the command that runs one through a session | CURRENT |
+| `timemachine/SESSIONS.jsonl` | One line for every session ever started, so no replay goes uncounted | CURRENT |
+| `timemachine/test_tape.py`, `timemachine/test_sim.py`, `timemachine/__init__.py` | Checks with no network, and the package marker | CURRENT |
 
 ## dashboard/ (the owner's screen)
 

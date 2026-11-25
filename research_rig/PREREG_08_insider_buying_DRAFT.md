@@ -4,11 +4,11 @@ Status: DRAFT, written 2026-11-25. Not frozen and not in the trial ledger. It ru
 
 Blocked on, each one separately:
 
-- The owner's yes to decision 11 in `docs/decisions/morning_list_2026-11-25.md` (the order in which high-risk ideas get tested).
+- The owner's yes to decision 11 in `archive/decisions/morning_list_2026-11-25.md` (the order in which high-risk ideas get tested).
 - His decision on pass mark 4 (decisions 1a and 1b).
 - Daily prices that include stocks that later died. Item 2 of the morning list would cover it if the vendor's claim holds (`docs/research/26_insider_buying_evidence.md`, "Data a test would need").
 - His yes to reading the SEC's filing lists. Each request has to carry a name and a contact email address, and research will not pick one for him.
-- Keys in `config/thresholds.yaml` for the numbers this plan needs and does not have, each with a dated note in `docs/decisions/`. They are listed under "To settle before this is frozen".
+- Keys in `config/thresholds.yaml` for the numbers this plan needs and does not have, each with a dated note in `archive/decisions/`. They are listed under "To settle before this is frozen".
 
 ## Why
 

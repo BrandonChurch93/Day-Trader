@@ -1,26 +1,23 @@
 # Status
 
-Last updated: 2026-11-25 13:15 UTC
+Last updated: 2026-11-25 15:10 UTC
 
-This page is the current state of the project. It is the second thing to read, after `AGENTS.md`. If another page disagrees with this one about a result or about where things stand, this page stands. The map of every file is `docs/INDEX.md`. Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
+What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
-`AGENTS.md` still names `docs/playbook/00_START_HERE.md` as the second read and says to load `docs/playbook/` by default. Only the owner may change that file, so it has not been changed. Until he decides, every playbook page opens with a dated note that says it was written before any test and sends the reader here for results. A reader who follows `AGENTS.md` to the letter still arrives at this page. The exact lines and the proposed wording are in `docs/decisions/morning_list_2026-11-25.md`, item 5 of "Things only you can do".
+## Where things stand
 
-## Phase
-
-- Research. Nothing is built. Building has not been approved by the owner.
-- No broker account, no keys, no purchases, no real trades.
-- A research rig in `research_rig/` replays rules on past prices. It is not the product.
-- Owner direction that applies now, with dates, is in `docs/decisions/0002-historical-testing-and-risk-posture.md` (test on past data, a middle risk level, a small moonshot share only where there is a reason) and `docs/decisions/0003-quality-bar-adopted.md`.
+- Nothing tested so far is good enough to trade. That is the list below, and it is a short list.
+- Three machines exist or are being built: the rig (`research_rig/`, working), the practice desk (`practice/`, built, waiting for a practice account key), the time machine (`timemachine/`, being built).
+- The practice desk is on GitHub's timer and sends nothing until the owner adds a practice key to the repo's secrets. What it has done is on the owner's screen and in the summary file on the `practice-records` branch. This page does not repeat it.
+- No real-money account. No purchases. No real trades.
 
 ## Every test so far
 
 The Result column is written by `tools/status_table.py` from the output files. Do not edit it by hand.
 
-- No rule has a credited pass. Where the table says a rule passes, that is a measurement against a proposed bar. Research recommends none is credited, and the owner has not answered (question 18b).
-- Where the table shows a bar, it is the value stored in the output file when the test was run. The value in force is in `config/thresholds.yaml`.
-- The keys the tests are judged on have the status "proposed" in that file. Research uses them to judge research replays. That use approves nothing: no bar is an owner decision until he says so.
-- Pilot 02 was a replay on past prices. `AGENTS.md` hard rule 7 does not count that as evidence of model skill, for or against. It tested the harness and how the models behave.
+- "Pass" in the table means a rule cleared the five pass marks in that run (`research_rig/README.md` lists them). No pass from 2026-11-25 is counted. Each came from a run where the pass mark or the costs changed after results had been seen, or where the ledger row was late. Under "Honest testing" in `AGENTS.md` that makes it a new attempt, not a result. Fails stand.
+- Where the table says "question 18b" or "the morning list", it points at `archive/decisions/morning_list_2026-11-25.md`, which is history. The builder settled it as written in the line above.
+- A counted pass would mean "worth running on the practice desk". It would not mean "makes money".
 
 <!-- results:start (written by tools/status_table.py, do not edit by hand) -->
 | Test | What was asked | Result, MEASURED | Full write-up |
@@ -35,23 +32,18 @@ The Result column is written by `tools/status_table.py` from the output files. D
 | Trial count check | The owner's rule counts a rerun after an engine fault as a trial. The two reruns were not counted when they ran. Does counting them change a result | Worked out from the stored outputs with 93 trials counted. It covers the outputs now judged: the rerun of replays 01 and 03 with its cross-checks, replay 04, and both runs of replay 05. The first-run outputs of replays 01 and 03 came from the engine with the faults and are not worked out again. Of 34 passes in those outputs, across all cost levels, none become fails. 66 of 378 rows could not be worked out again from what was stored, and none of those had passed mark 3. The closest is M90 on Binance.US, BTCUSD in R01, at 0.951 against a bar of 0.95 (`replay_min_deflated_sharpe`). Pass mark 3 alone changes from pass to fail in 29 rows that had already failed another mark. | `research_rig/TRIAL_LEDGER.md`, `research_rig/ledger_count_check.json` |
 <!-- results:end -->
 
-In this table "pass" means a rule cleared the five marks in that run. It is a measurement. It is not a credited result: research recommends that no pass from 2026-11-25 is credited, because every one came from a run that broke one of the owner's rules or one of research's own (question 18b in `docs/decisions/morning_list_2026-11-25.md`, and "Known faults and slips" below). Fails stand. The owner has not answered yet.
-
-A credited pass would mean "worth running in a practice account". It would not mean "makes money". The five pass marks and their config keys are in `research_rig/README.md`. Each plan can add its own conditions on top, such as passing on both price histories.
-
 ## What is believed now
 
 Each line says how far to trust it.
 
-- No rule has a credited pass. Every pass in the table came from a run that broke a rule: a late ledger row, a stricter pass mark and a changed cost for holding carried inside a rerun for engine faults, or a rerun made before asking the owner. Each is listed under "Known faults and slips". Research recommends none is credited (question 18b in `docs/decisions/morning_list_2026-11-25.md`); the owner has not answered. The measurements themselves, MEASURED: every pass exists at one cost level only, or only in a rerun, or sits within a hair of a bar. Five stock rules clear the marks at every cost in the corrected run of replay 05 and none does in the first run. No stock rule clears them at the two lower cost levels in the first run.
-- Slow trend rules cut the largest drop and give up growth. MEASURED on bitcoin and on the US stock market, and it matches the live record of funds built on the same rules (`docs/research/21_systematic_funds_and_published_rules.md`). In the held-back years most of them grew less than simply holding: three of the four passing bitcoin rules on each price history (`docs/research/16_rig_audit.md`), and the ten-month stock rule in the table above.
-- No day trading rule on crypto passes the five marks at any venue cost tested. MEASURED. That is not the same as every rule losing money: at the lowest venue cost a few ether rules have a positive Sharpe ratio in the held-back years, and none passes. At Alpaca cost every one of them lost money in the held-back years (`docs/research/16_rig_audit.md`, the table of hourly rules).
-- A wide basket of smaller coins grew far less than holding bitcoin in the held-back years, and no basket rule passes. MEASURED. The figures are in the table above.
-- Nothing tested so far supports fast money. MEASURED for the rules in the table, which is a short list. The reading on traders, funds and AI systems with real money points the same way (`docs/research/25_what_the_evidence_supports.md`). A no on these rules is strong for these rules. It does not rule out ideas that have not been tested.
-- Pass mark 4, the overfitting estimate, is not steady enough to be a yes or no on its own. MEASURED three ways: it moves with the start date, it passes on made-up data with no edge in a share of samples that document 16 gives, and in replay 05, where it is one number per cost level across all eight rules, it went from failing to passing at the two lower cost levels when one of the eight rules was corrected. At the highest cost level it already passed in the first run (`docs/research/16_rig_audit.md`, `docs/research/22_replay_05_stock_trend.md`). The bar in `backtest_max_pbo` has not been changed.
-- AI models making the trading call: no evidence that it works, from live public records (`docs/research/18_ai_systems_with_live_records.md`). Our own pilot was a replay on past prices and cannot count either way (`docs/research/14_ai_calls_pilot_02.md`). Models stay out of the order path (`AGENTS.md` hard rule 1).
-- The closest thing to a lead on stocks is rule I2 in replay 05: hold the three strongest industry groups when the market is above its ten-month average. In the corrected run, which research recommends is not credited (question 18b), it grew nearly as much as holding with a much smaller largest drop. It carries three cautions listed in `docs/research/22_replay_05_stock_trend.md`, and it has not been tested on anything that can be bought. Treat it as a reason for the next test, not as a result.
-- Stocks have been tested only on a free index that cannot be bought. Funds that can be bought, and day trading SPY and QQQ, are UNKNOWN. No rule has been run on either.
+- No day trading rule on crypto passes at any venue cost tested. MEASURED, eight rules on hourly bitcoin and ether. At the lowest venue cost a few ether rules have a positive Sharpe ratio in the held-back years and none passes. At Alpaca cost every one lost money in the held-back years (`docs/research/16_rig_audit.md`).
+- Slow trend rules cut the largest drop and give up growth. MEASURED on bitcoin and on the US stock market index, and it matches the live record of funds built on the same rules (`docs/research/21_systematic_funds_and_published_rules.md`). In the held-back years most grew less than holding.
+- A wide basket of smaller coins grew far less than holding bitcoin in the held-back years. MEASURED (`docs/research/23_replay_04_coin_basket.md`).
+- Fixed rules that anyone can write down in one line have not given fast money here. MEASURED for the rules in the table. It says nothing about ideas not yet tested, and it is the reason the next tests are of AI traders that read far more than a rule can.
+- AI models making the trading call: UNKNOWN. Public live records do not show it working (`docs/research/18_ai_systems_with_live_records.md`). Our own pilot was six model runs of 147 calls each, too few to tell skill from luck (`docs/research/14_ai_calls_pilot_02.md`). The time machine and the practice desk exist to measure this properly.
+- The closest thing to a lead on stocks is rule I2 in replay 05: hold the three strongest industry groups when the market is above its ten-month average. It grew nearly as much as holding with a much smaller largest drop, on an index that cannot be bought, in a run that is not counted. A reason for the next test, not a result (`docs/research/22_replay_05_stock_trend.md`).
+- Stocks that can be bought, and day trading SPY and QQQ, are UNKNOWN. No rule has been run on either.
+- Pass mark 4, the overfitting estimate, is not steady enough to be a yes or no on its own. MEASURED three ways (`docs/research/16_rig_audit.md`). From the next plan on it is measured over start dates fixed before the run.
 
 ## What has been replaced
 
@@ -59,81 +51,35 @@ Each line says how far to trust it.
 |---|---|---|
 | Verdicts in `docs/research/12_replay_01_crypto_trend.md`, `docs/research/12b_replay_01_kraken_crosscheck.md`, `docs/research/15_replay_03_intraday_crypto.md` | `docs/research/16_rig_audit.md` | Two code audits found faults in the first rig. The rerun changed verdicts |
 | Engine v1 (`research_rig/engine.py`) | Engine v2 (`research_rig/rig2.py`) | Same reason |
-| `docs/decisions/0005-overnight-research-2026-11-25.md` where it reports results | `docs/decisions/0006-audit-and-second-night-2026-11-25.md` and the table above | Results changed after the audits |
-| Either run of replay 05 read alone | Both runs side by side in `docs/research/22_replay_05_stock_trend.md`. Research recommends that neither is credited as a pass (question 18b in the morning list) | The code for rule I2 did not match the plan. That is a rule fault, not an engine fault, and the owner's rerun rule names the engine only |
+| Either run of replay 05 read alone | Both runs side by side in `docs/research/22_replay_05_stock_trend.md` | The code for rule I2 did not match its plan in the first run |
 | Playbook lines that read as settled findings | This page | The playbook was written from reading on 2026-11-24, before any test of our own |
+| Anything in `archive/` read as a rule | `AGENTS.md` | The owner retired the old rule layer on 2026-11-25 (`docs/DECISIONS.md`) |
 
-## Known faults and slips
+## Known faults in the tools
 
-- `research_rig/basket.py` closes a position in a coin whose history ends by using knowledge of the full file. It never fired in replay 04. It must be fixed before the file is used again (`audit/2026-11-25_replay_04_audit.md`, finding 04-01, and two more in 04-02 and 04-03).
-- Trial ledger rows for replay 04 and for the first run of replay 05 were added after the runs started. `AGENTS.md` hard rule 8 says the row comes before the run and that a result without one does not count. The plans naming the trials were pushed before the runs. Replay 05 also had a preview with 3 shuffles before the full run, and rough results were seen. What follows from this is the owner's to say: question 18b. Research recommends the fails stand, the passes are not credited, and every trial is counted. Recorded in `docs/decisions/0006-audit-and-second-night-2026-11-25.md`.
-- Two reruns had no ledger row and were not counted as trials. The owner's rule says a rerun after a proved engine fault is written in the ledger, counted as a trial and reported as a rerun (`docs/quality/01_the_bar.md`). The rerun after the audits and the corrected run of replay 05 were reported as reruns and were not in the ledger. Rows R1 and R2 were added late on 2026-11-25. Counting them, as the rule says, was then checked on the stored outputs: the result is the "Trial count check" row in the table above. Every later run uses the larger count (`research_rig/TRIAL_LEDGER.md`).
-- The corrected run of replay 05 (ledger row R2) was made under a wider reading of the owner's rerun rule than he wrote. His words allow a rerun "when a machine check proves the engine itself was wrong". In replay 05 the engine was right and one rule was coded differently from its plan. Research reran before asking, and for a time `research_rig/README.md` and `docs/GLOSSARY.md` gave the rule as "the engine or the code". Both now quote him. The ledger row for that run was also added after it, not before. The auditor had already measured what the correction would do, so its effect was known before the rerun. Questions 18a and 18b in the morning list ask him to settle it, and research recommends its passes are not credited.
-- The rerun after the code audits (ledger row R1) rests on research's reading of two words in the owner's rule that he has not defined: that an audit by another model which ran its own checks is a "machine check", and that the code which works out the pass marks is part of "the engine itself". He was not asked. Question 18c. If he reads his rule more narrowly, the first results of replays 01 and 03 stand, and in those no rule passes on both price histories.
-- The same rerun (R1) carried two changes that were not engine faults, listed in `research_rig/AMENDMENT_2026-11-25_audit_fixes.md`. Row A13 made pass mark 1 stricter than the plan wrote it: a rule must also hold with its orders filled one hour late. It can only remove passes, and it is still a change to a pass mark after results were seen, which the owner's Never list forbids. Row A08, besides fixing a search that stopped too early, changed what holding the coin pays when the break-even cost is worked out, from a flat 5 basis points to the same cost as the rule. The plan did not say which, and the change can make mark 2 easier to pass. A third row, A12, is an engine fix that changes one rule: the engine's 0.10 band check now follows the plan's words, and only rule P2's trades change. The amendment's own heading "What does not change" lists the pass marks and the costs, which A13 and A08 contradict. The list of changes was pushed before the rerun and the ledger row after it. The hourly part stopped twice on program errors and was restarted. A cold-read test found that these had been reported together as "audit fixes". Research recommends the four bitcoin passes from R1 are not credited (question 18b).
-- `research_rig/export_dashboard.py`, which makes the data for the owner's screen, replayed five stored runs, of three already-tested rules, on the whole price history, held-back years included, every time it ran. It ran several times on 2026-11-25 and the count was not recorded. Each time it compared four whole-sample figures with `results_v2.json`, for the rule and for holding (growth a year, Sharpe ratio, largest drop, total return), and the trade count for the three daily charts. They matched. The curves, the year-by-year figures and the trade lists on the screen were made in those replays. No stored output holds them and nothing checks them, and the saved curves are not in the repo, so they cannot be rebuilt from the repo alone. Earlier wording here said it "checked each figure" and "made no new number". Both were wrong, and a cold-read test found it. `research_rig/README.md` had also described the script as reading the output files. The script now reads saved curves, works the verdict out from the stored results each time, and replays nothing unless given `--resimulate`. `i2_2020_note.py` was also run a second time after one line of it (where it looks for data) had changed. It runs no rule, and the output was identical. Questions 16a and 16b.
-- The owner's lines in `docs/quality/01_the_bar.md` are written for the Builder, the mode that builds from a kit. Research applies them to its own tests. That is research's choice and is stated here so nobody takes it for his instruction.
-- Outputs were not stored with their command, commit and input fingerprints at run time, which `docs/quality/01_the_bar.md` asks for. `research_rig/provenance.json` rebuilds that record after the fact, from git history and the files on the research machine. It shows that no input file was modified after the output that used it was first stored. It cannot prove the bytes were the same at run time.
-- Three document builders (`build_doc12.py`, `build_doc12b.py`, `build_doc15.py`) left out the dated correction note that had been added by hand to their pages, so running them again deleted it. Found by a fresh-copy test on 2026-11-25 and fixed: the note is now in the builders, and `python3 tools/check_repo.py --builders` fails if any built page differs from what its builder writes.
-- `docs/decisions/0002-historical-testing-and-risk-posture.md` proposed that a replay of a model on dates after its training cutoff could count. `AGENTS.md` hard rule 7 says only forward paper or shadow results count. Hard rule 7 stands. Question 19 in the morning list.
-- The held-back slice has been looked at more than once per rule. Besides the two reruns: cross-checks on a second price history, one short try of replay 05 with 3 shuffles before its full run, where rough results were seen (`docs/research/22_replay_05_stock_trend.md`), the repeats by the dashboard script described earlier in this list, a second run of `research_rig/i2_2020_note.py`, which runs no rule and multiplies up industry returns for one held-back year, two full starts of replay 05 that stopped on program errors and were started again unchanged (`docs/research/22_replay_05_stock_trend.md`), and the first start of replay 03, which stopped at its save step before any result was read and was started again (`research_rig/TRIAL_LEDGER.md`, rows 27 to 42). No rule or setting was changed after any of these. The held-back slice is no longer fresh for any rule tested so far. The only fresh test left is the practice account.
-- The plans for replay 01 and pilot 02 were pushed in the same commit as their results (b393482). The plans carry their own written times, which say they came first. That is STATED and cannot be shown from the commit history. From replay 03 on, each plan was pushed before its run.
-- Pass mark 3 screened nothing in replay 05, because of how its plan defined the spread of Sharpe ratios. Research proposes that the next plan defines it across all counted trials. That is a proposal to the owner, not a rule yet.
-- Bitstamp's terms are unclear about collecting its prices. Kraken's published files are the proposed main crypto history. Waiting on the owner.
-- Two data collections were started on 2026-11-25 under the owner's overnight latitude (his words: "free to do anything that will benefit the project"), without asking him about these sources in particular: the order-book sampler on Kraken's and Binance.US's public price feeds, and a pull of stock prices from the workspace's own price history, which finished on 2026-11-25. STATED by research: neither ran a rule. Neither is in the repo beyond a short summary of the first and a table of dates and counts for the second. Kraken's general terms bar automation on its content, and the workspace data's terms are UNKNOWN to research. Both are now put to him (items 4 and 6 of "Things only you can do" in the morning list).
-- Document 16 and the morning list recommended counting a tie in pass mark 4 as half and did not say plainly that this is the easier reading. Results had been seen, so that was a recommendation to loosen a mark. A ninth reader caught it. Research now recommends keeping the stricter count (decision 1b). The same pages said a tie can only happen with an odd number of rules. That holds only when every rule has a different result, and it is corrected in document 16.
+Only what someone using the tools needs to know. The longer account of each slip on the first nights is in `archive/decisions/0006-audit-and-second-night-2026-11-25.md` and `archive/audit/`.
+
+- `research_rig/basket.py` closes a position in a coin whose history ends by using knowledge of the full file. It never fired in replay 04. Fix it before the file is used again (`archive/audit/2026-11-25_replay_04_audit.md`, findings 04-01 to 04-03).
+- The held-back years of the first replays have been looked at more than once: two reruns, cross-checks on a second price history, and a script for the owner's screen that replayed stored runs each time it ran (fixed, it now reads stored outputs unless asked with `--resimulate`). Treat every held-back figure in the table as used. New tests need new held-back data: the practice desk and time machine months that no rule here was tuned on.
+- Ledger rows for replay 04 and the first run of replay 05 were written after the runs started. Two reruns were added to the ledger afterwards. The count of 93 trials includes them.
+- Outputs from the first nights were not stored with their command and input fingerprints at run time. `research_rig/provenance.json` rebuilds that record after the fact.
+- Pass mark 3 screened nothing in replay 05, because of how its plan defined the spread of Sharpe ratios. The next plan defines it across all counted trials.
+- Bitstamp's terms are unclear about collecting its prices. Kraken's published files are the main crypto history from here on.
+- Stock prices collected from the workspace's built-in price history have gaps, and some one-minute prices sit outside the day's range in its daily file. They stay on the research machine, are never published, and any test that uses them says so.
+- The practice desk checks exits about every ten minutes, GitHub's timer can run late, and stocks trade only in regular hours. A stop can be filled late. Results from the desk include that.
 
 ## Waiting on the owner
 
-The full list, one item at a time, with what each approves and does not approve: `docs/decisions/morning_list_2026-11-25.md`. Nothing on it is decided.
+Two things only he can do. Nothing else waits on him.
 
-What research would ask him first, in this order. The same four are under "Start here" in that list:
+1. Practice account key. Add `ALPACA_PAPER_KEY_ID` and `ALPACA_PAPER_SECRET_KEY` to this repo's secrets. That starts the pretend trading in `practice/`. The builder says when the code is ready for it.
+2. Data key. The same practice account's key, entered once in the secure form, lets the time machine record past stock prices and dated news. Without it the time machine runs on crypto only.
 
-1. Practice account keys (item 1 of "Things only you can do").
-2. The data purchase (item 2).
-3. How pass mark 4 is measured from now on (decisions 1a and 1b). Research recommends measuring it over start dates fixed before the run, and keeping the stricter count of ties.
-4. Which of last night's results are credited (question 18b). Research recommends no pass is.
-
-Next after those: how pass mark 3 is measured (decision 2), whether every replay gets an independent audit (decision 3), what to test next (decisions 4a and 4b) and which rules to watch in the practice account (decision 5). Research already works the way decision 3 proposes. Decision 2 is a proposal for the next plan. Neither is an approved rule.
-
-Questions about scope and about his own rules, on the same list, one block each:
-
-- 14 and 15: the two scope calls of 2026-11-24 that were never put to him.
-- 16a: whether a stored test may be run again unchanged, from now on, only to check that it gives the same file. 16b: what to do about the repeats that already happened.
-- 17: what "within tolerance" means in the practice gate and in the live gate. Neither says what is measured, in what unit, or how much is allowed. Until he sets them, no rule can pass the practice gate.
-- 18a: whether his rerun rule covers a rule coded differently from its plan, from now on. 18b: which of last night's results are credited. Research recommends no pass is. 18c: what "machine check" and "the engine itself" mean.
-- 19: whether a replay of an AI model on dates after its training cutoff can count as evidence. Hard rule 7 says no, and research recommends keeping it.
-- 20: whether the break-even cost multiple, which is hard rule 9 and also a config key marked proposed, is his number.
-- 21: whether the repo review file in `docs/quality/` is deleted when its items are closed, as his file says, or kept and marked as a record.
-
-Things only he can do:
-
-1. Open an Alpaca practice account and make a key for it, read-only if the key screen offers one. If only a full key can be made, do not enter it for research: the morning list says where it goes. Research reads the account and never sends an order, pretend ones included (`AGENTS.md` hard rules 1 and 13).
-2. Buy one month of stock price data. Replay 06 needs its dividend history. It also gives a second source to check item 6 against.
-3. Say whether Kraken's published files may be the main crypto history.
-4. Say whether the order-book sampler may run again on the public price feeds of Kraken and Binance.US.
-5. Say whether `AGENTS.md` and `docs/quality/00_READ_FIRST.md` may be changed so that they point to this page and to `docs/INDEX.md`. The morning list names each line and the proposed wording.
-6. Say whether stock prices from the workspace's own built-in price history may be kept and used for tests. The collection is finished. A gap check found some missing and short days, and a comparison of its one-minute files with its daily files found days where a one-minute price sits outside the day's range in the daily file (MEASURED, on files only the research machine has). Which file is off is not shown. STATED by research: no rule has been run on it (`docs/research/10_historical_data_and_practice.md`, "What was collected, and what a gap check found").
-
-Open owner numbers, with no value yet: `live_starting_capital_usd`, `live_max_position_usd`, `live_max_daily_loss_usd`, `live_max_total_loss_usd`, `moonshot_sleeve_share`, `moonshot_max_position_share`, `api_model_spend_cap_usd_month`. Nothing may assume a value for any of them. Two more have no key yet, because what they measure is not defined: the allowed slippage and error rate in the practice gate, and how closely live results must track practice results (question 17).
-
-## Next in the queue
-
-This is the queue in force. If another page lists a different order, this one stands. It is proposed, not approved: nothing on it that needs the owner starts without him. The reasons for the order are in `docs/research/25_what_the_evidence_supports.md`.
-
-1. Owner decides how pass mark 4 is measured from now on (decisions 1a and 1b in the morning list; background in `docs/research/16_rig_audit.md`, "Questions for the owner"). Every later replay depends on it. He also says which of last night's results are credited (question 18b), so that every page can use one word for them.
-2. Watch two slow rules in the practice account with pretend money, as observation only and labelled as not passed: the bitcoin rule P1 and the ten-month rule on a total market fund. Needs practice keys and the owner's yes to decision 5 in the morning list. Draft plan, which runs nothing: `research_rig/PRACTICE_01_two_rules_observation_DRAFT.md`. `AGENTS.md` hard rule 1 means the pretend orders come from a plain program on a timer, not from research.
-3. Replay 06: slow trend on funds that can be bought. Plan drafted in `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`. Needs the data purchase for dividend history, the owner's yes to decision 4a, and his decision on pass mark 4 before the plan is frozen. Proposed addition before it is frozen: the industry rule I2 on sector funds, which was picked after seeing the corrected run of replay 05 and must be disclosed as that in the plan.
-4. Replay 07: day trading SPY and QQQ on one-minute bars. Plan drafted in `research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`. Needs one-minute prices, from the data purchase or from the workspace's own price history if the owner allows it (item 6 of "Things only he can do"), his yes to decision 4b, and his decision on pass mark 4. Its night-only rule N5 also needs dividend history, which the workspace's price history does not have, so on that source alone N5 is dropped or waits for the purchase, and the plan says which before it is frozen.
-5. Credit Treasury bill interest on idle cash in every replay. A rig change with its own plan. Needs the owner's yes to decision 7.
-6. Later, each with its own plan: insider buying (reading in `docs/research/26_insider_buying_evidence.md`, draft plan in `research_rig/PREREG_08_insider_buying_DRAFT.md`, which runs nothing and waits on decision 11, on decisions 1a and 1b, on prices that include dead stocks and on the owner's yes to reading SEC filing lists), a plain statistical model against a tree model logged only, a small-company fund held overnight only, and buying stocks at new highs with tight exits.
-7. Only if basket tests continue, which research recommends against (decision 6): fix the three faults in `research_rig/basket.py` first.
-
-Nothing in this queue can start today without the owner except drafting plans.
+Real money, and the limits for it, are his when that day comes (`docs/DECISIONS.md`, "Not decided yet").
 
 ## Keeping this page true
 
-- Any commit that adds or changes a result, a decision or what waits on the owner changes this page in the same commit, and moves the "Last updated" line.
+- A commit that adds or changes a result changes this page in the same commit and moves the "Last updated" line.
 - After any new output file: `python3 tools/status_table.py --write`.
-- Before every commit: `python3 tools/check_repo.py`. It fails if the table above is out of date, if a path named here or in any decisions, playbook or research page does not exist, if a stored output differs from its fingerprint, if the number tables in the morning list are not what `tools/owner_numbers.py` writes, or if the coverage tables in `docs/research/10_historical_data_and_practice.md` are not what `tools/bars_coverage.py` writes. It does not check that a sentence is true.
+- Before every commit: `python3 tools/check_repo.py`.
 - Write beliefs with their label. Do not raise a label without a new source or a new logged test.

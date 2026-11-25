@@ -1,5 +1,5 @@
 """Works out pass mark 3 (deflated Sharpe) again with a larger count of trials, from the stored outputs only. Runs no rule and reads no prices.
-Why: the owner's rule says a rerun after an engine fault is counted as a trial (docs/quality/01, docs/decisions/0003 row T6).
+Why: the rule at the time said a rerun after an engine fault is counted as a trial (archive/quality/01_the_bar.md, archive/decisions/0003-quality-bar-adopted.md row T6).
 The rerun after the audits and the corrected run of replay 05 were not counted when they ran (TRIAL_LEDGER.md, rows R1 and R2).
 A larger count can only lower a deflated Sharpe, so it can turn a pass into a fail and never the other way.
 Method: deflated Sharpe = Phi((sr - sr0) * k), where sr0 = spread * g(count) and k depends on the return series only.

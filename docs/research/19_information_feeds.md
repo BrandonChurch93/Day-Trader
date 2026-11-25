@@ -223,7 +223,7 @@ What changes in practice:
 - Not used until permission is in writing: Cboe VIX files, FINRA short volume files, Kraken Futures funding, Kalshi, global Polymarket.
 - Cleared for private research: Treasury, SEC, Federal Reserve, Coin Metrics Community (non-commercial), DefiLlama's official stablecoin API (non-commercial), Polymarket US public API (no republishing).
 - Coin Metrics and DefiLlama are non-commercial licences. Research does not assume they cover a strategy trading real money.
-- Kraken's general terms also bar automation on its content. Research reads Kraken's documented public API and its published price history files as offered for exactly this use, but that is research's reading. STATED, flagged for the owner in `docs/decisions/morning_list_2026-11-25.md`.
+- Kraken's general terms also bar automation on its content. Research reads Kraken's documented public API and its published price history files as offered for exactly this use, but that is research's reading. STATED, flagged for the owner in `archive/decisions/morning_list_2026-11-25.md`.
 
 November 25, 2026. A live unauthenticated response is not a licence. These readings apply to the private, automated research collector, not to every use of a provider’s data. MEASURED tags the primary text checked; the resulting scope call is a conservative interpretation, not legal advice.
 

@@ -161,7 +161,7 @@ The last five columns show the result against all five marks at each venue's cos
 
 None of this is decided.
 
-1. Change proposal 1 of `docs/decisions/0005-overnight-research-2026-11-25.md`. No bitcoin rule now has a clean pass. Stop describing P2, S50 and D20 as passed.
+1. Change proposal 1 of `archive/decisions/0005-overnight-research-2026-11-25.md`. No bitcoin rule now has a clean pass. Stop describing P2, S50 and D20 as passed.
 2. If practice trading of the slow bitcoin trend goes ahead, run it as observation, labelled "failed mark 4 on the shorter history", with P1 only. P1 was named as the main rule before any run, so using it involves no picking.
 3. Do not lower `backtest_max_pbo` and do not drop mark 4. The mark did its job.
 4. As a possible next test, written down before it is run: one blended rule that holds the average of the nine, so that nothing is picked. This would be a new trial and would be counted.

@@ -10,7 +10,8 @@ By default this script does NOT do that: it reads the curves from dashboard/curv
 With --resimulate it replays those five runs with rig2 and rewrites the cache. What it checks against results_v2.json
 is exactly this: growth a year, Sharpe ratio, largest drop and total return over the whole sample, for the rule and for
 holding, and for the three daily charts the number of trades. The curves, the year-by-year figures and the trade lists
-are derived in that replay and are compared with nothing; no stored output holds them. Do not pass --resimulate unless the owner has allowed a repeat (questions 16a and 16b on the morning list).
+are derived in that replay and are compared with nothing; no stored output holds them. See AGENTS.md, "Honest testing",
+before considering a run on held-back dates.
 
 Usage: python3 export_dashboard.py                 (run from research_rig/; reads the cache, touches no raw prices)
        python3 export_dashboard.py --resimulate    (held-back run; see above)
@@ -42,7 +43,7 @@ def cached(sid, make, max_trades=None):
     s["trades"] = tl[-max_trades:] if max_trades else tl; s["trades_total"] = len(tl)
     _cache["series"][sid] = copy.deepcopy(s)
     return s
-MORNING = os.path.join(HERE, "..", "docs", "decisions", "morning_list_2026-11-25.md")
+STATUS = os.path.join(HERE, "..", "docs", "STATUS.md")
 VEN = list(R.VENUES)                                   # Binance.US, Alpaca, Kraken $10k tier, Kraken entry, Coinbase entry
 COST = {v: R.VENUES[v] + R.SLIP for v in VEN}          # cost per side, fee plus slippage, bps
 AN = {"BTCUSD": "Bitcoin", "ETHUSD": "Ether"}
@@ -105,7 +106,7 @@ def check(label, a, b):
 def both_status(venue, asset, rule):
     x = next((z for z in cmp_["both_histories"] if z["venue"] == venue and z["asset"] == asset and z["rule"] == rule), None)
     if x is None: return dict(passed=False, text="Not judged on both price histories.")
-    if x["both"]: return dict(passed=True, tone="mixed", label="Cleared the marks in a rerun. Not credited yet", text="Cleared all five pass marks on both price histories in the rerun after the audit fixes. That rerun also carried a stricter pass mark and a changed cost for holding, so whether it is credited as a pass is waiting on you (question 18b in the morning list). Research recommends it is not, and that the rule is watched in the practice account as not passed.")
+    if x["both"]: return dict(passed=True, tone="mixed", label="Cleared the marks in a rerun. Not a counted pass", text="Cleared all five pass marks on both price histories in the rerun after the audit fixes. That rerun also carried a stricter pass mark and a changed cost for holding. Those marks are a measurement, not a counted pass.")
     parts = []
     if x["bitstamp_failed"]: parts.append("Marks failed on Bitstamp prices: " + ", ".join(MARK[m] for m in x["bitstamp_failed"]) + ".")
     if x["kraken_failed"]: parts.append("Marks failed on Kraken prices: " + ", ".join(MARK[m] for m in x["kraken_failed"]) + ".")
@@ -365,25 +366,22 @@ else:
 if c4: tests.append(c4)
 
 
-# ------------------------------------------------------------------ waiting on you, read from the morning list at export time, nothing typed here
+# ------------------------------------------------------------------ current owner-only items, read from docs/STATUS.md at export time
 def waiting():
-    """Items under the first heading that mentions 'only you' or 'waiting on you'. Returns (items, problem)."""
+    """Read the listed actions under "Waiting on the owner". Return (items, problem)."""
     try:
-        txt = open(MORNING).read()
+        with open(STATUS, encoding="utf-8") as f:
+            txt = f.read()
     except OSError:
-        return [], "The morning list could not be opened."
-    m = re.search(r"^##+\s+[^\n]*(only you|waiting on you|waits on you|for you to do)[^\n]*\n(.*?)(?=^##\s|\Z)", txt, flags=re.M | re.S | re.I)
-    if not m: return [], "The morning list has no section of things only you can do."
+        return [], "The status page could not be opened."
+    m = re.search(r"^##[ \t]+Waiting on the owner[ \t]*\n(?P<body>.*?)(?=^##[ \t]|\Z)", txt, flags=re.M | re.S)
+    if not m: return [], "The status page has no Waiting on the owner section."
     out = []
-    for it in re.findall(r"^\s*(?:\d+\.|[-*])\s+(.+)$", m.group(2), flags=re.M):
-        it = re.sub(r"\*\*|__", "", re.sub(r"`([^`]*)`", r"\1", it)); it = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", it).replace("  ", " ").strip()
-        parts = re.split(r"(?<=\.)\s+", it, maxsplit=1); note = parts[1] if len(parts) > 1 else ""
-        note = " ".join(z for z in re.split(r"(?<=\.)\s+", note) if not re.search(r"docs/|research_rig/", z))  # sentences that only point at a repo file are left to the full list
-        note = note.strip(); rec = ""
-        k = note.rfind("Recommended:")   # the closing recommendation is shown on its own line; the rest folds under it
-        if k >= 0: rec = note[k + len("Recommended:"):].strip(); note = note[:k].strip()
-        out.append([parts[0].rstrip("."), note, rec])
-    return (out, None) if out else ([], "The morning list section has no items.")
+    for it in re.findall(r"^[ \t]*(?:\d+\.|[-*])[ \t]+(.+)$", m.group("body"), flags=re.M):
+        plain = re.sub(r"`([^`]*)`|\[([^\]]+)\]\([^)]*\)", r"\1\2", it).replace("**", "")
+        title, _, note = plain.partition(". ")
+        out.append([title.strip().rstrip("."), note.strip(), ""])
+    return out, None
 
 
 # ------------------------------------------------------------------ where things stand: the same rows as docs/STATUS.md, from tools/status_table.py
@@ -417,16 +415,36 @@ if pass_less:
 
 ntest = sum(s["trades_total"] for s in S)
 WAIT = waiting()
+
+
+# ------------------------------------------------------------------ practice trader records, read from the practice-records branch. No price is touched.
+PRACTICE_LIVE = "https://raw.githubusercontent.com/BrandonChurch93/Day-Trader/practice-records/records/summary.json"
+def practice():
+    """The newest summary.json the practice desk wrote (Run.summary in practice/trader.py, all traders in one file), or None if the branch cannot be read."""
+    import subprocess; root = os.path.abspath(os.path.join(HERE, ".."))
+    try:
+        subprocess.run(["git", "fetch", "-q", "origin", "practice-records"], cwd=root, check=True, capture_output=True, timeout=60)
+        return json.loads(subprocess.run(["git", "show", "FETCH_HEAD:records/summary.json"], cwd=root, check=True, capture_output=True, timeout=60).stdout)
+    except Exception as e:
+        print("practice records not read:", type(e).__name__); return None
+PR = practice()
+pr_on = bool(PR) and PR.get("status") in ("running", "halted")
+pr_n = PR["totals"]["orders"] if pr_on else 0
+pr_card = (dict(id="practice", label="Practice account", trades=pr_n, state="Running" if PR["status"] == "running" else "Stopped, needs you",
+                why="Pretend money. Several traders, some fixed rules and some AI, share one practice account. A plain program checks and places every order. They are listed at the top of this page.") if pr_on else
+           dict(id="practice", label="Practice account", trades=0, state="Not connected", why="Needs the practice key from you."))
 out = dict(
     generated_utc=datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M"),
     accounts=[dict(id="live", label="Real money", trades=0, state="Not started", why="No real account is connected. Nothing has been bought or sold."),
-              dict(id="practice", label="Practice account", trades=0, state="Not connected", why="Needs Alpaca practice keys from you."),
+              pr_card,
               dict(id="tests", label="Past-price tests", trades=ntest, state="Has results",
                    why=f"Pretend trades on old prices, in the {len(S)} comparisons below. Not real money.")],
-    headline=["No real or practice trade has been made."],
+    headline=[("No real trade has been made. " + (f"The practice account has sent {pr_n} pretend-money order" + ("" if pr_n == 1 else "s") + "." if pr_n else "The practice desk is running and has sent no order yet.")) if pr_on
+              else "No real or practice trade has been made."],
+    practice=PR, practice_live_url=PRACTICE_LIVE,
     status_rows=status_rows(), status_link=GH + "docs/STATUS.md",
     tests=tests, series=S, compare_notes=notes,
-    waiting_on_you=WAIT[0], waiting_problem=WAIT[1], waiting_link=GH + "docs/decisions/morning_list_2026-11-25.md",
+    waiting_on_you=WAIT[0], waiting_problem=WAIT[1], waiting_link=GH + "docs/STATUS.md#waiting-on-the-owner",
     glossary=[["Past-price test", "Running a rule over old prices to see how it would have done. Also called a replay or backtest."],
               ["Just holding", "Buying once at the start and never selling. The rule has to beat this to be worth anything."],
               ["Price history", "One venue's record of past prices. Bitcoin and ether are tested on two, Bitstamp's and Kraken's, and a rule must pass on both."],

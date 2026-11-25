@@ -2,7 +2,7 @@
 
 Status: DRAFT, written 2026-11-25. Not frozen and not in the trial ledger. It is frozen and logged only when every gate below is met (the data, the owner's yes to decision 4b, and his decision on pass mark 4), and before any rule is run on it. Proposed by research. No owner decision is recorded here.
 
-Blocked on: one-minute prices for SPY and QQQ. Two possible sources: a purchase, or the workspace's own price history if the owner allows it and it passes a gap check (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace", and items 2 and 6 of `docs/decisions/morning_list_2026-11-25.md`). The workspace's own price history has no dividends, and rule N5 below needs them. So on that source alone, N5 must either get dividends from a second source or be dropped, and the plan must say which before it is frozen. Also waits on the owner's yes to decision 4b and his decision on pass mark 4. If both sources are in hand, the plan must say before it is frozen which one is the test and which one is the cross-check.
+Blocked on: one-minute prices for SPY and QQQ. Two possible sources: a purchase, or the workspace's own price history if the owner allows it and it passes a gap check (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace", and items 2 and 6 of `archive/decisions/morning_list_2026-11-25.md`). The workspace's own price history has no dividends, and rule N5 below needs them. So on that source alone, N5 must either get dividends from a second source or be dropped, and the plan must say which before it is frozen. Also waits on the owner's yes to decision 4b and his decision on pass mark 4. If both sources are in hand, the plan must say before it is frozen which one is the test and which one is the cross-check.
 
 ## Why
 
@@ -16,7 +16,7 @@ One-minute open, high, low, close, volume for SPY and QQQ, regular hours 09:30 t
 
 - A signal worked out from bars up to and including minute m is filled at the open of minute m+1. Sensitivity, reported: filled at the open of minute m+2.
 - A stop is filled at the stop price if the bar opens on the good side of it, else at the bar's open. Sensitivity: every stop pays one more cost.
-- Cost per side at three levels: 0.5 bps, the lower end of `cost_model_bps_per_side_liquid_etf`, and the upper end. The lowest level is reported so the result can be read against `intraday_trend_max_round_trip_bps`. Marks are judged at the two config levels only. To settle before this plan is frozen: the 0.5 bps is typed here and is not a key in `config/thresholds.yaml`. It needs a key, with a dated note in `docs/decisions/`, or a line saying why it is not a threshold.
+- Cost per side at three levels: 0.5 bps, the lower end of `cost_model_bps_per_side_liquid_etf`, and the upper end. The lowest level is reported so the result can be read against `intraday_trend_max_round_trip_bps`. Marks are judged at the two config levels only. To settle before this plan is frozen: the 0.5 bps is typed here and is not a key in `config/thresholds.yaml`. It needs a key, with a dated note in `archive/decisions/`, or a line saying why it is not a threshold.
 - Long only. No leverage, no shorting, no 3x funds. The papers' headline numbers use leverage or shorting, so ours will be smaller by design.
 - Every day trading rule is flat at 15:59. Cash earns nothing inside the day.
 - 252 days a year.

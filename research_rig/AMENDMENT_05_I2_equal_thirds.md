@@ -4,7 +4,7 @@ Written 2026-11-25 08:22 UTC, before the corrected run. Status: research rig, no
 
 ## What was found
 
-An independent audit of `run_05.py` (`audit/2026-11-25_replay_05_audit.md`, finding 1) found that the code for rule I2 does not do what the plan says.
+An independent audit of `run_05.py` (`archive/audit/2026-11-25_replay_05_audit.md`, finding 1) found that the code for rule I2 does not do what the plan says.
 
 - The plan (`PREREG_05_stock_trend_free_data.md`, rule I2) says: hold the three leading industry groups, one third each, else cash.
 - The code splits the account into three thirds once, in 1927, and never again. Each third then grows on its own for 99 years. The first third always gets the top-ranked group when the rule comes back from cash.

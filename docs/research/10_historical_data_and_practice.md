@@ -10,7 +10,7 @@ Tags: MEASURED means read on a primary page or measured from a public endpoint. 
 
 Status of everything recommended here: proposed by the research team. Nothing in this file is an owner decision.
 
-> Note added 2026-11-25. The first data purchase recommended below is the Kibot end-of-day plan. Later the same night two stock tests were planned that need one-minute prices as well as daily ones, so the purchase now put to the owner is one month of the EODHD plan with both (`docs/decisions/morning_list_2026-11-25.md`). Row 3 of the table below is also superseded: research now proposes Kraken's published files as the main crypto history, with Bitstamp as the cross-check, because Bitstamp's terms are unclear about collecting its prices (item 3 of "Things only you can do" in the same list). The rest of this page stands.
+> Note added 2026-11-25. The first data purchase recommended below is the Kibot end-of-day plan. Later the same night two stock tests were planned that need one-minute prices as well as daily ones, so the purchase now put to the owner is one month of the EODHD plan with both (`archive/decisions/morning_list_2026-11-25.md`). Row 3 of the table below is also superseded: research now proposes Kraken's published files as the main crypto history, with Bitstamp as the cross-check, because Bitstamp's terms are unclear about collecting its prices (item 3 of "Things only you can do" in the same list). The rest of this page stands.
 
 ## Words used here
 
@@ -76,7 +76,7 @@ The Perplexity workspace that research runs in has its own price history lookup.
 What is UNKNOWN:
 
 - Who the data comes from, and how it is adjusted.
-- What its terms say about keeping copies and using them for tests. Research found no terms for it. The owner works at Perplexity and can ask. This is item 6 of "Things only you can do" in `docs/decisions/morning_list_2026-11-25.md`.
+- What its terms say about keeping copies and using them for tests. Research found no terms for it. The owner works at Perplexity and can ask. This is item 6 of "Things only you can do" in `archive/decisions/morning_list_2026-11-25.md`.
 - Whether the prices are right. The check below looks for gaps and broken rows. It does not compare a price with a second source, and nothing has.
 - Whether a day the check calls a holiday really was one. The check's holiday calendar was written from memory by the collecting agent, not taken from the exchange.
 
@@ -302,7 +302,7 @@ One checker checked 14 claims: 11 held, 3 were overstated, none wrong. With one 
 
 ## What research proposes
 
-1. (Superseded on 2026-11-25. The purchase now put to the owner is one month of the EODHD plan with daily and one-minute prices, because two planned tests need one-minute prices and dividends. See the note at the top of this page and item 2 of `docs/decisions/morning_list_2026-11-25.md`. The line as first written follows.) Buy one month of the Kibot $14 end-of-day plan and download the full daily ETF archive once, because it is the cheapest durable archive and may be kept permanently; EODHD at $19.99 is the runner-up if its plain AI permission matters more.
+1. (Superseded on 2026-11-25. The purchase now put to the owner is one month of the EODHD plan with daily and one-minute prices, because two planned tests need one-minute prices and dividends. See the note at the top of this page and item 2 of `archive/decisions/morning_list_2026-11-25.md`. The line as first written follows.) Buy one month of the Kibot $14 end-of-day plan and download the full daily ETF archive once, because it is the cheapest durable archive and may be kept permanently; EODHD at $19.99 is the runner-up if its plain AI permission matters more.
 2. Before relying on Bitstamp bars further, have the owner or a professional read Bitstamp's US terms, because the general terms are mixed and the US page could not be opened.
 3. Keep bitcoin and ether as the only coins in crypto replays, because no free source here was found that avoids the dead-coin problem for others.
 4. Use the Alpaca practice account to debug programs, not to judge results, and add fees, dividends and stop slippage in our own records, because the practice account does not simulate them.

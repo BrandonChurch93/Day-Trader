@@ -2,7 +2,7 @@
 
 Last verified: 2026-11-25. Written by research. Nothing here is an owner decision, and nothing here was tested by this project. No rule was run and no price data was downloaded.
 
-Why this page exists: decision 11 in `docs/decisions/morning_list_2026-11-25.md` proposes insider buying that is not routine as the first high-risk idea to test. `docs/research/13_high_risk_sleeve_evidence.md` gave the 2012 paper's headline. This page reads what came after it. The draft test plan, which runs nothing, is `research_rig/PREREG_08_insider_buying_DRAFT.md`.
+Why this page exists: decision 11 in `archive/decisions/morning_list_2026-11-25.md` proposes insider buying that is not routine as the first high-risk idea to test. `docs/research/13_high_risk_sleeve_evidence.md` gave the 2012 paper's headline. This page reads what came after it. The draft test plan, which runs nothing, is `research_rig/PREREG_08_insider_buying_DRAFT.md`.
 
 How it was made: one researcher read the sources and wrote notes. Research then opened these sources again and checked the figures used below: the 2012 paper, the Aalto thesis, the 2026 preprint, the Equibles study, the Lee paper, the three fund filings, the Catalyst fact sheet and annual report, the SEC data page, FINRA's notice, EODHD's page on delisted stocks, and Apple's filing list at the SEC. The two closing notices were not opened again. One figure in the notes was wrong and is corrected here (the Catalyst benchmark). Everything else in the notes that is used below and was not opened again is marked "not rechecked".
 

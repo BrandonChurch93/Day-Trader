@@ -27,11 +27,12 @@
       <button type="button" class="btn theme-btn" id="theme-toggle" aria-label="Switch to dark theme">Dark theme</button>
     </div>
     <nav class="sectionnav" aria-label="Sections">
+      <a href="#practice">Practice account</a>
       <a href="#status">Where things stand</a>
       <a href="#tests">Tests</a>
       <a href="#compare">Rule against holding</a>
       <a href="#trades">Trades</a>
-      <a href="#waiting">Waiting on you</a>
+      <a href="#waiting">Only you can do</a>
       <a href="#words">Words</a>
     </nav>
   </header>
@@ -39,6 +40,15 @@
   <main id="main" class="wrap">
     <p class="freshness" id="freshness">Loading data</p>
     <div id="load-error" class="error-box" hidden></div>
+
+    <section id="practice" class="section" aria-labelledby="h-practice">
+      <h2 id="h-practice">Practice account</h2>
+      <p class="section-note">Pretend money in an Alpaca practice account. Several traders share it, each with its own pretend budget. Some are fixed rules and some are AI traders. A plain program checks and places every order.</p>
+      <div id="practice-body"><p class="meta">Loading the practice records</p></div>
+    </section>
+
+    <!-- Time machine goes here: a section id="timemachine" listing replay sessions (trader, model, window, gain, hold, random twin).
+         Not built yet. When it is, add a "Time machine" link to the section nav after "Practice account". -->
 
     <section id="status" class="section" aria-labelledby="h-status">
       <h2 id="h-status">Where things stand</h2>
@@ -139,7 +149,7 @@
     </section>
 
     <section id="waiting" class="section" aria-labelledby="h-waiting">
-      <h2 id="h-waiting">Waiting on you</h2>
+      <h2 id="h-waiting">Only you can do</h2>
       <div class="card">
         <ol class="waitlist" id="waitlist"></ol>
         <p class="waitlink" id="waitlink"></p>

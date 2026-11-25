@@ -4,11 +4,12 @@ Fails (exit 1) if:
      of a file table row (a row whose State cell starts with CURRENT, RECORD, DRAFT or RAW), or a folder with a trailing
      slash that holds it is. The task table does not count. A path or folder named anywhere else on that page
      does not count, so a new file under docs/research/ or research_rig/ needs its own row
-  2. a path written in backticks in README.md, AGENTS.md, docs/STATUS.md, docs/INDEX.md, docs/GLOSSARY.md, research_rig/README.md,
-     dashboard/README.md, or any file directly under docs/decisions/, docs/playbook/ or docs/research/ does not exist
+  2. a path written in backticks in README.md, AGENTS.md, docs/STATUS.md, docs/INDEX.md, docs/GLOSSARY.md,
+     docs/DECISIONS.md, docs/QUEUE.md, research_rig/README.md,
+     dashboard/README.md, or any file directly under docs/playbook/ or docs/research/ does not exist
      (a path that git ignores, such as research_rig/data/ or dashboard/data.json, is local only and is not flagged; the few
      names that look like paths and are not, such as a model name, are listed with reasons in NOT_IN_REPO below)
-     Not checked for paths: docs/quality/ (the owner's files), audit/, the raw reports in docs/research/*_raw/, and the plans
+     Not checked for paths: archive/, the raw reports in docs/research/*_raw/, and the plans
      and notes in research_rig/ other than its README
   3. a config key written in backticks anywhere under docs/ or research_rig/*.md is missing from config/thresholds.yaml
      (only names that look like keys of that file are checked: the known prefixes below)
@@ -16,9 +17,7 @@ Fails (exit 1) if:
   5. the results table in docs/STATUS.md is not what tools/status_table.py writes from the output files
   6. a stored output in research_rig/, or a raw input file present on this machine, differs from its fingerprint in
      research_rig/provenance.json (this does not fingerprint the code files that record lists)
-  7. the two number tables in docs/decisions/morning_list_2026-11-25.md are not what tools/owner_numbers.py writes from
-     config/thresholds.yaml
-  8. the coverage tables in docs/research/10_historical_data_and_practice.md are not what tools/bars_coverage.py writes from
+  7. the coverage tables in docs/research/10_historical_data_and_practice.md are not what tools/bars_coverage.py writes from
      research_rig/platform_bars_coverage.json and research_rig/platform_bars_crosscheck.json, or the page holds more than one
      such block, or the file fingerprints listed in the coverage file do not add up to the two in research_rig/provenance.json.
      This does not show that the counts in those two files are right: only someone with the price files can rerun them
@@ -31,10 +30,8 @@ bad = []
 # Names in backticks that look like paths and are not files in this repo, each with the reason. Keep this list short and exact:
 # a pair is (the file that names it, the name). Anything else that does not resolve is a fault.
 NOT_IN_REPO = {
-    ("docs/decisions/0003-quality-bar-adopted.md", "kit/"): "the owner's build kit, which lives outside this repo",
+    ("dashboard/README.md", "summary.json"): "generated on the practice-records branch, not stored on this branch",
     ("docs/research/08_backtester_fixtures_draft.md", "kit/data/"): "the owner's build kit, which lives outside this repo",
-    ("docs/decisions/0006-audit-and-second-night-2026-11-25.md", "passmarks.py"): "named in a correction that says no such file exists",
-    ("docs/decisions/source_check_2026-11-24_stocks.md", "Day-Trader/docs/playbook/01_stocks_what_works.md"): "the checker's own path to a file that is in the repo",
     ("docs/research/05_perplexity_platform_options.md", "perplexity/sonar"): "a model name, not a path",
     ("docs/research/06_architecture_and_build_process.md", "config/universe.yaml"): "a file the reading proposed; nothing is built",
     ("docs/research/06_architecture_and_build_process.md", "src/risk/"): "a folder the reading proposed; nothing is built",
@@ -51,12 +48,12 @@ folders = [p for p in listed if p.endswith("/")]
 for t in tracked:
     if t in listed or any(t.startswith(f) for f in folders): continue
     bad.append(f"not in docs/INDEX.md: {t}")
-for f in ["README.md", "AGENTS.md", "docs/STATUS.md", "docs/INDEX.md", "docs/GLOSSARY.md", "research_rig/README.md", "dashboard/README.md"] + sorted(glob.glob("docs/decisions/*.md")) + sorted(glob.glob("docs/playbook/*.md")) + sorted(glob.glob("docs/research/*.md")):
+for f in ["README.md", "AGENTS.md", "docs/STATUS.md", "docs/INDEX.md", "docs/GLOSSARY.md", "docs/DECISIONS.md", "docs/QUEUE.md", "research_rig/README.md", "dashboard/README.md"] + sorted(glob.glob("docs/playbook/*.md")) + sorted(glob.glob("docs/research/*.md")):
     for p in set(re.findall(r"`([A-Za-z0-9_./\-]+)`", open(f).read())):
         if "/" not in p and not re.search(r"\.(md|py|json|yaml|csv|html|js|css)$", p): continue
         if "*" in p or ".." in p or p.startswith("/") or "NN" in p: continue  # NN marks a pattern, not a file
         if (f, p) in NOT_IN_REPO: continue
-        cands = [p, os.path.join(os.path.dirname(f), p), os.path.join("research_rig", p), os.path.join("docs", p)] + [os.path.join("docs", d, p) for d in ("research", "decisions", "playbook", "quality")]
+        cands = [p, os.path.join(os.path.dirname(f), p), os.path.join("research_rig", p), os.path.join("docs", p)] + [os.path.join("docs", d, p) for d in ("research", "playbook")]
         if any(os.path.exists(c) for c in cands): continue
         if any(subprocess.run(["git", "check-ignore", "-q", x]).returncode == 0 for c in cands for x in {c, c.rstrip("/")}): continue  # a local-only path that git ignores, such as research_rig/data/
         bad.append(f"{f} names a path that does not exist: {p}")
@@ -70,8 +67,6 @@ m = re.search(r"Last updated: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC", open("docs/S
 if not m: bad.append("docs/STATUS.md has no 'Last updated: YYYY-MM-DD HH:MM UTC' line")
 sys.path.insert(0, "tools"); import status_table
 if not status_table.in_sync(): bad.append("docs/STATUS.md results table is out of date: run python3 tools/status_table.py --write")
-import owner_numbers
-if not owner_numbers.in_sync(): bad.append("docs/decisions/morning_list_2026-11-25.md number tables are out of date: run python3 tools/owner_numbers.py --write")
 import bars_coverage
 if not bars_coverage.in_sync(): bad.append("docs/research/10_historical_data_and_practice.md coverage tables are out of date, or there is more than one block: run python3 tools/bars_coverage.py --write")
 if not bars_coverage.fingerprints_agree(): bad.append("research_rig/platform_bars_coverage.json lists file fingerprints that do not add up to the ones in research_rig/provenance.json")

@@ -82,8 +82,8 @@ assert all(held(v, n)["sharpe"] < held(KR, n)["sharpe"] for v in dearer for n in
 assert all(held(v, w)["sharpe"] < held(v, k)["sharpe"] for v in VL for w in wide for k in ("K4", "K5")), "wide vs K4/K5 sentence not supported"
 assert wide_below_btc == len(wide) * len(VL)
 one_fail = [(n, v, [k for k in MK if not V[v]["rules"][n]["marks"][k]]) for v in VL for n in RU if sum(not V[v]["rules"][n]["marks"][k] for k in MK) == 1]
-# The independent audit's own figures, quoted from audit/2026-11-25_replay_04_audit.md (MEASURED by the auditor, not by run_04.py)
-AUDIT = "audit/2026-11-25_replay_04_audit.md"
+# The independent audit's own figures, quoted from archive/audit/2026-11-25_replay_04_audit.md (MEASURED by the auditor, not by run_04.py)
+AUDIT = "archive/audit/2026-11-25_replay_04_audit.md"
 AUD = [
     ("04-01", "The sale of a coin whose history ends uses the last bar of the full archive. That is hindsight: on the day after a last print the engine assumes the coin is gone for good and books a sale at the earlier close. In the auditor's four-row test, adding only a later print changed the account value on an earlier day from 0.49950025 to 0.99950025",
      "Never fired here: zero such sales in every base and sensitivity run. Must be fixed before `basket.py` is used again"),
@@ -217,7 +217,7 @@ Held-back Sharpe ratio, base run / with {r['sensitivity'][VL[0]]['alt_slippage_5
 
 ## What the independent audit found
 
-A different AI model audited `run_04.py` and `basket.py`, rebuilt the selection and K1, K4 and both comparisons in its own code, and probed for use of future data. Its report is `{AUDIT}`, with `audit/replay_04_independent.py` and `audit/replay_04_probes.py`. It found 15 points. None of the changes it tested produced a pass against holding bitcoin. The lead decided not to change `basket.py` or rerun tonight, so the result stands as run, with these faults stated. The figures in this table are the auditor's, not this run's.
+A different AI model audited `run_04.py` and `basket.py`, rebuilt the selection and K1, K4 and both comparisons in its own code, and probed for use of future data. Its report is `{AUDIT}`, with `archive/audit/replay_04_independent.py` and `archive/audit/replay_04_probes.py`. It found 15 points. None of the changes it tested produced a pass against holding bitcoin. The lead decided not to change `basket.py` or rerun tonight, so the result stands as run, with these faults stated. The figures in this table are the auditor's, not this run's.
 
 {audit_tab()}
 The other findings (04-08 to 04-12, 04-14) are small or are about checks and wording. See the report.

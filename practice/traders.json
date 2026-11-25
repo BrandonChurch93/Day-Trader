@@ -1,0 +1,4 @@
+[
+ {"id": "P1-BTC", "name": "Bitcoin trend rule P1", "kind": "rule", "rule": "p1", "symbol": "BTC/USD", "benchmark": "BTC/USD", "method": "practice/PLAN_02_ai_desk.md"},
+ {"id": "T1-VTI", "name": "Ten-month rule T1 on a total market fund (VTI)", "kind": "rule", "rule": "t1", "symbol": "VTI", "benchmark": "VTI", "method": "practice/PLAN_02_ai_desk.md"}
+]

@@ -9,7 +9,7 @@ Every number below is MEASURED by `research_rig/run_v2.py` and read from its out
 ## Bottom line
 
 - Two different AI models audited the rig code line by line, separately. Neither found a rule that used future prices. Both found faults in how results were measured.
-- I wrote down every fix and pushed it before rerunning anything (`research_rig/AMENDMENT_2026-11-25_audit_fixes.md`). No slice was changed. Correction added later on 2026-11-25: an earlier version of this line also said no rule, cost or pass mark was changed. That was wrong. Two rows of that list are not engine fixes. A13 made pass mark 1 stricter than the plan wrote it, so that it must also hold with the fill one hour late. A08 changed what buy and hold pays when the break-even cost is worked out, from a flat 5 bps to the same cost as the rule. A third row, A12, is an engine fix to the 0.10 band check that changes the trades of one rule, P2. So a pass in this rerun did not come from engine fixes alone, and research recommends that none is credited (question 18b in `docs/decisions/morning_list_2026-11-25.md`).
+- I wrote down every fix and pushed it before rerunning anything (`research_rig/AMENDMENT_2026-11-25_audit_fixes.md`). No slice was changed. Correction added later on 2026-11-25: an earlier version of this line also said no rule, cost or pass mark was changed. That was wrong. Two rows of that list are not engine fixes. A13 made pass mark 1 stricter than the plan wrote it, so that it must also hold with the fill one hour late. A08 changed what buy and hold pays when the break-even cost is worked out, from a flat 5 bps to the same cost as the rule. A third row, A12, is an engine fix to the 0.10 band check that changes the trades of one rule, P2. So a pass in this rerun did not come from engine fixes alone, and research recommends that none is credited (question 18b in `archive/decisions/morning_list_2026-11-25.md`).
 - After the fixes, rules that pass on both price histories: Binance.US cost: P1, P2, S50, D20. In the first run that list was: none.
 - So the fixes turned four failures into passes at the cheapest venue only. That is a result found after the fact. It is a reason to test in the practice account, not a result to rely on.
 - The pass sits on a knife edge. The overfitting estimate for bitcoin on Kraken prices at Binance.US cost is 0.2409 against a bar of 0.25 (`backtest_max_pbo`). With the latest days dropped instead of the earliest it is 0.2645, which fails. On Bitstamp prices started on the same day as the Kraken history it is 0.4205, which fails.
@@ -21,8 +21,8 @@ Every number below is MEASURED by `research_rig/run_v2.py` and read from its out
 
 | Auditor | Model | What it did | Report |
 |---|---|---|---|
-| A | GPT-6.2 Sol | Read every file. Wrote its own separate replay from scratch and compared it with the rig day by day. 18 findings | `audit/2026-11-25_auditor_a.md`, `audit/replay_independent.py`, `audit/diagnostics.py` |
-| B | Gemini Neon | Checked the statistics against the original papers, ran them on made-up data, tested each hourly rule for use of future prices by changing future bars and watching for any change in earlier signals. 11 findings | `audit/2026-11-25_auditor_b.md`, `audit/pbo_stability.json` |
+| A | GPT-6.2 Sol | Read every file. Wrote its own separate replay from scratch and compared it with the rig day by day. 18 findings | `archive/audit/2026-11-25_auditor_a.md`, `archive/audit/replay_independent.py`, `archive/audit/diagnostics.py` |
+| B | Gemini Neon | Checked the statistics against the original papers, ran them on made-up data, tested each hourly rule for use of future prices by changing future bars and watching for any change in earlier signals. 11 findings | `archive/audit/2026-11-25_auditor_b.md`, `archive/audit/pbo_stability.json` |
 
 What they agreed on:
 
@@ -193,7 +193,7 @@ The [paper](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf) says "belo
 
 ### How much it moves when nothing real changes
 
-MEASURED by auditor B with the first-run code (`audit/pbo_stability.json`):
+MEASURED by auditor B with the first-run code (`archive/audit/pbo_stability.json`):
 
 - Start date moved one month at a time from 2013-01-01 to 2015-01-01 (25 start dates, Bitstamp bitcoin, Alpaca cost, first-run code): the estimate ran from 0.203 to 0.744, middle value 0.603. It was under the bar on 1 of 25 start dates. The one that passed is the start date the plan used.
 - Number of blocks changed (8, 10, 12, 14, 16, 20) with start 2013-01-01: the estimate ran from 0.203 to 0.287, under the bar for 3 of 6 block counts.
@@ -216,7 +216,7 @@ What this means:
 
 One more sign of the same problem. The two price histories cover the same market. Started on the same day (2014-05-01) and charged Binance.US cost, the estimate is 0.241 on Kraken prices and 0.421 on Bitstamp prices. One passes and one fails. The Bitstamp pass in replay 01 comes from starting in 2013, before the Kraken history begins. The two venues' daily closing prices were not the same in the early years: the typical gap was 45 bps in 2014 to 2017 and 2.0 bps from 2020 on (`research_rig/venue_price_gap.json`). That is one likely reason the two answers differ. Whether it is the whole reason is UNKNOWN.
 
-Proposal, not adopted: measure mark 4 as the middle value over a fixed set of start dates and block counts, written down before the run. This costs nothing and removes the knife edge. (Corrected 2026-11-25: that last claim overstated it. A fixed set of dates stops one start date from deciding. The mark stays noisy, as the made-up data test on this page shows. Also corrected 2026-11-25: this line also proposed counting ties as half. That is the easier reading, as the table above shows, and results have been seen. Research now recommends keeping ties counted as overfit. Decisions 1a and 1b in `docs/decisions/morning_list_2026-11-25.md`.)
+Proposal, not adopted: measure mark 4 as the middle value over a fixed set of start dates and block counts, written down before the run. This costs nothing and removes the knife edge. (Corrected 2026-11-25: that last claim overstated it. A fixed set of dates stops one start date from deciding. The mark stays noisy, as the made-up data test on this page shows. Also corrected 2026-11-25: this line also proposed counting ties as half. That is the easier reading, as the table above shows, and results have been seen. Research now recommends keeping ties counted as overfit. Decisions 1a and 1b in `archive/decisions/morning_list_2026-11-25.md`.)
 
 ## Day trading rules on hourly bars, after the fixes
 
@@ -256,7 +256,7 @@ Passes at any venue cost: 0 of 80 after the fixes, 0 of 80 in the first run. Doc
 |---|---|---|
 | How should a tie be counted in mark 4 from now on? | As overfit, as in every test so far. (Corrected 2026-11-25: this row first said "as half") | Counting a tie as half is the neutral reading, and counting it as overfit pushes a no-edge result from 0.50 to about 0.56 with 9 rules. But half is the easier reading, results have been seen, and the owner's bar says never to loosen a limit after seeing a result. Keeping the full count is a cautious policy, not a claim that it is the more correct statistic. The rule list in a plan is never chosen to make ties more or less likely |
 | Should mark 4 be measured over several start dates and block counts? | Yes, fixed in the plan before each run | One start date decides the result today. What this would do to the bitcoin results is UNKNOWN (corrected 2026-11-25: this row first said it would most likely turn the bitcoin passes back into fails, which was a guess). With the first-run code at Alpaca cost the middle value over 25 start dates was 0.603. It has not been measured at Binance.US cost, and research has not run it, so that the choice of method is not made by looking at its result |
-| Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the only bitcoin rule. The morning list proposes one stock rule beside it (`docs/decisions/morning_list_2026-11-25.md`, decision 5) | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
+| Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the only bitcoin rule. The morning list proposes one stock rule beside it (`archive/decisions/morning_list_2026-11-25.md`, decision 5) | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
 
 ## Files
 

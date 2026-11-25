@@ -11,7 +11,7 @@ Date: 2026-11-25. Plan written before any rule in it was run (STATED in the plan
 - Mark that fails for every rule at every venue: 3 deflated Sharpe. The highest deflated Sharpe was 0.933 (K4 at Binance.US), against a bar of 0.95 (`replay_min_deflated_sharpe`).
 - K4 (bitcoin and ether) and K5 (bitcoin only) came closest. Mark 1 passes for K4 at: Binance.US; for K5 at: none. Both still fail mark 3 everywhere.
 - Dead coins were kept in the data. Coins held at some point whose history later ended, at Kraken $10k tier: K1 3; K2 3; K3 7; K4 0; K5 0. No position was ever closed because a coin's history ended (0 such sales across all rules and venues). So the half-value loss test on those sales tested no real loss. The code for those sales also uses hindsight (audit finding 04-01). It never fired here, but must be fixed before reuse.
-- An independent audit rebuilt K1, K4 and both comparisons from the raw files and matched them to rounding. It found faults, listed below. None of the changes it tested turned a fail into a pass (MEASURED by the auditor, `audit/2026-11-25_replay_04_audit.md`).
+- An independent audit rebuilt K1, K4 and both comparisons from the raw files and matched them to rounding. It found faults, listed below. None of the changes it tested turned a fail into a pass (MEASURED by the auditor, `archive/audit/2026-11-25_replay_04_audit.md`).
 - Taxes are not in these numbers. A rule that sells pays tax sooner than holding does.
 
 Closest miss: K4 at Binance.US, which fails only 3 deflated Sharpe (deflated Sharpe 0.933 against a bar above 0.95, `replay_min_deflated_sharpe`). A near miss is a fail.
@@ -192,7 +192,7 @@ Held-back Sharpe ratio, base run / with 50 bps slippage on every coin other than
 
 ## What the independent audit found
 
-A different AI model audited `run_04.py` and `basket.py`, rebuilt the selection and K1, K4 and both comparisons in its own code, and probed for use of future data. Its report is `audit/2026-11-25_replay_04_audit.md`, with `audit/replay_04_independent.py` and `audit/replay_04_probes.py`. It found 15 points. None of the changes it tested produced a pass against holding bitcoin. The lead decided not to change `basket.py` or rerun tonight, so the result stands as run, with these faults stated. The figures in this table are the auditor's, not this run's.
+A different AI model audited `run_04.py` and `basket.py`, rebuilt the selection and K1, K4 and both comparisons in its own code, and probed for use of future data. Its report is `archive/audit/2026-11-25_replay_04_audit.md`, with `archive/audit/replay_04_independent.py` and `archive/audit/replay_04_probes.py`. It found 15 points. None of the changes it tested produced a pass against holding bitcoin. The lead decided not to change `basket.py` or rerun tonight, so the result stands as run, with these faults stated. The figures in this table are the auditor's, not this run's.
 
 | Finding | What the auditor found (MEASURED by the auditor) | Effect on this result |
 |---|---|---|

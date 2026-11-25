@@ -2,7 +2,7 @@
 
 Status: DRAFT, written 2026-11-25. Not frozen and not in the trial ledger. It is frozen and logged only when every gate below is met (the data, the owner's yes to decision 4a, and his decision on pass mark 4), and before any rule is run on it. Proposed by research. No owner decision is recorded here.
 
-Blocked on: one month of daily fund prices with opening prices and dividend history (a purchase, `docs/decisions/morning_list_2026-11-25.md`). The workspace's own price history has daily prices and no dividends (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace"), so it can serve as a cross-check on prices only. Also waits on the owner's yes to decision 4a and his decision on pass mark 4.
+Blocked on: one month of daily fund prices with opening prices and dividend history (a purchase, `archive/decisions/morning_list_2026-11-25.md`). The workspace's own price history has daily prices and no dividends (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace"), so it can serve as a cross-check on prices only. Also waits on the owner's yes to decision 4a and his decision on pass mark 4.
 
 Written with this knowledge, stated so nobody has to guess: replay 05 (`docs/research/22_replay_05_stock_trend.md`) had already been run on index data when this draft was written. The rules below are published rules chosen from the reading in `docs/research/21_systematic_funds_and_published_rules.md`. None was tuned on replay 05. If the industry rule I2 is added on sector funds, as `docs/STATUS.md` proposes, that sentence stops being true for it: I2 was picked after seeing the corrected run of replay 05. The frozen plan must say so next to the rule.
 
@@ -31,7 +31,7 @@ Daily open, high, low, close, volume, splits and dividends. Before BIL exists, c
 - Cost per side at both ends of `cost_model_bps_per_side_liquid_etf`, and at twice the upper end. A move between a fund and cash pays two sides.
 - Dividends are added on the day they go ex. Fund fees are inside the fund prices already.
 - Long or cash only. No leverage, no shorting. 252 days a year. Sharpe ratios use returns above the bill rate.
-- Fractional weights are traded only when the target differs from the current weight by more than 0.10. To settle before this plan is frozen: this number and the 0.1 percentage points under "Checks that must pass first" are typed here and are not keys in `config/thresholds.yaml`. Each needs a key, with a dated note in `docs/decisions/`, or a line saying why it is not a threshold.
+- Fractional weights are traded only when the target differs from the current weight by more than 0.10. To settle before this plan is frozen: this number and the 0.1 percentage points under "Checks that must pass first" are typed here and are not keys in `config/thresholds.yaml`. Each needs a key, with a dated note in `archive/decisions/`, or a line saying why it is not a threshold.
 
 ## Rules (6 trials)
 

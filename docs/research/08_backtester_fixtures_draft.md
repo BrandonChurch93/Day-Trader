@@ -1,6 +1,6 @@
 # Backtester fixtures: draft list
 
-Last updated: 2026-11-24. Draft, proposed by research. It answers item 7 of `docs/quality/05_repo_review_2026-11-24.md` and hand-over 6 in `docs/quality/04_research_to_build.md`.
+Last updated: 2026-11-24. Draft, proposed by research. It answers item 7 of `archive/quality/05_repo_review_2026-11-24.md` and hand-over 6 in `archive/quality/04_research_to_build.md`.
 
 A gate must not be passable while the product is wrong. The engine proves itself on these before any strategy result counts. A regression test against a locked baseline stays as a second check, because it catches drift but not an engine that was wrong from the start.
 
@@ -26,4 +26,4 @@ No expected value is typed in this file. Each one is worked out by hand at kit t
 | 16 | Duplicate order | Submitting the same order id twice creates one order. An unclear submission halts the strategy and alerts. It is not retried |
 | 17 | Paper and live | Starting with a live setting and no decision record is refused |
 
-Fixtures 5 and 6 were added by research. The rest restate `docs/quality/01_the_bar.md` under "Numbers and results" and the hard rules in `AGENTS.md`.
+Fixtures 5 and 6 were added by research. The rest restate `archive/quality/01_the_bar.md` under "Numbers and results" and the hard rules in `AGENTS.md`.

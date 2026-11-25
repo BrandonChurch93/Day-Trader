@@ -1,7 +1,7 @@
 """The record of how each stored output was made: script, command, the commit that stored it, and the fingerprint of every input file.
 
 Written after the fact on 2026-11-25. At run time the outputs were not stored with their command, commit and input
-fingerprints, which docs/quality/01_the_bar.md asks for. This file rebuilds what can still be shown:
+fingerprints, which archive/quality/01_the_bar.md asks for. This file rebuilds what can still be shown:
   - the output file as it is in the repo (sha256) and the commits that first stored it and last changed it (from git history)
   - the script and command (from the code and the run logs)
   - the raw input files as they were on the research machine when this record was taken (sha256, bytes, last-modified time)

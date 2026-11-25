@@ -2,109 +2,141 @@
 # Documents name the key. They never repeat the value.
 #
 # status:
-#   owner     set by the owner, with the date he said it
-#   proposed  a research recommendation the owner has not confirmed. Research uses it to judge its own
-#             replays and for planning. That use approves nothing, and no product gate may rest on it
-#             until the owner confirms it
-#   open      an owner number with no value. Nothing may assume one. `recommended` is a suggestion to put to him, never a value to use
-#
-# Changing any value here needs a dated note in docs/decisions/.
-
-research_run_cap_hours:
-  value: 2
-  status: owner
-  set: 2026-11-24
-  note: Cap on working time for one research or planning run. At the cap the run stops and reports.
+#   owner    the owner's own words, with the date
+#   builder  set by the builder for testing and pretend money; the builder may change it before
+#            a test runs, never after seeing that test's result
+#   open     a real-money number with no value yet; nothing may assume one
 
 paper_min_trading_days:
   value: 60
-  status: proposed
-  source: docs/decisions/0001-starting-decisions.md row 9
+  status: builder
+  source: archive/decisions/0001-starting-decisions.md row 9
 
 paper_min_closed_trades:
   value: 100
-  status: proposed
-  source: docs/decisions/0001-starting-decisions.md row 9
+  status: builder
+  source: archive/decisions/0001-starting-decisions.md row 9
 
 scale_live_evidence_months:
   value: [6, 12]
-  status: proposed
+  status: builder
   note: Months of live evidence before scaling past tiny capital. Low end is the minimum.
-  source: docs/decisions/0001-starting-decisions.md row 9
+  source: archive/decisions/0001-starting-decisions.md row 9
 
 live_tracks_paper_months:
   value: 3
-  status: proposed
+  status: builder
   note: Months that tiny-live results must track paper within tolerance.
   source: docs/playbook/00_START_HERE.md build phases
 
 backtest_max_pbo:
   value: 0.25
-  status: proposed
+  status: builder
   note: Probability of backtest overfitting. A project heuristic, not a published cutoff.
   source: docs/playbook/06_architecture_and_build.md
 
 backtest_min_breakeven_cost_multiple:
   value: 2
-  status: proposed
-  note: A strategy is rejected if its break-even cost is under this multiple of modeled cost. AGENTS.md hard rule 9 names the same number as a rule ("at least twice"), so this value may not go below 2 whatever its status here. Whether the key should be marked owner is put to him in the morning list.
+  status: builder
+  note: A strategy is rejected in this test if its break-even cost is under this multiple of modeled cost.
   source: docs/playbook/01_stocks_what_works.md
+
+replay_09_dates:
+  value: {dev: ["2024-01-01", "2026-06-30"], held: ["2026-07-01", "2026-11-24"], pbo_starts: ["2024-01-01", "2025-01-01", "2026-01-01"], pull_start: "2020-01-01"}
+  status: builder
+  source: research_rig/PREREG_09_crypto_methods.md
+
+replay_09_basket:
+  value: [AVAX/USD, BTC/USD, DOGE/USD, ETH/USD, LINK/USD, LTC/USD, SOL/USD, XRP/USD]
+  status: builder
+  source: research_rig/PREREG_09_crypto_methods.md
+
+replay_09_liquidity:
+  value: {days: 30, min_median_usd: 10000}
+  status: builder
+  source: research_rig/PREREG_09_crypto_methods.md
+
+replay_09_calendar:
+  value: {asia_entry: 1, asia_control_entries: [1, 9, 17], asia_hours: 8, weekend_control_days: [0, 2, 5], weekend_day: 5, weekend_hours: 47, daily_entry: 1, daily_exit: 23, weekly_hours: 166, momentum_days: 7}
+  status: builder
+  note: UTC hours; weekdays use Monday as zero.
+  source: research_rig/PREREG_09_crypto_methods.md
+
+replay_09_lead:
+  value: {symbols: [ETH/USD, SOL/USD], every_hours: 4, hold_hours: 2, signal_lag_bars: 2, btc_min_return: 0.01, alt_max_return: 0.0025}
+  status: builder
+  source: research_rig/PREREG_09_crypto_methods.md
+
+replay_09_vol:
+  value: {lookback_days: 20, target_daily_sd: 0.025}
+  status: builder
+  source: research_rig/PREREG_09_crypto_methods.md
+
+replay_09_capit:
+  value: {max_daily_return: -0.05, min_volume_multiple: 2}
+  status: builder
+  source: research_rig/PREREG_09_crypto_methods.md
+
+replay_09_statistics:
+  value: {first_trial_id: 101, new_trials: 7, previous_trials: 93, trial_count: 100, pbo_blocks: 16, draws: 1000, seed: 9101}
+  status: builder
+  source: research_rig/PREREG_09_crypto_methods.md
 
 replay_max_drop_ratio_vs_hold:
   value: 0.6
-  status: proposed
+  status: builder
   note: Pass mark 1 of a replay. On the held-back slice the rule's largest drop may be at most this share of the largest drop from holding. A house number first used in research_rig/PREREG_01_daily_crypto_trend.md.
-  source: docs/decisions/0005-overnight-research-2026-11-25.md
+  source: archive/decisions/0005-overnight-research-2026-11-25.md
 
 replay_min_deflated_sharpe:
   value: 0.95
-  status: proposed
+  status: builder
   note: Pass mark 3 of a replay. Deflated Sharpe ratio with every trial in the ledger counted. A house number.
-  source: docs/decisions/0005-overnight-research-2026-11-25.md
+  source: archive/decisions/0005-overnight-research-2026-11-25.md
 
 replay_min_shuffle_percentile:
   value: 0.95
-  status: proposed
+  status: builder
   note: Pass mark 5 of a replay. The rule must beat this share of its own in and out spells put in random order. A house number.
-  source: docs/decisions/0005-overnight-research-2026-11-25.md
+  source: archive/decisions/0005-overnight-research-2026-11-25.md
 
 cost_model_bps_per_side_liquid_etf:
   value: [2, 5]
-  status: proposed
+  status: builder
   note: Modeled spread plus slippage per side for liquid ETFs. Single stocks are higher.
   source: docs/playbook/01_stocks_what_works.md
 
 max_kelly_fraction:
   value: 0.25
-  status: proposed
+  status: builder
   note: Largest share of the Kelly size used for the stress-tested edge. A house number. The cited papers give the idea, not the value.
   source: docs/playbook/01_stocks_what_works.md
 
 drawdown_derisk_band:
   value: [0.15, 0.20]
-  status: proposed
+  status: builder
   note: Exposure is cut as drawdown approaches this band. A house number.
   source: docs/playbook/01_stocks_what_works.md
 
 intraday_trend_max_round_trip_bps:
   value: 1
-  status: proposed
+  status: builder
   note: SPY/QQQ intraday trend stays experimental unless actual round-trip cost is well below this. Tightened from 2 on 2026-11-24. The cited reproduction puts break-even below about 1 bp round trip.
   source: docs/playbook/01_stocks_what_works.md
 
 shadow_min_escalated_events:
   value: 100
-  status: proposed
+  status: builder
   source: docs/playbook/06_architecture_and_build.md
 
 shadow_min_schema_validity:
   value: 0.995
-  status: proposed
+  status: builder
   source: docs/playbook/06_architecture_and_build.md
 
 shadow_max_injection_escapes:
   value: 0
-  status: proposed
+  status: builder
   source: docs/playbook/06_architecture_and_build.md
 
 # Owner numbers. All open.
@@ -150,3 +182,217 @@ api_model_spend_cap_usd_month:
   status: open
   recommended: 25
   note: Hard cap on API-billed model spend by the running service. The working is in docs/playbook/05_perplexity_and_costs.md.
+
+# Practice trader 01 (practice/trader.py). Pretend money only. Set for the build the owner
+# approved on 2026-11-25 (archive/decisions/0007-owner-goal-and-practice-trader-2026-11-25.md).
+
+practice_amount_per_trader_usd:
+  value: 1000
+  status: builder
+  note: Pretend dollars given to each trader on the practice desk, fixed rule or AI. Not a real-money number. The same for every trader so they can be compared.
+  source: practice/README.md
+
+practice_max_order_usd:
+  value: 2000
+  status: builder
+  note: The practice desk refuses to send any single order larger than this, in pretend dollars.
+  source: practice/README.md
+
+practice_min_order_usd:
+  value: 1
+  status: builder
+  note: The practice desk refuses to send an order smaller than this, in pretend dollars. Alpaca says fractional buys start at one dollar.
+  source: https://docs.alpaca.markets/us/docs/fractional-trading.md
+
+practice_max_orders_per_trader_per_day:
+  value: 20
+  status: builder
+  note: The practice desk refuses to send more orders than this for one trader in one day (UTC). Counted from the broker's own order list.
+  source: practice/README.md
+
+practice_rebalance_band:
+  value: 0.10
+  status: builder
+  note: A fixed rule's holding is changed only on a full move in or out, or when the share it wants differs from the share it has by more than this. Same band as the replays used (research_rig/engine.py).
+  source: research_rig/PREREG_01_daily_crypto_trend.md
+
+practice_crypto_fee_bps_added:
+  value: 25
+  status: builder
+  note: Fee per crypto fill, in basis points, that the practice desk counts in its books. Alpaca's published taker fee at its lowest volume tier. Whether the practice account charges it itself is UNKNOWN until the first fill is read.
+  source: https://docs.alpaca.markets/us/docs/crypto-fees.md
+
+practice_crypto_fee_in_coin:
+  value: 0
+  status: builder
+  note: 1 if the practice account takes the fee on a crypto buy out of the coins bought, 0 if the books count it in dollars. Alpaca says live accounts take it in coin. UNKNOWN for the practice account until the first fill is read, then set here.
+  source: https://docs.alpaca.markets/us/docs/crypto-fees.md
+
+practice_max_price_age_hours_crypto:
+  value: 30
+  status: builder
+  note: A fixed crypto rule decides nothing if the newest finished day in its daily prices ended more than this many hours ago.
+  source: practice/README.md
+
+practice_max_price_age_days_stock:
+  value: 5
+  status: builder
+  note: A fixed stock rule decides nothing if its newest daily price is more than this many days old.
+  source: practice/README.md
+
+practice_max_quote_age_minutes:
+  value: 20
+  status: builder
+  note: No order is sent for a symbol whose newest price was read from a trade or quote older than this many minutes.
+  source: practice/README.md
+
+practice_fill_wait_seconds:
+  value: 60
+  status: builder
+  note: How long one run waits for its orders to fill before leaving them to be read on the next run.
+  source: practice/README.md
+
+practice_qty_tolerance:
+  value: 0.01
+  status: builder
+  note: How far, as a share, the account's holding of a symbol may differ from the sum of the traders' books before trading in that symbol stops. Wide enough for a fee taken in coin.
+  source: practice/README.md
+
+practice_open_order_max_hours:
+  value: 6
+  status: builder
+  note: An order still open after this many hours raises an alarm. The desk cannot cancel orders.
+  source: practice/README.md
+
+practice_unread_runs_before_alarm:
+  value: 3
+  status: builder
+  note: The run ends with an error when the broker could not be reached this many runs in a row.
+  source: practice/README.md
+
+practice_pick_max_life_hours:
+  value: 24
+  status: builder
+  note: The longest an AI trader's pick may stay valid. Anything in it not traded by then is dropped.
+  source: practice/picks.py
+
+practice_pick_max_actions:
+  value: 10
+  status: builder
+  note: The most buys and sells one pick may hold.
+  source: practice/picks.py
+
+practice_timer_minutes:
+  value: 10
+  status: builder
+  note: How often GitHub's timer runs the practice desk. The schedule line in the workflow has to match it by hand. GitHub can run late.
+  source: .github/workflows/practice-trader.yml
+
+tm_daily_lookback_days:
+  value: 420
+  status: builder
+  note: Calendar days of daily bars recorded before a replay window start so long moving averages have enough history.
+  source: timemachine/record.py
+
+tm_universe_min_price:
+  value: 5
+  status: builder
+  note: Lowest prior closing price in dollars for a stock to enter the daily liquid replay universe.
+  source: timemachine/record.py
+
+tm_universe_min_dollar_volume:
+  value: 10000000
+  status: builder
+  note: Lowest median prior daily dollar volume for a stock to enter the daily liquid replay universe.
+  source: timemachine/record.py
+
+tm_universe_lookback_days:
+  value: 20
+  status: builder
+  note: Number of prior trading days used to compute median dollar volume for the daily liquid replay universe.
+  source: timemachine/record.py
+
+tm_record_max_rpm:
+  value: 150
+  status: builder
+  note: Maximum HTTP requests per minute made by the tape recorder, kept below Alpaca's 200 per minute free limit.
+  source: timemachine/record.py
+
+tm_record_batch_size:
+  value: 100
+  status: builder
+  note: Number of symbols requested per batched market data call while recording the tape.
+  source: timemachine/record.py
+
+
+tm_account_start_usd:
+  value: 1000
+  status: builder
+  note: Pretend cash in each time machine account at the start of a session. One trader per account, so this is also the trader's budget. Kept equal to practice_amount_per_trader_usd so replays and the live practice desk compare.
+  source: timemachine/simbroker.py
+
+tm_stock_half_spread_bps:
+  value: 5
+  status: builder
+  note: Half the assumed bid-ask spread on a stock fill, in basis points. A buy fills this much above the minute's open and a sell this much below. An assumption, not measured.
+  source: timemachine/simbroker.py
+
+tm_crypto_half_spread_bps:
+  value: 10
+  status: builder
+  note: Half the assumed bid-ask spread on a crypto fill, in basis points. A buy fills this much above the minute's open and a sell this much below. An assumption, not measured.
+  source: timemachine/simbroker.py
+
+tm_max_share_of_minute_volume:
+  value: 0.1
+  status: builder
+  note: The largest share of one stock minute's volume a pretend order may fill. The rest of the order is canceled, as a part fill.
+  source: timemachine/simbroker.py
+
+tm_crypto_max_share_of_minute_volume:
+  value: 0
+  status: proposed
+  note: The largest share of one crypto minute's volume a pretend order may fill; the rest is canceled as a part fill. 0 means no cap. Set to 0 because the crypto minutes on the Alpaca data address carry only Alpaca's own venue volume. MEASURED on the recorded tape for October 2026, a 0.1 cap would cover a 1000 dollar order in about 0.2 percent of bitcoin minutes and almost no ether minutes. The practice account itself is STATED by Alpaca to fill crypto at the quote.
+  source: timemachine/simbroker.py
+
+tm_tick_minutes:
+  value: 5
+  status: builder
+  note: Simulated minutes between two runs of the practice desk program inside a session. Stops, targets and time exits are checked on each run, as on the live timer.
+  source: timemachine/session.py
+
+tm_stock_wake_times_ny:
+  value: [10.0, 12.5, 15.5]
+  status: builder
+  note: New York clock times, in hours, when a stock trader wakes on each trading day (10.0 is 10:00, 12.5 is 12:30). Each must sit on a half hour because the tape has 30 minute bars. A time after an early close is dropped that day.
+  source: timemachine/session.py
+
+tm_crypto_wake_hours_utc:
+  value: [0, 12]
+  status: builder
+  note: UTC hours when a crypto trader wakes, every day of the window.
+  source: timemachine/session.py
+
+tm_max_looks_per_wake:
+  value: 10
+  status: builder
+  note: The most extra lookups (bars, news, prices) a trader may make at one wake before it must pick.
+  source: timemachine/server.py
+
+tm_look_max_bars:
+  value: 2000
+  status: builder
+  note: The most bars one lookup returns. The newest are kept.
+  source: timemachine/server.py
+
+tm_look_max_days:
+  value: 400
+  status: builder
+  note: The most calendar days back one lookup may reach.
+  source: timemachine/server.py
+
+tm_skip_idle_ticks:
+  value: 1
+  status: builder
+  note: 1 skips a desk run when the trader holds nothing, has no open order and no pick left to act on, except the first run of each hour and the last run. Results are the same either way (checked in timemachine/test_sim.py). 0 runs every tick.
+  source: timemachine/session.py

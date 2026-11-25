@@ -59,14 +59,14 @@
     $('theme-toggle').addEventListener('click', function () {
       document.documentElement.setAttribute('data-theme', currentTheme() === 'dark' ? 'light' : 'dark');
       setThemeButton();
-      if (state.data) drawCharts();
+      if (state.data) { drawCharts(); drawPracticeChart(); }
     });
     if (window.matchMedia) {
       var mq = window.matchMedia('(prefers-color-scheme: dark)');
       var onChange = function (e) {
         document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
         setThemeButton();
-        if (state.data) drawCharts();
+        if (state.data) { drawCharts(); drawPracticeChart(); }
       };
       if (mq.addEventListener) mq.addEventListener('change', onChange);
     }
@@ -350,6 +350,11 @@
     var isTests = state.tradeFilter === 'tests';
     $('trade-series-field').hidden = !isTests;
 
+    var pr = practice.summary;
+    if (state.tradeFilter === 'practice' && pr && pr.orders && pr.orders.length) {
+      body.innerHTML = '<p data-testid="practice-trades-pointer">Practice trades are listed in the <a href="#practice">Practice account section</a> at the top of the page.</p>';
+      return;
+    }
     if (!isTests) {
       body.innerHTML = '<div class="empty" data-testid="empty-trades"><h3>No trades in ' + esc(acc ? acc.label : 'this account') + '</h3>' +
         '<p><strong>' + esc(acc ? acc.state : '') + '.</strong> ' + esc(acc ? acc.why : '') + '</p></div>';
@@ -400,12 +405,530 @@
       var more = w[1] ? (w[2] ? '<details><summary>What this covers</summary><p>' + esc(w[1]) + '</p></details>' : '<span>' + esc(w[1]) + '</span>') : '';
       return '<li><div><strong>' + esc(w[0]) + '</strong>' + rec + more + '</div></li>';
     }).join('') : '<li class="wait-empty"><div><strong>' + esc(d.waiting_problem || 'Nothing is listed.') + '</strong><span>Open the full list below.</span></div></li>';
-    $('waitlink').innerHTML = d.waiting_link ? '<a href="' + esc(d.waiting_link) + '" target="_blank" rel="noopener">See the full list</a>' : '';
+    $('waitlink').innerHTML = d.waiting_link ? '<a href="' + esc(d.waiting_link) + '" target="_blank" rel="noopener">See the status page</a>' : '';
   }
   function renderGlossary(d) {
     $('glossary').innerHTML = (d.glossary || []).map(function (g) {
       return '<dt>' + esc(g[0]) + '</dt><dd>' + esc(g[1]) + '</dd>';
     }).join('');
+  }
+
+  // ---------- practice account ----------
+  // The practice desk's summary.json (practice/trader.py, Run.summary). The copy in data.json is shown first,
+  // then the page quietly asks practice_live_url for a newer one. Nothing here can place or change an order.
+  var practice = { summary: null, source: 'baked', check: 'none', open: {}, hl: '', ordersShown: (window.innerWidth || 1200) < 700 ? 10 : 25, ordersTrader: '', closedShown: (window.innerWidth || 1200) < 700 ? 10 : 25, ghBase: '' };
+  var PR_PAGE = (window.innerWidth || 1200) < 700 ? 10 : 25;
+
+  function isNum(x) { return typeof x === 'number' && isFinite(x); }
+  function timeOf(s) { var t = Date.parse(s || ''); return isNaN(t) ? null : t; }
+  function utcText(s) {
+    var t = timeOf(s);
+    return t === null ? (s ? String(s) : 'Not recorded') : new Date(t).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  }
+  function localText(t, withZone) {
+    var d = new Date(t), now = new Date();
+    var o = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    if (d.getFullYear() !== now.getFullYear()) o.year = 'numeric';
+    if (withZone !== false) o.timeZoneName = 'short';
+    try { return d.toLocaleString('en-US', o); } catch (e) { return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
+  }
+  // A time in the owner's local time, with the UTC time in the title.
+  function timeTag(s, fallback) {
+    var t = timeOf(s);
+    if (t === null) return esc(fallback || 'Not recorded');
+    return '<time datetime="' + esc(new Date(t).toISOString()) + '" title="' + esc(utcText(s)) + '">' + esc(localText(t)) + '</time>';
+  }
+  function signedMoney(x) {
+    if (!isNum(x)) return 'Not recorded';
+    if (Math.abs(x) < 0.005) return '$0.00';
+    return (x < 0 ? MINUS : '+') + '$' + num(Math.abs(x), 2);
+  }
+  function signedPct(x, digits) {
+    if (!isNum(x)) return 'Not recorded';
+    var dg = digits === undefined ? 2 : digits;
+    var p = pct(x, dg);
+    return x > 0 && Number((x * 100).toFixed(dg)) !== 0 ? '+' + p : p;
+  }
+  function money2(x) { return isNum(x) ? (x < 0 ? MINUS : '') + '$' + num(Math.abs(x), 2) : 'Not recorded'; }
+  function priceAny(x) {
+    if (!isNum(x)) return 'Not recorded';
+    var a = Math.abs(x), dg = a >= 1 ? 2 : (a >= 0.01 ? 4 : 8);
+    return (x < 0 ? MINUS : '') + '$' + num(a, dg);
+  }
+  function qtyFmt(x) {
+    if (!isNum(x)) return 'Not recorded';
+    var s = Number(x).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 });
+    return s.charAt(0) === '-' ? MINUS + s.slice(1) : s;
+  }
+  function negCls(x) { return isNum(x) && x < 0 ? 'neg' : ''; }
+  function gainHtml(usd, p) {
+    var ref = isNum(usd) ? usd : p;
+    if (!isNum(usd) && !isNum(p)) return 'Not recorded';
+    var parts = [];
+    if (isNum(usd)) parts.push(signedMoney(usd));
+    if (isNum(p)) parts.push(isNum(usd) ? '(' + signedPct(p) + ')' : signedPct(p));
+    return '<span class="' + negCls(ref) + '">' + esc(parts.join(' ')) + '</span>';
+  }
+  function capital(s) { s = String(s || ''); return s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Not recorded'; }
+  function plural(n, one, many) { return int(n) + ' ' + (n === 1 ? one : many); }
+  function safeUrl(u) { return typeof u === 'string' && /^https?:\/\//i.test(u) ? u : null; }
+  function traders() { return (practice.summary && practice.summary.traders) || []; }
+  function traderById(id) { var l = traders(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; }
+  function traderName(id) { var t = traderById(id); return t ? (t.name || t.id) : (id || 'Not recorded'); }
+  function kindText(t) {
+    if (t.kind === 'ai') return 'AI' + (t.model ? ', ' + t.model : '');
+    if (t.kind === 'rule') return 'Fixed rule';
+    return capital(t.kind);
+  }
+
+  var PR_STATE = {
+    waiting_for_key: { label: 'Waiting for the key', cls: 'badge-neutral', mark: '' },
+    running: { label: 'Running', cls: 'badge-test', mark: '' },
+    halted: { label: 'Stopped, needs you', cls: 'badge-fail', mark: '\u00d7' }
+  };
+
+  function recordsLine(s) {
+    var parts = [];
+    if (!(s && timeOf(s.made_utc) !== null)) parts.push('No records yet.');
+    else if (!(s.last_check_utc && timeOf(s.last_check_utc) === timeOf(s.made_utc))) parts.push('Records as of ' + timeTag(s.made_utc) + '.');
+    if (practice.check === 'checking') parts.push('Checking for newer records.');
+    else if (practice.check === 'failed') parts.push('Could not check for newer records.');
+    else if (practice.source === 'live') parts.push('This is the newest copy from the records branch.');
+    else if (practice.check === 'same') parts.push('Checked for newer records, none found.');
+    return parts.join(' ');
+  }
+  function setRecordsLine() {
+    var el = $('practice-records');
+    if (el) el.innerHTML = recordsLine(practice.summary);
+  }
+
+  function kpi(label, value, sub, cls) {
+    return '<div class="card pr-kpi' + (cls || '') + '"><p class="pr-kpi-label">' + esc(label) + '</p>' +
+      '<p class="pr-kpi-value">' + value + '</p>' + (sub ? '<p class="pr-kpi-sub">' + sub + '</p>' : '') + '</div>';
+  }
+  function renderPractice() {
+    var body = $('practice-body');
+    if (!body) return;
+    destroy('practice');
+    var s = practice.summary;
+    var status = s && PR_STATE[s.status] ? s.status : 'waiting_for_key';
+    var st = PR_STATE[status];
+    var waiting = !s || status === 'waiting_for_key';
+    var html = '';
+
+    // 1. one line of state
+    html += '<div class="pr-status" data-testid="practice-status"><span class="badge ' + st.cls + '">' +
+      (st.mark ? '<span class="mark" aria-hidden="true">' + st.mark + '</span>' : '') + esc(st.label) + '</span>' +
+      (s && s.status_text ? '<p>' + esc(s.status_text) + '</p>' : '') + '</div>' +
+      '<p class="meta pr-records">' + (s && s.last_check_utc ? 'Last check ' + timeTag(s.last_check_utc) + '. ' : '') +
+      '<span id="practice-records">' + recordsLine(s) + '</span></p>';
+
+    if (waiting) {
+      html += '<div class="empty pr-empty" data-testid="practice-empty"><h3>Not started</h3>' +
+        '<p>' + (s && s.status_text ? 'Nothing has been bought or sold yet.' : 'No practice trades yet. The desk starts when the practice key is in place.') +
+        (traders().length ? ' ' + plural(traders().length, 'trader is', 'traders are') + ' set up and waiting' +
+          (s && s.account && isNum(s.account.pretend_start_usd) ? ', with ' + money2(s.account.pretend_start_usd) + ' of pretend money between them' : '') + '.' : '') +
+        ' Wins, losses and gains show here after the first trades.</p></div>';
+    }
+
+    // 2. overall
+    var a = (s && s.account) || {}, t = (s && s.totals) || {};
+    var closed = isNum(t.closed_trades) ? t.closed_trades : 0;
+    if (!waiting) {
+      html += '<div class="pr-kpis">' +
+        kpi('Pretend value now', esc(money2(a.value_usd)), gainHtml(a.gain_usd, a.gain_pct) + ' since the start of ' + esc(money2(a.pretend_start_usd)), ' pr-kpi-main') +
+        kpi('Wins', esc(int(t.wins)), closed ? '' : 'No closed trades yet') +
+        kpi('Losses', esc(int(t.losses)), closed ? '' : 'No closed trades yet') +
+        kpi('Win rate', isNum(t.win_rate) ? esc(pct(t.win_rate, 0)) : '<span class="pr-kpi-none">None yet</span>',
+          closed ? esc('Won ' + int(t.wins) + ' of ' + plural(closed, 'closed trade', 'closed trades')) : 'Shown after the first closed trade') +
+        kpi('Closed trades', esc(int(closed)), isNum(t.flat) && t.flat ? esc(plural(t.flat, 'came out even', 'came out even')) : (isNum(t.orders) ? esc(plural(t.orders, 'order sent', 'orders sent')) : '')) +
+        '</div>';
+    }
+    if (!waiting) html += '<p class="meta pr-note">' + esc((s && s.notes && s.notes.win) ||
+      'A trade is counted when a holding goes back to nothing. It is a win if more dollars came back than went in, fees included.') + '</p>';
+
+    // 3. traders
+    var list = traders().slice().sort(function (x, y) {
+      var gx = isNum(x.gain_pct) ? x.gain_pct : -Infinity, gy = isNum(y.gain_pct) ? y.gain_pct : -Infinity;
+      return gy - gx;
+    });
+    if (list.length) {
+      html += '<div class="card pr-block"><h3 class="h3">Traders</h3>' +
+        '<p class="meta">' + esc(plural(list.length, 'trader', 'traders')) + ', each with its own pretend budget. Best gain first. Open a trader to see what it holds, why, and its trades.</p>' +
+        '<div class="tablewrap"><table class="pr-stack pr-traders"><caption class="sr-only">Traders, best gain first</caption><thead><tr>' +
+        '<th scope="col">Trader</th><th scope="col" class="n">Gain</th><th scope="col" class="n">Just holding</th>' +
+        '<th scope="col" class="n">Wins and losses</th><th scope="col" class="n">Holdings</th><th scope="col">State</th></tr></thead>' +
+        list.map(traderRows).join('') + '</table></div></div>';
+    }
+
+    // 4. chart
+    html += chartCard(s);
+
+    // 5. all trades and closed trades
+    if (!waiting || (s && (s.orders || []).length)) {
+      html += '<div class="card pr-block" id="pr-orders-card">' + ordersCard(s) + '</div>';
+      html += '<div class="card pr-block" id="pr-closed-card">' + closedCard(s) + '</div>';
+    }
+
+    // 6. problems and stopped symbols
+    var probs = (s && s.problems) || [], syms = (s && s.symbols_stopped) || [];
+    if (syms.length) {
+      html += '<div class="pr-problems" data-testid="practice-symbols-stopped"><h3 class="h3">Symbols stopped</h3><p class="meta">No trader can buy these until you look.</p><ul>' +
+        syms.map(function (x) { return '<li><strong>' + esc(x.symbol || 'Not recorded') + '</strong>' + esc(x.reason || 'No reason was recorded.') + '</li>'; }).join('') + '</ul></div>';
+    }
+    if (probs.length) {
+      html += '<div class="pr-problems" data-testid="practice-problems"><h3 class="h3">Problems</h3><ul>' +
+        probs.map(function (p) {
+          return '<li><span class="meta">' + timeTag(p.utc) + (p.trader ? ', ' + esc(traderName(p.trader)) : '') + '</span>' + esc(p.text) + '</li>';
+        }).join('') + '</ul></div>';
+    }
+
+    body.innerHTML = html;
+    Object.keys(practice.open).forEach(function (id) { if (practice.open[id]) openTrader(id, false); });
+    drawPracticeChart();
+  }
+
+  function traderState(t) {
+    if (t.halted) return '<span class="badge badge-fail"><span class="mark" aria-hidden="true">\u00d7</span>Stopped</span>' +
+      '<span class="pr-halt-reason">' + esc(t.halt_reason || 'No reason was recorded.') + '</span>';
+    if (t.started === false) return '<span class="pr-muted">Waiting for its first check</span>';
+    return 'Trading';
+  }
+  function traderRows(t) {
+    var id = String(t.id), rid = 'pr-t-' + id.replace(/[^A-Za-z0-9_-]/g, '_');
+    var started = t.started !== false;
+    var wl = isNum(t.closed_trades) && t.closed_trades ? int(t.wins) + ' won, ' + int(t.losses) + ' lost' : 'None closed';
+    var npos = (t.positions || []).length;
+    return '<tbody class="pr-trader' + (t.halted ? ' pr-trader-halted' : '') + '" data-trader="' + esc(id) + '"><tr>' +
+      '<th scope="row" data-label="Trader"><button type="button" class="pr-open" id="' + esc(rid) + '-btn" aria-expanded="false" aria-controls="' + esc(rid) + '-detail" data-trader-toggle="' + esc(id) + '">' +
+        '<span class="pr-chev" aria-hidden="true"></span><span class="pr-tname">' + esc(t.name || id) + '</span></button>' +
+        '<span class="pr-kind">' + esc(kindText(t)) + '</span></th>' +
+      '<td class="n" data-label="Gain">' + (started ? gainHtml(t.gain_usd, t.gain_pct) : '<span class="pr-muted">None yet</span>') + '</td>' +
+      '<td class="n" data-label="Just holding' + (t.benchmark ? ' ' + esc(t.benchmark) : '') + '">' +
+        (isNum(t.hold_value_usd) || isNum(t.hold_gain_pct)
+          ? gainHtml(isNum(t.hold_value_usd) && isNum(t.start_usd) ? t.hold_value_usd - t.start_usd : null, t.hold_gain_pct)
+          : '<span class="pr-muted">None yet</span>') +
+        (t.benchmark ? '<span class="pr-sub">' + esc(t.benchmark) + '</span>' : '') + '</td>' +
+      '<td class="n" data-label="Wins and losses">' + esc(wl) + '</td>' +
+      '<td class="n" data-label="Holdings">' + esc(npos ? plural(npos, 'open', 'open') : 'None') + '</td>' +
+      '<td data-label="State" class="pr-state">' + traderState(t) + '</td>' +
+      '</tr></tbody>';
+  }
+
+  function openTrader(id, toggle) {
+    var tb = null, all = document.querySelectorAll('#practice-body tbody.pr-trader');
+    for (var i = 0; i < all.length; i++) if (all[i].getAttribute('data-trader') === id) tb = all[i];
+    if (!tb) return;
+    var btn = tb.querySelector('[data-trader-toggle]');
+    var existing = tb.querySelector('tr.pr-detail');
+    var willOpen = toggle === false ? true : !existing;
+    if (existing) existing.parentNode.removeChild(existing);
+    practice.open[id] = willOpen;
+    btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    tb.classList.toggle('is-open', willOpen);
+    if (!willOpen) return;
+    var t = traderById(id);
+    var tr = document.createElement('tr');
+    tr.className = 'pr-detail';
+    tr.id = btn.getAttribute('aria-controls');
+    tr.innerHTML = '<td colspan="6">' + traderDetail(t) + '</td>';
+    tb.appendChild(tr);
+  }
+
+  function exitText(t, p) {
+    var x = p.exit;
+    if (!x) return t.kind === 'rule' ? 'Sold when the rule says so' : 'None set';
+    var parts = [];
+    if (isNum(x.stop)) parts.push('sell if it falls to ' + priceAny(x.stop));
+    if (isNum(x.target)) parts.push('sell if it reaches ' + priceAny(x.target));
+    if (x.by_utc) parts.push('sell by ' + localText(timeOf(x.by_utc) || 0));
+    return parts.length ? capital(parts.join(', ')) : 'None set';
+  }
+
+  function traderDetail(t) {
+    var s = practice.summary || {};
+    var h = '<div class="pr-detail-in">';
+    var facts = [];
+    facts.push('<div><dt>Kind</dt><dd>' + esc(kindText(t)) + '</dd></div>');
+    facts.push('<div><dt>Pretend budget</dt><dd>' + esc(money2(t.start_usd)) + '</dd></div>');
+    facts.push('<div><dt>Value now</dt><dd>' + esc(money2(t.value_usd)) + '</dd></div>');
+    facts.push('<div><dt>Cash</dt><dd>' + esc(money2(t.cash_usd)) + '</dd></div>');
+    if (isNum(t.target_weight)) facts.push('<div><dt>Share the rule asks to hold</dt><dd>' + esc(pct(t.target_weight, 0)) + '</dd></div>');
+    facts.push('<div><dt>Closed trades made</dt><dd>' + gainHtml(t.realised_usd, null) + '</dd></div>');
+    facts.push('<div><dt>Fees added</dt><dd>' + esc(money2(t.fees_added_usd)) + '</dd></div>');
+    facts.push('<div><dt>Label</dt><dd>' + esc(t.label ? capital(t.label) : 'Not passed') + '</dd></div>');
+    h += '<p class="meta">No trader on this desk has a counted pass. Each one runs to be watched.' +
+      (t.method ? ' How it works: ' + methodLink(t.method) + '.' : '') + '</p>';
+    if (t.halted) h += '<div class="pr-halt" role="note"><strong><span aria-hidden="true">\u00d7 </span>Stopped.</strong> ' + esc(t.halt_reason || 'No reason was recorded.') + '</div>';
+    if (t.started === false) h += '<div class="pr-wait"><strong>Waiting for its first check.</strong> It has not made its first decision yet, so there are no holdings or gains to show.</div>';
+    h += '<dl class="pr-facts">' + facts.join('') + '</dl>';
+
+    // holdings
+    var pos = t.positions || [];
+    h += '<h4 class="pr-h4">Holdings now</h4>';
+    if (!pos.length) h += '<p class="pr-muted">Nothing held. All ' + esc(money2(t.cash_usd)) + ' is cash.</p>';
+    else h += '<div class="tablewrap"><table class="pr-stack pr-pos"><caption class="sr-only">Holdings of ' + esc(t.name || t.id) + '</caption><thead><tr>' +
+      '<th scope="col">Symbol</th><th scope="col" class="n">Amount</th><th scope="col" class="n">Price now</th><th scope="col" class="n">Value</th>' +
+      '<th scope="col" class="n">Paid</th><th scope="col" class="n">Gain</th><th scope="col">Bought</th><th scope="col">Exit in force</th></tr></thead><tbody>' +
+      pos.map(function (p) {
+        return '<tr><th scope="row" data-label="Symbol">' + esc(p.symbol) + '</th><td class="n" data-label="Amount">' + esc(qtyFmt(p.qty)) + '</td>' +
+          '<td class="n" data-label="Price now">' + esc(priceAny(p.price)) + '</td><td class="n" data-label="Value">' + esc(money2(p.value_usd)) + '</td>' +
+          '<td class="n" data-label="Paid">' + esc(money2(p.cost_usd)) + '</td><td class="n" data-label="Gain">' + gainHtml(p.gain_usd, isNum(p.gain_usd) && p.cost_usd > 0 ? p.gain_usd / p.cost_usd : null) + '</td>' +
+          '<td data-label="Bought">' + timeTag(p.opened_utc) + '</td><td data-label="Exit in force" class="pr-wrap">' + esc(exitText(t, p)) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+
+    // last pick
+    if (t.kind === 'ai' || t.last_pick) {
+      h += '<h4 class="pr-h4">Last pick</h4>';
+      var lp = t.last_pick;
+      if (!lp) h += '<p class="pr-muted">No pick yet.</p>';
+      else {
+        var src = (lp.sources || []).map(function (u) {
+          var ok = safeUrl(u);
+          return '<li>' + (ok ? '<a href="' + esc(ok) + '" target="_blank" rel="noopener">' + esc(u) + '</a>' : esc(u)) + '</li>';
+        }).join('');
+        h += '<div class="pr-pick"><p class="meta">Made ' + timeTag(lp.made_utc) + (lp.pick_id ? ', pick ' + esc(lp.pick_id) : '') + '</p>' +
+          '<p class="pr-thesis">' + esc(lp.thesis || 'No reason was written.') + '</p>' +
+          (src ? '<p class="meta">Sources it gave</p><ul class="pr-sources">' + src + '</ul>' : '<p class="meta">No sources given.</p>') + '</div>';
+      }
+    }
+
+    // its orders and closed trades
+    var orders = (s.orders || []).filter(function (o) { return o.trader === t.id; });
+    h += '<h4 class="pr-h4">Its orders</h4>' + (orders.length ? ordersTable(orders, false) : '<p class="pr-muted">No orders yet.</p>');
+    if (isNum(t.orders_count) && t.orders_count > orders.length) h += '<p class="meta">Showing the newest ' + int(orders.length) + ' of ' + int(t.orders_count) + ' orders. The records file keeps the newest 300 for the whole desk.</p>';
+    var cl = (s.closed || []).filter(function (c) { return c.trader === t.id; });
+    h += '<h4 class="pr-h4">Its closed trades</h4>' + (cl.length ? closedTable(cl, false) : '<p class="pr-muted">No closed trades yet.</p>');
+    h += '<p><button type="button" class="btn" data-trader-close="' + esc(t.id) + '">Close ' + esc(t.name || t.id) + '</button></p>';
+    return h + '</div>';
+  }
+
+  function methodLink(m) {
+    var path = String(m).replace(/^\/+/, '');
+    if (!/^[A-Za-z0-9_./-]+$/.test(path) || !practice.ghBase) return esc(m);
+    if (path.indexOf('practice/') !== 0 && path.indexOf('docs/') !== 0) path = 'practice/' + path;
+    return '<a href="' + esc(practice.ghBase + path) + '" target="_blank" rel="noopener">' + esc(path.split('/').pop()) + '</a>';
+  }
+
+  var STATUS_PLAIN = { filled: 'Filled', open: 'Open', 'part filled': 'Part filled' };
+  function statusCell(st) {
+    var k = String(st || '');
+    return STATUS_PLAIN[k] ? esc(STATUS_PLAIN[k]) : '<strong>' + esc(capital(k || 'not recorded')) + '</strong>';
+  }
+
+  function ordersTable(orders, showTrader) {
+    return '<div class="tablewrap"><table class="pr-stack pr-ord"><caption class="sr-only">Orders, newest first</caption><thead><tr>' +
+      '<th scope="col">Sent</th>' + (showTrader ? '<th scope="col">Trader</th>' : '') +
+      '<th scope="col">Order</th><th scope="col" class="n">Dollars</th><th scope="col" class="n">Fill price</th><th scope="col" class="n">Price when sent</th>' +
+      '<th scope="col" class="n">Gap (bps)</th><th scope="col" class="n">Fee added</th><th scope="col">Status</th></tr></thead><tbody>' +
+      orders.map(function (o) {
+        var size = isNum(o.qty) ? qtyFmt(o.qty) : (isNum(o.asked_qty) ? 'asked ' + qtyFmt(o.asked_qty) : '');
+        var dollars = isNum(o.notional_usd) ? money2(o.notional_usd) : (isNum(o.asked_usd) ? 'asked ' + money2(o.asked_usd) : 'Not recorded');
+        return '<tr class="pr-ord-main"><td data-label="Sent">' + timeTag(o.utc) + '</td>' +
+          (showTrader ? '<td data-label="Trader">' + esc(traderName(o.trader)) + '</td>' : '') +
+          '<td data-label="Order"><span class="act">' + esc(capital(o.side)) + '</span> ' + esc(o.symbol || '') + (size ? '<span class="pr-sub">' + esc(size) + '</span>' : '') + '</td>' +
+          '<td class="n" data-label="Dollars">' + esc(dollars) + '</td>' +
+          '<td class="n" data-label="Fill price">' + esc(priceAny(o.fill_price)) + '</td>' +
+          '<td class="n" data-label="Price when sent">' + esc(priceAny(o.assumed_price)) + '</td>' +
+          '<td class="n" data-label="Gap (bps)">' + esc(isNum(o.gap_bps) ? num(o.gap_bps, 1) : 'Not recorded') + '</td>' +
+          '<td class="n" data-label="Fee added">' + esc(isNum(o.fee_added_usd) ? money2(o.fee_added_usd) : 'Not recorded') + '</td>' +
+          '<td data-label="Status">' + statusCell(o.status) + '</td></tr>' +
+          '<tr class="pr-ord-reason"><td colspan="' + (showTrader ? 9 : 8) + '" data-label="Reason" class="pr-wrap"><span class="pr-reason-label">Reason: </span>' + esc(o.reason || 'No reason recorded') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function closedTable(cl, showTrader) {
+    var MARK = { win: '\u2713', loss: '\u00d7', flat: '=' };
+    var WORD = { win: 'Win', loss: 'Loss', flat: 'Even' };
+    return '<div class="tablewrap"><table class="pr-stack pr-cl"><caption class="sr-only">Closed trades, newest first</caption><thead><tr>' +
+      '<th scope="col">Closed</th>' + (showTrader ? '<th scope="col">Trader</th>' : '') +
+      '<th scope="col">Symbol</th><th scope="col">Bought</th><th scope="col" class="n">Paid</th><th scope="col" class="n">Gain</th><th scope="col">Result</th></tr></thead><tbody>' +
+      cl.map(function (c) {
+        var r = c.result in WORD ? c.result : null;
+        return '<tr><td data-label="Closed">' + timeTag(c.closed_utc) + '</td>' +
+          (showTrader ? '<td data-label="Trader">' + esc(traderName(c.trader)) + '</td>' : '') +
+          '<td data-label="Symbol">' + esc(c.symbol || 'Not recorded') + '</td><td data-label="Bought">' + timeTag(c.opened_utc) + '</td>' +
+          '<td class="n" data-label="Paid">' + esc(money2(c.cost_usd)) + '</td><td class="n" data-label="Gain">' + gainHtml(c.gain_usd, c.gain_pct) + '</td>' +
+          '<td data-label="Result"><span class="pr-result pr-result-' + esc(r || 'none') + '"><span aria-hidden="true">' + (r ? MARK[r] : '?') + ' </span>' + esc(r ? WORD[r] : capital(c.result)) + '</span></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function traderSelect(id, label, value, includeAccount) {
+    var opts = '<option value="">' + esc(includeAccount ? 'No trader highlighted' : 'All traders') + '</option>' +
+      traders().map(function (t) { return '<option value="' + esc(t.id) + '"' + (t.id === value ? ' selected' : '') + '>' + esc(t.name || t.id) + '</option>'; }).join('');
+    return '<label class="field pr-field"><span class="field-label">' + esc(label) + '</span><select id="' + id + '">' + opts + '</select></label>';
+  }
+
+  function ordersCard(s) {
+    var all = (s && s.orders) || [];
+    var list = practice.ordersTrader ? all.filter(function (o) { return o.trader === practice.ordersTrader; }) : all;
+    var shown = list.slice(0, practice.ordersShown);
+    var n = s && s.notes ? s.notes : {};
+    var h = '<h3 class="h3">All trades</h3><p class="meta">Every order sent, newest first, with the reason given for it.</p>';
+    if (all.length && traders().length > 1) h += '<div class="controls pr-controls">' + traderSelect('pr-orders-trader', 'Trader', practice.ordersTrader, false) + '</div>';
+    if (!list.length) h += '<p class="pr-muted">No orders yet.</p>';
+    else {
+      h += ordersTable(shown, true);
+      h += '<div class="pager"><p class="pager-info">Showing ' + int(shown.length) + ' of ' + int(list.length) + (all.length >= 300 ? '. The records file keeps the newest 300.' : '') + '</p>' +
+        (shown.length < list.length ? '<div class="pager-btns"><button type="button" class="btn" data-more="orders">Show ' + int(Math.min(PR_PAGE, list.length - shown.length)) + ' more</button></div>' : '') + '</div>';
+    }
+    h += '<div class="pr-notes"><p class="meta">' + esc(n.gap || 'Gap is how far the fill was from the newest price the program had read when it sent the order, in basis points. Plus means the fill was worse for the account.') + '</p>' +
+      '<p class="meta">A basis point is one hundredth of a percent.</p>' +
+      (n.fee ? '<p class="meta">' + esc(n.fee) + '</p>' : '') + (n.not_added ? '<p class="meta">' + esc(n.not_added) + '</p>' : '') + '</div>';
+    return h;
+  }
+
+  function closedCard(s) {
+    var all = (s && s.closed) || [];
+    var shown = all.slice(0, practice.closedShown);
+    var h = '<h3 class="h3">Closed trades</h3><p class="meta">Each time a holding went back to nothing, newest first.</p>';
+    if (!all.length) return h + '<p class="pr-muted">No closed trades yet.</p>';
+    h += closedTable(shown, true);
+    h += '<div class="pager"><p class="pager-info">Showing ' + int(shown.length) + ' of ' + int(all.length) + '</p>' +
+      (shown.length < all.length ? '<div class="pager-btns"><button type="button" class="btn" data-more="closed">Show ' + int(Math.min(PR_PAGE, all.length - shown.length)) + ' more</button></div>' : '') + '</div>';
+    return h;
+  }
+
+  // ---------- practice chart ----------
+  function chartPoints(s) {
+    return ((s && s.points) || []).filter(function (p) { return p && timeOf(p.utc) !== null; })
+      .sort(function (x, y) { return timeOf(x.utc) - timeOf(y.utc); });
+  }
+  function chartCard(s) {
+    var pts = chartPoints(s);
+    var h = '<div class="card chart-card pr-block"><h3 class="h3">Gain over time</h3>' +
+      '<p class="testlabel">Pretend money in a practice account.</p>';
+    if (pts.length < 2) return h + '<p class="pr-chart-wait">The chart appears after the second check is recorded.</p></div>';
+    if (typeof Chart === 'undefined') return h + '<p class="pr-chart-wait">The chart file did not load, so the chart cannot be drawn.</p></div>';
+    var hl = practice.hl && traderById(practice.hl) ? practice.hl : '';
+    h += '<p class="meta">Gain since the start, in percent, so traders with different budgets can be compared.</p>' +
+      '<div class="controls pr-controls">' + traderSelect('pr-chart-trader', 'Highlight a trader', hl, true) + '</div>' +
+      '<div class="legend" aria-hidden="true"><span class="key key-rule pr-key-acct">Whole account</span><span class="key key-hold">Just holding (dashed)</span>' +
+      '<span class="key pr-key-trader">Each trader</span>' + (hl ? '<span class="key pr-key-hl">' + esc(traderName(hl)) + '</span>' : '') + '</div>' +
+      '<div class="chartbox pr-chartbox"><canvas id="chart-practice" role="img" aria-label="' +
+      esc('Gain since the start for the whole account, for just holding, and for each trader, from ' + localText(timeOf(pts[0].utc)) + ' to ' + localText(timeOf(pts[pts.length - 1].utc)) + (hl ? '. Highlighted: ' + traderName(hl) : '')) +
+      '"></canvas></div></div>';
+    return h;
+  }
+
+  function drawPracticeChart() {
+    destroy('practice');
+    var cv = $('chart-practice'), s = practice.summary;
+    if (!cv || !s || typeof Chart === 'undefined') return;
+    var pts = chartPoints(s);
+    if (pts.length < 2) return;
+    var a = s.account || {}, list = traders();
+    var start = isNum(a.pretend_start_usd) && a.pretend_start_usd > 0 ? a.pretend_start_usd : null;
+    var per = {};
+    list.forEach(function (t) { per[t.id] = isNum(t.start_usd) && t.start_usd > 0 ? t.start_usd : null; });
+    var ids = [];
+    pts.forEach(function (p) { Object.keys(p.traders || {}).forEach(function (k) { if (ids.indexOf(k) < 0) ids.push(k); }); });
+    function series(get, base) {
+      return pts.map(function (p) { var v = get(p); return { x: timeOf(p.utc), y: isNum(v) && base ? v / base - 1 : null }; });
+    }
+    var hl = practice.hl, grid = cssVar('--hold'), hlc = cssVar('--pick');
+    var sets = ids.filter(function (k) { return k !== hl; }).map(function (k) {
+      return { label: traderName(k), data: series(function (p) { return (p.traders || {})[k]; }, per[k] || (start && list.length ? start / list.length : null)),
+        borderColor: cssVar('--trader-line'), borderWidth: 1, pointRadius: 0, tension: 0, spanGaps: true, prKind: 'trader' };
+    });
+    sets.push({ label: 'Just holding', data: series(function (p) { return p.hold_value_usd; }, start), borderColor: grid, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, tension: 0, spanGaps: true, prKind: 'main' });
+    sets.push({ label: 'Whole account', data: series(function (p) { return p.value_usd; }, start), borderColor: cssVar('--rule'), borderWidth: 2.5, pointRadius: 0, tension: 0, spanGaps: true, prKind: 'main' });
+    if (hl && ids.indexOf(hl) >= 0) sets.push({ label: traderName(hl), data: series(function (p) { return (p.traders || {})[hl]; }, per[hl]), borderColor: hlc, borderWidth: 2.5, pointRadius: 0, tension: 0, spanGaps: true, prKind: 'main' });
+    var o = baseOptions();
+    var x0 = timeOf(pts[0].utc), x1 = timeOf(pts[pts.length - 1].utc), span = x1 - x0;
+    o.scales.x.type = 'linear'; o.scales.x.min = x0; o.scales.x.max = x1;
+    o.scales.x.ticks.maxRotation = 0; o.scales.x.ticks.autoSkip = true;
+    o.scales.x.ticks.maxTicksLimit = cv.parentNode.clientWidth < 500 ? 4 : 7;
+    o.scales.x.ticks.callback = function (v) {
+      var d = new Date(Number(v));
+      try {
+        return span < 2 * 864e5 ? d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit' }) : d.toLocaleString('en-US', { month: 'short', day: 'numeric' });
+      } catch (e) { return d.toISOString().slice(5, 16); }
+    };
+    o.scales.y.ticks.callback = function (v) { return pct(Number(v), Math.abs(Number(v)) < 0.1 ? 1 : 0); };
+    o.plugins.tooltip.filter = function (it) { return it.dataset.prKind === 'main'; };
+    o.plugins.tooltip.callbacks = {
+      title: function (items) { return items.length ? localText(items[0].parsed.x) : ''; },
+      label: function (c) { return c.dataset.label + ': ' + signedPct(c.parsed.y); }
+    };
+    state.charts.practice = new Chart(cv, { type: 'line', data: { datasets: sets }, options: o });
+  }
+
+  // ---------- practice events ----------
+  function initPracticeEvents() {
+    var body = $('practice-body');
+    body.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-trader-toggle]');
+      if (b) { openTrader(b.getAttribute('data-trader-toggle')); return; }
+      var c = e.target.closest('[data-trader-close]');
+      if (c) {
+        var id = c.getAttribute('data-trader-close');
+        openTrader(id, true);
+        var all = body.querySelectorAll('[data-trader-toggle]');
+        for (var i = 0; i < all.length; i++) if (all[i].getAttribute('data-trader-toggle') === id) all[i].focus();
+        return;
+      }
+      var m = e.target.closest('[data-more]');
+      if (m) {
+        var which = m.getAttribute('data-more');
+        if (which === 'orders') { practice.ordersShown += PR_PAGE; $('pr-orders-card').innerHTML = ordersCard(practice.summary); }
+        else { practice.closedShown += PR_PAGE; $('pr-closed-card').innerHTML = closedCard(practice.summary); }
+        var nb = body.querySelector('[data-more="' + which + '"]');
+        if (nb) nb.focus();
+      }
+    });
+    body.addEventListener('change', function (e) {
+      if (e.target.id === 'pr-orders-trader') {
+        practice.ordersTrader = e.target.value; practice.ordersShown = PR_PAGE;
+        $('pr-orders-card').innerHTML = ordersCard(practice.summary);
+        $('pr-orders-trader').focus();
+      } else if (e.target.id === 'pr-chart-trader') {
+        practice.hl = e.target.value;
+        var card = $('chart-practice') ? $('chart-practice').closest('.chart-card') : null;
+        if (card) {
+          var tmp = document.createElement('div'); tmp.innerHTML = chartCard(practice.summary);
+          card.parentNode.replaceChild(tmp.firstChild, card);
+          drawPracticeChart();
+          $('pr-chart-trader').focus();
+        }
+      }
+    });
+  }
+
+  function checkLivePractice(url) {
+    if (!url || typeof fetch !== 'function') return;
+    practice.check = 'checking';
+    setRecordsLine();
+    var done = false;
+    var timer = setTimeout(function () { if (!done) { done = true; practice.check = 'failed'; setRecordsLine(); } }, 15000);
+    function fail() { if (done) return; done = true; clearTimeout(timer); practice.check = 'failed'; setRecordsLine(); }
+    try {
+      fetch(url, { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (live) {
+          if (done) return;
+          if (!live || typeof live !== 'object' || Array.isArray(live)) throw new Error('bad');
+          done = true; clearTimeout(timer);
+          var lt = timeOf(live.made_utc), bt = practice.summary ? timeOf(practice.summary.made_utc) : null;
+          if (lt !== null && (bt === null || lt > bt)) {
+            practice.summary = live; practice.source = 'live'; practice.check = 'done';
+            try { renderPractice(); } catch (e) { /* keep what is on screen */ }
+            if (state.tradeFilter === 'practice') renderTrades();
+          } else { practice.check = 'same'; setRecordsLine(); }
+        })
+        .catch(fail);
+    } catch (e) { fail(); }
+  }
+
+  function initPractice(d) {
+    practice.summary = d.practice && typeof d.practice === 'object' ? d.practice : null;
+    practice.source = 'baked'; practice.check = 'none';
+    practice.ghBase = d.status_link ? String(d.status_link).replace(/docs\/STATUS\.md$/, '') : '';
+    try { initPracticeEvents(); } catch (e) { /* the section still shows */ }
+    try { renderPractice(); } catch (e) {
+      $('practice-body').innerHTML = '<div class="empty"><h3>The practice records could not be shown</h3><p>The records in data.json are not in the expected shape.</p></div>';
+    }
+    try { checkLivePractice(d.practice_live_url); } catch (e) { /* stay on the saved copy */ }
   }
 
   // ---------- nav highlight ----------
@@ -451,6 +974,7 @@
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (d) {
         state.data = d;
+        initPractice(d);
         renderStatus(d);
         $('compare-notes').innerHTML = (d.compare_notes || []).map(function (n) { return '<p>' + esc(n) + '</p>'; }).join('');
         renderTests(d);

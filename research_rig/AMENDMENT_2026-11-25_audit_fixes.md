@@ -6,7 +6,7 @@ Status: research rig, not the product. Proposed by research. No owner decision i
 
 ## Why
 
-Two independent models audited the rig after replay 01, cross-check X2 and replay 03 had been run. The first audit report is filed at `audit/2026-11-25_auditor_a.md`. It found no use of future prices. It did find faults in how results were measured and in two of the statistics. This file lists every change, so that the rerun cannot be shaped by its own results.
+Two independent models audited the rig after replay 01, cross-check X2 and replay 03 had been run. The first audit report is filed at `archive/audit/2026-11-25_auditor_a.md`. It found no use of future prices. It did find faults in how results were measured and in two of the statistics. This file lists every change, so that the rerun cannot be shaped by its own results.
 
 Honest limit: these fixes are made after the first results were seen. To keep that from helping any rule, every change of verdict is reported in both directions, the first results stay in the repo unchanged, and no pass mark number is changed.
 
@@ -60,4 +60,4 @@ Honest limit: these fixes are made after the first results were seen. To keep th
 Nothing above this line was changed. Two statements above are wrong, and later readers found them:
 
 - "What does not change" lists the costs and the five pass marks. Row A13 does change what pass mark 1 asks: each daily rule must also hold with the fill one hour late. It can only remove passes. Row A08, besides fixing the search limit, changes what holding pays when the break-even cost is worked out, which is part of pass mark 2. The plan had not said which cost holding pays.
-- So the rerun (ledger row R1) was not engine fixes only. Research recommends that its passes are not credited (question 18b in `docs/decisions/morning_list_2026-11-25.md`). The account is in `docs/STATUS.md`, "Known faults and slips".
+- So the rerun (ledger row R1) was not engine fixes only. Research recommends that its passes are not credited (question 18b in `archive/decisions/morning_list_2026-11-25.md`). The account is in `docs/STATUS.md`, "Known faults and slips".

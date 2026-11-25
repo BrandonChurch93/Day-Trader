@@ -1,0 +1,73 @@
+# The practice desk. A plain timer, pretend money only (an Alpaca practice account).
+# AI traders decide by writing pick files to the practice-picks branch. This program checks each pick against the
+# trader's pretend budget and the limits in config/thresholds.yaml, places the order and keeps the records.
+# No model runs here. What it does and why: practice/README.md.
+# The two secrets are entered by the owner in the repo's settings. They are the key of a practice account.
+name: Practice trader
+on:
+  schedule:
+    - cron: "7,17,27,37,47,57 * * * *"   # must match practice_timer_minutes in config/thresholds.yaml
+  workflow_dispatch:
+    inputs:
+      clear:
+        description: "Trader id to clear after an unclear order was checked by hand. Leave empty for a normal run."
+        required: false
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: practice-trader
+  cancel-in-progress: false
+jobs:
+  run:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          ref: practice-records
+          path: practice_records
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          ref: practice-picks
+          path: practice_picks
+          persist-credentials: false
+      - name: Name for the records commits
+        run: |
+          git -C practice_records config user.name "practice-desk"
+          git -C practice_records config user.email "practice-desk@users.noreply.github.com"
+      - name: Checks with a pretend broker. No trading if any fails
+        run: python3 practice/test_trader.py && python3 practice/test_review.py && python3 practice/test_market.py
+      - name: One run of the desk
+        id: trader
+        continue-on-error: true
+        env:
+          ALPACA_PAPER_KEY_ID: ${{ secrets.ALPACA_PAPER_KEY_ID }}
+          ALPACA_PAPER_SECRET_KEY: ${{ secrets.ALPACA_PAPER_SECRET_KEY }}
+          PRACTICE_RECORDS_DIR: practice_records/records
+          PRACTICE_PICKS_DIR: practice_picks
+          PRACTICE_SAVE: git
+          PRACTICE_CLEAR: ${{ github.event.inputs.clear }}
+        run: python3 practice/trader.py
+      - name: Save the records to the practice-records branch
+        id: save
+        if: always()
+        run: |
+          cd practice_records
+          git add -A
+          git diff --cached --quiet || git commit -q -m "Practice desk run $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3; do
+            if git push -q origin HEAD:practice-records; then exit 0; fi
+            sleep $((i * 3))
+          done
+          echo "The records could not be saved to the practice-records branch."
+          exit 1
+      - name: Fail the run so the owner hears about a stopped trader or unsaved records
+        if: always() && (steps.trader.outcome == 'failure' || steps.save.outcome == 'failure')
+        run: |
+          echo "The practice desk stopped a trader, could not use its key, or could not save its records. Read records/summary.json on the practice-records branch."
+          exit 1

@@ -1,7 +1,7 @@
-"""Builds docs/research/16_rig_audit.md from compare_v1_v2.json, results_v2.json, noise_pbo.json and audit/pbo_stability.json.
+"""Builds docs/research/16_rig_audit.md from compare_v1_v2.json, results_v2.json, noise_pbo.json and archive/audit/pbo_stability.json.
 Run after run_v2.py, compare_v1_v2.py and noise_pbo.py. Every number in the document comes from those files."""
 import json, statistics as st
-v = json.load(open("results_v2.json")); c = json.load(open("compare_v1_v2.json")); nz = json.load(open("noise_pbo.json")); ps = json.load(open("../audit/pbo_stability.json"))
+v = json.load(open("results_v2.json")); c = json.load(open("compare_v1_v2.json")); nz = json.load(open("noise_pbo.json")); ps = json.load(open("../archive/audit/pbo_stability.json"))
 V = ["Binance.US", "Alpaca", "Kraken $10k tier", "Kraken entry", "Coinbase entry"]; COST = {"Binance.US": 7, "Alpaca": 30, "Kraken $10k tier": 43, "Kraken entry": 85, "Coinbase entry": 95}
 AN = {"BTCUSD": "Bitcoin", "ETHUSD": "Ether"}; MN = {"m1": "1 held-back", "m2": "2 break-even", "m3": "3 deflated Sharpe", "m4": "4 overfitting", "m5": "5 shuffle", "passed": "verdict"}
 RUN = {"R01": "Replay 01 (Bitstamp prices)", "X2": "Cross-check X2 (Kraken prices)", "S2": "Sensitivity S2 (ether from 2016, Kraken prices)", "R03": "Replay 03 (hourly rules)", "DIAG": "Diagnostic (Bitstamp prices from 2014-05-01, not pre-registered)"}
@@ -99,7 +99,7 @@ Every number below is MEASURED by `research_rig/run_v2.py` and read from its out
 ## Bottom line
 
 - Two different AI models audited the rig code line by line, separately. Neither found a rule that used future prices. Both found faults in how results were measured.
-- I wrote down every fix and pushed it before rerunning anything (`research_rig/AMENDMENT_2026-11-25_audit_fixes.md`). No slice was changed. Correction added later on 2026-11-25: an earlier version of this line also said no rule, cost or pass mark was changed. That was wrong. Two rows of that list are not engine fixes. A13 made pass mark 1 stricter than the plan wrote it, so that it must also hold with the fill one hour late. A08 changed what buy and hold pays when the break-even cost is worked out, from a flat 5 bps to the same cost as the rule. A third row, A12, is an engine fix to the 0.10 band check that changes the trades of one rule, P2. So a pass in this rerun did not come from engine fixes alone, and research recommends that none is credited (question 18b in `docs/decisions/morning_list_2026-11-25.md`).
+- I wrote down every fix and pushed it before rerunning anything (`research_rig/AMENDMENT_2026-11-25_audit_fixes.md`). No slice was changed. Correction added later on 2026-11-25: an earlier version of this line also said no rule, cost or pass mark was changed. That was wrong. Two rows of that list are not engine fixes. A13 made pass mark 1 stricter than the plan wrote it, so that it must also hold with the fill one hour late. A08 changed what buy and hold pays when the break-even cost is worked out, from a flat 5 bps to the same cost as the rule. A third row, A12, is an engine fix to the 0.10 band check that changes the trades of one rule, P2. So a pass in this rerun did not come from engine fixes alone, and research recommends that none is credited (question 18b in `archive/decisions/morning_list_2026-11-25.md`).
 - After the fixes, rules that pass on both price histories: {byv(BOTH)}. In the first run that list was: {byv(BOTH0)}.
 - So the fixes turned four failures into passes at the cheapest venue only. That is a result found after the fact. It is a reason to test in the practice account, not a result to rely on.
 - The pass sits on a knife edge. The overfitting estimate for bitcoin on Kraken prices at Binance.US cost is {kb['rerun']:.4f} against a bar of {TH['backtest_max_pbo']} (`backtest_max_pbo`). With the latest days dropped instead of the earliest it is {kb['latest_days_dropped']:.4f}, which fails. On Bitstamp prices started on the same day as the Kraken history it is {DG:.4f}, which fails.
@@ -111,8 +111,8 @@ Every number below is MEASURED by `research_rig/run_v2.py` and read from its out
 
 | Auditor | Model | What it did | Report |
 |---|---|---|---|
-| A | GPT-6.2 Sol | Read every file. Wrote its own separate replay from scratch and compared it with the rig day by day. 18 findings | `audit/2026-11-25_auditor_a.md`, `audit/replay_independent.py`, `audit/diagnostics.py` |
-| B | Gemini Neon | Checked the statistics against the original papers, ran them on made-up data, tested each hourly rule for use of future prices by changing future bars and watching for any change in earlier signals. 11 findings | `audit/2026-11-25_auditor_b.md`, `audit/pbo_stability.json` |
+| A | GPT-6.2 Sol | Read every file. Wrote its own separate replay from scratch and compared it with the rig day by day. 18 findings | `archive/audit/2026-11-25_auditor_a.md`, `archive/audit/replay_independent.py`, `archive/audit/diagnostics.py` |
+| B | Gemini Neon | Checked the statistics against the original papers, ran them on made-up data, tested each hourly rule for use of future prices by changing future bars and watching for any change in earlier signals. 11 findings | `archive/audit/2026-11-25_auditor_b.md`, `archive/audit/pbo_stability.json` |
 
 What they agreed on:
 
@@ -183,7 +183,7 @@ The [paper](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf) says "belo
 {pbo()}
 ### How much it moves when nothing real changes
 
-MEASURED by auditor B with the first-run code (`audit/pbo_stability.json`):
+MEASURED by auditor B with the first-run code (`archive/audit/pbo_stability.json`):
 
 {stab()}
 MEASURED by me with the rerun code on made-up data where no rule has any edge (`research_rig/noise_pbo.py`, {nz['samples']} samples each, {nz['blocks']} blocks). Marks 3 and 5 are built to let no-edge data through about 1 time in 20. Mark 4 at this bar lets it through more often than that:
@@ -197,7 +197,7 @@ What this means:
 
 One more sign of the same problem. The two price histories cover the same market. Started on the same day (2014-05-01) and charged Binance.US cost, the estimate is {kb['rerun']:.3f} on Kraken prices and {next(x['rerun'] for x in c['pbo'] if x['run']=='DIAG' and x['venue']=='Binance.US'):.3f} on Bitstamp prices. One passes and one fails. The Bitstamp pass in replay 01 comes from starting in 2013, before the Kraken history begins. The two venues' daily closing prices were not the same in the early years: the typical gap was {PG['median_bps_2014_2017']:.0f} bps in 2014 to 2017 and {PG['median_bps_2020_on']:.1f} bps from 2020 on (`research_rig/venue_price_gap.json`). That is one likely reason the two answers differ. Whether it is the whole reason is UNKNOWN.
 
-Proposal, not adopted: measure mark 4 as the middle value over a fixed set of start dates and block counts, written down before the run. This costs nothing and removes the knife edge. (Corrected 2026-11-25: that last claim overstated it. A fixed set of dates stops one start date from deciding. The mark stays noisy, as the made-up data test on this page shows. Also corrected 2026-11-25: this line also proposed counting ties as half. That is the easier reading, as the table above shows, and results have been seen. Research now recommends keeping ties counted as overfit. Decisions 1a and 1b in `docs/decisions/morning_list_2026-11-25.md`.)
+Proposal, not adopted: measure mark 4 as the middle value over a fixed set of start dates and block counts, written down before the run. This costs nothing and removes the knife edge. (Corrected 2026-11-25: that last claim overstated it. A fixed set of dates stops one start date from deciding. The mark stays noisy, as the made-up data test on this page shows. Also corrected 2026-11-25: this line also proposed counting ties as half. That is the easier reading, as the table above shows, and results have been seen. Research now recommends keeping ties counted as overfit. Decisions 1a and 1b in `archive/decisions/morning_list_2026-11-25.md`.)
 
 ## Day trading rules on hourly bars, after the fixes
 
@@ -219,7 +219,7 @@ Passes at any venue cost: {r03_pass} of {r03_n} after the fixes, {cn['R03']['pas
 |---|---|---|
 | How should a tie be counted in mark 4 from now on? | As overfit, as in every test so far. (Corrected 2026-11-25: this row first said \"as half\") | Counting a tie as half is the neutral reading, and counting it as overfit pushes a no-edge result from 0.50 to about 0.56 with 9 rules. But half is the easier reading, results have been seen, and the owner's bar says never to loosen a limit after seeing a result. Keeping the full count is a cautious policy, not a claim that it is the more correct statistic. The rule list in a plan is never chosen to make ties more or less likely |
 | Should mark 4 be measured over several start dates and block counts? | Yes, fixed in the plan before each run | One start date decides the result today. What this would do to the bitcoin results is UNKNOWN (corrected 2026-11-25: this row first said it would most likely turn the bitcoin passes back into fails, which was a guess). With the first-run code at Alpaca cost the middle value over {len(ps['dates'])} start dates was {st.median([x['pbo_le0'] for x in ps['dates']]):.3f}. It has not been measured at Binance.US cost, and research has not run it, so that the choice of method is not made by looking at its result |
-| Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the only bitcoin rule. The morning list proposes one stock rule beside it (`docs/decisions/morning_list_2026-11-25.md`, decision 5) | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
+| Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the only bitcoin rule. The morning list proposes one stock rule beside it (`archive/decisions/morning_list_2026-11-25.md`, decision 5) | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
 
 ## Files
 
