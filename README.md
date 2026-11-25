@@ -1,45 +1,66 @@
 # Day-Trader
 
-An AI-assisted trading system for US stocks and crypto. Status: in research. The product is not built. A small research rig exists for testing ideas on past prices. No accounts or keys connected. Last updated 2026-11-25.
+Research toward an AI-assisted trading system for US stocks and crypto. The product is not built and building has not been approved. A research rig exists for testing ideas on past prices. No broker account or key is connected.
+
+This page does not hold results. Results change, and they live in one place: `docs/STATUS.md`.
 
 ## Read in this order
 
-1. `AGENTS.md` - rules every agent and contributor follows. One page.
-2. `docs/playbook/00_START_HERE.md` - the whole picture in about two pages.
-3. `docs/quality/00_READ_FIRST.md` - the owner's quality bar and build method.
-4. `docs/playbook/01..06` - condensed decisions per topic. This is the layer agents load by default.
-5. `docs/research/01..15` - full reports with every source. Open only when a playbook line points there. 09 is brokers and venues, 10 is historical data and practice accounts, 11 is the AI trader test design, 12 is the first replay results (slow trend rules on bitcoin and ether), 12b is the same replay on a second venue's prices, 13 is the high-risk sleeve evidence, 14 is the first pilot of AI models making the calls, 15 is the replay of rules that trade inside the day.
-6. `docs/decisions/` - dated record of choices, the audits of the playbook and the source checks.
+| Step | File | What you get | Length |
+|---|---|---|---|
+| 1 | `AGENTS.md` | The rules. They win over everything else | One page |
+| 2 | `docs/STATUS.md` | Where the project stands today: every test and its result, what is believed now, what waits on the owner, what is next | One page |
+| 3 | `docs/INDEX.md` | The map. Find your task in its first table and read only the files it names | Look up, do not read through |
 
-## What the evidence says, in five lines
+Then, only if your task needs it:
 
-- Most retail day traders lose money after costs, and most LLM agents given real or simulated money have lost too.
-- The ideas with the best evidence are slower than day trading: multi-day trend following with volatility-based sizing, held overnight.
-- Language models are useful for reading news, filings and transcripts, for writing and reviewing strategy code, and for reviewing trades. They are poor at predicting prices from numbers.
-- So the product is a small always-on rules-based trading service. The AI sits beside it as a researcher and reviewer and never touches the order path.
-- Cheap-model screening with rare escalation to a top model is the right cost design. The list-price comparison lives in `docs/playbook/05_perplexity_and_costs.md`.
+- `docs/quality/00_READ_FIRST.md` before you plan, build or review anything. It is the owner's standard.
+- `docs/playbook/00_START_HERE.md` for the shape of the product and where Perplexity fits.
+- `research_rig/README.md` before you run or add a test.
+- `config/thresholds.yaml` before you use or change a number.
+
+## Five rules that are easy to break
+
+1. A number is written once, in `config/thresholds.yaml`. Documents name the key.
+2. A test's plan and its trial ledger rows are pushed before the test runs.
+3. Numbers in documents are written by a script from an output file, never typed.
+4. A result or decision changes `docs/STATUS.md` in the same commit. A new, moved or retired file changes `docs/INDEX.md` in the same commit.
+5. Run `python3 tools/check_repo.py` before every commit. It fails if the map is not true.
+
+## Which file wins when two disagree
+
+1. `AGENTS.md`
+2. `config/thresholds.yaml` for any number
+3. `docs/STATUS.md` for any result or the current state
+4. A dated note in `docs/decisions/` over an undated page
+5. The newer of two dated pages
+
+The playbook pages were written from reading on 2026-11-24, before the project ran a test of its own. Where they and the status page disagree, the status page stands.
 
 ## Layout
 
 ```text
 Day-Trader/
-├── AGENTS.md              rules for agents
-├── README.md
+├── AGENTS.md              the rules
+├── README.md              this page
 ├── config/                every threshold and owner number, once
-├── research_rig/          research tool for replays on past prices. Not the product
-└── docs/
-    ├── playbook/          condensed, decision-only (default reading)
-    ├── quality/           the owner's quality bar and build method
-    ├── research/          full cited reports (audit trail)
-    └── decisions/         decision log and playbook audits
+├── docs/
+│   ├── STATUS.md          the current state (read second)
+│   ├── INDEX.md           the map of every file
+│   ├── quality/           the owner's quality bar and build method
+│   ├── playbook/          short decision pages per topic
+│   ├── research/          full reports and the results of our own tests
+│   └── decisions/         dated record of choices and what the owner is asked next
+├── research_rig/          the test rig: plans, scripts, outputs. Not the product
+├── audit/                 independent audits of the rig code
+├── dashboard/             the owner's screen for tests and trades
+└── tools/                 the check that keeps the map true
 ```
-
-Code directories (`src/`, `config/`, `tests/`, `infra/`) are specified in `docs/playbook/06_architecture_and_build.md` and get created in Phase 1.
 
 ## Evidence labels
 
-- MEASURED: independent empirical data, official rule text, or a published price page.
+- MEASURED: independent data, official rule text, a published price page, or our own logged test.
 - STATED: claimed by a vendor, author or promoter and not independently verified.
-- UNKNOWN: could not be verified. Treat as a thing to test, not a fact.
+- UNKNOWN: could not be verified. A thing to test, not a fact.
 
 This repository is research and engineering documentation, not financial advice.

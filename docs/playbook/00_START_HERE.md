@@ -1,5 +1,7 @@
 # Start here
 
+> Note added 2026-11-25. This page was written from reading, before the project ran any test of its own. The current state, with the result of every test, is `docs/STATUS.md`. The map of every file is `docs/INDEX.md`. Where this page and the status page disagree, the status page stands. What our own tests have added so far: no rule has a clean pass, slow trend rules cut the worst drop and give up growth on both bitcoin and the US stock market, and every day trading rule tested on crypto lost to fees. The reasons and the next tests are in `docs/research/25_what_the_evidence_supports.md`.
+
 Last verified: 2026-11-24. This page is the whole project in two pages. Each section points to the playbook file that holds the rules, and each playbook file points to the full research.
 
 ## The honest verdict
