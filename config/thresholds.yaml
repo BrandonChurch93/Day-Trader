@@ -432,3 +432,8 @@ tm_keyless_news_per_page:
   status: builder
   note: Number of articles requested per page from public WordPress REST endpoints (WordPress maximum is 100).
   source: timemachine/record.py
+tm_knowledge_hit_within:
+  value: 0.10
+  status: builder
+  note: A model's remembered month-end price counts as close when it is within this fraction of the tape's price. Used only by the memory test of the models.
+  source: timemachine/knowledge_line.py
