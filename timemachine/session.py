@@ -314,6 +314,14 @@ class Session:
         probs = [p for p in self.rec.rows("problems") if p["utc"] >= since]
         return dict(pick_id=st["pick_id"], wake_utc=since, no_pick_why=st.get("no_pick_why"), outcome=st.get("outcome", []), orders_since=orders, problems_since=probs)
 
+    def _feed_get(self, base, path, params=None):
+        """A crypto session is shown nothing about stocks, whatever the tape holds."""
+        if self.meta["market"] == "crypto" and path == "/v1beta1/screener/stocks/movers":
+            return {"gainers": [], "losers": [], "last_updated": iso(self.now), "market_type": "stocks"}
+        if self.meta["market"] == "crypto" and path == "/v1beta1/screener/stocks/most-actives":
+            return {"most_actives": [], "last_updated": iso(self.now)}
+        return self.sd.get(base, path, params)
+
     def packet(self, fresh=False):
         if self.done():
             raise Done()
@@ -321,7 +329,7 @@ class Session:
         if p.exists() and not fresh:
             return json.loads(p.read_text())
         bk = self.book(); held = [x["symbol"] for x in bk["positions"]]
-        feed = M.build_feed(self.sd.get, self.meta["watch"], held, self.now)
+        feed = M.build_feed(self._feed_get, self.meta["watch"], held, self.now)
         if not self.meta.get("news"):
             feed["news"] = []   # a session made without news shows none, whatever the tape holds
         all_syms = list(dict.fromkeys(list(self.meta["watch"]) + held))
@@ -353,6 +361,8 @@ class Session:
             return dict(ok=False, error=f"No lookups left at this wake (the limit is tm_max_looks_per_wake). Make your pick.")
         days = min(float(days if days is not None else 5), self.cfg["tm_look_max_days"]); start = self.now - dt.timedelta(days=days)
         syms = [s.strip() for s in (symbols or "").split(",") if s.strip()]
+        if self.meta["market"] == "crypto" and any("/" not in x for x in syms + ([symbol] if symbol else [])):
+            return dict(ok=False, error="This is a crypto session. Lookups are for crypto pairs such as BTC/USD only.")
         if what == "bars":
             assert timeframe in ("1Min", "30Min", "1Hour", "1Day") and symbol, "bars needs symbol and timeframe 1Min, 30Min, 1Hour or 1Day"
             if timeframe == "1Min" and "/" not in symbol:

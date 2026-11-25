@@ -40,38 +40,38 @@ Verdict: not finished.
 
 ## Each session
 
-| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| July | Claude Opus 5.5 | not finished | | | | | | | | | | |
-| July | GPT-6.2 Sol | not finished | | | | | | | | | | |
-| July | Gemini Neon | not finished | | | | | | | | | | |
-| July | Claude Sonnet 5.5 | not finished | | | | | | | | | | |
-| July | Kimi K3 | not finished | | | | | | | | | | |
-| July | Grok 4.7 | not finished | | | | | | | | | | |
-| August | Claude Opus 5.5 | not finished | | | | | | | | | | |
-| August | GPT-6.2 Sol | not finished | | | | | | | | | | |
-| August | Gemini Neon | not finished | | | | | | | | | | |
-| August | Claude Sonnet 5.5 | not finished | | | | | | | | | | |
-| August | Kimi K3 | not finished | | | | | | | | | | |
-| August | Grok 4.7 | not finished | | | | | | | | | | |
-| September | Claude Opus 5.5 | not finished | | | | | | | | | | |
-| September | GPT-6.2 Sol | not finished | | | | | | | | | | |
-| September | Gemini Neon | not finished | | | | | | | | | | |
-| September | Claude Sonnet 5.5 | not finished | | | | | | | | | | |
-| September | Kimi K3 | not finished | | | | | | | | | | |
-| September | Grok 4.7 | not finished | | | | | | | | | | |
-| October | Claude Opus 5.5 | not finished | | | | | | | | | | |
-| October | GPT-6.2 Sol | not finished | | | | | | | | | | |
-| October | Gemini Neon | not finished | | | | | | | | | | |
-| October | Claude Sonnet 5.5 | not finished | | | | | | | | | | |
-| October | Kimi K3 | not finished | | | | | | | | | | |
-| October | Grok 4.7 | not finished | | | | | | | | | | |
-| November 1 to 24 | Claude Opus 5.5 | not finished | | | | | | | | | | |
-| November 1 to 24 | GPT-6.2 Sol | not finished | | | | | | | | | | |
-| November 1 to 24 | Gemini Neon | not finished | | | | | | | | | | |
-| November 1 to 24 | Claude Sonnet 5.5 | not finished | | | | | | | | | | |
-| November 1 to 24 | Kimi K3 | not finished | | | | | | | | | | |
-| November 1 to 24 | Grok 4.7 | not finished | | | | | | | | | | |
+| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups | Wakes that showed stock fund movers |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| July | Claude Opus 5.5 | not finished | | | | | | | | | | | |
+| July | GPT-6.2 Sol | not finished | | | | | | | | | | | |
+| July | Gemini Neon | not finished | | | | | | | | | | | |
+| July | Claude Sonnet 5.5 | not finished | | | | | | | | | | | |
+| July | Kimi K3 | not finished | | | | | | | | | | | |
+| July | Grok 4.7 | not finished | | | | | | | | | | | |
+| August | Claude Opus 5.5 | not finished | | | | | | | | | | | |
+| August | GPT-6.2 Sol | not finished | | | | | | | | | | | |
+| August | Gemini Neon | not finished | | | | | | | | | | | |
+| August | Claude Sonnet 5.5 | not finished | | | | | | | | | | | |
+| August | Kimi K3 | not finished | | | | | | | | | | | |
+| August | Grok 4.7 | not finished | | | | | | | | | | | |
+| September | Claude Opus 5.5 | not finished | | | | | | | | | | | |
+| September | GPT-6.2 Sol | not finished | | | | | | | | | | | |
+| September | Gemini Neon | not finished | | | | | | | | | | | |
+| September | Claude Sonnet 5.5 | not finished | | | | | | | | | | | |
+| September | Kimi K3 | not finished | | | | | | | | | | | |
+| September | Grok 4.7 | not finished | | | | | | | | | | | |
+| October | Claude Opus 5.5 | not finished | | | | | | | | | | | |
+| October | GPT-6.2 Sol | not finished | | | | | | | | | | | |
+| October | Gemini Neon | not finished | | | | | | | | | | | |
+| October | Claude Sonnet 5.5 | not finished | | | | | | | | | | | |
+| October | Kimi K3 | not finished | | | | | | | | | | | |
+| October | Grok 4.7 | not finished | | | | | | | | | | | |
+| November 1 to 24 | Claude Opus 5.5 | not finished | | | | | | | | | | | |
+| November 1 to 24 | GPT-6.2 Sol | not finished | | | | | | | | | | | |
+| November 1 to 24 | Gemini Neon | not finished | | | | | | | | | | | |
+| November 1 to 24 | Claude Sonnet 5.5 | not finished | | | | | | | | | | | |
+| November 1 to 24 | Kimi K3 | not finished | | | | | | | | | | | |
+| November 1 to 24 | Grok 4.7 | not finished | | | | | | | | | | | |
 
 ## Why each trade was made, and how it ended
 
@@ -83,4 +83,5 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 - The rule against outside knowledge is given by instruction. Each trader's lookups are logged; its memory is not.
 - Whether these months fall after each model's knowledge line is UNKNOWN. It has not been measured.
 - A headline can remind a model of what it already knows about that period. That would look like skill and is not. About one headline in eight was edited after it was published; those are marked and the card says not to trade on them.
+- For a time on 2026-11-25 the packets of crypto sessions also listed the previous day's movers among stock funds, after those funds were loaded onto the tape. Nothing from the future was shown, and no trader looked up a stock. The last column of the session table counts the wakes this touched. It was switched off at 15:53 UTC.
 - With six models, one looking good by luck is likely. That is why the bar is per model and was fixed before the run.

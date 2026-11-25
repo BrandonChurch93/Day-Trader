@@ -59,4 +59,4 @@ For every buy: which headlines the trader named as its reason, what else it look
 - Many posts carry a last-edit time before their publish time (scheduled ahead, by up to 72 hours). The tape uses the publish time, so a trader sees such a story no earlier than readers did.
 - One site publishes batches of short filler stories on the hour. They are real posts with real dates and stay on the tape. A trader has to judge their worth, as a reader would.
 - What this check cannot see: a story whose text was changed after publishing without the site marking it.
-
+- 2026-11-25 15:53 UTC: after stock funds were loaded onto the tape (about 15:35 UTC), the packets of crypto sessions also listed the previous day's biggest movers and most traded among those funds. MEASURED: it showed nothing from the future (a fund's day is visible only after its close), and no trader looked up a stock. It is still outside what this plan describes, so it was switched off: a crypto session now shows nothing about stocks and refuses stock lookups. Sessions that ran across that time saw the fund movers at some wakes. The count for each session is in the results table.

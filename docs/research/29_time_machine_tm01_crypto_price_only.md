@@ -16,7 +16,7 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 
 | Model | Months counted | Gain summed | Holding bitcoin, same months | 80th percentile of twins | Twins beaten | Verdict |
 |---|---|---|---|---|---|---|
-| Claude Opus 5.5 | 0 of 5 | n/a | n/a | n/a | n/a | not finished |
+| Claude Opus 5.5 | 1 of 5 | -$61.35 | -$76.42 | -$41.50 | 11 of 20 | not finished |
 | GPT-6.2 Sol | 1 of 5 | -$32.50 | -$76.42 | -$21.92 | 0 of 20 | not finished |
 | Gemini Neon | 0 of 5 | n/a | n/a | n/a | n/a | not finished |
 | Claude Sonnet 5.5 | 1 of 5 | -$88.92 | -$76.42 | -$64.07 | 0 of 20 | not finished |
@@ -25,42 +25,57 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 
 ## Each session
 
-| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| July | Claude Opus 5.5 | not finished | | | | | | | | | | |
-| July | GPT-6.2 Sol | -$2.78 | $69.81 | n/a | n/a of 0 | 5 | 2 | 3 | $6.16 | -1.9% | 57 of 62 | 92 |
-| July | Gemini Neon | not finished | | | | | | | | | | |
-| July | Claude Sonnet 5.5 | -$25.70 | $69.81 | n/a | n/a of 0 | 3 | 0 | 3 | $4.45 | -2.9% | 58 of 62 | 20 |
-| July | Kimi K3 | not finished | | | | | | | | | | |
-| July | Grok 4.7 | not finished | | | | | | | | | | |
-| August | Claude Opus 5.5 | $42.97 | $245.33 | n/a | n/a of 0 | 8 | 5 | 3 | $11.39 | -3.5% | 46 of 62 | 24 |
-| August | GPT-6.2 Sol | $4.17 | $245.33 | n/a | n/a of 0 | 3 | 1 | 2 | $3.87 | -1.2% | 59 of 62 | 31 |
-| August | Gemini Neon | not finished | | | | | | | | | | |
-| August | Claude Sonnet 5.5 | $51.44 | $245.33 | n/a | n/a of 0 | 6 | 4 | 2 | $7.15 | -1.5% | 51 of 62 | 53 |
-| August | Kimi K3 | not finished | | | | | | | | | | |
-| August | Grok 4.7 | not finished | | | | | | | | | | |
-| September | Claude Opus 5.5 | not finished | | | | | | | | | | |
-| September | GPT-6.2 Sol | not finished | | | | | | | | | | |
-| September | Gemini Neon | not finished | | | | | | | | | | |
-| September | Claude Sonnet 5.5 | not finished | | | | | | | | | | |
-| September | Kimi K3 | not finished | | | | | | | | | | |
-| September | Grok 4.7 | not finished | | | | | | | | | | |
-| October | Claude Opus 5.5 | -$61.35 | -$76.42 | n/a | n/a of 12 | 6 | 0 | 6 | $7.37 | -8.0% | 55 of 62 | 250 |
-| October | GPT-6.2 Sol | -$32.50 | -$76.42 | -$21.92 | 0 of 20 | 4 | 0 | 4 | $4.45 | -3.6% | 58 of 62 | 37 |
-| October | Gemini Neon | -$162.36 | -$76.42 | n/a | n/a of 0 | 8 | 0 | 8 | $12.53 | -17.6% | 56 of 62 | 31 |
-| October | Claude Sonnet 5.5 | -$88.92 | -$76.42 | -$64.07 | 0 of 20 | 4 | 0 | 4 | $5.79 | -10.5% | 59 of 62 | 29 |
-| October | Kimi K3 | -$110.50 | -$76.42 | n/a | n/a of 0 | 12 | 0 | 9 | $14.50 | -13.3% | 54 of 62 | 57 |
-| October | Grok 4.7 | -$37.59 | -$76.42 | n/a | n/a of 9 | 3 | 0 | 3 | $5.42 | -5.7% | 59 of 62 | 116 |
-| November 1 to 24 | Claude Opus 5.5 | not finished | | | | | | | | | | |
-| November 1 to 24 | GPT-6.2 Sol | not finished | | | | | | | | | | |
-| November 1 to 24 | Gemini Neon | not finished | | | | | | | | | | |
-| November 1 to 24 | Claude Sonnet 5.5 | $0.07 | -$231.10 | n/a | n/a of 0 | 4 | 2 | 2 | $5.26 | -2.5% | 43 of 48 | 37 |
-| November 1 to 24 | Kimi K3 | not finished | | | | | | | | | | |
-| November 1 to 24 | Grok 4.7 | not finished | | | | | | | | | | |
+| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups | Wakes that showed stock fund movers |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| July | Claude Opus 5.5 | -$50.63 | $69.81 | n/a | n/a of 0 | 10 | 3 | 6 | $14.66 | -8.3% | 44 of 62 | 18 | 28 of 62 |
+| July | GPT-6.2 Sol | -$2.78 | $69.81 | n/a | n/a of 0 | 5 | 2 | 3 | $6.16 | -1.9% | 57 of 62 | 92 | 10 of 62 |
+| July | Gemini Neon | not finished | | | | | | | | | | | |
+| July | Claude Sonnet 5.5 | -$25.70 | $69.81 | n/a | n/a of 0 | 3 | 0 | 3 | $4.45 | -2.9% | 58 of 62 | 20 | 0 of 62 |
+| July | Kimi K3 | -$24.12 | $69.81 | n/a | n/a of 0 | 12 | 5 | 7 | $15.23 | -4.5% | 47 of 62 | 22 | 36 of 62 |
+| July | Grok 4.7 | not finished | | | | | | | | | | | |
+| August | Claude Opus 5.5 | $42.97 | $245.33 | n/a | n/a of 0 | 8 | 5 | 3 | $11.39 | -3.5% | 46 of 62 | 24 | 23 of 62 |
+| August | GPT-6.2 Sol | $4.17 | $245.33 | n/a | n/a of 0 | 3 | 1 | 2 | $3.87 | -1.2% | 59 of 62 | 31 | 0 of 62 |
+| August | Gemini Neon | not finished | | | | | | | | | | | |
+| August | Claude Sonnet 5.5 | $51.44 | $245.33 | n/a | n/a of 0 | 6 | 4 | 2 | $7.15 | -1.5% | 51 of 62 | 53 | 10 of 62 |
+| August | Kimi K3 | not finished | | | | | | | | | | | |
+| August | Grok 4.7 | not finished | | | | | | | | | | | |
+| September | Claude Opus 5.5 | not finished | | | | | | | | | | | |
+| September | GPT-6.2 Sol | $6.89 | $59.89 | n/a | n/a of 0 | 5 | 3 | 2 | $5.53 | -0.5% | 55 of 60 | 90 | 60 of 60 |
+| September | Gemini Neon | not finished | | | | | | | | | | | |
+| September | Claude Sonnet 5.5 | -$0.27 | $59.89 | n/a | n/a of 0 | 3 | 2 | 1 | $3.51 | -1.8% | 56 of 60 | 39 | 55 of 60 |
+| September | Kimi K3 | not finished | | | | | | | | | | | |
+| September | Grok 4.7 | not finished | | | | | | | | | | | |
+| October | Claude Opus 5.5 | -$61.35 | -$76.42 | -$41.50 | 11 of 20 | 6 | 0 | 6 | $7.37 | -8.0% | 55 of 62 | 250 | 0 of 62 |
+| October | GPT-6.2 Sol | -$32.50 | -$76.42 | -$21.92 | 0 of 20 | 4 | 0 | 4 | $4.45 | -3.6% | 58 of 62 | 37 | 0 of 62 |
+| October | Gemini Neon | -$162.36 | -$76.42 | n/a | n/a of 0 | 8 | 0 | 8 | $12.53 | -17.6% | 56 of 62 | 31 | 0 of 62 |
+| October | Claude Sonnet 5.5 | -$88.92 | -$76.42 | -$64.07 | 0 of 20 | 4 | 0 | 4 | $5.79 | -10.5% | 59 of 62 | 29 | 0 of 62 |
+| October | Kimi K3 | -$110.50 | -$76.42 | n/a | n/a of 0 | 12 | 0 | 9 | $14.50 | -13.3% | 54 of 62 | 57 | 46 of 62 |
+| October | Grok 4.7 | -$37.59 | -$76.42 | n/a | n/a of 17 | 3 | 0 | 3 | $5.42 | -5.7% | 59 of 62 | 116 | 0 of 62 |
+| November 1 to 24 | Claude Opus 5.5 | not finished | | | | | | | | | | | |
+| November 1 to 24 | GPT-6.2 Sol | not finished | | | | | | | | | | | |
+| November 1 to 24 | Gemini Neon | not finished | | | | | | | | | | | |
+| November 1 to 24 | Claude Sonnet 5.5 | $0.07 | -$231.10 | n/a | n/a of 0 | 4 | 2 | 2 | $5.26 | -2.5% | 43 of 48 | 37 | 43 of 48 |
+| November 1 to 24 | Kimi K3 | not finished | | | | | | | | | | | |
+| November 1 to 24 | Grok 4.7 | not finished | | | | | | | | | | | |
 
 ## Why each trade was made, and how it ended
 
 One row per buy. "Looked at" is what the trader asked the desk for at that wake, beyond the packet it is always given. No trader in this plan had news, so none looked at news.
+
+### July, Claude Opus 5.5
+
+| Wake (UTC) | Coin | Looked at | Its reason | Ended | Result |
+|---|---|---|---|---|---|
+| 2026-07-01 12:00 | SOL/USD | 1Hour bars x1 | Strongest of the eight over the past week, higher lows on hourly bars. | target reached 2026-07-02 10:35 | win $17.54 (+7.0%) |
+| 2026-07-02 12:00 | BTC/USD | 1Hour bars x2 | Hourly higher lows since July 1, bounce off the 58k double bottom, about 4.5 percent room to resistance. | stop reached 2026-07-06 12:05 | win $0.74 (+0.2%) |
+| 2026-07-03 12:00 | ETH/USD | 1Day bars x1, 1Hour bars x1 | Leading the rebound, broke out of a triple-bottom base, hourly trend up. | stop reached 2026-07-08 08:20 | loss -$1.80 (-0.7%) |
+| 2026-07-07 00:00 | BTC/USD | 1Hour bars x1 | Dip to 61.25k was bought back within hours to a new rebound high; trend of higher daily closes since July 1. | stop reached 2026-07-08 13:50 | loss -$13.07 (-4.3%) |
+| 2026-07-09 12:00 | BTC/USD | packet only | Higher lows on the daily rebound, range holding, stop placed outside the range noise. | stop reached 2026-07-17 13:45 | loss -$3.62 (-1.0%) |
+| 2026-07-15 00:00 | ETH/USD | 1Hour bars x1 | Broke above the June 15 high and held the breakout on hourly bars; room to the 2000 area. | stop reached 2026-07-17 13:10 | loss -$14.39 (-4.8%) |
+| 2026-07-16 00:00 | LINK/USD | 1Day bars x1 | Daily breakout to a six-week high with higher lows all month; about 7 percent room to the early-June level. | stop reached 2026-07-17 13:10 | loss -$15.37 (-6.1%) |
+| 2026-07-18 00:00 | BTC/USD | 1Day bars x1, 1Hour bars x1 | Rising daily lows all month, dip to 62.45k bought straight back; stop placed outside the daily range. | stop reached 2026-07-28 01:10 | loss -$21.93 (-3.4%) |
+| 2026-07-19 00:00 | ETH/USD | 1Day bars x1 | Rising daily lows, breakout retest held above 1800; wide stop under July 13 low. | time limit 2026-07-31 12:00 | win $1.28 (+0.4%) |
+| 2026-07-22 00:00 | BTC/USD | packet only | Holding above the mid-June highs, a seven-week high, rising daily lows all month. | open at the end | still held at the end or not filled |
 
 ### July, GPT-6.2 Sol
 
@@ -79,6 +94,23 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-07-02 12:00 | SOL/USD | 1Day bars x2, 1Hour bars x1 | Breakout above week-long resistance near 79; hourly closes holding above it. | time limit 2026-07-06 00:00 | loss -$4.31 (-1.4%) |
 | 2026-07-15 00:00 | ETH/USD | 1Day bars x2, 1Hour bars x1 | Daily close above 1848 resistance after repeated tests; hourly bars holding 1870-1890. | stop reached 2026-07-17 00:35 | loss -$8.17 (-2.7%) |
 | 2026-07-21 12:00 | ETH/USD | 1Day bars x1, 1Hour bars x1 | ETH above last week's 1894 high with BTC leading through range top; hourly higher highs and higher lows. | stop reached 2026-07-24 00:40 | loss -$13.22 (-4.4%) |
+
+### July, Kimi K3
+
+| Wake (UTC) | Coin | Looked at | Its reason | Ended | Result |
+|---|---|---|---|---|---|
+| 2026-07-01 12:00 | BTC/USD | 1Hour bars x1 | sweep of June lows then 8-hour hold above 58,400; higher intraday highs into 59,382 | target reached 2026-07-01 21:35 | win $7.23 (+2.9%) |
+| 2026-07-02 00:00 | BTC/USD | 1Hour bars x1 | strong impulse off the sweep low, shallow pullback holding above 59,900 retest of prior intraday highs | target reached 2026-07-02 09:55 | win $3.59 (+1.4%) |
+| 2026-07-02 12:00 | BTC/USD | 1Day bars x2, 1Hour bars x1 | reclaim of June 29 high 60,721; daily reversal candle; stop under the broken shelf, target under June 24 high 63,131 | stop reached 2026-07-04 06:25 | win $2.35 (+0.9%) |
+| 2026-07-02 12:00 | SOL/USD | 1Day bars x2, 1Hour bars x1 | strongest alt, daily higher highs, fresh 10:00 breakout from 77-78.5 intraday base; stop back inside the base | stop reached 2026-07-08 00:00 | loss -$6.89 (-2.8%) |
+| 2026-07-05 00:00 | BTC/USD | 1Day bars x1 | third green daily off the July 1 low, July 4 traded above June 24 high and closed at 63,089 on the doorstep; stop under the day's low | stop reached 2026-07-06 05:30 | loss -$2.47 (-1.0%) |
+| 2026-07-06 00:00 | ETH/USD | 1Hour bars x2 | daily close confirmed above June 22 high 1,777.5, drive to 1,806, base 1,755-1,790 below | stop reached 2026-07-06 12:05 | loss -$7.92 (-3.2%) |
+| 2026-07-09 00:00 | BTC/USD | 1Hour bars x1 | flush to 61,460 then eight hours of higher lows at the bottom of the range; half size for setup quality | target reached 2026-07-09 18:20 | win $2.26 (+1.1%) |
+| 2026-07-15 00:00 | BTC/USD | 1Hour bars x1 | confirmed daily breakout above the five-day range with old top held as support and a second impulse into the close | stop reached 2026-07-16 07:40 | loss -$5.78 (-1.9%) |
+| 2026-07-19 00:00 | BTC/USD | 1Hour bars x1 | grind of hourly higher lows holding above the 64.68-64.70k range top; breakout attempt with consolidation character, not a spike | stop reached 2026-07-20 06:35 | loss -$6.14 (-2.0%) |
+| 2026-07-20 12:00 | BTC/USD | packet only | core long adapted to tape character: wide stop at the true structure failure, intent to hold through stop-hunt noise | stop reached 2026-07-25 00:00 | loss -$4.99 (-2.0%) |
+| 2026-07-27 00:00 | BTC/USD | packet only | daily reclaim of 65.3k after the dip proved a bear trap; ETH new highs as breadth confirmation | stop reached 2026-07-27 22:55 | loss -$7.08 (-2.8%) |
+| 2026-07-29 00:00 | BTC/USD | packet only | repeated July pattern of dip-buys back to range top; ETH strength confirms flow | sold by the trader 2026-07-30 12:00 | win $1.72 (+0.7%) |
 
 ### August, Claude Opus 5.5
 
@@ -111,6 +143,24 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-08-20 00:00 | BTC/USD | 1Hour bars x2 | Range top 66.5k broken and 68-70k held for 8 hours; stop under the 67.8k consolidation low. | target reached 2026-08-21 01:50 | win $16.47 (+8.2%) |
 | 2026-08-20 00:00 | ETH/USD | 1Hour bars x2 | Second leg to 2.25k held; higher beta than BTC; stop under the 2.17k hold zone. | stop reached 2026-08-22 10:20 | win $8.52 (+5.7%) |
 | 2026-08-27 12:00 | SOL/USD | packet only | Held a 12h base above the prior 102.9 high; stop under the base. | stop reached 2026-08-28 14:05 | loss -$2.01 (-0.8%) |
+
+### September, GPT-6.2 Sol
+
+| Wake (UTC) | Coin | Looked at | Its reason | Ended | Result |
+|---|---|---|---|---|---|
+| 2026-09-05 00:00 | SOL/USD | 1Day bars x1, 1Hour bars x2, 1Min bars x1 | Buy a small pullback-recovery swing; do not give it room to revisit the whole daily range. | target reached 2026-09-06 02:40 | win $4.81 (+1.9%) |
+| 2026-09-12 00:00 | SOL/USD | 1Day bars x1, 1Hour bars x2, 1Min bars x1 | Buy the recovery with a stop below 101.55; 103 is the first hurdle. | stop reached 2026-09-12 19:40 | loss -$4.17 (-1.7%) |
+| 2026-09-17 12:00 | SOL/USD | 1Hour bars x3, 1Min bars x1 | Buy the higher-low retest, with the stop below 99.37 and target near the prior 102.54 daily close. | target reached 2026-09-18 01:50 | win $3.56 (+1.8%) |
+| 2026-09-21 00:00 | SOL/USD | 1Day bars x1, 1Hour bars x2, 1Min bars x1 | Buy the rebound toward the 114 area and exit if the latest hourly breakout fails. | target reached 2026-09-21 08:40 | win $6.02 (+2.7%) |
+| 2026-09-26 00:00 | SOL/USD | 1Day bars x1, 1Hour bars x2, 1Min bars x1 | Express a small continuation swing above 120; exit below the hourly retest low. | stop reached 2026-09-26 04:00 | loss -$3.32 (-1.8%) |
+
+### September, Claude Sonnet 5.5
+
+| Wake (UTC) | Coin | Looked at | Its reason | Ended | Result |
+|---|---|---|---|---|---|
+| 2026-09-04 00:00 | BTC/USD | 1Day bars x1, 1Hour bars x1, 1Min bars x1 | Range breakout above 80.5k held for 10 hourly bars on rising volume. | stop reached 2026-09-04 14:50 | loss -$11.64 (-3.9%) |
+| 2026-09-19 00:00 | BTC/USD | 1Day bars x1, 1Hour bars x2 | Held above the 80.5k range top for 10 hourly bars after a jump. | stop reached 2026-09-23 16:00 | win $6.29 (+3.1%) |
+| 2026-09-19 00:00 | ETH/USD | 1Day bars x1, 1Hour bars x2 | ETH broke out with BTC and held 2600+ for 10 hours. | stop reached 2026-09-23 14:10 | win $5.09 (+2.5%) |
 
 ### October, Claude Opus 5.5
 
@@ -194,4 +244,5 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 - The rule against outside knowledge is given by instruction. Each trader's lookups are logged; its memory is not.
 - Whether these months fall after each model's knowledge line is UNKNOWN. It has not been measured.
 - October was the shakedown month. Its three known differences are listed at the end of the plan.
+- For a time on 2026-11-25 the packets of crypto sessions also listed the previous day's movers among stock funds, after those funds were loaded onto the tape. Nothing from the future was shown, and no trader looked up a stock. The last column of the session table counts the wakes this touched. It was switched off at 15:53 UTC.
 - With six models, one looking good by luck is likely. That is why the bar is per model and was fixed before the run.

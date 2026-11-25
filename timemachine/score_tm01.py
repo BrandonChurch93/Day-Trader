@@ -4,7 +4,7 @@ python3 timemachine/score_tm01.py                 plan TM01: writes timemachine/
 python3 timemachine/score_tm01.py --plan TM02     plan TM02: writes timemachine/results_tm02.json and docs/research/30_time_machine_tm02_crypto_with_news.md
 python3 timemachine/score_tm01.py --check         exits 1 if the stored files differ from what the session folders give now (add --plan TM02 for that plan)
 
-Reads only result.json and looks.jsonl of each session under $TM_RUNS. It runs no trader and reads no prices.
+Reads only result.json, looks.jsonl and the stored packets of each session under $TM_RUNS. It runs no trader and reads no prices.
 A month counts for a model when its AI session, the bitcoin hold of that month and all 20 twins are finished.
 The verdict of the plan is written only when all five months count for a model."""
 import datetime as dt
@@ -86,6 +86,16 @@ def why_rows(session, r):
     return rows
 
 
+def fund_mover_wakes(session):
+    """Wakes whose packet also listed the day's movers among stock funds. The plans are about crypto alone; this was shown by mistake
+    for a time on 2026-11-25 after stock funds were loaded onto the tape, and is counted here so each session can be read with it in mind."""
+    n = 0
+    for f in (RUNS / session / "packets").glob("*.json"):
+        feed = json.loads(f.read_text())["feed"]
+        n += bool(feed.get("most_active") or feed["movers"].get("gainers") or feed["movers"].get("losers"))
+    return n
+
+
 def session_row(tag, mo):
     sid = f"{P['prefix']}-{tag}-2026-{mo}"; r = load(sid)
     if r is None:
@@ -101,7 +111,7 @@ def session_row(tag, mo):
                buys=sum(1 for o in s["orders"] if o["side"] == "buy" and o["status"] == "filled"),
                closed=t["closed_trades"], wins=t["wins"], losses=t["losses"], fees_usd=t["fees_added_usd"], max_drop=round(max_drop(s["points"]), 4),
                wakes_no_pick=sum(1 for x in steps if x.get("pick") is None), refused_attempts=sum(x.get("bad_attempts", 0) for x in steps),
-               lookups=sum(x.get("looks", 0) for x in steps), news_on=bool(r["session"].get("news")),
+               lookups=sum(x.get("looks", 0) for x in steps), fund_mover_wakes=fund_mover_wakes(sid), news_on=bool(r["session"].get("news")),
                edited_later_news_seen=r.get("edited_later_news_seen"), git_dirty=r["session"]["git"]["dirty"], config_hash=r["session"]["config_hash"],
                benchmark_shown=r["session"]["benchmark"], hold_gain_usd=hold["summary"]["account"]["gain_usd"] if hold else None,
                twins_done=len(twins), twin_gains={str(k): v for k, v in sorted(twins.items())}, why=why_rows(sid, r))
@@ -181,14 +191,14 @@ def doc(o):
             L.append(f"| {name} | {len(r['months_both_finished'])} of {len(MONTHS)} | {usd(r['with_news_usd'])} | {usd(r['price_only_usd'])} | {('yes' if r['better_with_news'] else 'no') if 'better_with_news' in r else 'n/a'} |")
         L += ["", f"Verdict: {nt['verdict']}."]
     L += ["", "## Each session", "",
-          "| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+          "| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups | Wakes that showed stock fund movers |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for mo, mname in MONTHS:
         for tag, _ in MODELS:
             r = o["models"][tag]["months"][mo]
             if not r["finished"]:
-                L.append(f"| {mname} | {o['models'][tag]['name']} | not finished | | | | | | | | | | |"); continue
+                L.append(f"| {mname} | {o['models'][tag]['name']} | not finished | | | | | | | | | | | |"); continue
             L.append(f"| {mname} | {o['models'][tag]['name']} | {usd(r['gain_usd'])} | {usd(r['hold_gain_usd'])} | {usd(r.get('twin_p80_usd'))} | "
-                     f"{r.get('twins_beaten', 'n/a')} of {r['twins_done']} | {r['buys']} | {r['wins']} | {r['losses']} | {usd(r['fees_usd'])} | {r['max_drop'] * 100:.1f}% | {r['wakes_no_pick']} of {r['wakes']} | {r['lookups']} |")
+                     f"{r.get('twins_beaten', 'n/a')} of {r['twins_done']} | {r['buys']} | {r['wins']} | {r['losses']} | {usd(r['fees_usd'])} | {r['max_drop'] * 100:.1f}% | {r['wakes_no_pick']} of {r['wakes']} | {r['lookups']} | {r['fund_mover_wakes']} of {r['wakes']} |")
     L += ["", "## Why each trade was made, and how it ended", "",
           "One row per buy. \"Looked at\" is what the trader asked the desk for at that wake, beyond the packet it is always given. "
           + ("\"Headlines it named\" is the pick's own list of sources. Headlines are also in every packet, so a trader can use one without a lookup." if P["news"] else "No trader in this plan had news, so none looked at news."), ""]
@@ -212,6 +222,7 @@ def doc(o):
           "- Whether these months fall after each model's knowledge line is UNKNOWN. It has not been measured.",
           "- October was the shakedown month. Its three known differences are listed at the end of the plan." if not P["news"] else
           "- A headline can remind a model of what it already knows about that period. That would look like skill and is not. About one headline in eight was edited after it was published; those are marked and the card says not to trade on them.",
+          "- For a time on 2026-11-25 the packets of crypto sessions also listed the previous day's movers among stock funds, after those funds were loaded onto the tape. Nothing from the future was shown, and no trader looked up a stock. The last column of the session table counts the wakes this touched. It was switched off at 15:53 UTC.",
           "- With six models, one looking good by luck is likely. That is why the bar is per model and was fixed before the run.", ""]
     return "\n".join(L)
 

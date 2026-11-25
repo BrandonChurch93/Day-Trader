@@ -2,28 +2,1464 @@
  "hit_within": 0.1,
  "models": {
   "GROK": {
-   "answered": false,
-   "name": "Grok 4.7"
+   "answered": true,
+   "carried_forward_hits": [],
+   "hits_after_stated": [],
+   "how_sure": "I do not remember a month-end price for BTC, ETH, or SOL in any of these months, so every close is null. I only remember that bitcoin was around the $100,000 level after late 2024, and nothing reliable after early 2025.",
+   "last_hit": null,
+   "months": {
+    "2025-01": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-02": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-03": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-04": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-05": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-06": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-07": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-12": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-01": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-02": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-03": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-04": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-05": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-06": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-07": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    }
+   },
+   "name": "Grok 4.7",
+   "replay_given": [],
+   "replay_hits": [],
+   "stated_latest_month": "2025-01"
   },
   "KIMI": {
-   "answered": false,
-   "name": "Kimi K3"
+   "answered": true,
+   "carried_forward_hits": [],
+   "hits_after_stated": [],
+   "how_sure": "My memory is a rough approximation for early-to-mid 2025 (within a few thousand dollars on BTC, less certain on ETH and SOL), and it gets genuinely thin after about July 2025, so everything from 2025-08 onward is honestly unknown to me.",
+   "last_hit": "2025-06",
+   "months": {
+    "2025-01": {
+     "answers": {
+      "BTC/USD": 102500,
+      "ETH/USD": 3250,
+      "SOL/USD": 230
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-02": {
+     "answers": {
+      "BTC/USD": 84500,
+      "ETH/USD": 2200,
+      "SOL/USD": 140
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-03": {
+     "answers": {
+      "BTC/USD": 82500,
+      "ETH/USD": 2000,
+      "SOL/USD": 130
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-04": {
+     "answers": {
+      "BTC/USD": 94500,
+      "ETH/USD": 1800,
+      "SOL/USD": 150
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-05": {
+     "answers": {
+      "BTC/USD": 104500,
+      "ETH/USD": 2500,
+      "SOL/USD": 165
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-06": {
+     "answers": {
+      "BTC/USD": 107000,
+      "ETH/USD": 2500,
+      "SOL/USD": 155
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-07": {
+     "answers": {
+      "BTC/USD": 118000,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2025-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-12": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-01": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-02": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-03": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-04": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-05": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-06": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-07": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    }
+   },
+   "name": "Kimi K3",
+   "replay_given": [],
+   "replay_hits": [],
+   "stated_latest_month": "2025-07"
   },
   "NEON": {
-   "answered": false,
-   "name": "Gemini Neon"
+   "answered": true,
+   "carried_forward_hits": [],
+   "hits_after_stated": [],
+   "how_sure": "I recall approximate month-end closes from 2025-01 through 2026-02, with somewhat less precision on exact ETH and SOL month-end prints in late 2025 and early 2026. My memory ends during 2026-03, so 2026-03 month-end and all months from 2026-04 through 2026-11 are null.",
+   "last_hit": "2026-02",
+   "months": {
+    "2025-01": {
+     "answers": {
+      "BTC/USD": 102400,
+      "ETH/USD": 3300,
+      "SOL/USD": 231
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-02": {
+     "answers": {
+      "BTC/USD": 84300,
+      "ETH/USD": 2240,
+      "SOL/USD": 148
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-03": {
+     "answers": {
+      "BTC/USD": 82500,
+      "ETH/USD": 1820,
+      "SOL/USD": 125
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-04": {
+     "answers": {
+      "BTC/USD": 94200,
+      "ETH/USD": 1795,
+      "SOL/USD": 148
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-05": {
+     "answers": {
+      "BTC/USD": 104600,
+      "ETH/USD": 2530,
+      "SOL/USD": 156
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-06": {
+     "answers": {
+      "BTC/USD": 107100,
+      "ETH/USD": 2485,
+      "SOL/USD": 155
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-07": {
+     "answers": {
+      "BTC/USD": 115700,
+      "ETH/USD": 3700,
+      "SOL/USD": 172
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-08": {
+     "answers": {
+      "BTC/USD": 108200,
+      "ETH/USD": 4390,
+      "SOL/USD": 201
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-09": {
+     "answers": {
+      "BTC/USD": 114000,
+      "ETH/USD": 4145,
+      "SOL/USD": 208
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-10": {
+     "answers": {
+      "BTC/USD": 109500,
+      "ETH/USD": 3850,
+      "SOL/USD": 187
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-11": {
+     "answers": {
+      "BTC/USD": 90400,
+      "ETH/USD": 2990,
+      "SOL/USD": 133
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-12": {
+     "answers": {
+      "BTC/USD": 87500,
+      "ETH/USD": 2970,
+      "SOL/USD": 124
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2026-01": {
+     "answers": {
+      "BTC/USD": 78600,
+      "ETH/USD": 2440,
+      "SOL/USD": 105
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2026-02": {
+     "answers": {
+      "BTC/USD": 67000,
+      "ETH/USD": 1960,
+      "SOL/USD": 85
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2026-03": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-04": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-05": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-06": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-07": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    }
+   },
+   "name": "Gemini Neon",
+   "replay_given": [],
+   "replay_hits": [],
+   "stated_latest_month": "2026-03"
   },
   "OPUS": {
-   "answered": false,
-   "name": "Claude Opus 5.5"
+   "answered": true,
+   "carried_forward_hits": [],
+   "hits_after_stated": [],
+   "how_sure": "Fairly confident in early-to-mid 2025 month-ends (within a few percent); Oct-Dec 2025 are approximate, and I only have vague impressions of a further sell-off in January 2026 with no reliable month-end figures from 2026 onward.",
+   "last_hit": "2025-12",
+   "months": {
+    "2025-01": {
+     "answers": {
+      "BTC/USD": 102400,
+      "ETH/USD": 3300,
+      "SOL/USD": 233
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-02": {
+     "answers": {
+      "BTC/USD": 84350,
+      "ETH/USD": 2240,
+      "SOL/USD": 148
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-03": {
+     "answers": {
+      "BTC/USD": 82550,
+      "ETH/USD": 1820,
+      "SOL/USD": 125
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-04": {
+     "answers": {
+      "BTC/USD": 94200,
+      "ETH/USD": 1795,
+      "SOL/USD": 147
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-05": {
+     "answers": {
+      "BTC/USD": 104600,
+      "ETH/USD": 2530,
+      "SOL/USD": 156
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-06": {
+     "answers": {
+      "BTC/USD": 107100,
+      "ETH/USD": 2490,
+      "SOL/USD": 155
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-07": {
+     "answers": {
+      "BTC/USD": 115800,
+      "ETH/USD": 3700,
+      "SOL/USD": 170
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-08": {
+     "answers": {
+      "BTC/USD": 108200,
+      "ETH/USD": 4390,
+      "SOL/USD": 201
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-09": {
+     "answers": {
+      "BTC/USD": 114000,
+      "ETH/USD": 4145,
+      "SOL/USD": 208
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-10": {
+     "answers": {
+      "BTC/USD": 109500,
+      "ETH/USD": 3850,
+      "SOL/USD": 187
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-11": {
+     "answers": {
+      "BTC/USD": 90400,
+      "ETH/USD": 3000,
+      "SOL/USD": 137
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-12": {
+     "answers": {
+      "BTC/USD": 87500,
+      "ETH/USD": 2970,
+      "SOL/USD": 125
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2026-01": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-02": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-03": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-04": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-05": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-06": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-07": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    }
+   },
+   "name": "Claude Opus 5.5",
+   "replay_given": [],
+   "replay_hits": [],
+   "stated_latest_month": "2026-01"
   },
   "SOL": {
-   "answered": false,
-   "name": "GPT-6.2 Sol"
+   "answered": true,
+   "carried_forward_hits": [],
+   "hits_after_stated": [],
+   "how_sure": "The BTC values are rounded recollections rather than exact closes. I don't recall ETH or SOL month-end prices or any 2026 month-end prices with enough confidence to give a value.",
+   "last_hit": null,
+   "months": {
+    "2025-01": {
+     "answers": {
+      "BTC/USD": 102400,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2025-02": {
+     "answers": {
+      "BTC/USD": 84300,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2025-03": {
+     "answers": {
+      "BTC/USD": 82500,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2025-04": {
+     "answers": {
+      "BTC/USD": 94200,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2025-05": {
+     "answers": {
+      "BTC/USD": 104600,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2025-06": {
+     "answers": {
+      "BTC/USD": 107100,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2025-07": {
+     "answers": {
+      "BTC/USD": 115800,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2025-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2025-12": {
+     "answers": {
+      "BTC/USD": 87500,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2026-01": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-02": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-03": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-04": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-05": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-06": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-07": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    }
+   },
+   "name": "GPT-6.2 Sol",
+   "replay_given": [],
+   "replay_hits": [],
+   "stated_latest_month": "2025-12"
   },
   "SONNET": {
-   "answered": false,
-   "name": "Claude Sonnet 5.5"
+   "answered": true,
+   "carried_forward_hits": [
+    "2025-12"
+   ],
+   "hits_after_stated": [],
+   "how_sure": "Values for 2025-01 to 2025-06 are fairly solid to within a few percent; July to October 2025 are rougher recollections, and the 2025-11 figures are vague. I remember nothing reliable after November 2025, so everything later is null.",
+   "last_hit": "2025-11",
+   "months": {
+    "2025-01": {
+     "answers": {
+      "BTC/USD": 102400,
+      "ETH/USD": 3300,
+      "SOL/USD": 235
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-02": {
+     "answers": {
+      "BTC/USD": 84300,
+      "ETH/USD": 2450,
+      "SOL/USD": 140
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-03": {
+     "answers": {
+      "BTC/USD": 82500,
+      "ETH/USD": 1822,
+      "SOL/USD": 125
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-04": {
+     "answers": {
+      "BTC/USD": 94200,
+      "ETH/USD": 1820,
+      "SOL/USD": 150
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-05": {
+     "answers": {
+      "BTC/USD": 104600,
+      "ETH/USD": 2520,
+      "SOL/USD": 160
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-06": {
+     "answers": {
+      "BTC/USD": 107100,
+      "ETH/USD": 2430,
+      "SOL/USD": 155
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-07": {
+     "answers": {
+      "BTC/USD": 115700,
+      "ETH/USD": 3680,
+      "SOL/USD": 180
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-08": {
+     "answers": {
+      "BTC/USD": 108200,
+      "ETH/USD": 4360,
+      "SOL/USD": 203
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-09": {
+     "answers": {
+      "BTC/USD": 114000,
+      "ETH/USD": 4150,
+      "SOL/USD": 210
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-10": {
+     "answers": {
+      "BTC/USD": 109500,
+      "ETH/USD": 3870,
+      "SOL/USD": 190
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-11": {
+     "answers": {
+      "BTC/USD": 90400,
+      "ETH/USD": 3020,
+      "SOL/USD": 138
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-12": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-01": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-02": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-03": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-04": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-05": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-06": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-07": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    }
+   },
+   "name": "Claude Sonnet 5.5",
+   "replay_given": [],
+   "replay_hits": [],
+   "stated_latest_month": "2025-11"
   }
  },
  "months": [
