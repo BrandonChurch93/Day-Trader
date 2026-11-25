@@ -1,0 +1,28 @@
+{
+ "BTCUSD_archive_vs_api_close_max_bps": 0.0,
+ "BTCUSD_overlap_days": 665,
+ "BTCUSD_first": "2013-10-06",
+ "BTCUSD_days": 4798,
+ "BTCUSD_missing_days_filled": 12,
+ "BTCUSD_missing_after_test_start": 10,
+ "BTCUSD_close_gap_vs_bitstamp_bps": {
+  "median": 4.327131112072946,
+  "p99": 357.2324112260232,
+  "max": 1839.5640000000003,
+  "max_date": "2014-09-18",
+  "days": 4591
+ },
+ "ETHUSD_archive_vs_api_close_max_bps": 0.0,
+ "ETHUSD_overlap_days": 665,
+ "ETHUSD_first": "2015-08-07",
+ "ETHUSD_days": 4128,
+ "ETHUSD_missing_days_filled": 6,
+ "ETHUSD_missing_after_test_start": 1,
+ "ETHUSD_close_gap_vs_bitstamp_bps": {
+  "median": 3.00733790448815,
+  "p99": 32.70951973371505,
+  "max": 496.7019345699253,
+  "max_date": "2019-07-14",
+  "days": 3187
+ }
+}
