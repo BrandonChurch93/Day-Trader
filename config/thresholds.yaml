@@ -41,6 +41,30 @@ backtest_min_breakeven_cost_multiple:
   note: A strategy is rejected in this test if its break-even cost is under this multiple of modeled cost.
   source: docs/playbook/01_stocks_what_works.md
 
+replay_07_costs:
+  value: {low_bps_per_side: 0.5}
+  status: builder
+  note: Replay 07. A cost per side below cost_model_bps_per_side_liquid_etf, reported so the result can be read against intraday_trend_max_round_trip_bps. Not used for a pass mark. Set 2026-11-25 at freeze.
+  source: research_rig/PREREG_07_intraday_spy_qqq.md
+
+replay_07_data:
+  value: {max_gap_vs_daily_bps: 25, warmup_days: 14}
+  status: builder
+  note: Replay 07. A day is not used if its one-minute high, low or last close is outside the daily file's figure by more than max_gap_vs_daily_bps. warmup_days used days at the start of each fund are left out of every result so rule N2 has its history. Set 2026-11-25 at freeze.
+  source: research_rig/PREREG_07_intraday_spy_qqq.md
+
+replay_07_dates:
+  value: {dev_end: "2018-12-31", held_start: "2019-01-01", held_end: "2026-06-30", post_start: "2026-07-01", last_day: "2026-11-24", pbo_starts_spy: ["2004-01-01", "2007-01-01", "2010-01-01", "2013-01-01"], pbo_starts_qqq: ["2011-06-01", "2012-06-01", "2013-06-01", "2014-06-01"]}
+  status: builder
+  note: Replay 07 slices, and the start dates over which pass mark 4 is worked out (each to last_day; the largest value is judged). Set 2026-11-25 at freeze.
+  source: research_rig/PREREG_07_intraday_spy_qqq.md
+
+replay_07_statistics:
+  value: {first_trial_id: 56, new_trials: 16, previous_trials_in_ledger: 93, frozen_plan_09_trials: 7, trial_count: 116, pbo_blocks: 16, shuffles: 1000, seed: 7, days_per_year: 252}
+  status: builder
+  note: Replay 07. trial_count is the trials in the ledger before this plan, plus the frozen plan 09 trials that have no ledger rows yet, plus these. Set 2026-11-25 at freeze.
+  source: research_rig/PREREG_07_intraday_spy_qqq.md
+
 replay_09_dates:
   value: {dev: ["2024-01-01", "2026-06-30"], held: ["2026-07-01", "2026-11-24"], pbo_starts: ["2024-01-01", "2025-01-01", "2026-01-01"], pull_start: "2020-01-01"}
   status: builder

@@ -205,7 +205,7 @@ Two limits of the gap check that the same read found are now fixed, and the chec
 
 What this means for the tests and the purchase:
 
-- Replay 07 (day trading SPY and QQQ on one-minute prices) could run its day-only rules without a purchase, if the owner allows this data and the plan first says how the faults listed above are handled. As drafted it cannot run in full: its night-only rule N5 needs dividend history (`research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`). On this data alone N5 would have to be dropped, and the plan would have to say so before it is frozen.
+- Replay 07 (day trading SPY and QQQ on one-minute prices) could run its day-only rules without a purchase, if the owner allows this data and the plan first says how the faults listed above are handled. As drafted it cannot run in full: its night-only rule N5 needs dividend history (the draft plan, since frozen as `research_rig/PREREG_07_intraday_spy_qqq.md`, which settles it). On this data alone N5 would have to be dropped, and the plan would have to say so before it is frozen.
 - Replay 06 (slow trend on funds that can be bought) still needs dividend history, which this lookup does not have. The purchase above is still the recommended source for it.
 - The purchase is still worth making for a second reason. A second source changed a result once already: no bitcoin rule that passed on Bitstamp's history in the first run passed on Kraken's (`docs/research/12b_replay_01_kraken_crosscheck.md`). A test on one unchecked source should not be believed.
 - Until the owner answers, research runs no rule on this data. The files stay out of the repo, like all raw prices.
