@@ -27,7 +27,7 @@ def status_at(row,t):
         return "CONFIRMED"
     if n>=3 and 2*m<n:
         return "REMOVED"
-    if row["notice_status"] == "CONFIRMED" and row["notice_at"] and row["notice_at"] <= monday:
+    if row["notice_status"] == "CONFIRMED" and row["notice_at"] and row["notice_at"] < monday:
         return "CONFIRMED"
     return "UNKNOWN"
 

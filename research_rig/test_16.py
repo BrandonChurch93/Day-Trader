@@ -384,6 +384,15 @@ class Replay16Test(unittest.TestCase):
         wrong = rows[0]|{"notice_status":"REMOVED"}
         self.assertEqual(S.I.status_at(wrong,d("2020-01-06")),"REMOVED")
 
+    def test_date_only_monday_notice_confirms_next_monday_not_current(self):
+        d = lambda day:F.F.boundary(day,0)
+        row = dict(id=10,market="spot",pair="TESTUSDT",notice_status="CONFIRMED",
+                   notice_at="2020-03-02",months=[])
+        timeline = S.I.Timeline({"as_of_rows":[row]},d("2020-03-09"))
+        key = ("spot",10,"TESTUSDT")
+        self.assertEqual(timeline.states(d("2020-03-02"))[key],"UNKNOWN")
+        self.assertEqual(timeline.states(d("2020-03-09"))[key],"CONFIRMED")
+
     def test_chronology_lifts_only_proven_date_only_gaps_through_60_days(self):
         try:
             from . import identity_chronology_16_17 as q
@@ -446,9 +455,18 @@ class Replay16Test(unittest.TestCase):
         self.assertTrue(M.live(X,tape,ts(26),ts(30),params())[0])
         out = M.short_week(tape,X,T,ts(8),params())
         self.assertEqual((out.reason,out.funding,out.flagged),("volume_stop",0,True))
+        self.assertEqual(out.dead_close_phase,1)
         self.assertAlmostEqual(out.price,.03)
         self.assertAlmostEqual(out.turnover,1.97)
         self.assertFalse(fut(dict(list(flat.items())[:-1])).dead)
+
+    def test_dead_spell_close_requires_a_sized_open_short(self):
+        book = M.Book(2)
+        lot = M.Long(True,C.Outcome(1,ts(1),()),np.ones(2))
+        dry = M.Sleeve(0.,0.,2.,True,"volume_stop",np.array([[0,0,1],[0,0,2]]),1)
+        M.portfolio_step(book,T,ts(1),[lot],np.array([[1.],[0.]]),1,np.ones((2,1)),
+                         [dry],np.zeros(2,dtype=bool),0.,0.,0.,.5,np.zeros(2,dtype=bool))
+        self.assertEqual(M.dead_counts(book),{"rule":1,"random":[0]})
 
     def test_spot_and_futures_use_same_swap_bounds_and_date_fence(self):
         for cid in F.SPOT_SWAP_IDS:
@@ -513,6 +531,8 @@ class Replay16Test(unittest.TestCase):
         report = R.render(got|{"cutoff_utc":"2019-01-14T00:00:00+00:00",
                                "last_complete_funding_week_monday_utc":"2019-01-07"})
         self.assertIn("Short forced closes",report)
+        self.assertIn("Monday-observed basket name-weeks | Monday-observed major name-weeks",report)
+        self.assertIn("dead-spell closes, judged costs",report)
         self.assertIn("began Monday 2019-01-07 UTC",report)
 
     def test_guard_before_metadata_or_result_access(self):

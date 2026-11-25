@@ -6,10 +6,10 @@ from statistics import median
 
 try:
     from . import score_17 as S
-    from .report_16 import identity_counts_text
+    from .report_16 import identity_counts_text, random_dead_text
 except ImportError:
     import score_17 as S
-    from report_16 import identity_counts_text
+    from report_16 import identity_counts_text, random_dead_text
 
 OUT = S.F.F.ROOT/"docs/research/57_replay_17_short_the_peak.md"
 LABELS = {"judged":"Judged costs","low":"Lower costs","no_cost_no_funding":"No costs or funding"}
@@ -70,13 +70,24 @@ def render(result):
             r = row[sample]["swing"]["judged"]
             lines.append(f"| {y} | {r['price']:+.4f} | {r['funding']:+.4f} | {r['fees']:.4f} | "
                          f"{row[sample]['shown']['levered']['forced']} |")
+        lines += ["",f"### {sample.capitalize()} dead-spell closes, judged costs","",
+                  "| Year | Rule S | Random Rule S median (range) | Hot hold | All live short | All rankable spot | 3x | Bounce |",
+                  "|---|"+"---:|"*7]
+        for y,row in result["years"].items():
+            data = row[sample]
+            s = data["swing"]["judged"]["dead_spell_closes"]
+            d = data["dead_spell_closes"]
+            three,bounce = (data["shown"][k]["dead_spell_closes"]["rule"] for k in ("levered","bounce"))
+            lines.append(f"| {y} | {s['rule']} | {random_dead_text(s['random'])} | "
+                         f"{d['hot_hold']['judged']} | {d['all_short']} | {d['spot_all']} | {three} | {bounce} |")
         lines.append("")
     if "shown_us_shortable" in result:
         lines += ["","## US-shortable roster, shown only","",
-                  "| Year | 1x Rule S at judged costs | Closed trades | Hot slots | Live hot slots |",
-                  "|---|---:|---:|---:|---:|"]
+                  "| Year | 1x Rule S at judged costs | Closed trades | Hot slots | Live hot slots | Dead-spell closes |",
+                  "|---|---:|---:|---:|---:|---:|"]
         for y,r in result["shown_us_shortable"].items():
-            lines.append(f"| {y} | {pct(r['end'])} | {r['trades']} | {r['hot_slots']} | {r['live_hot_slots']} |")
+            lines.append(f"| {y} | {pct(r['end'])} | {r['trades']} | {r['hot_slots']} | "
+                         f"{r['live_hot_slots']} | {r['dead_spell_closes']['rule']} |")
         lines += ["","STATED. The November 25, 2026 roster looks ahead to which assets survived "
                   "and received US listings. Some were already in Replay 13's viewed list. "
                   "Binance perpetual prices stand in for the US contracts; fees and funding differ. "
@@ -87,6 +98,8 @@ def render(result):
               "is an archive proxy. The later funding-file requirement no longer gates entry. "
               "Its counts are retrospective diagnostics only. A flagged part's denominator is the "
               "part-weeks assigned a live contract on Monday, even if the rule never opens a trade. "
+              "Dead-spell counts cover closes of open positions, not idle or flagged parts. "
+              "Every random draw's count and the cost sensitivity counts are in the result JSON. "
               "Dated identity uses only Monday-available evidence or permanent "
               "notice exclusion; the all-month rule is a descriptive status comparison only. "
               "The hourly fill cannot establish what an order would have "

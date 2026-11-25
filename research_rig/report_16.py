@@ -2,6 +2,7 @@
 from pathlib import Path
 import argparse
 import json
+from statistics import median
 
 try:
     from . import score_16 as S
@@ -13,6 +14,10 @@ OUT = S.F.F.ROOT/"docs/research/56_replay_16_hot_five_hedged.md"
 
 def pct(x):
     return f"{100*(x-1):+.2f}%"
+
+
+def random_dead_text(draws):
+    return f"{median(draws):g} ({min(draws)}–{max(draws)})" if draws else "not run"
 
 
 def identity_counts_text(result):
@@ -45,8 +50,8 @@ def render(result):
     for sample in ("held","viewed"):
         for style in ("M","B"):
             lines += ["",f"## {sample.capitalize()} list, short {style}","",
-                      "| Year | Lower costs | Judged costs | Higher costs | Random cutoff (judged) | Short price contribution | Short funding contribution | Short fee debit | Short forced closes | Flagged weeks | Flagged share | Fallback weeks | Live viewed after excluding hot | Live major-weeks | Monday-observed name-weeks | Of those, not allowed under old file gate | All missing-file candidates |",
-                      "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+                      "| Year | Lower costs | Judged costs | Higher costs | Random cutoff (judged) | Short price contribution | Short funding contribution | Short fee debit | Short forced closes | Flagged weeks | Flagged share | Fallback weeks | Live viewed after excluding hot | Live major-weeks | Monday-observed basket name-weeks | Monday-observed major name-weeks | Basket name-weeks blocked by old file gate | Major name-weeks blocked by old file gate | All missing-file candidates |",
+                      "|---|"+"---:|"*18]
             for year,row in result["years"].items():
                 book = row[sample]["shorts"][style]
                 b = book["judged"]
@@ -60,8 +65,8 @@ def render(result):
                              f"{b['forced_closes']} | {b['flagged_weeks']} | "
                              f"{b['flagged_week_share_pct']:.2f}% | {fallback} | "
                              f"{count('live_market')} | {count('live_majors')} | "
-                             f"{count('monday_live')+count('monday_live_majors')} | "
-                             f"{count('file_gate_excluded')+count('file_gate_excluded_majors')} | {missing} |")
+                             f"{count('monday_live')} | {count('monday_live_majors')} | "
+                             f"{count('file_gate_excluded')} | {count('file_gate_excluded_majors')} | {missing} |")
         lines += ["",f"### {sample.capitalize()} scale figures, judged costs","",
                   "| Year | Spot all rankable | Long only | Short M only | Short B only | Paper lean (no costs) |",
                   "|---|---:|---:|---:|---:|---:|"]
@@ -70,6 +75,16 @@ def render(result):
             lines.append(f"| {y} | {pct(r['all_spot_end'])} | {pct(r['long_only']['judged'])} | "
                          f"{pct(r['short_alone']['M']['judged'])} | {pct(r['short_alone']['B']['judged'])} | "
                          f"{pct(r['paper_lean_end'])} |")
+        lines += ["",f"### {sample.capitalize()} dead-spell closes, judged costs","",
+                  "| Year | Hedged M | M random median (range) | Hedged B | B random median (range) | Short M only | Short B only | All spot | Long only | Paper lean |",
+                  "|---|"+"---:|"*9]
+        for y,book in result["years"].items():
+            d = book[sample]["dead_spell_closes"]
+            m,b = (d["hedged"][s]["judged"] for s in ("M","B"))
+            lines.append(f"| {y} | {m['rule']} | {random_dead_text(m['random'])} | "
+                         f"{b['rule']} | {random_dead_text(b['random'])} | "
+                         f"{d['short_alone']['M']['judged']} | {d['short_alone']['B']['judged']} | "
+                         f"{d['all_spot']} | {d['long_only']} | {d['paper_lean']} |")
     lines += identity_counts_text(result)
     lines += ["","## Interpretation","",
               "STATED. This is a weekly replay on one venue, with a held-back rank slice rather "
@@ -82,6 +97,9 @@ def render(result):
               "forced close. A stopped contract is settled at its last positive-volume trade close "
               "at cost and unactionable zero-volume hours earn no funding. The book cannot be "
               "replicated as written on a US account.",
+              "", "Dead-spell counts cover closes of open positions, not idle or flagged parts. "
+              "Every random draw's count and the cost sensitivity counts are in the result JSON. "
+              "Basket and major coverage columns are separate and can share a contract.",
               "", "The frozen plan, weekly diagnostics, every random path endpoint and input "
               "fingerprints are preserved with the result."]
     if "trade_hours_without_mark" in result:

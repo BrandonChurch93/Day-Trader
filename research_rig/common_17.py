@@ -32,6 +32,7 @@ class Part:
     # also cumulative price, funding, fees, forced adjustment, trades, forced.
     path: np.ndarray
     flagged: bool
+    dead_close_phase: int | None = None
 
 
 def prepare(tape,asset,t,end,p):
@@ -74,6 +75,7 @@ def swing(grid,asset,t,end,p,fee,*,lev=1,bounce=False,charge_funding=True,trace=
     path = np.zeros((2*len(grid.trades),7))
     pending,retire_at = None,None
     flagged = grid.gap
+    dead_close_phase = None
 
     def note(hour,event,px):
         if trace is not None:
@@ -118,6 +120,7 @@ def swing(grid,asset,t,end,p,fee,*,lev=1,bounce=False,charge_funding=True,trace=
         if grid.dry and grid.dry[i]:
             if side:
                 close_at(hour,last,"volume_stop")
+                dead_close_phase = 2*i
             # The existing stale-contract convention retires this weekly
             # part. It can be considered again on a later Monday.
             flagged = True
@@ -175,30 +178,40 @@ def swing(grid,asset,t,end,p,fee,*,lev=1,bounce=False,charge_funding=True,trace=
             # Even an idle part stops taking signals once the contract goes stale.
             retire_at = hour+H
         path[2*i+1] = total
-    return Part(path,flagged)
+    return Part(path,flagged,dead_close_phase)
 
 
-def hold_factor(sleeves,denom,fee,charge_funding):
+def hold_factor(sleeves,denom,fee,charge_funding,dead_closes=None):
     """The held shorts use the Plan 16 hourly whole-account equity check."""
     if not sleeves:
         return 1.
     path = np.sum([r.path for r in sleeves],axis=0)
     total = 1+(path[:,0]+path[:,1]*charge_funding-path[:,2]*fee)/denom
-    return float(total[-1]) if np.all(total>0) else 0.
+    survives = np.all(total>0)
+    if dead_closes is not None:
+        last = len(total)-1 if survives else np.flatnonzero(~(total>0))[0]
+        dead_closes.append(sum(r.dead_close_phase is not None and r.dead_close_phase<=last for r in sleeves))
+    return float(total[-1]) if survives else 0.
 
 
-def group_pnl(parts,ix,group_size):
+def group_pnl(parts,ix,group_size,dead_closes=None):
     """Return each group's weekly realized components, ending at first ruin."""
     if not parts:
         return np.zeros((len(ix),7))
     cube = np.stack([o.path for o in parts]+[np.zeros_like(parts[0].path)])
     final = cube[ix,-1].sum(axis=1)
+    if dead_closes is not None:
+        phases = np.array([o.dead_close_phase if o.dead_close_phase is not None else cube.shape[1]
+                           for o in parts]+[cube.shape[1]])
+        dead_closes[:] = (phases[ix]<cube.shape[1]).sum(axis=1)
     bottoms = cube[:,:,0].min(axis=1)
     for i in np.flatnonzero(bottoms[ix].sum(axis=1)<=-group_size):
         combined = cube[ix[i]].sum(axis=0)
         failed = np.flatnonzero(combined[:,0]<=-group_size)
         if len(failed):
             final[i] = combined[failed[0]]
+            if dead_closes is not None:
+                dead_closes[i] = (phases[ix[i]]<=failed[0]).sum()
     final[:,:5] /= group_size
     return final
 
@@ -211,10 +224,13 @@ class Accounts:
         self.idle_parts = np.zeros(n,dtype=int)
         self.live_parts = np.zeros(n,dtype=int)
         self.scheduled_parts = 0
+        self.dead_closes = np.zeros(n,dtype=int)
 
     def add(self,parts,indices,n,carried):
-        pnl = group_pnl(parts,indices,n)
+        dead_closes = np.zeros(len(self.value),dtype=int)
+        pnl = group_pnl(parts,indices,n,dead_closes)
         prior = self.value.copy()
+        self.dead_closes += (prior>0)*dead_closes
         self.value *= np.maximum(0,1+pnl[:,0])
         self.stats[:,:4] += prior[:,None]*pnl[:,1:5]
         self.stats[:,4:] += (prior[:,None]>0)*pnl[:,5:]
@@ -237,7 +253,9 @@ class Accounts:
                 "flagged_parts":int(self.flagged_parts[0]),
                 "live_parts":int(self.live_parts[0]),
                 "flag_share_pct":float(self.flagged_parts[0]*100/max(1,self.live_parts[0])),
-                "ruined":bool(self.value[0]==0),"random_ends":self.value[1:].tolist()}
+                "ruined":bool(self.value[0]==0),"random_ends":self.value[1:].tolist(),
+                "dead_spell_closes":{"rule":int(self.dead_closes[0]),
+                                     "random":self.dead_closes[1:].tolist()}}
 
 
 def judge(years,p,level):
@@ -304,6 +322,8 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None,us_roster=None):
             extras = {k:Accounts(1) for k in ("levered","bounce")}
             holds = {k:1. for k in levels}
             all_short = 1.
+            dead_holds = {k:[] for k in levels}
+            dead_all_short = []
             spot_book = C.Account()
             diagnostics = []
             for t in range(start,last,C.WEEK):
@@ -335,9 +355,11 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None,us_roster=None):
                     parts = [swing(g,a,t,end,params,fee,charge_funding=pay)
                              for g,a in zip(grids,pool)]
                     normal[level].add(parts,groups if level=="judged" else groups[:1],n,carried)
-                    holds[level] *= hold_factor([weekly[i] for i in groups[0] if i<len(pool)],n,fee,pay)
+                    holds[level] *= hold_factor([weekly[i] for i in groups[0] if i<len(pool)],n,fee,pay,
+                                               dead_holds[level] if holds[level]>0 else None)
                     if level=="judged" and weekly:
-                        all_short *= hold_factor(weekly,len(weekly),fee,pay)
+                        all_short *= hold_factor(weekly,len(weekly),fee,pay,
+                                                dead_all_short if all_short>0 else None)
                 fee = p["cost_bps_per_side"]/10000
                 for key,kw in (("levered",{"lev":p["shown_leverage"]}),("bounce",{"bounce":True})):
                     parts = [swing(g,a,t,end,params,fee,**kw) for g,a in zip(grids,pool)]
@@ -345,6 +367,9 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None,us_roster=None):
             year_result[sample] = {"swing":{k:a.row() for k,a in normal.items()},
                                    "shown":{k:a.row() for k,a in extras.items()},
                                    "hot_hold":holds,"all_short":all_short,
+                                   "dead_spell_closes":{
+                                       "hot_hold":{k:sum(v) for k,v in dead_holds.items()},
+                                       "all_short":sum(dead_all_short),"spot_all":0},
                                    "spot_all":1+spot_book.finish()["gain"],"weeks":diagnostics}
         years[str(year)] = year_result
     judgments = {k:judge(years,p,k) for k in ("judged","low","no_cost_no_funding")}

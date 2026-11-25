@@ -134,6 +134,7 @@ class Sleeve:
     reason: str
     # End-of-hour marked cumulative gross components relative to entry notional.
     path: np.ndarray
+    dead_close_phase: int | None = None
 
 
 def live_screens(asset,tape,t,end,p):
@@ -252,8 +253,9 @@ def short_week(tape,asset,start,end,p,trace=None):
     turnover = 1+price/entry
     if trace is not None:
         trace.append((t,reason,price,funding))
+    dead_close_phase = len(path) if reason=="volume_stop" else None
     path.extend([(gain,funding,turnover)]*(len(loop)-len(path)))
-    return Sleeve(gain,funding,turnover,gap,reason,np.array(path,dtype=float))
+    return Sleeve(gain,funding,turnover,gap,reason,np.array(path,dtype=float),dead_close_phase)
 
 
 @dataclass(frozen=True)
@@ -361,6 +363,7 @@ class Book:
         self.short_price = np.zeros(n)
         self.short_fees = np.zeros(n)
         self.forced = np.zeros(n,dtype=int)
+        self.dead_closes = np.zeros(n,dtype=int)
         self.failed = np.zeros(n,dtype=bool)
 
     def begin(self,t):
@@ -408,6 +411,7 @@ def portfolio_step(book,t,end,data,weights,hot_n,short_w,short_plans,is_b,
     else:
         exposure = gain = unit = np.zeros(len(opening))
     forced = np.zeros(len(opening),dtype=int)
+    dead_closes = np.zeros(len(opening),dtype=int)
     if short_plans:
         price = short_w @ np.array([r.price for r in short_plans])
         funding = short_w @ np.array([r.funding for r in short_plans])
@@ -416,6 +420,11 @@ def portfolio_step(book,t,end,data,weights,hot_n,short_w,short_plans,is_b,
         debit = turnover*fee
         is_forced = np.array([r.reason=="forced" for r in short_plans],dtype=bool)
         forced = (short_w>0) @ is_forced.astype(int)
+        dead_phase = np.array([r.dead_close_phase if r.dead_close_phase is not None else len(r.path)
+                               for r in short_plans])
+        is_dead = np.array([r.dead_close_phase is not None for r in short_plans])
+        if np.any(is_dead):
+            dead_closes = (short_w>0) @ is_dead.astype(int)
         # Only paths whose componentwise conservative floor is <= 0 need a
         # synchronized hourly check. Every long asset mark is nonnegative.
         floor = short_w @ np.array([r.path[:,0].min()+r.path[:,1].min()
@@ -448,8 +457,10 @@ def portfolio_step(book,t,end,data,weights,hot_n,short_w,short_plans,is_b,
                     price[i],funding[i],turn = w@sleeve_paths[:,first,:]
                     debit[i] = turn*fee[i]
                     forced[i] = np.sum((w>0)&is_forced&(c_paths[:,first]>1))
+                    dead_closes[i] = np.sum((w>0)&is_dead&(dead_phase<=first))
                 book.failed[i] = True
     book.forced += forced*(exposure>0)
+    book.dead_closes += dead_closes*(exposure>0)
     book.funding += exposure*funding
     book.short_price += exposure*price
     book.short_fees += exposure*debit
@@ -490,6 +501,10 @@ def detail(book,p,weeks):
             "flagged_week_share_pct":100*book.flags[0].item()/weeks,"ruined":bool(book.failed[0]),
             "random_percentile":C.percentile(end[1:].tolist(),p["random_percentile"]),
             "random_ends":end[1:].tolist()}
+
+
+def dead_counts(book):
+    return {"rule":int(book.dead_closes[0]),"random":book.dead_closes[1:].tolist()}
 
 
 def replay(snapshots,spot,tapes,p,p13,identity=None):
@@ -578,6 +593,12 @@ def replay(snapshots,spot,tapes,p,p13,identity=None):
                   "long_only":{c:float(r.finish()[0]) for c,r in long_only[name].items()},
                   "short_alone":{s:{c:float(r.finish()[0]) for c,r in v.items()}
                                  for s,v in short_alone[name].items()},
+                  "dead_spell_closes":{
+                      "hedged":{s:{c:dead_counts(r) for c,r in v.items()}
+                                for s,v in accounts[name].items()},
+                      "short_alone":{s:{c:int(r.dead_closes[0]) for c,r in v.items()}
+                                     for s,v in short_alone[name].items()},
+                      "all_spot":0,"long_only":0,"paper_lean":0},
                   "shorts":{s:{c:detail(r,p,len(rows[name])) for c,r in v.items()}
                             for s,v in accounts[name].items()}}
             for name in snapshots}

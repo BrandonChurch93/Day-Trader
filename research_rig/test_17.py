@@ -141,9 +141,10 @@ class Replay17Test(unittest.TestCase):
         a[1:,5] = 1
         b[3,[0,1,5]] = [1,1,1]
         ac = R.Accounts(1)
-        ac.add([R.Part(a,False),R.Part(b,False)],np.array([[0,1]]),2,False)
+        ac.add([R.Part(a,False,1),R.Part(b,False,3)],np.array([[0,1]]),2,False)
         self.assertEqual(ac.value[0],0)
         self.assertEqual(ac.row()["trades"],1)
+        self.assertEqual(ac.row()["dead_spell_closes"]["rule"],1)
         self.assertAlmostEqual(ac.row()["price"],-1.2)
 
     def test_idle_is_not_a_flag_even_for_carried_list(self):
@@ -173,6 +174,21 @@ class Replay17Test(unittest.TestCase):
         self.assertEqual(part.path[-1,2],0)
         self.assertAlmostEqual(part.path[-1,3],.0198)
         self.assertTrue(part.flagged)
+        self.assertEqual(part.dead_close_phase,2)
+        flat = R.swing(R.Grid(gp.trades,gp.risk,(False,)*len(gp.signals),gp.payments,
+                              gp.preceding_payment,gp.preceding_close,gp.gap,gp.dry),
+                       X,T,ts(8),settings(),.01)
+        self.assertTrue(flat.flagged)
+        self.assertIsNone(flat.dead_close_phase)
+
+    def test_hold_dead_spell_close_counts_stop_at_ruin(self):
+        early = M.Sleeve(-4,0,6,False,"forced",np.array([[0,0,1],[-4,0,6],[-4,0,6]]))
+        dry = M.Sleeve(0,0,2,True,"volume_stop",np.array([[0,0,1],[0,0,1],[0,0,2]]),2)
+        diag = []
+        self.assertEqual(R.hold_factor([early,dry],2,0,True,diag),0)
+        self.assertEqual(diag,[0])
+        self.assertEqual(R.hold_factor([dry],1,0,True,diag),1)
+        self.assertEqual(diag,[0,1])
 
     def test_trade_low_is_forced_proxy_for_levered_bounce(self):
         tape = fut({-25:(80,80,80),-3:(120,120,120),0:(100,100,94),
@@ -227,6 +243,7 @@ class Replay17Test(unittest.TestCase):
         report = P.render(got|{"cutoff_utc":"2019-01-14T00:00:00+00:00",
                                "last_complete_funding_week_monday_utc":"2019-01-07"})
         self.assertIn("No costs or funding",report)
+        self.assertIn("Rule S | Random Rule S median (range) | Hot hold | All live short",report)
         self.assertIn("began Monday 2019-01-07 UTC",report)
         with_roster = R.replay({"held":[snap],"viewed":[snap]},dict(TESTUSDT=s,ALTUSDT=s),
                                {X.pair:tape},cfg,p,p|cfg,us_roster=snap["kept"])
