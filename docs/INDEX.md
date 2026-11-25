@@ -196,6 +196,7 @@ Working papers.
 | `research_rig/report_12.py` | Writes the Replay 12 page (research doc 47) from the stored summaries and results; reads no price | CURRENT |
 | `research_rig/missing_tickers_12.md` | Plan 12: what the tickers with no prices are, and a seeded look at 40 of them | CURRENT |
 | `research_rig/PREREG_13_year_or_method_DRAFT.md` | Draft plan: a fixed dip-and-peak rule on the hottest coins, scored year by year from 2020 to 2026, to tell the owner's method from the year he traded in | DRAFT |
+| `research_rig/PREREG_14_large_stock_momentum_DRAFT.md` | Draft plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
 | `research_rig/common_11.py` | Plan 11 shared paths, calendar, event ids and the price-file map for renamed tickers | CURRENT |
@@ -275,6 +276,8 @@ Working papers.
 | `timemachine/PLAN_TM04_stock_basket.md` | Plan for the fourth AI replays: each model names once a week eight of 38 stocks to hold. Marks fixed before any session | CURRENT |
 | `timemachine/PLAN_TM06_hot_coin_swing.md` | Plan for the owner's method in two parts tested apart: a daily picker of hot coins and an hourly swing trader, with a control run of the futures book first. Marks fixed before any session | CURRENT |
 | `timemachine/tm06_fix_weeks.py` | Works out once, from daily bars, the four test weeks and the five coins of each swing session in plan TM06 | CURRENT |
+| `timemachine/tm06.py` | Plan TM06's tools: the fast tape's funding and open interest as of the wake, picker sessions (part P), swing sessions (part S), the 15-minute reversal control, and their yardsticks, twins and carried leverage | CURRENT |
+| `timemachine/score_tm06.py`, `timemachine/results_tm06.json` | Scores plan TM06 from the finished TM06 sessions: each at every fee level, its yardsticks, its twins' percentile, trades, time in market and forced close-outs; swing sessions also at 2x and 3x. The JSON is its stored output | CURRENT |
 | `timemachine/PLAN_TM05_avoid_list_DRAFT.md` | DRAFT plan for the fifth AI replays: each model names once a week up to `tm05_plan.leave_out_max` of the 38 stocks to leave out, judged against random leave-outs on April to May 2026 and a forward stretch not yet recorded. Not fixed, not run; needs tool changes | DRAFT |
 | `timemachine/score_tm01.py`, `timemachine/results_tm01.json` | Scores plan TM01 from the finished sessions: each model against holding bitcoin and its random twins, and a "why" row for every buy. The JSON is its stored output | CURRENT |
 | `timemachine/results_tm02.json` | Stored scores of plan TM02, written by `timemachine/score_tm01.py --plan TM02` | CURRENT |
