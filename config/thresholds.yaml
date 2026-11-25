@@ -808,6 +808,12 @@ replay_13_plan:
   note: Plan 13, frozen 2026-11-25 19.27 UTC, a fixed dip-and-peak rule on the hottest coins scored year by year from 2020 to 2026, to separate the method from the year the owner traded in. All settings are round figures fixed before any price was read. cost_bps_per_side is 10 for the venue fee plus 5 for half the spread. Draft until frozen.
   source: research_rig/PREREG_13_year_or_method.md
 
+replay_16_plan:
+  value: {start: "2020-01-01", end: "2026-11-24", held_rank_from: 51, held_rank_to: 100, long_share: 0.5, spot_cost_bps_per_side: 15, other_spot_costs_bps: [5, 30], perp_cost_bps_per_side: 10, perp_cost_bps_per_side_majors: 5, other_perp_costs_bps: [5, 20], min_basket_names: 10, live_funding_lookback_hours: 24, short_stop_pct: 80, random_draws: 1000, seed: 16, random_percentile: 75, min_years_above: 5, min_falling_years: 2, max_year_loss_pct: 25, max_missing_hours: 6}
+  status: builder
+  note: Draft plan 16, written 2026-11-25 19.42 UTC, the hot five held long on spot with a same-size short on futures, weekly, judged on a held-back list of the next 50 coins down. Round figures set before any futures price was read. Draft until frozen.
+  source: research_rig/PREREG_16_hot_five_hedged_DRAFT.md
+
 replay_14_plan:
   value: {start: "2016-01-04", end: "2026-11-24", lookback_months: 12, skip_months: 1, n_small: 10, n_wide: 50, cost_bps_per_side: 5, random_draws: 1000, seed: 14, random_percentile: 95, first_half_end: "2021-12-31", new_trials: 2}
   status: builder

@@ -214,6 +214,7 @@ Working papers.
 | `research_rig/score_13.lock` | Plan 13: marks that the run was made; a second run is refused | CURRENT |
 | `research_rig/report_13.py` | Writes the plan 13 result page from results_13.json; reads no price | CURRENT |
 | `research_rig/PREREG_14_large_stock_momentum_DRAFT.md` | Draft plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | DRAFT |
+| `research_rig/PREREG_16_hot_five_hedged_DRAFT.md` | Draft plan 16: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Not frozen, nothing run | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
 | `research_rig/common_11.py` | Plan 11 shared paths, calendar, event ids and the price-file map for renamed tickers | CURRENT |
