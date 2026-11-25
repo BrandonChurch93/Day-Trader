@@ -1,0 +1,37 @@
+{
+ "account_facts": null,
+ "key_refused": false,
+ "rules": {
+  "P1-BTC": {
+   "cash": 1000.0,
+   "feed": null,
+   "halt_reason": null,
+   "halted": false,
+   "hold_units": null,
+   "last_check_utc": null,
+   "last_key": null,
+   "last_price": null,
+   "open_trade": null,
+   "orders_by_day": {},
+   "pending": null,
+   "qty": 0.0,
+   "target": null
+  },
+  "T1-VTI": {
+   "cash": 1000.0,
+   "feed": null,
+   "halt_reason": null,
+   "halted": false,
+   "hold_units": null,
+   "last_check_utc": null,
+   "last_key": null,
+   "last_price": null,
+   "open_trade": null,
+   "orders_by_day": {},
+   "pending": null,
+   "qty": 0.0,
+   "target": null
+  }
+ },
+ "started_utc": null
+}
