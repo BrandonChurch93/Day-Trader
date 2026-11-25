@@ -5,6 +5,7 @@ Usage, from research_rig/ (no setting is read from the command line; all come fr
   python3 score_14.py --selftest   runs test_14.py on made-up data; free to run at any time
   python3 score_14.py --coverage   members, bars and rankable counts; reads whether a bar exists, never a price value;
                                    writes coverage_14.json
+  python3 score_14.py --pins       prints the members hash, bar manifest hash and code commit the frozen plan must pin
   python3 score_14.py --run        the one real run (the lead runs it once, after the plan is frozen)
 
 --run refuses:
@@ -12,6 +13,10 @@ Usage, from research_rig/ (no setting is read from the command line; all come fr
   - while the plan file named in replay_14_plan.source, or any PREREG_14_*.md here, has DRAFT in its name, or its
     Status line says DRAFT, or the plan file does not exist,
   - if the plan, config/thresholds.yaml, members list builder or this code differs from the last commit (git HEAD),
+  - unless the plan pins members_sha256, bars_manifest_sha256, code_commit and config_sha256 (lines "name: value") and each equals
+    the value now, so changed data or a committed code change after the freeze is refused,
+  - if a data check (stale flat bars, file identity, one company counted twice; common_14.data_checks) flags a row
+    that the plan does not list with a reason,
   - if score_14.lock exists here or in ~/workspace/rig/data/replay_14/, or results_14.json exists here. Both locks are
     taken after the checks and before any price is read.
 It writes results_14.json with the command, the time, the git commit and the fingerprints of every input.
@@ -20,9 +25,11 @@ Definitions: plan 14, "Definitions fixed before the run" (agreed with the lead 2
   - ranking day: each month-end from the lookback_months-th; gain = close one month-end before / close twelve
     month-ends before - 1, both on those exact days; top N bought in equal parts at the next day's open; ties by ticker.
   - one share class per company (first ticker alphabetically) in the rule and every yardstick.
-  - (b) every member with a close on the ranking day and an open on the purchase day; (c) N drawn from the stocks the
-    rule could rank, random_draws paths, seed, a fresh draw each month in each path; above = strictly above the
-    random_percentile-th percentile (numpy linear).
+  - (b) every member with a close on the ranking day and an open on the purchase day; (c) random_draws paths of N
+    stocks from those the rule could rank that have an open, seed; turnover-matched (lead's decision on the opus audit,
+    2026-11-25): at each re-form a path keeps exactly as many of its holdings as the rule kept, chosen at random, and
+    draws the rest from the eligible stocks it did not hold; same costs and stop handling as the rule; above = strictly
+    above the random_percentile-th percentile (numpy linear).
   - cost_bps_per_side on what is traded at each re-form, the first purchase, stop sales and the final sale; SPY pays
     one buy and one sell.
   - halves split at the first ranking day after first_half_end; SPY over the same open-to-open spans."""
@@ -33,7 +40,8 @@ import common_14 as C
 P = C.P
 OUT = "results_14.json"
 LOCK = "score_14.lock"
-CODE = ("research_rig/common_14.py", "research_rig/score_14.py", "research_rig/build_members_14.py", "research_rig/fetch_14.py")
+CODE = ("research_rig/common_14.py", "research_rig/score_14.py", "research_rig/build_members_14.py", "research_rig/fetch_14.py",
+        "research_rig/test_14.py", "research_rig/report_14.py")
 
 class Refused(Exception): pass
 
@@ -47,17 +55,24 @@ def plan_periods(members, px, days):
         out.append(dict(i=i, k=k, fill=i + 1, ranked=ranked, unrankable=unr))
     return out, me
 
-def run_setup(members, px, days, periods, n, daily=True):
+def run_setup(members, px, days, periods, n, daily=True, cost=None):
     fills = [p["fill"] for p in periods]
     baskets = [C.top_n(p["ranked"], px, p["fill"], n) for p in periods]
-    sim = C.simulate(px, fills, baskets, P["cost_bps_per_side"], daily=daily)
+    sim = C.simulate(px, fills, baskets, P["cost_bps_per_side"] if cost is None else cost, daily=daily)
     sim["baskets"] = baskets
     return sim
 
-def score(members, px, days, with_random=True):
-    """Every judged and reported figure, from members, prices and the calendar. Used by the real run and the tests."""
+def kept_counts(baskets, flags):
+    """How many names the rule kept at each re-form: in this basket and in the last one, not stopped in between."""
+    st = {}
+    for k, s, _ in flags: st.setdefault(k, set()).add(s)
+    return [0] + [len(set(baskets[k]) & (set(baskets[k - 1]) - st.get(k - 1, set()))) for k in range(1, len(baskets))]
+
+def score(members, px, days, with_random=True, cost_bps=None):
+    """Every judged and reported figure, from members, prices and the calendar. Used by the real run and the tests.
+    cost_bps replaces the configured cost (only the no-edge check uses it, to measure the effect of cost)."""
     periods, me = plan_periods(members, px, days)
-    fills = [p["fill"] for p in periods]; cost = P["cost_bps_per_side"]
+    fills = [p["fill"] for p in periods]; cost = P["cost_bps_per_side"] if cost_bps is None else cost_bps
     half_end = str(P["first_half_end"])
     k2 = next((j for j, p in enumerate(periods) if days[p["i"]] > half_end), len(periods))
     spy = px.si["SPY||"]
@@ -93,16 +108,24 @@ def score(members, px, days, with_random=True):
             f_, _, d_ = C.hold_one(px, px.si[k], fills[0], cost); res["scale"][s] = dict(total=f_ - 1.0, max_drop=C.max_drop(d_))
         else: res["scale"][s] = None
     moves = C.period_moves(px, fills)
-    tick = {px.si[r["series"]]: r["ticker_then"] for r in members if r["series"] in px.si}
+    by_s = {}
+    for r in members:
+        if r["series"] in px.si: by_s.setdefault(px.si[r["series"]], []).append(r)
+    def label(s, day):
+        """ticker_then of the member row on this series in force on that day (a series can carry several labels)."""
+        rs = by_s.get(s, [])
+        now = [r for r in rs if r["date_from"] <= day < r["date_to"]]
+        return (now or sorted(rs, key=lambda r: r["date_from"])[-1:] or [dict(ticker_then=px.keys[s])])[0]["ticker_then"]
     for name, n in (("small", P["n_small"]), ("wide", P["n_wide"])):
-        S = run_setup(members, px, days, periods, n)
+        S = run_setup(members, px, days, periods, n, cost=cost)
         tot = S["value"] - 1.0
         h1 = S["at_fill"][k2] - 1.0 if k2 < len(periods) else tot
         h2 = S["value"] / S["at_fill"][k2] - 1.0 if k2 < len(periods) else float("nan")
         rnd = []
         if with_random:
             rng = np.random.default_rng([P["seed"], n])
-            bk = C.random_baskets(periods, px, n, P["random_draws"], rng)
+            kept = kept_counts(S["baskets"], S["flags"])
+            bk = C.random_baskets(periods, px, n, P["random_draws"], rng, kept=kept, stopped=moves[2])
             rnd = list(C.fast_values(moves, bk, cost) - 1.0)
         pct = float(np.percentile(rnd, P["random_percentile"])) if rnd else float("nan")
         marks = {"1_above_spy": bool(tot > res["spy"]["total"]),
@@ -119,19 +142,21 @@ def score(members, px, days, with_random=True):
         else: without = tot
         res["setups"][name] = dict(
             n=n, ledger_row=146 if name == "small" else 147, total=tot, first_half=h1, second_half=h2,
-            random=dict(draws=len(rnd), percentile=P["random_percentile"], value_at_percentile=pct,
+            random=dict(draws=len(rnd), percentile=P["random_percentile"], value_at_percentile=pct, turnover_matched=True,
+                        rule_mean_kept=float(np.mean(kept[1:])) if with_random and len(kept) > 1 else float("nan"),
                         median=float(np.median(rnd)) if rnd else float("nan"),
                         share_of_draws_beaten=float(np.mean(np.array(rnd) < tot)) if rnd else float("nan")),
             marks=marks, passes=all(marks.values()),
             reported=dict(by_year=by_year(S["daily"]), max_drop=C.max_drop(S["daily"]),
                           mean_turnover=float(np.mean(S["turnover"][1:])) if len(S["turnover"]) > 1 else 0.0,
                           flagged_holdings=len(S["flags"]), carried_through_gap=len(S["carried"]),
-                          flagged=[dict(ticker=tick.get(s, px.keys[s]), period_ranking_day=days[periods[k]["i"]], last_close_day=days[d])
+                          flagged=[dict(ticker=label(s, days[periods[k]["i"]]), period_ranking_day=days[periods[k]["i"]], last_close_day=days[d])
                                    for k, s, d in S["flags"]],
                           total_without_flagged_hindsight=without,
                           short_baskets=sum(len(b) < n for b in S["baskets"]),
                           spmo_overlap="UNKNOWN: no dated public record of SPMO's holdings was found"),
-            picks={days[p["i"]]: [tick.get(s, px.keys[s]) for s in b] for p, b in zip(periods, S["baskets"])})
+            carried=[dict(ticker=label(s, days[periods[k]["i"]]), period_ranking_day=days[periods[k]["i"]]) for k, s in S["carried"]],
+            picks={days[p["i"]]: [label(s, days[p["i"]]) for s in b] for p, b in zip(periods, S["baskets"])})
     return res
 
 # ----------------------------------------------------------------------------------------------------------- coverage
@@ -140,7 +165,7 @@ def coverage(members, px, days):
     me = C.month_end_index(days)
     by_ent_start = {(r["entity"], r["date_from"]) for r in members}
     years = sorted({d[:4] for d in days}); idx = {d: i for i, d in enumerate(days)}
-    nobars = {y: [] for y in years}; stops = []
+    nobars = {y: [] for y in years}; stops = []; stops_nobar = []
     for r in members:
         s = px.si.get(r["series"]) if r["series"] else None
         for y in years:
@@ -153,8 +178,10 @@ def coverage(members, px, days):
             prior = [i for d, i in idx.items() if d < r["date_to"]]
             want = max(prior) if prior else None
             last = int(px.last[s])
+            inside = [i for d, i in idx.items() if r["date_from"] <= d < r["date_to"]]
+            priced = bool(inside) and not np.isnan(px.C[s, inside]).all()
             if want is not None and last < want and last >= 0:
-                stops.append(dict(ticker=r["ticker_then"], feed=r["ticker_feed"], removed=r["date_to"],
+                (stops if priced else stops_nobar).append(dict(ticker=r["ticker_then"], feed=r["ticker_feed"], removed=r["date_to"],
                                   last_bar=days[last], trading_days_short=want - last))
             elif last < 0 and r["date_from"] <= days[-1]: pass
     periods, _ = plan_periods(members, px, days)
@@ -163,10 +190,51 @@ def coverage(members, px, days):
                                       with_series=len(C.universe(members, px, days[i]))) for i in me],
                 lines_without_bars_by_year={y: dict(count=len(v), tickers=sorted(set(v))) for y, v in nobars.items()},
                 bars_stop_before_removal=sorted(stops, key=lambda x: x["removed"]),
+                bars_stop_before_removal_by_days_short={str(k): sum(x["trading_days_short"] == k for x in stops) for k in sorted({x["trading_days_short"] for x in stops})},
+                stop_lines_with_no_bar_in_membership=sorted(stops_nobar, key=lambda x: x["removed"]),
+                companies_on_two_files=two_files(members),
                 ranking_days=[dict(day=days[p["i"]], rankable=len(p["ranked"]), unrankable=len(p["unrankable"]), unrankable_tickers=p["unrankable"]) for p in periods],
                 lines=len(members), series=len(px.keys))
 
+def two_files(members):
+    """Companies whose rows use more than one price file: files are never joined, so the history restarts."""
+    from build_members_14 import A_ROW_RENAMES          # same company where source A has a removal and an addition
+    ent = {r["entity"]: r["entity"] for r in members}
+    def root(e):
+        while ent[e] != e: e = ent[e]
+        return e
+    for o, n_, d in A_ROW_RENAMES:
+        a = [r["entity"] for r in members if r["ticker_then"] == o and r["date_to"] == d]
+        b = [r["entity"] for r in members if r["ticker_then"] == n_ and r["date_from"] == d]
+        if a and b: ent[root(b[0])] = root(a[0])
+    by = {}
+    for r in members:
+        if r["ticker_feed"]: by.setdefault(root(r["entity"]), []).append(r)
+    out = []
+    for e, rs in by.items():
+        rs.sort(key=lambda r: r["date_from"]); files = list(dict.fromkeys(r["ticker_feed"] for r in rs))
+        if len(files) > 1:
+            out.append(dict(company=rs[-1]["company"], files=files,
+                            restarts=[min(r["date_from"] for r in rs if r["ticker_feed"] == f) for f in files[1:]]))
+    return sorted(out, key=lambda x: x["restarts"][0])
+
 # ------------------------------------------------------------------------------------------------------------- guards
+PINS = ("members_sha256", "bars_manifest_sha256", "code_commit", "config_sha256")
+
+def pins_now(members):
+    """What the frozen plan must pin: the member list hash, a manifest hash over every bar file the run can read
+    (name and sha256 of each), and the last commit that touched the code or the config."""
+    files = sorted({r["ticker_feed"] for r in members if r["ticker_feed"]} | set(C.SCALE))
+    h = __import__("hashlib").sha256()
+    names = [os.path.join(C.BARS, f + ".csv") for f in files]
+    names += [os.path.join(C.ASOF, f) for f in sorted(os.listdir(C.ASOF))] if os.path.isdir(C.ASOF) else []
+    for p in names:
+        f = os.path.relpath(p, os.path.dirname(C.BARS))
+        h.update(f.encode() + b"\0" + (C.sha256_file(p) if os.path.exists(p) else "missing").encode() + b"\n")
+    commit = git("log", "-1", "--format=%H", "--", "config/thresholds.yaml", *CODE).stdout.strip()
+    return dict(members_sha256=C.sha256_file(C.MEMBERS), bars_manifest_sha256=h.hexdigest(), code_commit=commit,
+                config_sha256=C.sha256_json(P))
+
 def git(*a): return subprocess.run(["git", *a], cwd=C.REPO, capture_output=True, text=True)
 
 def plan_file():
@@ -187,6 +255,15 @@ def guard_run():
     rels = [C.PLAN_SOURCE, "config/thresholds.yaml", *CODE]
     dirty = git("status", "--porcelain", "--", *rels).stdout.strip()
     if dirty: raise Refused("refused: these differ from the last commit; commit them first:\n" + dirty)
+    with open(p) as fh: text = fh.read()
+    members = C.load_members(); now = pins_now(members)
+    for k in PINS:
+        line = next((l for l in text.splitlines() if l.strip().lstrip("-* ").startswith(k + ":")), None)
+        if line is None: raise Refused(f"refused: the plan does not pin {k}. Print the values with: python3 score_14.py --pins")
+        if line.split(":", 1)[1].strip().strip("`") != now[k]:
+            raise Refused(f"refused: {k} differs from the value pinned in the plan (data or code changed after the freeze)")
+    unlisted = C.flags_listed(C.data_checks(members, C.calendar()), text)
+    if unlisted: raise Refused("refused: data check flags not listed in the plan with a reason (a line with the key and 'because'): " + ", ".join(unlisted))
     for d in (C.HERE, C.OFF_REPO_LOCK_DIR):
         if os.path.exists(os.path.join(d, LOCK)): raise Refused(f"refused: {os.path.join(d, LOCK)} exists; the one run has been taken")
     if os.path.exists(os.path.join(C.HERE, OUT)): raise Refused(f"refused: {OUT} exists; the one run has been taken")
@@ -199,8 +276,8 @@ def take_locks(cmd):
         os.write(fd, (json.dumps(stamp) + "\n").encode()); os.close(fd); made.append(os.path.join(d, LOCK))
     return stamp
 
-def fingerprints(px):
-    return dict(members_csv_sha256=C.sha256_file(C.MEMBERS), bars=px.digest(), plan_sha256=C.sha256_file(os.path.join(C.REPO, C.PLAN_SOURCE)),
+def fingerprints(px, members):
+    return dict(pins=pins_now(members), members_csv_sha256=C.sha256_file(C.MEMBERS), bars=px.digest(), plan_sha256=C.sha256_file(os.path.join(C.REPO, C.PLAN_SOURCE)),
                 config_replay_14_plan_sha256=C.sha256_json(P), config_replay_14_plan=P,
                 code_sha256={rel: C.sha256_file(os.path.join(C.REPO, rel)) for rel in CODE})
 
@@ -213,7 +290,7 @@ def real_run():
     res = score(members, px, days)
     out = dict(made_by="research_rig/score_14.py --run", plan=C.PLAN_SOURCE, run=stamp,
                finished_utc=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-               inputs=fingerprints(px), coverage=coverage(members, px, days), result=res)
+               inputs=fingerprints(px, members), coverage=coverage(members, px, days), data_checks=C.data_checks(members, days), result=res)
     json.dump(out, open(os.path.join(C.HERE, OUT), "w"), indent=1, default=float)
     print(f"wrote research_rig/{OUT}. Write the page with: python3 report_14.py")
 
@@ -222,6 +299,7 @@ def coverage_mode():
     px = C.Prices(days, members)
     cov = coverage(members, px, days)
     cov["made_by"] = "research_rig/score_14.py --coverage (counts only, no price value used)"
+    cov["data_checks"] = C.data_checks(members, days)
     json.dump(cov, open(os.path.join(C.OUTDIR, "coverage_14.json"), "w"), indent=1)
     me = cov["month_end_lines"]; R = cov["ranking_days"]
     print(json.dumps(dict(lines=cov["lines"], series=cov["series"],
@@ -229,6 +307,10 @@ def coverage_mode():
                           one_class_with_series=[min(m["with_series"] for m in me), max(m["with_series"] for m in me)],
                           lines_without_bars_by_year={y: v["count"] for y, v in cov["lines_without_bars_by_year"].items()},
                           bars_stop_before_removal=len(cov["bars_stop_before_removal"]),
+                          by_days_short=cov["bars_stop_before_removal_by_days_short"],
+                          stop_lines_with_no_bar_in_membership=[x["ticker"] for x in cov["stop_lines_with_no_bar_in_membership"]],
+                          companies_on_two_files=len(cov["companies_on_two_files"]),
+                          data_checks={k: len(v) for k, v in cov["data_checks"].items()},
                           rankable=[min(r["rankable"] for r in R), max(r["rankable"] for r in R)],
                           unrankable=[min(r["unrankable"] for r in R), max(r["unrankable"] for r in R)]), indent=1))
 
@@ -238,6 +320,7 @@ if __name__ == "__main__":
         if a == ["--selftest"]:
             sys.exit(subprocess.run([sys.executable, os.path.join(C.HERE, "test_14.py")]).returncode)
         elif a == ["--coverage"]: coverage_mode()
+        elif a == ["--pins"]: print(json.dumps(pins_now(C.load_members()), indent=1))
         elif a == ["--run"]: real_run()
         else: print(__doc__); sys.exit(2)
     except Refused as e:

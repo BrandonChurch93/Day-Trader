@@ -156,15 +156,19 @@ def parallel(workers, todo, job):
                 print("inventory",i,"/",len(pending),flush=True)
 
 
-def store_archives(name,keys,prior,errors,workers):
-    result = {}
-    for key,meta,err in parallel(workers,sorted(keys),lambda k:inspect_archive(k,prior.get(k))):
+def store_archives(name,keys,prior,errors,workers,existing=None):
+    snap_hash = digest((DATA/"snapshots_16.json").read_bytes())
+    result = ({k:v for k,v in existing["archives"].items()
+               if k in keys and archive_root(k,v["where"]).is_file()}
+              if existing is not None and existing["snapshots_sha256"]==snap_hash else {})
+    for key,meta,err in parallel(workers,sorted(keys-result.keys()),
+                                 lambda k:inspect_archive(k,prior.get(k))):
         if err is None:
             result[key] = meta
         else:
             errors[key] = err
     F.put_json(DATA/f"manifest_{name}.json",{"archives":result,"errors":errors,
-               "snapshots_sha256":digest((DATA/"snapshots_16.json").read_bytes())})
+               "snapshots_sha256":snap_hash})
     print(name,"clock-checked archives",len(result),"errors",len(errors),flush=True)
     if errors:
         raise SystemExit(f"{name} incomplete; see manifest")
@@ -208,6 +212,7 @@ PERP_MANUAL = {
     4172: [(None,"2022-05-12T15:30","LUNAUSDT"),
            ("2022-09-09T13",None,"1000LUNCUSDT")],
     4256: [(None,"2024-10-22T09","KLAYUSDT")],
+    4644: [],  # Poseidon Network, not the Invesco QQQ equity-index contract.
     5690: [(None,"2024-07-16T09","RNDRUSDT"),("2024-07-16T09",None,"RENDERUSDT")],
     6536: [(None,"2026-02-23T09","OMUSDT"),("2026-02-23T09",None,"MANTRAUSDT")],
     6953: [(None,"2026-01-06T09","FXSUSDT"),("2026-01-06T09",None,"FRAXUSDT")],
@@ -234,6 +239,7 @@ PERP_EVIDENCE = {
            "https://www.binance.com/en/support/announcement/detail/5b9bc7ef56834de895cf829af859207e"],
     4256: ["https://www.binance.com/en/support/announcement/detail/f75f933759ee49d0af1dfbce7e32144c",
            "https://www.binance.com/en/support/announcement/detail/beac1e0a0edf4fe69d5e5c45f9d60343"],
+    4644: ["https://www.binance.com/en/support/announcement/detail/4cde981dc32d4268b7645e9d16e8d63a"],
     5690: ["https://www.binance.com/en/support/announcement/detail/d1f2ae8d99b24439a7a900caa9bb6b3b"],
     6536: ["https://www.binance.com/en/support/announcement/detail/4d13052b4be943f5b155cb9150ca902c"],
     6953: ["https://www.binance.com/en/support/announcement/detail/a17352ba70414c96882cd881591dd36d"],
@@ -339,7 +345,9 @@ def held_futures(workers):
             keys.update(group)
         else:
             errors[s] = err
-    store_archives("futures_held",keys,{},errors,workers)
+    dest = DATA/"manifest_futures_held.json"
+    resume = json_read(dest) if dest.is_file() else None
+    store_archives("futures_held",keys,{},errors,workers,resume)
 
 
 def coverage(workers):
@@ -406,12 +414,20 @@ def coverage(workers):
             t,f = data
             clock_tapes[sym] = M.Tape(C.Series(dict.fromkeys(t)),C.Series({}),
                                       dict.fromkeys(f),ranges.get(sym,()))
+    identity_file = DATA/S.IDENTITY
+    raw_identity = identity_file.read_bytes() if identity_file.is_file() else None
+    manifest_hashes = {k:digest((DATA/k).read_bytes()) for k in map(lambda n:f"manifest_{n}.json",m)}
+    allowed = S.identity_policy(raw_identity,digest((DATA/"snapshots_16.json").read_bytes()),
+                                manifest_hashes) if raw_identity else None
     counts = {}
     for name,snaps in json_read(DATA/"snapshots_16.json").items():
         counts[name] = {}
         for year,start,end in years:
             v = dict(weeks=0,listed_coin_weeks=0,spot_prior_open_coin_weeks=0,
                      live_contract_coin_weeks=0,missing_funding_file_candidates=0)
+            if allowed:
+                v.update(confirmed_spot_prior_open_coin_weeks=0,confirmed_live_contract_coin_weeks=0,
+                         confirmed_missing_funding_file_candidates=0)
             for t in range(start,end,C.WEEK):
                 v["weeks"] += 1
                 snap = M.snapshot_at(snaps,t)
@@ -424,9 +440,19 @@ def coverage(workers):
                 live,missing = M.market_pool(snap,clock_tapes,t,min(t+C.WEEK,end),p)
                 v["live_contract_coin_weeks"] += len(live)
                 v["missing_funding_file_candidates"] += len(missing)
+                if allowed:
+                    v["confirmed_spot_prior_open_coin_weeks"] += sum(any(
+                        (row["id"],pair) in allowed["spot"] and
+                        lo<=t-H and t<hi and t-H in spot_open.get(pair,())
+                        for lo,hi,pair in F.segments(row)) for row in snap["kept"])
+                    a,b = M.market_pool(snap,clock_tapes,t,min(t+C.WEEK,end),p,allowed["futures"])
+                    v["confirmed_live_contract_coin_weeks"] += len(a)
+                    v["confirmed_missing_funding_file_candidates"] += len(b)
             counts[name][str(year)] = v
     out = {"cutoff_utc":F.utc(cutoff).isoformat(),"manifest_totals":totals,
            "clock_groups_checked":len(groups),"coverage":counts}
+    if raw_identity:
+        out["identity_policy_sha256"] = digest(raw_identity)
     F.put_json(DATA/"coverage_16_17.json",out)
     print(json.dumps(out,indent=2))
 

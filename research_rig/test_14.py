@@ -5,7 +5,7 @@
 
 Made-up worlds: business days from replay_14_plan.start to replay_14_plan.end; stocks follow random walks with no
 momentum unless asked; members join and leave; one company has two share classes; some stocks stop."""
-import sys, os, tempfile, unittest, datetime as dt, json
+import sys, os, tempfile, unittest, subprocess, datetime as dt, json
 import numpy as np
 os.environ.setdefault("RESULTS_14_DIR", tempfile.mkdtemp())
 import common_14 as C
@@ -149,6 +149,25 @@ class Small(unittest.TestCase):
             self.assertAlmostEqual(fast[j], sim["value"], places=10)
         self.assertGreater(ncar, 0)
 
+    def test_random_paths_keep_as_many_as_the_rule(self):
+        days, members, px = world(6, n=60, days=bdays("2016-01-04", "2019-12-31"))
+        periods, me = S.plan_periods(members, px, days)
+        fills = [p["fill"] for p in periods]; n = 10
+        rule = S.run_setup(members, px, days, periods, n, daily=False)
+        kept = S.kept_counts(rule["baskets"], rule["flags"])
+        mv = C.period_moves(px, fills)
+        bk = C.random_baskets(periods, px, n, 50, np.random.default_rng(2), kept=kept, stopped=mv[2])
+        self.assertGreater(sum(kept), 0)
+        for j in range(50):
+            for k in range(1, len(periods)):
+                cur = {s for s in bk[j, k] if s >= 0}; prev = {s for s in bk[j, k - 1] if s >= 0 and not mv[2][k - 1][s]}
+                elig = {s for _, _, s in periods[k]["ranked"] if not np.isnan(px.O[s, fills[k]])}
+                self.assertEqual(len(cur & prev), min(kept[k], len(prev & elig)))
+                self.assertTrue(cur <= elig); self.assertEqual(len(cur), min(n, len(elig)))
+        fast = C.fast_values(mv, bk, 5)
+        for j in range(5):
+            self.assertAlmostEqual(fast[j], C.simulate(px, fills, [[s for s in bk[j, k] if s >= 0] for k in range(len(fills))], 5)["value"], places=10)
+
 class Rules(unittest.TestCase):
     def test_gain_uses_exact_month_ends(self):
         days = bdays("2016-01-04", "2017-03-31")
@@ -205,10 +224,17 @@ class LookAhead(unittest.TestCase):
 
 class Guards(unittest.TestCase):
     def test_draft_plan_refused(self):
-        with self.assertRaises(S.Refused):
-            saved = dict(os.environ); [os.environ.pop(v, None) for v in C.ENV_OVERRIDES]
-            try: S.guard_run()
-            finally: os.environ.clear(); os.environ.update(saved)
+        d = tempfile.mkdtemp(); plan = os.path.join(d, "PREREG_14_x_DRAFT.md")
+        with open(plan, "w") as fh: fh.write("Status: DRAFT\n")
+        h, src = C.HERE, C.PLAN_SOURCE
+        saved = dict(os.environ); [os.environ.pop(v, None) for v in C.ENV_OVERRIDES]
+        C.HERE, C.PLAN_SOURCE = d, plan
+        try:
+            with self.assertRaisesRegex(S.Refused, "draft"): S.guard_run()
+            p2 = os.path.join(d, "PREREG_14_x.md"); os.rename(plan, p2); C.PLAN_SOURCE = p2
+            with self.assertRaisesRegex(S.Refused, "Status"): S.guard_run()
+        finally:
+            C.HERE, C.PLAN_SOURCE = h, src; os.environ.clear(); os.environ.update(saved)
 
     def test_override_refused(self):
         os.environ["REPLAY_14_BARS"] = "/tmp/x"
@@ -226,6 +252,58 @@ class Guards(unittest.TestCase):
             os.remove(os.path.join(d1, S.LOCK))         # either lock alone also blocks
             with self.assertRaises(FileExistsError): S.take_locks("test again")
         finally: C.HERE, C.OFF_REPO_LOCK_DIR = h, o
+
+    def test_pins_required_and_checked(self):
+        d = tempfile.mkdtemp(); plan = os.path.join(d, "PREREG_14_frozen.md")
+        h, src = C.HERE, C.PLAN_SOURCE
+        saved = dict(os.environ); [os.environ.pop(v, None) for v in C.ENV_OVERRIDES]
+        C.HERE, C.PLAN_SOURCE = d, plan
+        try:
+            with open(plan, "w") as fh: fh.write("# plan\nStatus: frozen\n")
+            with self.assertRaisesRegex(S.Refused, "does not pin"): S.guard_run()
+            with open(plan, "w") as fh: fh.write("Status: frozen\n" + "".join(f"- {k}: 0\n" for k in S.PINS))
+            with self.assertRaisesRegex(S.Refused, "differs from the value pinned"): S.guard_run()
+        finally:
+            C.HERE, C.PLAN_SOURCE = h, src; os.environ.clear(); os.environ.update(saved)
+
+class DataChecks(unittest.TestCase):
+    def setUp(self):
+        self.days = bdays("2020-01-01", "2021-06-30"); self.b = tempfile.mkdtemp(); self.a = tempfile.mkdtemp()
+    def put(self, d, name, vols, close=None):
+        with open(os.path.join(d, name + ".csv"), "w") as fh:
+            fh.write("date,open,high,low,close,volume\n")
+            for i, (day, v) in enumerate(zip(self.days, vols)):
+                c = 10 + 0.01 * i if close is None else close[i]
+                fh.write(f"{day},{c},{c},{c},{c},{v}\n" if v == 0 else f"{day},{c},{c + 1},{c - 1},{c},{v}\n")
+
+    def test_zero_volume_is_no_bar_except_funds(self):
+        T = len(self.days); v = [100 + i for i in range(T)]; v[50:60] = [0] * 10
+        cl = [10 + 0.01 * i for i in range(T)]; cl[70:76] = [9.0] * 6           # six identical rows with volume
+        self.put(self.b, "X", v, cl); self.put(self.b, "SPY", v, cl)
+        px = C.Prices(self.days, [row("X", "2020-01-01", "2022-01-01")], bars=self.b, extra=("SPY",))
+        x, spy = px.si["X||"], px.si["SPY||"]
+        self.assertTrue(np.isnan(px.C[x, 50:60]).all()); self.assertFalse(np.isnan(px.C[x, 49]))
+        self.assertTrue(np.isnan(px.C[x, 70:76]).all()); self.assertFalse(np.isnan(px.C[x, 76]))
+        self.assertFalse(np.isnan(px.C[spy, 50:60]).any())
+
+    def test_flags(self):
+        T = len(self.days); rg = np.random.default_rng(3); cl = [10 + 0.01 * i for i in range(T)]
+        nv = lambda: [int(x) for x in rg.integers(1000, 9000, T)]
+        base = nv()
+        st = nv(); st[100:106] = [0] * 6                               # six flat zero-volume sessions
+        sc = list(cl); sc[100:106] = [sc[99]] * 6
+        self.put(self.b, "S", st, sc); self.put(self.a, "S@2021-01-04", [2 * x for x in st], sc)
+        iv = nv(); self.put(self.b, "I", iv); self.put(self.a, "I@2021-01-04", nv())   # another stock
+        ov = nv(); self.put(self.b, "OK", ov); self.put(self.a, "OK@2021-01-04", [3 * x for x in ov])          # same stock, scaled
+        self.put(self.b, "D1", base); self.put(self.b, "D2", base)
+        self.put(self.a, "D1@2021-01-04", base); self.put(self.a, "D2@2021-01-04", base)
+        m = [row(t, "2021-01-04", "2021-06-30") for t in ("S", "I", "OK", "D1", "D2")]
+        r = C.data_checks(m, self.days, bars=self.b, asof=self.a)
+        self.assertEqual([f["key"] for f in r["stale"]], ["S@2021-01-04"])
+        self.assertEqual([f["key"] for f in r["identity"]], ["I@2021-01-04"])
+        self.assertEqual([f["keys"] for f in r["duplicate"]], [["D1@2021-01-04", "D2@2021-01-04"]])
+        plan = "- S@2021-01-04 is stale because the feed pads it\n- I@2021-01-04 because checked by hand\n"
+        self.assertEqual(C.flags_listed(r, plan), ["D1@2021-01-04+D2@2021-01-04"])
 
 class RealShape(unittest.TestCase):
     """The real member list and the real bar dates (which days have a bar), with made-up prices put in their place.
@@ -249,7 +327,20 @@ class RealShape(unittest.TestCase):
             for v in r["setups"][k]["picks"].values():      # never two share classes of one company
                 self.assertFalse({"GOOG", "GOOGL"} <= set(v) or {"FOX", "FOXA"} <= set(v) or {"NWS", "NWSA"} <= set(v))
 
+class Funds(unittest.TestCase):
+    def test_last_mark_includes_the_sale(self):
+        days = bdays("2020-01-01", "2020-03-31"); T = len(days)
+        px = C.Prices.from_arrays(days, {"SPY||": (np.full(T, 10.0), np.linspace(10, 12, T))})
+        final, units, daily = C.hold_one(px, 0, 1, 5)
+        self.assertAlmostEqual(daily[-1], final, places=14)
+        self.assertAlmostEqual(final, (1 - 5e-4) / 10 * 12 * (1 - 5e-4), places=12)
+
 class Report(unittest.TestCase):
+    def test_refuses_before_opening_the_page(self):
+        d = tempfile.mkdtemp(); out = os.path.join(d, "page.md")
+        r = subprocess.run([sys.executable, os.path.join(C.HERE, "report_14.py"), "--from", d, "--out", out], capture_output=True, text=True)
+        self.assertNotEqual(r.returncode, 0); self.assertFalse(os.path.exists(out))
+
     def test_page_from_result_file_only(self):
         import report_14
         d = tempfile.mkdtemp()
@@ -266,21 +357,31 @@ class Report(unittest.TestCase):
         self.assertIn(f"{res['spy']['total'] * 100:+.1f}%", page)
         self.assertNotIn("nan", page.lower().replace("nanc", ""))
 
-def score_world(seed, mom=0.0):
+def score_world(seed, mom=0.0, cost_bps=None):
     days, members, px = world(seed, mom=mom)
-    return S.score(members, px, days)
+    return S.score(members, px, days, cost_bps=cost_bps)
 
-def noedge(worlds):
-    """How often each mark passes by chance, in made-up worlds with no momentum."""
+def noedge(worlds, costs=(None, 0)):
+    """How often each mark passes by chance, in made-up worlds with no momentum, at the configured cost and at 0. Also
+    the share of random paths each set-up beat, by tenths: with no edge it should be spread evenly (uniform)."""
     keys = ("1_above_spy", "2_above_everyone", "3_above_random_percentile", "4_above_spy_each_half")
-    tally = {n: {k: 0 for k in keys + ("all_four",)} for n in ("small", "wide")}
-    for w in range(worlds):
-        r = score_world(1000 + w)
-        for n in tally:
-            m = r["setups"][n]["marks"]
-            for k in keys: tally[n][k] += m[k]
-            tally[n]["all_four"] += r["setups"][n]["passes"]
-    return {n: {k: f"{v}/{worlds}" for k, v in t.items()} for n, t in tally.items()}
+    out = {}
+    for cb in costs:
+        tally = {n: {k: 0 for k in keys + ("all_four",)} for n in ("small", "wide")}
+        share = {n: [] for n in tally}
+        for w in range(worlds):
+            r = score_world(1000 + w, cost_bps=cb)
+            for n in tally:
+                m = r["setups"][n]["marks"]
+                for k in keys: tally[n][k] += m[k]
+                tally[n]["all_four"] += r["setups"][n]["passes"]
+                share[n].append(r["setups"][n]["random"]["share_of_draws_beaten"])
+        name = f"cost_{P['cost_bps_per_side'] if cb is None else cb}_bps"
+        out[name] = {n: dict(passes={k: f"{v}/{worlds}" for k, v in tally[n].items()},
+                             share_beaten_mean=round(float(np.mean(share[n])), 3), share_beaten_var=round(float(np.var(share[n])), 3),
+                             share_beaten_by_tenths=[int(x) for x in np.histogram(share[n], bins=10, range=(0, 1))[0]])
+                     for n in tally}
+    return out
 
 if __name__ == "__main__":
     quick = "--quick" in sys.argv
@@ -292,9 +393,10 @@ if __name__ == "__main__":
           "second half from", r["second_half_first_ranking_day"], "rankable", min(r["counts"]["rankable"]), "-", max(r["counts"]["rankable"]))
     rm = score_world(7, mom=0.9)
     print("made-up world with momentum built in, marks:", {n: rm["setups"][n]["marks"] for n in rm["setups"]})
-    worlds = 10 if quick else 100
+    worlds = 10 if quick else 400
     ne = noedge(worlds)
     print("no-edge check (made-up worlds, no momentum), passes:", json.dumps(ne))
     if not quick:
-        json.dump(dict(made_by="research_rig/test_14.py (made-up data only)", worlds=worlds, passes=ne,
+        json.dump(dict(made_by="research_rig/test_14.py (made-up data only)", worlds=worlds, seeds=f"1000 to {999 + worlds}", by_cost=ne,
+                       uniform_reference=dict(mean=0.5, var=round(1 / 12, 3)),
                        utc=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M")), open(os.path.join(C.HERE, "noedge_14.json"), "w"), indent=1)

@@ -161,6 +161,18 @@ class Replay16Test(unittest.TestCase):
         apply()
         self.assertEqual(book.finish()[0],0)
 
+    def test_ruin_excludes_later_short_funding_and_forced_closes(self):
+        long = M.Long(True,C.Outcome(1,ts(3),()),np.ones(4))
+        a = M.short_week(fut({1:(550,550,550)}),X,T,ts(3),params())
+        b = M.short_week(fut({2:(200,200,200)},payments={-8:0,2:.5}),X,T,ts(3),params())
+        book = M.Book(1)
+        M.portfolio_step(book,T,ts(3),[long],np.ones((1,1)),1,np.array([[.5,.5]]),
+                         [a,b],np.array([False]),0,.01,0,.5,np.zeros(1,dtype=bool))
+        self.assertTrue(book.failed[0])
+        self.assertEqual(book.funding[0],0)
+        self.assertEqual(book.forced[0],1)
+        self.assertAlmostEqual(book.short_fees[0],.25*.01*(6.5+1))
+
     def test_delayed_long_future_value_does_not_fund_earlier_monday(self):
         def ending(future_factor,release):
             b = M.Book(1)
@@ -179,6 +191,37 @@ class Replay16Test(unittest.TestCase):
         self.assertEqual(old[0].pair,new.pair)
         self.assertLess(old[0].end,new.begin)
         self.assertEqual(old[1].pair,"1000LUNCUSDT")
+
+    def test_identity_filter_does_not_carry_if_present_list_loses_all_candidates(self):
+        a = {"id":10,"symbol":"TEST"}
+        b = {"id":20,"symbol":"ALT"}
+        sn = [{"known_at":ts(-1),"kept":[b]},{"known_at":T,"kept":[a]}]
+        s = C.Series({ts(i):C.Bar(100,100,100) for i in range(-60,0)})
+        listed,ranked,carried = M.spot_universe(sn,{"TESTUSDT":s,"ALTUSDT":s},T,
+                                               params(rise_days=1),{(20,"ALTUSDT")})
+        self.assertEqual((listed,ranked,carried),([],[],False))
+        live,missing = M.market_pool(sn[-1],{X.pair:fut()},T,ts(8),params(),{(20,X.pair)})
+        self.assertEqual((live,missing),([],set()))
+
+    def test_identity_policy_must_match_snapshot_and_be_named_in_each_plan(self):
+        import json
+        good = json.dumps({"snapshots_sha256":"abc","confirmed":{"spot":[[1,"BTCUSDT"]],
+                           "futures":[[1,"BTCUSDT"]]},
+                           "archive_manifest_sha256":{"manifest_spot.json":"xyz"}}).encode()
+        self.assertEqual(S.identity_policy(good,"abc")["futures"],{(1,"BTCUSDT")})
+        self.assertEqual(S.identity_policy(good,"abc",{"manifest_spot.json":"xyz"})["spot"],{(1,"BTCUSDT")})
+        with self.assertRaises(S.S.Refused):
+            S.identity_policy(good,"abc",{"manifest_spot.json":"changed"})
+        with self.assertRaises(S.S.Refused):
+            S.identity_policy(good,"other-snapshot")
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            (d/S.IDENTITY).write_bytes(good)
+            plan = S.F.digest(good)[:12].encode()
+            with patch.object(S.F,"DATA",d):
+                with self.assertRaises(S.S.Refused):
+                    S.identity_bytes(plan,b"missing")
+                self.assertEqual(S.identity_bytes(plan,plan),good)
 
     def test_marks_1_to_3_ignore_quality_but_loss_mark_does_not(self):
         def year(end,reference,random,flags):
@@ -220,3 +263,17 @@ class Replay16Test(unittest.TestCase):
                 with self.assertRaises(S.S.Refused):
                     S.run()
                 meta.assert_not_called()
+
+    def test_one_shot_durable_lock_and_no_symlink_bypass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            result,local,durable = d/"result",d/"local",d/"durable"
+            S.S.guard("Status: frozen fixture",result,local,durable,{"fixture":True})
+            self.assertTrue(durable.is_file())
+            local.unlink()
+            with self.assertRaises(S.S.Refused):
+                S.S.guard("Status: frozen fixture",result,local,durable,{})
+            durable.unlink()
+            durable.symlink_to(d/"absent")
+            with self.assertRaises(S.S.Refused):
+                S.S.unused_paths(result,local,durable)

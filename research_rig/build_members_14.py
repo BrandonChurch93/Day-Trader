@@ -99,7 +99,12 @@ FEED = {
     ("WLTW", None): ("WTW", "", "", "Willis Towers Watson; history under WTW"),
     ("DWDP", None): ("DD", "2017-09-01", "", "DowDuPont, renamed DuPont; the DD file before 2017-09-01 is the old DuPont, a different company"),
     ("DD", "2019-06-03"): ("DD", "2017-09-01", "", "the DD file before 2017-09-01 is the old DuPont"),
-    ("DD", None): ("DD", "", "2017-08-31", "old DuPont; the DD file from 2017-09-01 is DowDuPont"),
+    ("DD", None): ("DD@2017-06-01", "", "2017-08-31", "old DuPont; the plain DD file before 2017-09-01 holds Dow Chemical's bars (its volumes are in fixed proportion to DOW@2017-06-01's), so the feed's file for the company that had DD on 2017-06-01 is used"),
+    ("DOW", None): ("DOW", "", "2017-08-31", "Dow Chemical; last regular-way day 2017-08-31 (SEC https://www.sec.gov/Archives/edgar/data/0001666700/000119312517274834/d426905dex991.htm); the DOW file is flat with zero volume from 2017-09-01 to 2019-04-01 and is Dow Inc. after"),
+    ("DOW", "2019-04-02"): ("DOW", "2019-04-02", "", "Dow Inc.; regular-way trading from 2019-04-02 (SEC https://www.sec.gov/Archives/edgar/data/1751788/000119312519095067/d716962dex991.htm); earlier DOW bars are not this company"),
+    ("CBS", None): ("CBS", "", "", "the PARA file has zero volume before 2024, so CBS's own file is used"),
+    ("VIAC", None): ("VIAC", "", "", "the PARA file has zero volume before 2024, so ViacomCBS's own file is used"),
+    ("PARA", None): ("PARA@2023-06-01", "", "", "Paramount Global; the plain PARA file has zero volume before 2024, so the feed's file for the company that had PARA on 2023-06-01 is used"),
     ("TFCFA", None): ("FOXA", "", "2019-03-18", "21st Century Fox class A; the FOXA file from 2019-03-19 is the new Fox Corporation"),
     ("TFCF", None): ("FOX", "", "2019-03-18", "21st Century Fox class B; the FOX file from 2019-03-19 is the new Fox Corporation"),
     ("FOXA", "2019-03-19"): ("FOXA", "2019-03-19", "", "new Fox Corporation; earlier FOXA bars are 21st Century Fox"),
@@ -174,10 +179,14 @@ def bars_dir():
     return os.path.join(DATA, "bars")
 
 def file_dates():
-    """{symbol: sorted list of dates with a bar}. Dates only, no price."""
+    """{symbol: sorted list of dates with a real trade}. Dates only, no price. Bars that are not trades (zero volume, or
+    a run of five or more identical rows; common_14.not_trades) are left out, so such a run cuts a file like a gap."""
+    from common_14 import not_trades
     B = bars_dir(); out = {}
     for f in os.listdir(B):
-        out[f[:-4]] = [r["date"] for r in csv.DictReader(open(os.path.join(B, f)))]
+        with open(os.path.join(B, f)) as fh: rows = list(csv.DictReader(fh))
+        bad = not_trades(rows)
+        out[f[:-4]] = [r["date"] for r in rows if r["date"] not in bad]
     return out
 
 def gap_cut(d, spy_idx, a, ff, ft):
@@ -186,7 +195,7 @@ def gap_cut(d, spy_idx, a, ff, ft):
     ds = [x for x in d if x in spy_idx and (not ff or x >= ff) and (not ft or x <= ft)]
     if not ds: return ff, ft, ""
     k = bisect.bisect_left(ds, a); notes = []
-    for t in range(max(k, 1), len(ds)):
+    for t in range(max(k + 1, 1), len(ds)):          # gaps after the row start
         if ii[t] - ii[t - 1] > GAP_DAYS: ft = ds[t - 1]; notes.append(f"cut after {ds[t - 1]} at a gap in the file"); break
     for t in range(min(k, len(ds) - 1), 0, -1):
         if ii[t] - ii[t - 1] > GAP_DAYS: ff = ds[t]; notes.append(f"cut before {ds[t]} at a gap in the file"); break

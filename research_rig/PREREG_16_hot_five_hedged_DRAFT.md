@@ -94,6 +94,30 @@ Still before any futures price or funding rate was read.
 - At the exit hour only the open counts: the position is sold there, and that hour's high is not used. The entry hour's high does count.
 - The two coin lists were read from the saved pages and fingerprinted before any new price was collected: viewed list `ccb0fe0d5485`, held-back list `f5bea224faad`, both together `3cc9dcf9bed1` (first twelve characters).
 
+## Definitions added 2026-11-25 20:34 UTC: which coin is which
+
+Added before the freeze and before any return was computed. Reason: two Binance tickers on the list turned out to be other assets (QQQUSDT and EWTUSDT are stock fund products there, not the coins with those tickers on CoinMarketCap). A ticker alone is not proof of identity.
+
+- Only mappings with status CONFIRMED are used, in every sample and every yardstick. The policy file's fingerprint is 4965f08c2692. Both scorers refuse a different fingerprint.
+- Route 1, notices: Binance's own listing and contract notices tie the pair to the project. A notice can confirm or remove.
+- Route 2, price level: for each saved monthly CoinMarketCap page where the coin appears, the saved USD price is compared with Binance's hourly bars for the UTC day of the page's own quote time, in the same token unit. A month matches if the saved price lies between the day's low less 5% and the day's high plus 5%. A month counts only if Binance has a full day of bars. With at least three such months: CONFIRMED at 80% or more matching, REMOVED under 50%, UNKNOWN between. With fewer than three there is no verdict from this route.
+- Final status: REMOVED if either route removes. CONFIRMED if the price-level route confirms, or if it gives no verdict and a notice confirms. Everything else is UNKNOWN and left out.
+- This check reads price levels and prints only counts of matching months. It computes no return of any rule.
+- A first version compared the saved price with one hourly close within 5%. It was tried and replaced before the freeze, because it measured clock mismatch and not identity. MEASURED, mappings with three or more comparable months, by share of months matching in tenths from 0-10% to 90-100%: hourly close 4, 2, 3, 13, 10, 30, 90, 166, 113, 62; UTC day range 0, 0, 1, 1, 0, 1, 0, 1, 1, 488.
+- MEASURED result: 556 mappings checked, 514 CONFIRMED (248 spot, 266 futures), 22 REMOVED, 20 UNKNOWN. Another 340 listed pairs have no stored bars and were never eligible.
+- MEASURED held-back list, live coin-weeks with a confirmed contract by year 2020 to 2026: 279, 1343, 1582, 1902, 2069, 2175, 1711 (before the identity check: 283, 1427, 1612, 1927, 2108, 2223, 1774). Viewed list: 1375, 2185, 2273, 2408, 2552, 2393, 1952.
+- Limits. A confirmed mapping can still have single months outside the range, for example around a token swap; those months are not removed. KNC and DYDX each have two CoinMarketCap ids that both confirm against one ticker, and the spot pairs of those and of BNX run across a swap without a break, so the hour of the swap is not resolved. The 42 left out were dropped for an identity reason, not a price reason, but a sample without them is not the full list.
+
+UNKNOWN, left out (CoinMarketCap id, then pair):
+
+- spot (10); 1414 XZCUSDT, 1521 KMDUSDT, 1785 GASUSDT, 2062 AIONUSDT, 2691 PNTUSDT, 13631 MANTAUSDT, 29676 AEVOUSDT, 35429 LAYERUSDT, 36119 WALUSDT, 38337 0GUSDT.
+- futures (10); 693 XVGUSDT, 1230 STEEMUSDT, 1727 BNTUSDT, 1757 FUNUSDT, 2090 LAUSDT, 5026 OXTUSDT, 5665 HNTUSDT, 7288 XVSUSDT, 8857 ANCUSDT, 18679 XCNUSDT.
+
+REMOVED (CoinMarketCap id, then pair):
+
+- spot (12); 1518 SKYUSDT, 1765 AUSDT, 2239 AAVEUSDT, 3513 SUSDT, 3773 FETUSDT, 3890 POLUSDT, 4086 EGLDUSDT, 4113 UNIUSDT, 4256 KAIAUSDT, 6636 DOTUSDT, 6892 EGLDUSDT, 10529 SUNUSDT.
+- futures (10); 1042 SCUSDT, 4113 UNIUSDT, 4644 QQQUSDT, 5268 EWTUSDT, 8526 RAYUSDT, 20314 LUNAUSDT, 36507 PUMPUSDT, 36645 XPLUSDT, 38868 SENTUSDT, 39125 LITUSDT.
+
 ## How this can fool us
 
 - The short basket is made of larger coins than the held-back long side, so the book also carries "small coins against large coins". The paper lean figure shows how much of the result that is.

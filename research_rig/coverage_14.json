@@ -867,6 +867,13 @@
    "trading_days_short": 3
   },
   {
+   "ticker": "ADT",
+   "feed": "ADT",
+   "removed": "2016-05-03",
+   "last_bar": "2016-04-29",
+   "trading_days_short": 1
+  },
+  {
    "ticker": "CVC",
    "feed": "CVC",
    "removed": "2016-06-22",
@@ -878,6 +885,20 @@
    "feed": "CPGX",
    "removed": "2016-07-05",
    "last_bar": "2016-06-30",
+   "trading_days_short": 1
+  },
+  {
+   "ticker": "EMC",
+   "feed": "EMC",
+   "removed": "2016-09-08",
+   "last_bar": "2016-09-06",
+   "trading_days_short": 1
+  },
+  {
+   "ticker": "SE",
+   "feed": "SE",
+   "removed": "2017-02-28",
+   "last_bar": "2017-02-24",
    "trading_days_short": 1
   },
   {
@@ -937,6 +958,20 @@
    "trading_days_short": 3
   },
   {
+   "ticker": "XL",
+   "feed": "XL",
+   "removed": "2018-09-14",
+   "last_bar": "2018-09-11",
+   "trading_days_short": 2
+  },
+  {
+   "ticker": "CA",
+   "feed": "CA",
+   "removed": "2018-11-06",
+   "last_bar": "2018-11-02",
+   "trading_days_short": 1
+  },
+  {
    "ticker": "AET",
    "feed": "AET",
    "removed": "2018-12-03",
@@ -962,20 +997,6 @@
    "feed": "NFX",
    "removed": "2019-02-15",
    "last_bar": "2019-02-13",
-   "trading_days_short": 1
-  },
-  {
-   "ticker": "TFCF",
-   "feed": "FOX",
-   "removed": "2019-03-20",
-   "last_bar": "2019-03-18",
-   "trading_days_short": 1
-  },
-  {
-   "ticker": "TFCFA",
-   "feed": "FOXA",
-   "removed": "2019-03-20",
-   "last_bar": "2019-03-18",
    "trading_days_short": 1
   },
   {
@@ -1056,6 +1077,13 @@
    "trading_days_short": 1
   },
   {
+   "ticker": "INFO",
+   "feed": "INFO",
+   "removed": "2022-03-02",
+   "last_bar": "2022-02-25",
+   "trading_days_short": 2
+  },
+  {
    "ticker": "CTXS",
    "feed": "CTXS",
    "removed": "2022-10-03",
@@ -1084,6 +1112,13 @@
    "trading_days_short": 3
   },
   {
+   "ticker": "SBNY",
+   "feed": "SBNY",
+   "removed": "2023-03-15",
+   "last_bar": "2023-03-10",
+   "trading_days_short": 2
+  },
+  {
    "ticker": "FRC",
    "feed": "FRC",
    "removed": "2023-05-04",
@@ -1094,8 +1129,8 @@
    "ticker": "ATVI",
    "feed": "ATVI",
    "removed": "2023-10-18",
-   "last_bar": "2023-10-13",
-   "trading_days_short": 2
+   "last_bar": "2023-10-12",
+   "trading_days_short": 3
   },
   {
    "ticker": "PXD",
@@ -1159,6 +1194,95 @@
    "removed": "2026-08-18",
    "last_bar": "2026-08-14",
    "trading_days_short": 1
+  }
+ ],
+ "bars_stop_before_removal_by_days_short": {
+  "1": 17,
+  "2": 15,
+  "3": 14,
+  "4": 3,
+  "5": 1
+ },
+ "stop_lines_with_no_bar_in_membership": [
+  {
+   "ticker": "TFCF",
+   "feed": "FOX",
+   "removed": "2019-03-20",
+   "last_bar": "2019-03-18",
+   "trading_days_short": 1
+  },
+  {
+   "ticker": "TFCFA",
+   "feed": "FOXA",
+   "removed": "2019-03-20",
+   "last_bar": "2019-03-18",
+   "trading_days_short": 1
+  }
+ ],
+ "companies_on_two_files": [
+  {
+   "company": "Andeavor",
+   "files": [
+    "TSO",
+    "ANDV"
+   ],
+   "restarts": [
+    "2017-08-01"
+   ]
+  },
+  {
+   "company": "Aptiv",
+   "files": [
+    "DLPH",
+    "APTV"
+   ],
+   "restarts": [
+    "2017-12-05"
+   ]
+  },
+  {
+   "company": "Skydance",
+   "files": [
+    "CBS",
+    "VIAC",
+    "PARA@2023-06-01",
+    "SKYD"
+   ],
+   "restarts": [
+    "2019-12-05",
+    "2022-02-17",
+    "2025-08-07"
+   ]
+  },
+  {
+   "company": "Bath & Body Works, Inc.",
+   "files": [
+    "LB",
+    "BBWI"
+   ],
+   "restarts": [
+    "2021-08-03"
+   ]
+  },
+  {
+   "company": "Coterra Energy",
+   "files": [
+    "COG",
+    "CTRA"
+   ],
+   "restarts": [
+    "2021-10-04"
+   ]
+  },
+  {
+   "company": "Dayforce",
+   "files": [
+    "CDAY",
+    "DAY"
+   ],
+   "restarts": [
+    "2024-02-01"
+   ]
   }
  ],
  "ranking_days": [
@@ -1481,9 +1605,10 @@
   },
   {
    "day": "2019-04-30",
-   "rankable": 496,
-   "unrankable": 3,
+   "rankable": 495,
+   "unrankable": 4,
    "unrankable_tickers": [
+    "DOW",
     "EVRG",
     "FOX",
     "LIN"
@@ -1491,9 +1616,10 @@
   },
   {
    "day": "2019-05-31",
-   "rankable": 496,
-   "unrankable": 3,
+   "rankable": 495,
+   "unrankable": 4,
    "unrankable_tickers": [
+    "DOW",
     "EVRG",
     "FOX",
     "LIN"
@@ -1501,190 +1627,212 @@
   },
   {
    "day": "2019-06-28",
-   "rankable": 495,
-   "unrankable": 4,
+   "rankable": 494,
+   "unrankable": 5,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
+    "DOW",
     "FOX",
     "LIN"
    ]
   },
   {
    "day": "2019-07-31",
-   "rankable": 495,
-   "unrankable": 4,
+   "rankable": 494,
+   "unrankable": 5,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
+    "DOW",
     "FOX",
     "LIN"
    ]
   },
   {
    "day": "2019-08-30",
-   "rankable": 495,
-   "unrankable": 4,
+   "rankable": 494,
+   "unrankable": 5,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
+    "DOW",
     "FOX",
     "LIN"
    ]
   },
   {
    "day": "2019-09-30",
-   "rankable": 495,
-   "unrankable": 4,
+   "rankable": 494,
+   "unrankable": 5,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
+    "DOW",
     "FOX",
     "LIN"
    ]
   },
   {
    "day": "2019-10-31",
-   "rankable": 496,
-   "unrankable": 3,
+   "rankable": 495,
+   "unrankable": 4,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
+    "DOW",
     "FOX"
    ]
   },
   {
    "day": "2019-11-29",
-   "rankable": 496,
-   "unrankable": 3,
+   "rankable": 495,
+   "unrankable": 4,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
+    "DOW",
     "FOX"
    ]
   },
   {
    "day": "2019-12-31",
-   "rankable": 497,
-   "unrankable": 3,
+   "rankable": 495,
+   "unrankable": 5,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
-    "FOX"
+    "DOW",
+    "FOX",
+    "VIAC"
    ]
   },
   {
    "day": "2020-01-31",
-   "rankable": 497,
-   "unrankable": 3,
+   "rankable": 495,
+   "unrankable": 5,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
-    "FOX"
+    "DOW",
+    "FOX",
+    "VIAC"
    ]
   },
   {
    "day": "2020-02-28",
-   "rankable": 497,
-   "unrankable": 3,
+   "rankable": 495,
+   "unrankable": 5,
    "unrankable_tickers": [
     "AMCR",
     "CTVA",
-    "FOX"
+    "DOW",
+    "FOX",
+    "VIAC"
    ]
   },
   {
    "day": "2020-03-31",
-   "rankable": 498,
-   "unrankable": 2,
+   "rankable": 496,
+   "unrankable": 4,
    "unrankable_tickers": [
     "AMCR",
-    "CTVA"
+    "CTVA",
+    "DOW",
+    "VIAC"
    ]
   },
   {
    "day": "2020-04-30",
-   "rankable": 495,
-   "unrankable": 5,
+   "rankable": 494,
+   "unrankable": 6,
    "unrankable_tickers": [
     "AMCR",
     "CARR",
     "CTVA",
     "HWM",
-    "OTIS"
+    "OTIS",
+    "VIAC"
    ]
   },
   {
    "day": "2020-05-29",
-   "rankable": 495,
-   "unrankable": 5,
+   "rankable": 494,
+   "unrankable": 6,
    "unrankable_tickers": [
     "AMCR",
     "CARR",
     "CTVA",
     "HWM",
-    "OTIS"
+    "OTIS",
+    "VIAC"
    ]
   },
   {
    "day": "2020-06-30",
-   "rankable": 497,
-   "unrankable": 3,
-   "unrankable_tickers": [
-    "CARR",
-    "HWM",
-    "OTIS"
-   ]
-  },
-  {
-   "day": "2020-07-31",
-   "rankable": 497,
-   "unrankable": 3,
-   "unrankable_tickers": [
-    "CARR",
-    "HWM",
-    "OTIS"
-   ]
-  },
-  {
-   "day": "2020-08-31",
-   "rankable": 497,
-   "unrankable": 3,
-   "unrankable_tickers": [
-    "CARR",
-    "HWM",
-    "OTIS"
-   ]
-  },
-  {
-   "day": "2020-09-30",
-   "rankable": 497,
-   "unrankable": 3,
-   "unrankable_tickers": [
-    "CARR",
-    "HWM",
-    "OTIS"
-   ]
-  },
-  {
-   "day": "2020-10-30",
    "rankable": 496,
    "unrankable": 4,
    "unrankable_tickers": [
     "CARR",
     "HWM",
     "OTIS",
-    "VNT"
+    "VIAC"
    ]
   },
   {
-   "day": "2020-11-30",
+   "day": "2020-07-31",
+   "rankable": 496,
+   "unrankable": 4,
+   "unrankable_tickers": [
+    "CARR",
+    "HWM",
+    "OTIS",
+    "VIAC"
+   ]
+  },
+  {
+   "day": "2020-08-31",
+   "rankable": 496,
+   "unrankable": 4,
+   "unrankable_tickers": [
+    "CARR",
+    "HWM",
+    "OTIS",
+    "VIAC"
+   ]
+  },
+  {
+   "day": "2020-09-30",
+   "rankable": 496,
+   "unrankable": 4,
+   "unrankable_tickers": [
+    "CARR",
+    "HWM",
+    "OTIS",
+    "VIAC"
+   ]
+  },
+  {
+   "day": "2020-10-30",
    "rankable": 495,
    "unrankable": 5,
    "unrankable_tickers": [
     "CARR",
     "HWM",
     "OTIS",
+    "VIAC",
+    "VNT"
+   ]
+  },
+  {
+   "day": "2020-11-30",
+   "rankable": 494,
+   "unrankable": 6,
+   "unrankable_tickers": [
+    "CARR",
+    "HWM",
+    "OTIS",
+    "VIAC",
     "VNT",
     "VTRS"
    ]
@@ -1833,28 +1981,6 @@
   },
   {
    "day": "2022-02-28",
-   "rankable": 496,
-   "unrankable": 4,
-   "unrankable_tickers": [
-    "BBWI",
-    "CEG",
-    "CTRA",
-    "OGN"
-   ]
-  },
-  {
-   "day": "2022-03-31",
-   "rankable": 496,
-   "unrankable": 4,
-   "unrankable_tickers": [
-    "BBWI",
-    "CEG",
-    "CTRA",
-    "OGN"
-   ]
-  },
-  {
-   "day": "2022-04-29",
    "rankable": 495,
    "unrankable": 5,
    "unrankable_tickers": [
@@ -1862,97 +1988,131 @@
     "CEG",
     "CTRA",
     "OGN",
+    "PARA"
+   ]
+  },
+  {
+   "day": "2022-03-31",
+   "rankable": 495,
+   "unrankable": 5,
+   "unrankable_tickers": [
+    "BBWI",
+    "CEG",
+    "CTRA",
+    "OGN",
+    "PARA"
+   ]
+  },
+  {
+   "day": "2022-04-29",
+   "rankable": 494,
+   "unrankable": 6,
+   "unrankable_tickers": [
+    "BBWI",
+    "CEG",
+    "CTRA",
+    "OGN",
+    "PARA",
     "WBD"
    ]
   },
   {
    "day": "2022-05-31",
+   "rankable": 494,
+   "unrankable": 6,
+   "unrankable_tickers": [
+    "BBWI",
+    "CEG",
+    "CTRA",
+    "OGN",
+    "PARA",
+    "WBD"
+   ]
+  },
+  {
+   "day": "2022-06-30",
    "rankable": 495,
    "unrankable": 5,
    "unrankable_tickers": [
     "BBWI",
     "CEG",
     "CTRA",
-    "OGN",
-    "WBD"
-   ]
-  },
-  {
-   "day": "2022-06-30",
-   "rankable": 496,
-   "unrankable": 4,
-   "unrankable_tickers": [
-    "BBWI",
-    "CEG",
-    "CTRA",
+    "PARA",
     "WBD"
    ]
   },
   {
    "day": "2022-07-29",
-   "rankable": 496,
-   "unrankable": 4,
+   "rankable": 495,
+   "unrankable": 5,
    "unrankable_tickers": [
     "BBWI",
     "CEG",
     "CTRA",
+    "PARA",
     "WBD"
    ]
   },
   {
    "day": "2022-08-31",
-   "rankable": 497,
-   "unrankable": 3,
+   "rankable": 496,
+   "unrankable": 4,
    "unrankable_tickers": [
     "CEG",
     "CTRA",
+    "PARA",
     "WBD"
    ]
   },
   {
    "day": "2022-09-30",
-   "rankable": 497,
-   "unrankable": 3,
+   "rankable": 496,
+   "unrankable": 4,
    "unrankable_tickers": [
     "CEG",
     "CTRA",
+    "PARA",
     "WBD"
    ]
   },
   {
    "day": "2022-10-31",
-   "rankable": 498,
-   "unrankable": 2,
+   "rankable": 497,
+   "unrankable": 3,
    "unrankable_tickers": [
     "CEG",
+    "PARA",
     "WBD"
    ]
   },
   {
    "day": "2022-11-30",
-   "rankable": 498,
-   "unrankable": 2,
+   "rankable": 497,
+   "unrankable": 3,
    "unrankable_tickers": [
     "CEG",
+    "PARA",
     "WBD"
    ]
   },
   {
    "day": "2022-12-30",
-   "rankable": 498,
-   "unrankable": 2,
+   "rankable": 497,
+   "unrankable": 3,
    "unrankable_tickers": [
     "CEG",
+    "PARA",
     "WBD"
    ]
   },
   {
    "day": "2023-01-31",
-   "rankable": 497,
-   "unrankable": 3,
+   "rankable": 496,
+   "unrankable": 4,
    "unrankable_tickers": [
     "CEG",
     "GEHC",
+    "PARA",
     "WBD"
    ]
   },
@@ -2396,6 +2556,114 @@
   }
  ],
  "lines": 774,
- "series": 732,
- "made_by": "research_rig/score_14.py --coverage (counts only, no price value used)"
+ "series": 735,
+ "made_by": "research_rig/score_14.py --coverage (counts only, no price value used)",
+ "data_checks": {
+  "stale": [],
+  "identity": [
+   {
+    "key": "BKNG@2016-01-04",
+    "file": "BKNG",
+    "asof": "BKNG@2016-01-04",
+    "why": "2199 of 2740 trading days in common"
+   },
+   {
+    "key": "CB@2016-01-04",
+    "file": "CB",
+    "asof": "CB@2016-01-04",
+    "why": "9 of 2740 trading days in common"
+   },
+   {
+    "key": "CBRE@2016-01-04",
+    "file": "CBRE",
+    "asof": "CBRE@2016-01-04",
+    "why": "2184 of 2740 trading days in common"
+   },
+   {
+    "key": "TFCF@2019-03-19",
+    "file": "FOX",
+    "asof": "TFCF@2019-03-19",
+    "why": "4 of 275 trading days in common"
+   },
+   {
+    "key": "TFCFA@2019-03-19",
+    "file": "FOXA",
+    "asof": "TFCFA@2019-03-19",
+    "why": "4 of 275 trading days in common"
+   },
+   {
+    "key": "IR@2016-01-04",
+    "file": "TT",
+    "asof": "IR@2016-01-04",
+    "why": "volumes not in one fixed proportion (spread 0.0069)"
+   },
+   {
+    "key": "JEF@2016-01-04",
+    "file": "JEF",
+    "asof": "JEF@2016-01-04",
+    "why": "337 of 939 trading days in common"
+   },
+   {
+    "key": "LMT@2016-01-04",
+    "file": "LMT",
+    "asof": "LMT@2016-01-04",
+    "why": "156 of 2740 trading days in common"
+   },
+   {
+    "key": "GL@2019-08-08",
+    "file": "GL",
+    "asof": "GL@2019-08-08",
+    "why": "1834 of 2110 trading days in common"
+   },
+   {
+    "key": "TPR@2016-01-04",
+    "file": "TPR",
+    "asof": "TPR@2016-01-04",
+    "why": "2279 of 2740 trading days in common"
+   },
+   {
+    "key": "UAA@2016-04-08",
+    "file": "UAA",
+    "asof": "UAA@2016-04-08",
+    "why": "1392 of 1561 trading days in common"
+   },
+   {
+    "key": "WELL@2016-01-04",
+    "file": "WELL",
+    "asof": "WELL@2016-01-04",
+    "why": "2198 of 2740 trading days in common"
+   },
+   {
+    "key": "WMB@2016-01-04",
+    "file": "WMB",
+    "asof": "WMB@2016-01-04",
+    "why": "123 of 2740 trading days in common"
+   },
+   {
+    "key": "XL@2016-01-04",
+    "file": "XL",
+    "asof": "XL@2016-01-04",
+    "why": "140 of 678 trading days in common"
+   },
+   {
+    "key": "EVHC@2016-12-02",
+    "file": "EVHC",
+    "asof": "EVHC@2016-12-02",
+    "why": "467 of 699 trading days in common"
+   },
+   {
+    "key": "BKR@2017-07-07",
+    "file": "BKR",
+    "asof": "BKR@2017-07-07",
+    "why": "1785 of 2362 trading days in common"
+   },
+   {
+    "key": "BMS@2019-06-07",
+    "file": "BMS",
+    "asof": "BMS@2019-06-07",
+    "why": "18 of 277 trading days in common"
+   }
+  ],
+  "duplicate": []
+ }
 }

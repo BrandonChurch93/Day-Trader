@@ -23,6 +23,31 @@ from timemachine.tape import Tape
 from timemachine import weights as W
 
 _tape = None; _reg = threading.Lock(); _sessions = {}
+_CACHE_MAX = None  # read from config at serve() or first use
+_ro_tapes = {}  # one shared read-only tape per fast store path, for every session made on it (was one Tape per session)
+
+
+def cache_max():
+    """tm_server_day_bars_cache_max from config/thresholds.yaml: day-bar cache entries a tape may hold before its caches are dropped."""
+    return int(W.lev_config(keys=["tm_server_day_bars_cache_max"])["tm_server_day_bars_cache_max"])
+
+
+def ro_tape(path):
+    with _reg:
+        if path not in _ro_tapes:
+            _ro_tapes[path] = Tape(path, readonly=True)
+        return _ro_tapes[path]
+
+
+def trim_caches():
+    """The tape caches only save reads; past the cap they are dropped whole and filled again on use."""
+    global _CACHE_MAX
+    if _CACHE_MAX is None:
+        _CACHE_MAX = cache_max()
+    cap = _CACHE_MAX
+    for t in [x for x in [_tape] if x is not None] + list(_ro_tapes.values()):
+        if len(t._day_bars_cache) > cap:
+            t._clear_cache()
 
 
 def tape():
@@ -51,7 +76,9 @@ def handle(method, path, q, body):
     with slot[0]:
         if slot[1] is None:
             try:
-                slot[1] = W.open_session(sid, tape=tape())  # a weights or a pick session; carries on any desk runs a stopped server left half done
+                meta = json.loads((S.runs_dir() / sid / "session.json").read_text()) if (S.runs_dir() / sid / "session.json").exists() else {}
+                tp = ro_tape(meta["tape"]) if meta.get("tape_readonly") and meta.get("tape") else tape()
+                slot[1] = W.open_session(sid, tape=tp)  # a weights or a pick session; carries on any desk runs a stopped server left half done
             except KeyError:
                 return 404, dict(ok=False, error=f"no session {sid}")
         sess = slot[1]
@@ -96,7 +123,7 @@ class H(BaseHTTPRequestHandler):
         u = urllib.parse.urlparse(self.path); q = urllib.parse.parse_qs(u.query)
         body = self.rfile.read(int(self.headers.get("Content-Length") or 0)) if method == "POST" else None
         try:
-            code, obj = handle(method, u.path, q, body)
+            code, obj = handle(method, u.path, q, body); trim_caches()
         except Exception as e:
             traceback.print_exc(); code, obj = 500, dict(ok=False, error=f"{type(e).__name__}: {str(e)[:300]}")
         data = (json.dumps(obj, separators=(",", ":"), sort_keys=True) if compact(q) else json.dumps(obj, indent=1, sort_keys=True)).encode()
@@ -114,6 +141,8 @@ class H(BaseHTTPRequestHandler):
 
 
 def serve(port=None):
+    global _CACHE_MAX
+    _CACHE_MAX = cache_max()
     port = int(port if port is not None else os.environ.get("TM_PORT", "8765"))
     srv = ThreadingHTTPServer(("127.0.0.1", port), H)
     print(f"time machine server on http://127.0.0.1:{srv.server_address[1]} (runs in {S.runs_dir()})", flush=True)

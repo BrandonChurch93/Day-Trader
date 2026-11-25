@@ -222,9 +222,11 @@ Working papers.
 | `research_rig/noedge_14.json` | Plan 14: how often each mark passes in made-up worlds with no edge. Made-up data only | CURRENT |
 | `research_rig/coverage_14.json` | Plan 14: counts of members, rankable stocks and missing price files by date. No prices | CURRENT |
 | `research_rig/report_14.py` | Writes the plan 14 result page from the stored result; reads no price | CURRENT |
+| `research_rig/check_adjust_14.py` | Plan 14 check that the vendor's adjusted prices differ from raw by a factor that steps only on listed ex-dates; prints yes or no per company, no return | DRAFT |
 | `research_rig/fetch_16.py` | Collects plans 16 and 17 inputs from the Binance bulk archive only (spot, futures and mark bars, funding) with hashes and a coverage count; data stays off the repo | DRAFT |
 | `research_rig/common_16.py`, `research_rig/score_16.py`, `research_rig/test_16.py`, `research_rig/report_16.py` | Plan 16 rules, scorer (refuses until plans 16 and 17 are both frozen), self-tests on made-up prices, and the result page writer; not audited yet | DRAFT |
-| `research_rig/common_17.py`, `research_rig/score_17.py`, `research_rig/report_17.py` | Plan 17 rules, scorer (refuses until plans 16 and 17 are both frozen) and the result page writer; self-tests not written yet, not audited | DRAFT |
+| `research_rig/common_17.py`, `research_rig/score_17.py`, `research_rig/test_17.py`, `research_rig/report_17.py` | Plan 17 rules, scorer (refuses until plans 16 and 17 are both frozen), self-tests on made-up prices, and the result page writer; not audited yet | DRAFT |
+| `research_rig/check_identity_levels_16_17.py`, `research_rig/diagnose_identity_daily_16_17.py` | Plans 16 and 17 identity check: does a Binance pair carry the coin on the saved list, by matching saved price levels; prints counts only, computes no return | DRAFT |
 | `research_rig/PREREG_16_hot_five_hedged_DRAFT.md` | Draft plan 16: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Not frozen, nothing run | DRAFT |
 | `research_rig/PREREG_17_short_the_peak_DRAFT.md` | Draft plan 17: the short side of the owner's method as a fixed rule on futures, judged on the held-back coin list. Not frozen, nothing run | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |

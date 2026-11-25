@@ -53,14 +53,18 @@ def run():
     p13,p16,p = (cfg[f"replay_{i}_plan"]["value"] for i in (13,16,17))
     validate(p,p13,p16)
     expected = {n:F.digest((F.DATA/n).read_bytes()) for n in (*A.META,HELD)}
+    audit = A.identity_bytes(raw,peer)
+    identity = A.identity_policy(audit,expected["snapshots_16.json"],expected)
     job = {"command":[sys.executable,*sys.argv],"git_head":S.git_head(),"start_utc":S.now(),
            "plan_sha256":F.digest(raw),"peer_plan_sha256":F.digest(peer),
-           "config_sha256":F.digest(config),"inputs":expected,
+           "config_sha256":F.digest(config),"inputs":expected|{A.IDENTITY:F.digest(audit)},
            "code_sha256":{name:F.digest((HERE/name).read_bytes()) for name in CODE}}
     if A.peer_plan_bytes()!=raw or A.plan_bytes()!=peer:
         raise S.Refused("one of the plans changed before lock")
     S.guard(raw.decode(),RESULT,LOCAL_LOCK,DURABLE_LOCK,job)
     try:
+        if A.identity_bytes(raw,peer)!=audit:
+            raise S.Refused("identity audit changed after lock")
         snap,spot_meta,viewed = A.metadata({k:expected[k] for k in A.META},peer)
         held = (F.DATA/HELD).read_bytes()
         if F.digest(held)!=expected[HELD]:
@@ -68,12 +72,13 @@ def run():
         futures = combine_futures(viewed,json.loads(held),expected["snapshots_16.json"])
         ranges = A.source_ranges(futures)
         cutoff = A.funding_cutoff(p16,p13,A.source_ranges(viewed))
-        spot = A.load_groups(spot_meta,True,cutoff)
-        tapes = A.load_groups(futures,False,cutoff)
+        spot = A.load_groups(A.admitted_archives(spot_meta,identity["spot"],True),True,cutoff)
+        tapes = A.load_groups(A.admitted_archives(futures,identity["futures"],False),False,cutoff)
         for symbol,tape in tapes.items():
             tape.covered = ranges.get(symbol,())
-        replay = M.replay(snap,spot,tapes,p,p16|{"end":F.F.utc(cutoff).date().isoformat()},p13)
+        replay = M.replay(snap,spot,tapes,p,p16|{"end":F.F.utc(cutoff).date().isoformat()},p13,identity)
         replay.update(job=job,finished_utc=S.now(),cutoff_utc=F.F.utc(cutoff).isoformat(),parameters=p,
+                      last_complete_funding_week_monday_utc=F.F.utc(cutoff-A.C.WEEK).date().isoformat(),
                       perp_identity_mappings=F.PERP_MANUAL,perp_identity_evidence=F.PERP_EVIDENCE,
                       perp_identity_uncertainties=F.PERP_UNCERTAIN,bundled_aliases=F.BUNDLES)
         if RESULT.exists() or RESULT.is_symlink():

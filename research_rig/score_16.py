@@ -28,6 +28,7 @@ RESULT = HERE/"results_16.json"
 LOCAL_LOCK = HERE/"score_16.lock"
 DURABLE_LOCK = F.DATA/"score_16.lock"
 META = ("snapshots_16.json","snapshot_fingerprints.json","manifest_spot.json","manifest_futures.json")
+IDENTITY = "identity_policy_16_17.json"
 CODE = ("common_13.py","fetch_13.py","score_13.py","common_16.py","fetch_16.py",
         "score_16.py","test_16.py","report_16.py")
 
@@ -203,6 +204,38 @@ def metadata(expected,plan):
     return snapshots,spot,futures
 
 
+def identity_bytes(plan,peer):
+    raw = (F.DATA/IDENTITY).read_bytes()
+    key = F.digest(raw)[:12].encode()
+    if key not in plan or key not in peer:
+        raise S.Refused("the frozen plans must both identify the same identity audit fingerprint")
+    return raw
+
+
+def identity_policy(raw,snapshot_sha,manifests=None):
+    info = json.loads(raw)
+    allow = info["confirmed"]
+    if info["snapshots_sha256"]!=snapshot_sha or set(allow)!={"spot","futures"}:
+        raise S.Refused("identity audit does not match the shared snapshot lists")
+    if not all(type(i) is int and isinstance(s,str) and s.endswith("USDT")
+               for pairs in allow.values() for i,s in pairs):
+        raise S.Refused("malformed identity allowlist")
+    if any(not pairs for pairs in allow.values()):
+        raise S.Refused("one audited market has no confirmed identities")
+    if manifests is not None:
+        pinned = info.get("archive_manifest_sha256",{})
+        if any(pinned.get(k)!=v for k,v in manifests.items() if k.startswith("manifest_")):
+            raise S.Refused("archive manifests differ from those used for the identity audit")
+    return {k:{(i,s) for i,s in rows} for k,rows in allow.items()}
+
+
+def admitted_archives(manifest,pairs,spot):
+    symbols = {s for _,s in pairs}
+    i = 4 if spot else 5
+    return {"archives":{key:m for key,m in manifest["archives"].items()
+                        if key.split("/")[i] in symbols}}
+
+
 def run():
     raw = plan_bytes()
     peer = peer_plan_bytes()
@@ -212,24 +245,29 @@ def run():
     p13,p = (cfg[f"replay_{n}_plan"]["value"] for n in (13,16))
     validate(p,p13)
     expected = {name:F.digest((F.DATA/name).read_bytes()) for name in META}
+    audit = identity_bytes(raw,peer)
+    identity = identity_policy(audit,expected["snapshots_16.json"],expected)
     job = {"command":[sys.executable,*sys.argv],"git_head":S.git_head(),"start_utc":S.now(),
            "plan_sha256":F.digest(raw),"peer_plan_sha256":F.digest(peer),
-           "config_sha256":F.digest(config),"inputs":expected,
+           "config_sha256":F.digest(config),"inputs":expected|{IDENTITY:F.digest(audit)},
            "code_sha256":{name:F.digest((HERE/name).read_bytes()) for name in CODE}}
     if plan_bytes()!=raw or peer_plan_bytes()!=peer:
         raise S.Refused("plan changed before lock")
     S.guard(raw.decode(),RESULT,LOCAL_LOCK,DURABLE_LOCK,job)
     try:
+        if identity_bytes(raw,peer)!=audit:
+            raise S.Refused("identity audit changed after lock")
         snapshots,sp,fut = metadata(expected,raw)
         ranges = source_ranges(fut)
         cutoff = funding_cutoff(p,p13,ranges)
-        spot = load_groups(sp,True,cutoff)
-        tapes = load_groups(fut,False,cutoff)
+        spot = load_groups(admitted_archives(sp,identity["spot"],True),True,cutoff)
+        tapes = load_groups(admitted_archives(fut,identity["futures"],False),False,cutoff)
         for s,tape in tapes.items():
             tape.covered = ranges.get(s,())
         runtime = p|{"end":F.F.utc(cutoff).date().isoformat()}
-        result = M.replay(snapshots,spot,tapes,runtime,p13)
+        result = M.replay(snapshots,spot,tapes,runtime,p13,identity)
         result.update(job=job,finished_utc=S.now(),cutoff_utc=F.F.utc(cutoff).isoformat(),
+                      last_complete_funding_week_monday_utc=F.F.utc(cutoff-C.WEEK).date().isoformat(),
                       parameters=p,spot_identity_mappings=F.F.MANUAL,perp_identity_mappings=F.PERP_MANUAL,
                       perp_identity_evidence=F.PERP_EVIDENCE,perp_identity_uncertainties=F.PERP_UNCERTAIN,
                       bundled_aliases=F.BUNDLES)

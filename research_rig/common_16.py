@@ -70,13 +70,15 @@ def live(asset,tape,t,end,p):
     return coverage and observed,not coverage
 
 
-def market_pool(snapshot,tapes,t,end,p):
+def market_pool(snapshot,tapes,t,end,p,confirmed=None):
     available = []
     unknown = set()
     taken = set()
     for row in snapshot["kept"] if snapshot else ():
         for asset in F.perp_segments(row):
             if not asset.begin <= t < asset.end or asset.pair in taken:
+                continue
+            if confirmed is not None and (asset.coin,asset.pair) not in confirmed:
                 continue
             ok,miss = live(asset,tapes.get(asset.pair),t,end,p)
             if miss:
@@ -174,6 +176,21 @@ def snapshot_at(rows,t):
     return next((s for s in reversed(rows) if s["known_at"]<=t and s["kept"]),None)
 
 
+def spot_universe(rows,spot,t,p,confirmed=None):
+    if confirmed is None:
+        return C.weekly_universe(rows,spot,t,p)
+    snap = snapshot_at(rows,t)
+    last = next((s for s in reversed(rows) if s["known_at"]<=t),None)
+    if not snap:
+        return [],[],True
+    # A confirmed-ID filter cannot change when a saved list applies, carry
+    # a different list, or move the boundary of either ranked slice.
+    kept = [r for r in snap["kept"] if any(
+        lo<=t<hi and (r["id"],symbol) in confirmed for lo,hi,symbol in F.F.segments(r))]
+    listed,ranked,_ = C.weekly_universe([snap|{"kept":kept}],spot,t,p)
+    return listed,ranked,snap is not last
+
+
 def weight_matrix(picks,universe):
     columns = {a.coin:i for i,a in enumerate(universe)}
     w = np.zeros((len(picks),len(columns)),dtype=float)
@@ -230,8 +247,8 @@ def portfolio_step(book,t,end,data,weights,hot_n,short_w,short_plans,is_b,
         turnover = short_w @ np.array([r.turnover for r in short_plans])
         fee = np.where(is_b,major_fee,perp_fee)
         debit = turnover*fee
-        book.forced += ((short_w>0) @ np.array([r.reason=="forced" for r in short_plans],
-                                              dtype=int))*(exposure>0)*(~book.failed)
+        is_forced = np.array([r.reason=="forced" for r in short_plans],dtype=bool)
+        forced = (short_w>0) @ is_forced.astype(int)
         # Only paths whose componentwise conservative floor is <= 0 need a
         # synchronized hourly check. Every long asset mark is nonnegative.
         floor = short_w @ np.array([r.path[:,0].min()+r.path[:,1].min()
@@ -240,11 +257,21 @@ def portfolio_step(book,t,end,data,weights,hot_n,short_w,short_plans,is_b,
         risk = np.flatnonzero((opening>0)&(1-share+exposure*floor<=0))
         if len(risk):
             long_path = (weights[risk] @ np.array([d.path-1 for d in data]))*scaled
-            p_paths = np.array([r.path[:,0]+r.path[:,1] for r in short_plans])
-            c_paths = np.array([r.path[:,2] for r in short_plans])
+            sleeve_paths = np.array([r.path for r in short_plans])
+            p_paths = sleeve_paths[:,:,0]+sleeve_paths[:,:,1]
+            c_paths = sleeve_paths[:,:,2]
             path = 1+long_path+exposure[risk,None]*(short_w[risk]@p_paths-
                               fee[risk,None]*(short_w[risk]@c_paths))
-            book.failed[risk[np.any(path<=0,axis=1)]] = True
+            for j in np.flatnonzero(np.any(path<=0,axis=1)):
+                i = risk[j]
+                first = np.flatnonzero(path[j]<=0)[0]
+                w = short_w[i]
+                price[i],funding[i],turn = w@sleeve_paths[:,first,:]
+                debit[i] = turn*fee[i]
+                # Turnover is 1 while a sleeve is open and exceeds 1 after exit.
+                forced[i] = np.sum((w>0)&is_forced&(c_paths[:,first]>1))
+                book.failed[i] = True
+        book.forced += forced*(exposure>0)*(opening>0)
     else:
         price = funding = debit = np.zeros(len(opening))
     book.funding += opening*exposure*funding
@@ -289,9 +316,10 @@ def detail(book,p,weeks):
             "random_ends":end[1:].tolist()}
 
 
-def replay(snapshots,spot,tapes,p,p13):
+def replay(snapshots,spot,tapes,p,p13,identity=None):
     n = p13["hot_n"]
     p13 = p13|{k:p[k] for k in ("start","end","max_missing_hours")}
+    spot_ids,futures_ids = (None,None) if identity is None else (identity["spot"],identity["futures"])
     rng = {name:random.Random(p["seed"]) for name in snapshots}
     answer = {}
     for year,start,finish in C.year_windows(p13):
@@ -305,17 +333,18 @@ def replay(snapshots,spot,tapes,p,p13):
         rows = {name:[] for name in snapshots}
         for t in range(start,finish,C.WEEK):
             end = min(t+C.WEEK,finish)
-            market,missing = market_pool(snapshot_at(snapshots["viewed"],t),tapes,t,end,p)
+            market,missing = market_pool(snapshot_at(snapshots["viewed"],t),tapes,t,end,p,futures_ids)
             majors = []
             for a in MAJORS:
-                ok,bad = live(a,tapes.get(a.pair),t,end,p)
+                ok,bad = live(a,tapes.get(a.pair),t,end,p) if (
+                    futures_ids is None or (a.coin,a.pair) in futures_ids) else (False,False)
                 if ok:
                     majors.append(a)
                 if bad:
                     missing.add(a.pair)
             plans = [short_week(tapes[a.pair],a,t,end,p) for a in market+majors]
             for name,snaps in snapshots.items():
-                _,ranked,carried = C.weekly_universe(snaps,spot,t,p13)
+                _,ranked,carried = spot_universe(snaps,spot,t,p13,spot_ids)
                 hot = ranked[:n]
                 pool = sorted(ranked)
                 groups = [hot]+[rng[name].sample(pool,min(n,len(pool)))

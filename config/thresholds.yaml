@@ -825,3 +825,9 @@ replay_14_plan:
   status: builder
   note: Draft plan 14, plain 12-month momentum skipping the last month on S&P 500 members by date, re-formed monthly, two basket sizes. All settings fixed before any price was collected. Draft until frozen.
   source: research_rig/PREREG_14_large_stock_momentum_DRAFT.md
+
+tm_server_day_bars_cache_max:
+  value: 400
+  status: builder
+  note: timemachine/server.py only. Day-bar cache entries (one symbol, one day of one-minute bars) a tape may hold in the server before all its caches are dropped and filled again on use. Memory only; the caches save reads and change no answer. Added 2026-11-25 after the 8768 server reached 2 GB.
+  source: timemachine/server.py

@@ -5,10 +5,13 @@ candidates.txt (old and new tickers looked at while rebuilding the member list),
 (Alpaca, adjustment=all, feed=sip), from replay_14_plan.start to replay_14_plan.end, in one collection so one adjustment
 date applies. Reads no return and computes none. Prints counts only, never a price.
 
-Raw bars go to ~/workspace/rig/data/replay_14/bars/<symbol>.csv (never committed).
+Raw bars go to ~/workspace/rig/data/replay_14/bars/<symbol>.csv (never committed). A name SYM@YYYY-MM-DD in the member
+list is fetched with the feed's asof setting: the company that had ticker SYM on that day.
 
 Usage, from research_rig/:  python3 fetch_14.py            (resumes; finished batches are not fetched again)
                             python3 fetch_14.py --summary  (counts and date spans from the stored files)
+                            python3 fetch_14.py --identity (for the identity check: each member row's company as of
+                                                            its first day, into bars_asof/)
 
 The credential is used only through `pplx credentials run`; it is never read, printed or stored here."""
 import sys, os, json, csv, time, subprocess, datetime as dt
@@ -44,12 +47,16 @@ def get(url):
     raise SystemExit("stopped: the feed failed 6 times")
 
 def fetch_batch(syms):
+    """A name SYM@YYYY-MM-DD asks the feed for the company that had ticker SYM on that day (Alpaca's asof setting);
+    plain SYM means the company that has the ticker now. Stored under the full name."""
     out = {s: [] for s in syms}; token = None
+    sym = [x.split("@")[0] for x in syms]; asof = {x.split("@")[1] for x in syms if "@" in x}
+    if len(asof) > 1 or (asof and len(syms) > 1): raise SystemExit("one asof name per request")
     while True:
-        url = (f"https://data.alpaca.markets/v2/stocks/bars?symbols={','.join(syms)}&timeframe=1Day&start={START}&end={END}"
-               f"&adjustment=all&limit=10000&feed=sip" + (f"&page_token={token}" if token else ""))
+        url = (f"https://data.alpaca.markets/v2/stocks/bars?symbols={','.join(sym)}&timeframe=1Day&start={START}&end={END}"
+               f"&adjustment=all&limit=10000&feed=sip" + (f"&asof={next(iter(asof))}" if asof else "") + (f"&page_token={token}" if token else ""))
         d = get(url)
-        for s, bars in (d.get("bars") or {}).items(): out.setdefault(s, []).extend(bars)
+        for s, bars in (d.get("bars") or {}).items(): out.setdefault(syms[0] if asof else s, []).extend(bars)
         token = d.get("next_page_token")
         if not token: return out
         time.sleep(0.35)
@@ -76,6 +83,26 @@ def main():
     json.dump(meta, open(meta_p, "w"), indent=1)
     summary()
 
+ASOF = os.path.join(DATA, "bars_asof")
+
+def asof_names():
+    """For the identity check (common_14.asof_names): each member row's company as of its first day and as of the first
+    day of its ranking look-back."""
+    sys.path.insert(0, HERE); import common_14 as C
+    return sorted({n for r in C.load_members(MEMBERS) if r["ticker_feed"] for n in C.asof_names(r)} | {n for v in C.EXTRA_ASOF.values() for n in v})
+
+def identity():
+    os.makedirs(ASOF, exist_ok=True)
+    names = [x for x in asof_names() if not os.path.exists(os.path.join(ASOF, x + ".csv"))]
+    for n, x in enumerate(names):
+        got = fetch_batch([x])
+        bars = sorted(got.get(x, []), key=lambda b: b["t"])
+        with open(os.path.join(ASOF, x + ".csv"), "w", newline="") as f:
+            w = csv.writer(f); w.writerow(["date", "open", "high", "low", "close", "volume"])
+            for b in bars: w.writerow([b["t"][:10], b["o"], b["h"], b["l"], b["c"], b["v"]])
+        if n % 50 == 0: print(f"{n + 1}/{len(names)} asof names fetched", flush=True)
+    print("asof files:", len(os.listdir(ASOF)))
+
 def spans():
     """{symbol: (first date, last date, rows)} from the stored files; dates and counts only."""
     out = {}
@@ -91,4 +118,6 @@ def summary():
                           scale={s: S.get(s) for s in SCALE}), indent=1))
 
 if __name__ == "__main__":
-    summary() if "--summary" in sys.argv[1:] else main()
+    if "--summary" in sys.argv[1:]: summary()
+    elif "--identity" in sys.argv[1:]: identity()
+    else: main()

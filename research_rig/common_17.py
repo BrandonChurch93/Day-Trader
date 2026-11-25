@@ -221,12 +221,13 @@ def judge(years,p,level):
             "marks":marks,"finding":"supported" if all(marks) else "not supported"}
 
 
-def replay(snapshots,spot,tapes,p,p16,p13):
+def replay(snapshots,spot,tapes,p,p16,p13,identity=None):
     n = p["hot_n"]
     params = p13|p16|p
     levels = dict(zip(("low","judged","high"),sorted([p["cost_bps_per_side"],*p["other_costs_bps"]])))
     levels["no_cost_no_funding"] = 0
     rng = {s:random.Random(p["seed"]) for s in snapshots}
+    spot_ids,futures_ids = (None,None) if identity is None else (identity["spot"],identity["futures"])
     years = {}
     for year,start,last in C.year_windows(params):
         year_result = {}
@@ -239,11 +240,11 @@ def replay(snapshots,spot,tapes,p,p16,p13):
             diagnostics = []
             for t in range(start,last,C.WEEK):
                 end = min(t+C.WEEK,last)
-                _,ranked,carried = C.weekly_universe(snaps,spot,t,params)
+                _,ranked,carried = M.spot_universe(snaps,spot,t,params,spot_ids)
                 hot = ranked[:n]
                 selected = [hot]+[rng[sample].sample(sorted(ranked),min(n,len(ranked)))
                                   for _ in range(p["random_draws"])]
-                pool,missing = M.market_pool(M.snapshot_at(snaps,t),tapes,t,end,params)
+                pool,missing = M.market_pool(M.snapshot_at(snaps,t),tapes,t,end,params,futures_ids)
                 indices = {a.coin:i for i,a in enumerate(pool)}
                 groups = np.full((len(selected),n),len(pool),dtype=int)
                 for j,s in enumerate(selected):
