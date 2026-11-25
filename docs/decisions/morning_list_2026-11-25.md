@@ -1,6 +1,6 @@
 # Morning list, 2026-11-25
 
-Written by research at the end of the overnight run, and rewritten at 08:50 UTC after the audits and the second set of tests. Status: proposed. Nothing here is an owner decision. The record of the night is `docs/decisions/0005-overnight-research-2026-11-25.md` and `docs/decisions/0006-audit-and-second-night-2026-11-25.md`. The current state, with every result, is `docs/STATUS.md`.
+Written by research at the end of the overnight run, and rewritten at 08:36 UTC after the audits and the second set of tests. Status: proposed. Nothing here is an owner decision. The record of the night is `docs/decisions/0005-overnight-research-2026-11-25.md` and `docs/decisions/0006-audit-and-second-night-2026-11-25.md`. The current state, with every result, is `docs/STATUS.md`.
 
 ## Where things stand
 
