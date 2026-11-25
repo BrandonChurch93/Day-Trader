@@ -6,14 +6,15 @@ Last changed: 2026-11-25 18:29 UTC
 
 ## Running now
 
-As of 2026-11-25 18:29 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
+As of 2026-11-25 18:33 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
 
 | # | What | Plan | Started |
 |---|---|---|---|
 | 9b | The earnings release reader. Design sample scored 2026-11-25 18:11 UTC and Claude Sonnet 5.5 alone chosen (`docs/research/44_replay_11_earnings_reader.md`). The held-back half is read: 2,146 answers, hashes pushed 2026-11-25 18:20 UTC. Waiting: the last five-day exits fall after the prices on file end (2026-11-24). When those days have traded, collect daily prices again for every symbol at once, rerun the split check, then score the held-back half once | `research_rig/PREREG_11_earnings_release_reader.md`, ledger rows 121 to 134 | 2026-11-25 |
 | 9g | Fast lane, the owner's own method (`practice/traders/F01_hot_coin_swing.md`). Plan written 2026-11-25 18:25 UTC: a control run of the futures book, then a daily picker and an hourly swing trader tested apart. Waiting on two things being built: the second price store's months after March 2026, and the session types the plan needs | `timemachine/PLAN_TM06_hot_coin_swing.md`, ledger rows TM06-0, TM06-P, TM06-S | 2026-11-25 |
-| 16 | Following the disclosed stock trades of members of Congress (the owner's idea, `docs/DECISIONS.md` 2026-11-25). 85,291 dated trades collected, 2019 to 2026. Draft plan written 2026-11-25 18:27 UTC. Now: prices for every ticker, the code, a check of the code by a second model, then freeze and score | `research_rig/PREREG_12_congress_followers_DRAFT.md`, ledger rows 135 to 143 | 2026-11-25 |
-| - | Ideas round 7: other trades and holdings that must be disclosed in public and could be copied after the public date (fund holdings, activist filings, short-seller reports, drift after earnings from the open) | reading, no plan | 2026-11-25 18:29 UTC |
+| 16 | Following the disclosed stock trades of members of Congress (the owner's idea, `docs/DECISIONS.md` 2026-11-25). 85,291 dated trades collected, 2019 to 2026. Draft plan written 2026-11-25 18:27 UTC. The reading is in (`docs/research/48_congress_trades_evidence.md`): published tests that buy after the filing found no gain for the average purchase, and the law allows 30 days before a filing must be public, so the plan now also scores later entry days. Now: prices for every ticker, the code, a check of the code by a second model, then freeze and score | `research_rig/PREREG_12_congress_followers_DRAFT.md`, ledger rows 135 to 143 | 2026-11-25 |
+| - | Ideas round 7: other trades and holdings that must be disclosed in public and could be copied after the public date. The write-up is in (2026-11-25 18:33 UTC); its sources are with a checker before it goes into `docs/research/` | reading, no plan | 2026-11-25 18:29 UTC |
+| 9j | Governance votes: for DAOs whose coins trade on Coinbase, what the coin did in the hours after a close vote ended, against the same coin at random hours. A description first, not a counted test (`docs/research/43_crypto_events_evidence_checked.md`) | description, no plan | 2026-11-25 18:33 UTC |
 | - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
 
 ## Next, in order
@@ -27,7 +28,6 @@ As of 2026-11-25 18:29 UTC. Plans TM01 to TM04 are finished and are in Done or i
 | 12 | Earnings call answers scored apart from the prepared remarks, held 15 days | filings, call text, stock prices | nothing |
 | 13 | New contracts that are large against a company's sales, from 8-K filings and the federal award list | free filings and award list, stock prices | nothing |
 | 15 | Insider buying only when the news is bad and the price is far below its high (`research_rig/PREREG_08_insider_buying_DRAFT.md` is the plain version) | filings, prices, news (data key is in; stock news only from 2026-04-29) | a free slot |
-| 9j | Governance votes: for DAOs whose coins trade on Coinbase, what the coin did in the hours after a close vote ended, against the same coin at random hours. A description first, not a counted test (`docs/research/43_crypto_events_evidence_checked.md`) | free Snapshot vote records, Coinbase minutes | a free slot |
 | 9e | A new swing card where the desk, not the model, sets the exit: a stop 8% below and five days, on months not yet traded. Earned by the exit replay (`docs/research/32_exit_replay.md`). Moved down by the builder 2026-11-25 16:44 UTC: the same replay showed the models' buys behind random buys under every exit, so the exit alone is unlikely to be the fix. Plan and ledger row first | a desk-exit option in the time machine | lower priority than 9b, 9c, 9d |
 
 ## Ideas, not yet shaped into a test
