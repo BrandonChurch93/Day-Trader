@@ -380,7 +380,7 @@ class Session:
             return dict(ok=False, error="This session has no news. It trades from prices alone.")
         elif what == "news":
             data = [{k2: (iso(v) if isinstance(v, dt.datetime) else v) for k2, v in a.items() if k2 != "updated"}  # the edit time may be after now: never shown
-                    for a in self.tape.news(self.now, symbols=syms or None, since_utc=start, limit=50)]
+                    for a in self.tape.news(self.now, symbols=syms or (list(self.meta["watch"]) if self.meta["market"] == "crypto" else None), since_utc=start, limit=50)]
         elif what == "price":
             data = {s: {k2: (iso(v) if isinstance(v, dt.datetime) else v) for k2, v in x.items()} for s, x in self.tape.snapshot(syms, self.now).items()}
         else:
