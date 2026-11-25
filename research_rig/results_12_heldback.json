@@ -1,0 +1,2475 @@
+{
+ "made_by": "research_rig/score_12.py --heldback",
+ "made_utc": "2026-11-25 19:20",
+ "config": {
+  "design_filed_from": "2019-01-01",
+  "design_filed_to": "2022-12-31",
+  "heldback_filed_from": "2023-01-01",
+  "holds_days": [
+   21,
+   63,
+   126
+  ],
+  "main_hold_days": 63,
+  "cost_bps_per_side": 10,
+  "large_buy_min_usd": 50001,
+  "proven_lookback_days": 1095,
+  "proven_min_events": 10,
+  "proven_top_members": 10,
+  "proven_refresh_days": 63,
+  "bootstrap_draws": 5000,
+  "bootstrap_seed": 12,
+  "bootstrap_days_per_month": 21,
+  "min_events": 200,
+  "random_date_window_days": 90,
+  "random_date_draws": 200,
+  "late_entry_trading_days": 5,
+  "late_entry_calendar_days": 30,
+  "named_members": [
+   "Pelosi",
+   "Khanna",
+   "McCaul",
+   "Gottheimer",
+   "Cisneros",
+   "Lisa C. McClain",
+   "Tuberville",
+   "Greene",
+   "Mullin",
+   "Bresnahan",
+   "Goldman",
+   "Crenshaw",
+   "Wasserman Schultz"
+  ],
+  "new_trials": 9
+ },
+ "inputs": {
+  "trades_sha256": "495e91d72e05314058c4117332f11dad1f437a59b47ec800c04f587759be097e",
+  "details_sha256": "5b51f696a5e293ba3a800e1c47f1fd7a83a070ef287ceff76187db301f0b59a6",
+  "renames_sha256": "a92baefc96ba573ea0df198eb9125fc78fd3ecb5e3b26eb0e512a807b95a1277",
+  "score_12_sha256": "60088e1d5176ad4cae6babbadeac7748d9947f119cb3f38a662c868d4f87766a",
+  "common_12_sha256": "b634c86683e9891d839ab7116f1e6b7059ba82a81be44449bfe474047609e5d5"
+ },
+ "prices_read": {
+  "files": 2978,
+  "sha256": "43535d116c28a92b5a34590ab4dbf77ca023ebf2a44c8b23e5444f3cbcf2335b",
+  "last_day_loaded": "2026-11-24"
+ },
+ "chosen_setup": "large-H63",
+ "named_members_matched": {
+  "Pelosi": {
+   "member": "Nancy Pelosi",
+   "rows": 142
+  },
+  "Khanna": {
+   "member": "Ro Khanna",
+   "rows": 32284
+  },
+  "McCaul": {
+   "member": "Michael T. McCaul",
+   "rows": 7659
+  },
+  "Gottheimer": {
+   "member": "Josh Gottheimer",
+   "rows": 3209
+  },
+  "Cisneros": {
+   "member": "Gilbert Ray Cisneros, Jr.",
+   "rows": 2781
+  },
+  "Lisa C. McClain": {
+   "member": "Lisa C. McClain",
+   "rows": 1421
+  },
+  "Tuberville": {
+   "member": "Tommy Tuberville",
+   "rows": 1192
+  },
+  "Greene": {
+   "member": "Marjorie Taylor Greene",
+   "rows": 507
+  },
+  "Mullin": {
+   "member": "Markwayne Mullin",
+   "rows": 386
+  },
+  "Bresnahan": {
+   "member": "Robert P. Bresnahan, Jr.",
+   "rows": 607
+  },
+  "Goldman": {
+   "member": "Daniel S. Goldman",
+   "rows": 1151
+  },
+  "Crenshaw": {
+   "member": "Dan Crenshaw",
+   "rows": 32
+  },
+  "Wasserman Schultz": {
+   "member": "Debbie Wasserman Schultz",
+   "rows": 47
+  }
+ },
+ "results": {
+  "main": {
+   "judged": {
+    "days": 954,
+    "first_day": "2023-01-04",
+    "last_day": "2026-10-22",
+    "positions": 425,
+    "growth": 1.9854684791236772,
+    "spy_growth": 2.062152463881001,
+    "ends_above_spy": false,
+    "per_year_excess": -0.009960178300828515,
+    "gross_growth": 2.118575082014414,
+    "no_reset_growth_not_judged": 2.05694568538729,
+    "turnover": 65.00815334498901,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 249,
+      "growth": 1.1846960156212831,
+      "spy_growth": 1.254398237360017
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.106334350004673,
+      "spy_growth": 1.2465173170594896
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.16605574825781,
+      "spy_growth": 1.1736887693923728
+     },
+     "2026": {
+      "days": 203,
+      "growth": 1.2991232577083693,
+      "spy_growth": 1.123657800609126
+     }
+    },
+    "bootstrap_block_months": 3,
+    "bootstrap_p5_monthly_diff": -0.008012790974914955,
+    "qqq_for_scale": {
+     "days": 954,
+     "growth": 1.9854684791236772,
+     "fund_growth": 2.65059957021735,
+     "per_year_excess": -0.0734816138074994
+    },
+    "nanc_for_scale": {
+     "days": 930,
+     "growth": 1.8696008836081275,
+     "fund_growth": 1.9875998847113066,
+     "per_year_excess": -0.01644723950957727
+    },
+    "events": {
+     "in_group": 548,
+     "traded": 543,
+     "no_price": 5,
+     "no_price_share": 0.009124087591240875,
+     "stopped": 2,
+     "no_price_by_year": {
+      "2023": 2,
+      "2024": 1,
+      "2025": 2,
+      "2026": 0
+     }
+    }
+   },
+   "sales_b": {
+    "days": 954,
+    "first_day": "2023-01-04",
+    "last_day": "2026-10-22",
+    "positions": 930,
+    "growth": 1.9104769972702706,
+    "spy_growth": 2.06949710930212,
+    "ends_above_spy": false,
+    "per_year_excess": -0.020898121367388778,
+    "gross_growth": 2.0396498516686092,
+    "no_reset_growth_not_judged": 1.9787968977838621,
+    "turnover": 65.43478925792198,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 249,
+      "growth": 1.2300933853718996,
+      "spy_growth": 1.257840855606705
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.347346549492217,
+      "spy_growth": 1.2440996963767652
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.132860386763854,
+      "spy_growth": 1.1744658099858631
+     },
+     "2026": {
+      "days": 203,
+      "growth": 1.0175318790969479,
+      "spy_growth": 1.126013415210724
+     }
+    },
+    "traded_events": 1152
+   },
+   "by_stock_not_judged": {
+    "days": 954,
+    "first_day": "2023-01-04",
+    "last_day": "2026-10-22",
+    "positions": 373,
+    "growth": 2.1843392654464777,
+    "spy_growth": 2.0658885257688406,
+    "ends_above_spy": true,
+    "per_year_excess": 0.014836180349897754,
+    "gross_growth": 2.3194419674306235,
+    "no_reset_growth_not_judged": 2.25532215521062,
+    "turnover": 60.168284323215815,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 249,
+      "growth": 1.1791270725363165,
+      "spy_growth": 1.253757272162162
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.147075724669525,
+      "spy_growth": 1.2438336912988053
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.231644695819987,
+      "spy_growth": 1.1762029736495976
+     },
+     "2026": {
+      "days": 203,
+      "growth": 1.3112392841625733,
+      "spy_growth": 1.1262863719396037
+     }
+    },
+    "traded_events": 543
+   },
+   "without_busiest_member_not_judged": {
+    "member": "Michael T. McCaul",
+    "days": 954,
+    "first_day": "2023-01-04",
+    "last_day": "2026-10-22",
+    "positions": 276,
+    "growth": 2.002341335195981,
+    "spy_growth": 2.060717093830611,
+    "ends_above_spy": false,
+    "per_year_excess": -0.007562131469874389,
+    "gross_growth": 2.1382485560840476,
+    "no_reset_growth_not_judged": 2.0753117445543423,
+    "turnover": 65.7843382466312,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 249,
+      "growth": 1.1787375611351214,
+      "spy_growth": 1.25401411890074
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.1175464510940407,
+      "spy_growth": 1.247170014579795
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.1515281451771235,
+      "spy_growth": 1.1726257607490116
+     },
+     "2026": {
+      "days": 203,
+      "growth": 1.3200210261309588,
+      "spy_growth": 1.1236494822302705
+     }
+    },
+    "traded_events": 331
+   },
+   "without_call_or_exercise_rows_not_judged": {
+    "events_left_out": 17,
+    "days": 954,
+    "first_day": "2023-01-04",
+    "last_day": "2026-10-22",
+    "positions": 410,
+    "growth": 1.9695256834092245,
+    "spy_growth": 2.0618108413962184,
+    "ends_above_spy": false,
+    "per_year_excess": -0.012023111885792526,
+    "gross_growth": 2.1010571808708427,
+    "no_reset_growth_not_judged": 2.04028757768352,
+    "turnover": 64.77819347884831,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 249,
+      "growth": 1.1858081598162937,
+      "spy_growth": 1.2521955167470271
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0643662751566214,
+      "spy_growth": 1.2455088406234944
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.202243793070516,
+      "spy_growth": 1.1764986343513386
+     },
+     "2026": {
+      "days": 203,
+      "growth": 1.2979667436434128,
+      "spy_growth": 1.1236690849359843
+     }
+    },
+    "traded_events": 526
+   },
+   "without_stopped_not_judged": {
+    "days": 954,
+    "first_day": "2023-01-04",
+    "last_day": "2026-10-22",
+    "positions": 423,
+    "growth": 1.9656344999447874,
+    "spy_growth": 2.063104107938964,
+    "ends_above_spy": false,
+    "per_year_excess": -0.012702640070103244,
+    "gross_growth": 2.096666612459854,
+    "no_reset_growth_not_judged": 2.036095126631853,
+    "turnover": 64.64908345736754,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 249,
+      "growth": 1.1846960156212831,
+      "spy_growth": 1.254398237360017
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.094415736911386,
+      "spy_growth": 1.2470029692386075
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.16605574825781,
+      "spy_growth": 1.1736887693923728
+     },
+     "2026": {
+      "days": 203,
+      "growth": 1.3001521987302194,
+      "spy_growth": 1.1237385305932295
+     }
+    },
+    "traded_events": 541
+   },
+   "random_days_c_not_judged": {
+    "draws": 200,
+    "with_days": 200,
+    "mean_per_year_excess": 0.42946244707566905,
+    "p5": -0.10018632145076678,
+    "p95": 1.7629402451256653,
+    "share_of_draws_at_or_above_real": 0.585
+   }
+  },
+  "late5": {
+   "judged": {
+    "days": 954,
+    "first_day": "2023-01-11",
+    "last_day": "2026-10-29",
+    "positions": 425,
+    "growth": 1.617267995366591,
+    "spy_growth": 2.044643720304769,
+    "ends_above_spy": false,
+    "per_year_excess": -0.060060248921015136,
+    "gross_growth": 1.7257795510088638,
+    "no_reset_growth_not_judged": 1.6753731508705236,
+    "turnover": 64.92015068717794,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 244,
+      "growth": 1.1051783574157685,
+      "spy_growth": 1.230800346180124
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0705727485188294,
+      "spy_growth": 1.2443953406999095
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.1213070767686923,
+      "spy_growth": 1.176107400813093
+     },
+     "2026": {
+      "days": 208,
+      "growth": 1.2190145052287722,
+      "spy_growth": 1.135075302262429
+     }
+    },
+    "bootstrap_block_months": 3,
+    "bootstrap_p5_monthly_diff": -0.012707955598691558,
+    "qqq_for_scale": {
+     "days": 954,
+     "growth": 1.617267995366591,
+     "fund_growth": 2.643743311704675,
+     "per_year_excess": -0.1217455934575924
+    },
+    "nanc_for_scale": {
+     "days": 935,
+     "growth": 1.5884364840546379,
+     "fund_growth": 2.0237996185882032,
+     "per_year_excess": -0.06319917886304771
+    },
+    "events": {
+     "in_group": 548,
+     "traded": 543,
+     "no_price": 5,
+     "no_price_share": 0.009124087591240875,
+     "stopped": 2,
+     "no_price_by_year": {
+      "2023": 2,
+      "2024": 1,
+      "2025": 2,
+      "2026": 0
+     }
+    }
+   },
+   "sales_b": {
+    "days": 954,
+    "first_day": "2023-01-11",
+    "last_day": "2026-10-29",
+    "positions": 930,
+    "growth": 1.9685166762297357,
+    "spy_growth": 2.0410288206224925,
+    "ends_above_spy": false,
+    "per_year_excess": -0.009509810432656751,
+    "gross_growth": 2.1015547321764365,
+    "no_reset_growth_not_judged": 2.038822352293416,
+    "turnover": 65.40913310061953,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 244,
+      "growth": 1.1096992845335634,
+      "spy_growth": 1.2350590399416042
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.3595130140592926,
+      "spy_growth": 1.245903690393305
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.1287854287493253,
+      "spy_growth": 1.1655942873830885
+     },
+     "2026": {
+      "days": 208,
+      "growth": 1.155949944311288,
+      "spy_growth": 1.137966653759306
+     }
+    },
+    "traded_events": 1152
+   },
+   "by_stock_not_judged": {
+    "days": 954,
+    "first_day": "2023-01-11",
+    "last_day": "2026-10-29",
+    "positions": 373,
+    "growth": 1.7979809848561314,
+    "spy_growth": 2.041991323854766,
+    "ends_above_spy": false,
+    "per_year_excess": -0.033057398349985334,
+    "gross_growth": 1.9095712434388348,
+    "no_reset_growth_not_judged": 1.8566680716131123,
+    "turnover": 60.20057399239364,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 244,
+      "growth": 1.0907466301910627,
+      "spy_growth": 1.2330491842483269
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.1326954156921338,
+      "spy_growth": 1.2422514271787066
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.2102834165590912,
+      "spy_growth": 1.175147741502965
+     },
+     "2026": {
+      "days": 208,
+      "growth": 1.2024332835212046,
+      "spy_growth": 1.1344138435036917
+     }
+    },
+    "traded_events": 543
+   },
+   "without_busiest_member_not_judged": {
+    "member": "Michael T. McCaul",
+    "days": 954,
+    "first_day": "2023-01-11",
+    "last_day": "2026-10-29",
+    "positions": 276,
+    "growth": 1.6068114259885662,
+    "spy_growth": 2.044769094114927,
+    "ends_above_spy": false,
+    "per_year_excess": -0.06168459170472551,
+    "gross_growth": 1.7158428965683348,
+    "no_reset_growth_not_judged": 1.665122572571484,
+    "turnover": 65.63014303776826,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 244,
+      "growth": 1.0989720132350091,
+      "spy_growth": 1.2301125283774614
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0750422204458816,
+      "spy_growth": 1.2448068572841917
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.1096666581125347,
+      "spy_growth": 1.1757104384927062
+     },
+     "2026": {
+      "days": 208,
+      "growth": 1.2256323650962284,
+      "spy_growth": 1.135787499457263
+     }
+    },
+    "traded_events": 331
+   },
+   "without_call_or_exercise_rows_not_judged": {
+    "events_left_out": 17,
+    "days": 954,
+    "first_day": "2023-01-11",
+    "last_day": "2026-10-29",
+    "positions": 410,
+    "growth": 1.5856432614730647,
+    "spy_growth": 2.045362533679291,
+    "ends_above_spy": false,
+    "per_year_excess": -0.06503748106293517,
+    "gross_growth": 1.6916521596460232,
+    "no_reset_growth_not_judged": 1.642488602856671,
+    "turnover": 64.68560692875758,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 244,
+      "growth": 1.1204092976681805,
+      "spy_growth": 1.2311672507652425
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0404013422666654,
+      "spy_growth": 1.244347980155578
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.1149468218256207,
+      "spy_growth": 1.1767113695769715
+     },
+     "2026": {
+      "days": 208,
+      "growth": 1.2200390302256214,
+      "spy_growth": 1.1345965139454208
+     }
+    },
+    "traded_events": 526
+   },
+   "without_stopped_not_judged": {
+    "days": 954,
+    "first_day": "2023-01-11",
+    "last_day": "2026-10-29",
+    "positions": 423,
+    "growth": 1.592958207794839,
+    "spy_growth": 2.0446802947047864,
+    "ends_above_spy": false,
+    "per_year_excess": -0.06381757733744564,
+    "gross_growth": 1.6994290380306305,
+    "no_reset_growth_not_judged": 1.650186122295245,
+    "turnover": 64.67434849171963,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 244,
+      "growth": 1.1051783574157685,
+      "spy_growth": 1.230800346180124
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0539555549910573,
+      "spy_growth": 1.2444593198993703
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.1213070767686923,
+      "spy_growth": 1.176107400813093
+     },
+     "2026": {
+      "days": 208,
+      "growth": 1.219621720296876,
+      "spy_growth": 1.1350372497106058
+     }
+    },
+    "traded_events": 541
+   },
+   "random_days_c_not_judged": {
+    "draws": 200,
+    "with_days": 200,
+    "mean_per_year_excess": 0.26348740404720283,
+    "p5": -0.09568668325639457,
+    "p95": 1.6510415435601347,
+    "share_of_draws_at_or_above_real": 0.805
+   }
+  },
+  "cal30": {
+   "judged": {
+    "days": 953,
+    "first_day": "2023-02-03",
+    "last_day": "2026-11-19",
+    "positions": 424,
+    "growth": 1.6717999567543318,
+    "spy_growth": 1.81916743278232,
+    "ends_above_spy": false,
+    "per_year_excess": -0.022090725253610444,
+    "gross_growth": 1.7849534720542986,
+    "no_reset_growth_not_judged": 1.7339199534443062,
+    "turnover": 65.45077401239607,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 228,
+      "growth": 1.0996007159937835,
+      "spy_growth": 1.176523981698896
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.075042235438578,
+      "spy_growth": 1.2471574237889327
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.174086914411283,
+      "spy_growth": 1.170042380946364
+     },
+     "2026": {
+      "days": 223,
+      "growth": 1.2045463644118972,
+      "spy_growth": 1.059617249002976
+     }
+    },
+    "bootstrap_block_months": 3,
+    "bootstrap_p5_monthly_diff": -0.009951910015387009,
+    "qqq_for_scale": {
+     "days": 953,
+     "growth": 1.6717999567543318,
+     "fund_growth": 2.1481507151486277,
+     "per_year_excess": -0.0641441701596206
+    },
+    "nanc_for_scale": {
+     "days": 950,
+     "growth": 1.6818903391834736,
+     "fund_growth": 1.8312894908711512,
+     "per_year_excess": -0.022321528399221857
+    },
+    "events": {
+     "in_group": 548,
+     "traded": 543,
+     "no_price": 5,
+     "no_price_share": 0.009124087591240875,
+     "stopped": 2,
+     "no_price_by_year": {
+      "2023": 2,
+      "2024": 1,
+      "2025": 2,
+      "2026": 0
+     }
+    }
+   },
+   "sales_b": {
+    "days": 953,
+    "first_day": "2023-02-03",
+    "last_day": "2026-11-19",
+    "positions": 918,
+    "growth": 1.599114759337441,
+    "spy_growth": 1.8277241290222834,
+    "ends_above_spy": false,
+    "per_year_excess": -0.034716310183730226,
+    "gross_growth": 1.706625247661161,
+    "no_reset_growth_not_judged": 1.6558573485765429,
+    "turnover": 64.94701190179475,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 228,
+      "growth": 1.1532014512992017,
+      "spy_growth": 1.1721346453147483
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.2874720533886237,
+      "spy_growth": 1.2462160087100975
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.1002806051328244,
+      "spy_growth": 1.1796749887046427
+     },
+     "2026": {
+      "days": 223,
+      "growth": 0.9788884021513939,
+      "spy_growth": 1.0606630629031029
+     }
+    },
+    "traded_events": 1150
+   },
+   "by_stock_not_judged": {
+    "days": 953,
+    "first_day": "2023-02-03",
+    "last_day": "2026-11-19",
+    "positions": 372,
+    "growth": 1.6021302078883075,
+    "spy_growth": 1.816206989126984,
+    "ends_above_spy": false,
+    "per_year_excess": -0.03261967024316792,
+    "gross_growth": 1.7013305843296138,
+    "no_reset_growth_not_judged": 1.654856306559099,
+    "turnover": 60.05916039838704,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 228,
+      "growth": 1.051474817933363,
+      "spy_growth": 1.1792794259324775
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0805941780270136,
+      "spy_growth": 1.2416110763641446
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.224150847456442,
+      "spy_growth": 1.1714903461073556
+     },
+     "2026": {
+      "days": 223,
+      "growth": 1.151864442531882,
+      "spy_growth": 1.0588253452159326
+     }
+    },
+    "traded_events": 543
+   },
+   "without_busiest_member_not_judged": {
+    "member": "Michael T. McCaul",
+    "days": 953,
+    "first_day": "2023-02-03",
+    "last_day": "2026-11-19",
+    "positions": 276,
+    "growth": 1.6738022698669042,
+    "spy_growth": 1.816093907884155,
+    "ends_above_spy": false,
+    "per_year_excess": -0.021343658682841715,
+    "gross_growth": 1.7889653950844493,
+    "no_reset_growth_not_judged": 1.7373529254729343,
+    "turnover": 66.49878506745154,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 228,
+      "growth": 1.1091870495656877,
+      "spy_growth": 1.1739783092016685
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0797486895331159,
+      "spy_growth": 1.247746135491306
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.1634808711145612,
+      "spy_growth": 1.1702108306086012
+     },
+     "2026": {
+      "days": 223,
+      "growth": 1.2012058239023509,
+      "spy_growth": 1.0594680929920537
+     }
+    },
+    "traded_events": 331
+   },
+   "without_call_or_exercise_rows_not_judged": {
+    "events_left_out": 17,
+    "days": 953,
+    "first_day": "2023-02-03",
+    "last_day": "2026-11-19",
+    "positions": 409,
+    "growth": 1.7094766924384908,
+    "spy_growth": 1.8212049494046958,
+    "ends_above_spy": false,
+    "per_year_excess": -0.016601865552684614,
+    "gross_growth": 1.8245678927871143,
+    "no_reset_growth_not_judged": 1.7727906841892478,
+    "turnover": 65.12503030809275,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 228,
+      "growth": 1.1238120025977925,
+      "spy_growth": 1.1772592765171404
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0280010764417866,
+      "spy_growth": 1.2472685253269207
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.223175214042041,
+      "spy_growth": 1.1704668826967697
+     },
+     "2026": {
+      "days": 223,
+      "growth": 1.2097267280135326,
+      "spy_growth": 1.059662601906292
+     }
+    },
+    "traded_events": 526
+   },
+   "without_stopped_not_judged": {
+    "days": 953,
+    "first_day": "2023-02-03",
+    "last_day": "2026-11-19",
+    "positions": 422,
+    "growth": 1.6619944777417117,
+    "spy_growth": 1.8184688390198755,
+    "ends_above_spy": false,
+    "per_year_excess": -0.02351150493734111,
+    "gross_growth": 1.7739211354082727,
+    "no_reset_growth_not_judged": 1.723682697833278,
+    "turnover": 65.13841069570074,
+    "months": 46,
+    "years": {
+     "2023": {
+      "days": 228,
+      "growth": 1.0996007159937835,
+      "spy_growth": 1.176523981698896
+     },
+     "2024": {
+      "days": 252,
+      "growth": 1.0684957374152169,
+      "spy_growth": 1.2467350880544978
+     },
+     "2025": {
+      "days": 250,
+      "growth": 1.174086914411283,
+      "spy_growth": 1.170042380946364
+     },
+     "2026": {
+      "days": 223,
+      "growth": 1.204818203967276,
+      "spy_growth": 1.0595691475745734
+     }
+    },
+    "traded_events": 541
+   },
+   "random_days_c_not_judged": {
+    "draws": 200,
+    "with_days": 200,
+    "mean_per_year_excess": 0.18342974155539238,
+    "p5": -0.08356759938368465,
+    "p95": 1.649551214837028,
+    "share_of_draws_at_or_above_real": 0.535
+   }
+  }
+ },
+ "pass_marks": {
+  "1_ends_above_spy": false,
+  "2_bootstrap_p5_above_0": false,
+  "3_above_sales": true,
+  "4_min_events": true,
+  "5_late5_ends_above_spy": false
+ },
+ "passes": false,
+ "largest_event_returns_chosen_hold": [
+  {
+   "ticker": "OPEN",
+   "member": "Cleo Fields",
+   "filed": "2025-08-06",
+   "entry": "2025-08-07",
+   "exit": "2025-11-04",
+   "stopped": false,
+   "event_return": 2.5948051948051947
+  },
+  {
+   "ticker": "IREN",
+   "member": "Cleo Fields",
+   "filed": "2025-08-06",
+   "entry": "2025-08-07",
+   "exit": "2025-11-04",
+   "stopped": false,
+   "event_return": 2.5631016042780748
+  },
+  {
+   "ticker": "SNDK",
+   "member": "Lisa C. McClain",
+   "filed": "2025-11-21",
+   "entry": "2025-11-24",
+   "exit": "2026-02-25",
+   "stopped": false,
+   "event_return": 2.0687111801242235
+  },
+  {
+   "ticker": "HUMA",
+   "member": "Tommy Tuberville",
+   "filed": "2024-04-15",
+   "entry": "2024-04-16",
+   "exit": "2024-07-16",
+   "stopped": false,
+   "event_return": 1.9299999999999997
+  },
+  {
+   "ticker": "SNDK",
+   "member": "Ro Khanna",
+   "filed": "2026-02-06",
+   "entry": "2026-02-09",
+   "exit": "2026-05-08",
+   "stopped": false,
+   "event_return": 1.6383409889219132
+  },
+  {
+   "ticker": "MU",
+   "member": "John Fetterman",
+   "filed": "2026-04-03",
+   "entry": "2026-04-06",
+   "exit": "2026-07-06",
+   "stopped": false,
+   "event_return": 1.6348747591522157
+  },
+  {
+   "ticker": "AMD",
+   "member": "Julia Letlow",
+   "filed": "2026-03-12",
+   "entry": "2026-03-13",
+   "exit": "2026-06-11",
+   "stopped": false,
+   "event_return": 1.4655494422290642
+  },
+  {
+   "ticker": "AMD",
+   "member": "Ro Khanna",
+   "filed": "2026-03-09",
+   "entry": "2026-03-10",
+   "exit": "2026-06-08",
+   "stopped": false,
+   "event_return": 1.4212631474988888
+  },
+  {
+   "ticker": "AMD",
+   "member": "Gilbert Ray Cisneros, Jr.",
+   "filed": "2026-03-09",
+   "entry": "2026-03-10",
+   "exit": "2026-06-08",
+   "stopped": false,
+   "event_return": 1.4212631474988888
+  },
+  {
+   "ticker": "MU",
+   "member": "Ro Khanna",
+   "filed": "2026-03-09",
+   "entry": "2026-03-10",
+   "exit": "2026-06-08",
+   "stopped": false,
+   "event_return": 1.4102915777710048
+  },
+  {
+   "ticker": "MU",
+   "member": "Tony Wied",
+   "filed": "2026-03-09",
+   "entry": "2026-03-10",
+   "exit": "2026-06-08",
+   "stopped": false,
+   "event_return": 1.4102915777710048
+  },
+  {
+   "ticker": "MU",
+   "member": "Gilbert Ray Cisneros, Jr.",
+   "filed": "2026-03-09",
+   "entry": "2026-03-10",
+   "exit": "2026-06-08",
+   "stopped": false,
+   "event_return": 1.4102915777710048
+  },
+  {
+   "ticker": "INTC",
+   "member": "Gilbert Ray Cisneros, Jr.",
+   "filed": "2026-02-13",
+   "entry": "2026-02-17",
+   "exit": "2026-05-15",
+   "stopped": false,
+   "event_return": 1.368168952754191
+  },
+  {
+   "ticker": "AMD",
+   "member": "Cleo Fields",
+   "filed": "2026-02-24",
+   "entry": "2026-02-25",
+   "exit": "2026-05-26",
+   "stopped": false,
+   "event_return": 1.3456382087328929
+  },
+  {
+   "ticker": "HOOD",
+   "member": "Byron Donalds",
+   "filed": "2025-04-14",
+   "entry": "2025-04-15",
+   "exit": "2025-07-16",
+   "stopped": false,
+   "event_return": 1.3365014709210228
+  },
+  {
+   "ticker": "MRNA",
+   "member": "Ro Khanna",
+   "filed": "2026-07-06",
+   "entry": "2026-07-07",
+   "exit": "2026-10-02",
+   "stopped": false,
+   "event_return": 1.3143727161997565
+  },
+  {
+   "ticker": "AZN",
+   "member": "Gilbert Ray Cisneros, Jr.",
+   "filed": "2025-11-18",
+   "entry": "2025-11-19",
+   "exit": "2026-02-20",
+   "stopped": false,
+   "event_return": 1.3041799182189915
+  },
+  {
+   "ticker": "SNDK",
+   "member": "Gilbert Ray Cisneros, Jr.",
+   "filed": "2026-02-13",
+   "entry": "2026-02-17",
+   "exit": "2026-05-15",
+   "stopped": false,
+   "event_return": 1.2999999999999998
+  },
+  {
+   "ticker": "AZN",
+   "member": "Lisa C. McClain",
+   "filed": "2025-11-21",
+   "entry": "2025-11-24",
+   "exit": "2026-02-25",
+   "stopped": false,
+   "event_return": 1.2952733804872572
+  },
+  {
+   "ticker": "MU",
+   "member": "Gilbert Ray Cisneros, Jr.",
+   "filed": "2026-04-07",
+   "entry": "2026-04-08",
+   "exit": "2026-07-08",
+   "stopped": false,
+   "event_return": 1.285903614457831
+  }
+ ],
+ "call_or_exercise_rows": {
+  "buy_events_with_such_rows": 188,
+  "all_members": true
+ },
+ "named_members_not_judged": {
+  "Pelosi": {
+   "member": "Nancy Pelosi",
+   "rows": 142,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.002503990683832643,
+      "median_minus_spy": -0.010322161007983333,
+      "share_above_spy": 0.46153846153846156,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": -0.027277681689457527,
+      "median_minus_spy": -0.02477482601664871,
+      "share_above_spy": 0.38461538461538464,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": -0.013335455671750531,
+      "median_minus_spy": -0.010191069190083946,
+      "share_above_spy": 0.38461538461538464,
+      "note": "too few events to judge"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": -0.0009749235582494887,
+      "median_minus_spy": 0.014523248264090016,
+      "share_above_spy": 0.5384615384615384,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.02096588948656264,
+      "median_minus_spy": 0.012215763333934149,
+      "share_above_spy": 0.5384615384615384,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.020026287752605117,
+      "median_minus_spy": 0.01610582421268092,
+      "share_above_spy": 0.6153846153846154,
+      "note": "too few events to judge"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": -0.02896102285654438,
+      "median_minus_spy": -0.005045924937279178,
+      "share_above_spy": 0.46153846153846156,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.007255324411877732,
+      "median_minus_spy": 0.007713009082340294,
+      "share_above_spy": 0.6153846153846154,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": -0.005777081220096014,
+      "median_minus_spy": 0.001617245684768287,
+      "share_above_spy": 0.5384615384615384,
+      "note": "too few events to judge"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": {
+    "H21": {
+     "main": {
+      "events": 14,
+      "no_price": 0,
+      "mean_minus_spy": 0.03679582727238145,
+      "median_minus_spy": -0.03399404702537162,
+      "share_above_spy": 0.2857142857142857,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 14,
+      "no_price": 0,
+      "mean_minus_spy": -0.0255013680619982,
+      "median_minus_spy": -0.04988226166923282,
+      "share_above_spy": 0.35714285714285715,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 14,
+      "no_price": 0,
+      "mean_minus_spy": -0.040974907560298944,
+      "median_minus_spy": -0.022892205102865992,
+      "share_above_spy": 0.35714285714285715,
+      "note": "too few events to judge"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 14,
+      "no_price": 0,
+      "mean_minus_spy": 0.02016442649650049,
+      "median_minus_spy": -0.009433753854687033,
+      "share_above_spy": 0.5,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 14,
+      "no_price": 0,
+      "mean_minus_spy": 0.03712913315597753,
+      "median_minus_spy": -0.001600988033106765,
+      "share_above_spy": 0.5,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 14,
+      "no_price": 0,
+      "mean_minus_spy": 0.020020141402641658,
+      "median_minus_spy": 0.022124510124097496,
+      "share_above_spy": 0.5,
+      "note": "too few events to judge"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 12,
+      "no_price": 0,
+      "mean_minus_spy": 0.18805052428402882,
+      "median_minus_spy": 0.05369870909517249,
+      "share_above_spy": 0.5833333333333334,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 12,
+      "no_price": 0,
+      "mean_minus_spy": 0.20564194265159227,
+      "median_minus_spy": 0.07578491056407488,
+      "share_above_spy": 0.8333333333333334,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 12,
+      "no_price": 0,
+      "mean_minus_spy": 0.14412499633318235,
+      "median_minus_spy": 0.07962025453012156,
+      "share_above_spy": 0.75,
+      "note": "too few events to judge"
+     }
+    }
+   }
+  },
+  "Khanna": {
+   "member": "Ro Khanna",
+   "rows": 32284,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 5636,
+      "no_price": 26,
+      "mean_minus_spy": -0.003330460212618068,
+      "median_minus_spy": -0.007173213653154764,
+      "share_above_spy": 0.46540099361249115,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 5636,
+      "no_price": 26,
+      "mean_minus_spy": -0.004922123482550749,
+      "median_minus_spy": -0.007819522881980734,
+      "share_above_spy": 0.4583037615330021,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 5632,
+      "no_price": 30,
+      "mean_minus_spy": -0.005721836789804106,
+      "median_minus_spy": -0.009220926818528097,
+      "share_above_spy": 0.4444247159090909,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 5636,
+      "no_price": 26,
+      "mean_minus_spy": -0.020036649726478038,
+      "median_minus_spy": -0.026217033475478047,
+      "share_above_spy": 0.4201561391057488,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 5636,
+      "no_price": 26,
+      "mean_minus_spy": -0.0199149919619801,
+      "median_minus_spy": -0.02656340041329952,
+      "share_above_spy": 0.4212207239176721,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 5632,
+      "no_price": 30,
+      "mean_minus_spy": -0.01978773748469007,
+      "median_minus_spy": -0.028072942196377237,
+      "share_above_spy": 0.41832386363636365,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 5249,
+      "no_price": 21,
+      "mean_minus_spy": -0.038220644962738595,
+      "median_minus_spy": -0.05089712821512404,
+      "share_above_spy": 0.39226519337016574,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 5249,
+      "no_price": 21,
+      "mean_minus_spy": -0.03949539047168147,
+      "median_minus_spy": -0.053920540264693395,
+      "share_above_spy": 0.38312059439893315,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 5055,
+      "no_price": 24,
+      "mean_minus_spy": -0.03933337830785633,
+      "median_minus_spy": -0.05549754383902561,
+      "share_above_spy": 0.3883283877349159,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  },
+  "McCaul": {
+   "member": "Michael T. McCaul",
+   "rows": 7659,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 539,
+      "no_price": 10,
+      "mean_minus_spy": -0.006738247186282213,
+      "median_minus_spy": -0.008286084390715986,
+      "share_above_spy": 0.4619666048237477,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 539,
+      "no_price": 10,
+      "mean_minus_spy": -0.007286467789146076,
+      "median_minus_spy": -0.010463094872004142,
+      "share_above_spy": 0.45454545454545453,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 539,
+      "no_price": 10,
+      "mean_minus_spy": -0.007168169097695645,
+      "median_minus_spy": -0.007019220674972404,
+      "share_above_spy": 0.46567717996289426,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 539,
+      "no_price": 10,
+      "mean_minus_spy": -0.01844222993989891,
+      "median_minus_spy": -0.01920535372985288,
+      "share_above_spy": 0.4489795918367347,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 539,
+      "no_price": 10,
+      "mean_minus_spy": -0.016615534421917277,
+      "median_minus_spy": -0.014279857634473592,
+      "share_above_spy": 0.44341372912801486,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 539,
+      "no_price": 10,
+      "mean_minus_spy": -0.007722477267584306,
+      "median_minus_spy": -0.010436194160879486,
+      "share_above_spy": 0.48794063079777367,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 496,
+      "no_price": 9,
+      "mean_minus_spy": -0.032945001469524816,
+      "median_minus_spy": -0.04909432366047978,
+      "share_above_spy": 0.4375,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 496,
+      "no_price": 9,
+      "mean_minus_spy": -0.030856548092536733,
+      "median_minus_spy": -0.03672663409587451,
+      "share_above_spy": 0.43548387096774194,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 482,
+      "no_price": 9,
+      "mean_minus_spy": -0.028514634858312307,
+      "median_minus_spy": -0.03949707836221905,
+      "share_above_spy": 0.43568464730290457,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  },
+  "Gottheimer": {
+   "member": "Josh Gottheimer",
+   "rows": 3209,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 453,
+      "no_price": 49,
+      "mean_minus_spy": -0.004297368520177844,
+      "median_minus_spy": -0.00471401029266727,
+      "share_above_spy": 0.4746136865342163,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 452,
+      "no_price": 50,
+      "mean_minus_spy": 0.00043205516676834743,
+      "median_minus_spy": -0.00088480078226022,
+      "share_above_spy": 0.49336283185840707,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 452,
+      "no_price": 50,
+      "mean_minus_spy": 0.001267595854085917,
+      "median_minus_spy": -0.010449347948661702,
+      "share_above_spy": 0.4579646017699115,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 453,
+      "no_price": 49,
+      "mean_minus_spy": -0.0010441565072586043,
+      "median_minus_spy": -0.021811107383161277,
+      "share_above_spy": 0.45253863134657835,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 452,
+      "no_price": 50,
+      "mean_minus_spy": 0.002647417462331072,
+      "median_minus_spy": -0.020396156812744093,
+      "share_above_spy": 0.4579646017699115,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 452,
+      "no_price": 50,
+      "mean_minus_spy": 0.011695117613745505,
+      "median_minus_spy": -0.015953753409340687,
+      "share_above_spy": 0.4579646017699115,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 445,
+      "no_price": 49,
+      "mean_minus_spy": -0.009294747101401693,
+      "median_minus_spy": -0.018331976733803934,
+      "share_above_spy": 0.45617977528089887,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 444,
+      "no_price": 50,
+      "mean_minus_spy": -0.01053666528680946,
+      "median_minus_spy": -0.027884899711425715,
+      "share_above_spy": 0.45495495495495497,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 437,
+      "no_price": 49,
+      "mean_minus_spy": -0.007880002031816836,
+      "median_minus_spy": -0.03321866530255546,
+      "share_above_spy": 0.459954233409611,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": {
+    "H21": {
+     "main": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.005903091617679579,
+      "median_minus_spy": 0.029489644779810087,
+      "share_above_spy": 0.5384615384615384,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.00183155042989171,
+      "median_minus_spy": -0.0021713574661338386,
+      "share_above_spy": 0.46153846153846156,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.027719407721060144,
+      "median_minus_spy": 0.021267462452314367,
+      "share_above_spy": 0.5384615384615384,
+      "note": "too few events to judge"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.03771667904417198,
+      "median_minus_spy": 0.008717480025313251,
+      "share_above_spy": 0.6923076923076923,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.04129554949536683,
+      "median_minus_spy": 0.016164603474100092,
+      "share_above_spy": 0.5384615384615384,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 13,
+      "no_price": 0,
+      "mean_minus_spy": 0.07614416749414825,
+      "median_minus_spy": 0.08840825829019261,
+      "share_above_spy": 0.7692307692307693,
+      "note": "too few events to judge"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 12,
+      "no_price": 0,
+      "mean_minus_spy": 0.06846659609905494,
+      "median_minus_spy": 0.06880927876804593,
+      "share_above_spy": 0.75,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 12,
+      "no_price": 0,
+      "mean_minus_spy": 0.055868024115868796,
+      "median_minus_spy": 0.06140242855030864,
+      "share_above_spy": 0.75,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 12,
+      "no_price": 0,
+      "mean_minus_spy": 0.057526007317644706,
+      "median_minus_spy": 0.06804102498487707,
+      "share_above_spy": 0.75,
+      "note": "too few events to judge"
+     }
+    }
+   }
+  },
+  "Cisneros": {
+   "member": "Gilbert Ray Cisneros, Jr.",
+   "rows": 2781,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 700,
+      "no_price": 63,
+      "mean_minus_spy": 0.0022527659950350707,
+      "median_minus_spy": -0.010250005372502868,
+      "share_above_spy": 0.4614285714285714,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 700,
+      "no_price": 63,
+      "mean_minus_spy": 0.0007292482685724983,
+      "median_minus_spy": -0.012875276530789015,
+      "share_above_spy": 0.4542857142857143,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 700,
+      "no_price": 63,
+      "mean_minus_spy": 0.005674452398659624,
+      "median_minus_spy": -0.005671526788314507,
+      "share_above_spy": 0.47,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 700,
+      "no_price": 63,
+      "mean_minus_spy": 0.0014544239437676357,
+      "median_minus_spy": -0.03922796474346624,
+      "share_above_spy": 0.4142857142857143,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 700,
+      "no_price": 63,
+      "mean_minus_spy": 0.002352085334214044,
+      "median_minus_spy": -0.03818312052851225,
+      "share_above_spy": 0.42142857142857143,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 700,
+      "no_price": 63,
+      "mean_minus_spy": 0.0016783647367923757,
+      "median_minus_spy": -0.03036400475961376,
+      "share_above_spy": 0.43714285714285717,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 623,
+      "no_price": 57,
+      "mean_minus_spy": -0.010035283358937396,
+      "median_minus_spy": -0.062435055376087734,
+      "share_above_spy": 0.39486356340288925,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 623,
+      "no_price": 57,
+      "mean_minus_spy": -0.006659866612618348,
+      "median_minus_spy": -0.05816609400685668,
+      "share_above_spy": 0.39807383627608345,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 586,
+      "no_price": 56,
+      "mean_minus_spy": -0.019086568821218466,
+      "median_minus_spy": -0.07304973131067188,
+      "share_above_spy": 0.38054607508532423,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  },
+  "Lisa C. McClain": {
+   "member": "Lisa C. McClain",
+   "rows": 1421,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 635,
+      "no_price": 3,
+      "mean_minus_spy": -0.007349402786832587,
+      "median_minus_spy": -0.01421563019015859,
+      "share_above_spy": 0.4110236220472441,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 634,
+      "no_price": 4,
+      "mean_minus_spy": -0.016710960762917136,
+      "median_minus_spy": -0.022616107135792762,
+      "share_above_spy": 0.361198738170347,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 634,
+      "no_price": 4,
+      "mean_minus_spy": -0.007172883466224884,
+      "median_minus_spy": -0.018505909029332135,
+      "share_above_spy": 0.3990536277602524,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 635,
+      "no_price": 3,
+      "mean_minus_spy": -0.011336613969196977,
+      "median_minus_spy": -0.0411401519186414,
+      "share_above_spy": 0.384251968503937,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 634,
+      "no_price": 4,
+      "mean_minus_spy": -0.009421746334761621,
+      "median_minus_spy": -0.0341394110545879,
+      "share_above_spy": 0.40063091482649843,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 634,
+      "no_price": 4,
+      "mean_minus_spy": 0.0029486763604726295,
+      "median_minus_spy": -0.02209062277165902,
+      "share_above_spy": 0.4305993690851735,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 635,
+      "no_price": 3,
+      "mean_minus_spy": 0.025631073244748746,
+      "median_minus_spy": -0.017778511635770933,
+      "share_above_spy": 0.46771653543307085,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 634,
+      "no_price": 4,
+      "mean_minus_spy": 0.032751120182899426,
+      "median_minus_spy": -0.02270198078045793,
+      "share_above_spy": 0.45425867507886436,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 634,
+      "no_price": 4,
+      "mean_minus_spy": 0.02820712172577405,
+      "median_minus_spy": -0.024273387856472428,
+      "share_above_spy": 0.46214511041009465,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  },
+  "Tuberville": {
+   "member": "Tommy Tuberville",
+   "rows": 1192,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": 0.0012087754463357488,
+      "median_minus_spy": -0.00522790286385344,
+      "share_above_spy": 0.4573643410852713,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": 0.007697714949717348,
+      "median_minus_spy": -0.00660149850600078,
+      "share_above_spy": 0.4728682170542636,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": -0.004940725702829312,
+      "median_minus_spy": -0.004010786089855944,
+      "share_above_spy": 0.4728682170542636,
+      "note": "too few events to judge"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": -0.011445844849438475,
+      "median_minus_spy": -0.037796971304904226,
+      "share_above_spy": 0.37209302325581395,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": -0.02205460552828717,
+      "median_minus_spy": -0.033879781779073914,
+      "share_above_spy": 0.4186046511627907,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": -0.021152641824998663,
+      "median_minus_spy": -0.013570888147052873,
+      "share_above_spy": 0.4263565891472868,
+      "note": "too few events to judge"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": -0.027234665468338137,
+      "median_minus_spy": -0.04283400310551433,
+      "share_above_spy": 0.4418604651162791,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": -0.030947319691650987,
+      "median_minus_spy": -0.03237835136565681,
+      "share_above_spy": 0.4418604651162791,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 129,
+      "no_price": 1,
+      "mean_minus_spy": -0.03728141957114978,
+      "median_minus_spy": -0.01670624700432044,
+      "share_above_spy": 0.46511627906976744,
+      "note": "too few events to judge"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": {
+    "H21": {
+     "main": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": 0.08180692409161143,
+      "median_minus_spy": 0.046726155585069984,
+      "share_above_spy": 0.7777777777777778,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": 0.09369541936957829,
+      "median_minus_spy": 0.1086019079076811,
+      "share_above_spy": 0.7777777777777778,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": -0.029876845033041072,
+      "median_minus_spy": -0.011072848659254397,
+      "share_above_spy": 0.4444444444444444,
+      "note": "too few events to judge"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": 0.049272204013535194,
+      "median_minus_spy": -0.003131385547366694,
+      "share_above_spy": 0.4444444444444444,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": 0.05230397467940421,
+      "median_minus_spy": 0.078390144955927,
+      "share_above_spy": 0.5555555555555556,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": -0.05357347654936438,
+      "median_minus_spy": -0.09954789671133824,
+      "share_above_spy": 0.4444444444444444,
+      "note": "too few events to judge"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": -0.0036696845053306847,
+      "median_minus_spy": -0.11457067036852786,
+      "share_above_spy": 0.4444444444444444,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": -0.02526534532935966,
+      "median_minus_spy": -0.07137886686260542,
+      "share_above_spy": 0.4444444444444444,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 9,
+      "no_price": 0,
+      "mean_minus_spy": -0.07853728162911933,
+      "median_minus_spy": -0.0909758805756451,
+      "share_above_spy": 0.4444444444444444,
+      "note": "too few events to judge"
+     }
+    }
+   }
+  },
+  "Greene": {
+   "member": "Marjorie Taylor Greene",
+   "rows": 507,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.0008271425693017536,
+      "median_minus_spy": -0.006339665135801309,
+      "share_above_spy": 0.4689265536723164,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.004812568147286547,
+      "median_minus_spy": 0.0005730436618440748,
+      "share_above_spy": 0.5056497175141242,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.0018432941090417764,
+      "median_minus_spy": -0.004866366714389336,
+      "share_above_spy": 0.4717514124293785,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.00925458060027271,
+      "median_minus_spy": -0.0067806752767723966,
+      "share_above_spy": 0.4774011299435028,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.010960234417703796,
+      "median_minus_spy": -0.0026636519602560305,
+      "share_above_spy": 0.4858757062146893,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.016474140485394084,
+      "median_minus_spy": 0.008324954362287751,
+      "share_above_spy": 0.5169491525423728,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.023918691640867157,
+      "median_minus_spy": -0.008931108040324265,
+      "share_above_spy": 0.4774011299435028,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.02238287582258544,
+      "median_minus_spy": -0.0029191864416849844,
+      "share_above_spy": 0.4943502824858757,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 354,
+      "no_price": 5,
+      "mean_minus_spy": 0.029695630768834424,
+      "median_minus_spy": 0.012603422463160374,
+      "share_above_spy": 0.5254237288135594,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  },
+  "Mullin": {
+   "member": "Markwayne Mullin",
+   "rows": 386,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.010281147670701995,
+      "median_minus_spy": 0.00649928557492796,
+      "share_above_spy": 0.5673469387755102,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.0007435956900563869,
+      "median_minus_spy": 0.0002877022606273538,
+      "share_above_spy": 0.5020408163265306,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.0023737237102275893,
+      "median_minus_spy": 0.004931734115208863,
+      "share_above_spy": 0.5265306122448979,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.0230778221929577,
+      "median_minus_spy": 0.02021827770326845,
+      "share_above_spy": 0.5387755102040817,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.016136386026556516,
+      "median_minus_spy": 0.011019626935486748,
+      "share_above_spy": 0.5265306122448979,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.0157694460160426,
+      "median_minus_spy": -0.001550568204873537,
+      "share_above_spy": 0.49795918367346936,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.018863947656758515,
+      "median_minus_spy": -0.010584480243939876,
+      "share_above_spy": 0.4857142857142857,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.014232331009761623,
+      "median_minus_spy": -0.00046923503475393424,
+      "share_above_spy": 0.49795918367346936,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 245,
+      "no_price": 3,
+      "mean_minus_spy": 0.010140722538076343,
+      "median_minus_spy": -0.027196440127010613,
+      "share_above_spy": 0.44081632653061226,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  },
+  "Bresnahan": {
+   "member": "Robert P. Bresnahan, Jr.",
+   "rows": 607,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.0060326473633965086,
+      "median_minus_spy": -0.012567952000244298,
+      "share_above_spy": 0.42660550458715596,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.007269251766958098,
+      "median_minus_spy": -0.015358911802950348,
+      "share_above_spy": 0.43577981651376146,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.003550724504893136,
+      "median_minus_spy": -0.0048299901146877655,
+      "share_above_spy": 0.46788990825688076,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.022842014983555356,
+      "median_minus_spy": -0.030221878971889993,
+      "share_above_spy": 0.41743119266055045,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.019741117525887503,
+      "median_minus_spy": -0.02587109361504447,
+      "share_above_spy": 0.42201834862385323,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.017333292436802754,
+      "median_minus_spy": -0.03533109728165518,
+      "share_above_spy": 0.38073394495412843,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.05784768021705467,
+      "median_minus_spy": -0.0955773537392256,
+      "share_above_spy": 0.3486238532110092,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.05009142359756365,
+      "median_minus_spy": -0.08741938573291497,
+      "share_above_spy": 0.3532110091743119,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 218,
+      "no_price": 0,
+      "mean_minus_spy": -0.04900210510188779,
+      "median_minus_spy": -0.08503005440641631,
+      "share_above_spy": 0.3577981651376147,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": {
+    "H21": {
+     "main": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": 0.15642589726334566,
+      "median_minus_spy": 0.15642589726334566,
+      "share_above_spy": 1.0,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": 0.13112103364342287,
+      "median_minus_spy": 0.13112103364342287,
+      "share_above_spy": 1.0,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": 0.06812574632853485,
+      "median_minus_spy": 0.06812574632853485,
+      "share_above_spy": 1.0,
+      "note": "too few events to judge"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": 0.08273284671951342,
+      "median_minus_spy": 0.08273284671951342,
+      "share_above_spy": 1.0,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": 0.07003334255082794,
+      "median_minus_spy": 0.07003334255082794,
+      "share_above_spy": 1.0,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": -0.11659801496149946,
+      "median_minus_spy": -0.11659801496149946,
+      "share_above_spy": 0.0,
+      "note": "too few events to judge"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": -0.07008975099465187,
+      "median_minus_spy": -0.07008975099465187,
+      "share_above_spy": 0.0,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": -0.0669457219775833,
+      "median_minus_spy": -0.0669457219775833,
+      "share_above_spy": 0.0,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 1,
+      "no_price": 0,
+      "mean_minus_spy": -0.2262154909337759,
+      "median_minus_spy": -0.2262154909337759,
+      "share_above_spy": 0.0,
+      "note": "too few events to judge"
+     }
+    }
+   }
+  },
+  "Goldman": {
+   "member": "Daniel S. Goldman",
+   "rows": 1151,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": -0.018653186343037937,
+      "median_minus_spy": -0.023721686711765333,
+      "share_above_spy": 0.40756302521008403,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": -0.015003170043233283,
+      "median_minus_spy": -0.022239638841496046,
+      "share_above_spy": 0.4117647058823529,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": 0.00040657683205956574,
+      "median_minus_spy": -0.011475150208934415,
+      "share_above_spy": 0.4369747899159664,
+      "note": "reported, not judged"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": -0.04167415911632676,
+      "median_minus_spy": -0.0784778442697977,
+      "share_above_spy": 0.3403361344537815,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": -0.03835608121974358,
+      "median_minus_spy": -0.05688187702818859,
+      "share_above_spy": 0.3235294117647059,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": -0.025357689940722204,
+      "median_minus_spy": -0.04872465280605687,
+      "share_above_spy": 0.35294117647058826,
+      "note": "reported, not judged"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": -0.06704541023154109,
+      "median_minus_spy": -0.08901021681178817,
+      "share_above_spy": 0.3235294117647059,
+      "note": "reported, not judged"
+     },
+     "late5": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": -0.07030083722049515,
+      "median_minus_spy": -0.08733110548140538,
+      "share_above_spy": 0.3235294117647059,
+      "note": "reported, not judged"
+     },
+     "cal30": {
+      "events": 238,
+      "no_price": 77,
+      "mean_minus_spy": -0.04526419985840497,
+      "median_minus_spy": -0.06559543160249715,
+      "share_above_spy": 0.36134453781512604,
+      "note": "reported, not judged"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  },
+  "Crenshaw": {
+   "member": "Dan Crenshaw",
+   "rows": 32,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 0,
+      "no_price": 1
+     },
+     "late5": {
+      "events": 0,
+      "no_price": 1
+     },
+     "cal30": {
+      "events": 0,
+      "no_price": 1
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 0,
+      "no_price": 1
+     },
+     "late5": {
+      "events": 0,
+      "no_price": 1
+     },
+     "cal30": {
+      "events": 0,
+      "no_price": 1
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 0,
+      "no_price": 0
+     },
+     "late5": {
+      "events": 0,
+      "no_price": 0
+     },
+     "cal30": {
+      "events": 0,
+      "no_price": 0
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  },
+  "Wasserman Schultz": {
+   "member": "Debbie Wasserman Schultz",
+   "rows": 47,
+   "stock_purchases": {
+    "H21": {
+     "main": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": 0.0012675861644451448,
+      "median_minus_spy": -0.04264519316709975,
+      "share_above_spy": 0.4,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": -0.033688374037180016,
+      "median_minus_spy": -0.037062040253762085,
+      "share_above_spy": 0.2,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": 0.15146250622957952,
+      "median_minus_spy": 0.12779510172619102,
+      "share_above_spy": 0.9,
+      "note": "too few events to judge"
+     }
+    },
+    "H63": {
+     "main": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": 0.09440296678019565,
+      "median_minus_spy": 0.05328098165684647,
+      "share_above_spy": 0.5,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": 0.02040772156835561,
+      "median_minus_spy": -0.07838333115418866,
+      "share_above_spy": 0.4,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": 0.13655121562786438,
+      "median_minus_spy": 0.1753851528186824,
+      "share_above_spy": 0.6,
+      "note": "too few events to judge"
+     }
+    },
+    "H126": {
+     "main": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": 0.16721699863154751,
+      "median_minus_spy": 0.02388435909285236,
+      "share_above_spy": 0.6,
+      "note": "too few events to judge"
+     },
+     "late5": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": 0.15246706284482126,
+      "median_minus_spy": -0.08071893200956926,
+      "share_above_spy": 0.4,
+      "note": "too few events to judge"
+     },
+     "cal30": {
+      "events": 10,
+      "no_price": 0,
+      "mean_minus_spy": 0.3036487046743642,
+      "median_minus_spy": 0.07315040406290496,
+      "share_above_spy": 0.6,
+      "note": "too few events to judge"
+     }
+    }
+   },
+   "call_purchases_as_underlying_stock_not_option_returns": null
+  }
+ }
+}

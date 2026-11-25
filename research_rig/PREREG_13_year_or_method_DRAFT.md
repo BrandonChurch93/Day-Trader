@@ -80,6 +80,16 @@ Added 2026-11-25 19:03 UTC after a second model read the code against this plan.
 - Every yardstick is worked out at each cost level, not only the judged one. The 3x figures are shown at the judged cost only.
 - The percentile of the random paths uses straight-line interpolation between sorted paths. The random draws come from one seeded stream in date order.
 
+Added 2026-11-25 19:16 UTC after a third model rebuilt the rules from this text alone and compared trade by trade on made-up data. No return had been worked out. Bar times only were read: the venue's own stops left 15 runs of missing hours, 31 hours in all, the longest 5 hours, 8 runs in 2020, 6 in 2021 and 1 in 2023, each one missing for every pair at once. Under the lines above, one missing hour would have blocked every entry for the next 7 days and the next Monday's ranking, and would have put 2020 and 2021 out of the judgment. A trader at the time lost the stopped hours and not the week, so the lines below replace the stricter ones above.
+
+- Missing hours allowed: `replay_13_plan.max_missing_hours`. It was set after reading how many hours were missing (times only): in every coin-week on file the count of missing hours is either at most 6 or more than 12.
+- A 7-day window can be used, for the Monday ranking and for the dip signal alike, when the bar at each end of it is on file and no more than that many hourly bars are missing inside it. This replaces "every hourly bar of the 7 days before".
+- The highest close of the last `replay_13_plan.dip_lookback_hours` hours is taken over the bars on file.
+- A part of the account in a week is flagged for missing bars only when its coin misses more than that many hours in the week. The flags for a carried coin list, a delayed sale and a sale at a last close stay as written.
+- Yardstick (a) holds every coin that can be ranked that Monday, the same pool the rules and the random yardstick choose from. Before this line it held every listed coin with a bar in the hour before, which left it invested on days when the rules could not rank anything.
+- When a chosen coin has no bar at Monday 00:00, rule A and both yardsticks buy at its first hourly open on file in that week. If none comes within `replay_13_plan.max_missing_hours` hours the part stays in cash for the week and is flagged.
+- When two coin identities point at the same pair in one week, the pair is counted once under the higher-ranked identity, and the number of such weeks is reported.
+
 ## How this can fool us
 
 - One venue's prices. Fills are at the next hour's open with a fixed cost; a fast coin's real spread at that moment can be wider.

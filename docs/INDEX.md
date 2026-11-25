@@ -192,6 +192,10 @@ Working papers.
 | `research_rig/prices_12_summary.json` | Plan 12: counts and dates of the collected bars, no price values | CURRENT |
 | `research_rig/common_12.py` | Plan 12 shared code: events, entry days, trades, merging, the daily portfolio with turnover cost, the SPY mirror and the bootstrap | CURRENT |
 | `research_rig/score_12.py` | Plan 12 scoring: --counts, --selftest, --design once, --heldback once | CURRENT |
+| `research_rig/results_12_design.json` | Plan 12: the nine set-ups scored on the design half (filings 2019 to 2022), three entry days each, and the set-up chosen for the held-back half. Written once by score_12.py --design | CURRENT |
+| `research_rig/score_12_design.lock` | Plan 12: marks that the design half was scored; a second run is refused | CURRENT |
+| `research_rig/results_12_heldback.json` | Plan 12: the chosen set-up scored once on the held-back half (filings from 2023), with the five pass marks. Written once by score_12.py --heldback | CURRENT |
+| `research_rig/score_12_heldback.lock` | Plan 12: marks that the held-back half was scored; a second run is refused | CURRENT |
 | `research_rig/events_12_summary.json` | Plan 12: event counts, no-bar counts by year and named-member matches, no returns | CURRENT |
 | `research_rig/test_12.py` | Plan 12 tests on made-up data, with a planted-edge check and a no-edge check | CURRENT |
 | `research_rig/report_12.py` | Writes the Replay 12 page (research doc 47) from the stored summaries and results; reads no price | CURRENT |
