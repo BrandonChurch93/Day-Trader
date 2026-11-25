@@ -142,6 +142,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/57_replay_17_short_the_peak.md` | Replay 17: the short side of the owner's method as a fixed rule on futures, year by year. Not supported, 0 of 3 marks, with or without costs; US fee levels and the US-shortable list shown beside it. Written by script from the one run | CURRENT |
 | `docs/research/58_crowded_trades_evidence_checked.md` | Shorting crowded coin futures and buying the bounce after a flush: what Binance's public archive holds, the published and public tests after costs (most lose once dead coins are kept), and which coins a US account can short today. Checked reading, nothing measured on our own prices | CURRENT |
 | `docs/research/59_why_the_ai_traders_lost.md` | Why the AI traders lost: every written reason in plans TM01 to TM04 sorted into fixed categories and joined to what happened next (entries, stops, costs, bitcoin dial moves, stock picks), with 12 quotes and record faults. After the fact, not a test. Written from `timemachine/autopsy/autopsy_results.json` | CURRENT |
+| `docs/research/60_us_venue_costs_checked.md` | What a small US account pays to go long or short crypto: venue fees, checked coin lists, and worked costs with limits | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.

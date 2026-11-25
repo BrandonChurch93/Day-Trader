@@ -39,6 +39,7 @@ The Result column is written by `tools/status_table.py` from the output files. D
 
 Each line says how far to trust it.
 
+- What a US account pays to go long or short crypto: STATED, low published fees on larger coins at some venues; MEASURED, single public book snapshots only; normal perpetual spreads and actual fills are UNKNOWN (`docs/research/60_us_venue_costs_checked.md`).
 - No day trading rule on crypto passes at any venue cost tested. MEASURED, eight rules on hourly bitcoin and ether. At the lowest venue cost a few ether rules have a positive Sharpe ratio in the held-back years and none passes. At Alpaca cost every one lost money in the held-back years (`docs/research/16_rig_audit.md`).
 - Slow trend rules cut the largest drop and give up growth. MEASURED on bitcoin and on the US stock market index, and it matches the live record of funds built on the same rules (`docs/research/21_systematic_funds_and_published_rules.md`). In the held-back years most grew less than holding.
 - A wide basket of smaller coins grew far less than holding bitcoin in the held-back years. MEASURED (`docs/research/23_replay_04_coin_basket.md`).
