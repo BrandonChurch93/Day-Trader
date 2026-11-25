@@ -262,8 +262,69 @@
      "wins": 1
     },
     "09": {
-     "finished": false,
-     "session": "TM01-B01-GROK-2026-09"
+     "benchmark_shown": "BTC/USD",
+     "buys": 2,
+     "closed": 2,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 3.26,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": 0.66,
+     "git_dirty": true,
+     "hold_gain_usd": 59.89,
+     "lookups": 61,
+     "losses": 1,
+     "max_drop": -0.0107,
+     "model": "grok_4_7",
+     "news_on": false,
+     "refused_attempts": 0,
+     "session": "TM01-B01-GROK-2026-09",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 60,
+     "wakes_no_pick": 58,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-09-18T14:25:00Z",
+       "exit_reason": "Exit set in pick 20260918T1200Z: the target price was reached.",
+       "gain_pct": 0.03,
+       "gain_usd": 10.54,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Double bottom at 74,900 broke 76,800 and the break is holding, with alts confirming.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Bitcoin held 74,900 twice, then ground through 76,800 and is holding above that break while the other coins rise with it. Buying the hold, with a stop back under the breakout bar, aiming for the late-August supply near 80,800.",
+       "usd": 350,
+       "wake_utc": "2026-09-18T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-23T14:20:00Z",
+       "exit_reason": "Exit set in pick 20260922T0000Z: the stop price was reached.",
+       "gain_pct": -0.0328,
+       "gain_usd": -9.87,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "New highs held for a full session with higher lows, so the breakout is a trend and not a spike.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Bitcoin broke 82,200 and held the break all day, grinding to 87,400 with higher lows. Joining the trend rather than waiting for a pullback that has not come, with a stop under the breakout day's shelf and a far target so a winner is not cut at the first pause.",
+       "usd": 300,
+       "wake_utc": "2026-09-22T00:00:00Z"
+      }
+     ],
+     "wins": 1
     },
     "10": {
      "benchmark_shown": "AVAX/USD",
@@ -1257,7 +1318,7 @@
      "buys": 9,
      "closed": 8,
      "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
-     "counts": false,
+     "counts": true,
      "edited_later_news_seen": 0,
      "fees_usd": 13.84,
      "finished": true,
@@ -1274,7 +1335,18 @@
      "session": "TM01-B01-NEON-2026-08",
      "twin_gains": {
       "1": 138.29,
+      "10": 185.17,
+      "11": 108.55,
+      "12": 143.51,
+      "13": 158.61,
+      "14": 145.32,
+      "15": 51.85,
+      "16": 79.37,
+      "17": 125.89,
+      "18": 130.85,
+      "19": 70.75,
       "2": 88.51,
+      "20": 37.99,
       "3": 64.7,
       "4": 90.95,
       "5": 38.91,
@@ -1283,7 +1355,10 @@
       "8": 93.36,
       "9": 45.23
      },
-     "twins_done": 9,
+     "twin_median_usd": 92.16,
+     "twin_p80_usd": 143.87,
+     "twins_beaten": 17,
+     "twins_done": 20,
      "wakes": 62,
      "wakes_no_pick": 46,
      "wakes_unseen": 0,
@@ -1479,8 +1554,16 @@
      "news_on": false,
      "refused_attempts": 0,
      "session": "TM01-B01-NEON-2026-09",
-     "twin_gains": {},
-     "twins_done": 0,
+     "twin_gains": {
+      "1": 17.28,
+      "2": 40.68,
+      "3": 127.3,
+      "4": 4.15,
+      "5": 73.62,
+      "6": 109.29,
+      "7": 66.23
+     },
+     "twins_done": 7,
      "wakes": 60,
      "wakes_no_pick": 47,
      "wakes_unseen": 0,
@@ -1851,18 +1934,227 @@
      "wins": 0
     },
     "11": {
-     "finished": false,
-     "session": "TM01-B01-NEON-2026-11"
+     "benchmark_shown": "BTC/USD",
+     "buys": 10,
+     "closed": 10,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 14.07,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": -84.5,
+     "git_dirty": true,
+     "hold_gain_usd": -231.1,
+     "lookups": 71,
+     "losses": 10,
+     "max_drop": -0.1094,
+     "model": "gemini_neon",
+     "news_on": false,
+     "refused_attempts": 1,
+     "session": "TM01-B01-NEON-2026-11",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 48,
+     "wakes_no_pick": 39,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-11-02T16:10:00Z",
+       "exit_reason": "Exit set in pick 20261101T1200Z: the stop price was reached.",
+       "gain_pct": -0.0525,
+       "gain_usd": -13.16,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Strongest relative strength and volume accumulation off Oct 30 low; tight hourly consolidation below 11.93 resistance.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "LINK/USD shows the clearest relative strength and volume accumulation across the 8 pairs since the Oct 30 reversal (+7.9% and +1.8% on high volume), forming higher hourly lows above 11.68 with zero-volume pullbacks while majors stabilize. Taking a 25% starter long with a stop below the Oct 31 low (11.20) and target at 12.80, keeping 75% in cash given the broader 30d downtrend.",
+       "usd": 250,
+       "wake_utc": "2026-11-01T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-05T15:10:00Z",
+       "exit_reason": "Exit set in pick 20261105T0000Z: the stop price was reached.",
+       "gain_pct": -0.0167,
+       "gain_usd": -4.18,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 2,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Clean breakout from 4-day base (1.235-1.262) with strong relative strength vs BTC and alts.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "XRP/USD",
+       "thesis": "XRP/USD built a tight 4-day base (1.235-1.262) while BTC and other alts made lower lows, then broke out cleanly on Nov 3 (+2.18% close at 1.2754) and held above 1.270 despite BTC pulling back in the 23:00Z hour. Buying a 25% starter position with stop below the base at 1.230 and target at 1.360, keeping ~74% in cash while BTC remains range-bound.",
+       "usd": 250,
+       "wake_utc": "2026-11-04T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-05T15:10:00Z",
+       "exit_reason": "Exit set in pick 20261105T0000Z: the stop price was reached.",
+       "gain_pct": -0.0182,
+       "gain_usd": -6.39,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Leading major; swept to higher low at 2,223 and broke 5-day range high (2,312) with tight consolidation at 2,325.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "Textbook liquidity sweep and reversal at 03:00Z: BTC swept below its Oct 30 low (75,762) to 75,577 on volume then surged +3.7% to 78,622; ETH made a higher low at 2,223 and broke above its 5-day high (2,312) to 2,336, holding tight near highs. Adding ETH/USD ($350) and BTC/USD ($300) alongside our XRP/USD long with stops below the 03:00Z sweep lows.",
+       "usd": 350,
+       "wake_utc": "2026-11-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-05T15:05:00Z",
+       "exit_reason": "Exit set in pick 20261105T0000Z: the stop price was reached.",
+       "gain_pct": -0.0148,
+       "gain_usd": -4.45,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Wyckoff spring below Oct 30 low (75,577) followed by strong 8-hour reversal to 78,375.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Textbook liquidity sweep and reversal at 03:00Z: BTC swept below its Oct 30 low (75,762) to 75,577 on volume then surged +3.7% to 78,622; ETH made a higher low at 2,223 and broke above its 5-day high (2,312) to 2,336, holding tight near highs. Adding ETH/USD ($350) and BTC/USD ($300) alongside our XRP/USD long with stops below the 03:00Z sweep lows.",
+       "usd": 300,
+       "wake_utc": "2026-11-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-18T16:40:00Z",
+       "exit_reason": "Exit set in pick 20261115T1200Z: the stop price was reached.",
+       "gain_pct": -0.0536,
+       "gain_usd": -18.81,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Climax washout to 1,711, +4.9% V-reversal, higher low at 1,772, and high-volume break to 1,843.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "Textbook climax capitulation and V-reversal at 01:00-02:00Z (BTC flushed to 61,991 on volume then ripped +3.7%; ETH flushed to 1,711 then ripped +4.9%), followed by a 5-hour pullback that held higher lows (BTC 63,735, ETH 1,772, LINK 8.99) and broke to higher highs (BTC 66,085, ETH 1,843, LINK 9.29). Entering ETH ($350), BTC ($300), and LINK ($200) with stops just below the 07:00Z higher lows for ~2.7-3.1:1 R:R.",
+       "usd": 350,
+       "wake_utc": "2026-11-15T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-17T15:55:00Z",
+       "exit_reason": "Exit set in pick 20261115T1200Z: the stop price was reached.",
+       "gain_pct": -0.037,
+       "gain_usd": -11.11,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Climax washout to 61,991, +3.7% V-reversal, higher low at 63,735, and break to 66,085.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Textbook climax capitulation and V-reversal at 01:00-02:00Z (BTC flushed to 61,991 on volume then ripped +3.7%; ETH flushed to 1,711 then ripped +4.9%), followed by a 5-hour pullback that held higher lows (BTC 63,735, ETH 1,772, LINK 8.99) and broke to higher highs (BTC 66,085, ETH 1,843, LINK 9.29). Entering ETH ($350), BTC ($300), and LINK ($200) with stops just below the 07:00Z higher lows for ~2.7-3.1:1 R:R.",
+       "usd": 300,
+       "wake_utc": "2026-11-15T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-20T02:30:00Z",
+       "exit_reason": "Exit set in pick 20261120T0000Z: the stop price was reached.",
+       "gain_pct": -0.0537,
+       "gain_usd": -10.77,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Cleanest altcoin higher-low (8.99) and higher-high (9.29) structure off the 01:00Z washout.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "Textbook climax capitulation and V-reversal at 01:00-02:00Z (BTC flushed to 61,991 on volume then ripped +3.7%; ETH flushed to 1,711 then ripped +4.9%), followed by a 5-hour pullback that held higher lows (BTC 63,735, ETH 1,772, LINK 8.99) and broke to higher highs (BTC 66,085, ETH 1,843, LINK 9.29). Entering ETH ($350), BTC ($300), and LINK ($200) with stops just below the 07:00Z higher lows for ~2.7-3.1:1 R:R.",
+       "usd": 200,
+       "wake_utc": "2026-11-15T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-20T02:30:00Z",
+       "exit_reason": "Exit set in pick 20261120T0000Z: the stop price was reached.",
+       "gain_pct": -0.0515,
+       "gain_usd": -12.91,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Strongest momentum leader across all 8 pairs; 7 straight green hours off 71.05 flush to break out at 75.11 on high volume.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "BTC wicked down to 63,262 at 15:00Z (stopping out our BTC long) then recovered four straight hours to 64,878, while ETH and LINK held cleanly. SOL/USD showed standout leadership, ripping seven consecutive green hours off its 71.05 flush low to break out at 75.11 (+1.48% on 118 vol). Replacing our stopped BTC slot with $250 SOL/USD and placing a wider stop below the 71.05 flush low (70.50) to avoid noise wicks.",
+       "usd": 250,
+       "wake_utc": "2026-11-18T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-24T02:50:00Z",
+       "exit_reason": "Exit set in pick 20261123T0000Z: the stop price was reached.",
+       "gain_pct": -0.0055,
+       "gain_usd": -1.66,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Capitulation reversal (+9.0% off 55,121 low) followed by 10-hour tight bull flag holding 60,000 support.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Classic capitulation washout early Nov 21 (BTC 55,121, ETH 1,536) followed by a +9% V-reversal and a tight 10-hour high-level bull flag holding above 60,000 (BTC) and 1,671 (ETH). Entering measured swing longs in BTC ($300) and ETH ($300) with stops below the 12:00Z breakout base and ~2.6:1 R/R targets, keeping ~$318 cash.",
+       "usd": 300,
+       "wake_utc": "2026-11-22T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-24T02:45:00Z",
+       "exit_reason": "Exit set in pick 20261123T0000Z: the stop price was reached.",
+       "gain_pct": -0.0035,
+       "gain_usd": -1.06,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Capitulation reversal (+9.5% off 1,536 low) with two consecutive green 12h wakes and tight 10-hour flag above 1,671.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "Classic capitulation washout early Nov 21 (BTC 55,121, ETH 1,536) followed by a +9% V-reversal and a tight 10-hour high-level bull flag holding above 60,000 (BTC) and 1,671 (ETH). Entering measured swing longs in BTC ($300) and ETH ($300) with stops below the 12:00Z breakout base and ~2.6:1 R/R targets, keeping ~$318 cash.",
+       "usd": 300,
+       "wake_utc": "2026-11-22T00:00:00Z"
+      }
+     ],
+     "wins": 0
     }
    },
    "months_counted": [
-    "07"
+    "07",
+    "08"
    ],
    "name": "Gemini Neon",
-   "sum_gain_usd": 57.38,
-   "sum_hold_usd": 69.81,
-   "sum_twin_p80_usd": 32.76,
-   "sum_twins_beaten": 18,
+   "sum_gain_usd": 214.39,
+   "sum_hold_usd": 315.14,
+   "sum_twin_p80_usd": 162.42,
+   "sum_twins_beaten": 20,
    "verdict": "not finished"
   },
   "OPUS": {

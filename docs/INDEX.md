@@ -115,6 +115,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/29_time_machine_tm01_crypto_price_only.md` | Results so far for six AI models trading crypto from prices alone in the time machine, with why each trade was made. Rebuilt as sessions finish | CURRENT |
 | `docs/research/30_time_machine_tm02_crypto_with_news.md` | Results so far for the same six AI models with dated headlines added, the "did the news help" table, and the headlines each buy named | CURRENT |
 | `docs/research/31_model_knowledge_lines.md` | Where each model's memory of crypto prices stops, measured with one dated question, so the replay months can be read with that in mind | CURRENT |
+| `docs/research/32_exit_replay.md` | Exit replay (TMX1) of logged TM01 and TM02 AI and random-twin crypto buys under five fixed exit templates (A to E), written by `timemachine/exit_replay.py` | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
 
@@ -213,6 +214,8 @@ Working papers.
 | `timemachine/PLAN_TM04_stock_basket.md` | Plan for the fourth AI replays: each model names once a week eight of 38 stocks to hold. Marks fixed before any session | CURRENT |
 | `timemachine/score_tm01.py`, `timemachine/results_tm01.json` | Scores plan TM01 from the finished sessions: each model against holding bitcoin and its random twins, and a "why" row for every buy. The JSON is its stored output | CURRENT |
 | `timemachine/results_tm02.json` | Stored scores of plan TM02, written by `timemachine/score_tm01.py --plan TM02` | CURRENT |
+| `timemachine/PLAN_TMX1_exit_replay.md` | Plan for exit replay TMX1: five fixed exit templates on logged AI and random-twin crypto buys, with marks fixed before running | CURRENT |
+| `timemachine/exit_replay.py`, `timemachine/results_tmx1.json` | Replays logged TM01/TM02 AI and twin buys under templates A to E on 1Min tape bars and writes `docs/research/32_exit_replay.md`. The JSON is its stored output | CURRENT |
 | `timemachine/check_news_dates.py`, `timemachine/news_date_check.json` | Checks the news sites for stories dated earlier than they were made, and the stored counts | CURRENT |
 | `timemachine/knowledge_line.py`, `timemachine/knowledge_lines.json` | The memory test of the models: the question, the scoring against the tape, and the stored answers and hit marks | CURRENT |
 | `timemachine/SESSIONS.jsonl` | One line for every session ever started, so no replay goes uncounted | CURRENT |
