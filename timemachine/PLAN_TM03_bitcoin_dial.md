@@ -33,7 +33,9 @@ Card `practice/traders/D01_bitcoin_dial.md`, brief `timemachine/TRADER_BRIEF_WEI
 ## Yardsticks
 
 1. Hold: the same account, never changed after the first minute.
-2. Its own answers in shuffled order: the model's daily numbers for a month, put in a random order across that month's wakes, `tm_weights_twin_draws` times, with the same costs. This keeps how much it held on average and takes away when. It is the test of timing.
+2. Its own holdings in shuffled order (changed 2026-11-25 16:45 UTC, before any session of this plan was made; see the note below). The model's month is cut into stretches, a stretch being the days in a row it asked for the same share, the opening position included. The stretches are put back in a random order, each keeping its length, `tm_weights_twin_draws` times, with the same costs. This keeps every share it held and for how many days, and about the same number of trades, and takes away when. It is the test of timing.
+
+Note on the change. The first version shuffled the daily numbers one by one. The builder's helper measured on a made-up script that such a shuffle trades at nearly every wake and loses most of its money to costs, which would make any model that seldom moves look good. That would have flattered the model, so it was replaced before any session ran. The day-by-day shuffle and a shuffle of the new shares across the model's own change days are still printed, and are not part of the mark. When a model made few changes the number of different orders is small and the percentile is coarse; the scorer prints that number.
 
 ## What would count, fixed now
 

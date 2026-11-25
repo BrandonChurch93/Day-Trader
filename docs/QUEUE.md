@@ -15,18 +15,18 @@ Last changed: 2026-11-25 16:26 UTC
 
 | # | What | Needs | Blocked by |
 |---|---|---|---|
-| 8 | Start the practice desk with the two fixed rules and the first AI traders | practice account key in the repo's secrets | the owner's key |
-| 9b | An AI reads each earnings release the minute it is filed and says buy or skip for the next open; judged against random picks among the same releases and against buying every release. Plan and ledger row first | free SEC filings, daily stock prices from the built-in history | nothing |
-| 9c | Plan TM03: the model sets once a day how much bitcoin to hold, starting fully invested (`timemachine/PLAN_TM03_bitcoin_dial.md`). Plan and ledger row are in | the weights tool being built; crypto headlines for April and May | the tool |
-| 9d | Plan TM04: the model names eight of 38 stocks once a week (`timemachine/PLAN_TM04_stock_basket.md`). Plan and ledger row are in | the weights tool; filings and headlines on the tape | the tool |
-| 9e | A new swing card where the desk, not the model, sets the exit: a stop 8% below and five days, on months not yet traded. Earned by the exit replay (`docs/research/32_exit_replay.md`). Plan and ledger row first | nothing | a free slot |
-| 9f | Measured stock trading costs from past bid and ask, to replace the assumed spread | the data key (in) | being recorded |
-| 10 | Company filings read in full: a trader that compares each new annual or quarterly report with last year's and buys the companies whose reports changed least | free SEC filings, daily stock prices | stock prices: data key |
+| 8 | Put the first AI traders on the practice desk (`practice/PLAN_02_ai_desk.md`). The two fixed rules have run there since 2026-11-25 16:31 UTC | a method that earned it in the time machine | TM03 and TM04 results |
+| 9b | An AI reads each earnings release and says buy or skip for the next open; judged against random picks among the same releases and against buying every release. Large, mid and small companies. Draft plan `research_rig/PREREG_11_earnings_release_reader_DRAFT.md` | free SEC filings, daily stock prices from the built-in history | the plan being finished, then frozen with its ledger rows |
+| 9c | Plan TM03: the model sets once a day how much bitcoin to hold, starting fully invested (`timemachine/PLAN_TM03_bitcoin_dial.md`). Plan and ledger row are in. Yardstick changed before any session, see the plan | the weights tool (built, being checked); crypto headlines for April and May (recorded, date check running) | the checks |
+| 9d | Plan TM04: the model names eight of 38 stocks once a week (`timemachine/PLAN_TM04_stock_basket.md`). Plan and ledger row are in | the weights tool (built, being checked); filings and headlines on the tape (in) | the checks |
+| 9f | Measured stock trading costs from past bid and ask. Measured for 56 symbols, June to November 2026: the middle half-spread was about 1 bps in regular hours and about 2.4 bps in the first half hour, against the 5 bps the time machine charges. Still to do: write it up in `docs/research/` from a script | the data key (in) | a free slot |
+| 10 | Company filings read in full: a trader that compares each new annual or quarterly report with last year's and buys the companies whose reports changed least | free SEC filings, daily stock prices | the published design being collected with quotes |
 | 11 | A customer's good news, then buy its supplier before the supplier reports | free SEC filings for who sells to whom, stock prices, news | nothing |
 | 12 | Earnings call answers scored apart from the prepared remarks, held 15 days | filings, call text, stock prices | nothing |
 | 13 | New contracts that are large against a company's sales, from 8-K filings and the federal award list | free filings and award list, stock prices | nothing |
-| 14 | Fund trend rules on daily prices (`research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`) | daily fund prices with dividends | data key |
-| 15 | Insider buying only when the news is bad and the price is far below its high (`research_rig/PREREG_08_insider_buying_DRAFT.md` is the plain version) | filings, prices, news | data key |
+| 14 | Fund trend rules on daily prices (`research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`) | daily fund prices with dividends (data key is in) | the plan being brought up to date |
+| 15 | Insider buying only when the news is bad and the price is far below its high (`research_rig/PREREG_08_insider_buying_DRAFT.md` is the plain version) | filings, prices, news (data key is in; stock news only from 2026-04-29) | a free slot |
+| 9e | A new swing card where the desk, not the model, sets the exit: a stop 8% below and five days, on months not yet traded. Earned by the exit replay (`docs/research/32_exit_replay.md`). Moved down by the builder 2026-11-25 16:46 UTC: the same replay showed the models' buys behind random buys under every exit, so the exit alone is unlikely to be the fix. Plan and ledger row first | a desk-exit option in the time machine | lower priority than 9b, 9c, 9d |
 
 ## Ideas, not yet shaped into a test
 
