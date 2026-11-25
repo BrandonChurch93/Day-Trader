@@ -208,6 +208,34 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(closeout["utc"],O.stamp(T+60))
         self.assertEqual({r["symbol"]:r["open"] for r in closeout["trades"]},{A:170,B:120})
 
+    def test_reaudit_r1_full_costed_benchmarks_hold_every_leg(self):
+        for px in (90,110):
+            spec = world([(t,s,p,p,p,p) for t,p in ((T,100),(T+3600,px)) for s in (A,B,BTC)])
+            spec["end_marks"] = {s:px for s in (A,B,BTC)}
+            spec["params"]["funding"][A] = {T+3600:.001,T+7200:.002}
+            spec["params"]["funding"][B] = {T+3600:.002,T+7200:.001}
+            spec["params"]["funding"][BTC] = {T+3600:.0015,T+7200:.0015}
+            path = self.root/f"TM07-bench-{px}"
+            D.create_desk(path,spec,"A",D.BOSSES[0],D.issue_role_tokens("A"),approval_key=SEAL_KEY,
+                          vendor_signature=D.seal(SEAL_KEY,"vendor",spec["vendor_proofs"]))
+            session = D.DeskSession(path)
+            for weights,sign in (({A:.5,B:.5},1),({B:.5,A:.5},1),({BTC:1},1),({BTC:-1},-1)):
+                got = S.buy_and_hold(session,weights,12)
+                notional = 1000/(1+.0004+.0012*(1+sign*.0004))
+                expected = notional+sign*notional*(px/100-1)-sign*notional*px/100*.003
+                self.assertAlmostEqual(got["value"],expected,places=8)
+                self.assertEqual(set(got["book"]["qty"]),set(weights))
+                self.assertAlmostEqual(got["book"]["traded_usd"],notional)
+            for _ in range(2):
+                _,key = info(session)
+                session.handle("boss","pick",dict(wake_key=key,no_change=True,why="Baseline."))
+            main = S.score_week(path)["main"]
+            baseline = (1000/(1+.0004+.0012*1.0004))*(px/100)*(1-.003)
+            self.assertAlmostEqual(main["equal"],100*(baseline/1000-1))
+            self.assertAlmostEqual(main["benchmark"],main["equal"])
+            with self.assertRaisesRegex(S.UnsupportedWeek,"benchmark"):
+                S.buy_and_hold(session,{A:.5,"MISSING/USD":.5},12)
+
     def test_b02_immediate_cannot_size_from_a_later_open(self):
         def execute(later):
             spec = world()

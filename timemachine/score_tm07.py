@@ -192,6 +192,42 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
                 triggered=triggered, unsupported=unsupported)
 
 
+def buy_and_hold(sess, weights, fee, multiple=1):
+    """Fully fund every declared leg together after explicit fee and spread."""
+    spec = sess.spec
+    pp = P.with_fee(sess.pp,fee)
+    book = P.new_book(spec["cfg"]["tm_account_start_usd"])
+    weights = {s:w*multiple for s,w in sorted(weights.items())}
+    required = set(weights)
+    if not required <= set(pp["symbols"]) or not required <= spec["end_marks"].keys():
+        raise UnsupportedWeek("benchmark lacks priced symbols or final marks")
+    at,end = spec["wakes"][0],spec["end"]
+    cutoff = min(at+3600,end)
+    gross = sum(abs(w) for w in weights.values())
+    cost = sum(abs(w)*(pp["hs"][s]+pp["fee"][s]*(1+pp["hs"][s]*(1 if w > 0 else -1)))
+               for s,w in weights.items())
+    entered = []
+
+    def enter(tick,opens,protected):
+        if entered or tick >= cutoff or not required <= opens.keys():
+            return
+        budget = book["cash"]/(1+cost)
+        need = sum(abs(w)*budget*pp["maint"][s] for s,w in weights.items())
+        if budget < need:
+            raise UnsupportedWeek("benchmark cannot meet maintenance at its first common open")
+        for s,w in weights.items():
+            entered.append(P.trade(book,s,w*budget/opens[s],opens[s],pp))
+        book["target"] = dict(weights)
+        return required
+
+    rows = P.scan_rows(sess.minutes,at,end,required)
+    O.Orders().advance(book,pp,rows,at,end,gross,on_open=enter,last=True)
+    if len(entered) != len(weights) or book.get("desk_liquidation"):
+        raise UnsupportedWeek("benchmark has no executable full-book open")
+    book["last_px"].update(spec["end_marks"])
+    return dict(value=max(0.0,P.value_at(book,spec["end_marks"])),book=book,entries=entered)
+
+
 def usage_totals(rows, neutral=(), expected=None):
     """None means an unobserved field, not an observed zero. Cached/reasoning may be subsets."""
     out, seen = {}, {}
@@ -245,18 +281,20 @@ def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None)
         raise ValueError("journal does not match replay")
     if check["unsupported"]:
         return emit(dict(ident, invalid=f"original has no common open: {check['unsupported']}"))
-    n = len(bundles)
-    hold = [{ "weights": {s: spec["gross"]/len(spec["symbols"]) for s in spec["symbols"]}}] + [{} for _ in range(n-1)]
+    hold = {s: spec["gross"]/len(spec["symbols"]) for s in spec["symbols"]}
     benchmark = spec["benchmark"]
-    btc = [{"weights": {benchmark: 1.0}}] + [{} for _ in range(n-1)]
     by = {}
     for mult in (1, *cfg["tm06_plan"]["carried_leverage"]):
         for f in sorted(set(cfg["tm_perp_fee_levels_bps"]) | {fee}):
             gain = lambda v: (v/start-1)*100
             run = replay(sess, bundles, f, mult)
-            entry = dict(value=run["value"], gain=gain(run["value"]), equal=gain(replay(sess, hold, f, mult)["value"]),
-                         benchmark=gain(replay(sess, btc, f, mult)["value"]),
-                         benchmark_short=gain(replay(sess, [{"weights": {benchmark: -1.0}}]+[{} for _ in range(n-1)], f, mult)["value"]),
+            try:
+                equal, btc_long, btc_short = (gain(buy_and_hold(sess,w,f,mult)["value"])
+                                              for w in (hold,{benchmark:1.0},{benchmark:-1.0}))
+            except UnsupportedWeek as exc:
+                return emit(dict(ident,invalid=str(exc)))
+            entry = dict(value=run["value"], gain=gain(run["value"]), equal=equal,
+                         benchmark=btc_long, benchmark_short=btc_short,
                          stats=P.p_stats(run["book"], run["value"], start), immediate=run["immediate"], standing=run["standing"])
             if mult == 1 and f == fee or draw_sensitivities:
                 twin, activity = [], []
