@@ -1,7 +1,8 @@
 """Pure Replay 16 engine. The caller, not this module, opens verified archives."""
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
-from dataclasses import dataclass
+from copy import copy
+from dataclasses import dataclass, replace
 import random
 
 import numpy as np
@@ -18,6 +19,18 @@ except ImportError:
 H = C.HOUR
 MAJORS = (C.Asset(1,"BTCUSDT"),C.Asset(1027,"ETHUSDT"))
 LEVELS = ("low","judged","high")
+UNBOUNDED = 10**12
+
+
+def hour_bounds(begin,end):
+    """Keep only complete UTC bars wholly inside the identity segment."""
+    return ((begin+H-1)//H*H if begin>-UNBOUNDED else begin,
+            end//H*H if end<UNBOUNDED else end)
+
+
+def hourly_asset(asset):
+    begin,end = hour_bounds(asset.begin,asset.end)
+    return asset if (begin,end)==(asset.begin,asset.end) else replace(asset,begin=begin,end=end)
 
 
 @dataclass(frozen=True)
@@ -40,6 +53,20 @@ class Tape:
         self.dead = zero_runs(self.trade)
         self.dead_starts = [a for a,_ in self.dead]
         self.payments = sorted(t for t in self.funding if not self.no_volume(t))
+        self.scoped = {}
+
+    def within(self,asset):
+        span = (asset.begin,asset.end)
+        if span==(-UNBOUNDED,UNBOUNDED):
+            return self
+        if span not in self.scoped:
+            scoped = copy(self)
+            scoped.dead = zero_runs(self.trade,*span)
+            scoped.dead_starts = [a for a,_ in scoped.dead]
+            scoped.payments = sorted(t for t in self.funding
+                                      if span[0]<=t<span[1] and not scoped.no_volume(t))
+            self.scoped[span] = scoped
+        return self.scoped[span]
 
     def no_volume(self,t):
         i = bisect_left(self.dead_starts,t+1)-1
@@ -67,17 +94,18 @@ class Tape:
         return False
 
 
-def zero_runs(trade):
+def zero_runs(trade,begin=-UNBOUNDED,end=UNBOUNDED):
     timestamps = trade.times
     if not len(timestamps):
         return []
+    lo,hi = bisect_left(timestamps,begin),bisect_left(timestamps,end)
     if not isinstance(trade.bars,dict):
         volumes = trade.bars.values[:,4]
-        zero = np.flatnonzero(volumes==0)
+        zero = lo+np.flatnonzero(volumes[lo:hi]==0)
         volume_at = volumes.__getitem__
     else:
         volume_at = lambda i:getattr(trade.bars[timestamps[i]],"v",1)
-        zero = [i for i in range(len(timestamps)) if volume_at(i)==0]
+        zero = [i for i in range(lo,hi) if volume_at(i)==0]
     out = []
     j = 0
     while j<len(zero):
@@ -90,10 +118,10 @@ def zero_runs(trade):
             if out and start<out[-1][1]:
                 continue
             k = zero[j-1]+1
-            while k<len(timestamps) and volume_at(k)==0:
+            while k<hi and volume_at(k)==0:
                 k += 1
-            end = int(timestamps[k]) if k<len(timestamps) else 10**12
-            out.append((start,end))
+            resume = int(timestamps[k]) if k<hi else end
+            out.append((start,resume))
     return out
 
 
@@ -109,8 +137,10 @@ class Sleeve:
 
 
 def live_screens(asset,tape,t,end,p):
+    asset = hourly_asset(asset)
     if tape is None or not asset.begin <= t < asset.end or t not in tape.trade.bars:
         return None
+    tape = tape.within(asset)
     # Initial source presence is distinct from trading liveness. A source
     # is needed only while this identity segment is in force.
     coverage = tape.covers(t,min(end,asset.end-H))
@@ -133,7 +163,7 @@ def market_pool(snapshot,tapes,t,end,p,confirmed=None,screens=None,*,legacy_file
     taken = set()
     for row in snapshot["kept"] if snapshot else ():
         for asset in F.perp_segments(row):
-            asset = bound_asset(asset,confirmed)
+            asset = hourly_asset(bound_asset(asset,confirmed))
             if not asset.begin <= t < asset.end or asset.pair in taken:
                 continue
             if confirmed is not None and (asset.coin,asset.pair) not in confirmed:
@@ -157,8 +187,10 @@ def market_pool(snapshot,tapes,t,end,p,confirmed=None,screens=None,*,legacy_file
 
 
 def short_week(tape,asset,start,end,p,trace=None):
+    asset = hourly_asset(asset)
     if not asset.begin<=start<asset.end:
         raise ValueError("short entry outside the identity segment")
+    tape = tape.within(asset)
     opening = tape.executable(start)
     if opening is None:
         raise ValueError("short entry without a positive-volume open")
@@ -244,22 +276,34 @@ class Long:
 
 
 def long_week(series,asset,t,end,fee,p):
+    asset = hourly_asset(asset)
     if not asset.begin<=t<asset.end or t not in series.bars:
         return Long(False,C.Outcome(1,end,()),np.ones((end-t)//H+1))
     # The sole Rule A change is the entry gate above. The position cannot
     # buy after Monday, even though its Rule A sale may be delayed.
-    outcome = C.hold_week(series,asset,t,end,fee,1,p)
+    outcome = spot_outcome(series,asset,t,end,fee,p)
     entry = series.bars[t].o
     price = entry
     marks = []
     for hour in range(t,end+H,H):
-        if hour == end and outcome.release == end:
+        if outcome.release is not None and hour >= outcome.release:
             marks.append(outcome.factor)
-            break
+            continue
         if hour < end and asset.begin <= hour < asset.end and hour in series.bars:
             price = series.bars[hour].c
         marks.append(price/(entry*(1+fee)))
     return Long(True,outcome,np.array(marks,dtype=float),series,asset,entry*(1+fee))
+
+
+def spot_outcome(series,asset,t,end,fee,p):
+    asset = hourly_asset(asset)
+    outcome = C.hold_week(series,asset,t,end,fee,1,p)
+    if outcome.release is None and asset.end<UNBOUNDED:
+        # A known identity end retires the lot, rather than leaving an
+        # unfillable pending order alive in the original account.
+        i = bisect_left(series.times,asset.end)-1
+        outcome = replace(outcome,release=series.times[i]+H)
+    return outcome
 
 
 def snapshot_at(rows,t):
@@ -282,7 +326,9 @@ def spot_universe(rows,spot,t,p,confirmed=None):
             key = (r["id"],pair)
             if key not in confirmed or not lo<=t<hi or pair in allocated:
                 continue
-            lo = max(lo,asset_floor(confirmed,*key))
+            lo,hi = hour_bounds(max(lo,asset_floor(confirmed,*key)),hi)
+            if not lo<=t<hi:
+                continue
             if t-H<lo:
                 continue
             allocated.add(pair)
@@ -356,7 +402,7 @@ def portfolio_step(book,t,end,data,weights,hot_n,short_w,short_plans,is_b,
             d.outcome.factor-1 if d.outcome.release is not None and d.outcome.release<=end
             else -1 for d in data])
         unit = np.where(active & (opening>0) & (equity>0),
-                        np.minimum(equity*share/hot_n,opening/np.maximum(fills,1)),0)
+                        np.minimum(equity*share/hot_n,opening*share/np.maximum(fills,1)),0)
         exposure = unit*fills/(1+spot_fee)
         gain = unit*long_pnl
     else:

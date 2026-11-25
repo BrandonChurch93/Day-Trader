@@ -35,6 +35,8 @@ class Part:
 
 
 def prepare(tape,asset,t,end,p):
+    asset = M.hourly_asset(asset)
+    tape = tape.within(asset)
     hours = range(t,end+H,H)
     trade = tuple(tape.executable(x) if asset.begin<=x<asset.end else None for x in hours)
     risk = tuple((tape.mark.bars.get(x) or tape.trade.bars.get(x))
@@ -59,6 +61,7 @@ def prepare(tape,asset,t,end,p):
 
 
 def swing(grid,asset,t,end,p,fee,*,lev=1,bounce=False,charge_funding=True,trace=None):
+    asset = M.hourly_asset(asset)
     last = grid.preceding_close
     last_pay = grid.preceding_payment
     fund_window = p["live_funding_lookback_hours"]*H
@@ -322,7 +325,7 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None,us_roster=None):
                                     "hot_live":int(np.sum(groups[0]!=len(pool))),
                                     "missing_funding_files":len(missing),"carried":carried,
                                     **{k:len(v) for k,v in screens.items()}})
-                longs = [C.hold_week(spot[a.pair],a,t,end,p13["cost_bps_per_side"]/10000,1,params)
+                longs = [M.spot_outcome(spot[a.pair],a,t,end,p13["cost_bps_per_side"]/10000,params)
                          for a in ranked]
                 spot_book.advance(t,max(1,len(longs)),longs,carried)
                 weekly = [M.short_week(tapes[a.pair],a,t,end,params) for a in pool]

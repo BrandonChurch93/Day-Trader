@@ -214,8 +214,54 @@ class Replay16Test(unittest.TestCase):
         b.add_pending(old,np.array([.5]))
         new = M.Long(True,C.Outcome(2,ts(4),()),np.array([1,1,2.]))
         M.portfolio_step(b,ts(2),ts(4),[new],w,1,np.zeros((1,0)),[],f,0,0,0,.5,f)
-        self.assertAlmostEqual(b.cash[0],.2)
-        self.assertAlmostEqual(b.finish()[0],.7)
+        self.assertAlmostEqual(b.cash[0],.15)
+        self.assertAlmostEqual(b.finish()[0],.65)
+
+    def test_large_waiting_lot_does_not_back_new_short(self):
+        w = np.ones((1,1))
+        f = np.zeros(1,dtype=bool)
+        book = M.Book(1)
+        book.cash[0] = .2
+        book.add_pending(M.Long(True,C.Outcome(1,ts(8),()),np.ones(3)),np.array([4.]))
+        new = M.Long(True,C.Outcome(1,ts(7),()),np.ones(3))
+        sleeve = M.Sleeve(0,.2,2,False,"weekly",np.array([[0,0,1],[0,.2,2],[0,.2,2.]]))
+        M.portfolio_step(book,ts(2),ts(4),[new],w,1,w,[sleeve],f,.01,0,0,.5,f)
+        self.assertAlmostEqual(book.pending[-1][1][0],.1)
+        self.assertAlmostEqual(book.funding[0],.1/1.01*.2)
+        self.assertAlmostEqual(book.cash[0]-book.funding[0],.1)
+
+    def test_fence_at_half_hour_settles_at_prior_complete_close(self):
+        boundary = C.Asset(10,X.pair,T-H,ts(2)+H//2)
+        class RejectCross(dict):
+            def __getitem__(self,t):
+                if t==ts(2):
+                    raise AssertionError("bar crosses identity boundary")
+                return super().__getitem__(t)
+            def get(self,t,default=None):
+                return self[t] if t in self else default
+        tape = fut({1:(100,100,96),2:(900,1000,900)},marks={2:(900,1000,900)},
+                   payments={-1:0,2:.5})
+        tape.trade.bars = RejectCross(tape.trade.bars)
+        tape.mark.bars = RejectCross(tape.mark.bars)
+        out = M.short_week(tape,boundary,T,ts(4),params())
+        self.assertEqual((out.reason,out.funding,out.flagged),("last_close",0,True))
+        self.assertAlmostEqual(out.price,.04)
+        prices = C.Series(RejectCross({T:C.Bar(100,100,100),ts(1):C.Bar(100,95,96),
+                                       ts(2):C.Bar(900,900,900)}))
+        lot = M.long_week(prices,boundary,T,ts(4),0,params())
+        self.assertEqual((lot.outcome.release,lot.outcome.flagged),(ts(2),True))
+        self.assertAlmostEqual(lot.outcome.factor,.96)
+
+    def test_successor_starts_at_first_complete_bar_and_cannot_borrow_volume(self):
+        boundary = C.Asset(10,X.pair,T-H//2,ts(30))
+        tape = fut({i:(100,100,100,100,0) for i in range(-24,0)},payments={-1:0,0:0})
+        self.assertFalse(M.live(boundary,tape,ts(-1),ts(5),params())[0])
+        self.assertFalse(M.live(boundary,tape,T,ts(5),params())[0])
+        self.assertTrue(M.live(boundary,tape,ts(1),ts(5),params())[0])
+        self.assertEqual(tape.within(M.hourly_asset(boundary)).dead,[])
+        series = C.Series({ts(i):C.Bar(100,100,100) for i in range(-1,31)})
+        self.assertFalse(M.long_week(series,boundary,ts(-1),ts(5),0,params()).filled)
+        self.assertTrue(M.long_week(series,boundary,T,ts(5),0,params()).filled)
 
     def test_year_end_pending_open_settles_to_opening_year(self):
         series = C.Series({ts(0):C.Bar(100,100,100),ts(3):C.Bar(150,150,150)})

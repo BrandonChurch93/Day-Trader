@@ -29,6 +29,15 @@ def audit(data,out):
     timeline = A.I.Timeline(policy,stop)
     allowed = {sym for _,sym in timeline.admitted(runtime)["futures"]}
     ranges = A.source_ranges(merged)
+    snapshots = F.json_read(data/"snapshots_16.json")
+    spans = defaultdict(set)
+    floors = A.I.DatedPairs(timeline.floors["futures"])
+    for snaps in snapshots.values():
+        for snap in snaps:
+            for row in snap["kept"]:
+                for raw in F.perp_segments(row):
+                    a = M.hourly_asset(A.I.bound_asset(raw,floors))
+                    spans[raw.pair].add(a)
     groups = defaultdict(list)
     for key,m in merged["archives"].items():
         symbol = key.split("/")[5]
@@ -61,11 +70,18 @@ def audit(data,out):
                     vmark.update(ts)
             else:
                 funds.update(t for u in F.csv_times(raw) if (t:=(u+30)//60*60)<=stop)
-        intervals = M.zero_runs(C.Series(trade))
-        clock = M.Tape(C.Series({t:trade[t] for t in mondays if t in trade}),C.Series({}),{},ranges.get(symbol,()))
-        clock.dead,clock.dead_starts = intervals,[lo for lo,_ in intervals]
-        sorted_pay = sorted(t for t in funds if not clock.no_volume(t))
-        clock.payments = sorted({sorted_pay[i] for t in mondays if (i:=bisect_left(sorted_pay,t)-1)>=0})
+        source = M.Tape(C.Series(trade),C.Series({}),dict.fromkeys(funds,0.),ranges.get(symbol,()))
+        thin = C.Series({t:trade[t] for t in mondays if t in trade})
+        def project(full):
+            result = M.Tape(thin,C.Series({}),{},full.covered)
+            result.dead,result.dead_starts = full.dead,full.dead_starts
+            pay = full.payments
+            result.payments = sorted({pay[i] for t in mondays if (i:=bisect_left(pay,t)-1)>=0})
+            return result
+        clock = project(source)
+        for asset in spans[symbol]:
+            if (asset.begin,asset.end)!=(-M.UNBOUNDED,M.UNBOUNDED):
+                clock.scoped[asset.begin,asset.end] = project(source.within(asset))
         n = len(vtrade-vmark),len(trade.keys()-mark)
         return symbol,clock,n
 
@@ -73,7 +89,6 @@ def audit(data,out):
     with ThreadPoolExecutor(2) as pool:
         for sym,tape,n in pool.map(one,groups.items()):
             tapes[sym],marks[sym] = tape,n
-    snapshots = F.json_read(data/"snapshots_16.json")
     result = {}
     for sample,snaps in snapshots.items():
         result[sample] = {}

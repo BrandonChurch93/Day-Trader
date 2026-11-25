@@ -51,6 +51,25 @@ class Replay17Test(unittest.TestCase):
         control = fut({-25:(90,90,90),0:(80,500,500)},marks={-3:(120,120,120)})
         self.assertFalse(R.prepare(control,X,T,ts(2),settings()).signals[0])
 
+    def test_half_hour_fence_is_not_a_mark_or_trade_and_successor_waits(self):
+        tape = fut({-25:(90,90,90),-3:(120,120,120),0:(100,100,98),
+                    1:(98,99,96),2:(900,1000,900)},marks={2:(900,1000,900)})
+        old = C.Asset(10,X.pair,ts(-30),ts(2)+M.H//2)
+        successor = C.Asset(11,X.pair,old.end,ts(40))
+        g = R.prepare(tape,old,T,ts(5),settings())
+        self.assertTrue(g.signals[0])
+        self.assertIsNone(g.trades[2])
+        self.assertIsNone(g.risk[2])
+        trace = []
+        out = R.swing(g,old,T,ts(5),settings(),0.,lev=3,trace=trace)
+        self.assertTrue(out.flagged)
+        self.assertEqual(trace[-1][:3],(ts(2),"last_close",96))
+        g2 = R.prepare(tape,successor,ts(2),ts(5),settings())
+        self.assertIsNone(g2.trades[0])
+        self.assertIsNone(g2.risk[0])
+        self.assertIsNotNone(g2.trades[1])
+        self.assertFalse(any(g2.signals))
+
     def test_exit_clocks_funding_and_fees(self):
         g = grid([(100,100,95),(90,100,90),(100,100,100)],pays={0:.4,1:.1})
         a,tr = run(g,fee=.01)
