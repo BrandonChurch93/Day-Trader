@@ -117,6 +117,10 @@ if RAW_FULL_09:
         ["results_09.json"],
     )
     NOTES["alpaca_coverage_09.json"] = "Full-hourly gap check for steady-volume USD pairs. No rule rerun."
+if os.path.exists(os.path.join(H, "results_07.json")):
+    OUTPUTS["results_07.json"] = ("held-back", "python3 run_07.py --full", ["run_07.py", "rig2.py", "fixtures2.py", "platform_bars_integrity.py", "../config/thresholds.yaml"],
+                                  ["data/platform_bars/1min/*.csv", "data/platform_bars/1day/*.csv"], ["results_v2.json", "results_04.json", "results_05.json", "results_05b.json"])
+    NOTES["results_07.json"] = "Replay 07, run once on 2026-11-25. The output also holds the sha256 of each SPY and QQQ price file it read. run_07.py was uncommitted when it ran (sha256 aeffaeec647dd7a3267fdea225664bb861cbba7824de179fe9b1887a295c08d7)."
 
 def sha(path):
     h = hashlib.sha256()

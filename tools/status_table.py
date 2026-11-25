@@ -67,9 +67,18 @@ def crypto_methods():
             "(`practice_crypto_fee_bps_added` plus `tm_crypto_half_spread_bps`). "
             f"Held back {dates[0]} to {dates[1]}: best rule {growth} grew {pc(rules[growth]['held']['total'])}; "
             f"holding bitcoin grew {pc(h['total'])}.", "`docs/research/28_replay_09_crypto_methods.md`")
+def intraday_stocks():
+    r = J("results_07.json"); S = r["symbols"]; J2 = r["judged"]; cs = lambda l: f"{r['costs'][l]:g} bps"
+    s = "; ".join(f"{k}: {sum(o['passed_both_judged_costs'].values())} of {len(o['passed_both_judged_costs'])} rules pass all five marks at both {' and '.join(cs(l) for l in J2)} per side" for k, o in S.items())
+    be = [(o["breakeven"][n]["vs_hold_round_trip_bps"], n, k) for k, o in S.items() for n in o["breakeven"] if o["breakeven"][n]["vs_hold_per_side"]["status"] != "below_at_zero"]
+    s += ". " + (f"Highest break-even cost against holding, round trip, whole sample: {max(be)[0]:.1f} bps ({max(be)[1]} on {max(be)[2]})." if be else "No rule beats holding even at zero cost.")
+    s += " Prices from the workspace's own price lookup, dividend adjustment UNKNOWN, days that failed the bar check not used."
+    return ("Replay 07", "Eight day trading rules on SPY and QQQ one-minute bars, judged at 2 and 5 bps per side", s, "`docs/research/27_replay_07_intraday_spy_qqq.md`")
 ROWS = [crypto_trend, crypto_intraday, pilot, basket, stocks, books, smaller, count_check]
 if os.path.exists(RR + "results_09.json"):
     ROWS.insert(5, crypto_methods)
+if os.path.exists(RR + "results_07.json"):
+    ROWS.insert(ROWS.index(books), intraday_stocks)
 def table():
     t = "| Test | What was asked | Result, MEASURED | Full write-up |\n|---|---|---|---|\n"
     for f in ROWS:

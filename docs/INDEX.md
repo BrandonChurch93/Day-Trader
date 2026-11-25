@@ -110,8 +110,10 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/21_systematic_funds_and_published_rules.md` | Rule-based funds and published rules, with their live records | CURRENT |
 | `docs/research/25_what_the_evidence_supports.md` | One page that pulls the reading and all our tests together, with the ranked list of what to test next | CURRENT |
 | `docs/research/26_insider_buying_evidence.md` | What the evidence says about buying after insiders buy: the 2012 paper, later samples, funds that tried it, the data a test needs. Reading only, no test | CURRENT |
+| `docs/research/27_replay_07_intraday_spy_qqq.md` | Results for eight day trading rules on SPY and QQQ one-minute bars, with break-even costs | CURRENT |
 | `docs/research/28_replay_09_crypto_methods.md` | Results for new crypto timing, ranking, lead and risk rules on Alpaca | CURRENT |
 | `docs/research/29_time_machine_tm01_crypto_price_only.md` | Results so far for six AI models trading crypto from prices alone in the time machine, with why each trade was made. Rebuilt as sessions finish | CURRENT |
+| `docs/research/30_time_machine_tm02_crypto_with_news.md` | Results so far for the same six AI models with dated headlines added, the "did the news help" table, and the headlines each buy named | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
 
@@ -154,6 +156,7 @@ Working papers.
 | `research_rig/AMENDMENT_2026-11-25_audit_fixes.md` | The audit fixes, written before the rerun | CURRENT |
 | `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md` | Plan for a stock fund test that waits for a data purchase | DRAFT |
 | `research_rig/PREREG_07_intraday_spy_qqq.md` | Frozen plan for replay 07, day trading rules on SPY and QQQ one-minute bars. Ledger rows 56 to 71 | CURRENT |
+| `research_rig/run_07.py`, `research_rig/results_07.json`, `research_rig/build_doc27.py` | Replay 07: script with its checks, output from the one held-back run, and the builder of document 27 | CURRENT |
 | `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, decisions 1a and 1b, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |
 | `research_rig/PREREG_09_crypto_methods.md` | Frozen plan for new long-only crypto rules at Alpaca cost | CURRENT |
 | `research_rig/run_09.py`, `research_rig/fixtures_09.py` | Replay engine and synthetic timing, fees, gaps and matching checks for replay 09 | CURRENT |
@@ -204,6 +207,8 @@ Working papers.
 | `timemachine/PLAN_TM01_crypto_price_only.md` | Plan for the first AI replays: six models, one card, crypto prices only, with the pass mark fixed before any session | CURRENT |
 | `timemachine/PLAN_TM02_crypto_with_news.md` | Plan for the second AI replays: the same six models and months with dated crypto headlines added, and the test for whether the news helped | CURRENT |
 | `timemachine/score_tm01.py`, `timemachine/results_tm01.json` | Scores plan TM01 from the finished sessions: each model against holding bitcoin and its random twins, and a "why" row for every buy. The JSON is its stored output | CURRENT |
+| `timemachine/results_tm02.json` | Stored scores of plan TM02, written by `timemachine/score_tm01.py --plan TM02` | CURRENT |
+| `timemachine/check_news_dates.py`, `timemachine/news_date_check.json` | Checks the news sites for stories dated earlier than they were made, and the stored counts | CURRENT |
 | `timemachine/SESSIONS.jsonl` | One line for every session ever started, so no replay goes uncounted | CURRENT |
 | `timemachine/test_tape.py`, `timemachine/test_sim.py`, `timemachine/__init__.py` | Checks with no network, and the package marker | CURRENT |
 

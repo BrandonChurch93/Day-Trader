@@ -9,17 +9,14 @@ Last changed: 2026-11-25 15:22 UTC
 | # | What | Plan | Started |
 |---|---|---|---|
 | 1 | Six AI models trade crypto from prices alone in the time machine, October 2026 first, then four more months | `timemachine/PLAN_TM01_crypto_price_only.md` | 2026-11-25 |
-| 2 | Replay 07: eight day trading rules on SPY and QQQ one-minute prices | `research_rig/PREREG_07_intraday_spy_qqq.md` | 2026-11-25 |
-| 3 | Replay 09: seven crypto methods not tried before, at Alpaca's fees | `research_rig/PREREG_09_crypto_methods.md` | 2026-11-25 |
-| 4 | Tape: crypto prices further back, and a source of dated headlines that needs no key | none, tooling | 2026-11-25 |
+| 2 | The same six AI models trade crypto with dated headlines added, same five months | `timemachine/PLAN_TM02_crypto_with_news.md` | 2026-11-25 |
+| 3 | Tape: a fixed list of single stocks from the built-in price history, and company filings (8-K) as dated news | none, tooling | 2026-11-25 |
 | 4b | Order-book cost samples on Kraken and Binance.US, one full day. The sampler stops by itself at about 16:30 UTC. Then: `cd research_rig && python3 books_summary.py && python3 build_doc24.py`, `python3 tools/status_table.py --write`, commit, `python3 provenance.py --record --with-books`, commit | `docs/research/24_order_book_costs.md` | 2026-11-25 |
 
 ## Next, in order
 
 | # | What | Needs | Blocked by |
 |---|---|---|---|
-| 5 | Crypto traders that read dated headlines as well as prices (`practice/traders/A08_crypto_news.md` and a news version of card B01), against the price-only traders of item 1 | headlines on the tape | item 4 |
-| 5b | A "why" record for every replay trade: what the trader looked at before it (which bars, which headlines), its stated reason, and how the trade ended, gathered into one table per session so wins and losses can be traced to a cause. The owner asked for this on 2026-11-25 | lookups log and picks, both already kept by the time machine | nothing |
 | 6 | Measure each model's knowledge line with dated questions, so replays only use days after it | nothing | nothing |
 | 7 | Buy bitcoin or ether when the cost of holding futures has been sharply negative for a day, sell when it turns positive. A fixed rule on one year of free Kraken futures history | Kraken futures funding history | nothing |
 | 8 | Start the practice desk with the two fixed rules and the first AI traders | practice account key in the repo's secrets | the owner's key |
@@ -65,3 +62,7 @@ The results of everything run before 2026-11-25 15:00 UTC are in the table in `d
 |---|---|---|
 | - | Build the time machine | Built and pushed 2026-11-25. Tape and recorder 65 checks, pretend broker and server 93 checks. A hold of bitcoin over October 2026 ran end to end and its books matched the pretend broker to the cent |
 | - | Outside review of the practice desk's order code | Three passes by a different model. Faults found and fixed: overspending across traders, selling a shared holding twice, a stock order sent after the close, a pick edited after it was seen. Three test files pass |
+| - | Replay 07: eight day trading rules on SPY and QQQ one-minute prices | Run once 2026-11-25. No rule passed on either fund (`docs/research/27_replay_07_intraday_spy_qqq.md`). Follow-up worth doing: measure the real cost of a round trip in QQQ at the practice desk, since one rule beats holding only below about 1.8 hundredths of a percent |
+| - | Replay 09: seven crypto methods not tried before, at Alpaca's fees | Run once 2026-11-25 and checked by a second model. None passed (`docs/research/28_replay_09_crypto_methods.md`) |
+| - | Tape: crypto prices further back, and dated headlines that need no key | Done 2026-11-25. Days from 2024, minutes from 2026-01-01, headlines from 2026-06-01 from three sites. Headline dates checked (`timemachine/news_date_check.json`). SPY, QQQ and 22 funds added from the built-in price history |
+| - | A "why" record for every replay trade | Built 2026-11-25 into the scoring script. One row per buy: what the trader looked up, its reason, the headlines it named, how the trade ended (`docs/research/29_time_machine_tm01_crypto_price_only.md`, `docs/research/30_time_machine_tm02_crypto_with_news.md`) |
