@@ -160,6 +160,21 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(rec["skipped"][0]["why"],"gross_limit")
         self.assertLessEqual(P.gross_at(book,{A:100}),P.value_at(book,{A:100}))
 
+    def test_b08_twin_cannot_drop_a_condition_or_ignore_unfillable_wake(self):
+        spec = world()
+        bundles = [{"weights":{A:.2},"conditions":condition(T,B)},{"weights":None}]
+        class Swap:
+            def shuffle(self, xs):
+                xs.reverse()
+        rows = copy.deepcopy(spec["rows"])
+        rows[1]["marks"].pop(B)
+        with self.assertRaisesRegex(ValueError,"destination mark"):
+            S.shuffle_bundles(bundles,rows,spec["wakes"],spec["end"],Swap())
+        moved = S.shuffle_bundles(bundles,spec["rows"],spec["wakes"],spec["end"],Swap())
+        gap = world([r for r in spec["minutes"] if r[0] < T+3600 or r[1] != A])
+        s = self.create("A",spec=gap)
+        self.assertEqual(S.replay(s,moved).get("unsupported"),[T+3600])
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):

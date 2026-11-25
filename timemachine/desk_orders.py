@@ -308,7 +308,8 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     active_rows = P.scan_rows(minutes, at, end, symbols, watched=orders.active)
     scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate, last=last)
     if record is None:
-        record = dict(target=dict(book["target"]), trades=[], skipped=[{"why":"no_common_open"}], changed=False)
+        record = dict(target=dict(book["target"]), trades=[],
+                      skipped=[{"why":"maintenance" if scan["closeout"] else "no_common_open"}], changed=False)
     record["scan"] = scan
     if last:
         orders.expire(end)

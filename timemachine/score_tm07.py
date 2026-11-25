@@ -16,6 +16,10 @@ WEEKS = tuple((FIRST + timedelta(weeks=i)).isoformat() for i in range((LAST-FIRS
 EXTENSION = tuple(w for w in WEEKS if w not in SCREEN)
 
 
+class UnsupportedWeek(ValueError):
+    """A frozen draw cannot be represented intact on its destination tape."""
+
+
 def sign_tail(n, k):
     return sum(comb(n, j) for j in range(k, n+1))/2**n
 
@@ -54,11 +58,15 @@ def shuffle_bundles(bundles, rows, wakes, end, rng):
         b = deepcopy(bundles[j])
         source, dest = rows[j]["marks"], rows[k]["marks"]
         if b.get("exits"):
+            if any(not source.get(s) or not dest.get(s) for s in b["exits"]):
+                raise UnsupportedWeek(f"missing destination mark for exit at {wakes[k]}")
             b["exits"] = {s: {x: v/source[s]*dest[s] for x, v in e.items()}
-                          for s, e in b["exits"].items() if source.get(s) and dest.get(s)}
+                          for s, e in b["exits"].items()}
         orders = b.get("conditions") or {}
+        if any(not dest.get(s) for s in orders):
+            raise UnsupportedWeek(f"missing destination mark for condition at {wakes[k]}")
         b["conditions"] = {s: dict(o, id=move_ids[o["id"]], wake=wakes[k], level=dest[s]*o["ratio"],
-                                   expiry=min(end, wakes[k]+o["hours"]*3600)) for s, o in orders.items() if dest.get(s)}
+                                   expiry=min(end, wakes[k]+o["hours"]*3600)) for s, o in orders.items()}
         b["keep"] = [move_ids[o] for o in b.get("keep", []) if o in move_ids]
         out.append(b)
     return out
@@ -70,7 +78,7 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
         raise ValueError("one answer per wake required")
     pp = sess.pp if fee is None else P.with_fee(sess.pp, fee)
     book = P.new_book(spec["cfg"]["tm_account_start_usd"], spec.get("opening"))
-    active, events, scans = {}, [], []
+    active, events, scans, unsupported = {}, [], [], []
     count = hits = 0
     for i, (at, bundle, row) in enumerate(zip(spec["wakes"], bundles, spec["rows"])):
         end = spec["wakes"][i+1] if i+1 < len(bundles) else spec["end"]
@@ -82,12 +90,14 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
                                       spec["gross"]*multiple, first=i == 0, delay=delay)
         count += len(rec["trades"])
         hits += sum(e["kind"] == "filled" for e in changes)
+        if any(x["why"] == "no_common_open" for x in rec["skipped"]):
+            unsupported.append(at)
         if journal:
             events.extend(changes)
             scans.append(rec["scan"])
     book["last_px"].update(spec["end_marks"])
     final = max(0.0, P.value_at(book, spec["end_marks"]))
-    return dict(value=final, book=book, events=events, scans=scans, immediate=count, standing=hits)
+    return dict(value=final, book=book, events=events, scans=scans, immediate=count, standing=hits, unsupported=unsupported)
 
 
 def usage_totals(rows, neutral=()):
@@ -115,10 +125,14 @@ def score_week(path, draws=None, draw_sensitivities=False):
     bundles = [d for _, k, d in log if k == "decision"]
     stored = [d for _, k, d in log if k == "finish"][0]
     check = replay(sess, bundles, journal=True)
+    ident = dict(week=desk.wall(spec["wakes"][0]).date().isoformat(), arm=sess.arm, boss=sess.manifest["boss"],
+                 fixture=sess.manifest["fixture"], scout_hash=sess.manifest["scout_hash"], settings=desk.digest(sess.opts))
     if (cents(check["value"]) != cents(stored["value"]) or check["book"] != stored["book"]
             or check["events"] != [d for _, k, d in log if k == "condition"]
             or check["scans"] != [d for _, k, d in log if k == "scan"]):
         raise ValueError("journal does not match replay")
+    if check["unsupported"]:
+        return dict(ident, invalid=f"original has no common open: {check['unsupported']}")
     n = len(bundles)
     hold = [{ "weights": {s: spec["gross"]/len(spec["symbols"]) for s in spec["symbols"]}}] + [{} for _ in range(n-1)]
     benchmark = spec["benchmark"]
@@ -135,17 +149,20 @@ def score_week(path, draws=None, draw_sensitivities=False):
             if mult == 1 and f == fee or draw_sensitivities:
                 twin, trigger_counts = [], []
                 for i in range(draws):
-                    shuffled = shuffle_bundles(bundles, spec["rows"], spec["wakes"], spec["end"],
-                                                random.Random(f'tm06_shuffle:{seed}:{sess.sid}:{i}'))
+                    try:
+                        shuffled = shuffle_bundles(bundles, spec["rows"], spec["wakes"], spec["end"],
+                                                    random.Random(f'tm06_shuffle:{seed}:{sess.sid}:{i}'))
+                    except UnsupportedWeek as exc:
+                        return dict(ident, invalid=str(exc), failed_draw=i)
                     trial = replay(sess, shuffled, f, mult)
+                    if trial["unsupported"]:
+                        return dict(ident, invalid=f"twin has no common open: {trial['unsupported']}", failed_draw=i)
                     twin.append(gain(trial["value"]))
                     trigger_counts.append(trial["standing"])
                 entry.update(twin=twin, twin_trigger_counts=trigger_counts, judge=SW.judge(twin, entry["gain"], cfg["tm_weights_pass_percentile"]))
             by[f"{mult}x/{f:g}"] = entry
     neutral = (sess.manifest["scout"] or {}).get("usage", [])
-    return dict(week=desk.wall(spec["wakes"][0]).date().isoformat(), arm=sess.arm, boss=sess.manifest["boss"],
-                fixture=sess.manifest["fixture"], scout_hash=sess.manifest["scout_hash"], main=by[f"1x/{fee:g}"],
-                settings=desk.digest(sess.opts),
+    return dict(ident, main=by[f"1x/{fee:g}"],
                 usage=usage_totals(log, neutral), unique_boss_usage=usage_totals(log), by_fee_multiple=by,
                 delayed_value=replay(sess, bundles, fee, delay=60)["value"] if sess.arm == "C" else None)
 
@@ -169,7 +186,7 @@ def paired(scores, boss, arm, percentile=90):
     pairs = {}
     for week in WEEKS:
         baseline, candidate = (grouped.get((week, a)) for a in ("A", arm))
-        if baseline and candidate:
+        if baseline and candidate and not (baseline.get("invalid") or candidate.get("invalid")):
             if baseline["fixture"] != candidate["fixture"] or baseline.get("settings") != candidate.get("settings"):
                 raise ValueError("unmatched input")
             pairs[week] = (baseline["main"], candidate["main"])
