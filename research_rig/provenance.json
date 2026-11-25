@@ -498,7 +498,7 @@
    "first_stored_in_commit": "d790acc 2026-11-25T08:35:31Z",
    "last_changed_in_commit": "d790acc 2026-11-25T08:35:31Z",
    "inputs_modified_after_output_first_stored": [],
-   "note": "The sampler was still writing data/books/books.csv when this record was first taken. Its fingerprint is added when sampling ends."
+   "note": "As of 2026-11-25 09:55 UTC the sampler was still writing data/books/books.csv, and stops by itself at about 16:30 UTC. The summary stored here covers its first 34 minutes. The input fingerprint is added with --with-books once sampling ends, or as an interim one that says so."
   }
  }
 }
