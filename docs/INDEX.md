@@ -122,6 +122,8 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/35_replay_06_fund_trend.md` | Replay 06 results on Alpaca daily fund bars, with yardsticks, costs, pass marks and timing controls | CURRENT |
 | `docs/research/37_tm03_plain_dials.md` | Plain fixed dials (A to E and hindsight F) run through `timemachine/weights.py` against the completed TM03 AI models, written wholly by `timemachine/dial_rules_tm03.py --write` | CURRENT |
 | `docs/research/39_leverage_replay_tm03.md` | The stored TM03 bitcoin dials, holding and dials B and C replayed at 2x, 3x and 5x with financing and forced close-outs. Looked at after the fact, not a counted trial. Written wholly by `timemachine/leverage_replay_tm03.py` | CURRENT |
+| `docs/research/41_fast_lane_evidence_checked.md` | Checked reading on short holds in small coins with leverage: price patterns after costs, futures funding and basis, how leveraged retail accounts fare, six proposed tests and the verdict on each. Reading only, no test | CURRENT |
+| `docs/research/42_small_coins_measured.md` | Every USD coin pair on Alpaca measured for trading activity, daily range and half-spread, set beside Coinbase; which coins a small account could fill, and what the flat spread in TM01 and TM02 left out | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.

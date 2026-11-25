@@ -412,6 +412,18 @@ tm_crypto_half_spread_bps:
   note: Half the assumed bid-ask spread on a crypto fill, in basis points. A buy fills this much above the minute's open and a sell this much below. An assumption, not measured.
   source: timemachine/simbroker.py
 
+tm_crypto_fast_coins:
+  value: [UNI, AAVE, DOT, ADA, BCH]
+  status: builder
+  note: The five smaller coins that passed the activity screen on Alpaca and were added to the recorded tape on 2026-11-25. Any later plan may name them. TM01 and TM02 did not use them.
+  source: docs/research/42_small_coins_measured.md
+
+tm_crypto_half_spread_bps_by_coin:
+  value: {BTC: 5, ETH: 5, LINK: 13, DOT: 13, UNI: 13, AAVE: 13, SOL: 19, DOGE: 23, ADA: 23, XRP: 26, BCH: 45, AVAX: 45, LTC: 45}
+  status: builder
+  note: Half the bid-ask spread charged per coin on a fill priced from the Alpaca tape, in basis points, rounded up from the measured medians. Used from the next crypto plan on. TM01 and TM02 used the flat key tm_crypto_half_spread_bps and keep their results as scored.
+  source: docs/research/42_small_coins_measured.md
+
 tm_max_share_of_minute_volume:
   value: 0.1
   status: builder
@@ -609,6 +621,51 @@ tm_lev_replay_low_share:
   status: builder
   note: timemachine/leverage_replay_tm03.py only. A month counts as ended low when its final value is below this share of tm_account_start_usd.
   source: timemachine/leverage_replay_tm03.py
+tm_perp_fee_bps_per_side:
+  value: {default: 5}
+  status: builder
+  note: Perp sessions only. Fee per fill on the notional traded, in basis points, by symbol, with default for any symbol not named. 5 is Kraken Derivatives' lowest-volume taker fee (0.05 percent), read 2026-11-25. Separate from practice_crypto_fee_bps_added, which spot sessions keep.
+  source: timemachine/perp.py
+tm_perp_half_spread_bps:
+  value: {default: 10}
+  status: builder
+  note: Perp sessions only. Half the assumed bid-ask spread on a perp fill, in basis points, by symbol, with default for any symbol not named. A buy fills this much above the price and a sell this much below. An assumption until each small coin's spread is measured and added by name.
+  source: timemachine/perp.py
+tm_perp_maintenance:
+  value: {default: 0.05}
+  status: builder
+  note: Perp sessions only. Maintenance share of position value, by symbol, with default. If on any recorded minute the account value is below the sum over positions of this share times position value (each symbol at its worst price of that minute), the whole book is closed out. An assumption; small coins on real venues often need more.
+  source: timemachine/perp.py
+tm_perp_closeout_penalty:
+  value: 0.01
+  status: builder
+  note: Perp sessions only. A forced close-out pays this share of the notional closed as a liquidation fee, on top of the half spread and the fee. Kept apart from tm_lev_closeout_penalty so spot-margin sessions are unchanged by it.
+  source: timemachine/perp.py
+tm_perp_funding_files:
+  value: {BTC/USD: rig/data/funding/kraken_PF_XBTUSD.json, ETH/USD: rig/data/funding/kraken_PF_ETHUSD.json}
+  status: builder
+  note: Perp sessions only. Stored hourly perpetual funding (Kraken, relativeFundingRate per hour, positive means longs pay) for these symbols; paths under the workspace. Charged on the whole position value. Kept apart from tm_lev_funding_files so spot-margin sessions are unchanged.
+  source: timemachine/perp.py
+tm_perp_funding_hours:
+  value: {default: 1}
+  status: builder
+  note: Perp sessions only. Hours between funding charges, by symbol, with default; 1 or 8, since venues differ. Charges fall on whole multiples of this many hours in UTC. With a stored hourly file and 8 hours, one charge is the sum of the 8 stored hourly rates ending at it.
+  source: timemachine/perp.py
+tm_perp_fallback_rate_per_day:
+  value: 0.0003
+  status: builder
+  note: Perp sessions only. Funding per day, as a share of position value, for a symbol or charge the stored files do not cover; paid by longs and shorts alike, so a made-up rate never pays a short. 0.0003 is the common 0.01 percent per 8 hours base rate. The scan counts the hours charged this way.
+  source: timemachine/perp.py
+tm_perp_min_change:
+  value: 0.02
+  status: builder
+  note: Perp sessions only. A symbol whose signed weight would move by less than this is not traded. A move to zero and a change of side are always traded.
+  source: timemachine/perp.py
+tm_perp_packet_bars:
+  value: 12
+  status: builder
+  note: Perp sessions only. How many of the latest bars per symbol the packet shows, at the session's wake spacing (15 minute, 1 hour, 4 hour or 1 day bars). More are a lookup.
+  source: timemachine/perp.py
 tm05_plan:
   value: {stretch_a: {start: "2026-04-01", end: "2026-05-29"}, stretch_b: {start: "2026-11-30", end: "2027-02-26"}, wake_time_ny: 15.5, leave_out_max: 8, min_change: 0.0, method_min_models_above_median: 5, method_min_models_above_percentile: 2}
   status: builder
