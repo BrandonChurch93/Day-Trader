@@ -1,0 +1,3585 @@
+{
+ "changes": [
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "P1",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "P2",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "S50",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ],
+    "passed": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "S200",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "D20",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "D55",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "S100",
+   "marks": {
+    "m2": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "marks": {
+    "m1": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R01",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "S50",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "P1",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ],
+    "passed": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "P2",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ],
+    "passed": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "S50",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ],
+    "passed": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "S200",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "D20",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ],
+    "passed": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "D55",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "marks": {
+    "m4": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "S50",
+   "marks": {
+    "m3": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "P2",
+   "marks": {
+    "m3": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "S100",
+   "marks": {
+    "m2": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "marks": {
+    "m1": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "D55",
+   "marks": {
+    "m3": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "marks": {
+    "m3": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "X2",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "S2",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "marks": {
+    "m1": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "S2",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "S2",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "H2",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "H7",
+   "marks": {
+    "m1": [
+     true,
+     false
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "H2",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "H7",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "H2",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "H7",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "H2",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "H7",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "H2",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "H7",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "H7",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "H2",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "H7",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "H7",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "H1",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "H2",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "H4",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "H5",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "H6",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "H7",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "H8",
+   "marks": {
+    "m5": [
+     false,
+     true
+    ]
+   }
+  }
+ ],
+ "counts": {
+  "R01": {
+   "trials": 90,
+   "passed_first": 8,
+   "passed_rerun": 9,
+   "marks_changed": 15
+  },
+  "X2": {
+   "trials": 90,
+   "passed_first": 0,
+   "passed_rerun": 4,
+   "marks_changed": 19
+  },
+  "S2": {
+   "trials": 45,
+   "passed_first": 0,
+   "passed_rerun": 0,
+   "marks_changed": 3
+  },
+  "R03": {
+   "trials": 80,
+   "passed_first": 0,
+   "passed_rerun": 0,
+   "marks_changed": 62
+  }
+ },
+ "pbo": [
+  {
+   "run": "R01",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "first": 0.1198912198912199,
+   "rerun": 0.09114219114219115,
+   "ties_not_overfit": 0.07156177156177156,
+   "ties_half": 0.08135198135198135,
+   "tie_share": 0.019580419580419582,
+   "latest_days_dropped": 0.0951048951048951,
+   "rows_dropped": 4,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "first": null,
+   "rerun": 0.7836052836052836,
+   "ties_not_overfit": 0.6292929292929293,
+   "ties_half": 0.7064491064491065,
+   "tie_share": 0.15431235431235432,
+   "latest_days_dropped": 0.7930846930846931,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "first": 0.20264180264180265,
+   "rerun": 0.16076146076146075,
+   "ties_not_overfit": 0.12416472416472417,
+   "ties_half": 0.14246309246309247,
+   "tie_share": 0.036596736596736595,
+   "latest_days_dropped": 0.16643356643356644,
+   "rows_dropped": 4,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "first": null,
+   "rerun": 0.8388500388500388,
+   "ties_not_overfit": 0.6977466977466977,
+   "ties_half": 0.7682983682983683,
+   "tie_share": 0.1411033411033411,
+   "latest_days_dropped": 0.8491841491841492,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "first": 0.2619269619269619,
+   "rerun": 0.21095571095571095,
+   "ties_not_overfit": 0.1592851592851593,
+   "ties_half": 0.18512043512043513,
+   "tie_share": 0.05167055167055167,
+   "latest_days_dropped": 0.22268842268842268,
+   "rows_dropped": 4,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "first": null,
+   "rerun": 0.84001554001554,
+   "ties_not_overfit": 0.71002331002331,
+   "ties_half": 0.775019425019425,
+   "tie_share": 0.12999222999222998,
+   "latest_days_dropped": 0.827972027972028,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "first": 0.40093240093240096,
+   "rerun": 0.3436674436674437,
+   "ties_not_overfit": 0.25656565656565655,
+   "ties_half": 0.3001165501165501,
+   "tie_share": 0.0871017871017871,
+   "latest_days_dropped": 0.35454545454545455,
+   "rows_dropped": 4,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "first": null,
+   "rerun": 0.7245532245532246,
+   "ties_not_overfit": 0.6523698523698523,
+   "ties_half": 0.6884615384615385,
+   "tie_share": 0.07218337218337219,
+   "latest_days_dropped": 0.6668997668997669,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "first": 0.41126651126651126,
+   "rerun": 0.36293706293706296,
+   "ties_not_overfit": 0.27412587412587414,
+   "ties_half": 0.3185314685314685,
+   "tie_share": 0.08881118881118881,
+   "latest_days_dropped": 0.37668997668997667,
+   "rows_dropped": 4,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R01",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "first": null,
+   "rerun": 0.6905982905982906,
+   "ties_not_overfit": 0.6296037296037296,
+   "ties_half": 0.6601010101010101,
+   "tie_share": 0.06099456099456099,
+   "latest_days_dropped": 0.6289044289044289,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "first": 0.2501165501165501,
+   "rerun": 0.24087024087024086,
+   "ties_not_overfit": 0.16013986013986015,
+   "ties_half": 0.20050505050505052,
+   "tie_share": 0.08073038073038073,
+   "latest_days_dropped": 0.26449106449106446,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "first": 0.7616161616161616,
+   "rerun": 0.8089355089355089,
+   "ties_not_overfit": 0.6585081585081585,
+   "ties_half": 0.7337218337218336,
+   "tie_share": 0.15042735042735042,
+   "latest_days_dropped": 0.8217560217560218,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "first": 0.4041958041958042,
+   "rerun": 0.37948717948717947,
+   "ties_not_overfit": 0.27816627816627815,
+   "ties_half": 0.3288267288267288,
+   "tie_share": 0.10132090132090132,
+   "latest_days_dropped": 0.4191142191142191,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "first": 0.84001554001554,
+   "rerun": 0.8711732711732711,
+   "ties_not_overfit": 0.7294483294483295,
+   "ties_half": 0.8003108003108004,
+   "tie_share": 0.14172494172494174,
+   "latest_days_dropped": 0.8806526806526807,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "first": 0.511033411033411,
+   "rerun": 0.49456099456099456,
+   "ties_not_overfit": 0.38275058275058277,
+   "ties_half": 0.4386557886557887,
+   "tie_share": 0.1118104118104118,
+   "latest_days_dropped": 0.5271950271950272,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "first": 0.8477855477855478,
+   "rerun": 0.8744366744366744,
+   "ties_not_overfit": 0.7438228438228438,
+   "ties_half": 0.8091297591297592,
+   "tie_share": 0.1306138306138306,
+   "latest_days_dropped": 0.8705516705516706,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "first": 0.7839160839160839,
+   "rerun": 0.7774669774669775,
+   "ties_not_overfit": 0.6167055167055167,
+   "ties_half": 0.697086247086247,
+   "tie_share": 0.16076146076146075,
+   "latest_days_dropped": 0.8054390054390055,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "first": 0.7353535353535353,
+   "rerun": 0.7633255633255633,
+   "ties_not_overfit": 0.6858585858585858,
+   "ties_half": 0.7245920745920745,
+   "tie_share": 0.07746697746697746,
+   "latest_days_dropped": 0.708003108003108,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "first": 0.7560994560994561,
+   "rerun": 0.7711732711732712,
+   "ties_not_overfit": 0.6221445221445221,
+   "ties_half": 0.6966588966588966,
+   "tie_share": 0.14902874902874902,
+   "latest_days_dropped": 0.8034965034965035,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "X2",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "first": 0.6979020979020979,
+   "rerun": 0.7271173271173271,
+   "ties_not_overfit": 0.6675990675990676,
+   "ties_half": 0.6973581973581974,
+   "tie_share": 0.059518259518259516,
+   "latest_days_dropped": 0.668997668997669,
+   "rows_dropped": 3,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "S2",
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "first": 0.5651126651126651,
+   "rerun": 0.5784770784770785,
+   "ties_not_overfit": 0.4372183372183372,
+   "ties_half": 0.5078477078477078,
+   "tie_share": 0.14125874125874127,
+   "latest_days_dropped": 0.5826728826728826,
+   "rows_dropped": 1,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "S2",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "first": 0.541025641025641,
+   "rerun": 0.5302253302253302,
+   "ties_not_overfit": 0.4058275058275058,
+   "ties_half": 0.46802641802641803,
+   "tie_share": 0.1243978243978244,
+   "latest_days_dropped": 0.535975135975136,
+   "rows_dropped": 1,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "S2",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "first": 0.51010101010101,
+   "rerun": 0.4930846930846931,
+   "ties_not_overfit": 0.3836829836829837,
+   "ties_half": 0.43838383838383843,
+   "tie_share": 0.1094017094017094,
+   "latest_days_dropped": 0.49906759906759907,
+   "rows_dropped": 1,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "S2",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "first": 0.39557109557109554,
+   "rerun": 0.37513597513597513,
+   "ties_not_overfit": 0.3089355089355089,
+   "ties_half": 0.342035742035742,
+   "tie_share": 0.0662004662004662,
+   "latest_days_dropped": 0.37552447552447554,
+   "rows_dropped": 1,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "S2",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "first": 0.3707847707847708,
+   "rerun": 0.35112665112665115,
+   "ties_not_overfit": 0.2924630924630925,
+   "ties_half": 0.3217948717948718,
+   "tie_share": 0.058663558663558664,
+   "latest_days_dropped": 0.34685314685314683,
+   "rows_dropped": 1,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "DIAG",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "first": 0.4675213675213675,
+   "rerun": 0.4205128205128205,
+   "ties_not_overfit": 0.3486402486402486,
+   "ties_half": 0.38457653457653457,
+   "tie_share": 0.07187257187257187,
+   "latest_days_dropped": 0.4150738150738151,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "DIAG",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "first": 0.6252525252525253,
+   "rerun": 0.5672105672105672,
+   "ties_not_overfit": 0.4885003885003885,
+   "ties_half": 0.5278554778554778,
+   "tie_share": 0.07871017871017871,
+   "latest_days_dropped": 0.5703962703962704,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "DIAG",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "first": 0.7252525252525253,
+   "rerun": 0.6645687645687646,
+   "ties_not_overfit": 0.5742812742812743,
+   "ties_half": 0.6194250194250195,
+   "tie_share": 0.0902874902874903,
+   "latest_days_dropped": 0.6630924630924631,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "DIAG",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "first": 0.6888111888111889,
+   "rerun": 0.6937839937839938,
+   "ties_not_overfit": 0.5897435897435898,
+   "ties_half": 0.6417637917637917,
+   "tie_share": 0.10404040404040404,
+   "latest_days_dropped": 0.7245532245532246,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "DIAG",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "first": 0.6273504273504273,
+   "rerun": 0.6555555555555556,
+   "ties_not_overfit": 0.5641025641025641,
+   "ties_half": 0.6098290598290598,
+   "tie_share": 0.09145299145299145,
+   "latest_days_dropped": 0.6868686868686869,
+   "rows_dropped": 15,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "first": 0.22571872571872573,
+   "rerun": 0.22564102564102564,
+   "ties_not_overfit": 0.22564102564102564,
+   "ties_half": 0.22564102564102564,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.23916083916083916,
+   "rows_dropped": 13,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "first": 0.14794094794094795,
+   "rerun": 0.14871794871794872,
+   "ties_not_overfit": 0.14871794871794872,
+   "ties_half": 0.14871794871794872,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.12035742035742036,
+   "rows_dropped": 5,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "first": 0.02905982905982906,
+   "rerun": 0.03006993006993007,
+   "ties_not_overfit": 0.03006993006993007,
+   "ties_half": 0.03006993006993007,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.03480963480963481,
+   "rows_dropped": 13,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "first": 0.020512820512820513,
+   "rerun": 0.019813519813519812,
+   "ties_not_overfit": 0.019813519813519812,
+   "ties_half": 0.019813519813519812,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.018026418026418026,
+   "rows_dropped": 5,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "first": 0.00909090909090909,
+   "rerun": 0.008624708624708625,
+   "ties_not_overfit": 0.008624708624708625,
+   "ties_half": 0.008624708624708625,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.009712509712509712,
+   "rows_dropped": 13,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "first": 0.00574980574980575,
+   "rerun": 0.005283605283605284,
+   "ties_not_overfit": 0.005283605283605284,
+   "ties_half": 0.005283605283605284,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.004428904428904429,
+   "rows_dropped": 5,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "first": 0.004584304584304585,
+   "rerun": 0.0038073038073038073,
+   "ties_not_overfit": 0.0038073038073038073,
+   "ties_half": 0.0038073038073038073,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.002874902874902875,
+   "rows_dropped": 13,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "first": 0.0,
+   "rerun": 0.0,
+   "ties_not_overfit": 0.0,
+   "ties_half": 0.0,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.0,
+   "rows_dropped": 5,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "first": 0.0009324009324009324,
+   "rerun": 0.0009324009324009324,
+   "ties_not_overfit": 0.0009324009324009324,
+   "ties_half": 0.0009324009324009324,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.000777000777000777,
+   "rows_dropped": 13,
+   "zero_variance_cases": 0
+  },
+  {
+   "run": "R03",
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "first": 0.0009324009324009324,
+   "rerun": 0.0010878010878010878,
+   "ties_not_overfit": 0.0010878010878010878,
+   "ties_half": 0.0010878010878010878,
+   "tie_share": 0.0,
+   "latest_days_dropped": 0.0012432012432012432,
+   "rows_dropped": 5,
+   "zero_variance_cases": 0
+  }
+ ],
+ "both_histories": [
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "P1",
+   "bitstamp": true,
+   "kraken": true,
+   "both": true,
+   "first_bitstamp": true,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": []
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "P2",
+   "bitstamp": true,
+   "kraken": true,
+   "both": true,
+   "first_bitstamp": true,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": []
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "S50",
+   "bitstamp": true,
+   "kraken": true,
+   "both": true,
+   "first_bitstamp": true,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": []
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "D20",
+   "bitstamp": true,
+   "kraken": true,
+   "both": true,
+   "first_bitstamp": true,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": []
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "bitstamp": true,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": true,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": [
+    "m5"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "P2",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m4"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "S50",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "D20",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m4"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Binance.US",
+   "asset": "ETHUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "P2",
+   "bitstamp": true,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": true,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": [
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "S50",
+   "bitstamp": true,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": true,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": [
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "D20",
+   "bitstamp": true,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": true,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": [
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "P2",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "S50",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "D20",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Alpaca",
+   "asset": "ETHUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "P2",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "S50",
+   "bitstamp": true,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [],
+   "kraken_failed": [
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "D20",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "P2",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "S50",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "D20",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken $10k tier",
+   "asset": "ETHUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "P2",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "S50",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "D20",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "P2",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "S50",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "D20",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Kraken entry",
+   "asset": "ETHUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "P2",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "S50",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "D20",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "BTCUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "P1",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "P2",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "S50",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "S100",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "S200",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "D20",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "D55",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "M30",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4"
+   ]
+  },
+  {
+   "venue": "Coinbase entry",
+   "asset": "ETHUSD",
+   "rule": "M90",
+   "bitstamp": false,
+   "kraken": false,
+   "both": false,
+   "first_bitstamp": false,
+   "first_kraken": false,
+   "first_both": false,
+   "bitstamp_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "kraken_failed": [
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ]
+  }
+ ],
+ "passes": {}
+}

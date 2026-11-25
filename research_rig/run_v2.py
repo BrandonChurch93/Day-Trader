@@ -146,7 +146,7 @@ def r03_venue(args):
         for n in NAMES:
             e, eqh, held = run(x["T"][n]); Rr[(a, n)] = R.rets(e.values)
             A["rules"][n] = {k: dict(R.metrics(R.cut(e, lo, hi).values), trips=trips(eqh, held, idx, lo, hi)) for k, (lo, hi) in R.SL.items()}
-            A["rules"][n]["orders_that_waited"] = int(((np.diff(np.r_[0.0, x["T"][n][:-1]]) != 0) & ~x["cf"]).sum())
+            A["rules"][n]["orders_that_waited"] = int(((np.diff(np.r_[0.0, 0.0, x["T"][n][:-1]]) != 0) & ~x["cf"]).sum())
             A["rules"][n]["share_of_hours_in_position"] = float(held.mean())
         A["pbo"] = R.pbo_cscv(np.column_stack([Rr[(a, n)] for n in NAMES]), 16, "earliest"); A["pbo_drop_latest"] = R.pbo_cscv(np.column_stack([Rr[(a, n)] for n in NAMES]), 16, "latest")
         A["_rb"] = R.rets(hb.values); out[a] = A
@@ -190,7 +190,8 @@ if __name__ == "__main__":
     if "R03" in want:
         old = json.load(open("data/v2_r01_returns.json"))
         for a in ["BTCUSD", "ETHUSD"]: _D[a] = hourly_setup(a)
-        with Pool(4) as pool:
+        import multiprocessing as _mp
+        with _mp.get_context("fork").Pool(4) as pool:   # fork, so the workers inherit the hourly data loaded above
             g = pool.apply_async(r03_gross, (0,))
             rr = pool.map(r03_venue, [(v, fee, list(old[v].values())) for v, fee in R.VENUES.items()])
             gross = g.get()
