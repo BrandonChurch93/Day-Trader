@@ -178,7 +178,7 @@ Mark 4 asks: if you pick the best rule on half of the history, how often does it
 
 ### Three ways to count a tie
 
-The [paper](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf) says "below the median". It does not say what to do when the winner lands exactly on the median, which can only happen with an odd number of rules. STATED by the paper, read by auditor B and by me.
+The [paper](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf) says "below the median". It does not say what to do when the winner lands exactly on the median, which can only happen with an odd number of rules. STATED by the paper, read by auditor B and by me. (Corrected 2026-11-25: that is true when every rule has a different result. The code gives equal results the average of their ranks, so with an even number of rules a tie can still happen when two rules have exactly equal results on the other half. A tenth reader found this.)
 
 {pbo()}
 ### How much it moves when nothing real changes
@@ -197,7 +197,7 @@ What this means:
 
 One more sign of the same problem. The two price histories cover the same market. Started on the same day (2014-05-01) and charged Binance.US cost, the estimate is {kb['rerun']:.3f} on Kraken prices and {next(x['rerun'] for x in c['pbo'] if x['run']=='DIAG' and x['venue']=='Binance.US'):.3f} on Bitstamp prices. One passes and one fails. The Bitstamp pass in replay 01 comes from starting in 2013, before the Kraken history begins. The two venues' daily closing prices were not the same in the early years: the typical gap was {PG['median_bps_2014_2017']:.0f} bps in 2014 to 2017 and {PG['median_bps_2020_on']:.1f} bps from 2020 on (`research_rig/venue_price_gap.json`). That is one likely reason the two answers differ. Whether it is the whole reason is UNKNOWN.
 
-Proposal, not adopted: measure mark 4 as the middle value over a fixed set of start dates and block counts, written down before the run. This costs nothing and removes the knife edge. (Corrected 2026-11-25: this line also proposed counting ties as half. That is the easier reading, as the table above shows, and results have been seen. Research now recommends keeping ties counted as overfit. Decisions 1a and 1b in `docs/decisions/morning_list_2026-11-25.md`.)
+Proposal, not adopted: measure mark 4 as the middle value over a fixed set of start dates and block counts, written down before the run. This costs nothing and removes the knife edge. (Corrected 2026-11-25: that last claim overstated it. A fixed set of dates stops one start date from deciding. The mark stays noisy, as the made-up data test on this page shows. Also corrected 2026-11-25: this line also proposed counting ties as half. That is the easier reading, as the table above shows, and results have been seen. Research now recommends keeping ties counted as overfit. Decisions 1a and 1b in `docs/decisions/morning_list_2026-11-25.md`.)
 
 ## Day trading rules on hourly bars, after the fixes
 
@@ -217,7 +217,7 @@ Passes at any venue cost: {r03_pass} of {r03_n} after the fixes, {cn['R03']['pas
 
 | Question | Recommendation | Why |
 |---|---|---|
-| How should a tie be counted in mark 4 from now on? | As overfit, as in every test so far. (Corrected 2026-11-25: this row first said \"as half\") | Counting a tie as half is the neutral reading, and counting it as overfit pushes a no-edge result from 0.50 to about 0.56 with 9 rules. But half is the easier reading, results have been seen, and the owner's bar says never to loosen a limit after seeing a result. A tie can only happen with an odd number of rules, so a new plan can avoid it by testing an even number |
+| How should a tie be counted in mark 4 from now on? | As overfit, as in every test so far. (Corrected 2026-11-25: this row first said \"as half\") | Counting a tie as half is the neutral reading, and counting it as overfit pushes a no-edge result from 0.50 to about 0.56 with 9 rules. But half is the easier reading, results have been seen, and the owner's bar says never to loosen a limit after seeing a result. Keeping the full count is a cautious policy, not a claim that it is the more correct statistic. The rule list in a plan is never chosen to make ties more or less likely |
 | Should mark 4 be measured over several start dates and block counts? | Yes, fixed in the plan before each run | One start date decides the result today. Said plainly: this would most likely turn the bitcoin passes back into fails. With the first-run code at Alpaca cost the middle value over {len(ps['dates'])} start dates was {st.median([x['pbo_le0'] for x in ps['dates']]):.3f}. It has not been measured at Binance.US cost, and research has not run it, so that the choice of method is not made by looking at its result |
 | Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the only bitcoin rule. The morning list proposes one stock rule beside it (`docs/decisions/morning_list_2026-11-25.md`, decision 5) | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
 

@@ -54,6 +54,8 @@ Daily open, high, low, close, volume, splits and dividends. Before BIL exists, c
 
 Known weakness, stated now: the five-fund rules cannot start before 2007, so the development slice is short and holds one large fall.
 
+To settle before this plan is frozen: if a rule is added or dropped, the rule list, the trial count, the fixtures and the set of rules that mark 4 is worked out over are all rewritten here first. No rule is added or dropped to change how likely a tie is in mark 4.
+
 ## Pass marks
 
 The five marks used in the other replays, with the tie rule and shuffle method of `AMENDMENT_2026-11-25_audit_fixes.md`, numbers read from `config/thresholds.yaml`. Trials counted in the deflated Sharpe ratio: every rule trial in the ledger on the day this is frozen, reruns included, plus these 6. Today that count is the one `TRIAL_LEDGER.md` gives under "Reruns and how they are counted"; the six AI model runs in rows 21 to 26 are scored a different way and are not in it. How a draft is frozen is in `research_rig/README.md`, "Things a new test must also get right". This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/research/16_rig_audit.md`, and `docs/STATUS.md`, "Next in the queue"). The method he picks is named here before the plan is frozen.

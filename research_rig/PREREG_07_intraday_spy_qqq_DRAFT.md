@@ -43,6 +43,8 @@ Each rule is compared with holding the fund.
 | Held back | 2019-01-01 to 2026-06-30 | each frozen rule run once. Most of it lies after the papers' samples or after they were published |
 | After the designer's knowledge cutoff | 2026-07-01 to the last day in the file | reported |
 
+To settle before this plan is frozen: if a rule is added or dropped, the rule list, the trial count, the fixtures and the set of rules that mark 4 is worked out over are all rewritten here first. No rule is added or dropped to change how likely a tie is in mark 4.
+
 ## Pass marks
 
 The five marks used in the other replays, numbers read from `config/thresholds.yaml`, with the methods of `AMENDMENT_2026-11-25_audit_fixes.md`. Shuffle for these rules: the rule's daily profit or loss is kept and the days it traded are redrawn at random with the same count, 1,000 times, seed 7. Trials counted in the deflated Sharpe ratio: every rule trial in the ledger on the day this is frozen, reruns included, plus these 14. Today that count is the one `TRIAL_LEDGER.md` gives under "Reruns and how they are counted"; the six AI model runs in rows 21 to 26 are scored a different way and are not in it. This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/STATUS.md`, "Next in the queue").

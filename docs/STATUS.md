@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-25 10:06 UTC
+Last updated: 2026-11-25 10:13 UTC
 
 This page is the current state of the project. It is the second thing to read, after `AGENTS.md`. If another page disagrees with this one about a result or about where things stand, this page stands. The map of every file is `docs/INDEX.md`. Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
 
@@ -79,8 +79,8 @@ Each line says how far to trust it.
 - The plans for replay 01 and pilot 02 were pushed in the same commit as their results (b393482). The plans carry their own written times, which say they came first. That is STATED and cannot be shown from the commit history. From replay 03 on, each plan was pushed before its run.
 - Pass mark 3 screened nothing in replay 05, because of how its plan defined the spread of Sharpe ratios. Research proposes that the next plan defines it across all counted trials. That is a proposal to the owner, not a rule yet.
 - Bitstamp's terms are unclear about collecting its prices. Kraken's published files are the proposed main crypto history. Waiting on the owner.
-- Two data collections were started on 2026-11-25 without asking the owner: the order-book sampler on Kraken's and Binance.US's public price feeds, and a pull of stock prices from the workspace's own price history. Neither ran a rule and neither is in the repo beyond a short summary of the first. Kraken's general terms bar automation on its content, and the workspace data's terms are UNKNOWN to research. Both are now put to him (items 4 and 6 of "Things only you can do" in the morning list).
-- Document 16 and the morning list recommended counting a tie in pass mark 4 as half and did not say plainly that this is the easier reading. Results had been seen, so that was a recommendation to loosen a mark. A ninth reader caught it. Research now recommends keeping the stricter count (decision 1b).
+- Two data collections were started on 2026-11-25 under the owner's overnight latitude (his words: "free to do anything that will benefit the project"), without asking him about these sources in particular: the order-book sampler on Kraken's and Binance.US's public price feeds, and a pull of stock prices from the workspace's own price history. Neither ran a rule and neither is in the repo beyond a short summary of the first. Kraken's general terms bar automation on its content, and the workspace data's terms are UNKNOWN to research. Both are now put to him (items 4 and 6 of "Things only you can do" in the morning list).
+- Document 16 and the morning list recommended counting a tie in pass mark 4 as half and did not say plainly that this is the easier reading. Results had been seen, so that was a recommendation to loosen a mark. A ninth reader caught it. Research now recommends keeping the stricter count (decision 1b). The same pages said a tie can only happen with an odd number of rules. That holds only when every rule has a different result, and it is corrected in document 16.
 
 ## Waiting on the owner
 

@@ -54,3 +54,10 @@ Honest limit: these fixes are made after the first results were seen. To keep th
 - Every verdict and every mark that differs from the first run is listed, in both directions.
 - A rule passes for a venue only if it passes on both price histories, as in the X2 plan.
 - If the rerun produces a pass where the first run had a fail, it is reported as "pass after audit fixes" and treated with the same caution as any result found after the fact: it is a reason to test further, not a result to rely on.
+
+## Note added 2026-11-25 10:11 UTC, after the rerun
+
+Nothing above this line was changed. Two statements above are wrong, and later readers found them:
+
+- "What does not change" lists the costs and the five pass marks. Row A13 does change what pass mark 1 asks: each daily rule must also hold with the fill one hour late. It can only remove passes. Row A08, besides fixing the search limit, changes what holding pays when the break-even cost is worked out, which is part of pass mark 2. The plan had not said which cost holding pays.
+- So the rerun (ledger row R1) was not engine fixes only. Research recommends that its passes are not credited (question 18b in `docs/decisions/morning_list_2026-11-25.md`). The account is in `docs/STATUS.md`, "Known faults and slips".

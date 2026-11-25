@@ -65,7 +65,7 @@ Lines marked OWNER in these files are rules. Lines marked TRANSLATED are proposa
 | `docs/quality/02_how_we_build.md` | The build method: plan once, build once, check against the plan | CURRENT |
 | `docs/quality/03_working_with_the_owner.md` | How to write to the owner and how decisions get made | CURRENT |
 | `docs/quality/04_research_to_build.md` | What has to be true before research turns into building | CURRENT |
-| `docs/quality/05_repo_review_2026-11-24.md` | A review of this repo against the bar on that date | RECORD. The repo has changed since. See `docs/STATUS.md`. `docs/quality/00_READ_FIRST.md` says to delete it when its items are closed. It is the owner's file, so whether it is deleted or kept is his call (morning list, item 5) |
+| `docs/quality/05_repo_review_2026-11-24.md` | A review of this repo against the bar on that date | RECORD. The repo has changed since. See `docs/STATUS.md`. `docs/quality/00_READ_FIRST.md` says to delete it when its items are closed. It is the owner's file, so whether it is deleted or kept is his call (morning list, question 21) |
 
 ## docs/playbook/ (short pages written before the tests)
 

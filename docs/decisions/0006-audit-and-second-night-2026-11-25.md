@@ -108,7 +108,7 @@ After the first addendum was pushed (commit c7956c4), the repo was copied fresh 
 - Document 16 said the engine has 27 fixture checks. Counted from the code: 19, numbered up to 27.
 - Rule and practice were mixed. The front page, the rig's "How to add a test" and the playbook notes now say for each line whether it is the owner's rule, research practice or a proposal.
 - `docs/decisions/0002-historical-testing-and-risk-posture.md` proposed counting a replay of a model on dates after its training cutoff. `AGENTS.md` hard rule 7 says only forward paper or shadow results count. Hard rule 7 stands, and it is question 19.
-- Never put to the owner and now on his list: the two scope calls of 2026-11-24 (14, 15), whether a stored test may be run again unchanged as a check (16), and what "within tolerance" means in the practice and live gates (17).
+- Never put to the owner and now on his list: the two scope calls of 2026-11-24 (14, 15), whether a stored test may be run again unchanged as a check (16), and what "within tolerance" means in the practice and live gates (17). (Note added later the same day: question 16 is now 16a and 16b, and question 18 is now 18a, 18b and 18c.)
 - `rig2.py` cannot yet judge a one-rule test or check stock bars. Measured and written in `research_rig/README.md`.
 
 ## Third addendum, 2026-11-25 09:31 UTC: what a sixth cold reader found
@@ -180,5 +180,25 @@ After the fifth addendum was pushed (commit 1aa4d69), a ninth fresh model read o
 - Several lines read stronger than the status page: "the one lead worth following", "turns the stock index result into something that could be traded", a practice record that "starts the count", and "the honest next month", which is a time prediction. Each is reworded.
 - No block ended with the recommendation, which the owner's rules ask for. Every block now ends with it. Items 2, 3, 4 and 6 of "Things only you can do" now say what a yes covers. Item 1 now says where the practice keys go.
 - Counts and one config value typed into the page are replaced by pointers to the status table and the key.
+
+Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold. No rule was run.
+
+## Seventh addendum, 2026-11-25 10:13 UTC: a tenth reader on the rewritten morning list
+
+After the sixth addendum was pushed (commit efcde2e), a tenth fresh model, from a different maker than the ninth, checked the rewritten morning list against the files behind it. It confirmed the quoted rules, the line numbers and the two number tables. What it found, and what changed:
+
+- The new decision 1b, and document 16 before it, said a tie in pass mark 4 can only happen with an odd number of rules. The code gives equal results the average of their ranks, so with an even number a tie still happens when two rules have exactly equal results. Corrected in both. The page also suggested picking an even number of rules to avoid ties. That would be choosing rules to steer a statistic, and it is removed. Both draft plans now say a rule is never added or dropped for that reason.
+- Decision 1a said the fixed set of start dates would "most likely" turn the bitcoin results back to fails. The one measurement behind that used the first-run code on one price history at a higher cost. The effect is now given as UNKNOWN, and the page says the method does not make the mark steady. Document 16's line that it "removes the knife edge" is corrected the same way.
+- Decision 8 said no result argues for a different bar. That was a judgment. The values are rules of thumb and none is calibrated. They are now asked for as provisional. The decision also described the late-fill form of pass mark 1 as applying to the crypto rules in general. It applied to the daily rules only (amendment row A13), and it is not part of the decision.
+- "Start here" tied all three first answers to all three next steps. Each next step now lists only what it waits on.
+- The item on the data purchase called it the only source found for dividend history. Other vendors in `docs/research/10_raw/stock_history_data.md` have it too. Corrected.
+- The item on the workspace's price history gave a start date for one-minute data that is not in the repo. It is now marked interim.
+- Question 16a asked for a rerun check where the code is "shown by its commit". The provenance record says it cannot show that for last night's runs. The proposal now covers only runs that record their own code and inputs when they are made.
+- Question 17 would have set the allowed amounts after seeing practice results that then count. The first weeks now do not count toward the gate.
+- Question 18b's lead said every run broke a rule. It now says every pass came from a run with a problem, and its three parts can be answered separately.
+- "What research got wrong" left out five things that are on the status page. Added, one line each.
+- Several blocks bundled separate asks. Each now says the parts can be answered one at a time.
+- `research_rig/AMENDMENT_2026-11-25_audit_fixes.md` says pass marks and costs do not change, which its own rows A13 and A08 contradict. Its first lines allow a dated note at the bottom. That note is now there. Nothing above it was changed.
+- The descriptions of pass marks 3 and 5 in the number table said "at least" where the code asks for "above". Corrected.
 
 Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold. No rule was run.

@@ -5,11 +5,11 @@ The words in WHAT and MARKS are descriptions. Every number comes from the config
 import re, sys
 PAGE = "docs/decisions/morning_list_2026-11-25.md"
 START, END = "<!-- numbers:start (written by tools/owner_numbers.py from config/thresholds.yaml, do not edit by hand) -->", "<!-- numbers:end -->"
-MARKS = [("1", "replay_max_drop_ratio_vs_hold", "In the held-back years the rule must have a better Sharpe ratio than holding, and its largest drop may be at most this share of holding's largest drop. Since the audits the crypto rules must also hold with the order filled one hour late"),
-         ("2", "backtest_min_breakeven_cost_multiple", "The rule must stay ahead of holding up to a cost that is this many times the modeled cost"),
-         ("3", "replay_min_deflated_sharpe", "The deflated Sharpe ratio, which marks a result down for every rule that was tried, must be at least this"),
+MARKS = [("1", "replay_max_drop_ratio_vs_hold", "In the held-back years the rule must have a better Sharpe ratio than holding, and its largest drop may be at most this share of holding's largest drop. In the rerun of the crypto tests the daily rules also had to hold with the order filled one hour late (amendment row A13)"),
+         ("2", "backtest_min_breakeven_cost_multiple", "The rule must stay ahead of holding up to a cost that is at least this many times the modeled cost"),
+         ("3", "replay_min_deflated_sharpe", "The deflated Sharpe ratio, which marks a result down for every rule that was tried, must be above this"),
          ("4", "backtest_max_pbo", "The overfitting estimate must be below this"),
-         ("5", "replay_min_shuffle_percentile", "The rule must beat this share of copies of itself with its in and out spells put in random order")]
+         ("5", "replay_min_shuffle_percentile", "The rule must beat more than this share of reshuffled copies of its own trading pattern. Each plan says how the reshuffle is done")]
 WHAT = [("live_starting_capital_usd", "Money in the live account at the start, in dollars"),
         ("live_max_position_usd", "The most held in one position, in dollars"),
         ("live_max_daily_loss_usd", "The most the account may lose in one day before it stops for the day, in dollars"),
