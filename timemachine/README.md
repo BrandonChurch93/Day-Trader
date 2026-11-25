@@ -81,6 +81,12 @@ The live research tape (`$TM_STORE/tape.sqlite`) holds both crypto and US stock/
 - Stock session calendar (`sessions`): 226 NYSE sessions (`2026-01-02..2026-11-24`), including 165 sessions in `2026-04-01..2026-11-24`, derived from `SPY` `1Min` bars via `record.py sessions-from-tape`. Daily liquid `universe` covers 61 stock/ETF symbols per session across `2026-04-01..2026-11-24`.
 - Stock news (`2026-04-01..2026-11-24`, 12,958 dated items): `alpaca` (`2026-04-29..2026-11-24`, 11,726 items, 0.0% edited after publish), `sec_edgar` (`2026-04-01..2026-11-24`, 506 filings — 386 Form 8-K, 5 Form 8-K/A with item numbers in the headline, 105 Form 10-Q, 1 Form 10-Q/A, 8 Form 10-K, 1 Form 10-K/A with filing index links and no body text — stamped to the second with UTC `acceptanceDateTime`, 0.0% edited), and `finbold` (`2026-04-01..2026-11-24`, 726 dated stock headlines; 6.6% edited >1h after publish; Finbold headlines are tagged only by name matching).
 
+## Attention counts
+
+`timemachine/attention.py` reads `attention.sqlite` in the tape folder. Call `get_attention(coin, as_of_utc, lookback_days)` with a simulated UTC time. It returns counts only for completed periods and only once their recorded availability time has passed. No row means unknown, not zero.
+
+The default serves original and assumed-lag observations. An assumed lag is an estimate, not proof of the historical value. Use `min_vintage="original"` for verified archive snapshots only. Capture-only data is off by default. The store and the source checks stay off repo.
+
 ## Weights sessions
 
 A second kind of session. The trader does not pick trades. At each wake it says what share of the book to hold in each allowed symbol. The rest is cash. Long only.

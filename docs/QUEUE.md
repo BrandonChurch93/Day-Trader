@@ -10,7 +10,7 @@ As of 2026-11-25 17:52 UTC. Plans TM01 to TM04 are finished and are in Done or i
 
 | # | What | Plan | Started |
 |---|---|---|---|
-| 9b | The earnings release reader. Plan frozen 2026-11-25 17:56 UTC after two audits of the code by a second model. Next: four models read the 450-release design sample, then the set-ups are scored on it and one is chosen | `research_rig/PREREG_11_earnings_release_reader.md`, ledger rows 121 to 134 | 2026-11-25 |
+| 9b | The earnings release reader. Design sample scored 2026-11-25 18:11 UTC and Claude Sonnet 5.5 alone chosen (`docs/research/44_replay_11_earnings_reader.md`). Now: that reader goes through the 2,146 held-back releases once. Then the answers are hashed and pushed. The held-back half is scored once, after the last five-day exits have traded and the daily prices are collected again | `research_rig/PREREG_11_earnings_release_reader.md`, ledger rows 121 to 134 | 2026-11-25 |
 | 9g | Fast lane, the owner's own method (`practice/traders/F01_hot_coin_swing.md`): a second price store from Coinbase minutes for smaller coins, and a futures book in the time machine that can go long or short with funding and forced close-out | plan TM06, written when both are in | 2026-11-25 |
 | - | Dated calls by the crypto callers the owner followed, Alex Becker first: what was said on what date and what the coin did after | reading, no plan | 2026-11-25 |
 | - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
