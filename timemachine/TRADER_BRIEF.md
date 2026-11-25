@@ -39,7 +39,7 @@ This is the exact text given to an AI trader for a replay. Pretend money only. N
 - `expires_utc`: after this, anything not yet traded is dropped. The template fills in a good value.
 - `thesis`: one short paragraph in plain words.
 - `actions`: a list, may be empty. A buy names `symbol`, `side` "buy", `usd` and `reason`. A sell names `symbol`, `side` "sell", `share` of the holding (1.0 is all) and `reason`.
-- `exits`: optional. Each names `symbol` and any of `stop`, `target`, `by_utc`. Any one of them sells the whole holding. The desk checks exits between your wakes.
+- `exits`: optional. Each names `symbol` and any of `stop`, `target`, `by_utc`. Any one of them sells the whole holding. The desk checks exits between your wakes. It looks every `tm_tick_minutes` minutes at the newest price, as the live desk does on its timer. A price that touches your level for a minute between two looks and comes back is not caught, for a stop or for a target.
 - To do nothing this wake, send `{"no_pick": true, "why": "one plain sentence"}`.
 - A pick that does not fit the form is refused whole. Nothing in it is traded.
 
