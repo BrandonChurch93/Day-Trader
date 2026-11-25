@@ -133,12 +133,16 @@ class Orders:
             quantity = book["qty"].get(sym, 0)
             dq = w * value / mark - quantity
             target_gross = other + abs(w)
-            if abs(dq)*mark < 1e-9 or (abs(w-current) < pp["min_change"] and w != 0 and quantity*w >= 0):
+            saved_target_gross = abs(w) + sum(abs(v) for s,v in book["target"].items() if s != sym)
+            if saved_target_gross > gross + 1e-10:
+                trade, reason = None, "target_gross_limit"
+            elif abs(dq)*mark < 1e-9 or (abs(w-current) < pp["min_change"] and w != 0 and quantity*w >= 0):
                 trade, reason = None, "small_change"
             else:
                 trade, reason = guarded_trade(book, sym, dq, opens, pp, gross)
             if reason:
-                self.remove(sym, "refused", at, reason=reason, open=mark, gross_wanted=target_gross)
+                self.remove(sym, "refused", at, reason=reason, open=mark,
+                            gross_wanted=target_gross,saved_target_gross=saved_target_gross)
                 continue
             book["last_px"][sym] = mark
             if w:

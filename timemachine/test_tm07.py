@@ -297,6 +297,16 @@ class DeskTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"sealed"):
             reg.verify_gate(S.EXTENSION[0],boss,"B",[],SEAL_KEY)
 
+    def test_opus_r2_drift_does_not_allow_an_over_cap_saved_target(self):
+        spec = world()
+        book = P.new_book(1000)
+        P.p_step(book,{A:.9},None,spec["rows"][0],spec["params"],True)
+        engine = O.Orders(condition(T,B,weight=.15))
+        engine.observe_close((T,B,100,106,99,105))
+        engine.execute_open(book,spec["params"],T+60,{A:60.,B:105.},1)
+        self.assertEqual(engine.events[-1].get("reason"),"target_gross_limit")
+        self.assertLessEqual(sum(abs(w) for w in book["target"].values()),1)
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
