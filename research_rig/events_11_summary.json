@@ -1,0 +1,655 @@
+{
+ "made_by": "research_rig/prep_11.py summary",
+ "made_utc": "2026-11-25 17:48",
+ "list_sources": {
+  "500": "List of S&P 500 companies, revision 1345606266, 2026-03-27 01:30 UTC",
+  "400": "List of S&P 400 companies, revision 1346242889, 2026-03-30 19:25 UTC",
+  "600": "List of S&P 600 companies, revision 1346175333, 2026-03-30 10:21 UTC"
+ },
+ "members": {
+  "500": 500,
+  "400": 400,
+  "600": 600
+ },
+ "cik_how": {
+  "table": 1202,
+  "edgar name search": 8,
+  "sec ticker file": 290
+ },
+ "members_without_cik": [],
+ "window": [
+  "2026-04-01",
+  "2026-11-20"
+ ],
+ "price_aliases": {
+  "BK": "BNY",
+  "PSTG": "P",
+  "ASGN": "EFOR",
+  "ATGE": "CVSA",
+  "AXL": "DCH",
+  "EXPI": "AGNT",
+  "FDP": "DMC",
+  "IAC": "PPLI",
+  "VSCO": "VSXY",
+  "EQR": "VMRK",
+  "PSKY": "SKYD",
+  "SATS": "ECHO"
+ },
+ "filings": {
+  "500": {
+   "item_202_filings": 1511,
+   "companies_with_filings": 496,
+   "amendments": 5,
+   "with_exhibit_99": 1487,
+   "text_at_least_min": 1484,
+   "session": {
+    "before_open": 807,
+    "after_close": 672,
+    "during_hours": 32
+   }
+  },
+  "400": {
+   "item_202_filings": 1178,
+   "companies_with_filings": 395,
+   "amendments": 7,
+   "with_exhibit_99": 1170,
+   "text_at_least_min": 1168,
+   "session": {
+    "after_close": 642,
+    "before_open": 509,
+    "during_hours": 27
+   }
+  },
+  "600": {
+   "item_202_filings": 1757,
+   "companies_with_filings": 584,
+   "amendments": 6,
+   "with_exhibit_99": 1742,
+   "text_at_least_min": 1741,
+   "session": {
+    "before_open": 681,
+    "after_close": 1021,
+    "during_hours": 55
+   }
+  }
+ },
+ "dropped": {
+  "text short or no exhibit": 52,
+  "second within min_days_between": 83,
+  "no bar on entry day": 8,
+  "amendment (8-K/A)": 18
+ },
+ "used": {
+  "500": {
+   "events": 1454,
+   "companies": 496,
+   "design": 767,
+   "heldback": 687
+  },
+  "400": {
+   "events": 1141,
+   "companies": 394,
+   "design": 559,
+   "heldback": 582
+  },
+  "600": {
+   "events": 1690,
+   "companies": 582,
+   "design": 813,
+   "heldback": 877
+  }
+ },
+ "used_total": {
+  "events": 4285,
+  "design": 2139,
+  "heldback": 2146,
+  "split_last_design": "2026-07-30 09:22:24",
+  "split_first_heldback": "2026-07-30 09:30:23",
+  "last_design_entry_day": "2026-07-30",
+  "first_heldback_entry_day": "2026-07-31",
+  "by_month": {
+   "2026-04": 729,
+   "2026-05": 670,
+   "2026-06": 76,
+   "2026-07": 765,
+   "2026-08": 626,
+   "2026-09": 73,
+   "2026-10": 733,
+   "2026-11": 613
+  }
+ },
+ "text_chars": {
+  "events": 4285,
+  "p10": 17348,
+  "p25": 23909,
+  "median": 31324,
+  "p75": 40849,
+  "p90": 52730,
+  "max": 246712,
+  "by_list": {
+   "500": 33494,
+   "400": 30698,
+   "600": 29758
+  },
+  "guidance_heading_found": 2747,
+  "guidance_heading_median_pos": 4466,
+  "guidance_heading_p90_pos": 11185,
+  "cap": 20000,
+  "share_cut": 0.85,
+  "share_guidance_heading_after_cap": 0.02,
+  "share_cut_by_candidate_cap": {
+   "10000": 0.964,
+   "15000": 0.933,
+   "20000": 0.85,
+   "25000": 0.715,
+   "30000": 0.538
+  },
+  "share_guidance_after_by_candidate_cap": {
+   "10000": 0.129,
+   "15000": 0.041,
+   "20000": 0.02,
+   "25000": 0.012,
+   "30000": 0.006
+  },
+  "share_with_ticker_in_shown_text": 0.967
+ },
+ "prices": {
+  "trading_days": 187,
+  "first": "2026-03-02",
+  "last": "2026-11-24",
+  "by_list": {
+   "500": {
+    "companies": 500,
+    "every_day": 494,
+    "short": {
+     "AVB": {
+      "price_symbol": "AVB",
+      "days": 122,
+      "first": "2026-03-02",
+      "last": "2026-08-24"
+     },
+     "CTRA": {
+      "price_symbol": "CTRA",
+      "days": 48,
+      "first": "2026-03-02",
+      "last": "2026-05-07"
+     },
+     "EA": {
+      "price_symbol": "EA",
+      "days": 112,
+      "first": "2026-03-02",
+      "last": "2026-08-10"
+     },
+     "HOLX": {
+      "price_symbol": "HOLX",
+      "days": 26,
+      "first": "2026-03-02",
+      "last": "2026-04-07"
+     },
+     "KVUE": {
+      "price_symbol": "KVUE",
+      "days": 170,
+      "first": "2026-03-02",
+      "last": "2026-10-30"
+     },
+     "WBD": {
+      "price_symbol": "WBD",
+      "days": 151,
+      "first": "2026-03-02",
+      "last": "2026-10-05"
+     }
+    }
+   },
+   "400": {
+    "companies": 400,
+    "every_day": 389,
+    "short": {
+     "BLD": {
+      "price_symbol": "BLD",
+      "days": 86,
+      "first": "2026-03-02",
+      "last": "2026-07-02"
+     },
+     "CFR": {
+      "price_symbol": "CFR",
+      "days": 185,
+      "first": "2026-03-02",
+      "last": "2026-11-24"
+     },
+     "GTLS": {
+      "price_symbol": "GTLS",
+      "days": 95,
+      "first": "2026-03-02",
+      "last": "2026-07-16"
+     },
+     "IBOC": {
+      "price_symbol": "IBOC",
+      "days": 168,
+      "first": "2026-03-02",
+      "last": "2026-11-16"
+     },
+     "JHG": {
+      "price_symbol": "JHG",
+      "days": 86,
+      "first": "2026-03-02",
+      "last": "2026-07-02"
+     },
+     "MASI": {
+      "price_symbol": "MASI",
+      "days": 73,
+      "first": "2026-03-02",
+      "last": "2026-06-12"
+     },
+     "NSA": {
+      "price_symbol": "NSA",
+      "days": 98,
+      "first": "2026-03-02",
+      "last": "2026-07-21"
+     },
+     "NWE": {
+      "price_symbol": "NWE",
+      "days": 181,
+      "first": "2026-03-02",
+      "last": "2026-11-16"
+     },
+     "TCBI": {
+      "price_symbol": "TCBI",
+      "days": 154,
+      "first": "2026-03-02",
+      "last": "2026-10-08"
+     },
+     "TMHC": {
+      "price_symbol": "TMHC",
+      "days": 100,
+      "first": "2026-03-02",
+      "last": "2026-07-23"
+     },
+     "WBS": {
+      "price_symbol": "WBS",
+      "days": 120,
+      "first": "2026-03-02",
+      "last": "2026-08-20"
+     }
+    }
+   },
+   "600": {
+    "companies": 600,
+    "every_day": 571,
+    "short": {
+     "ACA": {
+      "price_symbol": "ACA",
+      "days": 164,
+      "first": "2026-03-02",
+      "last": "2026-10-22"
+     },
+     "AL": {
+      "price_symbol": "AL",
+      "days": 27,
+      "first": "2026-03-02",
+      "last": "2026-04-08"
+     },
+     "AMWD": {
+      "price_symbol": "AMWD",
+      "days": 62,
+      "first": "2026-03-02",
+      "last": "2026-05-28"
+     },
+     "APLS": {
+      "price_symbol": "APLS",
+      "days": 54,
+      "first": "2026-03-02",
+      "last": "2026-05-15"
+     },
+     "ARI": {
+      "price_symbol": "ARI",
+      "days": 184,
+      "first": "2026-03-02",
+      "last": "2026-11-19"
+     },
+     "AVNS": {
+      "price_symbol": "AVNS",
+      "days": 101,
+      "first": "2026-03-02",
+      "last": "2026-07-24"
+     },
+     "BLFS": {
+      "price_symbol": "BLFS",
+      "days": 152,
+      "first": "2026-03-02",
+      "last": "2026-10-07"
+     },
+     "CPRX": {
+      "price_symbol": "CPRX",
+      "days": 98,
+      "first": "2026-03-02",
+      "last": "2026-07-21"
+     },
+     "CSGS": {
+      "price_symbol": "CSGS",
+      "days": 54,
+      "first": "2026-03-02",
+      "last": "2026-05-15"
+     },
+     "GDEN": {
+      "price_symbol": "GDEN",
+      "days": 49,
+      "first": "2026-03-02",
+      "last": "2026-05-15"
+     },
+     "HLX": {
+      "price_symbol": "HLX",
+      "days": 146,
+      "first": "2026-03-02",
+      "last": "2026-09-28"
+     },
+     "ITGR": {
+      "price_symbol": "ITGR",
+      "days": 181,
+      "first": "2026-03-02",
+      "last": "2026-11-16"
+     },
+     "KW": {
+      "price_symbol": "KW",
+      "days": 74,
+      "first": "2026-03-02",
+      "last": "2026-06-15"
+     },
+     "LEG": {
+      "price_symbol": "LEG",
+      "days": 125,
+      "first": "2026-03-02",
+      "last": "2026-08-27"
+     },
+     "LXP": {
+      "price_symbol": "LXP",
+      "days": 171,
+      "first": "2026-03-02",
+      "last": "2026-11-03"
+     },
+     "MCW": {
+      "price_symbol": "MCW",
+      "days": 59,
+      "first": "2026-03-02",
+      "last": "2026-06-08"
+     },
+     "NVRI": {
+      "price_symbol": "NVRI",
+      "days": 127,
+      "first": "2026-05-27",
+      "last": "2026-11-24"
+     },
+     "PCRX": {
+      "price_symbol": "PCRX",
+      "days": 182,
+      "first": "2026-03-02",
+      "last": "2026-11-18"
+     },
+     "PRA": {
+      "price_symbol": "PRA",
+      "days": 86,
+      "first": "2026-03-02",
+      "last": "2026-07-02"
+     },
+     "QRVO": {
+      "price_symbol": "QRVO",
+      "days": 150,
+      "first": "2026-03-02",
+      "last": "2026-10-02"
+     },
+     "RAMP": {
+      "price_symbol": "RAMP",
+      "days": 170,
+      "first": "2026-03-02",
+      "last": "2026-10-30"
+     },
+     "SEE": {
+      "price_symbol": "SEE",
+      "days": 28,
+      "first": "2026-03-02",
+      "last": "2026-04-09"
+     },
+     "SEM": {
+      "price_symbol": "SEM",
+      "days": 84,
+      "first": "2026-03-02",
+      "last": "2026-06-30"
+     },
+     "SNCY": {
+      "price_symbol": "SNCY",
+      "days": 54,
+      "first": "2026-03-02",
+      "last": "2026-05-15"
+     },
+     "STEL": {
+      "price_symbol": "STEL",
+      "days": 84,
+      "first": "2026-03-02",
+      "last": "2026-06-30"
+     },
+     "TPH": {
+      "price_symbol": "TPH",
+      "days": 52,
+      "first": "2026-03-02",
+      "last": "2026-05-13"
+     },
+     "TWO": {
+      "price_symbol": "TWO",
+      "days": 122,
+      "first": "2026-03-02",
+      "last": "2026-08-24"
+     },
+     "VRE": {
+      "price_symbol": "VRE",
+      "days": 60,
+      "first": "2026-03-02",
+      "last": "2026-05-26"
+     },
+     "WSR": {
+      "price_symbol": "WSR",
+      "days": 92,
+      "first": "2026-03-02",
+      "last": "2026-07-13"
+     }
+    }
+   }
+  },
+  "used_events_whose_bars_stop_before_last_day": 56
+ },
+ "windows": {
+  "by_hold": {
+   "H1": {
+    "stops_inside": {},
+    "overnight_flagged": {},
+    "prices_end_first": 0,
+    "stops_inside_total": 0,
+    "overnight_flagged_total": 0
+   },
+   "H5": {
+    "stops_inside": {
+     "500_heldback": 1
+    },
+    "overnight_flagged": {},
+    "prices_end_first": 25,
+    "stops_inside_total": 1,
+    "overnight_flagged_total": 0
+   }
+  },
+  "all_large_overnight_moves_in_used_symbols": 25,
+  "moves_inside_a_used_window": []
+ },
+ "extraction_check_pick": [
+  {
+   "event_id": "cb334118096e",
+   "list": "500",
+   "symbol": "TSCO",
+   "accession": "0000916365-26-000052"
+  },
+  {
+   "event_id": "0f2adb7cb5e8",
+   "list": "500",
+   "symbol": "BF.B",
+   "accession": "0000014693-26-000048"
+  },
+  {
+   "event_id": "44b1f01567ec",
+   "list": "500",
+   "symbol": "DVA",
+   "accession": "0000927066-26-000060"
+  },
+  {
+   "event_id": "0a316053769f",
+   "list": "500",
+   "symbol": "VRTX",
+   "accession": "0000875320-26-000256"
+  },
+  {
+   "event_id": "decd44edbb52",
+   "list": "500",
+   "symbol": "FICO",
+   "accession": "0000814547-26-000031"
+  },
+  {
+   "event_id": "037cb61afa21",
+   "list": "500",
+   "symbol": "GILD",
+   "accession": "0000882095-26-000037"
+  },
+  {
+   "event_id": "24b307de0c98",
+   "list": "500",
+   "symbol": "AEE",
+   "accession": "0001002910-26-000030"
+  },
+  {
+   "event_id": "c4a5e09cb873",
+   "list": "400",
+   "symbol": "GHC",
+   "accession": "0001628280-26-050829"
+  },
+  {
+   "event_id": "f6931c72cfce",
+   "list": "400",
+   "symbol": "WING",
+   "accession": "0001628280-26-067723"
+  },
+  {
+   "event_id": "c1b6e1f1065d",
+   "list": "400",
+   "symbol": "UNM",
+   "accession": "0000005513-26-000085"
+  },
+  {
+   "event_id": "9913fb9cd4bb",
+   "list": "400",
+   "symbol": "EGP",
+   "accession": "0000049600-26-000040"
+  },
+  {
+   "event_id": "09810407b93c",
+   "list": "400",
+   "symbol": "CNX",
+   "accession": "0001070412-26-000056"
+  },
+  {
+   "event_id": "addeddd62eee",
+   "list": "400",
+   "symbol": "SLGN",
+   "accession": "0001628280-26-050641"
+  },
+  {
+   "event_id": "93def9ac1030",
+   "list": "400",
+   "symbol": "RYN",
+   "accession": "0000052827-26-000102"
+  },
+  {
+   "event_id": "d361ab0993de",
+   "list": "600",
+   "symbol": "CRC",
+   "accession": "0001609253-26-000143"
+  },
+  {
+   "event_id": "155e8b467fee",
+   "list": "600",
+   "symbol": "FORM",
+   "accession": "0001039399-26-000020"
+  },
+  {
+   "event_id": "bf4517c0dee4",
+   "list": "600",
+   "symbol": "HCSG",
+   "accession": "0000731012-26-000055"
+  },
+  {
+   "event_id": "e0403f810c72",
+   "list": "600",
+   "symbol": "MBIN",
+   "accession": "0001104659-26-119617"
+  },
+  {
+   "event_id": "6cbd2cda2246",
+   "list": "600",
+   "symbol": "XPEL",
+   "accession": "0001767258-26-000071"
+  },
+  {
+   "event_id": "c261148f0102",
+   "list": "600",
+   "symbol": "MARA",
+   "accession": "0001507605-26-000026"
+  }
+ ],
+ "design_sample": {
+  "events": 450,
+  "per_list": 150,
+  "folders_per_reader": 23,
+  "readers": [
+   "claude_sonnet_5_5",
+   "grok_4_7",
+   "kimi_k3",
+   "claude_opus_5_5"
+  ],
+  "folders_total": 92
+ },
+ "size": {
+  "march_open_to_5th_close_sd": {
+   "500": {
+    "sd": 0.0432,
+    "windows": 8928
+   },
+   "400": {
+    "sd": 0.0496,
+    "windows": 7092
+   },
+   "600": {
+    "sd": 0.0553,
+    "windows": 10476
+   }
+  },
+  "pooled_sd_heldback_weights": 0.0501,
+  "heldback_events": 2146,
+  "note": "sd from windows that start and end inside March 2026. After earnings the spread is wider by an amount UNKNOWN; x1.5 is an assumption.",
+  "edge_80pct_at_buy_share": {
+   "0.2": {
+    "buys": 429,
+    "sd_march": 0.0054,
+    "sd_march_x1_5": 0.0081
+   },
+   "0.4": {
+    "buys": 858,
+    "sd_march": 0.0033,
+    "sd_march_x1_5": 0.0049
+   },
+   "0.6": {
+    "buys": 1288,
+    "sd_march": 0.0022,
+    "sd_march_x1_5": 0.0033
+   }
+  },
+  "events_for_80pct_at_0_5pct_edge_half_bought": {
+   "sd_march": 622,
+   "sd_march_x1_5": 1400
+  }
+ },
+ "usable_file_sha256": "8cb81857456659e90eee43ffdb7814415eb7eff4c753e7f37947912c0c36be05"
+}

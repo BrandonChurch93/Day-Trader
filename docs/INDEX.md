@@ -175,6 +175,22 @@ Working papers.
 | `research_rig/PREREG_07_intraday_spy_qqq.md` | Frozen plan for replay 07, day trading rules on SPY and QQQ one-minute bars. Ledger rows 56 to 71 | CURRENT |
 | `research_rig/run_07.py`, `research_rig/results_07.json`, `research_rig/build_doc27.py` | Replay 07: script with its checks, output from the one held-back run, and the builder of document 27 | CURRENT |
 | `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, decisions 1a and 1b, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |
+| `research_rig/PREREG_11_earnings_release_reader.md` | Frozen plan for an AI that reads each earnings release and says buy or skip for the next open: 4,285 releases from large, mid and small companies, six set-ups, two holds, pass marks and costs fixed before any reader ran. Ledger rows 121 to 134. Queue row 9b | CURRENT |
+| `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
+| `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
+| `research_rig/common_11.py` | Plan 11 shared paths, calendar, event ids and the price-file map for renamed tickers | CURRENT |
+| `research_rig/prep_11.py` | Plan 11: filters and splits the events, draws the design sample, builds prompts and reader folders. Reads no price after a filing | CURRENT |
+| `research_rig/reader_instruction_11.txt` | Plan 11: the exact instruction every reader sees | CURRENT |
+| `research_rig/READER_BRIEF_11.md` | Plan 11: the message the lead pastes to spawn one reader helper, and the no-tools gap | CURRENT |
+| `research_rig/check_11_answers.py` | Plan 11: checks a reader's answers file and collects a phase's answers with their hashes | CURRENT |
+| `research_rig/score_11.py` | Plan 11 scorer. Refuses unless the answer hashes are pushed; --heldback runs once | CURRENT |
+| `research_rig/test_11.py` | Plan 11 tests on made-up events, texts and prices | CURRENT |
+| `research_rig/extract_check_11.py` | Plan 11 extraction check: extracted texts against the raw filings | CURRENT |
+| `research_rig/EXTRACTION_CHECK_11.md` | Plan 11 extraction check, reading notes on 20 texts | RECORD |
+| `research_rig/events_11_summary.json` | Plan 11 event, text, coverage and size counts, written by prep_11.py summary | RECORD |
+| `research_rig/extraction_check_11.json` | Plan 11 extraction check counts, written by extract_check_11.py | RECORD |
+| `research_rig/split_check_11.py` | Plan 11 split check: are the daily price files split-adjusted | CURRENT |
+| `research_rig/split_check_11.json` | Plan 11 split check result, written by split_check_11.py | RECORD |
 | `research_rig/PREREG_09_crypto_methods.md` | Frozen plan for new long-only crypto rules at Alpaca cost | CURRENT |
 | `research_rig/run_09.py`, `research_rig/fixtures_09.py` | Replay engine and synthetic timing, fees, gaps and matching checks for replay 09 | CURRENT |
 | `research_rig/fetch_09_alpaca.py` | Public Alpaca USD bar downloader; raw bars live on the research machine | CURRENT |

@@ -10,7 +10,7 @@ As of 2026-11-25 17:52 UTC. Plans TM01 to TM04 are finished and are in Done or i
 
 | # | What | Plan | Started |
 |---|---|---|---|
-| 9b | The earnings release reader: the checking code was audited by a second model, 14 faults found and fixed, a second audit pass is running before the plan is frozen | draft plan, frozen and pushed before any reader runs | 2026-11-25 |
+| 9b | The earnings release reader. Plan frozen 2026-11-25 17:56 UTC after two audits of the code by a second model. Next: four models read the 450-release design sample, then the set-ups are scored on it and one is chosen | `research_rig/PREREG_11_earnings_release_reader.md`, ledger rows 121 to 134 | 2026-11-25 |
 | 9g | Fast lane, the owner's own method (`practice/traders/F01_hot_coin_swing.md`): a second price store from Coinbase minutes for smaller coins, and a futures book in the time machine that can go long or short with funding and forced close-out | plan TM06, written when both are in | 2026-11-25 |
 | - | Dated calls by the crypto callers the owner followed, Alex Becker first: what was said on what date and what the coin did after | reading, no plan | 2026-11-25 |
 | - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
@@ -20,7 +20,6 @@ As of 2026-11-25 17:52 UTC. Plans TM01 to TM04 are finished and are in Done or i
 | # | What | Needs | Blocked by |
 |---|---|---|---|
 | 8 | Put the first AI traders on the practice desk (`practice/PLAN_02_ai_desk.md`). The two fixed rules have run there since 2026-11-25 16:31 UTC | a method that earned it in the time machine | no method has earned it yet: TM01 to TM04 did not pass |
-| 9b | An AI reads each earnings release and says buy or skip for the next open; judged against random picks among the same releases and against buying every release. Large, mid and small companies. The draft plan is on the research machine until it is frozen | free SEC filings, daily stock prices from the built-in history | the plan being finished, then frozen with its ledger rows |
 | 9f | Measured stock trading costs from past bid and ask. Measured for 56 symbols, June to November 2026: the middle half-spread was about 1 bps in regular hours and about 2.4 bps in the first half hour, against the 5 bps the time machine charges. Still to do: write it up in `docs/research/` from a script | the data key (in) | a free slot |
 | 10 | Company filings read in full: a trader that compares each new annual or quarterly report with last year's and buys the companies whose reports changed least | free SEC filings, daily stock prices | the published design being collected with quotes |
 | 11 | A customer's good news, then buy its supplier before the supplier reports | free SEC filings for who sells to whom, stock prices, news | nothing |

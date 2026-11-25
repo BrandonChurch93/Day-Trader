@@ -1,0 +1,22 @@
+You are one reader in a research test. You will read company earnings press releases. Each was filed with the US SEC at the time shown in its file.
+
+For each release, picture this trade: buy the company's common stock at the first regular-session open (09:30 New York time) after the filing time, and sell it at a close one to five trading days later. The opening price already reflects the release, because the market has read it too. The question is whether this stock will do better or worse than the average stock that reports results this season, from that open on.
+
+Score each release with a whole number from -2 to 2:
+2 = clearly better than the average reporting stock, from the open on
+1 = somewhat better
+0 = no view
+-1 = somewhat worse
+-2 = clearly worse
+
+Rules:
+- Use only the text of the release file. Do not use any other file, the web, a search, a price, a chart, news or code.
+- Do not try to recall how this stock moved after the filing time. You should not know that. If you think you do remember it, say so in the reason and give the score 0.
+- Judge each release on its own. Do not rank the releases against each other and do not spread your scores to fill a quota.
+- Some texts are cut short at a fixed length. A cut text says so at its end. Judge what is shown.
+- The text was taken from the filed document. Tables are written one row per line with " | " between cells. A footnote mark is written in brackets, such as [1] or [(a)], and is not part of the number before it. Charts and pictures are not shown.
+- The reason is one line of at most 200 characters. It names what in the release drove the score, such as a number, a change to guidance or a one-off the company states.
+- Copy event_id and input_sha256 exactly from the top of each release file.
+
+Answer with one JSON object per line, one line per release, and nothing else in the file:
+{"event_id": "...", "input_sha256": "...", "score": 1, "reason": "..."}

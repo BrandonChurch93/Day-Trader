@@ -151,6 +151,48 @@ replay_10_statistics:
   note: Add every symbol and entry-band pairing to previous_trials. Use replay_09_statistics for PBO blocks, matched draws and seed.
   source: research_rig/PREREG_10_negative_funding.md
 
+replay_11_events:
+  value: {start: "2026-04-01", end: "2026-11-20", lists: ["500", "400", "600"], min_text_chars: 1500, min_days_between: 20}
+  status: builder
+  note: Draft plan 11. Item 2.02 8-Ks filed start to end by members of the S&P 500, MidCap 400 and SmallCap 600 lists saved before any price was read. Set 2026-11-25, draft.
+  source: research_rig/PREREG_11_earnings_release_reader.md
+
+replay_11_costs:
+  value: {bps_per_side: {"500": 5, "400": 10, "600": 20}, sensitivity_multiples: [0, 0.5, 2]}
+  status: builder
+  note: Draft plan 11. Cost per side by list, an assumption fixed before any return after an event was worked out. The sensitivities multiply every list's cost and are reported, not judged. Set 2026-11-25, draft.
+  source: research_rig/PREREG_11_earnings_release_reader.md
+
+replay_11_readers:
+  value: {small_models: ["claude_sonnet_5_5", "grok_4_7", "kimi_k3"], strong_model: "claude_opus_5_5", batch_max: 20, text_cap_chars: 20000, audit_share: 0.10}
+  status: builder
+  note: Draft plan 11. Readers run as helper agents, one folder of at most batch_max releases each. Each release text is cut at text_cap_chars characters. Set 2026-11-25, draft.
+  source: research_rig/PREREG_11_earnings_release_reader.md
+
+replay_11_design:
+  value: {sample_per_list: 150, buy_share_min: 0.20, buy_share_max: 0.60, setups: ["claude_sonnet_5_5", "grok_4_7", "kimi_k3", "claude_opus_5_5", "middle", "cascade"]}
+  status: builder
+  note: Draft plan 11. The design sample, the buy-share window for choosing a set-up, and the set-ups from cheapest to dearest, which is the order ties are broken in. Set 2026-11-25, draft.
+  source: research_rig/PREREG_11_earnings_release_reader.md
+
+replay_11_gap:
+  value: {min_up_pct: 2.0}
+  status: builder
+  note: Draft plan 11. Yardstick (c) buys when the entry open is more than this percent above the last close before the filing. Set 2026-11-25, draft.
+  source: research_rig/PREREG_11_earnings_release_reader.md
+
+replay_11_statistics:
+  value: {draws: 1000, seed: 11, min_buys: 100, holds: {H1: 1, H5: 5}, main_hold: "H5", new_trials: 14, extraction_check: 20}
+  status: builder
+  note: Draft plan 11. holds are the exit's trading day counting the entry day as day 1. new_trials is 6 set-ups times 2 holds plus yardstick (c) at 2 holds. Set 2026-11-25, draft.
+  source: research_rig/PREREG_11_earnings_release_reader.md
+
+replay_11_overnight:
+  value: {ratio_min: 0.70, ratio_max: 1.45}
+  status: builder
+  note: Draft plan 11. A trade is flagged "large overnight move inside the hold" when a close-to-next-open ratio between two days of its window (entry day to exit day) is below ratio_min or above ratio_max. Judged results keep flagged trades; the result without them is printed beside, not judged. Set 2026-11-25 by the lead, draft.
+  source: research_rig/PREREG_11_earnings_release_reader.md
+
 replay_max_drop_ratio_vs_hold:
   value: 0.6
   status: builder
@@ -622,9 +664,9 @@ tm_lev_replay_low_share:
   note: timemachine/leverage_replay_tm03.py only. A month counts as ended low when its final value is below this share of tm_account_start_usd.
   source: timemachine/leverage_replay_tm03.py
 tm_perp_fee_bps_per_side:
-  value: {default: 5}
+  value: {default: 12}
   status: builder
-  note: Perp sessions only. Fee per fill on the notional traded, in basis points, by symbol, with default for any symbol not named. 5 is Kraken Derivatives' lowest-volume taker fee (0.05 percent), read 2026-11-25. Separate from practice_crypto_fee_bps_added, which spot sessions keep.
+  note: Perp sessions only. Fee per fill on the notional traded, in basis points, by symbol, with default for any symbol not named, used when a perp session runs. 12 is the main line of tm_perp_fee_levels_bps; every perp result is also scored at each of those levels (see docs/research/40_leverage_venues_checked.md). Separate from practice_crypto_fee_bps_added, which spot sessions keep.
   source: timemachine/perp.py
 tm_perp_fee_levels_bps:
   value: [1, 12, 25]
@@ -635,7 +677,7 @@ tm_perp_fee_levels_bps:
 tm_perp_half_spread_bps:
   value: {default: 10}
   status: builder
-  note: Perp sessions only. Half the assumed bid-ask spread on a perp fill, in basis points, by symbol, with default for any symbol not named. A buy fills this much above the price and a sell this much below. An assumption until each small coin's spread is measured and added by name.
+  note: Perp sessions only. Half the assumed bid-ask spread on a perp fill, in basis points. A symbol named here uses its own value; otherwise its coin's measured value in tm_crypto_half_spread_bps_by_coin; otherwise default. A buy fills this much above the price and a sell this much below.
   source: timemachine/perp.py
 tm_perp_maintenance:
   value: {default: 0.05}
