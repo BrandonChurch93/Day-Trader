@@ -91,17 +91,19 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 ### 2. How is pass mark 3 measured from now on?
 
 - The issue: in the stock test, mark 3 screened nothing, because of how its plan worked out the spread between rules.
+- The proposal: take the spread between rules across every trial counted in the ledger, not only the trials in one plan.
 - Why: that is what the mark is for.
 - You would be approving: a stricter mark 3 in every future plan.
 - You would not be approving: any change to the bar itself (`replay_min_deflated_sharpe`).
-- Recommended: take the spread across every trial counted in the ledger, not only the trials in one plan.
+- Recommended: yes.
 
 ### 3. Does every replay get an independent audit?
 
+- The proposal: a different model audits the code against the plan before any result is believed.
 - Why: last night's audits changed results twice. Research works this way already.
 - You would be approving: making that a standing rule for research.
 - You would not be approving: any change to a pass mark, or any spending.
-- Recommended: yes. A different model audits the code against the plan before the result is believed.
+- Recommended: yes.
 
 ### 4a. Test next: replay 06?
 
@@ -114,12 +116,12 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 
 ### 4b. Test after that: replay 07?
 
-- What it is: day trading SPY and QQQ on one-minute prices.
+- What it is: day trading SPY and QQQ on one-minute prices. Its plan and ledger rows are pushed before it runs.
 - Why: it is the one day trading case not yet tested.
 - One thing to know: as drafted, its night-only rule needs dividend history. On the workspace's own prices alone it would run without that rule, and the plan has to say so before it is frozen.
 - You would be approving: one research replay, once one-minute prices are in hand and decisions 1a and 1b are made.
 - You would not be approving: any building or any trade.
-- Recommended: yes. Its plan and ledger rows are pushed before it runs. Research expects a fail and would measure it.
+- Recommended: yes. Research expects a fail and would measure it.
 
 ### 5. Watch two rules in the practice account?
 
@@ -131,6 +133,7 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 
 ### 6. Drop crypto day trading and wide coin baskets?
 
+- The proposal: close both lines of work.
 - Why: no rule passed in either, at any venue cost.
 - You would be approving: closing those two lines of work.
 - You would not be approving: dropping crypto altogether.
@@ -138,10 +141,11 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 
 ### 7. Credit interest on idle cash in every replay?
 
+- The proposal: credit Treasury bill interest on cash that a rule is not using.
 - Why: trend rules sit in cash a lot, and the crypto replays credit nothing for it.
 - You would be approving: one change to the test rig, with its own written plan, used in new tests.
 - You would not be approving: any change to a pass mark, or running any stored test again.
-- Recommended: yes. Credit Treasury bill interest on cash.
+- Recommended: yes.
 
 ### 8. Are the bars for pass marks 1, 3, 4 and 5 yours, for research replays?
 
@@ -164,10 +168,11 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 
 ### 10. Test AI models making the call, going forward?
 
+- The proposal: leave the AI test parked for now.
 - Why: no AI system with a live record was found that beat holding, the test costs model usage, and the two rule observations in decision 5 come first. If you want the question answered anyway, it runs in the practice account only, with the rules in `docs/research/11_ai_trader_experiment_design.md` fixed first and your number for `api_model_spend_cap_usd_month` set.
 - You would be approving: leaving the AI test parked.
 - You would not be approving: dropping it for good.
-- Recommended: not now.
+- Recommended: yes, leave it parked.
 
 ### 11. High-risk share
 
@@ -187,10 +192,11 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 
 ### 13. Who the Builder is and where it runs
 
+- The proposal: decide this after a rule passes in practice, not before.
 - Why: there is nothing to build until then.
 - You would be approving: that this question waits.
 - You would not be approving: any choice of builder, host or software.
-- Recommended: decide after a rule passes in practice, not before.
+- Recommended: yes, let it wait.
 
 ## Questions about scope and about your own rules
 
@@ -207,44 +213,49 @@ These came out of the cold-read tests. Each stands alone. Answer any one without
 ### 15. Start with slow rules, not day trading?
 
 - The issue: also written on 2026-11-24 and never put to you (same file, row 2). Start with rules that hold for days or longer, on liquid funds and on bitcoin and ether.
+- The proposal: start with slow rules, and keep replay 07 as the one day trading test still worth running.
 - Why: every test since has pointed the same way.
 - You would be approving: where the first product rules come from.
 - You would not be approving: dropping day trading for good. Replay 07 decides that for stocks.
-- Recommended: yes, with replay 07 kept as the one day trading test still worth running.
+- Recommended: yes.
 
 ### 16a. From now on, may a stored test be run again, unchanged, only to check that it gives the same file?
 
 - The issue: your rule says never run the held-back slice a second time for the same version of a rule, and names one exception. A check that a result can be reproduced is not that exception.
+- The proposal: allow it as a check only, under these conditions. The code is the same as in the stored run, shown by its commit. The input files are the same, shown by their fingerprints. The check is written in the trial ledger before it runs. The output is written outside the repo and compared with the stored file. If it differs, the stored file is not replaced and you are told.
 - Why: a result nobody can reproduce is weaker than one that can be. Nothing new is tried, so it is not counted as a trial.
 - You would be approving: reproduction checks as described.
 - You would not be approving: any run with a rule, a cost, a date or a pass mark changed. Until you answer, nobody runs a test script.
-- Recommended: yes, as a check only, under these conditions. The code is the same as in the stored run, shown by its commit. The input files are the same, shown by their fingerprints. The check is written in the trial ledger before it runs. The output is written outside the repo and compared with the stored file. If it differs, the stored file is not replaced and you are told.
+- Recommended: yes, under those conditions.
 
 ### 16b. What about the repeats that already happened without your yes?
 
 - What happened, first: `research_rig/i2_2020_note.py` was run a second time. It multiplies up each industry group's daily returns for 2020, which is a held-back year. It runs no rule. One line of it, where it looks for the data, had changed, so it was not strictly unchanged code. The output was identical.
 - What happened, second: the script behind your screen replayed five already-tested rules over the whole price history each time it ran. That was several times, and the count was not recorded. Each time it compared four whole-sample figures with the stored results, for the rule and for holding: growth a year, Sharpe ratio, largest drop and total return. For the three daily charts it also compared the number of trades. They matched.
 - What that leaves unchecked: the curves, the year-by-year figures and the trade lists on your screen were made in those replays. No stored result holds them, and nothing checks them. They cannot be rebuilt from the repo alone, because the saved curves are kept out of it.
+- The proposal: let both stand as disclosed, and do not count them as trials. The screen now says its charts come from a replay that is not a counted result. It replays nothing any more.
 - Why: no rule, cost or date was changed, and no pass or fail was read from them. If you would rather count them, say so. Research can then work pass mark 3 out again at the higher count from the stored results, without running a rule.
 - You would be approving: that these repeats stand as disclosed and uncounted.
 - You would not be approving: any further repeat. That is question 16a.
-- Recommended: let both stand as disclosed, and do not count them as trials. The screen now says its charts come from a replay that is not a counted result. It replays nothing any more.
+- Recommended: yes, let both stand as disclosed.
 
 ### 17. What do "within tolerance" in the practice gate and the live gate mean?
 
 - The issue: `docs/playbook/00_START_HERE.md` says a rule leaves the practice account when "slippage and errors" are "within tolerance" (phase 2), and that more money waits until live results "track paper within tolerance" (phase 4). Neither says what is measured, in what unit, or how much is allowed. So today no rule can pass the practice gate, whatever it does.
+- The proposal: two steps. First, research proposes what to measure and in what unit. For practice: the gap between the price the rule assumed and the price the practice account gave, in basis points per order, and the number of orders that failed or went in wrong out of the orders sent. For live: the gap between live and practice results over the same days. Second, you set how much is allowed, after the first weeks of practice orders show what the numbers look like.
 - Why: an allowed amount picked before a single order has been sent would be a guess. Practice orders are pretend. The broker simulates them and no money is at risk.
 - You would be approving: that the measures get defined first, that the allowed amounts are yours to set, and that both gates stay shut until you set them.
 - You would not be approving: any value today, or any real money.
-- Recommended: two steps. First, research proposes what to measure and in what unit. For practice: the gap between the price the rule assumed and the price the practice account gave, in basis points per order, and the number of orders that failed or went in wrong out of the orders sent. For live: the gap between live and practice results over the same days. Second, you set how much is allowed, after the first weeks of practice orders show what the numbers look like.
+- Recommended: yes to the two steps. No value is asked for today.
 
 ### 18a. From now on, does your rerun rule cover a rule whose code does not match its written plan?
 
 - The issue: your rule names one case for a second run of the held-back slice: "when a machine check proves the engine itself was wrong". It does not name the case where the engine was right and one rule was coded differently from its pushed plan.
+- The proposal: allow it under four conditions. An independent check proves the mismatch against the plan as it was pushed. The correction and the ledger row are pushed before the rerun. The rerun is counted as trials and reported as a rerun. Both outputs are kept.
 - Why: a rule that does not match its plan tests something nobody wrote down, so without a rerun the plan's question is never answered. The conditions keep it from becoming a second try at a result someone did not like.
 - You would be approving: a second kind of allowed rerun, from now on.
 - You would not be approving: any rerun because a result was disappointing. Nothing from last night. That is 18b.
-- Recommended: yes, under four conditions. An independent check proves the mismatch against the plan as it was pushed. The correction and the ledger row are pushed before the rerun. The rerun is counted as trials and reported as a rerun. Both outputs are kept.
+- Recommended: yes, under those four conditions.
 
 ### 18b. Which of last night's results are credited?
 
@@ -265,10 +276,11 @@ These came out of the cold-read tests. Each stands alone. Answer any one without
 ### 18c. What do "machine check" and "the engine itself" mean in your rerun rule?
 
 - The issue: research reran after two other AI models audited the test code and ran their own checks. Research read that as "a machine check proves the engine itself was wrong". You have not said whether an audit by a model is a machine check, or whether the code that works out the pass marks is part of the engine.
+- The proposal: a machine check is a test with a known answer that the old code fails and the new code passes, or a second build from the raw data that disagrees. A model's opinion alone is not one. The engine is the shared code that simulates trades and works out the marks. It is not the code of any one rule, and it is not the definition of a pass mark. A rerun for an engine fault changes only what the check proved wrong.
 - Why: with those meanings a rerun cannot carry other changes along with it, which is what happened in row R1.
 - You would be approving: these two meanings, from now on.
 - You would not be approving: anything about last night. That is 18b.
-- Recommended: a machine check is a test with a known answer that the old code fails and the new code passes, or a second build from the raw data that disagrees. A model's opinion alone is not one. The engine is the shared code that simulates trades and works out the marks. It is not the code of any one rule, and it is not the definition of a pass mark. A rerun for an engine fault changes only what the check proved wrong.
+- Recommended: yes to both meanings.
 
 ### 19. May a replay of an AI model on past dates count as evidence, if every date is after the model's training cutoff?
 
@@ -281,18 +293,20 @@ These came out of the cold-read tests. Each stands alone. Answer any one without
 ### 20. Is the break-even cost multiple your number?
 
 - The issue: hard rule 9 in `AGENTS.md` says "at least twice the modeled cost". The same number is the key `backtest_min_breakeven_cost_multiple`, which the config file marks as proposed. They agree today, and the config file says the value may not go below the rule.
+- The proposal: say that this key is yours, so its status can change from proposed to owner.
 - Why: one number should not be a hard rule in one file and a proposal in another.
 - You would be approving: the number you already have in `AGENTS.md`, and nothing else.
 - You would not be approving: any change to its value.
-- Recommended: say that this key is yours, so its status can change from proposed to owner.
+- Recommended: yes.
 
 ### 21. When the repo review's items are closed, delete the file or keep it?
 
 - The issue: `docs/quality/00_READ_FIRST.md` line 51 says of `docs/quality/05_repo_review_2026-11-24.md`: "Delete it when its items are closed." The repo's map keeps old files and marks them as records, so the two pull in different directions.
+- The proposal: keep the file, marked as a record in `docs/INDEX.md`.
 - Why: a later reader can then see what the review found and that it was dealt with. Nothing reads it by default.
 - You would be approving: a change to that one line of your file, from "Delete it" to "Mark it as a record".
 - You would not be approving: any other change to your quality files. If you say delete, nothing changes and research deletes it when its items are closed.
-- Recommended: keep it, marked as a record in `docs/INDEX.md`.
+- Recommended: keep it.
 
 ## Item 5 in detail
 
