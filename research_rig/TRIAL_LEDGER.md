@@ -45,3 +45,12 @@ Read this before the table:
 - Cross-checks X1, X2 and S2, sensitivity S1 and the diagnostic ran the same rules on other prices, dates or fill times. They were logged as "not new trials" and are not in the count. Each is a further look at the held-back dates all the same, and `docs/research/16_rig_audit.md` treats the two price histories as one market seen twice, not as two independent tests.
 - Draft plans 06 and 07 are not counted until their plans are final and pushed.
 - Practice plan 01 (`archive/practice_PLAN_01_two_rules_observation.md`), first used 2026-11-25 and replaced by `practice/PLAN_02_ai_desk.md`: a forward record of P1 on bitcoin and T1 on a total market fund with pretend money. No setting of either rule was changed, so it was not a new trial and was not counted. It was not a look at the held-back years either, because it used forward prices.
+
+## Time machine replays of AI traders
+
+Scored a different way from rule trials and not in the deflated Sharpe count. Every session started is also one line in `timemachine/SESSIONS.jsonl`.
+
+| # | Logged (UTC) | Plan | Trials | Status |
+|---|---|---|---|---|
+| TM01-a to TM01-f | 2026-11-25 15:14 | `timemachine/PLAN_TM01_crypto_price_only.md` | Six models on card `practice/traders/B01_crypto_swing_price_only.md`, crypto prices only, five monthly sessions each (July to November 2026), plus a hold and 20 random twins per session. Pass mark in the plan | logged before any AI session was started. October 2026 runs first |
+

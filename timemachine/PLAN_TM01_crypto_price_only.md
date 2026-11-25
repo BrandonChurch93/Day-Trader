@@ -1,0 +1,56 @@
+# Time machine plan 01: six models, one card, crypto prices only
+
+Written 2026-11-25 15:14 UTC by the builder, before any AI session was started. Pretend money. This is the first run of AI traders in the time machine.
+
+## What is asked
+
+Does a model trading crypto from prices alone, on card `practice/traders/B01_crypto_swing_price_only.md`, beat holding bitcoin and beat a random trader of the same size and pace? And does the time machine work with real AI traders?
+
+## Traders
+
+Six sessions per month, one model each, the same card and the same brief (`timemachine/TRADER_BRIEF.md`):
+
+| Trial | Trader id | Model |
+|---|---|---|
+| TM01-a | B01-OPUS | Claude Opus 5.5 |
+| TM01-b | B01-SOL | GPT-6.2 Sol |
+| TM01-c | B01-NEON | Gemini Neon |
+| TM01-d | B01-SONNET | Claude Sonnet 5.5 |
+| TM01-e | B01-KIMI | Kimi K3 |
+| TM01-f | B01-GROK | Grok 4.7 |
+
+## Dates
+
+- Months, each a separate session that starts with a fresh `tm_account_start_usd`: July, August, September, October 2026, and 2026-11-01 to 2026-11-24.
+- October runs first, as the shakedown. If the machinery fails in October, it is fixed and October is run again as a new session that is also counted in `timemachine/SESSIONS.jsonl`.
+- These months are after the date the repo has used as the models' knowledge line (2026-07-01). That date is not measured for these six models. UNKNOWN. Measuring it is item 5 in `docs/QUEUE.md`.
+
+## Costs
+
+The fee is `practice_crypto_fee_bps_added` per side. The spread is `tm_crypto_half_spread_bps` per side. Fills are at the open of the next recorded minute. No cap on order size against volume (`tm_crypto_max_share_of_minute_volume`).
+
+## Yardsticks
+
+- Hold: buy bitcoin at the first wake and hold to the end of the month.
+- Random twins: for each finished AI session, 20 twins (`timemachine/run_code_trader.py twin`, seeds 1 to 20). A twin buys at the same wakes, the same dollars, a pair drawn at random, with the same stop and target distances and holding time.
+
+## What would count, fixed now
+
+For one model, over the five months added up:
+
+1. Its gain in dollars is above the gain from holding bitcoin, and
+2. its gain is above the 80th percentile of its own 20 twins' gains added up over the same months.
+
+Both, or it has shown nothing. A model that clears both gets a longer test with the same card: more months as the tape grows, then the practice desk. It does not mean real money.
+
+One month alone decides nothing. The October numbers are reported as they come, labelled as one month.
+
+## Also reported
+
+Number of trades, win rate, largest drop during a month, fees paid, how many picks were refused and why, how many wakes the model did nothing, and anything that broke.
+
+## Known weak points
+
+- The no-web rule is by instruction. A trader could break it. Each trader's lookups are logged by the server, and its report is read for signs of outside knowledge.
+- Six models and five months is 30 sessions. With that many, one model looking good by luck is likely. That is why the twin test is per model and the bar is set before the run.
+- Crypto minutes on this tape are often thin. Real fills could be worse than assumed.

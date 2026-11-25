@@ -178,7 +178,7 @@ Working papers.
 | `practice/broker.py`, `practice/market.py` | The only code that talks to the broker (practice address only, a short fixed list of actions), and the price reads | CURRENT |
 | `practice/rules.py` | The two fixed rules on the desk | CURRENT |
 | `practice/traders.json` | The traders on the desk now | CURRENT |
-| `practice/traders/` | `practice/traders/ROSTER.md` and one method card for each AI trader, A01 to A09 | CURRENT |
+| `practice/traders/` | `practice/traders/ROSTER.md` and one method card for each AI trader, A01 to A09 and B01 | CURRENT |
 | `practice/test_trader.py`, `practice/test_review.py`, `practice/test_market.py` | Checks with a pretend broker and no network. The timer runs them before every real run | CURRENT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 
@@ -186,11 +186,13 @@ Working papers.
 
 | File | What it is | State |
 |---|---|---|
+| `timemachine/README.md` | Start here: what it is, how to start a session, how a trader steps through it | CURRENT |
 | `timemachine/TRADER_BRIEF.md` | What an AI trader is told at the start of a replay | CURRENT |
 | `timemachine/tape.py`, `timemachine/record.py` | The store of recorded past prices and news, with reads that never return anything dated after the pretend now, and the recorder that fills it | CURRENT |
 | `timemachine/simdata.py`, `timemachine/simbroker.py` | Stand-ins for the price reads and the broker, so the practice desk's own order program runs unchanged on past days | CURRENT |
 | `timemachine/session.py`, `timemachine/server.py`, `timemachine/new_session.py` | One replay session, the local server a trader steps through, and the command that starts a session | CURRENT |
 | `timemachine/code_traders.py`, `timemachine/run_code_trader.py` | Traders that need no model (hold, random, the fixed rules), and the command that runs one through a session | CURRENT |
+| `timemachine/PLAN_TM01_crypto_price_only.md` | Plan for the first AI replays: six models, one card, crypto prices only, with the pass mark fixed before any session | CURRENT |
 | `timemachine/SESSIONS.jsonl` | One line for every session ever started, so no replay goes uncounted | CURRENT |
 | `timemachine/test_tape.py`, `timemachine/test_sim.py`, `timemachine/__init__.py` | Checks with no network, and the package marker | CURRENT |
 
