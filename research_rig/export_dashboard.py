@@ -427,6 +427,35 @@ def practice():
         return json.loads(subprocess.run(["git", "show", "FETCH_HEAD:records/summary.json"], cwd=root, check=True, capture_output=True, timeout=60).stdout)
     except Exception as e:
         print("practice records not read:", type(e).__name__); return None
+def timemachine():
+    """The stored scores of the time machine plans (timemachine/results_tm01.json, results_tm02.json), shaped for the page. Reads no prices and runs nothing."""
+    root = os.path.abspath(os.path.join(HERE, "..")); plans = []
+    names = {"07": "July", "08": "August", "09": "September", "10": "October", "11": "November 1 to 24"}
+    for pid, label, f, doc, plan in (("TM01", "Prices alone", "results_tm01.json", "docs/research/29_time_machine_tm01_crypto_price_only.md", "timemachine/PLAN_TM01_crypto_price_only.md"),
+                                     ("TM02", "Prices and dated headlines", "results_tm02.json", "docs/research/30_time_machine_tm02_crypto_with_news.md", "timemachine/PLAN_TM02_crypto_with_news.md")):
+        fp = os.path.join(root, "timemachine", f)
+        if not os.path.exists(fp):
+            continue
+        o = json.load(open(fp)); models, sessions, total = [], [], 0
+        for tag, m in o["models"].items():
+            models.append(dict(name=m["name"], months_counted=len(m["months_counted"]), months=len(m["months"]), gain=m.get("sum_gain_usd"), hold=m.get("sum_hold_usd"),
+                               twin_p80=m.get("sum_twin_p80_usd"), verdict=m["verdict"]))
+            for mo, r in m["months"].items():
+                total += 1
+                if not r["finished"]:
+                    continue
+                why = []
+                for w in r["why"]:
+                    ex = w["exit_reason"] or ""
+                    end = ("stop reached" if "stop" in ex else "target reached" if "target" in ex else "time limit" if "time" in ex or "by_utc" in ex else "sold by the trader") if w["closed_utc"] else "open at the end"
+                    looked = ", ".join((f"{k} bars x{v}" if k not in ("news", "price") else f"{k} x{v}") for k, v in sorted(w["looked"].items())) or "packet only"
+                    why.append(dict(wake=w["wake_utc"][:16].replace("T", " "), coin=w["symbol"], looked=looked, reason=w["reason"] or "", sources=w.get("sources") or [],
+                                    ended=end + (" " + w["closed_utc"][:16].replace("T", " ") if w["closed_utc"] else ""), result=w["result"], gain=w["gain_usd"], gain_pct=w["gain_pct"]))
+                sessions.append(dict(mo=mo, month=names[mo], model=m["name"], gain=r["gain_usd"], hold=r["hold_gain_usd"], twin_p80=r.get("twin_p80_usd"), twins_beaten=r.get("twins_beaten"),
+                                     twins_done=r["twins_done"], buys=r["buys"], wins=r["wins"], losses=r["losses"], max_drop=r["max_drop"], why=why))
+        sessions.sort(key=lambda x: (x["mo"], x["model"]))
+        plans.append(dict(id=pid, label=label, models=models, sessions=sessions, sessions_total=total, news_test=o.get("news_test"), doc=GH + doc, plan=GH + plan))
+    return dict(start_usd=R.th("tm_account_start_usd"), plans=plans) if plans else None
 PR = practice()
 pr_on = bool(PR) and PR.get("status") in ("running", "halted")
 pr_n = PR["totals"]["orders"] if pr_on else 0
@@ -442,6 +471,7 @@ out = dict(
     headline=[("No real trade has been made. " + (f"The practice account has sent {pr_n} pretend-money order" + ("" if pr_n == 1 else "s") + "." if pr_n else "The practice desk is running and has sent no order yet.")) if pr_on
               else "No real or practice trade has been made."],
     practice=PR, practice_live_url=PRACTICE_LIVE,
+    timemachine=timemachine(),
     status_rows=status_rows(), status_link=GH + "docs/STATUS.md",
     tests=tests, series=S, compare_notes=notes,
     waiting_on_you=WAIT[0], waiting_problem=WAIT[1], waiting_link=GH + "docs/STATUS.md#waiting-on-the-owner",

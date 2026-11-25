@@ -506,6 +506,63 @@
     return '<div class="card pr-kpi' + (cls || '') + '"><p class="pr-kpi-label">' + esc(label) + '</p>' +
       '<p class="pr-kpi-value">' + value + '</p>' + (sub ? '<p class="pr-kpi-sub">' + sub + '</p>' : '') + '</div>';
   }
+  // ---------- time machine ----------
+  function tmMoney(x) { return isNum(x) ? '<span class="' + negCls(x) + '">' + esc(signedMoney(x)) + '</span>' : '<span class="muted">Not yet</span>'; }
+  function tmVerdict(v) {
+    var cls = v === 'not finished' ? 'badge-neutral' : (/^counts|helped: six/.test(v) ? 'badge-pass' : 'badge-fail');
+    return '<span class="badge ' + cls + '">' + esc(capital(v)) + '</span>';
+  }
+  function renderTimeMachine(d) {
+    var body = $('timemachine-body');
+    if (!body) return;
+    var tm = d.timemachine;
+    if (!tm || !tm.plans || !tm.plans.length) {
+      body.innerHTML = '<div class="empty"><h3>No replay has finished yet</h3><p>Results show here when the first sessions are scored.</p></div>';
+      return;
+    }
+    var html = '';
+    tm.plans.forEach(function (pl) {
+      var done = pl.sessions.length;
+      html += '<div class="card pr-block tm-plan" data-testid="tm-plan-' + esc(pl.id) + '"><h3 class="h3">' + esc(pl.label) + '</h3>' +
+        '<p class="meta">' + esc(int(done)) + ' of ' + esc(int(pl.sessions_total)) + ' month-long sessions finished. Each starts with ' + esc(money2(tm.start_usd)) +
+        ' of pretend money. A model counts only if, over all five months added up, it beats both holding bitcoin and four in five of its random twins. One month alone decides nothing.</p>' +
+        '<div class="tablewrap"><table class="pr-stack tm-models"><caption class="sr-only">Models, months added up</caption><thead><tr>' +
+        '<th scope="col">Model</th><th scope="col" class="n">Months counted</th><th scope="col" class="n">Gain</th><th scope="col" class="n">Just holding bitcoin</th>' +
+        '<th scope="col" class="n">Random twins, 80th percentile</th><th scope="col">Verdict</th></tr></thead><tbody>' +
+        pl.models.map(function (m) {
+          return '<tr><th scope="row">' + esc(m.name) + '</th><td class="n" data-label="Months counted">' + esc(int(m.months_counted)) + ' of ' + esc(int(m.months)) + '</td>' +
+            '<td class="n" data-label="Gain">' + tmMoney(m.gain) + '</td><td class="n" data-label="Just holding bitcoin">' + tmMoney(m.hold) + '</td>' +
+            '<td class="n" data-label="Random twins, 80th percentile">' + tmMoney(m.twin_p80) + '</td><td class="pr-state" data-label="Verdict">' + tmVerdict(m.verdict) + '</td></tr>';
+        }).join('') + '</tbody></table></div>' +
+        '<p class="meta">A month is counted once its session, the bitcoin hold and all 20 twins are done, so this table lags the list below.</p>';
+      if (pl.news_test) {
+        var nt = pl.news_test;
+        html += '<h4 class="tm-h4">Did the news help</h4><p class="meta">Only if all six models gain more with headlines than without, over the five months. Verdict so far: ' + tmVerdict(nt.verdict) + '</p>';
+      }
+      if (done) {
+        html += '<h4 class="tm-h4">Sessions and why each trade was made</h4>' +
+          pl.sessions.map(function (x) {
+            var why = x.why.length ? '<div class="tablewrap"><table class="pr-stack tm-why"><caption class="sr-only">Buys of ' + esc(x.model) + ' in ' + esc(x.month) + '</caption><thead><tr>' +
+              '<th scope="col">Woke (UTC)</th><th scope="col">Coin</th><th scope="col">Looked at</th><th scope="col">Its reason</th>' +
+              (pl.id === 'TM02' ? '<th scope="col">Headlines it named</th>' : '') + '<th scope="col">Ended</th><th scope="col" class="n">Result</th></tr></thead><tbody>' +
+              x.why.map(function (w) {
+                return '<tr><th scope="row">' + esc(w.wake) + '</th><td data-label="Coin">' + esc(w.coin) + '</td><td class="tm-wrap" data-label="Looked at">' + esc(w.looked) + '</td>' +
+                  '<td class="tm-wrap tm-reason" data-label="Its reason">' + esc(w.reason) + '</td>' +
+                  (pl.id === 'TM02' ? '<td class="tm-wrap tm-reason" data-label="Headlines it named">' + (w.sources.length ? w.sources.map(esc).join('<br>') : 'None') + '</td>' : '') +
+                  '<td class="tm-wrap" data-label="Ended">' + esc(capital(w.ended)) + '</td>' +
+                  '<td class="n" data-label="Result">' + (isNum(w.gain) ? esc(capital(w.result)) + ' ' + gainHtml(w.gain, w.gain_pct) : esc(capital(w.result))) + '</td></tr>';
+              }).join('') + '</tbody></table></div>' : '<p class="meta">It bought nothing this month.</p>';
+            return '<details class="tm-session"><summary><span class="tm-sum-name">' + esc(x.month) + ', ' + esc(x.model) + '</span>' +
+              '<span class="tm-sum-fig">' + tmMoney(x.gain) + ' <span class="muted">against ' + (isNum(x.hold) ? esc(signedMoney(x.hold)) + ' holding bitcoin' : 'a hold not yet run') + '</span></span>' +
+              '<span class="tm-sum-fig muted">' + esc(plural(x.buys, 'buy', 'buys')) + ', ' + esc(plural(x.wins, 'win', 'wins')) + ', ' + esc(plural(x.losses, 'loss', 'losses')) +
+              (isNum(x.twins_beaten) ? ', beat ' + esc(int(x.twins_beaten)) + ' of 20 twins' : ', twins ' + esc(int(x.twins_done)) + ' of 20 run') + '</span></summary>' + why + '</details>';
+          }).join('');
+      }
+      html += '<p class="links"><a href="' + esc(pl.doc) + '" target="_blank" rel="noopener noreferrer">Full results</a> <a href="' + esc(pl.plan) + '" target="_blank" rel="noopener noreferrer">The plan, fixed before the run</a></p></div>';
+    });
+    body.innerHTML = html;
+  }
+
   function renderPractice() {
     var body = $('practice-body');
     if (!body) return;
@@ -976,6 +1033,7 @@
         state.data = d;
         initPractice(d);
         renderStatus(d);
+        try { renderTimeMachine(d); } catch (e) { $('timemachine-body').innerHTML = '<div class="empty"><h3>The replay results could not be shown</h3><p>The results in data.json are not in the expected shape.</p></div>'; }
         $('compare-notes').innerHTML = (d.compare_notes || []).map(function (n) { return '<p>' + esc(n) + '</p>'; }).join('');
         renderTests(d);
         fillSeriesSelects(d);
