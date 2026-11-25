@@ -73,7 +73,7 @@ class DeskTest(unittest.TestCase):
     def create(self, arm, scout=None, spec=None, sid=None):
         spec = spec or world()
         path = self.root / (sid or f"TM07-test-{arm}")
-        tokens = {r: "fake-" + r*7 for r in D.SCOUTS} if arm == "scout" else {"boss":TOKEN}
+        tokens = {r: "fake-" + r*7 for r in D.SCOUTS} if arm == "scout" else {"boss":TOKEN if arm == "A" else TOKEN+path.name}
         D.create_desk(path,spec,arm,D.BOSSES[0],tokens,scout,approval_key=SEAL_KEY,
                       vendor_signature=D.seal(SEAL_KEY,"vendor",spec.get("vendor_proofs",{})))
         return D.DeskSession(path)
@@ -247,6 +247,19 @@ class DeskTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"seal"):
             self.create("B",bad)
 
+    def test_b05_desk_service_never_dispatches_legacy_and_tokens_are_unique(self):
+        a = self.create("A")
+        with patch.object(server,"handle",side_effect=AssertionError("legacy route dispatched")):
+            self.assertEqual(server.handle_desk_only("GET","/next",{"session":[a.sid]},None,None)[0],404)
+        spec = world()
+        with self.assertRaisesRegex(ValueError,"already assigned"):
+            D.create_desk(self.root/"TM07-other",spec,"A",D.BOSSES[0],{"boss":TOKEN},
+                          approval_key=SEAL_KEY,vendor_signature=D.seal(SEAL_KEY,"vendor",spec["vendor_proofs"]))
+        incomplete = dict(root=str(self.root),launcher_digest="toy",probe_transcript_digest="toy",
+                          sandbox_identities=["toy"],passed=["desk_routes_only"])
+        with self.assertRaisesRegex(ValueError,"missing isolation"):
+            D.validate_worker_boundary(SEAL_KEY,incomplete,D.seal(SEAL_KEY,"worker-boundary",incomplete),self.root)
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
@@ -311,7 +324,8 @@ class DeskTest(unittest.TestCase):
         self.assertNotEqual(ak,bk)
         with self.assertRaises(PermissionError):
             b.handle("boss","look",dict(wake_key=ak,symbol=A,kind="news"))
-        self.assertEqual(b.authenticate(TOKEN),"boss")
+        self.assertIsNone(b.authenticate(TOKEN))
+        self.assertEqual(b.authenticate(TOKEN+b.sid),"boss")
         self.assertIsNone(b.authenticate("wrong"))
 
     def test_three_lookups_and_no_other_role(self):

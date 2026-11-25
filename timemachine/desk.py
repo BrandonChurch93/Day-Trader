@@ -41,6 +41,36 @@ def verify_seal(key, domain, obj, signature):
         raise ValueError(f"bad {domain} seal")
 
 
+def issue_role_tokens(arm):
+    roles = SCOUTS if arm == "scout" else ("boss",)
+    return {r:secrets.token_urlsafe(32) for r in roles}
+
+
+def claim_tokens(root,sid,tokens):
+    """The operator's desk root has one registry; collisions fail closed."""
+    path = root/".role_tokens.sqlite"
+    with closing(sqlite3.connect(path)) as con, con:
+        path.chmod(0o600)
+        con.execute("CREATE TABLE IF NOT EXISTS claimed (digest TEXT PRIMARY KEY, session TEXT, role TEXT)")
+        try:
+            con.executemany("INSERT INTO claimed VALUES(?,?,?)",
+                            [(sha256(t.encode()).hexdigest(),sid,r) for r,t in tokens.items()])
+        except sqlite3.IntegrityError as exc:
+            raise ValueError("a role token is already assigned") from exc
+
+
+def validate_worker_boundary(key,proof,signature,root):
+    """Fail closed until an independent operator attests deployment probes."""
+    verify_seal(key,"worker-boundary",proof,signature)
+    probes = {"desk_routes_only","wrong_role_denied","sibling_token_denied","fixture_read_denied",
+              "sibling_journal_read_denied","outbound_denied","fresh_context","role_only_handoff"}
+    if (proof.get("root") != str(Path(root).resolve()) or not proof.get("launcher_digest")
+            or not proof.get("probe_transcript_digest") or not proof.get("sandbox_identities")
+            or len(set(proof["sandbox_identities"])) != len(proof["sandbox_identities"])
+            or set(proof.get("passed",[])) != probes):
+        raise ValueError("worker boundary has missing isolation probes")
+
+
 def epoch(value):
     if type(value) is int:
         return value
@@ -209,6 +239,7 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, app
     path = Path(path)
     if not SID.fullmatch(path.name):
         raise ValueError("invalid TM07 session id")
+    claim_tokens(path.parent,path.name,tokens)
     path.mkdir(mode=0o700, parents=False)
     for name, obj in (("fixture.json", spec), ("manifest.json", dict(arm=arm, boss=boss, fixture=fixture,
                        scout_hash=digest(scout) if scout else None, scout=scout, settings=dict(SETTINGS, **(settings or {})),

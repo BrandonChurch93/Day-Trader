@@ -94,6 +94,13 @@ def handle_desk(method, path, sid, body, authorization):
         return 400, dict(ok=False, error=str(exc)[:300])
 
 
+def handle_desk_only(method,path,q,body,authorization):
+    sid = (q.get("session") or [""])[0]
+    if not path.startswith("/desk/") or not sid.startswith("TM07-"):
+        return 404, dict(ok=False,error="unknown desk route")
+    return handle_desk(method,path,sid,body,authorization)
+
+
 def handle(method, path, q, body, authorization=None):
     sid = (q.get("session") or [""])[0]
     if not sid:
@@ -151,6 +158,8 @@ def compact(q):
 
 
 class H(BaseHTTPRequestHandler):
+    desk_only = False
+
     def _go(self, method):
         u = urllib.parse.urlparse(self.path); q = urllib.parse.parse_qs(u.query)
         size = int(self.headers.get("Content-Length") or 0) if method == "POST" else 0
@@ -159,10 +168,16 @@ class H(BaseHTTPRequestHandler):
             return
         body = self.rfile.read(size) if method == "POST" else None
         try:
-            code, obj = handle(method, u.path, q, body, self.headers.get("Authorization")); trim_caches()
+            if self.desk_only:
+                code,obj = handle_desk_only(method,u.path,q,body,self.headers.get("Authorization"))
+            elif u.path.startswith("/desk/"):
+                code,obj = 404, dict(ok=False,error="use the isolated desk listener")
+            else:
+                code,obj = handle(method,u.path,q,body,self.headers.get("Authorization"))
+                trim_caches()
         except Exception as e:
             traceback.print_exc(); code, obj = 500, dict(ok=False, error=f"{type(e).__name__}: {str(e)[:300]}")
-        data = (json.dumps(obj, separators=(",", ":"), sort_keys=True) if compact(q) else json.dumps(obj, indent=1, sort_keys=True)).encode()
+        data = (json.dumps(obj, separators=(",", ":"), sort_keys=True) if self.desk_only or compact(q) else json.dumps(obj, indent=1, sort_keys=True)).encode()
         self.send_response(code); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(data))); self.end_headers()
         self.wfile.write(data)
 
@@ -183,6 +198,19 @@ def serve(port=None):
     srv = ThreadingHTTPServer(("127.0.0.1", port), H)
     print(f"time machine server on http://127.0.0.1:{srv.server_address[1]} (runs in {S.runs_dir()})", flush=True)
     return srv
+
+
+class DeskH(H):
+    desk_only = True
+
+
+def serve_desk(port,*,approval_key,proof,signature):
+    from timemachine.desk import validate_worker_boundary
+    root = os.environ.get("TM07_RUNS_DIR")
+    if not root:
+        raise ValueError("set a separate TM07_RUNS_DIR")
+    validate_worker_boundary(approval_key,proof,signature,root)
+    return ThreadingHTTPServer(("127.0.0.1",int(port)),DeskH)
 
 
 if __name__ == "__main__":
