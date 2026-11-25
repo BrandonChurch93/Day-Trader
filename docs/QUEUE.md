@@ -6,7 +6,7 @@ Last changed: 2026-11-25 18:29 UTC
 
 ## Running now
 
-As of 2026-11-25 18:38 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
+As of 2026-11-25 19:28 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
 
 | # | What | Plan | Started |
 |---|---|---|---|
@@ -15,6 +15,7 @@ As of 2026-11-25 18:38 UTC. Plans TM01 to TM04 are finished and are in Done or i
 | 19 | The owner's method as a fixed rule, year by year from 2020 to 2026 (he said on 2026-11-25 his good runs were in 2021): is it the method or the year. Draft plan written 2026-11-25 18:44 UTC. Now: bars and the monthly coin lists, the code, a check by a second model, then freeze and one run | `research_rig/PREREG_13_year_or_method_DRAFT.md`, ledger rows 144 and 145 | 2026-11-25 |
 | 20 | Plain momentum on large stocks held a month at a time, the one stock method with a real-money lead in our own measurement (`docs/research/51_stock_swing_evidence_checked.md`), also the yardstick an AI stock picker should have to beat. Draft plan written 2026-11-25 18:55 UTC. Now: the member list by date, prices, the code, a check by a second model, then freeze and one run | `research_rig/PREREG_14_large_stock_momentum_DRAFT.md`, ledger rows 146 and 147 | 2026-11-25 |
 | - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
+| 23 | Day trading stocks that are in play: each morning the stocks with unusual volume in the first minutes, traded on a break of the opening range and closed by the end of the day. This is the stock version of the owner's hot coins (`docs/DECISIONS.md` 2026-11-25). Replay 07 tested day trading on SPY and QQQ only. Now: the published design and its critics read and checked, and the size of the price collection worked out | plan to be written after the reading, with ledger rows before any run | 2026-11-25 |
 
 ## Next, in order
 

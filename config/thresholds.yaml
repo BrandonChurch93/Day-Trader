@@ -675,9 +675,9 @@ tm_perp_fee_levels_bps:
   source: docs/research/40_leverage_venues_checked.md
 
 tm_perp_half_spread_bps:
-  value: {default: 10}
+  value: {default: 10, "AAVE/USD": 10, "ADA/USD": 7, "AVAX/USD": 16, "BCH/USD": 10, "BNB/USD": 8, "BTC/USD": 2, "DOGE/USD": 9, "DOT/USD": 31, "ENA/USD": 12, "HBAR/USD": 10, "HYPE/USD": 7, "LINK/USD": 7, "LTC/USD": 10, "NEAR/USD": 9, "ONDO/USD": 15, "PEPE/USD": 30, "SOL/USD": 3, "SUI/USD": 8, "XLM/USD": 9, "XRP/USD": 4, "ZEC/USD": 9}
   status: builder
-  note: Perp sessions only. Half the assumed bid-ask spread on a perp fill, in basis points. A symbol named here uses its own value; otherwise its coin's measured value in tm_crypto_half_spread_bps_by_coin; otherwise default. A buy fills this much above the price and a sell this much below.
+  note: Perp sessions only. Half the assumed bid-ask spread on a perp fill, in basis points. A symbol named here uses its own value; otherwise its coin's measured value in tm_crypto_half_spread_bps_by_coin; otherwise default. A buy fills this much above the price and a sell this much below. The per-symbol values were set 2026-11-25 19.25 UTC for plan TM06 by its rule from an order-book sampler (42 rounds over 1.45 hours on one calm day, Coinbase spot and Coinbase derivatives) and are fixed before any TM06 session. The control run TM06-0 was made before that with 5 for bitcoin.
   source: timemachine/perp.py
 tm_perp_maintenance:
   value: {default: 0.05}
@@ -722,7 +722,7 @@ tm_crypto_half_spread_bps_default:
 tm_fast_funding_venue:
   value: {default: kraken_futures_pf}
   status: builder
-  note: Perp sessions on the fast tape only. Which venue in the fast tape's funding table charges each coin, with default for any coin not named. kraken_futures_pf has hourly rates for all 23 coins from 2025-11-19; kalshi_perp (8 hourly) starts in mid 2026 and lacks some coins. A charge time with no stored rate at or before it, inside its interval, pays tm_perp_fallback_rate_per_day and is counted.
+  note: Perp sessions on the fast tape only. Which venue in the fast tape's funding table charges each coin, with default for any coin not named. kraken_futures_pf has hourly rates for all 23 coins from 2025-11-19. It is the only venue stored; an 8 hourly venue named here would be charged one eighth each hour. A charge time with no stored rate at or before it, inside its interval, pays tm_perp_fallback_rate_per_day and is counted.
   source: timemachine/tm06.py
 tm_fast_oi_venue:
   value: {default: kraken_futures_pf}
@@ -768,6 +768,16 @@ tm06_swing_packet_minute_bars:
   value: 30
   status: builder
   note: Plan TM06 part S. The swing packet shows each coin's last this many finished one-minute bars.
+  source: timemachine/tm06.py
+tm06_handoff_swing_wakes:
+  value: 12
+  status: builder
+  note: Plan TM06 part S, splitting fixed 2026-11-25 (24 first, set to 12 by the lead the same day after the measured packet size), 14 agents per week per model. One agent answers this many wakes of a swing week, then a fresh agent takes over at the next 00:00 or 12:00 UTC boundary (the same for every model). The next agent gets the brief, the packet and a frozen copy of the earlier agent's notes. timemachine/tm06.py next and handoff.
+  source: timemachine/tm06.py
+tm06_handoff_picker_split_day:
+  value: 15
+  status: builder
+  note: Plan TM06 part P. A picker month is split in two at the first wake on or after this day of the month; null means one agent for the month. Set to 15 because 30 daily picker packets do not fit one agent comfortably (see the measured packet size in the TM06 report).
   source: timemachine/tm06.py
 tm06_reversal:
   value: {symbol: BTC/USD, minutes: 15}
