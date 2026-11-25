@@ -30,6 +30,17 @@ def digest(obj):
     return sha256(encode(obj).encode()).hexdigest()
 
 
+def seal(key, domain, obj):
+    if not isinstance(key,str) or len(key) < 32:
+        raise ValueError("operator seal key is required")
+    return hmac.digest(key.encode(), encode([domain,obj]).encode(), "sha256").hex()
+
+
+def verify_seal(key, domain, obj, signature):
+    if not isinstance(signature,str) or not hmac.compare_digest(seal(key,domain,obj),signature):
+        raise ValueError(f"bad {domain} seal")
+
+
 def epoch(value):
     if type(value) is int:
         return value
@@ -44,13 +55,33 @@ def wall(value):
     return datetime.fromtimestamp(value, UTC)
 
 
-def available(e, wake):
+def available(e, wake, proofs=None):
     published, known = e.get("published"), e.get("known_at")
-    return (type(published) is int and type(known) is int and published <= known <= wake
-            and e.get("vintage") == "original" and e.get("licensed") is True
-            and (e["kind"] not in ("bars", "attention") or type(e.get("period_end")) is int and e["period_end"] <= published)
-            and (e["kind"] != "news" or e.get("primary") is True
-                 or (isinstance(e.get("origins"), list) and len(set(e["origins"])) >= 2)))
+    if not (type(published) is int and type(known) is int and published <= known <= wake
+            and e.get("vintage") == "original" and e.get("licensed") is True):
+        return False
+    kind = e.get("kind")
+    value = e.get("value")
+    if kind == "bars":
+        duration = {"1Min":60,"30Min":1800,"1Hour":3600,"1Day":86400}.get(value.get("timeframe")) if isinstance(value,dict) else None
+        return bool(duration and type(value.get("t")) is int and value["t"]+duration == e.get("period_end")
+                    and e["period_end"] <= published)
+    if kind == "price":
+        return isinstance(value,dict) and orders.number(value.get("price")) and value["price"] > 0
+    if kind not in ("news","attention") or not isinstance(value,dict):
+        return False
+    proof = (proofs or {}).get(e.get("id"),{})
+    if (proof.get("row_hash") != digest(e) or proof.get("version_hash") != digest(value)
+            or proof.get("licensed") is not True or not proof.get("version_record")
+            or proof.get("published") != published or proof.get("known_at") != known):
+        return False
+    if kind == "attention":
+        return type(e.get("period_end")) is int and e["period_end"] <= published
+    confirmations = proof.get("confirmations") or []
+    if any(not isinstance(x,dict) or not x.get("group") or not x.get("version_record") or not x.get("version_hash")
+           or type(x.get("known_at")) is not int or x["known_at"] > known for x in confirmations):
+        return False
+    return any(x.get("primary") is True for x in confirmations) or len({x["group"] for x in confirmations}) >= 2
 
 
 def mark_as_of(tape, symbol, wake):
@@ -94,7 +125,7 @@ def desk_funding(tape, symbols, cfg, start, end):
     return funding, sources, stamps
 
 
-def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake):
+def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_proofs=None):
     """Builder helper only. Reads a caller-supplied tape and separately vetted existing rows."""
     a, b = epoch(start), epoch(end)
     wakes = list(range(a, b, 3600))
@@ -131,14 +162,16 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake):
                     packet.append(dict(id=f"bar:{size}:{stamp}:{s}", symbol=s, kind="bars", published=stamp+size,
                                        known_at=stamp+size, period_end=stamp+size, vintage="original", licensed=True,
                                        packet=True, value=dict(t=stamp, timeframe=tf, **{k: bar.get(k) for k in "ohlcv"})))
-        packet += [e for e in evidence_by_wake.get(str(t), []) if e.get("kind") in ("news", "attention") and available(e, t)]
+        packet += [e for e in evidence_by_wake.get(str(t), []) if e.get("kind") in ("news", "attention")
+                   and available(e,t,vendor_proofs)]
         evidence.append(packet)
     return dict(wakes=wakes, end=b, symbols=symbols, watch=watch, benchmark="BTC/USD", opening={},
                 rows=rows, minutes=list(mins), end_marks=desk_marks(tape, priced, b),
-                evidence=evidence, cfg=cfg, params=pp, gross=float(cfg["tm06_plan"]["swing_max_gross"]))
+                evidence=evidence, cfg=cfg, params=pp, vendor_proofs=vendor_proofs or {},
+                gross=float(cfg["tm06_plan"]["swing_max_gross"]))
 
 
-def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None):
+def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, approval_key=None, vendor_signature=None):
     """Write one isolated off-repo session folder. Scout mode has no trading book access."""
     if arm not in (*ARMS, "scout") or (arm != "scout" and boss not in BOSSES):
         raise ValueError("unknown arm or boss")
@@ -150,15 +183,36 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None):
         raise ValueError("desk arms require a sealed neutral scout export")
     spec = json.loads(encode(spec))
     fixture = digest(spec)
+    proof = spec.get("vendor_proofs",{})
+    if proof:
+        verify_seal(approval_key,"vendor",proof,vendor_signature)
     # A shared frozen packet is evidence, not another boss's output.
-    if scout and (scout["fixture"] != fixture or len(scout["wakes"]) != len(spec["wakes"])):
-        raise ValueError("scout export belongs to another tape")
+    if scout:
+        verify_seal(approval_key,"scout",{k:v for k,v in scout.items() if k != "seal"},scout.get("seal"))
+        if (scout["fixture"] != fixture or len(scout["wakes"]) != len(spec["wakes"])
+                or not SID.fullmatch(scout["neutral_id"])):
+            raise ValueError("scout seal belongs to another tape or neutral session")
+        opts = dict(SETTINGS,**(settings or {}))
+        for at, rows, block in zip(spec["wakes"],spec["evidence"],scout["wakes"]):
+            pool = {e["id"]:e for e in rows if available(e,at,proof)}
+            out = block["notes"]
+            if block.get("wake") != at or not isinstance(out,list) or len(out) > 2*opts["notes_per_scout"]:
+                raise ValueError("wrong wake in scout seal")
+            allowed = {f"note:{at}:{role}:{i}" for role in SCOUTS for i in range(opts["notes_per_scout"])}
+            for note in out:
+                if (note.get("id") not in allowed or note.get("wake") != at or note.get("symbol") not in spec["watch"]
+                        or not isinstance(note.get("text"),str) or not 1 <= len(note["text"]) <= opts["note_chars"]
+                        or not isinstance(note.get("evidence"),list) or not note["evidence"]
+                        or any(pool.get(e.get("id")) != e or e.get("symbol") != note["symbol"] for e in note["evidence"])):
+                    raise ValueError("invalid note in scout seal")
+                allowed.remove(note["id"])
     path = Path(path)
     if not SID.fullmatch(path.name):
         raise ValueError("invalid TM07 session id")
     path.mkdir(mode=0o700, parents=False)
     for name, obj in (("fixture.json", spec), ("manifest.json", dict(arm=arm, boss=boss, fixture=fixture,
                        scout_hash=digest(scout) if scout else None, scout=scout, settings=dict(SETTINGS, **(settings or {})),
+                       approval_scope=seal(approval_key,"scope",fixture) if approval_key else None,
                        tokens={role: sha256(t.encode()).hexdigest() for role, t in tokens.items()}))):
         fd = os.open(path / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "w") as f:
@@ -209,7 +263,7 @@ class DeskSession:
         at = self.spec["wakes"][k]
         out = {}
         for e in self.spec["evidence"][k]:
-            if (available(e, at) and e["symbol"] in self.spec["watch"] and isinstance(e.get("id"), str)
+            if (available(e,at,self.spec.get("vendor_proofs")) and e["symbol"] in self.spec["watch"] and isinstance(e.get("id"), str)
                     and OID.fullmatch(e["id"]) and e["kind"] in ("price", "bars", "news", "attention")):
                 if e["id"] in out and out[e["id"]] != e:
                     raise ValueError("conflicting evidence id")
@@ -331,7 +385,7 @@ class DeskSession:
         self.log(con, at, role, "scout", dict(notes=items))
         if all(r in st["scout"] for r in SCOUTS):
             notes = self.merge_notes(st["scout"], k)
-            self.log(con, at, "neutral", "seal", dict(notes=notes, count_before=sum(map(len, st["scout"].values()))))
+            self.log(con, at, "neutral", "seal", dict(wake=at,notes=notes,count_before=sum(map(len,st["scout"].values()))))
             self.next(st)
         return dict(accepted=True)
 
@@ -507,15 +561,18 @@ class DeskSession:
             self.log(con, at, role, "receipt:"+rid, result)
             return result
 
-    def export_scout(self):
+    def export_scout(self,approval_key):
         if self.arm != "scout":
             raise ValueError("only the neutral scout can export notes")
+        verify_seal(approval_key,"scope",self.manifest["fixture"],self.manifest.get("approval_scope"))
         with self.tx() as (con, st):
             if st["k"] != len(self.spec["wakes"]):
                 raise ValueError("scout stream is not sealed")
             items = [json.loads(x[0]) for x in con.execute("SELECT data FROM journal WHERE kind='seal' ORDER BY wake")]
             usage = [(r, json.loads(x)) for r, x in con.execute("SELECT role, data FROM journal WHERE kind LIKE 'usage:%' ORDER BY id")]
-            return dict(fixture=self.manifest["fixture"], wakes=items, usage=usage)
+            result = dict(fixture=self.manifest["fixture"],neutral_id=self.sid,wakes=items,usage=usage)
+            result["seal"] = seal(approval_key,"scout",result)
+            return result
 
 
 def open_desk(sid, root=None, token=None):

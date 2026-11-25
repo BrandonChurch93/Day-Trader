@@ -12,6 +12,7 @@ from timemachine import desk as D, desk_orders as O, perp as P, perp_fast as F, 
 A, B, BTC = "AAA/USD", "BBB/USD", "BTC/USD"
 T = 1784505600  # hourly anchor; prices and headlines below are invented
 TOKEN = "fake-boss-bearer-" * 4
+SEAL_KEY = "fake-operator-only-seal-key-" * 3
 
 
 def world(minutes=None):
@@ -41,7 +42,13 @@ def world(minutes=None):
                          dict(common, kind="attention", id=f"estimated{i}", period_end=t-60, vintage="assumed_lag"),
                          dict(common, kind="bars", id=f"unfinished{i}", period_end=t+60),
                          dict(common, kind="news", id=f"unlicensed{i}", primary=True, licensed=False)])
-    return dict(wakes=[T,T+3600], end=T+7200, symbols=symbols, watch=symbols, benchmark=BTC, opening={},
+    proofs = {}
+    for item in [xs[2] for xs in evidence]:
+        proofs[item["id"]] = dict(row_hash=D.digest(item),version_hash=D.digest(item["value"]),licensed=True,
+                                  version_record="made-up snapshot",published=item["published"],known_at=item["known_at"],
+                                  confirmations=[dict(group="primary",primary=True,known_at=item["known_at"],
+                                                      version_record="made-up snapshot",version_hash=D.digest(item["value"]))])
+    return dict(wakes=[T,T+3600], end=T+7200, symbols=symbols, watch=symbols, benchmark=BTC, opening={},vendor_proofs=proofs,
                 rows=rows, minutes=minutes, end_marks={s:100 for s in [A,B,BTC]}, evidence=evidence,
                 cfg=cfg, params=P.p_params([A,B,BTC], cfg, funding={A:{T:0.001}, B:{T:0.0}}), gross=1)
 
@@ -67,7 +74,8 @@ class DeskTest(unittest.TestCase):
         spec = spec or world()
         path = self.root / (sid or f"TM07-test-{arm}")
         tokens = {r: "fake-" + r*7 for r in D.SCOUTS} if arm == "scout" else {"boss":TOKEN}
-        D.create_desk(path, spec, arm, D.BOSSES[0], tokens, scout)
+        D.create_desk(path,spec,arm,D.BOSSES[0],tokens,scout,approval_key=SEAL_KEY,
+                      vendor_signature=D.seal(SEAL_KEY,"vendor",spec.get("vendor_proofs",{})))
         return D.DeskSession(path)
 
     def test_b01_later_bar_cannot_change_quote_or_condition(self):
@@ -221,6 +229,24 @@ class DeskTest(unittest.TestCase):
             opening.return_value.status.return_value = {"legacy":True}
             self.assertEqual(server.handle("GET","/status",{"session":[p.name]},None),(200,{"legacy":True}))
 
+    def test_b04_self_declared_confirmation_and_future_bar_are_not_proof(self):
+        base = dict(id="id",symbol=A,published=T,known_at=T,licensed=True,vintage="original")
+        future = dict(base,kind="bars",period_end=T,value={"t":T+60,"timeframe":"1Min"})
+        pretext = dict(base,kind="news",origins=["wire","mirror"],confirmation_known_at=T+3600,
+                       value={"headline":"made up"})
+        self.assertFalse(D.available(future,T))
+        self.assertFalse(D.available(pretext,T))
+        evidence = {pretext["id"]:dict(row_hash=D.digest(pretext),version_hash=D.digest(pretext["value"]),licensed=True,
+                    version_record="fake dated copy",published=T,known_at=T,
+                    confirmations=[dict(group=g,known_at=at,version_record=g,version_hash="toy")
+                                   for g,at in (("wire",T),("owner",T+3600))])}
+        self.assertFalse(D.available(pretext,T,evidence))
+        s = self.scout_export()
+        bad = copy.deepcopy(s)
+        bad["wakes"][0]["notes"][0]["evidence"][0]["known_at"] = T+60
+        with self.assertRaisesRegex(ValueError,"seal"):
+            self.create("B",bad)
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
@@ -229,7 +255,7 @@ class DeskTest(unittest.TestCase):
                 s.handle(r, "usage", dict(wake_key=key, request_id=f"call{k}",
                                           usage={"in":10,"out":2}, counts={"input":10,"output":2}))
                 s.handle(r, "notes", dict(wake_key=key, notes=[dict(symbol=A,text="Found a fact",evidence_ids=[f"n{k}"])]))
-        return s.export_scout()
+        return s.export_scout(SEAL_KEY)
 
     def test_no_condition_parity(self):
         spec = world()
