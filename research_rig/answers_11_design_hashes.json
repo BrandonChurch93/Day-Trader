@@ -1,0 +1,36 @@
+{
+ "phase": "design",
+ "made_utc": "2026-11-25 18:10",
+ "instruction_sha256": "9f67db815f2c01d519b88510cad82b1ec129942919456cb7df6b41b1f4201407",
+ "usable_file_sha256": "8cb81857456659e90eee43ffdb7814415eb7eff4c753e7f37947912c0c36be05",
+ "files": {
+  "answers_11_design_claude_opus_5_5.jsonl": {
+   "sha256": "b541be21ea2bcc6fdf157cc9f736c1b592554dc43e719d748488afe7edf05064",
+   "answers": 450,
+   "set_to_zero": 0,
+   "remembered_set_to_zero": 2,
+   "short_reason": 0
+  },
+  "answers_11_design_claude_sonnet_5_5.jsonl": {
+   "sha256": "e1a6fea0f9f12ff274119a92f266c04c6b3dcbb4854684cd8b7a18916d8941ae",
+   "answers": 450,
+   "set_to_zero": 0,
+   "remembered_set_to_zero": 0,
+   "short_reason": 0
+  },
+  "answers_11_design_grok_4_7.jsonl": {
+   "sha256": "80fb81d3c2b6d04b957cc0b7498d203398591dd4c171b47206bfa3c4ab3bcf30",
+   "answers": 450,
+   "set_to_zero": 0,
+   "remembered_set_to_zero": 0,
+   "short_reason": 0
+  },
+  "answers_11_design_kimi_k3.jsonl": {
+   "sha256": "992f88eac5b2e0111e4dc83b556b8c6c3fbd778acc06a53296289f1772f27577",
+   "answers": 450,
+   "set_to_zero": 0,
+   "remembered_set_to_zero": 0,
+   "short_reason": 0
+  }
+ }
+}
