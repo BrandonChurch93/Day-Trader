@@ -167,7 +167,7 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
     pp = sess.pp if fee is None else P.with_fee(sess.pp, fee)
     book = P.new_book(spec["cfg"]["tm_account_start_usd"], spec.get("opening"))
     active, events, scans, unsupported = {}, [], [], []
-    count = hits = 0
+    count = hits = triggered = 0
     for i, (at, bundle, row) in enumerate(zip(spec["wakes"], bundles, spec["rows"])):
         end = spec["wakes"][i+1] if i+1 < len(bundles) else spec["end"]
         if multiple != 1:
@@ -178,6 +178,7 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
                                       spec["gross"]*multiple, first=i == 0, delay=delay)
         count += len(rec["trades"])
         hits += sum(e["kind"] == "filled" for e in changes)
+        triggered += sum(e["kind"] == "triggered" for e in changes)
         if any(x["why"] == "no_common_open" for x in rec["skipped"]):
             unsupported.append(at)
         if journal:
@@ -185,7 +186,8 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
             scans.append(rec["scan"])
     book["last_px"].update(spec["end_marks"])
     final = max(0.0, P.value_at(book, spec["end_marks"]))
-    return dict(value=final, book=book, events=events, scans=scans, immediate=count, standing=hits, unsupported=unsupported)
+    return dict(value=final, book=book, events=events, scans=scans, immediate=count, standing=hits,
+                triggered=triggered, unsupported=unsupported)
 
 
 def usage_totals(rows, neutral=(), expected=None):
@@ -266,8 +268,10 @@ def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None)
                     if trial["unsupported"]:
                         return emit(dict(ident, invalid=f"twin has no common open: {trial['unsupported']}", failed_draw=i))
                     twin.append(gain(trial["value"]))
-                    activity.append(dict(immediate=trial["immediate"],standing=trial["standing"],turnover_usd=trial["book"]["traded_usd"]))
-                entry.update(twin=twin,twin_activity=activity,twin_trigger_counts=[x["standing"] for x in activity],
+                    activity.append(dict(immediate=trial["immediate"],standing=trial["standing"],triggered=trial["triggered"],
+                                         turnover_usd=trial["book"]["traded_usd"]))
+                entry.update(twin=twin,twin_activity=activity,twin_trigger_counts=[x["triggered"] for x in activity],
+                             twin_standing_fill_counts=[x["standing"] for x in activity],
                              judge=SW.judge(twin, entry["gain"], cfg["tm_weights_pass_percentile"]))
             by[f"{mult}x/{f:g}"] = entry
     neutral = (sess.manifest["scout"] or {}).get("usage", [])

@@ -159,6 +159,15 @@ class DeskTest(unittest.TestCase):
         move = S.replay(session,[{"weights":{A:.3}},{}])
         self.assertEqual(move["unsupported"],[T])
 
+    def test_reaudit_sol_r07_detection_is_not_a_fill(self):
+        spec = world()
+        session = self.create("A",spec=spec)
+        orders = condition(T,weight=1)
+        trial = S.replay(session,[{"conditions":orders},{}],journal=True)
+        self.assertIn("refused",[e["kind"] for e in trial["events"]])
+        self.assertEqual(trial["triggered"],1)
+        self.assertEqual(trial["standing"],0)
+
     def test_b02_immediate_cannot_size_from_a_later_open(self):
         def execute(later):
             spec = world()
@@ -251,7 +260,7 @@ class DeskTest(unittest.TestCase):
             a.handle("boss","pick",dict(wake_key=key,no_change=True,why="No move"))
         summary = S.score_week(a.path)
         self.assertEqual(summary["main"]["twin_activity"],[
-            {"immediate":0,"standing":0,"turnover_usd":0.0} for _ in range(4)])
+            {"immediate":0,"standing":0,"triggered":0,"turnover_usd":0.0} for _ in range(4)])
         self.assertEqual(summary["usage"]["boss"]["status"],"UNKNOWN")
         self.assertEqual(S.cent_lift(1000.0049,1000.005),.01)
 
