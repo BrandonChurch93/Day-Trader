@@ -236,6 +236,19 @@ class DeskTest(unittest.TestCase):
             with self.assertRaisesRegex(S.UnsupportedWeek,"benchmark"):
                 S.buy_and_hold(session,{A:.5,"MISSING/USD":.5},12)
 
+    def test_reaudit_opr_r5_price_packet_rejects_unscreened_fields(self):
+        spec = world()
+        price, other = spec["evidence"][0][:2]
+        price["value"]["observed_at"] = T+3600
+        other["value"]["funding"] = {"rate":.002,"every_hours":1,"stamped_utc":O.stamp(T+1)}
+        session = self.create("scout",spec=spec)
+        raw,_ = info(session,D.SCOUTS[0])
+        self.assertFalse({"p0","bp0"} & session.evidence(0).keys())
+        self.assertNotIn("observed_at",D.encode(raw))
+        clean = dict(price,value={"price":100,"observed_at":T-60})
+        self.assertTrue(D.available(clean,T))
+        self.assertFalse(D.available(dict(clean,future_hint=109),T))
+
     def test_b02_immediate_cannot_size_from_a_later_open(self):
         def execute(later):
             spec = world()

@@ -85,6 +85,36 @@ def wall(value):
     return datetime.fromtimestamp(value, UTC)
 
 
+PRICE_FIELDS = {"price","observed_at","change_1h","change_24h","volume","funding"}
+TYPED_ROW_FIELDS = {"id","symbol","kind","published","known_at","vintage","licensed","value"}
+BAR_LENGTHS = {"1Min":60,"30Min":1800,"1Hour":3600,"1Day":86400}
+
+
+def typed_price(value, published):
+    if (not isinstance(value,dict) or value.keys()-PRICE_FIELDS or not orders.number(value.get("price"))
+            or value["price"] <= 0
+            or "observed_at" in value and (type(value["observed_at"]) is not int or value["observed_at"] > published)):
+        return False
+    if any(value.get(k) is not None and not orders.number(value[k]) for k in ("change_1h","change_24h")):
+        return False
+    volume = value.get("volume")
+    if volume is not None and (not isinstance(volume,dict) or volume.keys() != {"usd_24h","usual_usd_per_day","ratio"}
+                               or any(v is not None and (not orders.number(v) or v < 0) for v in volume.values())):
+        return False
+    funding = value.get("funding")
+    if funding is not None:
+        if (not isinstance(funding,dict) or funding.keys() != {"rate","every_hours","stamped_utc"}
+                or not orders.number(funding["rate"]) or not orders.number(funding["every_hours"])
+                or not 1 <= funding["every_hours"] <= 24 or not isinstance(funding["stamped_utc"],str)):
+            return False
+        try:
+            if epoch(funding["stamped_utc"]) > published:
+                return False
+        except (TypeError,ValueError,OverflowError):
+            return False
+    return True
+
+
 def available(e, wake, proofs=None):
     published, known = e.get("published"), e.get("known_at")
     if not (type(published) is int and type(known) is int and published <= known <= wake
@@ -93,11 +123,16 @@ def available(e, wake, proofs=None):
     kind = e.get("kind")
     value = e.get("value")
     if kind == "bars":
-        duration = {"1Min":60,"30Min":1800,"1Hour":3600,"1Day":86400}.get(value.get("timeframe")) if isinstance(value,dict) else None
-        return bool(duration and type(value.get("t")) is int and value["t"]+duration == e.get("period_end")
-                    and e["period_end"] <= published)
+        if (e.keys()-(TYPED_ROW_FIELDS|{"period_end","packet"}) or not isinstance(value,dict)
+                or value.keys() != set("ohlcv")|{"t","timeframe"} or not isinstance(value["timeframe"],str)
+                or any(not orders.number(value[k]) or value[k] <= 0 for k in "ohlc")
+                or value["v"] is not None and (not orders.number(value["v"]) or value["v"] < 0)):
+            return False
+        duration = BAR_LENGTHS.get(value["timeframe"])
+        return bool(duration and type(value["t"]) is int and value["t"]+duration == e.get("period_end")
+                    and e["period_end"] <= published and type(e.get("packet",True)) is bool)
     if kind == "price":
-        return isinstance(value,dict) and orders.number(value.get("price")) and value["price"] > 0
+        return not (e.keys()-TYPED_ROW_FIELDS) and typed_price(value,published)
     if kind not in ("news","attention") or not isinstance(value,dict):
         return False
     proof = (proofs or {}).get(e.get("id"),{})
@@ -114,16 +149,21 @@ def available(e, wake, proofs=None):
     return any(x.get("primary") is True for x in confirmations) or len({x["group"] for x in confirmations}) >= 2
 
 
-def mark_as_of(tape, symbol, wake):
-    """Latest completed crypto close, with the finer bar winning a tie."""
+def completed_mark(tape, symbol, wake):
+    """Latest completed crypto close and its completion time."""
     candidates = []
-    for tf, seconds in (("1Min", 60), ("30Min", 1800), ("1Hour", 3600), ("1Day", 86400)):
+    for tf, seconds in BAR_LENGTHS.items():
         row = tape._conn().execute(
             "SELECT t,c FROM bars WHERE symbol=? AND tf=? AND t<=? ORDER BY t DESC LIMIT 1",
             (symbol, tf, wake-seconds)).fetchone()
         if row and orders.number(row[1]) and row[1] > 0:
             candidates.append((row[0]+seconds, -seconds, row[1]))
-    return max(candidates)[-1] if candidates else None
+    return max(candidates) if candidates else None
+
+
+def mark_as_of(tape, symbol, wake):
+    mark = completed_mark(tape,symbol,wake)
+    return mark[-1] if mark else None
 
 
 def desk_marks(tape, symbols, wake):
@@ -177,11 +217,12 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
         w = wall(t)
         packet = []
         for s in watch:
-            mark = mark_as_of(tape, s, t)
-            if mark is not None:
+            quote = completed_mark(tape,s,t)
+            if quote:
+                observed,_,mark = quote
                 h1, h24 = (mark_as_of(tape, s, t-3600*n) for n in (1, 24))
                 packet.append(dict(id=f"price:{t}:{s}", symbol=s, kind="price", published=t, known_at=t,
-                                   vintage="original", licensed=True, value=dict(price=mark,
+                                   vintage="original", licensed=True, value=dict(price=mark,observed_at=observed,
                                        change_1h=(mark/h1-1)*100 if h1 else None, change_24h=(mark/h24-1)*100 if h24 else None,
                                        volume=tm06.volume_row(tape, s, w, cfg), funding=tm06.last_funding(tape, s, w, cfg))))
             for size, count, tf in ((3600, 24, "1Hour"), (60, 30, "1Min")):
