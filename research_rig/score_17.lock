@@ -1,0 +1,45 @@
+{
+  "code_sha256": {
+    "build_identity_asof_16_17.py": "6617fbd31927b477df5b33c90239f7baa2dc8fad383a0140fcb0ed7d35ae3016",
+    "check_identity_levels_16_17.py": "95ea01dd4223b8f2120b983a5a4b8d9a57f3d6378792ad7a1dc50589f2dacc46",
+    "common_13.py": "e599c8ab8b87b18846c557689ae2065f62655619dd305fcaccc16a844afb7c58",
+    "common_16.py": "6c42e29268b42e3262f6e6d538bbd94a43b8c149767276383a0d53496193cc33",
+    "common_17.py": "647734a07f0e3fef5f779fbe1228dc739f638e94ec606b2a581ef64324f7de3c",
+    "diagnose_identity_daily_16_17.py": "8d71b8919d89d7ada6e6c807e5a88387f99673b855a31ad0ea4866c0d0678687",
+    "fetch_13.py": "bd00aba10a7d00acc4fe78098e0eee4544a75b2809b4ecf88f2060617583e47f",
+    "fetch_16.py": "762d1988ccdadbc5b156a6272a2fc7e8e8ac6c07701fb07b94aee405da263567",
+    "identity_asof_16_17.py": "f1b8fef6b04310815a7739d6ca6dbd151f1f574a08b70fe4b4885a1f995303d7",
+    "identity_chronology_16_17.py": "bc3edf79710398c5ca852d704dcfc3619d1a476d1a518b0bf900cece2d3490fb",
+    "identity_review.py": "db4dee94b9cd4f58a23831375b1ab3112cd410e3f67ddbfe6b811f66df9bb230",
+    "report_16.py": "27a6e63a453392cc823813c35ceba807f6149938f34566f7f9f5affeaaff5f1c",
+    "report_17.py": "061e6aea199fa8a4fb7b17d3bd76d35257d3e4cca04f45ec52fb86efe838ede2",
+    "score_13.py": "e80c1989936c23bbbe5fbfe0a2ba93c7a58f0fb9b9c124c2e432c07b982a390c",
+    "score_16.py": "f6cb4e1b37b60a54f1259aa0381a889d500944f6f501242a0e4205f6d6370732",
+    "score_17.py": "ff819c447d971dc72e9686fdabc1105118a406f2b08b6a15651d0da60bc4ba4e",
+    "test_16.py": "469ce182614019b4b9649d58ad490db695e9f66f1accdd195700ae317d467bb5",
+    "test_17.py": "d6ada0081d7fe3e408b810ff9731226dd4705dba1cc2dd1d3081eb2031e67a6e",
+    "us_roster_17.py": "93f7da2af7284d337a0b11f5c45d6278db866f2dc46f28b5bd561636f67ac65d"
+  },
+  "command": [
+    "/usr/local/bin/python3",
+    "/home/user/workspace/dt-work/research_rig/score_17.py",
+    "--run",
+    "--freeze-sha256",
+    "b676f39d7d784704b9540dd28888b1cf574a1fe272e5f1bbe1e79d8a6e18e57f"
+  ],
+  "config_sha256": "74062d4874c6d45ee66fc89999ab37cf65a22fda92327372bf35d2392feed97e",
+  "freeze_sha256": "b676f39d7d784704b9540dd28888b1cf574a1fe272e5f1bbe1e79d8a6e18e57f",
+  "git_head": "600ba5051fbc15d713f9ee72fd5e4f19f8d0dc7a",
+  "inputs": {
+    "identity_policy_16_17.json": "5b6aca5959b5c2a4a30033278794937f447f2c899cb6bd828eff81d3df3a248c",
+    "manifest_futures.json": "07a28ae776606bb1430aa91ab94ae69b5cfeec37e0f48c9f2d342ab745e8b94d",
+    "manifest_futures_held.json": "d2949c130e4d98d13ed4bf376abee0700e4122fbf76af80a7d8fcf695a1e9afd",
+    "manifest_spot.json": "8b380b878eb8468c7b9ee7a4fe6bc60aeb073f2baaf48ff382010455b1d62a4f",
+    "snapshot_fingerprints.json": "2cf174cccfedbf5c21e0f40822dce4f972f20bf68d60c1d067a7290b02549bdc",
+    "snapshots_16.json": "3cc9dcf9bed1729827b8ca44d6370d5eed1cb98f630cc88d17ae0919562c5992"
+  },
+  "peer_plan_sha256": "950928e4322051a614ea519652f606f0d7ad1f11de5d07a8e3ee67b7acf03587",
+  "plan_sha256": "4eb88fdba6f1639d7f87857cf0d11d44114b30fdd6090dd224db6422b38003b3",
+  "start_utc": "2026-11-25T23:00:37.898864+00:00",
+  "us_roster_sha256": "50be7cc83aaa8fe22b401ba0531d987a63c3b37a220c9373fd8c5bd200342faf"
+}

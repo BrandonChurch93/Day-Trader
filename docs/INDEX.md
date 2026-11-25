@@ -138,6 +138,8 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/52_replay_14_large_stock_momentum.md` | Replay 14: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, 2017 to 2026. Did not pass: behind SPY, above every member in equal parts, not above the 95th percentile of random baskets. Written by script from the one run | CURRENT |
 | `docs/research/54_replay_13_year_or_method.md` | Replay 13: the owner's dip-and-peak method as a fixed rule on the hottest coins, each year 2020 to 2026. The dip rule was not paid, 2021 included; holding the hot five met its marks and still lost money in three years | CURRENT |
 | `docs/research/55_stocks_in_play_evidence_checked.md` | Day trading stocks in play: the published opening-range rule, rebuilds that lose once real fills are charged, other single-stock day rules after costs, and what real day traders made. Checked reading, nothing measured by us | CURRENT |
+| `docs/research/56_replay_16_hot_five_hedged.md` | Replay 16: the hot five on spot against a same-size futures short, weekly, 2020 to 2026, coins ranked 51 to 100. Not supported, 0 of 4 marks. Written by script from the one run | CURRENT |
+| `docs/research/57_replay_17_short_the_peak.md` | Replay 17: the short side of the owner's method as a fixed rule on futures, year by year. Not supported, 0 of 3 marks, with or without costs; US fee levels and the US-shortable list shown beside it. Written by script from the one run | CURRENT |
 | `docs/research/58_crowded_trades_evidence_checked.md` | Shorting crowded coin futures and buying the bounce after a flush: what Binance's public archive holds, the published and public tests after costs (most lose once dead coins are kept), and which coins a US account can short today. Checked reading, nothing measured on our own prices | CURRENT |
 | `docs/research/59_why_the_ai_traders_lost.md` | Why the AI traders lost: every written reason in plans TM01 to TM04 sorted into fixed categories and joined to what happened next (entries, stops, costs, bitcoin dial moves, stock picks), with 12 quotes and record faults. After the fact, not a test. Written from `timemachine/autopsy/autopsy_results.json` | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
@@ -232,7 +234,7 @@ Working papers.
 | `research_rig/common_16.py`, `research_rig/score_16.py`, `research_rig/test_16.py`, `research_rig/report_16.py` | Plan 16 rules, scorer (refuses until plans 16 and 17 are both frozen), self-tests on made-up prices, and the result page writer; not audited yet | DRAFT |
 | `research_rig/common_17.py`, `research_rig/score_17.py`, `research_rig/test_17.py`, `research_rig/report_17.py` | Plan 17 rules, scorer (refuses until plans 16 and 17 are both frozen), self-tests on made-up prices, and the result page writer; not audited yet | DRAFT |
 | `research_rig/check_identity_levels_16_17.py`, `research_rig/diagnose_identity_daily_16_17.py` | Plans 16 and 17 identity check: does a Binance pair carry the coin on the saved list, by matching saved price levels; prints counts only, computes no return | DRAFT |
-| `research_rig/PREREG_16_hot_five_hedged.md` | Plan 16, frozen 2026-11-25: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Not frozen, nothing run | CURRENT |
+| `research_rig/PREREG_16_hot_five_hedged.md` | Plan 16, frozen 2026-11-25: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Run once, not supported | CURRENT |
 | `research_rig/build_identity_asof_16_17.py` | Builds the shared dated identity policy for plans 16 and 17 and counts changes against the every-month check | CURRENT |
 | `research_rig/held_live_coverage_16_17.py` | Counts held-back list contracts live on each Monday, no returns | CURRENT |
 | `research_rig/identity_asof_16_17.py` | Applies saved identity evidence as of each replay Monday | CURRENT |
@@ -243,7 +245,11 @@ Working papers.
 | `research_rig/replay_clock_audit_16_17.py` | Counts Monday liveness, zero-volume spells and hours with no mark bar, no returns | CURRENT |
 | `research_rig/us_roster_17.py` | Verifies the pinned US-shortable roster and maps its coins to CoinMarketCap ids | CURRENT |
 | `research_rig/us_roster_coverage_17.py` | Reports stored spot and futures coverage for the shown-only US roster of plan 17 | CURRENT |
-| `research_rig/PREREG_17_short_the_peak.md` | Plan 17, frozen 2026-11-25: the short side of the owner's method as a fixed rule on futures, judged on the held-back coin list. Not frozen, nothing run | CURRENT |
+| `research_rig/PREREG_17_short_the_peak.md` | Plan 17, frozen 2026-11-25: the short side of the owner's method as a fixed rule on futures, judged on the held-back coin list. Run once, not supported | CURRENT |
+| `research_rig/results_16.json` | Plan 16 result: both lists and both shorts by year at three cost levels, random draws, flags and input fingerprints. Written once by score_16.py --run | CURRENT |
+| `research_rig/score_16.lock` | Plan 16: marks that the run was made; a second run is refused | CURRENT |
+| `research_rig/results_17.json` | Plan 17 result: the short rule by year on the held-back, viewed and US-shortable lists, yardsticks, 3x and bounce variants, US fee levels, flags and input fingerprints. Written once by score_17.py --run | CURRENT |
+| `research_rig/score_17.lock` | Plan 17: marks that the run was made; a second run is refused | CURRENT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
 | `research_rig/common_11.py` | Plan 11 shared paths, calendar, event ids and the price-file map for renamed tickers | CURRENT |
