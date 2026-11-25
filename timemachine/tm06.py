@@ -8,7 +8,7 @@ The fast tape
   half spread  per coin: tm_perp_half_spread_bps by symbol, else tm_crypto_half_spread_bps_by_coin, else the placeholder
                tm_crypto_half_spread_bps_default (perp.half_spread_bps).
   funding      from its funding table, venue per coin from tm_fast_funding_venue (default kraken_futures_pf, hourly, all 23
-               coins from 2025-11-19). An hourly rate stamped t is charged at t. An 8 hour rate (kalshi_perp) stamped t is
+               coins from 2025-11-19). An hourly rate stamped t is charged at t. An 8 hour rate (any 8 hourly venue) stamped t is
                known at t and charged as one eighth at each of the 8 whole hours after t. A charge time with no stored rate
                (before the venue's first rate, or in a gap) pays tm_perp_fallback_rate_per_day, long or short, and is counted.
                No rate stamped after the simulated time is ever charged or shown.
@@ -34,12 +34,14 @@ Every number the plan fixes is read from tm06_plan (plan(cfg)); the tm06_ keys h
 Scoring (score_picker, score_swing, score_control) replays the session to the cent, then runs the same answers and every
 yardstick through the same book at each fee in tm_perp_fee_levels_bps. timemachine/score_tm06.py collects them.
 
-python3 timemachine/tm06.py picker --trader P01 --model M --method CARD.md --from 2026-03-01 --to 2026-03-31 [--session ID]
-python3 timemachine/tm06.py swing --trader S01 --model M --method CARD.md --symbols SOL/USD,ZEC/USD --from 2026-03-02 --to 2026-03-08 [--session ID]
+python3 timemachine/tm06.py picker --trader P01 --model M --method CARD.md --month 2026-04 [--session ID]     (coins: tm06_plan.coins)
+python3 timemachine/tm06.py swing --trader S01 --model M --method CARD.md --week 1 [--session ID]     (tm06_plan.swing_weeks; 168 wakes)
+  (or --from/--to, and for swing --symbols, instead of --month or --week. Both refuse to start while a coin would be priced at
+   the placeholder half spread tm_crypto_half_spread_bps_default.)
 python3 timemachine/tm06.py control --from 2026-03-01 --to 2026-03-31 [--session ID]     (runs the rule at once)
 python3 timemachine/tm06.py score SESSION [--draws N]
 """
-import argparse, datetime as dt, json, math, os, random, sqlite3, sys
+import argparse, datetime as dt, hashlib, json, math, os, random, shutil, sqlite3, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -52,7 +54,8 @@ from timemachine.attention import get_attention
 UTC = S.UTC
 iso, parse = S.iso, S.parse
 T_KEYS = ["tm_fast_funding_venue", "tm_fast_oi_venue", "tm_fast_oi_known_after_hours", "tm06_pick_change_hours", "tm06_pick_volume_usual_days",
-          "tm06_pick_listed_hours", "tm06_pick_attention_days", "tm06_attention_rule", "tm06_reversal", "tm06_plan"]
+          "tm06_pick_listed_hours", "tm06_pick_attention_days", "tm06_attention_rule", "tm06_reversal", "tm06_plan",
+          "tm06_swing_packet_hour_bars", "tm06_swing_packet_minute_bars", "tm06_handoff_swing_wakes", "tm06_handoff_picker_split_day"]
 LIMITS = P.LIMITS + [
     "The fast tape's funding is from Kraken's non-US perps by default; a US venue's rates may differ. Before a coin's first stored rate the fixed fallback is charged.",
     "Open interest and attention counts are shown as they were known at the wake; the store does not always say when a value was first published, so attention uses the reader's assumed lag."]
@@ -217,19 +220,45 @@ def tape_coins(tape):
     return json.loads(tape.get_meta("coins_json") or "[]") if hasattr(tape, "get_meta") else []
 
 
+def measured_spread(symbols, cfg):
+    """A picker or swing session starts only when every coin it prices has its own half spread (tm_perp_half_spread_bps by
+    symbol, or tm_crypto_half_spread_bps_by_coin), never the placeholder tm_crypto_half_spread_bps_default."""
+    m, coin = cfg["tm_perp_half_spread_bps"], (cfg.get("tm_crypto_half_spread_bps_by_coin") or {})
+    bad = [s for s in symbols if s not in m and s.split("/")[0] not in coin]
+    assert not bad, f"no measured half spread for {', '.join(bad)}: set it in tm_perp_half_spread_bps before a session (the placeholder is not used)"
+
+
 def create_picker(session_id, trader_id, model, method_path, start_date, end_date, tape=None, coins=None, attention_db=None, note=None):
-    tape = tape or W.fast_tape(); cfg = full_config(); pl = plan(cfg); coins = list(coins or tape_coins(tape)); assert coins, "no coin list (meta coins_json on the fast tape)"
-    db = str(attention_db or default_attention_db())
+    """coins: tm06_plan.coins unless given (tests)."""
+    tape = tape or W.fast_tape(); cfg = full_config(); pl = plan(cfg); coins = list(coins or pl["coins"]); assert coins, "no coin list"
+    measured_spread(coins + ["BTC/USD"], cfg); db = str(attention_db or default_attention_db())
     return P.create(session_id, trader_id, model, method_path, start_date, end_date, coins, max_gross=1.0,
                     rules=[dict(every="day", utc_hours=[pl["wake_hour"]])], tape=tape, note=note, benchmark="BTC/USD", long_only=True,
                     extra=dict(tm06=dict(part="P", max_names=pl["max_names"], attention_db=db, config={k: cfg[k] for k in T_KEYS})))
 
 
 def create_swing(session_id, trader_id, model, method_path, start_date, end_date, symbols, tape=None, note=None, news=False):
-    tape = tape or W.fast_tape(); cfg = full_config(); pl = plan(cfg)
+    tape = tape or W.fast_tape(); cfg = full_config(); pl = plan(cfg); measured_spread(list(symbols) + ["BTC/USD"], cfg)
     return P.create(session_id, trader_id, model, method_path, start_date, end_date, symbols, max_gross=pl["swing_max_gross"],
                     rules=[dict(every="minutes", step=pl["swing_minutes"])], tape=tape, note=note, news=news, benchmark="BTC/USD", long_only=True,
                     extra=dict(tm06=dict(part="S", config={k: cfg[k] for k in T_KEYS})))
+
+
+def plan_week(n, cfg=None):
+    """Swing week n (1 to 4) of tm06_plan.swing_weeks: its first day, its last day (the Sunday; the plan's end is the next
+    Monday, not included) and its coins as pairs."""
+    pl = plan(cfg or full_config()); w = pl["swing_weeks"][int(n) - 1]
+    last = (dt.date.fromisoformat(w["end"]) - dt.timedelta(days=1)).isoformat()
+    return w["start"], last, [f"{c}/USD" for c in w["coins"]]
+
+
+def plan_month(month, cfg=None):
+    """The picker's dates for one calendar month YYYY-MM, clipped to tm06_plan.picker_start and picker_end."""
+    p = (cfg or full_config())["tm06_plan"]; y, m = (int(x) for x in month.split("-"))
+    first = dt.date(y, m, 1); last = (dt.date(y + m // 12, m % 12 + 1, 1) - dt.timedelta(days=1))
+    a, b = max(first, dt.date.fromisoformat(p["picker_start"])), min(last, dt.date.fromisoformat(p["picker_end"]))
+    assert a <= b, f"{month} is outside the plan's picker dates"
+    return a.isoformat(), b.isoformat()
 
 
 def create_control(session_id, start_date, end_date, tape=None, note=None):
@@ -321,6 +350,39 @@ class PickerSession(P.PSession):
         return super().submit(b2)
 
 
+class SwingSession(P.PSession):
+    """Part S: a perp session whose packet also shows, per coin, the last tm06_swing_packet_hour_bars hourly bars (as bars),
+    the last tm06_swing_packet_minute_bars finished one-minute bars (bars_1min) and the picker's volume row."""
+
+    def symbol_rows(self):
+        out = super().symbol_rows(); c = dict(self.cfg, **self.meta["tm06"]["config"])
+        nh, nm = int(c["tm06_swing_packet_hour_bars"]), int(c["tm06_swing_packet_minute_bars"])
+        for s in self.allowed:
+            hb = S.built_bars(self.tape, s, 3600, self.now - dt.timedelta(hours=nh + 1), self.now, nh)
+            mb = self.tape.bars(s, "1Min", self.now - dt.timedelta(minutes=nm + 1), self.now, limit=nm)  # finished minutes only
+            out[s]["bars"] = [[S.iso(b["t"]), b["o"], b["h"], b["l"], b["c"], b["v"]] for b in hb]
+            out[s]["bars_1min"] = [[S.iso(b["t"]), b["o"], b["h"], b["l"], b["c"], b.get("v")] for b in mb]
+            out[s]["volume"] = volume_row(self.tape, s, self.now, c)
+        return out
+
+    def packet(self, fresh=False):
+        """The perp packet with the swing's own wording: long or flat (the perp text offers shorts), and what the bars are."""
+        if self.done():
+            raise S.Done()
+        p = self.dir / "packets" / f"{self.prog['k']}.json"
+        if p.exists() and not fresh:
+            return json.loads(p.read_text())
+        out = super().packet(fresh=True); mg = self.pmg; s0 = self.allowed[0]; c = dict(self.cfg, **self.meta["tm06"]["config"])
+        out["answer_forms"][0] = {"weights": {s0: min(0.5, mg)}, "exits": {s0: {"stop": "price", "target": "price"}}, "why": "..."}
+        out["rules"][0] = f"Perpetual futures, long or flat. Each weight is from 0 to {mg:g}. The weights add up to at most {mg:g}. The rest is margin."
+        out["rules"].insert(1, f"bars: the last {int(c['tm06_swing_packet_hour_bars'])} finished hourly bars. bars_1min: the last {int(c['tm06_swing_packet_minute_bars'])} "
+                               "finished one-minute bars. volume.ratio is the last 24 hours' dollar volume against the coin's own mean day of the 30 days before.")
+        if fresh:
+            return out
+        p.parent.mkdir(exist_ok=True); S.save_json(p, out)
+        return json.loads(p.read_text())
+
+
 # ---- scoring: one replay setting, then the same book for the model and every yardstick
 def load(session_id, tape=None):
     d = S.runs_dir() / session_id; meta = json.loads((d / "session.json").read_text()); assert meta.get("instrument") == "perp" and meta.get("tm06"), "not a TM06 session"
@@ -357,7 +419,14 @@ def hold(n, w):
 
 def twin_block(name, runs, model_final, cfg):
     from timemachine import score_weights as SW
-    t = SW.twin_set(name, runs, model_final, cfg); t.pop("_draw_gains_pct", None); return t
+    return SW.twin_set(name, runs, model_final, cfg)  # keeps _draw_gains_pct for joining months and weeks; public() drops it
+
+
+def public(x):
+    """The score without its private draw lists (keys starting with _)."""
+    if isinstance(x, dict):
+        return {k: public(v) for k, v in x.items() if not k.startswith("_")}
+    return [public(v) for v in x] if isinstance(x, list) else x
 
 
 def swap_twin(swaps, lists, rng):
@@ -465,24 +534,118 @@ def score(session_id, tape=None, draws=None):
     return score_picker(session_id, tape, draws) if part == "P" else score_swing(session_id, tape, draws) if part == "S" else score_control(session_id, tape)
 
 
+# ---- hand-offs: one session answered by several agents in turn (plan line on splitting)
+BRIEFS = ROOT / "timemachine" / "TM06_LAUNCH_BRIEFS.md"
+
+
+def handoff_points(meta, cfg):
+    """The 0-based wakes where a new agent takes over. Swing: every tm06_handoff_swing_wakes wakes, at the same UTC clock
+    times every day (00:00 and 12:00 for 12 hourly wakes), the same for every model. Picker: the first wake on or after day tm06_handoff_picker_split_day of the month, when that splits the session
+    (null: no split). Control and other sessions: none. The session's own snapshot of the keys wins over today's config."""
+    c = dict(cfg, **(meta.get("tm06") or {}).get("config", {})); part = (meta.get("tm06") or {}).get("part"); wakes = [parse(w) for w in meta["wakes"]]
+    if part == "S":
+        n = int(c["tm06_handoff_swing_wakes"]); pts = list(range(n, len(wakes), n))
+        assert (wakes[0].hour, wakes[0].minute) == (0, 0) and 1440 % (n * int(plan(c)["swing_minutes"])) == 0, "swing hand-offs would not fall at the same clock times every day"
+        return pts
+    if part == "P" and c.get("tm06_handoff_picker_split_day") is not None:
+        d = int(c["tm06_handoff_picker_split_day"]); k = next((i for i, w in enumerate(wakes) if w.day >= d), None)
+        return [k] if k else []
+    return []
+
+
+def handoffs_done(sid):
+    f = S.runs_dir() / sid / "handoffs.jsonl"
+    return [json.loads(x) for x in f.read_text().splitlines() if x.strip()] if f.exists() else []
+
+
+def next_wake(sid, cfg=None):
+    """For a session: the next wake, whether it is a hand-off point, which agent answers it and that agent's steps."""
+    d = S.runs_dir() / sid; meta = json.loads((d / "session.json").read_text()); prog = json.loads((d / "progress.json").read_text())
+    pts = handoff_points(meta, cfg or full_config()); n = len(meta["wakes"]); k = int(prog["k"]); done = bool(prog.get("done")) or k >= n
+    starts = [0] + pts; agent = sum(1 for p in starts if p <= min(k, n - 1)); first = starts[agent - 1]; last = (starts[agent] if agent < len(starts) else n) - 1
+    rec = {h["k"]: h for h in handoffs_done(sid)}
+    out = dict(session=sid, part=(meta.get("tm06") or {}).get("part"), model=meta.get("model"), method=meta.get("method"), wakes=n, done=done, handoff_steps=[p + 1 for p in pts],
+               agents=len(starts), recorded=[rec[k_]["agent"] for k_ in sorted(rec)])
+    if done:
+        return out
+    hand = k in pts
+    out.update(next_step=k + 1, next_utc=meta["wakes"][k], agent=agent, first_step=first + 1, last_step=last + 1, is_handoff=hand,
+               handoff_recorded=k in rec, notes_for_agent=rec[k]["frozen"] if k in rec else None,
+               ran_past=[p + 1 for p in pts if p < k and p not in rec])
+    return out
+
+
+def handoff(sid, notes, cfg=None):
+    """Records a hand-off at the session's next wake: freezes a copy of the earlier agent's notes in the session folder
+    (handoffs/notes_for_agent_N.md, read-only) and adds one line to handoffs.jsonl. Only at a hand-off point, once."""
+    nx = next_wake(sid, cfg); assert not nx["done"], f"{sid} is finished"
+    assert nx["is_handoff"], f"step {nx['next_step']} is not a hand-off point (they are {nx['handoff_steps']})"
+    assert not nx["handoff_recorded"], f"the hand-off at step {nx['next_step']} is already recorded"
+    src = Path(notes); assert src.is_file(), f"no notes file at {src}"
+    d = S.runs_dir() / sid / "handoffs"; d.mkdir(exist_ok=True); dst = d / f"notes_for_agent_{nx['agent']}.md"
+    shutil.copyfile(src, dst); os.chmod(dst, 0o444)
+    rec = dict(k=nx["next_step"] - 1, step=nx["next_step"], utc=nx["next_utc"], agent=nx["agent"], notes_from=str(src.resolve()), frozen=str(dst),
+               sha256=hashlib.sha256(dst.read_bytes()).hexdigest(), made_utc=dt.datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    with open(S.runs_dir() / sid / "handoffs.jsonl", "a") as f:
+        f.write(json.dumps(rec, sort_keys=True) + "\n")
+    return rec
+
+
+def brief_text(nx, port, notes_path):
+    """The launcher brief for the next agent, its placeholders filled (TM06_LAUNCH_BRIEFS.md, the part's section)."""
+    t = BRIEFS.read_text(); part = {"S": "swing", "P": "picker"}[nx["part"]]
+    body = t.split(f"<!-- BRIEF {part} -->")[1].split("<!-- END -->")[0].strip()
+    vals = dict(MODEL=nx["model"], METHOD_CARD=nx["method"], SESSION_ID=nx["session"], PORT=str(port), AGENT=str(nx["agent"]), AGENTS=str(nx["agents"]), FIRST_STEP=str(nx["first_step"]),
+                LAST_STEP=str(nx["last_step"]), WAKES=str(nx["wakes"]), NOTES_PATH=notes_path, HANDOFF_NOTES_PATH=nx["notes_for_agent"] or "none (you are the first agent)")
+    for k, v in vals.items():
+        body = body.replace("{" + k + "}", v)
+    return body
+
+
 def main(argv=None):
     a = argparse.ArgumentParser(description="Plan TM06 sessions and scoring, on the fast tape. Pretend money only."); sub = a.add_subparsers(dest="cmd", required=True)
     pk = sub.add_parser("picker"); sw = sub.add_parser("swing"); co = sub.add_parser("control"); sc = sub.add_parser("score")
+    nx_ = sub.add_parser("next", help="the next wake of a session, whether it is a hand-off point, and which agent answers it")
+    nx_.add_argument("session"); nx_.add_argument("--port", type=int, help="also print the filled launcher brief"); nx_.add_argument("--notes", help="with --port: the new agent's own notes file")
+    ho = sub.add_parser("handoff", help="at a hand-off point: freeze the earlier agent's notes into the session and record the hand-off")
+    ho.add_argument("session"); ho.add_argument("--notes", required=True, help="the earlier agent's notes file")
     for p in (pk, sw):
         p.add_argument("--trader", required=True); p.add_argument("--model", required=True); p.add_argument("--method", required=True)
-    sw.add_argument("--symbols", required=True)
+    sw.add_argument("--symbols"); sw.add_argument("--week", type=int, help="1 to 4: dates and coins from tm06_plan.swing_weeks (168 hourly wakes)")
+    pk.add_argument("--month", help="YYYY-MM: that month's dates, clipped to tm06_plan.picker_start and picker_end")
     for p in (pk, sw, co):
-        p.add_argument("--from", dest="start", required=True); p.add_argument("--to", dest="end", required=True); p.add_argument("--session"); p.add_argument("--note")
+        p.add_argument("--from", dest="start"); p.add_argument("--to", dest="end"); p.add_argument("--session"); p.add_argument("--note")
     sc.add_argument("session"); sc.add_argument("--draws", type=int)
     x = a.parse_args(argv); stamp = dt.datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
+    if x.cmd == "next":
+        nx = next_wake(x.session); print(json.dumps(nx, indent=1))
+        if x.port and not nx["done"]:
+            assert x.notes, "give --notes: the new agent's own notes file"
+            assert not nx["is_handoff"] or nx["handoff_recorded"], "record the hand-off first: tm06.py handoff SESSION --notes EARLIER_NOTES"
+            print("\n" + brief_text(nx, x.port, x.notes))
+        return
+    if x.cmd == "handoff":
+        print(json.dumps(handoff(x.session, x.notes), indent=1)); return
     if x.cmd == "score":
-        print(json.dumps(score(x.session, draws=x.draws), indent=1, sort_keys=True)); return
+        print(json.dumps(public(score(x.session, draws=x.draws)), indent=1, sort_keys=True)); return
     if x.cmd == "picker":
-        sid = x.session or f"TM06-P-{x.trader}-{x.start}-{stamp}"; create_picker(sid, x.trader, x.model, x.method, x.start, x.end, note=x.note)
+        if x.month:
+            x.start, x.end = plan_month(x.month)
+        assert x.start and x.end, "give --month or --from and --to"
+        sid = x.session or f"TM06-P-{x.trader}-{x.month or x.start}"; create_picker(sid, x.trader, x.model, x.method, x.start, x.end, note=x.note)
     elif x.cmd == "swing":
-        sid = x.session or f"TM06-S-{x.trader}-{x.start}-{stamp}"
-        create_swing(sid, x.trader, x.model, x.method, x.start, x.end, [s.strip() for s in x.symbols.split(",") if s.strip()], note=x.note)
+        if x.week:
+            x.start, x.end, syms = plan_week(x.week); pl = plan(full_config())
+            want = (dt.date.fromisoformat(x.end) - dt.date.fromisoformat(x.start)).days * 1440 // pl["swing_minutes"] + 1440 // pl["swing_minutes"]
+            got = len(W.make_wakes(W.fast_tape(), "crypto", x.start, x.end, [dict(every="minutes", step=pl["swing_minutes"])])[0])
+            assert got == want, f"week {x.week} gives {got} wakes, not {want}"
+        else:
+            assert x.symbols and x.start and x.end, "give --week or --symbols, --from and --to"
+            syms = [s.strip() for s in x.symbols.split(",") if s.strip()]
+        sid = x.session or (f"TM06-S-{x.trader}-w{x.week}" if x.week else f"TM06-S-{x.trader}-{x.start}-{stamp}")
+        create_swing(sid, x.trader, x.model, x.method, x.start, x.end, syms, note=x.note)
     else:
+        assert x.start and x.end, "give --from and --to"
         sid = x.session or f"TM06-C-{x.start}-{stamp}"; create_control(sid, x.start, x.end, note=x.note); r = run_control(sid)
         print(json.dumps(dict(session=sid, wakes=len(r["steps"]), done=True), indent=1)); return
     meta = json.loads((S.runs_dir() / sid / "session.json").read_text())

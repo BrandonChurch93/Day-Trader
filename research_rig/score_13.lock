@@ -1,0 +1,22 @@
+{
+  "code_sha256": {
+    "common_13.py": "e599c8ab8b87b18846c557689ae2065f62655619dd305fcaccc16a844afb7c58",
+    "fetch_13.py": "bd00aba10a7d00acc4fe78098e0eee4544a75b2809b4ecf88f2060617583e47f",
+    "score_13.py": "e80c1989936c23bbbe5fbfe0a2ba93c7a58f0fb9b9c124c2e432c07b982a390c",
+    "test_13.py": "f4b1c0d047001cd39c6686b7131306fc78060a77929b0593ca25c9d5d417a620"
+  },
+  "command": [
+    "/usr/local/bin/python3",
+    "score_13.py",
+    "--run"
+  ],
+  "config_sha256": "f6c7fce4fa7fb80a54ae4eb9acf70dc56ef55e62e50acdae8936aa6443eb4b44",
+  "git_head": "c6089b232b88bdb372faf3838a6ecb0f89d4bef8",
+  "inputs": {
+    "manifest_sha256": "30e0f2ffbb9468f8d2583fb1109c9babd9087ff5da135d84dc0087c42fc59cf9",
+    "snapshots_sha256": "b00d7bfa006ab61d1724b9faa833e87ebff7d2695de88b6f1c6283275ffd370d"
+  },
+  "mode": "run",
+  "plan_sha256": "2c914b7945a5561f14316063a567febe2aa30165cf8abeefa19656dd9f2a7797",
+  "run_started_utc": "2026-11-25T19:28:08.197886+00:00"
+}

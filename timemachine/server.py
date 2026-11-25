@@ -84,6 +84,13 @@ def handle(method, path, q, body):
         return 404, dict(ok=False, error="unknown address. Use /next, /look, /pick or /status.")
 
 
+def compact(q):
+    """Plan TM06 picker and swing sessions get compact JSON (their packets are large); every other session as before."""
+    slot = _sessions.get((q.get("session") or [""])[0])
+    meta = getattr(slot[1], "meta", None) if slot else None
+    return bool(meta) and (meta.get("tm06") or {}).get("part") in ("P", "S")
+
+
 class H(BaseHTTPRequestHandler):
     def _go(self, method):
         u = urllib.parse.urlparse(self.path); q = urllib.parse.parse_qs(u.query)
@@ -92,7 +99,7 @@ class H(BaseHTTPRequestHandler):
             code, obj = handle(method, u.path, q, body)
         except Exception as e:
             traceback.print_exc(); code, obj = 500, dict(ok=False, error=f"{type(e).__name__}: {str(e)[:300]}")
-        data = json.dumps(obj, indent=1, sort_keys=True).encode()
+        data = (json.dumps(obj, separators=(",", ":"), sort_keys=True) if compact(q) else json.dumps(obj, indent=1, sort_keys=True)).encode()
         self.send_response(code); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(data))); self.end_headers()
         self.wfile.write(data)
 

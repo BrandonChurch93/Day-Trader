@@ -4,6 +4,24 @@
   12,
   25
  ],
+ "joined": {
+  "picker": {
+   "models": {},
+   "models_above_twin_median": 0,
+   "models_clearing_all_marks": 0,
+   "need_above_median": 5,
+   "need_all_marks": 2,
+   "verdict": "not finished"
+  },
+  "swing": {
+   "models": {},
+   "models_above_twin_median": 0,
+   "models_clearing_all_marks": 0,
+   "need_above_median": 5,
+   "need_all_marks": 2,
+   "verdict": "not finished"
+  }
+ },
  "limits": [
   "A model may still know this period if it falls before the model's knowledge line. UNKNOWN how much that helps it.",
   "The no-search and no-file rule is given by instruction. It is not enforced by this program.",

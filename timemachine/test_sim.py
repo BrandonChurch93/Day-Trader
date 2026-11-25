@@ -1082,7 +1082,7 @@ for h in range(11 * 24):
     fdb.execute("INSERT INTO funding VALUES ('BTC/USD', 'kraken_futures_pf', ?, 0.00002, 1)", (t,))
     fdb.execute("INSERT INTO open_interest VALUES ('A/USD', 'kraken_futures_pf', ?, ?)", (t, 1000.0 + h))
     if h % 8 == 4:
-        fdb.execute("INSERT INTO funding VALUES ('B/USD', 'kalshi_perp', ?, 0.0008, 8)", (t,))
+        fdb.execute("INSERT INTO funding VALUES ('B/USD', 'venue_eight_hour', ?, 0.0008, 8)", (t,))
 fdb.execute("INSERT INTO funding VALUES ('A/USD', 'kraken_futures_pf', ?, 0.5, 1)", (FE + 86400 * 30,))  # a rate dated far after every window
 fdb.commit(); fdb.close(); FT_W._conn().close() if hasattr(FT_W._conn(), "close") else None
 ADB = str(FSTORE / "attention.sqlite"); adb = _sq.connect(ADB); adb.executescript(ATT_SCHEMA)
@@ -1122,7 +1122,7 @@ ok(T6.full_config()["tm_crypto_half_spread_bps_default"] is not None and "tm_cry
 
 # 2. funding and open interest as of the simulated time
 C6 = T6.full_config(); t0f, t1f = U(2026, 6, 9), U(2026, 6, 10)
-c8 = dict(C6, tm_fast_funding_venue={"default": "kraken_futures_pf", "B/USD": "kalshi_perp"})
+c8 = dict(C6, tm_fast_funding_venue={"default": "kraken_futures_pf", "B/USD": "venue_eight_hour"})
 fu, src = T6.fast_funding(FT, ["A/USD", "B/USD", "C/USD"], c8, t0f, t1f)
 ok(all(v == 0.0001 for v in fu["A/USD"].values()) and max(fu["A/USD"]) <= int(t1f.timestamp()) and "C/USD" not in fu and "fallback" in src["C/USD"],
    "tm06: hourly funding is charged at its own hour, a rate dated after the window is never read, and a coin with none falls back")
@@ -1136,9 +1136,28 @@ ok(abs(oi - ((1000 + h1) / (1000 + h1 - 24) - 1) * 100) < 1e-9 and T6.oi_change_
    "tm06: open interest change is over 24 hours to the latest row known tm_fast_oi_known_after_hours before the wake; none when the coin has no rows")
 
 # 3. picker sessions
-real_fc = T6.full_config; T6.full_config = lambda: (lambda c: dict(c, tm06_plan=dict(c["tm06_plan"], picker_max_names=2)))(real_fc())
+# a session refuses to start while a coin it prices would fall to the placeholder half spread
+real_fc = T6.full_config; FIX6 = ["A/USD", "B/USD", "C/USD", "D/USD"]
+nosp6 = lambda: (lambda c: dict(c, tm_perp_half_spread_bps={"default": c["tm_perp_half_spread_bps"]["default"]}))(real_fc())
+T6.full_config = nosp6; C6n = nosp6(); msg6 = ""
 try:
-    T6.create_picker("f6_pick", "FP", "script", "x.md", "2026-06-09", "2026-06-11", attention_db=ADB)
+    T6.create_picker("f6_nospread", "FP", "script", "x.md", "2026-06-09", "2026-06-11", attention_db=ADB)
+except AssertionError as e:
+    msg6 = str(e)
+ok("placeholder" in msg6 and "A/USD" not in msg6.split("for ")[1].split(":")[0].split(", ") and all(c in msg6 for c in T6.plan(C6)["coins"] if c.split("/")[0] not in C6n["tm_crypto_half_spread_bps_by_coin"])
+   and not (Path(os.environ["TM_RUNS"]) / "f6_nospread").exists(), "tm06 picker: the coins default to tm06_plan.coins, and a coin without a measured half spread stops the start")
+msg6 = ""
+try:
+    T6.create_swing("f6_nospread", "FS", "script", "x.md", "2026-06-09", "2026-06-09", ["A/USD", "C/USD"])
+except AssertionError as e:
+    msg6 = str(e)
+ok("A/USD, C/USD" in msg6 and not (Path(os.environ["TM_RUNS"]) / "f6_nospread").exists(), "tm06 swing: a coin without a measured half spread stops the start")
+T6.full_config = real_fc
+ok(T6.measured_spread(["BTC/USD", "ETH/USD"], C6) is None, "tm06: a coin in tm_crypto_half_spread_bps_by_coin counts as measured")
+spread6 = lambda c: dict(c, tm_perp_half_spread_bps=dict(c["tm_perp_half_spread_bps"], **{s: 3 for s in FIX6}))
+T6.full_config = lambda: (lambda c: dict(spread6(c), tm06_plan=dict(c["tm06_plan"], picker_max_names=2)))(real_fc())
+try:
+    T6.create_picker("f6_pick", "FP", "script", "x.md", "2026-06-09", "2026-06-11", coins=T6.tape_coins(FT), attention_db=ADB)
 finally:
     T6.full_config = real_fc
 pk6 = WW.open_session("f6_pick", tape=WT); m6 = pk6.meta
@@ -1188,8 +1207,23 @@ for i in range(20):
 ok(T6.swap_twin(sws, ls6, random.Random(3)) == T6.swap_twin(sws, ls6, random.Random(3)), "tm06 picker twin: seeded")
 
 # 5. swing sessions
-T6.create_swing("f6_swing", "FS", "script", "x.md", "2026-06-09", "2026-06-09", ["A/USD", "C/USD"])
+T6.full_config = lambda: spread6(real_fc())
+try:
+    T6.create_swing("f6_swing", "FS", "script", "x.md", "2026-06-09", "2026-06-09", ["A/USD", "C/USD"])
+finally:
+    T6.full_config = real_fc
 sg = WW.open_session("f6_swing", tape=WT); pg = sg.packet()
+nh6, nm6 = C6["tm06_swing_packet_hour_bars"], C6["tm06_swing_packet_minute_bars"]; ra6 = pg["symbols"]["A/USD"]; now6 = sg.now
+ok(isinstance(sg, T6.SwingSession) and len(ra6["bars"]) == nh6 and len(ra6["bars_1min"]) == nm6 and set(ra6["volume"]) == set(T6.volume_row(FT, "A/USD", now6, dict(C6)))
+   and ra6["bars"][-1][0] == S.iso(now6 - dt.timedelta(hours=1)) and ra6["bars_1min"][-1][0] == S.iso(now6 - dt.timedelta(minutes=1)),
+   "tm06 swing packet: the last tm06_swing_packet_hour_bars hourly bars, the last tm06_swing_packet_minute_bars finished minutes and the picker's volume row, nothing after the wake")
+ok("long or flat" in pg["rules"][0] and all(v >= 0 for v in pg["answer_forms"][0]["weights"].values()) and any(r.startswith("bars:") for r in pg["rules"])
+   and sg.packet() == pg, "tm06 swing packet: the rules and the example say long or flat, say what the bars are, and the packet is kept as first shown")
+w1 = T6.plan_week(1, C6); wk0 = C6["tm06_plan"]["swing_weeks"][0]
+ok(w1[0] == wk0["start"] and dt.date.fromisoformat(w1[1]).weekday() == 6 and (dt.date.fromisoformat(w1[1]) - dt.date.fromisoformat(w1[0])).days == 6
+   and w1[2] == [f"{c}/USD" for c in wk0["coins"]], "tm06 swing --week: the plan week's first day to its Sunday, its coins")
+ok(T6.plan_month("2026-04", C6) == ("2026-04-01", "2026-04-30") and T6.plan_month("2026-11", C6) == ("2026-11-01", C6["tm06_plan"]["picker_end"]),
+   "tm06 picker --month: a calendar month clipped to the plan's dates")
 ok(sg.meta["long_only"] and len(sg.meta["wakes"]) == 24 and sg.max_gross == T6.plan(C6)["swing_max_gross"] if hasattr(sg, "max_gross") else len(sg.meta["wakes"]) == 24,
    "tm06 swing: hourly wakes on the coins given, long only, gross at most tm06_plan.swing_max_gross")
 bad = sg.submit({"weights": {"A/USD": 0.5, "C/USD": -0.5}, "why": "x"})
@@ -1264,6 +1298,83 @@ try:
 except SystemExit as e:
     caught = e.code
 ok(caught == 0 and os.path.getsize(FPATH) == fsize, "score_tm06: --check finds the same file, and nothing wrote to the fast tape")
+ok(r6["joined"]["picker"]["models"]["script"]["covered"] == ["2026-06"] and r6["joined"]["picker"]["verdict"] == "not finished" and r6["joined"]["swing"]["verdict"] == "not finished"
+   and "_draw_gains_pct" not in json.dumps(r6), "score_tm06 joined: a model short of the plan's months or weeks is not finished; the draw lists stay out of the file")
+# joined on made-up scores: months compound, twins compound draw by draw, the method counts and the verdict
+tp6 = C6["tm06_plan"]; mon6 = ST6.plan_months(C6); pp6v = C6["tm_weights_pass_percentile"]
+yb = lambda g: dict(stats=dict(final_gain_pct=g))
+def fakep(mdl, mo, g, tw):
+    return dict(part="P", model=mdl, session=f"{mdl}-{mo}", main_fee_bps=tp6["main_fee_bps"], window=dict(start=mo + "-01"),
+                by_fee={f"{tp6['main_fee_bps']:g}": dict(model=dict(final_gain_pct=g), yardsticks=dict(equal_all_held=yb(0.0), top_7d_rise=yb(0.5)), random_swap_twins=dict(_draw_gains_pct=tw))})
+def fakes(mdl, k, g, eqg):
+    w = tp6["swing_weeks"][k]
+    return dict(part="S", model=mdl, session=f"{mdl}-w{k}", main_fee_bps=tp6["main_fee_bps"], window=dict(start=w["start"]),
+                by_multiple={"1x": {f"{tp6['main_fee_bps']:g}": dict(model=dict(final_gain_pct=g), yardsticks={"equal_hold_5": yb(eqg), "hold_long_BTC/USD": yb(1.0)},
+                                                                         shuffled_order_twins=dict(_draw_gains_pct=[-1.0, 0.0, 1.0]))}})
+twd = [float(i) for i in range(-5, 5)]; fk = {}
+for i in range(6):
+    for mo in mon6:
+        x = fakep(f"m{i}", mo, 10.0 if i < tp6["method_min_models_above_median"] else -10.0, twd); fk[x["session"]] = x
+    for k in range(len(tp6["swing_weeks"])):
+        x = fakes(f"m{i}", k, 2.0 if k % 2 else -1.0, 3.0 if k % 2 else -4.0); fk[x["session"]] = x
+jj = ST6.joined(fk, C6); jp = jj["picker"]["models"]["m0"]
+ok(abs(jp["gain_pct"] - ((1.1 ** len(mon6)) - 1) * 100) < 1e-9 and abs(jp["yardsticks_gain_pct"]["top_7d_rise"] - ((1.005 ** len(mon6)) - 1) * 100) < 1e-9
+   and abs(jp["twin_median_gain_pct"] - SW.summary([ST6.chain([v] * len(mon6)) for v in twd])["median"]) < 1e-9 and jp["clears_all_marks"],
+   "score_tm06 joined: months compounded, yardsticks compounded, twins compounded draw by draw")
+ok(jj["picker"]["models_above_twin_median"] == tp6["method_min_models_above_median"] and jj["picker"]["verdict"] == "shown", "score_tm06 joined: enough models above the twin middle and clearing the marks is shown")
+js6 = jj["swing"]["models"]["m0"]; dr6 = js6["by_week_direction"]
+ok(dr6["rising"]["weeks"] == [2, 4] and dr6["falling"]["weeks"] == [1, 3] and abs(dr6["falling"]["gain_pct"] - ST6.chain([-1.0, -1.0])) < 1e-9 and dr6["falling"]["model_above"] and not dr6["rising"]["model_above"]
+   and abs(js6["hold_long_gain_pct"] - ST6.chain([1.0] * 4)) < 1e-9 and js6["covered"] == [1, 2, 3, 4], "score_tm06 joined: weeks split by the sign of their equal-hold gain; bitcoin held shown for scale")
+ok(jj["swing"]["verdict"] == "not shown" and jj["swing"]["models_above_twin_median"] == 6 and jj["swing"]["models_clearing_all_marks"] == 0,
+   "score_tm06 joined: above the shuffled middle but not above its pass percentile is not shown")
+del fk["m0-" + mon6[-1]]
+ok(ST6.joined(fk, C6)["picker"]["verdict"] == "not finished" and ST6.joined(fk, C6)["picker"]["models"]["m0"]["missing"] == [mon6[-1]], "score_tm06 joined: a missing month is not finished")
+# 9. hand-offs: one session answered by several agents in turn
+T6.full_config = lambda: spread6(real_fc())
+try:
+    T6.create_swing("f6_hand", "FH", "script", "x.md", "2026-06-09", "2026-06-10", ["A/USD", "C/USD"])
+    T6.create_swing("f6_hand2", "FH", "script", "x.md", "2026-06-09", "2026-06-10", ["A/USD", "C/USD"])
+finally:
+    T6.full_config = real_fc
+nh = int(C6["tm06_handoff_swing_wakes"]); n0 = T6.next_wake("f6_hand")
+ok(n0["agent"] == 1 and n0["first_step"] == 1 and n0["last_step"] == nh and n0["handoff_steps"] == list(range(nh + 1, 48, nh)) and n0["agents"] == 48 // nh and not n0["is_handoff"] and n0["method"] == "x.md",
+   "tm06 next: the first agent answers steps 1 to tm06_handoff_swing_wakes; the hand-off is at the next step")
+caught = False
+try:
+    T6.handoff("f6_hand", __file__)
+except AssertionError:
+    caught = True
+ok(caught, "tm06 handoff: refused where the next wake is not a hand-off point")
+hs = WW.open_session("f6_hand", tape=WT); hs2 = WW.open_session("f6_hand2", tape=WT)
+for _ in range(nh):
+    hs.packet(); hs.submit({"no_change": True, "why": "x"})
+for _ in range(nh + 1):
+    hs2.packet(); hs2.submit({"no_change": True, "why": "x"})
+n1 = T6.next_wake("f6_hand")
+ok(n1["is_handoff"] and n1["agent"] == 2 and n1["first_step"] == nh + 1 and n1["last_step"] == 2 * nh and n1["next_utc"].endswith(":00:00Z") and int(n1["next_utc"][11:13]) % nh == 0 and not n1["handoff_recorded"] and n1["ran_past"] == [],
+   "tm06 next: at the hand-off the next agent's steps, at the same clock time every day")
+ok(T6.next_wake("f6_hand2")["ran_past"] == [nh + 1], "tm06 next: an agent that answered past its last step without a recorded hand-off is reported")
+notes6 = Path(TMP) / "agent1_notes.md"; notes6.write_text("held A, watching C\n")
+rec6 = T6.handoff("f6_hand", str(notes6)); notes6.write_text("changed later\n"); fz = Path(rec6["frozen"])
+lines6 = (Path(os.environ["TM_RUNS"]) / "f6_hand" / "handoffs.jsonl").read_text().splitlines()
+ok(fz.read_text() == "held A, watching C\n" and not os.access(fz, os.W_OK) and rec6["agent"] == 2 and rec6["step"] == nh + 1 and len(lines6) == 1
+   and rec6["sha256"] == __import__("hashlib").sha256(fz.read_bytes()).hexdigest(), "tm06 handoff: a frozen read-only copy of the notes as they stood, recorded once in the session")
+caught = False
+try:
+    T6.handoff("f6_hand", str(notes6))
+except AssertionError:
+    caught = True
+bt = T6.brief_text(T6.next_wake("f6_hand"), 8799, "/tmp/agent2_notes.md")
+ok(caught and str(fz) in bt and "8799" in bt and f"steps {nh + 1} to {2 * nh} of 48" in bt and "x.md" in bt
+   and not __import__("re").search(r"\{[A-Z_]+\}", bt) and "long or flat" in bt, "tm06 brief: the swing brief with every placeholder filled; a second hand-off at the same step is refused")
+ok(T6.handoff_points(json.loads((Path(os.environ["TM_RUNS"]) / "f6_pick" / "session.json").read_text()), C6) == []
+   and T6.handoff_points(dict(json.loads((Path(os.environ["TM_RUNS"]) / "f6_pick" / "session.json").read_text()), tm06=dict(part="P", config=dict(tm06_handoff_picker_split_day=10))), C6) == [1]
+   and T6.handoff_points(dict(json.loads((Path(os.environ["TM_RUNS"]) / "f6_pick" / "session.json").read_text()), tm06=dict(part="P", config=dict(tm06_handoff_picker_split_day=None))), C6) == []
+   and T6.handoff_points(json.loads((Path(os.environ["TM_RUNS"]) / "f6_ctl" / "session.json").read_text()), C6) == [],
+   "tm06 next: a picker month splits at the first wake on or after tm06_handoff_picker_split_day (none when null, none inside a short window); the control never splits")
+SV.handle("GET", "/status", {"session": ["f6_hand"]}, None); SV.handle("GET", "/status", {"session": ["f6_wfast"]}, None)
+ok(SV.compact({"session": ["f6_hand"]}) and not SV.compact({"session": ["f6_wfast"]}) and not SV.compact({"session": ["nope"]}),
+   "server: compact JSON for TM06 picker and swing sessions only")
 os.environ.pop("TM_STORE", None)
 
 n_log = len(Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines())

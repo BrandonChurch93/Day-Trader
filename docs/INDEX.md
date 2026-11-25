@@ -135,6 +135,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/50_public_filers_evidence_checked.md` | Copying other public filers after the public date (fund holdings, large-stake filings, ARK, short sellers, lobbying and contracts, analysts) and drift after earnings: the reading with every source checked, and what it changes in the queue | CURRENT |
 | `docs/research/51_stock_swing_evidence_checked.md` | Buy-only methods for single stocks held weeks to months: the reading with every source checked, and eight real-money funds measured against SPY from our own feed | CURRENT |
 | `docs/research/53_prediction_markets_checked.md` | Prediction markets (Kalshi, Polymarket US, Interactive Brokers): fees, free history, AI forecasters against market prices, who makes money, what can be tested honestly; every source checked | CURRENT |
+| `docs/research/54_replay_13_year_or_method.md` | Replay 13: the owner's dip-and-peak method as a fixed rule on the hottest coins, each year 2020 to 2026. The dip rule was not paid, 2021 included; holding the hot five met its marks and still lost money in three years | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -208,6 +209,9 @@ Working papers.
 | `research_rig/fetch_13.py` | Plan 13 data: monthly coin lists and hourly Binance archives, stored outside the repo with a manifest | CURRENT |
 | `research_rig/score_13.py` | Plan 13 scorer: --selftest on made-up bars; --run once on the frozen plan, lock first | CURRENT |
 | `research_rig/test_13.py` | Plan 13 self-tests on made-up bars, 34 checks | CURRENT |
+| `research_rig/results_13.json` | Plan 13 result: each year's figures for both rules and every yardstick at three cost levels, flags, and the finding. Written once by score_13.py --run | CURRENT |
+| `research_rig/score_13.lock` | Plan 13: marks that the run was made; a second run is refused | CURRENT |
+| `research_rig/report_13.py` | Writes the plan 13 result page from results_13.json; reads no price | CURRENT |
 | `research_rig/PREREG_14_large_stock_momentum_DRAFT.md` | Draft plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
@@ -278,6 +282,7 @@ Working papers.
 | `timemachine/session.py`, `timemachine/server.py`, `timemachine/new_session.py` | One replay session, the local server a trader steps through, and the command that starts a session | CURRENT |
 | `timemachine/weights.py`, `timemachine/score_weights.py` | Weights sessions: the trader sets what share of the book to hold in each symbol at each wake. The session and book, and the scorer with its shuffle, random basket and hold twins | CURRENT |
 | `timemachine/TRADER_BRIEF_WEIGHTS.md` | What an AI trader is told at the start of a weights session | CURRENT |
+| `timemachine/TM06_LAUNCH_BRIEFS.md` | Plan TM06: the exact text pasted to each agent of a picker or swing session, with placeholders, and how hand-offs are made | CURRENT |
 | `timemachine/perp.py` | Perp mode for weights sessions (instrument perp): signed weights up to max_gross, hourly or 8 hour funding from stored files, per-symbol fee and half spread, maintenance and close-out on the minute low or high, stops and targets, wakes from 15 minutes to daily. Its scorer replays the session to the cent, then scores the same answers at each fee in `tm_perp_fee_levels_bps` with the random sign twin, the signs flipped yardstick and long and short holds | CURRENT |
 | `timemachine/attention.py` | Reads the attention store (Wikipedia page views, headline counts, Reddit counts per coin) as of a simulated time; serves only periods that were complete and published by then | CURRENT |
 | `timemachine/test_attention.py` | Checks that the attention reader never serves a count before its availability time and treats a missing row as unknown | CURRENT |

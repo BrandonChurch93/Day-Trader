@@ -535,6 +535,9 @@ def open_session(session_id, tape=None):
         if (json.loads((S.runs_dir() / session_id / "session.json").read_text()).get("tm06") or {}).get("part") == "P":
             from timemachine.tm06 import PickerSession  # plan TM06's daily coin picker: a perp session with its own packet and answer
             return PickerSession(session_id, tape=tape)
+        if (json.loads((S.runs_dir() / session_id / "session.json").read_text()).get("tm06") or {}).get("part") == "S":
+            from timemachine.tm06 import SwingSession  # plan TM06's hourly swing session: more bars and a volume row in the packet
+            return SwingSession(session_id, tape=tape)
         from timemachine.perp import PSession
         return PSession(session_id, tape=tape)
     return WSession(session_id, tape=tape) if is_weights(session_id) else S.Session(session_id, tape=tape)
