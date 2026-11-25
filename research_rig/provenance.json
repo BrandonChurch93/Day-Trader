@@ -3,7 +3,7 @@
  "python_when_recorded": "3.14.8",
  "packages": "research_rig/requirements.txt",
  "commit_fields": "short hash and commit time. 'first_stored_in_commit' is the commit that added the file. The code a run used is taken to be the code at that commit; that is STATED by research, and nothing in this record can show it.",
- "not_in_this_record": "dashboard/data.json and dashboard/curves_cache.json, which are not committed. export_dashboard.py --resimulate replays five rules on raw prices that include held-back dates to draw their curves. See README.md, 'How each stored output was made'.",
+ "not_in_this_record": "dashboard/data.json and dashboard/curves_cache.json, which are not committed. export_dashboard.py --resimulate replays five stored runs, of three rules, on raw prices that include held-back dates to draw their curves. See README.md, 'How each stored output was made'.",
  "inputs": {
   "data/bitstamp_BTCUSD.csv": {
    "bytes": 322629,
