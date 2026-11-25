@@ -1,5 +1,7 @@
 # Replay 01: slow trend rules on bitcoin and ether, with real fees
 
+Correction, 2026-11-25: two separate code audits found faults in how this run measured its results. The verdict tables below are the first run and are kept as the record. The corrected verdicts are in `docs/research/16_rig_audit.md`. Read that before using any number here.
+
 Run on 2026-11-25 (UTC), the evening of 2026-11-24 in Idaho. This is the first result from the research rig in `research_rig/`.
 
 Status: research evidence. Proposed by research. Nothing in this file is an owner decision. The rig is a research tool. It is not the product and no product code was written.

@@ -48,13 +48,20 @@ def pbo():
     t = "| Run | Venue cost | Coin | First run | Rerun (ties count as overfit, the verdict) | Ties count as half | Ties count as not overfit | Share of splits that tie | Rerun with the latest days dropped instead |\n|---|---|---|---|---|---|---|---|---|\n"
     for x in c["pbo"]:
         if x["run"] in ("R01", "X2", "DIAG") and x["asset"] == "BTCUSD":
-            t += f"| {x['run']} | {x['venue']} | {AN[x['asset']]} | {f3(x['first'])} | {x['rerun']:.3f} | {x['ties_half']:.3f} | {x['ties_not_overfit']:.3f} | {x['tie_share']*100:.1f}% | {x['latest_days_dropped']:.3f} |\n"
+            t += f"| {x['run']} | {x['venue']} | {AN[x['asset']]} | {f4(x['first'])} | {x['rerun']:.4f} | {x['ties_half']:.4f} | {x['ties_not_overfit']:.4f} | {x['tie_share']*100:.1f}% | {x['latest_days_dropped']:.4f} |\n"
     return t
+def price_gap():
+    import pandas as pd
+    b = pd.read_csv("data/bitstamp_BTCUSD.csv", parse_dates=["date"]).set_index("date"); k = pd.read_csv("data/krakenfull_BTCUSD.csv", parse_dates=["date"]).set_index("date")
+    j = b.join(k, lsuffix="_b", rsuffix="_k", how="inner"); j = j[(j.index >= "2014-05-01") & (j.index <= "2026-11-24")]; d = (j.close_k / j.close_b - 1).abs() * 1e4
+    g = {"days": int(len(d)), "median_bps_2014_2017": float(d[d.index.year <= 2017].median()), "median_bps_2020_on": float(d[d.index.year >= 2020].median()), "max_bps": float(d.max())}
+    json.dump(g, open("venue_price_gap.json", "w"), indent=1); return g
+PG = price_gap()
 def stab():
     d = ps["dates"]; le = [x["pbo_le0"] for x in d]; n_pass = sum(x < TH["backtest_max_pbo"] for x in le)
     t = f"- Start date moved one month at a time from {d[0]['start']} to {d[-1]['start']} ({len(d)} start dates, Bitstamp bitcoin, Alpaca cost, first-run code): the estimate ran from {min(le):.3f} to {max(le):.3f}, middle value {st.median(le):.3f}. It was under the bar on {n_pass} of {len(d)} start dates. The one that passed is the start date the plan used.\n"
     for s0, bl in ps["blocks"].items():
-        ks = sorted(bl, key=lambda z: int(z)); vals = [bl[k]["pbo_le0"] if isinstance(bl[k], dict) else bl[k] for k in ks]
+        bl = sorted(bl, key=lambda z: z["S"]); ks = [str(z["S"]) for z in bl]; vals = [z["pbo_le0"] for z in bl]
         t += f"- Number of blocks changed ({', '.join(ks)}) with start {s0}: the estimate ran from {min(vals):.3f} to {max(vals):.3f}, under the bar for {sum(x < TH['backtest_max_pbo'] for x in vals)} of {len(vals)} block counts.\n"
     return t
 def noise():
@@ -74,6 +81,8 @@ def r03():
 r03_pass = sum(x["marks"]["passed"] for vn in V for a in AN for x in v["R03"]["venues"][vn][a]["rules"].values()); r03_n = sum(1 for vn in V for a in AN for x in v["R03"]["venues"][vn][a]["rules"])
 r03_lose = sum(x["all"]["cagr"] < 0 for a in AN for x in v["R03"]["venues"]["Alpaca"][a]["rules"].values()); r03_k = sum(1 for a in AN for x in v["R03"]["venues"]["Alpaca"][a]["rules"])
 kb = next(x for x in c["pbo"] if x["run"] == "X2" and x["venue"] == "Binance.US" and x["asset"] == "BTCUSD")
+DG = next(x["rerun"] for x in c["pbo"] if x["run"] == "DIAG" and x["venue"] == "Binance.US")
+f4 = lambda x: "" if x is None else f"{x:.4f}"
 n9 = nz["cases"]["9 rules, correlation 0.8"]["pbo"]
 bl = lambda L: ", ".join(f"{x['rule']}" for x in L) or "none"
 byv = lambda L: "; ".join(f"{vn} cost: {bl([x for x in L if x['venue']==vn])}" for vn in V if any(x['venue']==vn for x in L)) or "none"
@@ -91,7 +100,7 @@ Every number below is MEASURED by `research_rig/run_v2.py` and read from its out
 - I wrote down every fix and pushed it before rerunning anything (`research_rig/AMENDMENT_2026-11-25_audit_fixes.md`). No rule, cost, slice or pass mark was changed.
 - After the fixes, rules that pass on both price histories: {byv(BOTH)}. In the first run that list was: {byv(BOTH0)}.
 - So the fixes turned four failures into passes at the cheapest venue only. That is a result found after the fact. It is a reason to test in the practice account, not a result to rely on.
-- The pass sits on a knife edge. The overfitting estimate for bitcoin on Kraken prices at Binance.US cost is {kb['rerun']:.4f} against a bar of {TH['backtest_max_pbo']} (`backtest_max_pbo`). With the latest days dropped instead of the earliest it is {kb['latest_days_dropped']:.4f}, which fails.
+- The pass sits on a knife edge. The overfitting estimate for bitcoin on Kraken prices at Binance.US cost is {kb['rerun']:.4f} against a bar of {TH['backtest_max_pbo']} (`backtest_max_pbo`). With the latest days dropped instead of the earliest it is {kb['latest_days_dropped']:.4f}, which fails. On Bitstamp prices started on the same day as the Kraken history it is {DG:.4f}, which fails.
 - Mark 4 itself is too jumpy to trust as a yes or no. On made-up data with no edge at all, {n9['share_below_bar']*100:.0f}% of samples still came in under the bar. Moving the start date by one month flips the first run's result.
 - At every other venue cost, including Alpaca and Kraken, no rule passes on both histories. Ether passes nowhere.
 - Day trading rules on hourly bars: {r03_pass} of {r03_n} rule, coin and venue combinations pass after the fixes. {r03_lose} of {r03_k} lose money over the whole sample at Alpaca cost.
@@ -175,7 +184,7 @@ The [paper](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf) says "belo
 MEASURED by auditor B with the first-run code (`audit/pbo_stability.json`):
 
 {stab()}
-MEASURED by me with the rerun code on made-up data where no rule has any edge (`research_rig/noise_pbo.py`, {nz['samples']} samples each, {nz['blocks']} blocks). A sound gate would almost never pass these:
+MEASURED by me with the rerun code on made-up data where no rule has any edge (`research_rig/noise_pbo.py`, {nz['samples']} samples each, {nz['blocks']} blocks). Marks 3 and 5 are built to let no-edge data through about 1 time in 20. Mark 4 at this bar lets it through more often than that:
 
 {noise()}
 What this means:
@@ -184,7 +193,7 @@ What this means:
 - The first run's pass on Bitstamp prices depended on the start date the plan happened to use.
 - The bar has not been changed. Changing how mark 4 is measured is a decision for the owner, and it should be made before the next test is run, not after.
 
-One more sign of the same problem. The two price histories cover the same market. Started on the same day (2014-05-01) and charged Binance.US cost, the estimate is {kb['rerun']:.3f} on Kraken prices and {next(x['rerun'] for x in c['pbo'] if x['run']=='DIAG' and x['venue']=='Binance.US'):.3f} on Bitstamp prices. One passes and one fails. The Bitstamp pass in replay 01 comes from starting in 2013, before the Kraken history begins.
+One more sign of the same problem. The two price histories cover the same market. Started on the same day (2014-05-01) and charged Binance.US cost, the estimate is {kb['rerun']:.3f} on Kraken prices and {next(x['rerun'] for x in c['pbo'] if x['run']=='DIAG' and x['venue']=='Binance.US'):.3f} on Bitstamp prices. One passes and one fails. The Bitstamp pass in replay 01 comes from starting in 2013, before the Kraken history begins. The two venues' daily closing prices were not the same in the early years: the typical gap was {PG['median_bps_2014_2017']:.0f} bps in 2014 to 2017 and {PG['median_bps_2020_on']:.1f} bps from 2020 on (`research_rig/venue_price_gap.json`). That is one likely reason the two answers differ. Whether it is the whole reason is UNKNOWN.
 
 Proposal, not adopted: measure mark 4 as the middle value over a fixed set of start dates and block counts, written down before the run, and count ties as half. This costs nothing and removes the knife edge.
 

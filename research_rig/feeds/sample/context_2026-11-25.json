@@ -1,0 +1,58 @@
+{
+  "run_at_utc": "2026-11-25T08:04:00.773233+00:00",
+  "sample_note": "Trimmed to public government summary values and feed statuses. No restricted-provider prices, series, or raw filings.",
+  "feeds": {
+    "treasury_bills": {
+      "status": "partial",
+      "fields": {
+        "monthly_outstanding_bill_average": {
+          "value": 4.014,
+          "source_url": "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates?filter=security_desc%3Aeq%3ATreasury+Bills&sort=-record_date&page%5Bsize%5D=2",
+          "fetch_time_utc": "2026-11-25T08:04:16.260807+00:00",
+          "data_timestamp": "2026-10-31",
+          "stale": false,
+          "unit": "percent",
+          "note": "Monthly average on outstanding bills, not a current yield or a rate for a particular term."
+        }
+      }
+    },
+    "sec_form4": {
+      "status": "ok",
+      "fields": {
+        "filings_scanned": {
+          "value": 12,
+          "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=40",
+          "fetch_time_utc": "2026-11-25T08:04:04.258153+00:00",
+          "data_timestamp": "2026-11-24T21:56:42-05:00",
+          "stale": false
+        },
+        "filings_with_purchase_candidates": {
+          "value": 0,
+          "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=40",
+          "fetch_time_utc": "2026-11-25T08:04:04.258153+00:00",
+          "data_timestamp": "2026-11-24T21:56:42-05:00",
+          "stale": false
+        }
+      }
+    },
+    "polymarket_us": {
+      "status": "ok",
+      "fields": {
+        "next_fed_decision_date": {
+          "value": "2026-12-09",
+          "source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+          "fetch_time_utc": "2026-11-25T08:04:00.876180+00:00",
+          "data_timestamp": "2026-11-18",
+          "stale": false
+        }
+      }
+    },
+    "coin_metrics": {"status": "ok"},
+    "stablecoins": {"status": "ok"},
+    "cboe_vix": {"status": "disabled_terms"},
+    "kraken_futures": {"status": "disabled_terms"},
+    "finra_regsho": {"status": "disabled_terms"},
+    "kalshi": {"status": "disabled_terms"},
+    "polymarket_global": {"status": "disabled_terms"}
+  }
+}
