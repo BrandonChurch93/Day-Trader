@@ -57,6 +57,12 @@ for f in ["README.md", "AGENTS.md", "docs/STATUS.md", "docs/INDEX.md", "docs/GLO
         if any(os.path.exists(c) for c in cands): continue
         if any(subprocess.run(["git", "check-ignore", "-q", x]).returncode == 0 for c in cands for x in {c, c.rstrip("/")}): continue  # a local-only path that git ignores, such as research_rig/data/
         bad.append(f"{f} names a path that does not exist: {p}")
+try:
+    import yaml
+    for _k, _v in yaml.safe_load(open("config/thresholds.yaml")).items():
+        if not isinstance(_v, dict) or "value" not in _v: bad.append(f"config/thresholds.yaml: key {_k} has no value field")
+except ImportError: pass
+except Exception as e: bad.append("config/thresholds.yaml does not parse as YAML: " + " ".join(str(e).split())[:200])
 keys = set(re.findall(r"^([a-z0-9_]+):", open("config/thresholds.yaml").read(), re.M))
 pref = ("backtest_", "replay_", "paper_", "live_", "moonshot_", "api_model_", "cost_model_", "shadow_", "intraday_trend_", "research_run_", "scale_live_", "max_kelly", "drawdown_derisk")
 for f in glob.glob("docs/**/*.md", recursive=True) + glob.glob("research_rig/*.md"):

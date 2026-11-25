@@ -717,7 +717,7 @@ tm_perp_packet_bars:
 tm_crypto_half_spread_bps_default:
   value: 25
   status: builder
-  note: PLACEHOLDER until measured. Half spread in basis points for a coin that tm_crypto_half_spread_bps_by_coin does not name, on perp sessions. Order: a symbol named in tm_perp_half_spread_bps, else its coin in tm_crypto_half_spread_bps_by_coin, else this key, else the tm_perp_half_spread_bps default. Sessions made before this key existed keep the old order. Set at the upper middle of the measured coins; the helper measuring the fast tape coins will replace it.
+  note: PLACEHOLDER until measured. Half spread in basis points for a coin that tm_crypto_half_spread_bps_by_coin does not name, on perp sessions. In order, a symbol named in tm_perp_half_spread_bps, else its coin in tm_crypto_half_spread_bps_by_coin, else this key, else the tm_perp_half_spread_bps default. Sessions made before this key existed keep the old order. Set at the upper middle of the measured coins; the helper measuring the fast tape coins will replace it.
   source: timemachine/perp.py
 tm_fast_funding_venue:
   value: {default: kraken_futures_pf}
@@ -797,7 +797,7 @@ tm06_plan:
   source: timemachine/PLAN_TM06_hot_coin_swing.md
 
 replay_12_plan:
-  value: {design_filed_from: "2019-01-01", design_filed_to: "2022-12-31", heldback_filed_from: "2023-01-01", holds_days: [21, 63, 126], main_hold_days: 63, cost_bps_per_side: 10, large_buy_min_usd: 50001, proven_lookback_days: 1095, proven_min_events: 10, proven_top_members: 10, proven_refresh_days: 63, bootstrap_draws: 5000, bootstrap_seed: 12, min_events: 200, random_date_window_days: 90, random_date_draws: 200, new_trials: 9}
+  value: {design_filed_from: "2019-01-01", design_filed_to: "2022-12-31", heldback_filed_from: "2023-01-01", holds_days: [21, 63, 126], main_hold_days: 63, cost_bps_per_side: 10, large_buy_min_usd: 50001, proven_lookback_days: 1095, proven_min_events: 10, proven_top_members: 10, proven_refresh_days: 63, bootstrap_draws: 5000, bootstrap_seed: 12, min_events: 200, random_date_window_days: 90, random_date_draws: 200, late_entry_trading_days: 5, late_entry_calendar_days: 30, new_trials: 9}
   status: builder
-  note: Draft plan 12, following disclosed stock buys of members of Congress. Filed dates split the record into a design half and a held-back half. holds_days are trading days from the entry open. large_buy_min_usd is the low end of the reported value range. proven_* define the point-in-time list of members whose earlier finished buys did best. new_trials is 3 groups times 3 holds. Draft until frozen.
+  note: Draft plan 12, following disclosed stock buys of members of Congress. Filed dates split the record into a design half and a held-back half. holds_days are trading days from the entry open. large_buy_min_usd is the low end of the reported value range. proven_* define the point-in-time list of members whose earlier finished buys did best. late_entry_* are the later entries used because the filing day is not proof of the day the public could see it. new_trials is 3 groups times 3 holds. Draft until frozen.
   source: research_rig/PREREG_12_congress_followers_DRAFT.md

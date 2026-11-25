@@ -16,6 +16,7 @@ The owner, 2026-11-25 (`docs/DECISIONS.md`): people say you cannot go wrong foll
 
 - Trades: every Periodic Transaction Report of both chambers filed from `replay_12_plan.design_filed_from` on, 85,291 rows of stock and stock-option trades, each with the day of the trade and the day its first version was filed. Kept on the research machine, not in the repo. The helper that built it computed no return. A seeded sample of rows is checked against the original filings and the match rate is reported.
 - One event is one member buying one stock in filings of one day, whatever the number of rows. Stock purchases only. Options are left out of the judged groups because the record does not always say what kind.
+- The filing day is the day the report was received, as the official record gives it. It is not proof of the hour the public could first read it, and paper filings can appear later. So the main entry is the first trading day after the filing day, and every result is also worked out with the entry `replay_12_plan.late_entry_trading_days` trading days later and `replay_12_plan.late_entry_calendar_days` calendar days later.
 - Prices: daily bars adjusted for splits and dividends. Entry is the open of the first trading day after the filing day. Exit is the close `replay_12_plan.holds_days` trading days later, counting the entry day as day 1.
 - Costs: `replay_12_plan.cost_bps_per_side` basis points a side.
 - A stock with no price history in our feed (many are companies that were later taken over or went under) cannot be traded here. The count and share of such events is reported next to every result. This flatters the buys, and it flatters each yardstick that uses the same stocks by the same amount.
@@ -46,12 +47,13 @@ Yardsticks:
 
 ## What would count, fixed now
 
-On the held-back half, the chosen set-up passes when all four hold:
+On the held-back half, the chosen set-up passes when all five hold:
 
 1. Its portfolio ends above SPY over the same days, after costs.
 2. Its monthly gain less SPY's, resampled by whole months `replay_12_plan.bootstrap_draws` times, has its 5th percentile above zero.
 3. Its portfolio ends above the same portfolio built from sales, yardstick (b).
 4. It has at least `replay_12_plan.min_events` purchase events.
+5. With the entry `replay_12_plan.late_entry_trading_days` trading days later, its portfolio still ends above SPY. A result that needs the very first day is one a follower may not be able to get.
 
 A pass means worth running on the practice desk with pretend money as a slow sleeve. It does not mean it makes money. Reported and not judged: the other eight set-ups, yardstick (c), each year apart, the by-stock portfolio, and the result with the busiest member left out.
 
