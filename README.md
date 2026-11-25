@@ -1,6 +1,6 @@
 # Day-Trader
 
-An AI-assisted trading system for US stocks and crypto. Status: research complete, nothing built, no accounts or keys connected. Last updated 2026-11-24.
+An AI-assisted trading system for US stocks and crypto. Status: in research. The product is not built. A small research rig exists for testing ideas on past prices. No accounts or keys connected. Last updated 2026-11-25.
 
 ## Read in this order
 
@@ -8,7 +8,7 @@ An AI-assisted trading system for US stocks and crypto. Status: research complet
 2. `docs/playbook/00_START_HERE.md` - the whole picture in about two pages.
 3. `docs/quality/00_READ_FIRST.md` - the owner's quality bar and build method.
 4. `docs/playbook/01..06` - condensed decisions per topic. This is the layer agents load by default.
-5. `docs/research/01..13` - full reports with every source. Open only when a playbook line points there. 09 is brokers and venues, 10 is historical data and practice accounts, 11 is the AI trader test design, 12 is the first replay results, 13 is the high-risk sleeve evidence.
+5. `docs/research/01..14` - full reports with every source. Open only when a playbook line points there. 09 is brokers and venues, 10 is historical data and practice accounts, 11 is the AI trader test design, 12 is the first replay results, 13 is the high-risk sleeve evidence, 14 is the first pilot of AI models making the calls.
 6. `docs/decisions/` - dated record of choices, the audits of the playbook and the source checks.
 
 ## What the evidence says, in five lines
@@ -26,6 +26,7 @@ Day-Trader/
 ├── AGENTS.md              rules for agents
 ├── README.md
 ├── config/                every threshold and owner number, once
+├── research_rig/          research tool for replays on past prices. Not the product
 └── docs/
     ├── playbook/          condensed, decision-only (default reading)
     ├── quality/           the owner's quality bar and build method

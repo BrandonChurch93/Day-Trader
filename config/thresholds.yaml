@@ -48,6 +48,24 @@ backtest_min_breakeven_cost_multiple:
   note: A strategy is rejected if its break-even cost is under this multiple of modeled cost.
   source: docs/playbook/01_stocks_what_works.md
 
+replay_max_drop_ratio_vs_hold:
+  value: 0.6
+  status: proposed
+  note: Pass mark 1 of a replay. On the held-back slice the rule's largest drop may be at most this share of the largest drop from holding. A house number first used in research_rig/PREREG_01_daily_crypto_trend.md.
+  source: docs/decisions/0005-overnight-research-2026-11-25.md
+
+replay_min_deflated_sharpe:
+  value: 0.95
+  status: proposed
+  note: Pass mark 3 of a replay. Deflated Sharpe ratio with every trial in the ledger counted. A house number.
+  source: docs/decisions/0005-overnight-research-2026-11-25.md
+
+replay_min_shuffle_percentile:
+  value: 0.95
+  status: proposed
+  note: Pass mark 5 of a replay. The rule must beat this share of its own in and out spells put in random order. A house number.
+  source: docs/decisions/0005-overnight-research-2026-11-25.md
+
 cost_model_bps_per_side_liquid_etf:
   value: [2, 5]
   status: proposed
