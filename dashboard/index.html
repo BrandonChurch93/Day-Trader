@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day Trader - Trades and results</title>
+  <meta name="description" content="Read-only view of Day Trader accounts, test results and trades.">
+  <script>
+    (function () {
+      var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    })();
+  </script>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/chart.umd.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <h1>Day Trader</h1>
+        <p class="subtitle">Trades and results</p>
+      </div>
+      <button type="button" class="btn theme-btn" id="theme-toggle" aria-label="Switch to dark theme">Dark theme</button>
+    </div>
+    <nav class="sectionnav" aria-label="Sections">
+      <a href="#status">Where things stand</a>
+      <a href="#tests">Tests</a>
+      <a href="#compare">Rule against holding</a>
+      <a href="#trades">Trades</a>
+      <a href="#waiting">Waiting on you</a>
+      <a href="#words">Words</a>
+    </nav>
+  </header>
+
+  <main id="main" class="wrap">
+    <p class="freshness" id="freshness">Loading data</p>
+    <div id="load-error" class="error-box" hidden></div>
+
+    <section id="status" class="section" aria-labelledby="h-status">
+      <h2 id="h-status">Where things stand</h2>
+      <div class="headline" id="headline"></div>
+      <div class="accounts" id="accounts"></div>
+      <h3 class="h3 status-title">Test results so far</h3>
+      <p class="section-note" id="status-note"></p>
+      <div class="status-rows" id="status-rows"></div>
+    </section>
+
+    <section id="tests" class="section" aria-labelledby="h-tests">
+      <h2 id="h-tests">What the tests say</h2>
+      <div class="tests" id="tests-list"></div>
+    </section>
+
+    <section id="compare" class="section" aria-labelledby="h-compare">
+      <h2 id="h-compare">Rule against just holding</h2>
+      <p class="section-note">Each comparison below is a past-price test, not real money.</p>
+      <div class="section-note" id="compare-notes"></div>
+      <div class="controls">
+        <label class="field">
+          <span class="field-label">Comparison</span>
+          <select id="series-select"></select>
+        </label>
+      </div>
+      <div class="card">
+        <div class="series-status" id="series-status"></div>
+        <p class="series-note" id="series-note"></p>
+        <p class="meta" id="series-meta"></p>
+        <div class="figs">
+          <div class="figs-block">
+            <h3 class="h3" id="figs-full-title">Whole period</h3>
+            <div class="tablewrap"><table class="figtable" id="figs-full"></table></div>
+          </div>
+          <div class="figs-block">
+            <h3 class="h3">The rule only</h3>
+            <dl class="rulefacts" id="rule-facts"></dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card card">
+        <div class="chart-head">
+          <h3 class="h3">Account value, starting at $1</h3>
+          <div class="seg" role="group" aria-label="Chart scale">
+            <button type="button" class="seg-btn" data-scale="log" aria-pressed="true">Log scale</button>
+            <button type="button" class="seg-btn" data-scale="linear" aria-pressed="false">Linear scale</button>
+          </div>
+        </div>
+        <p class="testlabel">Past-price test. Not real money.</p>
+        <div class="legend" aria-hidden="true">
+          <span class="key key-rule">Rule</span>
+          <span class="key key-hold">Just holding (dashed)</span>
+        </div>
+        <div class="chartbox"><canvas id="chart-equity" role="img" aria-label="Account value of the rule and of just holding"></canvas></div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card card">
+          <h3 class="h3">Fall from the last high point</h3>
+          <p class="testlabel">Past-price test. Not real money.</p>
+          <div class="legend" aria-hidden="true">
+            <span class="key key-rule">Rule</span>
+            <span class="key key-hold">Just holding (dashed)</span>
+          </div>
+          <div class="chartbox"><canvas id="chart-drawdown" role="img" aria-label="Fall from the last high point for the rule and for just holding"></canvas></div>
+        </div>
+        <div class="chart-card card">
+          <h3 class="h3">Year by year</h3>
+          <p class="testlabel">Past-price test. Not real money.</p>
+          <div class="legend" aria-hidden="true">
+            <span class="key key-rule key-bar">Rule</span>
+            <span class="key key-hold key-bar">Just holding</span>
+          </div>
+          <div class="chartbox"><canvas id="chart-yearly" role="img" aria-label="Return each year for the rule and for just holding"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="h3" id="figs-since-title">Since 2023</h3>
+        <p class="testlabel">Past-price test. Not real money.</p>
+        <div class="tablewrap"><table class="figtable" id="figs-since"></table></div>
+      </div>
+    </section>
+
+    <section id="trades" class="section" aria-labelledby="h-trades">
+      <h2 id="h-trades">Trades</h2>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Which trades" id="trade-filter"></div>
+        <label class="field" id="trade-series-field">
+          <span class="field-label">Comparison</span>
+          <select id="trade-series-select"></select>
+        </label>
+      </div>
+      <div class="card">
+        <div id="trade-body"></div>
+      </div>
+    </section>
+
+    <section id="waiting" class="section" aria-labelledby="h-waiting">
+      <h2 id="h-waiting">Waiting on you</h2>
+      <div class="card">
+        <ol class="waitlist" id="waitlist"></ol>
+        <p class="waitlink" id="waitlink"></p>
+      </div>
+    </section>
+
+    <section id="words" class="section" aria-labelledby="h-words">
+      <h2 id="h-words">Words</h2>
+      <div class="card">
+        <dl class="glossary" id="glossary"></dl>
+      </div>
+    </section>
+  </main>
+  <footer class="wrap foot">
+    <p>This screen only reads data.json. It does not place or change any trade.</p>
+  </footer>
+</body>
+</html>
