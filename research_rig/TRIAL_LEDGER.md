@@ -54,3 +54,4 @@ Scored a different way from rule trials and not in the deflated Sharpe count. Ev
 | # | Logged (UTC) | Plan | Trials | Status |
 |---|---|---|---|---|
 | TM01-a to TM01-f | 2026-11-25 15:14 | `timemachine/PLAN_TM01_crypto_price_only.md` | Six models on card `practice/traders/B01_crypto_swing_price_only.md`, crypto prices only, five monthly sessions each (July to November 2026), plus a hold and 20 random twins per session. Pass mark in the plan | logged before any AI session was started. October 2026 runs first |
+| TM02-a to TM02-f | 2026-11-25 15:33 | `timemachine/PLAN_TM02_crypto_with_news.md` | The same six models on card `practice/traders/B02_crypto_swing_with_news.md`: the fixed lines of B01 plus dated crypto headlines, five monthly sessions each (July to November 2026), a hold and 20 random twins per session. Pass mark and the test for "did the news help" in the plan | logged before any session of this plan was made |
