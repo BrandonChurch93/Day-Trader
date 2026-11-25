@@ -2,7 +2,7 @@
 
 Made by `timemachine/score_tm03.py` from `timemachine/results_tm03.json`. Do not edit by hand. Pretend money. The plan, with its pass mark fixed before any session ran, is `timemachine/PLAN_TM03_bitcoin_dial.md`.
 
-Sessions in: 34 of 48 are finished and scored here. 11 are running and 3 are not started; those are left out until they finish.
+Sessions in: 39 of 48 are finished and scored here. 6 are running and 3 are not started; those are left out until they finish.
 
 ## What was asked
 
@@ -37,12 +37,12 @@ MEASURED, pretend money, months finished so far, added up. "Percentile" is the s
 |---|---|---|---|---|---|---|---|---|
 | Claude Opus 5.5 | 8 of 8 | $124.30 | -$64.31 | $140.40 | 37.7 | yes | no | passes line 1 only |
 | GPT-6.2 Sol | 8 of 8 | $126.17 | -$64.31 | $159.02 | 26.8 | yes | no | passes line 1 only |
-| Gemini Neon | 6 of 8 | $116.22 | $205.83 | $257.18 | 1.1 | not finished (so far no) | not finished (so far no) | not finished |
+| Gemini Neon | 8 of 8 | $25.05 | -$64.31 | $130.01 | 9.0 | yes | no | passes line 1 only |
 | Claude Sonnet 5.5 | 8 of 8 | $138.35 | -$64.31 | $156.98 | 39.4 | yes | no | passes line 1 only |
-| Kimi K3 | 0 of 8 | n/a | n/a | n/a | n/a | not finished | not finished | not finished |
+| Kimi K3 | 3 of 8 | $210.45 | $375.04 | $308.98 | 0.9 | not finished (so far no) | not finished (so far no) | not finished |
 | Grok 4.7 | 4 of 8 | $143.26 | $167.81 | $253.24 | 0.1 | not finished (so far no) | not finished (so far no) | not finished |
 
-Method: not finished. So far 3 of 6 models are above holding and 0 of 6 are above the pass percentile of their shuffled stretches, on the months each has finished.
+Method: not finished. So far 4 of 6 models are above holding and 0 of 6 are above the pass percentile of their shuffled stretches, on the months each has finished.
 
 ## Each model, month by month
 
@@ -79,13 +79,13 @@ MEASURED. Gain and hold are in dollars on the month's account. "Shuffled stretch
 | Month | Gain | Hold | Shuffled stretches | Day by day (not judged) | Change days (not judged) | Average share held | Changes | Costs | Largest drop | Hold's largest drop |
 |---|---|---|---|---|---|---|---|---|---|---|
 | April 2026 | $83.01 | $114.43 | 0.0 (of 6 orders) | 0.0 | 0.0 | 0.98 | 2 | $7.09 | -4.2% | -4.2% |
-| May 2026 | running | | | | | | | | | |
+| May 2026 | -$15.30 | -$39.03 | 78.8 (of 720 orders) | 96.2 | 69.3 | 0.63 | 5 | $9.83 | -8.3% | -10.7% |
 | June 2026 | -$115.73 | -$207.22 | 39.0 | 62.8 | 44.5 | 0.42 | 10 | $14.00 | -11.6% | -20.7% |
 | July 2026 | -$2.66 | $69.81 | 1.1 | 5.6 | 0.9 | 0.72 | 10 | $12.32 | -5.1% | -5.5% |
 | August 2026 | $220.30 | $245.33 | 15.1 (of 24 orders) | 70.7 | 49.1 | 0.91 | 3 | $8.67 | -3.3% | -3.2% |
 | September 2026 | $23.63 | $59.89 | 15.8 (of 120 orders) | 40.9 | 31.8 | 0.85 | 4 | $8.54 | -6.6% | -7.0% |
 | October 2026 | -$92.33 | -$76.42 | 2.8 | 38.2 | 4.1 | 0.64 | 7 | $12.76 | -12.1% | -10.8% |
-| November 1 to 24, 2026 | running | | | | | | | | | |
+| November 1 to 24, 2026 | -$75.87 | -$231.10 | 58.7 | 73.4 | 75.7 | 0.30 | 8 | $13.31 | -8.4% | -26.9% |
 
 ### Claude Sonnet 5.5
 
@@ -107,9 +107,9 @@ MEASURED. Gain and hold are in dollars on the month's account. "Shuffled stretch
 | April 2026 | not started | | | | | | | | | |
 | May 2026 | not started | | | | | | | | | |
 | June 2026 | running | | | | | | | | | |
-| July 2026 | running | | | | | | | | | |
-| August 2026 | running | | | | | | | | | |
-| September 2026 | running | | | | | | | | | |
+| July 2026 | $22.63 | $69.81 | 6.8 | 34.0 | 15.4 | 0.59 | 8 | $7.75 | -3.9% | -5.5% |
+| August 2026 | $202.85 | $245.33 | 10.4 (of 720 orders) | 83.0 | 93.9 | 0.81 | 5 | $8.95 | -3.1% | -3.2% |
+| September 2026 | -$15.02 | $59.89 | 5.3 (of 120 orders) | 8.9 | 4.0 | 0.82 | 4 | $8.20 | -6.7% | -7.0% |
 | October 2026 | running | | | | | | | | | |
 | November 1 to 24, 2026 | not started | | | | | | | | | |
 
@@ -138,19 +138,23 @@ MEASURED, months finished so far. The month is cut where the asked share changed
 | GPT-6.2 Sol | both | 18 | 93 | $33.61 | $152.14 |
 | GPT-6.2 Sol | opening | 8 | 54 | -$4.12 | -$27.49 |
 | GPT-6.2 Sol | price | 16 | 91 | $96.68 | $50.85 |
-| Gemini Neon | both | 32 | 125 | $248.54 | -$93.56 |
-| Gemini Neon | opening | 5 | 45 | -$57.34 | -$16.92 |
-| Gemini Neon | price | 4 | 13 | -$74.98 | $7.24 |
+| Gemini Neon | both | 43 | 161 | $205.76 | $72.61 |
+| Gemini Neon | opening | 7 | 60 | -$35.17 | -$23.97 |
+| Gemini Neon | price | 6 | 17 | -$145.55 | $26.26 |
 | Claude Sonnet 5.5 | both | 22 | 123 | $210.43 | $199.24 |
 | Claude Sonnet 5.5 | opening | 7 | 92 | -$57.17 | -$24.66 |
 | Claude Sonnet 5.5 | price | 3 | 23 | -$14.91 | $7.75 |
+| Kimi K3 | both | 10 | 45 | $26.18 | -$108.11 |
+| Kimi K3 | news | 1 | 3 | $2.11 | -$9.23 |
+| Kimi K3 | opening | 2 | 30 | $128.06 | -$7.32 |
+| Kimi K3 | price | 6 | 14 | $54.12 | -$53.49 |
 | Grok 4.7 | both | 19 | 92 | $220.45 | -$17.91 |
 | Grok 4.7 | opening | 3 | 30 | -$77.20 | -$10.29 |
 
 ## What it shows so far
 
-- 34 of 48 sessions (one per model per month) are finished. 3 of 6 models have all months in.
-- On the months finished, 3 of 6 models gained more than holding, and 0 of 6 are above the pass percentile of their shuffled stretches.
+- 39 of 48 sessions (one per model per month) are finished. 4 of 6 models have all months in.
+- On the months finished, 4 of 6 models gained more than holding, and 0 of 6 are above the pass percentile of their shuffled stretches.
 - No verdict is given for a model until all its months are in, and none for the method until every model is.
 
 ## What it does not show
