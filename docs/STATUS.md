@@ -79,15 +79,17 @@ Only what someone using the tools needs to know. The longer account of each slip
 
 ## Waiting on the owner
 
-Nothing.
+Nothing waits on him today.
 
-Done by him on 2026-11-25:
+Real money, and the limits for it, are his when that day comes (`docs/DECISIONS.md`, "Not decided yet").
+
+## Done by the owner
+
+On 2026-11-25:
 
 - The data key, saved in the secure form. MEASURED at 16:23 UTC: it returns minute and daily prices for the whole US stock market back to 2016, the bid and ask at any past moment, and dated stock news from 2026-04-29 on and nothing older.
 - The practice account key, added to the repo's secrets at 16:31 UTC. The practice desk ran at 16:31 UTC and its first order filled.
 - He made the repo private. The desk's timer now runs every thirty minutes to stay inside GitHub's free allowance, and the owner's screen shows the practice records as of its last build.
-
-Real money, and the limits for it, are his when that day comes (`docs/DECISIONS.md`, "Not decided yet").
 
 ## Keeping this page true
 
