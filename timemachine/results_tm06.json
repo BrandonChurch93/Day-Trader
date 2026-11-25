@@ -1,0 +1,28 @@
+{
+ "fee_levels_bps": [
+  1,
+  12,
+  25
+ ],
+ "limits": [
+  "A model may still know this period if it falls before the model's knowledge line. UNKNOWN how much that helps it.",
+  "The no-search and no-file rule is given by instruction. It is not enforced by this program.",
+  "News headlines and summaries are as first recorded. A story edited after it was first published is marked edited_later, and its text may hold the later edit.",
+  "The stock list is today's list. Stocks delisted during the window are missing.",
+  "Prices are raw, not adjusted for splits or dividends. A split inside a held position is not handled. Dividends are not paid.",
+  "Fills are assumed: the open of the first recorded minute at or after the wake, a fixed half spread and fee per symbol. There is no cap on the share of a minute's volume. They are not real fills.",
+  "Perpetual futures are modelled as linear USD contracts priced at the spot minute bars on the tape, not at a venue's own mark or index price.",
+  "Funding is the stored hourly Kraken rate where tm_perp_funding_files has the symbol, else a fixed fallback paid by both sides.",
+  "Stops, targets and the maintenance rule are checked on minute highs and lows. With several symbols the worst prices of one minute are taken together, which they need not be.",
+  "Inside one minute the order of prices is not known: a minute that crosses both a stop and a target is counted as the stop.",
+  "Between wakes only the minutes of symbols held are read. Funding falling on a minute where only a symbol not held traded is charged at the next minute of a held one.",
+  "The fast tape's funding is from Kraken's non-US perps by default; a US venue's rates may differ. Before a coin's first stored rate the fixed fallback is charged.",
+  "Open interest and attention counts are shown as they were known at the wake; the store does not always say when a value was first published, so attention uses the reader's assumed lag."
+ ],
+ "main_line": [],
+ "plan": "TM06",
+ "scorer": "timemachine/score_tm06.py",
+ "scores": {},
+ "sessions": [],
+ "twin_draws": 1000
+}

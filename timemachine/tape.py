@@ -123,12 +123,18 @@ def _default_stock_close_epoch(date_str):
 class Tape:
     """Thread-safe SQLite market tape with strict as-of queries."""
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, readonly=False):
+        """readonly: open the file for reading only (SQLite mode=ro): no schema, no pragma that writes, every add_ refused.
+        Used for the fast tape (tape_fast.sqlite), which another job fills."""
         self.path = Path(path) if path is not None else (Path(os.environ.get("TM_STORE", str(DEFAULT_STORE))) / "tape.sqlite")
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.readonly = bool(readonly)
         self._local = threading.local()
         self._write_lock = threading.Lock()
         self._clear_cache()
+        if self.readonly:
+            assert self.path.exists(), f"no tape at {self.path}"
+            return
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._write_lock:
             conn = self._conn()
             conn.executescript(SCHEMA)
@@ -144,6 +150,10 @@ class Tape:
 
     def _conn(self):
         conn = getattr(self._local, "conn", None)
+        if conn is None and self.readonly:
+            conn = sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro", uri=True, timeout=30.0)
+            conn.execute("PRAGMA busy_timeout=30000")
+            self._local.conn = conn
         if conn is None:
             conn = sqlite3.connect(str(self.path), timeout=30.0)
             conn.execute("PRAGMA journal_mode=WAL")

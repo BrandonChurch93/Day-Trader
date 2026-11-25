@@ -32,6 +32,9 @@ What is different from a spot weights session:
   packet       small: the latest tm_perp_packet_bars bars per symbol at the wake spacing, the book, the last wake. More bars
                are a lookup (15Min, 1Hour, 4Hour, 1Day and 1Min).
 Crypto only.
+  fast tape    `new --tape fast` runs on tape_fast.sqlite, read-only. Funding then comes from its funding table (the venue per coin
+               in tm_fast_funding_venue; see timemachine/tm06.py), and the packet adds the 24 hour change in open interest.
+  long only    `new --long-only` refuses a negative weight; the book itself still allows one.
 
 The book is pure functions (p_step, p_scan, run_perp) used by the session, the twins and the scorer alike.
 
@@ -39,7 +42,7 @@ python3 timemachine/perp.py new --trader F01 --model M --method CARD.md --symbol
     --wakes '[{"every": "minutes", "step": 60}]' --max-gross 2 [--news] [--session ID]
 python3 timemachine/perp.py score SESSION [--draws N] [--fee-bps F] [--json]   (prints every fee level in tm_perp_fee_levels_bps)
 """
-import argparse, bisect, datetime as dt, hashlib, json, math, os, random, re, sys
+import argparse, bisect, datetime as dt, hashlib, heapq, json, math, os, random, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -52,13 +55,15 @@ from timemachine.tape import Tape
 UTC = S.UTC
 iso, parse = S.iso, S.parse
 P_KEYS = ["tm_perp_fee_bps_per_side", "tm_perp_half_spread_bps", "tm_perp_maintenance", "tm_perp_closeout_penalty", "tm_perp_funding_files",
-          "tm_perp_funding_hours", "tm_perp_fallback_rate_per_day", "tm_perp_min_change", "tm_perp_packet_bars", "tm_perp_fee_levels_bps", "tm_crypto_half_spread_bps_by_coin"]
+          "tm_perp_funding_hours", "tm_perp_fallback_rate_per_day", "tm_perp_min_change", "tm_perp_packet_bars", "tm_perp_fee_levels_bps", "tm_crypto_half_spread_bps_by_coin",
+          "tm_crypto_half_spread_bps_default"]
 LIMITS = W.LIMITS[:5] + [
     "Fills are assumed: the open of the first recorded minute at or after the wake, a fixed half spread and fee per symbol. There is no cap on the share of a minute's volume. They are not real fills.",
     "Perpetual futures are modelled as linear USD contracts priced at the spot minute bars on the tape, not at a venue's own mark or index price.",
     "Funding is the stored hourly Kraken rate where tm_perp_funding_files has the symbol, else a fixed fallback paid by both sides.",
     "Stops, targets and the maintenance rule are checked on minute highs and lows. With several symbols the worst prices of one minute are taken together, which they need not be.",
-    "Inside one minute the order of prices is not known: a minute that crosses both a stop and a target is counted as the stop."]
+    "Inside one minute the order of prices is not known: a minute that crosses both a stop and a target is counted as the stop.",
+    "Between wakes only the minutes of symbols held are read. Funding falling on a minute where only a symbol not held traded is charged at the next minute of a held one."]
 
 
 def p_config(path=ROOT / "config" / "thresholds.yaml"):
@@ -74,9 +79,24 @@ def per(m, s):
 
 
 def half_spread_bps(cfg, s):
-    """A symbol named in tm_perp_half_spread_bps, else its coin in tm_crypto_half_spread_bps_by_coin (measured), else the default."""
+    """A symbol named in tm_perp_half_spread_bps, else its coin in tm_crypto_half_spread_bps_by_coin (measured), else
+    tm_crypto_half_spread_bps_default (a placeholder; absent from sessions made before it existed), else the default."""
     m, coin = cfg["tm_perp_half_spread_bps"], (cfg.get("tm_crypto_half_spread_bps_by_coin") or {})
-    return m[s] if s in m else coin[s.split("/")[0]] if s.split("/")[0] in coin else m["default"]
+    d = cfg.get("tm_crypto_half_spread_bps_default")
+    return m[s] if s in m else coin[s.split("/")[0]] if s.split("/")[0] in coin else d if d is not None else m["default"]
+
+
+def session_params(meta, cfg, tape):
+    """The book settings for a session: from the stored funding files, or on the fast tape from its funding table."""
+    if meta.get("tape_name") == "fast":
+        from timemachine import tm06
+        return tm06.fast_params(W.priced(meta), cfg, tape, parse(meta["wakes"][0]), parse(meta["end_utc"]))
+    return p_params(W.priced(meta), cfg)
+
+
+def with_fee(pp, fee_bps):
+    """The same settings with one fee per side for every symbol (the scorer's fee levels)."""
+    return dict(pp, fee={s: float(fee_bps) / 1e4 for s in pp["fee"]})
 
 
 def p_params(symbols, cfg, funding=None, fee_bps=None):
@@ -212,11 +232,10 @@ def fund(book, e, s, px, pp, rec):
 def p_scan(book, minutes, t0, t1, pp):
     """From t0 to t1: funding at each charge time, and on every recorded minute the stops and targets, then the maintenance rule.
     minutes: sorted (start epoch, symbol, open, high, low, close)."""
-    a, b = int(t0.timestamp()), int(t1.timestamp()); keys = [m[0] for m in minutes]
-    i0, i1 = bisect.bisect_left(keys, a), bisect.bisect_left(keys, b); ev = funding_times(pp, a, b); ei = 0
+    a, b = int(t0.timestamp()), int(t1.timestamp()); ev = funding_times(pp, a, b); ei = 0
     px = dict(book["last_px"]); rec = dict(funding_usd=0.0, fallback_hours=0, closeout=None, exits=[])
-    for j in range(i0, i1):
-        t, s, o, h, l, c = minutes[j]
+    held0, flat_t = bool(book["qty"]), None
+    for t, s, o, h, l, c in scan_rows(minutes, a, b, book["qty"]):
         while ei < len(ev) and ev[ei][0] <= t:
             fund(book, ev[ei][0], ev[ei][1], px, pp, rec); ei += 1
         q = book["qty"].get(s, 0.0); ex = book["exits"].get(s)
@@ -226,6 +245,8 @@ def p_scan(book, minutes, t0, t1, pp):
                 lv, kind, gap = hit; tr = trade(book, s, -q, lv, pp); book["target"].pop(s, None); book["exits"].pop(s, None)
                 x = dict(utc=iso(dt.datetime.fromtimestamp(t, UTC)), symbol=s, kind=kind, level=ex.get(kind), filled_at=lv, gap=gap, price=tr["price"], side=tr["side"], qty=tr["qty"])
                 rec["exits"].append(x); book["exits_hit"].append(x)
+                if not book["qty"] and flat_t is None:
+                    flat_t = t
         if book["qty"]:
             adv = dict(px); q = book["qty"].get(s, 0.0)
             if q:
@@ -240,7 +261,7 @@ def p_scan(book, minutes, t0, t1, pp):
                 if short:
                     book["shortfall_usd"] += short; book["cash"] = 0.0
                 rec["closeout"] = dict(utc=iso(dt.datetime.fromtimestamp(t, UTC)), symbol=s, value_before=eq, value_after=book["cash"], shortfall_usd=short)
-                book["closeouts"].append(rec["closeout"]); book["pending"] = True
+                book["closeouts"].append(rec["closeout"]); book["pending"] = True; flat_t = t if flat_t is None else flat_t
                 book["largest_drop"] = min(book["largest_drop"], book["cash"] / book["peak"] - 1 if book["peak"] > 0 else 0.0)
         px[s] = c
         if book["qty"]:
@@ -249,15 +270,39 @@ def p_scan(book, minutes, t0, t1, pp):
         fund(book, ev[ei][0], ev[ei][1], px, pp, rec); ei += 1
     for s, p in px.items():
         book["last_px"][s] = p
+    rec["held_seconds"] = ((flat_t if flat_t is not None else b) - a) if held0 else 0  # time in market: held from t0 until flat or t1
+    book["held_seconds"] = book.get("held_seconds", 0) + rec["held_seconds"]
     return rec
 
 
+class Minutes(list):
+    """perp_minutes' result: the sorted rows, and each symbol's own rows, so that a scan reads only the symbols held."""
+
+    def __init__(self, rows):
+        super().__init__(rows); self.by = {}
+        for r in self:
+            self.by.setdefault(r[1], []).append(r)
+        self.keys = {s: [r[0] for r in rs] for s, rs in self.by.items()}
+
+
+def scan_rows(minutes, a, b, held):
+    """The minutes from a to b in time order. From a Minutes, only the symbols held at the start (a scan never opens a
+    position, so no other symbol can matter, except as noted in perp.LIMITS); from a plain list, every row as before."""
+    if isinstance(minutes, Minutes):
+        parts = [minutes.by[s][bisect.bisect_left(minutes.keys[s], a):bisect.bisect_left(minutes.keys[s], b)] for s in sorted(held) if s in minutes.by]
+        return heapq.merge(*parts)
+    keys = [m[0] for m in minutes]
+    return minutes[bisect.bisect_left(keys, a):bisect.bisect_left(keys, b)]
+
+
 def perp_minutes(tape, symbols, t0, t1):
-    """Every recorded 1Min bar of the symbols from t0 to t1, sorted: (start epoch, symbol, open, high, low, close)."""
-    out = []
+    """Every recorded 1Min bar of the symbols that has finished by t1, from t0, sorted: (start epoch, symbol, open, high, low, close).
+    The same rows as tape.bars(s, "1Min", t0, t1), read in one query per symbol."""
+    a, b = int(t0.timestamp()), int(t1.timestamp()); out = []
     for s in symbols:
-        out += [(int(b["t"].timestamp()), s, b["o"], b["h"], b["l"], b["c"]) for b in tape.bars(s, "1Min", t0, t1) if b["t"] < t1]
-    return sorted(out)
+        out += [(r[0], s, r[1], r[2], r[3], r[4]) for r in
+                tape._conn().execute("SELECT t, o, h, l, c FROM bars WHERE symbol = ? AND tf = '1Min' AND t >= ? AND t <= ? ORDER BY t", (s, a, b - 60))]
+    return Minutes(sorted(out))
 
 
 def scan_from(row, wake):
@@ -322,7 +367,7 @@ def check_exits(ex, w, marks):
     return errs
 
 
-def check_answer(body, allowed, cfg, max_gross, marks):
+def check_answer(body, allowed, cfg, max_gross, marks, long_only=False):
     mx = int(cfg["tm_weights_why_max_chars"])
     if not isinstance(body, dict):
         return ["The body must be a JSON object."]
@@ -341,6 +386,8 @@ def check_answer(body, allowed, cfg, max_gross, marks):
     if set(body) - W.OPTIONAL - {"exits"} != {"weights", "why"}:
         return errs + ['An answer is {"weights": {...}, "exits": {...}, "why": "..."} (exits optional) or {"no_change": true, "why": "..."}.']
     errs += check_weights(body["weights"], allowed, cfg, max_gross)
+    if not errs and long_only and any(v < 0 for v in body["weights"].values()):
+        errs.append("This session is long or flat only: every weight is from 0 up. A negative weight (a short) is refused.")
     if not errs and "exits" in body:
         errs += check_exits(body["exits"], body["weights"], marks)
     return errs
@@ -355,12 +402,17 @@ def bar_seconds(wakes):
 
 
 def create(session_id, trader_id, model, method_path, start_date, end_date, symbols, max_gross=1.0, opening=None, rules=None, wake_kind="daily",
-           news=False, tape=None, note=None, benchmark=None):
+           news=False, tape=None, note=None, benchmark=None, long_only=False, extra=None):
+    """long_only: the session refuses a negative weight. extra: more fields for session.json (a plan's own, such as tm06).
+    A tape opened read-only (the fast tape) is recorded so that the session opens it read-only again."""
     assert re.fullmatch(r"[A-Z0-9-]{2,12}", trader_id), "trader id: 2 to 12 capital letters, digits or dashes"
     assert re.fullmatch(r"[A-Za-z0-9_.-]{3,80}", session_id) and ".." not in session_id, "session id: 3 to 80 letters, digits, dot, dash or underscore"
     symbols = list(dict.fromkeys(symbols)); assert symbols and all("/" in s for s in symbols), "a perp session takes crypto pairs like SOL/USD"
     mg = float(max_gross); assert mg > 0, "max_gross is above zero"
     tape = tape or Tape(); cfg = full_config(); folder = S.runs_dir() / session_id
+    if getattr(tape, "readonly", False):  # the fast tape: its funding venue and open interest keys go in the session's config too
+        from timemachine import tm06
+        cfg.update(tm06.t_config())
     if folder.exists():
         raise FileExistsError(f"session {session_id} already exists")
     opening = dict(opening or {}); errs = check_weights(opening, symbols, cfg, mg, "the opening weights"); assert not errs, " ".join(errs)
@@ -373,6 +425,11 @@ def create(session_id, trader_id, model, method_path, start_date, end_date, symb
                 window=dict(start=start_date, end=end_date), symbols=symbols, watch=symbols, opening=opening, wake_rules=rules, wakes=[iso(w) for w in wl], end_utc=iso(end),
                 benchmark=benchmark, config=cfg, config_hash=chash, created_utc=iso(dt.datetime.now(UTC)), git=S.git_commit(), tape=str(tape.path), note=note,
                 news=bool(news), basket_size=None, perp=dict(max_gross=mg, bar_seconds=bar_seconds(wl)))
+    if getattr(tape, "readonly", False):
+        meta.update(tape_readonly=True, tape_name="fast")
+    if long_only:
+        meta["long_only"] = True
+    meta.update(extra or {})
     folder.mkdir(parents=True)
     (folder / "session.json").write_text(json.dumps(meta, indent=1, sort_keys=True) + "\n")
     line = dict(session=session_id, kind="weights", instrument="perp", max_gross=mg, trader=trader_id, model=model, method=method_path, method_sha256=meta["method_sha256"],
@@ -391,7 +448,8 @@ class PSession(W.WSession):
 
     def __init__(self, session_id, tape=None):
         meta = json.loads((S.runs_dir() / session_id / "session.json").read_text()); assert meta.get("instrument") == "perp"
-        self.pp = p_params(W.priced(meta), meta["config"]); self.pmg = float(meta["perp"]["max_gross"])
+        tape = tape or W.session_tape(meta)
+        self.pp = session_params(meta, meta["config"], tape); self.pmg = float(meta["perp"]["max_gross"]); self.long_only = bool(meta.get("long_only"))
         super().__init__(session_id, tape=tape)
 
     def last_rate(self, s):
@@ -412,6 +470,10 @@ class PSession(W.WSession):
             out[s] = dict(price=snap[s]["price"] if s in snap else None, price_utc=iso(snap[s]["t"]) if s in snap else None,
                           bars=[[iso(b["t"]), b["o"], b["h"], b["l"], b["c"], b["v"]] for b in bars],
                           funding_rate_last_hour=self.last_rate(s), funding_every_hours=self.pp["hours"][s])
+        if self.meta.get("tape_name") == "fast":  # the fast tape adds open interest, as a packet figure only
+            from timemachine import tm06
+            for s in self.allowed:
+                out[s]["open_interest_change_24h_pct"] = tm06.oi_change_pct(self.tape, s, self.now, self.cfg)
         return out
 
     def book_view(self, b=None):
@@ -482,7 +544,7 @@ class PSession(W.WSession):
             raise S.Done()
         k = self.prog["k"]; wake = self.wakes[k]; nxt = self.next_time(k)
         row = W.fill_row(self.tape, "crypto", W.priced(self.meta), wake, nxt)
-        errs = check_answer(body, self.allowed, self.cfg, self.pmg, row["marks"])
+        errs = check_answer(body, self.allowed, self.cfg, self.pmg, row["marks"], long_only=self.long_only)
         if errs:
             return self.bad(errs)
         answer = None if "no_change" in body else body["weights"]; exits = None if answer is None else body.get("exits") or {}
@@ -609,9 +671,9 @@ def score(session_id, tape=None, draws=None, seed=None, fee_bps=None):
     d = S.runs_dir() / session_id; meta = json.loads((d / "session.json").read_text()); assert meta.get("instrument") == "perp", "not a perp session"
     res = json.loads((d / "result.json").read_text()); cfg = res["config"]
     draws = int(draws if draws is not None else cfg["tm_weights_twin_draws"]); seed = int(seed if seed is not None else cfg["tm_weights_twin_seed"])
-    tape = tape or Tape(meta.get("tape")); table = W.price_table(tape, meta)
+    tape = tape or W.session_tape(meta); table = W.price_table(tape, meta)
     assert [st["row"] for st in res["steps"]] == table["rows"], "the tape gives other prices than the session recorded: it was changed after the run"
-    syms = W.priced(meta); pp = p_params(syms, cfg); mins = perp_minutes(tape, pp["symbols"], parse(meta["wakes"][0]), parse(meta["end_utc"]))
+    syms = W.priced(meta); pp = session_params(meta, cfg, tape); mins = perp_minutes(tape, pp["symbols"], parse(meta["wakes"][0]), parse(meta["end_utc"]))
     answers = [(st["asked"], st["exits"]) for st in res["steps"]]
     _, _, final = run_perp(meta, table, answers, pp, mins, cfg)
     assert round(final, 2) == round(res["final"]["value_usd"], 2), "the replay of the model's answers does not match the recorded final value"
@@ -620,7 +682,7 @@ def score(session_id, tape=None, draws=None, seed=None, fee_bps=None):
                funding_source=pp["source"], half_spread_bps={s: pp["hs"][s] * 1e4 for s in syms}, session_fee_bps={s: pp["fee"][s] * 1e4 for s in syms},
                session_value_usd=res["final"]["value_usd"], fee_levels_bps=levels, main_fee_bps=levels[len(levels) // 2], by_fee={})
     for f in levels:
-        out["by_fee"][f"{f:g}"] = score_at(meta, table, answers, res["steps"], p_params(syms, cfg, funding=pp["funding"], fee_bps=f), mins, cfg, draws, seed)
+        out["by_fee"][f"{f:g}"] = score_at(meta, table, answers, res["steps"], with_fee(pp, f), mins, cfg, draws, seed)
     return out
 
 
@@ -635,6 +697,8 @@ def main(argv=None):
     n.add_argument("--symbols", required=True); n.add_argument("--from", dest="start", required=True); n.add_argument("--to", dest="end", required=True)
     n.add_argument("--max-gross", type=float, default=1.0); n.add_argument("--open", default="cash"); n.add_argument("--wakes", default=None)
     n.add_argument("--news", action="store_true"); n.add_argument("--session"); n.add_argument("--note"); n.add_argument("--benchmark")
+    n.add_argument("--tape", choices=["main", "fast"], default="main", help="fast: the second price store tape_fast.sqlite, read-only, with its funding table")
+    n.add_argument("--long-only", action="store_true", help="refuse a negative weight")
     sc = sub.add_parser("score"); sc.add_argument("session"); sc.add_argument("--draws", type=int); sc.add_argument("--seed", type=int); sc.add_argument("--json", action="store_true")
     sc.add_argument("--fee-bps", type=float, help="one fee per side instead of every level in tm_perp_fee_levels_bps")
     x = a.parse_args(argv)
@@ -656,7 +720,8 @@ def main(argv=None):
     kind, rules = W.wake_choice(x.wakes, "crypto")
     sid = x.session or f"P-{x.trader}-{x.start}-{dt.datetime.now(UTC).strftime('%Y%m%dT%H%M%S')}"
     folder = create(sid, x.trader, x.model, x.method, x.start, x.end, [s.strip() for s in x.symbols.split(",") if s.strip()], max_gross=x.max_gross,
-                    opening=None if x.open == "cash" else json.loads(x.open), rules=rules, wake_kind=kind, news=x.news, note=x.note, benchmark=x.benchmark)
+                    opening=None if x.open == "cash" else json.loads(x.open), rules=rules, wake_kind=kind, news=x.news, note=x.note, benchmark=x.benchmark,
+                    tape=W.fast_tape() if x.tape == "fast" else None, long_only=x.long_only)
     meta = json.loads((folder / "session.json").read_text())
     print(json.dumps(dict(session=sid, folder=str(folder), wakes=len(meta["wakes"]), first_wake=meta["wakes"][0], end_utc=meta["end_utc"], max_gross=x.max_gross), indent=1))
 

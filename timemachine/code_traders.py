@@ -128,3 +128,22 @@ def bar_trend(symbol, gross, stop_pct):
         return {"weights": {symbol: w}, "exits": {symbol: {"stop": stop}}, "why": "rule bar_trend: the side of the packet's bars"}
     fn.label = f"bar_trend({symbol}, {gross}, {stop_pct})"
     return fn
+
+
+def reversal(symbol, move_pct, minutes=15):
+    """Plan TM06's negative control (tm06_reversal). At each wake, if the last finished bar of `minutes` minutes in the packet
+    moved more than move_pct percent from its open to its close, hold the other side at weight 1 (short after a rise, long
+    after a fall) until the next wake; otherwise flat. A missing or stale bar (not the one ending at the wake) means flat."""
+    move_pct, secs = float(move_pct), int(minutes) * 60
+
+    def fn(packet, look):
+        bars = packet["symbols"][symbol]["bars"]; now = int(dt.datetime.fromisoformat(packet["utc"].replace("Z", "+00:00")).timestamp())
+        b = bars[-1] if bars else None
+        if not b or int(dt.datetime.fromisoformat(b[0].replace("Z", "+00:00")).timestamp()) != now - secs or not b[1]:
+            return {"weights": {}, "why": "rule reversal: no bar ending at this wake, flat"}
+        mv = (b[4] / b[1] - 1) * 100
+        w = (-1.0 if mv > 0 else 1.0) if abs(mv) > move_pct else 0.0
+        return {"weights": {symbol: w} if w else {}, "why": f"rule reversal: last bar moved {mv:+.3f} percent, threshold {move_pct:g}"}
+    fn.label = f"reversal({symbol}, {move_pct}, {minutes})"
+    return fn
+

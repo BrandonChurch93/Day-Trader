@@ -16,6 +16,10 @@ tm_lev_fixed_rate_per_day), and on every recorded minute between wakes lev_scan(
 account value at the minute's low falls below the maintenance share of gross position value. Without max_gross (or at
 1.0) none of this runs and every result is as before.
 
+The fast tape (optional): `new --tape fast` makes a crypto session on the second price store tape_fast.sqlite. session.json
+then carries tape_readonly and tape_name, and the session, its twins and its scorer open that file read-only. Spot costs
+are as on the main tape. Without the flag nothing changes.
+
 Perpetual futures (optional): a session made by timemachine/perp.py carries instrument "perp" and is opened as a
 perp.PSession, with its own book (signed weights, funding, stops and targets). Every other session never reaches it.
 
@@ -462,7 +466,7 @@ def check_answer(body, allowed, cfg, basket_size=None, max_gross=1.0):
 
 # ---- making a session
 def create(session_id, trader_id, model, method_path, start_date, end_date, symbols, market="crypto", opening=None, rules=None, wake_kind="daily",
-           news=False, tape=None, note=None, benchmark=None, basket_size=None, max_gross=None):
+           news=False, tape=None, note=None, benchmark=None, basket_size=None, max_gross=None, tape_name=None):
     assert re.fullmatch(r"[A-Z0-9-]{2,12}", trader_id), "trader id: 2 to 12 capital letters, digits or dashes"
     assert re.fullmatch(r"[A-Za-z0-9_.-]{3,80}", session_id) and ".." not in session_id, "session id: 3 to 80 letters, digits, dot, dash or underscore"
     assert market in ("crypto", "stocks")
@@ -487,6 +491,8 @@ def create(session_id, trader_id, model, method_path, start_date, end_date, symb
                 git=S.git_commit(), tape=str(tape.path), note=note, news=bool(news), basket_size=int(basket_size) if basket_size else None)
     if mg > 1.0:  # only a leveraged session carries these, so every other session.json is as before
         lc = lev_config(); meta.update(max_gross=mg, leverage={k: v for k, v in lc.items()})
+    if getattr(tape, "readonly", False):  # a session on the fast tape opens it read-only again (session_tape)
+        meta.update(tape_readonly=True, tape_name=tape_name or "fast")
     folder.mkdir(parents=True)
     (folder / "session.json").write_text(json.dumps(meta, indent=1, sort_keys=True) + "\n")
     line = dict(session=session_id, kind="weights", trader=trader_id, model=model, method=method_path, method_sha256=meta["method_sha256"], market=market,
@@ -508,9 +514,27 @@ def is_weights(session_id):
     return p.exists() and json.loads(p.read_text()).get("kind") == "weights"
 
 
+def session_tape(meta):
+    """The session's own tape. A session made on the fast tape (tape_readonly in session.json) opens it read-only."""
+    return Tape(meta.get("tape"), readonly=bool(meta.get("tape_readonly")))
+
+
+def fast_tape():
+    """The second price store, read-only: $TM_STORE/tape_fast.sqlite (another job fills it; nothing here writes to it)."""
+    from timemachine.tape import DEFAULT_STORE
+    return Tape(Path(os.environ.get("TM_STORE", str(DEFAULT_STORE))) / "tape_fast.sqlite", readonly=True)
+
+
 def open_session(session_id, tape=None):
     """The right session object for a folder: a perp session, a weights session or a pick session."""
+    if is_weights(session_id):
+        meta = json.loads((S.runs_dir() / session_id / "session.json").read_text())
+        if meta.get("tape_readonly") and (tape is None or str(tape.path) != meta.get("tape")):
+            tape = session_tape(meta)  # a fast tape session never runs on the main tape the server passes in
     if is_weights(session_id) and json.loads((S.runs_dir() / session_id / "session.json").read_text()).get("instrument") == "perp":
+        if (json.loads((S.runs_dir() / session_id / "session.json").read_text()).get("tm06") or {}).get("part") == "P":
+            from timemachine.tm06 import PickerSession  # plan TM06's daily coin picker: a perp session with its own packet and answer
+            return PickerSession(session_id, tape=tape)
         from timemachine.perp import PSession
         return PSession(session_id, tape=tape)
     return WSession(session_id, tape=tape) if is_weights(session_id) else S.Session(session_id, tape=tape)
@@ -531,7 +555,7 @@ class WSession(S.Session):
         self.meta = json.loads((self.dir / "session.json").read_text()); self.cfg = self.meta["config"]
         assert self.meta.get("kind") == "weights"
         self.prog = json.loads((self.dir / "progress.json").read_text())
-        self.tape = tape or Tape(self.meta.get("tape"))
+        self.tape = tape or session_tape(self.meta)
         self.wakes = [parse(w) for w in self.meta["wakes"]]; self.end = parse(self.meta["end_utc"]); self.N = len(self.wakes)
         self.now = parse(self.prog["clock"]); self.tid = self.meta["trader"]; self.rec = _Rec(self.dir / "records")
         self.allowed = self.meta["symbols"]; self.mg = float(self.meta.get("max_gross") or 1.0)
@@ -751,12 +775,15 @@ def main(argv=None):
     n.add_argument("--wakes", default=None, help='"pick-hours", "weekly", or a JSON list of wake rules (see make_wakes); "daily" is refused')
     n.add_argument("--news", action="store_true"); n.add_argument("--session"); n.add_argument("--note"); n.add_argument("--benchmark")
     n.add_argument("--basket-size", type=int, help="answers must name exactly this many symbols in equal shares")
+    n.add_argument("--tape", choices=["main", "fast"], default="main", help="fast: the second price store tape_fast.sqlite, read-only (crypto only)")
     x = a.parse_args(argv)
+    assert x.tape == "main" or x.market == "crypto", "the fast tape holds crypto only"
     opening = None if x.open == "cash" else json.loads(x.open)
     kind, rules = wake_choice(x.wakes, x.market)
     sid = x.session or f"W-{x.trader}-{x.start}-{dt.datetime.now(UTC).strftime('%Y%m%dT%H%M%S')}"
     folder = create(sid, x.trader, x.model, x.method, x.start, x.end, [s.strip() for s in x.symbols.split(",") if s.strip()], market=x.market,
-                    opening=opening, rules=rules, wake_kind=kind, news=x.news, note=x.note, benchmark=x.benchmark, basket_size=x.basket_size)
+                    opening=opening, rules=rules, wake_kind=kind, news=x.news, note=x.note, benchmark=x.benchmark, basket_size=x.basket_size,
+                    tape=fast_tape() if x.tape == "fast" else None)
     meta = json.loads((folder / "session.json").read_text()); base = f"http://127.0.0.1:{os.environ.get('TM_PORT', '8765')}"
     print(json.dumps(dict(session=sid, folder=str(folder), wakes=len(meta["wakes"]), first_wake=meta["wakes"][0], end_utc=meta["end_utc"], wake_rules=meta["wake_rules"]), indent=1))
     print(f"curl -s '{base}/next?session={sid}'")

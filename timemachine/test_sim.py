@@ -1056,6 +1056,199 @@ ok(T4CFG["tm04_plan"]["basket_size"] == 8 and T4CFG["tm_adds_drops_after_weeks"]
 o4_ = T4.build(T4CFG, tape=WT); d4_ = T4.doc(o4_, T4CFG)
 ok(o4_["sessions"] == dict(planned=12, finished=0, running=0, not_started=12) and o4_["method"]["verdict"] == "not finished" and "Sessions in: 0 of 12 are finished" in d4_
    and "No finished run has a swap yet." in d4_ and d4_ == T4.doc(T4.build(T4CFG, tape=WT), T4CFG), "score_tm04: with no session in, it says so, gives no verdict and writes the same page every time")
+# ---- plan TM06 (timemachine/tm06.py, score_tm06.py): a made-up fast tape, read-only, with funding, open interest and attention
+import sqlite3 as _sq
+from timemachine import tm06 as T6, perp as PP, weights as WW, score_tm06 as ST6
+from timemachine.attention import SCHEMA as ATT_SCHEMA
+F0 = U(2026, 6, 1); FE = int(F0.timestamp()); JUMP = int(U(2026, 6, 9, 10, 5).timestamp())
+def fpx(s, t):  # A rises most, B a little, C falls, BTC flat but one step up at 10:05 on 2026-06-09
+    i = (t - FE) // 60
+    return dict(A=10 * (1 + 2e-5 * i), B=20 * (1 + 5e-6 * i), C=30 * (1 - 1e-5 * i), BTC=101.0 if t >= JUMP else 100.0)[s.split("/")[0]]
+FSTORE = Path(TMP) / "store"; FSTORE.mkdir(); FPATH = str(FSTORE / "tape_fast.sqlite"); FT_W = Tape(FPATH); frows = []
+for k in range(11 * 1440):
+    t = FE + 60 * k
+    for s in ("A/USD", "B/USD", "C/USD", "BTC/USD"):
+        fp = fpx(s, t); frows.append((s, "1Min", t, fp, fp, fp, fp, 10.0))
+for j in range(-40, 11):
+    for s, fp in (("A/USD", 9.0), ("B/USD", 20.0), ("C/USD", 33.0), ("BTC/USD", 100.0), ("D/USD", 5.0)):
+        frows.append((s, "1Day", FE + 86400 * j, fp, fp, fp, fp, 1000.0))
+FT_W.add_bars(frows); FT_W.set_meta("coins_json", json.dumps(["A/USD", "B/USD", "C/USD", "BTC/USD", "D/USD"]))
+fdb = _sq.connect(FPATH)
+fdb.executescript("CREATE TABLE funding (symbol TEXT, venue TEXT, t INTEGER, rate REAL, interval_hours REAL, PRIMARY KEY (symbol, venue, t));"
+                  "CREATE TABLE open_interest (symbol TEXT, venue TEXT, t INTEGER, oi_contracts REAL, PRIMARY KEY (symbol, venue, t));")
+for h in range(11 * 24):
+    t = FE + 3600 * h
+    fdb.execute("INSERT INTO funding VALUES ('A/USD', 'kraken_futures_pf', ?, 0.0001, 1)", (t,))
+    fdb.execute("INSERT INTO funding VALUES ('BTC/USD', 'kraken_futures_pf', ?, 0.00002, 1)", (t,))
+    fdb.execute("INSERT INTO open_interest VALUES ('A/USD', 'kraken_futures_pf', ?, ?)", (t, 1000.0 + h))
+    if h % 8 == 4:
+        fdb.execute("INSERT INTO funding VALUES ('B/USD', 'kalshi_perp', ?, 0.0008, 8)", (t,))
+fdb.execute("INSERT INTO funding VALUES ('A/USD', 'kraken_futures_pf', ?, 0.5, 1)", (FE + 86400 * 30,))  # a rate dated far after every window
+fdb.commit(); fdb.close(); FT_W._conn().close() if hasattr(FT_W._conn(), "close") else None
+ADB = str(FSTORE / "attention.sqlite"); adb = _sq.connect(ADB); adb.executescript(ATT_SCHEMA)
+for d in range(-2, 11):
+    ts = FE + 86400 * d
+    for coin, v in (("A", 300.0 if d >= 6 else 100.0), ("B", 50.0 if d >= 6 else 100.0), ("BTC", 100.0)):
+        adb.execute("INSERT INTO attention VALUES ('wikipedia_daily', ?, ?, ?, ?, 'assumed_lag')", (coin, ts, v, ts + 36 * 3600))
+adb.commit(); adb.close()
+os.environ["TM_STORE"] = str(FSTORE)
+fsize = os.path.getsize(FPATH)
+
+# 1. the fast tape as a source, read-only
+FT = WW.fast_tape()
+ok(FT.readonly and str(FT.path) == FPATH if hasattr(FT, "path") else FT.readonly, "the fast tape opens from $TM_STORE/tape_fast.sqlite, read-only")
+caught = False
+try:
+    FT.add_bars([("A/USD", "1Min", FE, 1, 1, 1, 1, 1)])
+except Exception:
+    caught = True
+ok(caught and os.path.getsize(FPATH) == fsize, "tm06: a read-only tape refuses a write and the file is unchanged")
+caught = False
+try:
+    Tape(TMP + "/no_such_fast.sqlite", readonly=True)
+except Exception:
+    caught = True
+ok(caught and not os.path.exists(TMP + "/no_such_fast.sqlite"), "tm06: a read-only open of a missing file fails and makes no file")
+WW.main(["new", "--trader", "FW", "--model", "script", "--method", "x.md", "--market", "crypto", "--symbols", "A/USD,B/USD", "--from", "2026-06-09", "--to", "2026-06-10",
+         "--session", "f6_wfast", "--tape", "fast", "--wakes", '[{"every": "day", "utc_hours": [0]}]'])
+mw6 = json.loads((S.runs_dir() / "f6_wfast" / "session.json").read_text())
+ok(mw6["tape_name"] == "fast" and mw6["tape_readonly"] is True and WW.session_tape(mw6).readonly, "tm06: weights.py new --tape fast records the fast tape, and the session opens it read-only")
+sw6 = WW.open_session("f6_wfast", tape=WT)
+ok(sw6.tape.readonly and sw6.packet()["symbols"]["A/USD"]["price"] == fpx("A/USD", int(U(2026, 6, 9).timestamp()) - 60), "tm06: open_session ignores a main tape passed in (the server's) and reads the fast tape")
+cfg_hs = dict(tm_perp_half_spread_bps={"default": 2.0, "X/USD": 7.0}, tm_crypto_half_spread_bps_by_coin={"A": 3.0}, tm_crypto_half_spread_bps_default=9.0)
+ok([PP.half_spread_bps(cfg_hs, s) for s in ("X/USD", "A/USD", "Q/USD")] == [7.0, 3.0, 9.0] and PP.half_spread_bps(dict(cfg_hs, tm_crypto_half_spread_bps_default=None), "Q/USD") == 2.0,
+   "tm06: half spread: the symbol's own, then the coin's measured one, then tm_crypto_half_spread_bps_default, then the perp default")
+ok(T6.full_config()["tm_crypto_half_spread_bps_default"] is not None and "tm_crypto_half_spread_bps_default" in PP.P_KEYS, "tm06: the placeholder default half spread is in config")
+
+# 2. funding and open interest as of the simulated time
+C6 = T6.full_config(); t0f, t1f = U(2026, 6, 9), U(2026, 6, 10)
+c8 = dict(C6, tm_fast_funding_venue={"default": "kraken_futures_pf", "B/USD": "kalshi_perp"})
+fu, src = T6.fast_funding(FT, ["A/USD", "B/USD", "C/USD"], c8, t0f, t1f)
+ok(all(v == 0.0001 for v in fu["A/USD"].values()) and max(fu["A/USD"]) <= int(t1f.timestamp()) and "C/USD" not in fu and "fallback" in src["C/USD"],
+   "tm06: hourly funding is charged at its own hour, a rate dated after the window is never read, and a coin with none falls back")
+b8 = fu["B/USD"]; first8 = int(U(2026, 6, 8, 20).timestamp())  # the first 8-hour stamp read: 8 hours before the window
+ok(sorted(b8) == list(range(first8 + 3600, int(U(2026, 6, 10, 4).timestamp()) + 1, 3600)) and all(abs(v - 0.0008 / 8) < 1e-15 for v in b8.values()),
+   "tm06: an 8-hour rate known at its stamp is charged in eighths at each of the 8 hours after it, never at its stamp or before")
+lf = T6.last_funding(FT, "A/USD", U(2026, 6, 9, 3, 30), C6)
+ok(lf["stamped_utc"] == "2026-06-09T03:00:00Z" and lf["rate"] == 0.0001 and T6.last_funding(FT, "C/USD", t0f, C6) is None, "tm06: the latest funding shown is stamped at or before the wake")
+oi = T6.oi_change_pct(FT, "A/USD", t0f, C6); hl = int(C6["tm_fast_oi_known_after_hours"]); h1 = 8 * 24 - hl
+ok(abs(oi - ((1000 + h1) / (1000 + h1 - 24) - 1) * 100) < 1e-9 and T6.oi_change_pct(FT, "C/USD", t0f, C6) is None,
+   "tm06: open interest change is over 24 hours to the latest row known tm_fast_oi_known_after_hours before the wake; none when the coin has no rows")
+
+# 3. picker sessions
+real_fc = T6.full_config; T6.full_config = lambda: dict(real_fc(), tm06_pick_max_names=2)
+try:
+    T6.create_picker("f6_pick", "FP", "script", "x.md", "2026-06-09", "2026-06-11", attention_db=ADB)
+finally:
+    T6.full_config = real_fc
+pk6 = WW.open_session("f6_pick", tape=WT); m6 = pk6.meta
+ok(isinstance(pk6, T6.PickerSession) and pk6.tape.readonly and m6["long_only"] and [w[11:] for w in m6["wakes"]] == ["%02d:00:00Z" % int(C6["tm06_pick_wake_hour_utc"])] * 3,
+   "tm06 picker: one wake a day at tm06_pick_wake_hour_utc, long only, on the fast tape")
+pa = pk6.packet(); ca = pa["coins"]["A/USD"]
+ok(pa["list"] == ["A/USD", "B/USD", "C/USD", "BTC/USD"] and "D/USD" not in pa["coins"], "tm06 picker: the list is the coins with a minute in the last tm06_pick_listed_hours; a coin without minutes is left off")
+ok(set(ca) == {"price", "change_pct", "volume", "funding_latest", "open_interest_change_24h_pct", "attention", "headlines"} and sorted(ca["change_pct"]) == ["168h", "1h", "24h", "720h"]
+   and ca["attention"]["wikipedia_daily"][-1][0] <= "2026-06-07" and ca["funding_latest"]["stamped_utc"] <= pa["utc"] and pa["coins"]["C/USD"]["attention"] == {},
+   "tm06 picker: each coin shows price, its changes over 1h, 24h, 7d, 30d, volume, funding, open interest change, attention known at the wake, headlines")
+wa = int(U(2026, 6, 9).timestamp())
+ok(abs(ca["change_pct"]["24h"] - (fpx("A/USD", wa - 60) / fpx("A/USD", wa - 86400 - 60) - 1) * 100) < 1e-9 and abs(ca["volume"]["usd_24h"] - sum(10 * fpx("A/USD", wa - 60 * j) for j in range(1, 1441))) < 1e-6
+   and ca["volume"]["usual_usd_per_day"] == 9000.0, "tm06 picker: changes from finished minutes only; volume over the last 24 hours against the mean of 1Day bars before")
+rj = lambda b: (not b["ok"]) and pk6.prog["k"] == 0
+ok(rj(pk6.submit({"coins": ["A/USD", "B/USD", "C/USD"], "reasons": {c: "r" for c in ("A/USD", "B/USD", "C/USD")}, "why": "x"})), "tm06 picker: more than tm06_pick_max_names names is refused")
+ok(rj(pk6.submit({"coins": ["D/USD"], "reasons": {"D/USD": "r"}, "why": "x"})), "tm06 picker: a coin not on the list at this wake is refused")
+ok(rj(pk6.submit({"coins": ["A/USD"], "reasons": {}, "why": "x"})) and rj(pk6.submit({"coins": ["A/USD"], "reasons": {"A/USD": "two\nlines"}, "why": "x"})),
+   "tm06 picker: a missing or many-line reason is refused")
+r1 = pk6.submit({"coins": ["A/USD", "B/USD"], "reasons": {"A/USD": "rising", "B/USD": "steady"}, "why": "x"}); nots = [t["qty"] * t["open"] for t in r1["trades"]]
+ok(r1["ok"] and sorted(t["symbol"] for t in r1["trades"]) == ["A/USD", "B/USD"] and all(t["side"] == "buy" for t in r1["trades"]) and abs(nots[0] - nots[1]) < 0.01 * nots[0]
+   and 0.97 * CFG["tm_account_start_usd"] < sum(nots) <= CFG["tm_account_start_usd"], "tm06 picker: the named coins are bought in equal parts adding up to 1x")
+pk6.packet(); r2 = pk6.submit({"coins": ["B/USD", "A/USD"], "reasons": {"A/USD": "rising", "B/USD": "steady"}, "why": "same"})
+ok(r2["ok"] and r2["trades"] == [], "tm06 picker: naming the same coins again trades nothing")
+pk6.packet(); r3 = pk6.submit({"coins": [], "reasons": {}, "why": "cash"})
+ok(r3["ok"] and sorted((t["symbol"], t["side"]) for t in r3["trades"]) == [("A/USD", "sell"), ("B/USD", "sell")] and r3["done"], "tm06 picker: no names means cash")
+ok(T6.check_pick({"coins": ["A/USD"], "reasons": {"A/USD": "r"}, "why": "x"}, ["A/USD"], 1, C6) == [] and T6.check_pick({"weights": {}}, ["A/USD"], 1, C6), "tm06 picker: the answer form")
+
+# 4. the picker's yardsticks
+sp6 = T6.score_picker("f6_pick", draws=7)
+ok(sp6["swaps"] == [dict(added=2, removed=0), dict(added=0, removed=0), dict(added=0, removed=2)] and sp6["names_per_wake"] == [2, 2, 0], "tm06 picker score: the model's swaps per day")
+ok(list(sp6["by_fee"]) == [f"{f:g}" for f in C6["tm_perp_fee_levels_bps"]] and all(set(b["yardsticks"]) == {"equal_all_held", "top_7d_rise", "top_attention_rise", "btc_held"}
+   and b["random_swap_twins"]["final_gain_pct"]["n"] == 7 for b in sp6["by_fee"].values()), "tm06 picker score: yardsticks (a), (b), (c), (e) and the random swap twins at each fee level")
+lo, hi = sp6["by_fee"][f"{min(C6['tm_perp_fee_levels_bps']):g}"], sp6["by_fee"][f"{max(C6['tm_perp_fee_levels_bps']):g}"]
+ok(lo["model"]["final_gain_pct"] > hi["model"]["final_gain_pct"] and lo["yardsticks"]["top_7d_rise"]["stats"]["final_gain_pct"] > hi["yardsticks"]["top_7d_rise"]["stats"]["final_gain_pct"],
+   "tm06 picker score: the same costs for the model and the yardsticks: a higher fee lowers both")
+w9 = U(2026, 6, 9)
+r7 = {s: T6.change_pct(FT, s, w9, 168) for s in pa["list"]}; ra = {s: T6.attention_rise(s.split("/")[0], w9, C6, ADB) for s in pa["list"]}
+ok(sorted(r7, key=lambda s: -r7[s])[:2] == ["A/USD", "B/USD"] and abs(ra["A/USD"] - 2.0) < 1e-9 and abs(ra["B/USD"] + 0.5) < 1e-9 and ra["BTC/USD"] == 0.0 and ra["C/USD"] is None
+   and sp6["attention_rule_left_out_per_wake"] == [1, 1, 1], "tm06 picker score: rule (b) ranks the 7-day rise; rule (c) the last day's count against the mean of the 7 before, leaving out a coin with no count")
+ok(lo["yardsticks"]["top_7d_rise"]["stats"]["final_gain_pct"] != lo["yardsticks"]["top_attention_rise"]["stats"]["final_gain_pct"], "tm06 picker score: rules (b) and (c) hold different coins here")
+sws = [dict(added=2, removed=0), dict(added=1, removed=1), dict(added=0, removed=0), dict(added=0, removed=2)]; ls6 = [["A", "B", "C", "D", "E"]] * 4
+for i in range(20):
+    tw6 = T6.swap_twin(sws, ls6, random.Random(i)); prev = []
+    for k, cur in enumerate(tw6):
+        ok(len(set(cur) - set(prev)) == sws[k]["added"] and len(set(prev) - set(cur)) == sws[k]["removed"] and set(cur) <= set(ls6[k]), "tm06 picker twin: each day the same number of names swapped as the model")
+        prev = cur
+ok(T6.swap_twin(sws, ls6, random.Random(3)) == T6.swap_twin(sws, ls6, random.Random(3)), "tm06 picker twin: seeded")
+
+# 5. swing sessions
+T6.create_swing("f6_swing", "FS", "script", "x.md", "2026-06-09", "2026-06-09", ["A/USD", "C/USD"])
+sg = WW.open_session("f6_swing", tape=WT); pg = sg.packet()
+ok(sg.meta["long_only"] and len(sg.meta["wakes"]) == 24 and sg.max_gross == float(C6["tm06_swing_max_gross"]) if hasattr(sg, "max_gross") else len(sg.meta["wakes"]) == 24,
+   "tm06 swing: hourly wakes on the coins given, long only, gross at most tm06_swing_max_gross")
+bad = sg.submit({"weights": {"A/USD": 0.5, "C/USD": -0.5}, "why": "x"})
+ok(not bad["ok"] and sg.prog["k"] == 0 and any("negative" in e or "long" in e for e in bad.get("errors", [json.dumps(bad)])), "tm06 swing: --long-only refuses a negative weight")
+ok(PP.check_answer({"weights": {"A/USD": -0.5}, "why": "x"}, ["A/USD"], C6, 1.0, {"A/USD": 10.0}, long_only=False) == [], "tm06 swing: without long_only the book takes a short")
+i6 = 0
+while not sg.done():
+    pg = sg.packet(); px = pg["symbols"]["A/USD"]["price"]
+    body = {"weights": {"A/USD": 0.5, "C/USD": 0.5} if i6 % 4 < 2 else {"A/USD": 1.0}, "exits": {"A/USD": {"stop": px * 0.9}}, "why": "x"} if i6 % 3 == 0 else {"no_change": True, "why": "x"}
+    ok(sg.submit(body)["ok"], "tm06 swing: a scripted answer is taken"); i6 += 1
+sc6 = T6.score_swing("f6_swing", draws=5); mults6 = ["1x"] + [f"{m:g}x" for m in C6["tm06_carry_multiples"]]
+ok(list(sc6["by_multiple"]) == mults6 and all(list(v) == [f"{f:g}" for f in C6["tm_perp_fee_levels_bps"]] for v in sc6["by_multiple"].values())
+   and all(set(b["yardsticks"]) == {"equal_hold_2", "hold_long_BTC/USD"} and b["shuffled_order_twins"]["final_gain_pct"]["n"] == 5 for v in sc6["by_multiple"].values() for b in v.values()),
+   "tm06 swing score: equal hold, hold long and the shuffled-order twins at 1x and each carried multiple, at each fee level")
+g1 = sc6["by_multiple"]["1x"]["1"]["model"]["final_gain_pct"]; g3 = sc6["by_multiple"]["3x"]["1"]["model"]["final_gain_pct"]
+m1, m3 = sc6["by_multiple"]["1x"]["25"]["model"], sc6["by_multiple"]["3x"]["25"]["model"]
+ok(2.8 < m3["costs_paid_usd"] / m1["costs_paid_usd"] < 3.2 and 2.8 < m3["funding_usd"] / m1["funding_usd"] < 3.2 and m3["trades"] == m1["trades"] and abs(g3) > abs(g1) > 0,
+   "tm06 carried: 3x the same weights pays about 3 times the costs and funding, with the same trades")
+cx6 = T6.load("f6_swing"); ans6 = cx6["answers"]
+ok(T6.times(ans6, 3)[0][0] == {s: 3 * v for s, v in ans6[0][0].items()} and T6.times(ans6, 2)[1] == ans6[1], "tm06 carried: the session's own weights times the multiple, the exits unchanged")
+for i in range(5):
+    sh = T6.shuffle_answers(ans6, cx6["table"]["rows"], random.Random(i))
+    ok(sorted(json.dumps(w, sort_keys=True) for w, _ in sh) == sorted(json.dumps(w, sort_keys=True) for w, _ in ans6), "tm06 shuffle: the same answers in another order")
+    for k, (w, ex) in enumerate(sh):
+        if ex:
+            mk = cx6["table"]["rows"][k]["marks"]["A/USD"]
+            ok(abs(ex["A/USD"]["stop"] / mk - 0.9) < 1e-9, "tm06 shuffle: a stop keeps its percent distance from the price at the wake it lands on")
+pp6 = PP.session_params(cx6["meta"], cx6["cfg"], FT); bk_a, _, fa = PP.run_perp(cx6["meta"], cx6["table"], ans6, pp6, cx6["mins"], cx6["cfg"])
+bk_b, _, fb = PP.run_perp(cx6["meta"], cx6["table"], ans6, pp6, list(cx6["mins"]), cx6["cfg"])
+ok(isinstance(cx6["mins"], PP.Minutes) and abs(fa - fb) < 1e-9 and bk_a["held_seconds"] == bk_b["held_seconds"] == 24 * 3600,
+   "tm06: the scan that reads only held symbols gives the same result as the plain scan, and time in market is counted (held from the first fill at the first wake to the end)")
+ok(set(pp6["source"]) == {"A/USD", "C/USD", "BTC/USD"} and "kraken_futures_pf" in pp6["source"]["A/USD"] and "fallback" in pp6["source"]["C/USD"] and set(pp6["hours"].values()) == {1},
+   "tm06: the session says where each coin's funding came from (the benchmark too), charged hourly")
+
+# 7. the negative control
+rv = C.reversal("BTC/USD", 0.5, 15); now_ = "2026-06-09T10:15:00Z"; mkp = lambda o, c, t="2026-06-09T10:00:00Z": {"utc": now_, "symbols": {"BTC/USD": {"bars": [[t, o, o, o, c, 1]]}}}
+ok(rv(mkp(100, 101), None)["weights"] == {"BTC/USD": -1.0} and rv(mkp(100, 99), None)["weights"] == {"BTC/USD": 1.0} and rv(mkp(100, 100.4), None)["weights"] == {}
+   and rv(mkp(100, 101, "2026-06-09T09:45:00Z"), None)["weights"] == {}, "tm06 control: short after a rise, long after a fall, flat on a small move or a stale bar")
+T6.create_control("f6_ctl", "2026-06-09", "2026-06-09"); rc6 = T6.run_control("f6_ctl"); st6 = {st["utc"]: st["asked"] for st in rc6["steps"]}
+ok(len(rc6["steps"]) == 96 and st6["2026-06-09T10:15:00Z"] == {"BTC/USD": -1.0} and st6["2026-06-09T10:30:00Z"] == {} and sum(1 for st in rc6["steps"] if st["trades"]) == 2,
+   "tm06 control: the rule shorts for 15 minutes after the step up and is flat otherwise")
+scc6 = T6.score_control("f6_ctl")
+ok(list(scc6["by_multiple"]) == [f"{m:g}x" for m in C6["tm06_reversal"]["multiples"]] and all(list(v) == [f"{f:g}" for f in C6["tm_perp_fee_levels_bps"]] for v in scc6["by_multiple"].values())
+   and all(v[f]["final_gain_pct"] < 0 for v in scc6["by_multiple"].values() for f in v) and set(scc6["hold_long"]) == set(scc6["by_multiple"]["1x"]),
+   "tm06 control: at each multiple and fee level; a rule with no edge loses its costs")
+
+# 8. the scorer
+o6 = TMP + "/results_tm06.json"; ST6.main(["--only", "f6_", "--draws", "3", "--out", o6]); r6 = json.loads(Path(o6).read_text())
+ok(r6["sessions"] == ["f6_ctl", "f6_pick", "f6_swing"] and [x["part"] for x in r6["main_line"]] == ["C", "P", "S"] and r6["twin_draws"] == 3, "score_tm06: only finished TM06 sessions, one main line each")
+ok("f6_wfast" not in r6["sessions"] and all(k in r6["main_line"][1] for k in ("gain_pct", "twin_percentile", "trades", "time_in_market_share", "closeouts"))
+   and all(k in r6["main_line"][2]["3x"] for k in ("gain_pct", "twin_percentile", "closeouts")), "score_tm06: gain, twin percentile, trades, time in market and close-outs")
+caught = 0
+try:
+    ST6.main(["--only", "f6_", "--draws", "3", "--out", o6, "--check"])
+except SystemExit as e:
+    caught = e.code
+ok(caught == 0 and os.path.getsize(FPATH) == fsize, "score_tm06: --check finds the same file, and nothing wrote to the fast tape")
+os.environ.pop("TM_STORE", None)
+
 n_log = len(Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines())
 ok(n_log == log0 + len([d for d in p.iterdir() if (d / "session.json").exists()]), "every session made is one line in the sessions log")
 
