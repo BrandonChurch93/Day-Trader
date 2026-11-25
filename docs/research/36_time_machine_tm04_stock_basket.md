@@ -2,7 +2,7 @@
 
 Made by `timemachine/score_tm04.py` from `timemachine/results_tm04.json`. Do not edit by hand. Pretend money. The plan, with its pass mark fixed before any session ran, is `timemachine/PLAN_TM04_stock_basket.md`.
 
-Sessions in: 11 of 12 are finished and scored here. Still running: 1. Not started: 0. Those are left out until they finish.
+Sessions in: 12 of 12 are finished and scored here. Still running: 0. Not started: 0. Those are left out until they finish.
 
 ## What was asked
 
@@ -40,7 +40,7 @@ MEASURED, pretend money, in dollars on the account. "Percentile" is the share of
 | Claude Sonnet 5.5 | r1 | -$52.42 | -$41.48 | -$34.18 | 39.7 | no | no | does not pass | -$64.86 |
 | Claude Sonnet 5.5 | r2 | -$103.69 | -$41.48 | -$39.04 | 16.2 | no | no | does not pass | -$64.86 |
 | Kimi K3 | r1 | -$123.01 | -$41.48 | -$35.93 | 10.8 | no | no | does not pass | -$64.86 |
-| Kimi K3 | r2 | running | | | | | | | |
+| Kimi K3 | r2 | -$156.11 | -$41.48 | -$33.07 | 5.5 | no | no | does not pass | -$64.86 |
 | Grok 4.7 | r1 | $17.29 | -$41.48 | -$30.35 | 78.0 | yes | no | does not pass | -$64.86 |
 | Grok 4.7 | r2 | -$37.35 | -$41.48 | -$35.04 | 48.5 | no | no | does not pass | -$64.86 |
 
@@ -61,6 +61,7 @@ MEASURED. The model's own baskets put in another order: `shuffle_runs` (stretche
 | Claude Sonnet 5.5 | r1 | 34.2 (median -$34.83) | 42.7 (median -$43.86) | 55.7 (median -$60.15) | 8 | $1.42 | -6.8% | -9.7% |
 | Claude Sonnet 5.5 | r2 | 6.0 (median $30.64) | 7.9 (median $11.47) | 8.2 (median $13.98) | 25 | $3.40 | -11.7% | -9.7% |
 | Kimi K3 | r1 | 6.2 (median -$4.17) | 7.2 (median -$15.61) | 11.3 (median -$36.48) | 19 | $2.75 | -16.2% | -9.7% |
+| Kimi K3 | r2 | 2.0 (median -$4.09) | 2.3 (median -$6.49) | 4.7 (median -$25.68) | 27 | $3.63 | -18.3% | -9.7% |
 | Grok 4.7 | r1 | 29.5 (median $41.56) | 36.7 (median $32.89) | 41.6 (median $28.76) | 11 | $1.79 | -5.4% | -9.7% |
 | Grok 4.7 | r2 | 22.0 (median -$1.93) | 22.5 (median -$5.19) | 25.9 (median -$3.66) | 11 | $1.77 | -7.5% | -9.7% |
 
@@ -74,6 +75,7 @@ MEASURED, for models with both runs finished. Names in common: the mean, over th
 | GPT-6.2 Sol | -$35.13 | 6.24 | 0.78 | -13.9 |
 | Gemini Neon | $41.02 | 5.76 | 0.72 | +8.7 |
 | Claude Sonnet 5.5 | $51.27 | 4.64 | 0.58 | +23.5 |
+| Kimi K3 | $33.10 | 5.16 | 0.65 | +5.3 |
 | Grok 4.7 | $54.64 | 6.08 | 0.76 | +29.5 |
 
 ## Adds and drops
@@ -90,12 +92,12 @@ Looked at after the fact, not judged, and not part of the plan's mark. It asks w
 
 | Measure | Events | Mean | Random: median | Mean less the list | Random: median less the list | Random below | Reading |
 |---|---|---|---|---|---|---|---|
-| added stock, weeks before it was added | 159 | +11.46% | -0.40% | +11.25% | -0.61% | 100.0% | higher than chance |
-| added stock, while held | 159 | -1.08% | -2.18% | +1.67% | +0.56% | 82.6% | within chance |
-| dropped stock, 1 week after it was dropped | 159 | -0.03% | +0.01% | -0.54% | -0.49% | 42.4% | within chance |
-| dropped stock, 4 weeks after it was dropped | 141 | +0.26% | -0.38% | -0.56% | -1.20% | 87.2% | within chance |
-| dropped stock, 8 weeks after it was dropped | 124 | +2.22% | -0.22% | -0.18% | -2.61% | 100.0% | higher than chance |
-| dropped stock, to the end of the window | 159 | -8.73% | -10.02% | -2.13% | -3.42% | 86.8% | within chance |
+| added stock, weeks before it was added | 186 | +11.41% | -0.34% | +11.09% | -0.65% | 100.0% | higher than chance |
+| added stock, while held | 186 | -1.53% | -1.97% | +1.02% | +0.58% | 65.2% | within chance |
+| dropped stock, 1 week after it was dropped | 186 | -0.17% | -0.13% | -0.60% | -0.56% | 41.7% | within chance |
+| dropped stock, 4 weeks after it was dropped | 167 | +0.16% | -0.72% | -0.65% | -1.53% | 96.1% | higher than chance |
+| dropped stock, 8 weeks after it was dropped | 146 | +2.26% | -0.40% | -0.08% | -2.74% | 100.0% | higher than chance |
+| dropped stock, to the end of the window | 186 | -8.81% | -10.29% | -2.18% | -3.66% | 91.5% | within chance |
 
 ### Claude Opus 5.5, both runs
 
@@ -141,16 +143,16 @@ Looked at after the fact, not judged, and not part of the plan's mark. It asks w
 | dropped stock, 8 weeks after it was dropped | 27 | +0.85% | -1.35% | -1.93% | -4.13% | 91.5% | within chance |
 | dropped stock, to the end of the window | 33 | -9.51% | -10.62% | -3.14% | -4.26% | 67.2% | within chance |
 
-### Kimi K3, run 1 only
+### Kimi K3, both runs
 
 | Measure | Events | Mean | Random: median | Mean less the list | Random: median less the list | Random below | Reading |
 |---|---|---|---|---|---|---|---|
-| added stock, weeks before it was added | 19 | +12.74% | -0.20% | +12.25% | -0.69% | 100.0% | higher than chance |
-| added stock, while held | 19 | -3.83% | -1.26% | -1.55% | +1.02% | 17.9% | within chance |
-| dropped stock, 1 week after it was dropped | 19 | -1.28% | -0.41% | -1.10% | -0.22% | 21.5% | within chance |
-| dropped stock, 4 weeks after it was dropped | 16 | -1.53% | -1.35% | -2.49% | -2.32% | 45.4% | within chance |
-| dropped stock, 8 weeks after it was dropped | 15 | -0.64% | -1.03% | -3.20% | -3.60% | 55.7% | within chance |
-| dropped stock, to the end of the window | 19 | -9.63% | -14.03% | -2.96% | -7.37% | 92.7% | within chance |
+| added stock, weeks before it was added | 46 | +11.76% | -0.01% | +11.00% | -0.77% | 100.0% | higher than chance |
+| added stock, while held | 46 | -4.05% | -0.96% | -2.29% | +0.80% | 4.7% | lower than chance |
+| dropped stock, 1 week after it was dropped | 46 | -1.11% | -0.74% | -1.02% | -0.65% | 30.1% | within chance |
+| dropped stock, 4 weeks after it was dropped | 42 | -0.83% | -2.12% | -1.67% | -2.96% | 88.9% | within chance |
+| dropped stock, 8 weeks after it was dropped | 37 | +1.23% | -1.07% | -1.04% | -3.34% | 92.5% | within chance |
+| dropped stock, to the end of the window | 46 | -9.42% | -12.81% | -2.65% | -6.04% | 95.2% | higher than chance |
 
 ### Grok 4.7, both runs
 
@@ -165,23 +167,23 @@ Looked at after the fact, not judged, and not part of the plan's mark. It asks w
 
 What the pooled table says about drops, in plain words:
 
-- Dropped stock, 1 week after it was dropped: the model's drops moved -0.03%, random drops at the same weeks +0.01% (median). Against the list: -0.54% and -0.49%. 42.4% of random draws did worse than the model's drops. Reading: within chance.
-- Dropped stock, 4 weeks after it was dropped: the model's drops moved +0.26%, random drops at the same weeks -0.38% (median). Against the list: -0.56% and -1.20%. 87.2% of random draws did worse than the model's drops. Reading: within chance.
-- Dropped stock, 8 weeks after it was dropped: the model's drops moved +2.22%, random drops at the same weeks -0.22% (median). Against the list: -0.18% and -2.61%. 100.0% of random draws did worse than the model's drops. Reading: higher than chance.
-- Dropped stock, to the end of the window: the model's drops moved -8.73%, random drops at the same weeks -10.02% (median). Against the list: -2.13% and -3.42%. 86.8% of random draws did worse than the model's drops. Reading: within chance.
-- The model's drops fell by more than random drops, beyond chance, on 0 of 4 drop measures. They fell by less than random drops, beyond chance, on 1.
-- So the plain answer: on these measures, what the model drops then falls about as much as any stock dropped from its basket at the same weeks would. The fall matches the falling market and the basket, not the choice. At 8 weeks after the drop, the model's drops did better than random drops, so the model let go of stocks that later recovered.
+- Dropped stock, 1 week after it was dropped: the model's drops moved -0.17%, random drops at the same weeks -0.13% (median). Against the list: -0.60% and -0.56%. 41.7% of random draws did worse than the model's drops. Reading: within chance.
+- Dropped stock, 4 weeks after it was dropped: the model's drops moved +0.16%, random drops at the same weeks -0.72% (median). Against the list: -0.65% and -1.53%. 96.1% of random draws did worse than the model's drops. Reading: higher than chance.
+- Dropped stock, 8 weeks after it was dropped: the model's drops moved +2.26%, random drops at the same weeks -0.40% (median). Against the list: -0.08% and -2.74%. 100.0% of random draws did worse than the model's drops. Reading: higher than chance.
+- Dropped stock, to the end of the window: the model's drops moved -8.81%, random drops at the same weeks -10.29% (median). Against the list: -2.18% and -3.66%. 91.5% of random draws did worse than the model's drops. Reading: within chance.
+- The model's drops fell by more than random drops, beyond chance, on 0 of 4 drop measures. They fell by less than random drops, beyond chance, on 2.
+- So the plain answer: on these measures, what the model drops then falls about as much as any stock dropped from its basket at the same weeks would. The fall matches the falling market and the basket, not the choice. At 4 weeks, 8 weeks after the drop, the model's drops did better than random drops, so the model let go of stocks that later recovered.
 
 What the pooled table says about adds, in plain words:
 
-- Added stock, weeks before it was added: +11.25% against the list, random adds -0.61% (median). 100.0% of random draws were below. Reading: higher than chance.
-- Added stock, while held: +1.67% against the list, random adds +0.56% (median). 82.6% of random draws were below. Reading: within chance.
+- Added stock, weeks before it was added: +11.09% against the list, random adds -0.65% (median). 100.0% of random draws were below. Reading: higher than chance.
+- Added stock, while held: +1.02% against the list, random adds +0.58% (median). 65.2% of random draws were below. Reading: within chance.
 
 Many measures are looked at here, per model and pooled. At the `tm_adds_drops_chance_pct` (5) percent reading, about that share would read beyond chance by luck alone.
 
 ## What it shows so far
 
-- 11 of 12 sessions are finished. 6 of 6 first runs are in.
+- 12 of 12 sessions are finished. 6 of 6 first runs are in.
 - Of the runs finished, 0 pass the plan's line for a run.
 - The method verdict is: not shown.
 

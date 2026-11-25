@@ -6,10 +6,14 @@ Last changed: 2026-11-25 16:26 UTC
 
 ## Running now
 
+As of 2026-11-25 17:52 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
+
 | # | What | Plan | Started |
 |---|---|---|---|
-| 1 | Six AI models trade crypto from prices alone in the time machine, October 2026 first, then four more months | `timemachine/PLAN_TM01_crypto_price_only.md` | 2026-11-25 |
-| 2 | The same six AI models trade crypto with dated headlines added, same five months | `timemachine/PLAN_TM02_crypto_with_news.md` | 2026-11-25 |
+| 9b | The earnings release reader: the checking code was audited by a second model, 14 faults found and fixed, a second audit pass is running before the plan is frozen | draft plan, frozen and pushed before any reader runs | 2026-11-25 |
+| 9g | Fast lane, the owner's own method (`practice/traders/F01_hot_coin_swing.md`): a second price store from Coinbase minutes for smaller coins, and a futures book in the time machine that can go long or short with funding and forced close-out | plan TM06, written when both are in | 2026-11-25 |
+| - | Dated calls by the crypto callers the owner followed, Alex Becker first: what was said on what date and what the coin did after | reading, no plan | 2026-11-25 |
+| - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
 
 ## Next, in order
 
@@ -17,9 +21,7 @@ Last changed: 2026-11-25 16:26 UTC
 |---|---|---|---|
 | 8 | Put the first AI traders on the practice desk (`practice/PLAN_02_ai_desk.md`). The two fixed rules have run there since 2026-11-25 16:31 UTC | a method that earned it in the time machine | no method has earned it yet: TM01 to TM04 did not pass |
 | 9b | An AI reads each earnings release and says buy or skip for the next open; judged against random picks among the same releases and against buying every release. Large, mid and small companies. The draft plan is on the research machine until it is frozen | free SEC filings, daily stock prices from the built-in history | the plan being finished, then frozen with its ledger rows |
-| 9d | Plan TM04: the model names eight of 38 stocks once a week (`timemachine/PLAN_TM04_stock_basket.md`) | nothing | 11 of 12 runs in; the method verdict on the first runs is final: not shown (`docs/research/36_time_machine_tm04_stock_basket.md`). One second run still going |
 | 9f | Measured stock trading costs from past bid and ask. Measured for 56 symbols, June to November 2026: the middle half-spread was about 1 bps in regular hours and about 2.4 bps in the first half hour, against the 5 bps the time machine charges. Still to do: write it up in `docs/research/` from a script | the data key (in) | a free slot |
-| 9g | Fast lane: small volatile coins held minutes to days. The owner's point, 2026-11-25: on a small account day trading belongs in things that move a lot, large stocks are for weeks or months. First measure which small coins trade often enough for a believable fill and what their spreads are, then a time machine round on those that pass | minute prices and quotes for every coin the practice venue lists | the measuring, started 2026-11-25 17:25 UTC |
 | 10 | Company filings read in full: a trader that compares each new annual or quarterly report with last year's and buys the companies whose reports changed least | free SEC filings, daily stock prices | the published design being collected with quotes |
 | 11 | A customer's good news, then buy its supplier before the supplier reports | free SEC filings for who sells to whom, stock prices, news | nothing |
 | 12 | Earnings call answers scored apart from the prepared remarks, held 15 days | filings, call text, stock prices | nothing |
@@ -79,3 +81,4 @@ The results of everything run before 2026-11-25 15:00 UTC are in the table in `d
 | - | A "why" record for every replay trade | Built 2026-11-25 into the scoring script. One row per buy: what the trader looked up, its reason, the headlines it named, how the trade ended (`docs/research/29_time_machine_tm01_crypto_price_only.md`, `docs/research/30_time_machine_tm02_crypto_with_news.md`) |
 | 4b | Order-book cost samples on Kraken and Binance.US, 254 rounds over 9 hours on 2026-11-25 | Finished. Buying or selling $1,000 of bitcoin or ether cost less than the 5 bps the replays charge, in the middle case and in the worst 5% of readings. Smaller coins cost more. One calm-or-not-measured day. `docs/research/24_order_book_costs.md` |
 | 9i | Where a US account in Idaho can trade crypto with leverage through an API | Read and checked 2026-11-25 17:48 UTC (`docs/research/40_leverage_venues_checked.md`): 66 claims confirmed, 3 wrong, 14 not found. No venue has small coins, an open order API and a matching practice account all at once. Fees run from about 1 to 25 basis points a side. Leveraged tests stay in the time machine, scored at three fee levels |
+| 9d | Plan TM04: the model names eight of 38 stocks once a week | Finished 2026-11-25 17:51 UTC, 12 of 12 runs. Method: not shown. Seven of twelve runs ended below holding all 38 in equal parts; best was GPT-6.2 Sol run 2 at the 82nd percentile of its random baskets, under the 90 needed (`docs/research/36_time_machine_tm04_stock_basket.md`) |
