@@ -10,7 +10,7 @@ The owner, 2026-11-25 (`docs/DECISIONS.md`): people say you cannot go wrong foll
 
 - A member has up to 45 days to report a trade. MEASURED on the collected record: the middle delay between trade and filing is 28 days, one in ten is 48 days or more, and 11% are over 45. A follower can only act after the filing. So every trade here is dated by its filing, never by the day of the trade.
 - MEASURED 2026-11-25 from our price feed, dividends included: the fund that copies Democratic members' disclosures with real money (NANC) made +85.3% from its first day, 2023-02-07, to 2026-11-24. SPY made +81.5% and QQQ +110.3%. The Republican fund (KRUZ, renamed GOP in March 2025) made +61.0%. A second public source gives the same three figures ([Total Real Returns](https://totalrealreturns.com/n/NANC,GOP,SPY)).
-- The published studies and their sources go into the research page for this replay when the helper's reading has been checked.
+- Published tests that buy after the filing found no gain over the market for the average disclosed purchase (`docs/research/48_congress_trades_evidence.md`). The expectation written down before the run: the all-members group does not pass. The open question is the two smaller groups.
 
 ## Data
 
@@ -40,6 +40,23 @@ Yardsticks:
 - (c) The same stocks bought on random days: for each event, the same stock bought on a day drawn within `replay_12_plan.random_date_window_days` days either side of the filing, `replay_12_plan.random_date_draws` times. This separates "they buy stocks that were going up anyway" from "the filing day matters".
 - Shown for scale, not judged: QQQ, and NANC from its first day.
 
+## Definitions fixed before the run
+
+Written 2026-11-25 after the code builder read the draft and listed what it left open. No price had been joined to any trade when these were written.
+
+- Time of day: every filing in the record carries only a day. Entry is never on the filing day.
+- Entry days: everything is worked out three ways. Main: the open of the first trading day after the filing day. Later: `replay_12_plan.late_entry_trading_days` trading days after that. Latest: the open of the first trading day after the filing day plus `replay_12_plan.late_entry_calendar_days` calendar days.
+- "Did best against SPY" for the proven list: for each member, the mean over events of the stock's return less SPY's, each from the entry open to the exit close at the set-up's own hold, no costs. A hold is finished when its exit day is before the refresh day. Refresh days run every `replay_12_plan.proven_refresh_days` trading days from the first trading day of each half. A list applies to events filed on or after its refresh day and before the next. Ties go by name. In the design half the list is empty until members have enough finished events, so that group's portfolio starts later.
+- "SPY over the same days": a mirror portfolio with the same weights on the same days and every stock swapped for SPY, no cost on the mirror. Days with no position are left out of both. "Beat SPY by the most per year" is the portfolio's growth divided by the mirror's, raised to 252 over the number of days, less 1. The bootstrap resamples calendar months of the portfolio's gain less the mirror's.
+- Purchases against sales (mark 3): the two portfolios hold on different days, so each is set against its own SPY mirror per year as above. Purchases pass when their figure is the higher. For the proven group, the sales side is the same members' sales. A large sale is a row whose range starts at `replay_12_plan.large_buy_min_usd` dollars or more.
+- Costs: the portfolio is reset to its target weights each day and `replay_12_plan.cost_bps_per_side` is charged on that day's turnover (the sum of the gaps between target and drifted weights), which covers entries, exits and the reset. The same portfolio with no daily reset, charged on entries and exits only, is shown and not judged.
+- A stock whose prices stop inside a hold is sold at its last close, flagged and counted; the result without such trades is shown and not judged. An event with no price on its entry day, or whose prices start after its filing day, is left out and counted by year.
+- The same member buying the same stock again while a hold is running is one position, held until the last hold ends.
+- Stock bought by using a call option is reported as a stock purchase and stays in the judged groups, because the judged path reads no free text. Such rows are counted, and each judged figure is shown again without them, not judged.
+- The feed finds prices by ticker. A ticker later reused by another company could join the wrong history. This is not detectable from the feed; the 20 largest single-event returns are printed so a wrong join shows.
+- In design mode every price file is cut at the last day a design event or a design random draw needs, so no held-back event's price is read.
+- The proven group may fall short of `replay_12_plan.min_events` on the held-back half. That is a fail on count, said as such.
+
 ## Two halves, one judged
 
 - Design half: filings from `replay_12_plan.design_filed_from` to `replay_12_plan.design_filed_to`. Used once to choose one set-up out of nine (three groups, three holding times): the one whose portfolio beat SPY by the most per year. Choosing among nine flatters the winner, so this half is not the judge.
@@ -59,7 +76,7 @@ A pass means worth running on the practice desk with pretend money as a slow sle
 
 ## Named members, reported and not judged
 
-Nancy Pelosi and the members most followed in the press (the list and its sources come from the helper's reading and are fixed in this plan before it is frozen). For each: the number of purchase events, and what they did from the filing day against SPY at each holding time. Pelosi's household reports many purchases of call options; for this table only, a call option purchase is treated as a purchase of the stock, and the count of such rows is shown. A single member has too few events to judge, and that is said beside each row.
+The members in `replay_12_plan.named_members`: Nancy Pelosi and the members that trackers and the press name most (`docs/research/48_congress_trades_evidence.md`). The list was fixed before any return was worked out. For each: the number of purchase events, and what they did from the filing day against SPY at each holding time. Pelosi's household reports many purchases of call options; for this table only, a call option purchase is treated as a purchase of the stock, and the count of such rows is shown. A single member has too few events to judge, and that is said beside each row.
 
 ## How this can fool us
 
