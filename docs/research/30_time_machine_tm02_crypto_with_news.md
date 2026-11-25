@@ -29,12 +29,12 @@ From the plan: the news helped only if all six models gained more with it than w
 
 | Model | Months finished in both | With news | Prices alone | Better with news |
 |---|---|---|---|---|
-| Claude Opus 5.5 | 4 of 5 | -$21.99 | -$103.88 | yes |
-| GPT-6.2 Sol | 4 of 5 | $2.61 | -$24.22 | yes |
-| Gemini Neon | 3 of 5 | $103.15 | $52.03 | yes |
+| Claude Opus 5.5 | 5 of 5 | -$70.27 | -$148.89 | yes |
+| GPT-6.2 Sol | 5 of 5 | -$28.00 | -$34.23 | yes |
+| Gemini Neon | 4 of 5 | $112.95 | $97.46 | yes |
 | Claude Sonnet 5.5 | 5 of 5 | -$10.18 | -$63.38 | yes |
 | Kimi K3 | 1 of 5 | -$69.90 | -$110.50 | yes |
-| Grok 4.7 | 2 of 5 | -$3.45 | -$47.25 | yes |
+| Grok 4.7 | 3 of 5 | $13.62 | -$48.85 | yes |
 
 Verdict: not finished.
 
@@ -53,10 +53,10 @@ Verdict: not finished.
 | August | Gemini Neon | $175.27 | $245.33 | n/a | n/a of 0 | 9 | 7 | 2 | $15.28 | -4.1% | 51 of 62 | 48 | 0 of 62 | 0 |
 | August | Claude Sonnet 5.5 | $15.87 | $245.33 | n/a | n/a of 0 | 5 | 3 | 2 | $7.06 | -1.9% | 55 of 62 | 10 | 0 of 62 | 0 |
 | August | Kimi K3 | not finished | | | | | | | | | | | | |
-| August | Grok 4.7 | not finished | | | | | | | | | | | | |
+| August | Grok 4.7 | $17.07 | $245.33 | n/a | n/a of 0 | 1 | 1 | 0 | $1.55 | -0.3% | 61 of 62 | 22 | 0 of 62 | 0 |
 | September | Claude Opus 5.5 | -$28.24 | $59.89 | n/a | n/a of 0 | 11 | 3 | 7 | $13.72 | -4.7% | 47 of 60 | 28 | 0 of 60 | 0 |
 | September | GPT-6.2 Sol | -$4.18 | $59.89 | n/a | n/a of 0 | 8 | 3 | 5 | $7.86 | -1.3% | 52 of 60 | 58 | 0 of 60 | 0 |
-| September | Gemini Neon | not finished | | | | | | | | | | | | |
+| September | Gemini Neon | $9.80 | $59.89 | n/a | n/a of 0 | 11 | 6 | 3 | $16.85 | -6.9% | 50 of 60 | 34 | 0 of 60 | 0 |
 | September | Claude Sonnet 5.5 | -$22.02 | $59.89 | n/a | n/a of 0 | 5 | 2 | 3 | $6.46 | -2.9% | 51 of 60 | 18 | 0 of 60 | 0 |
 | September | Kimi K3 | not finished | | | | | | | | | | | | |
 | September | Grok 4.7 | not finished | | | | | | | | | | | | |
@@ -66,8 +66,8 @@ Verdict: not finished.
 | October | Claude Sonnet 5.5 | -$9.70 | -$76.42 | n/a | n/a of 0 | 3 | 1 | 2 | $3.99 | -1.1% | 49 of 62 | 14 | 41 of 62 | 0 |
 | October | Kimi K3 | -$69.90 | -$76.42 | n/a | n/a of 0 | 11 | 2 | 8 | $12.23 | -9.0% | 47 of 62 | 5 | 13 of 62 | 1 |
 | October | Grok 4.7 | -$18.22 | -$76.42 | n/a | n/a of 0 | 1 | 0 | 1 | $1.46 | -1.9% | 61 of 62 | 15 | 8 of 62 | 0 |
-| November 1 to 24 | Claude Opus 5.5 | not finished | | | | | | | | | | | | |
-| November 1 to 24 | GPT-6.2 Sol | not finished | | | | | | | | | | | | |
+| November 1 to 24 | Claude Opus 5.5 | -$48.28 | -$231.10 | n/a | n/a of 0 | 7 | 2 | 5 | $8.40 | -7.0% | 39 of 48 | 19 | 0 of 48 | 0 |
+| November 1 to 24 | GPT-6.2 Sol | -$30.61 | -$231.10 | n/a | n/a of 0 | 4 | 0 | 4 | $5.56 | -3.1% | 44 of 48 | 33 | 0 of 48 | 0 |
 | November 1 to 24 | Gemini Neon | not finished | | | | | | | | | | | | |
 | November 1 to 24 | Claude Sonnet 5.5 | $22.22 | -$231.10 | n/a | n/a of 0 | 2 | 1 | 1 | $3.31 | -1.1% | 44 of 48 | 13 | 0 of 48 | 0 |
 | November 1 to 24 | Kimi K3 | not finished | | | | | | | | | | | | |
@@ -171,6 +171,12 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-08-23 12:00 | BTC/USD | packet only | Headline 'Institutional Demand Is Back: Bitcoin and Ethereum ETF Inflows Reached 10-Month High' (2026-08-23T11:02:27Z) plus a two-day hold at 77k; target 81k (+4.8%) vs stop 74.8k (-3.2%). | Institutional Demand Is Back: Bitcoin and Ethereum ETF Inflows Reached 10-Month High (2026-08-23T11:02:27Z) | time limit 2026-08-26 12:00 | win $2.09 (+0.8%) |
 | 2026-08-28 00:00 | BTC/USD | packet only | Price holds above the 80k resistance after a retest; target 84k (+4.6%) vs stop 77.8k (-3.1%). No headline used. | none | stop reached 2026-08-28 16:20 | loss -$11.91 (-4.0%) |
 
+### August, Grok 4.7
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-08-20 12:00 | BTC/USD | 1Hour bars x1 | Holding above 70000 after the break, and the 10:40 headline 'Bitcoin grabs 77% of $1.3 billion crypto fund surge as BlackRock leads the rebound' (2026-08-20T10:40:17Z) says the bid is fund flow, not only a squeeze. | https://cryptoslate.com/bitcoin-grabs-77-of-1-3-billion-crypto-fund-surge-as-blackrock-leads-the-rebound/ | target reached 2026-08-21 07:20 | win $17.07 (+5.7%) |
+
 ### September, Claude Opus 5.5
 
 | Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
@@ -199,6 +205,22 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-09-21 12:00 | SOL/USD | 1Day bars x1, 1Hour bars x3 | SOL cleared 112.53, then hourly lows rose from 114.954 to 115.832 while BTC stayed above 84k. Use 114.70 as invalidation and 121.80 as the projected objective. | none | time limit 2026-09-23 12:00 | loss -$0.74 (-0.4%) |
 | 2026-09-26 00:00 | SOL/USD | 1Hour bars x1 | SOL retested 120.85 and regained 122; US crypto ETFs draw over $3 billion this week, with nearly $800 million flowing beyond Bitcoin (2026-09-25T15:00:30Z) modestly supports the broader alt relative-strength trade. Invalidate below 120.55 and target a measured extension to 126.35. | https://cryptoslate.com/us-crypto-etfs-draw-over-3-billion-this-week-with-nearly-800-million-flowing-beyond-bitcoin/ | stop reached 2026-09-26 04:25 | loss -$3.83 (-2.0%) |
 | 2026-09-27 00:00 | LINK/USD | 1Hour bars x1 | LINK recovered above 14.05 after dipping to 13.874. Apple And Nvidia Tokenized Stocks Can Now Back USDC Loans On Aave (2026-09-26T17:30:00Z) identifies Chainlink pricing in a live collateral integration. Invalidate below 13.82 and target 14.72 after a potential break of 14.37. | https://www.newsbtc.com/news/defi/apple-and-nvidia-tokenized-stocks-can-now-back-usdc-loans-on-aave/ | stop reached 2026-09-28 04:05 | loss -$4.93 (-3.3%) |
+
+### September, Gemini Neon
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-09-02 00:00 | BTC/USD | 1Hour bars x3 | BTC swept $76,379 at 18:00Z on high volume and reclaimed $77,405 near range support, backed by renewed institutional demand in "Bitcoin ETFs Add $142M As September Trading Opens With Inflows" (2026-09-01T19:15:00Z) and "Bitcoin’s Korea Premium Flips Positive After Its Longest Losing Streak" (2026-09-01T16:36:05Z). | https://www.newsbtc.com/news/bitcoin-etfs-add-142m-september-trading-inflows/; https://cryptopotato.com/bitcoins-korea-premium-flips-positive-after-its-longest-losing-streak/; https://www.newsbtc.com/news/solana-etfs-925k-daily-inflows-new-month-opens/ | target reached 2026-09-03 21:35 | win $18.58 (+5.3%) |
+| 2026-09-02 00:00 | SOL/USD | 1Hour bars x3 | SOL led majors to $110.54 on Aug 27, pulled back 9.5% to sweep $97.20 at 21:00Z on heavy volume (338.1), and reclaimed $99.97, supported by "Solana ETFs Record $925K In Daily Inflows As New Month Opens" (2026-09-01T18:30:00Z). | https://www.newsbtc.com/news/bitcoin-etfs-add-142m-september-trading-inflows/; https://cryptopotato.com/bitcoins-korea-premium-flips-positive-after-its-longest-losing-streak/; https://www.newsbtc.com/news/solana-etfs-925k-daily-inflows-new-month-opens/ | stop reached 2026-09-09 23:00 | win $0.17 (+0.1%) |
+| 2026-09-05 00:00 | BTC/USD | 1Hour bars x1 | BTC held $78,628 after the NFP drop and stabilized at $79,677 for 9 hours, offering a pullback re-entry supported by massive institutional flows in "Wall Street just poured nearly $900 million into Bitcoin and Ethereum ETFs" (2026-09-04T14:55:26Z) and resilient post-jobs price action in "Bitcoin falls below $80,000 as hot US payrolls revive Fed hike risk" (2026-09-04T16:10:13Z). | https://cryptoslate.com/wall-street-just-poured-nearly-900-million-into-bitcoin-and-ethereum-etfs/; https://cryptoslate.com/bitcoin-falls-below-80000-as-hot-us-payrolls-revive-fed-hike-risk/ | stop reached 2026-09-10 13:20 | loss -$15.38 (-4.4%) |
+| 2026-09-12 00:00 | ETH/USD | 1Hour bars x2 | ETH broke out to $2,665 on strong volume post-CPI and retested $2,506-$2,516 support on light volume, backed by relative leadership noted in "BTC Volatility Returns, ETH Taps 8-Month High, While CPI Sets the Stage for the Fed: Weekly Recap" (2026-09-11T15:11:25Z) and upcoming protocol upgrade catalyst in "Ethereum Targets October 6 for Glamsterdam Sepolia Fork" (2026-09-11T21:56:49Z). | https://cryptopotato.com/btc-volatility-returns-eth-taps-8-month-high-while-cpi-sets-the-stage-for-the-fed-weekly-recap/; https://cryptopotato.com/ethereum-targets-october-6-for-glamsterdam-sepolia-fork/ | stop reached 2026-09-15 14:50 | loss -$17.96 (-5.1%) |
+| 2026-09-17 00:00 | BTC/USD | 1Hour bars x2 | BTC swept $74,981 at 18:00Z, reversed on heavy 12.3 volume at 19:00Z, and closed at $76,146, confirming post-event absorption of the pre-Fed selloff noted in "Bitcoin absorbs initial pre-Fed sell-off, leaving $70K as a critical test for Warsh’s Fed decision" (2026-09-16T12:15:50Z) and positioning noted in "Bitcoin’s Fed move could run straight into a $6.3 billion IBIT options wall" (2026-09-16T18:40:02Z). | https://cryptoslate.com/bitcoins-fed-move-could-run-straight-into-a-6-3-billion-ibit-options-wall/; https://cryptoslate.com/bitcoin-absorbs-initial-pre-fed-sell-off-leaving-70k-as-key-structural-test-for-warshs-decision/ | target reached 2026-09-18 15:25 | win $20.05 (+5.7%) |
+| 2026-09-17 00:00 | ETH/USD | 1Hour bars x2 | ETH swept $2,367 at 18:00Z (holding above its Aug 23 range low of $2,357) and surged +1.12% in the 23:00Z hour to $2,416, offering a clean 2.35:1 risk-reward swing rebound off range support. | https://cryptoslate.com/bitcoins-fed-move-could-run-straight-into-a-6-3-billion-ibit-options-wall/; https://cryptoslate.com/bitcoin-absorbs-initial-pre-fed-sell-off-leaving-70k-as-key-structural-test-for-warshs-decision/ | target reached 2026-09-18 18:35 | win $23.24 (+7.7%) |
+| 2026-09-19 12:00 | BTC/USD | 1Hour bars x2 | BTC coiled tightly at $80,820-$81,719 for 20 hours with zero give-back below the $82k resistance ceiling, backed by regulatory relief in "Bitcoin Reclaims $80K as SEC and CFTC Push Ahead After CLARITY Failure" (2026-09-19T05:49:43Z) and macro resilience in "Bitcoin survived the Fed and CLARITY, and now faces the next major test at $82,000 this weekend" (2026-09-19T09:06:06Z). | https://cryptopotato.com/bitcoin-reclaims-80k-as-sec-and-cftc-push-ahead-after-clarity-failure/; https://cryptoslate.com/bitcoin-survived-the-fed-and-clarity-and-now-faces-the-next-major-test-at-82000-this-weekend/ | stop reached 2026-09-24 08:50 | win $6.20 (+1.8%) |
+| 2026-09-19 12:00 | SOL/USD | 1Hour bars x2 | SOL broke above its Aug 27 high ($110.54) to $114.22 and held a clean low-volume retest of the $111.15-$111.86 breakout shelf, offering a 2.6:1 risk-reward continuation swing. | https://cryptopotato.com/bitcoin-reclaims-80k-as-sec-and-cftc-push-ahead-after-clarity-failure/; https://cryptoslate.com/bitcoin-survived-the-fed-and-clarity-and-now-faces-the-next-major-test-at-82000-this-weekend/ | stop reached 2026-09-23 14:20 | win $2.43 (+0.7%) |
+| 2026-09-23 00:00 | ETH/USD | 1Hour bars x1 | ETH held a tight 20-hour bull flag ($2,717-$2,774) above $2,700 resistance, backed by "Bitcoin ETFs just absorbed 11,500 BTC in their biggest buying day in nearly two years" (2026-09-22T16:00:57Z) and "Ethereum Investors Are Pulling ETH Off Binance at a Pace Not Seen in 3 Years" (2026-09-22T04:05:43Z). | https://cryptoslate.com/bitcoin-etfs-just-absorbed-11500-btc-in-their-biggest-buying-day-in-nearly-two-years/; https://cryptopotato.com/ethereum-investors-are-pulling-eth-off-binance-at-a-pace-not-seen-in-3-years/ | stop reached 2026-09-23 14:20 | loss -$12.56 (-4.2%) |
+| 2026-09-25 12:00 | BTC/USD | 1Hour bars x3 | BTC swept $83,740 at 07:00Z right into the 08:00 UTC expiry highlighted in "How Will Crypto Markets Move After $16B in Bitcoin Options Expire Today?" (2026-09-25T06:51:35Z), then rallied 4 consecutive hours to $85,256 high / $84,578 close, confirming $83.5k-$83.7k as post-expiry support. | https://cryptopotato.com/how-will-crypto-markets-move-after-16b-in-bitcoin-options-expire-today/; https://www.newsbtc.com/altcoins/circle-mints-250m-usdc-on-solana-in-fresh-treasury-issuance/ | open at the end | still held at the end or not filled |
+| 2026-09-25 12:00 | SOL/USD | 1Hour bars x3 | SOL swept $115.30 at 07:00Z (V=76.6) and surged 4 straight hours to $122.19 high / $120.85 close on massive breakout volume (V=240.9), supported by fresh liquidity in "Circle Mints 250M USDC On Solana In Fresh Treasury Issuance" (2026-09-25T07:30:00Z). | https://cryptopotato.com/how-will-crypto-markets-move-after-16b-in-bitcoin-options-expire-today/; https://www.newsbtc.com/altcoins/circle-mints-250m-usdc-on-solana-in-fresh-treasury-issuance/ | open at the end | still held at the end or not filled |
 
 ### September, Claude Sonnet 5.5
 
@@ -269,6 +291,27 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
 |---|---|---|---|---|---|---|
 | 2026-10-02 12:00 | XRP/USD | 1Hour bars x2 | Buy the hold above 1.51 after the 2026-10-02T08:41:21Z headline 'Evernorth Clears Shareholder Vote Ahead Of XRPN Nasdaq Debut', which confirms the 2026-10-01T16:59:04Z vote story that XRP is coming to Nasdaq with a 473M treasury. Stop under the pre-break base. | https://www.newsbtc.com/business/evernorth-shareholders-approve-xrp-treasury-xrpn/; https://cryptopotato.com/xrp-is-coming-to-nasdaq-evernorth-clears-key-vote-with-473m-treasury/ | stop reached 2026-10-02 18:40 | loss -$18.22 (-6.1%) |
+
+### November 1 to 24, Claude Opus 5.5
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-11-01 00:00 | LINK/USD | 1Day bars x8, 1Hour bars x2 | LINK bounced from 10.60 to 11.63 after the hack while others stayed flat; headlines 'Hanwha Chooses Chainlink Data and CCIP' (2026-10-31T20:00Z), 'Chainlink Unveils 24/7 Pricing ... Aave Adopts Feeds' (2026-10-31T19:00Z) and 'Chainlink Launches CustodySync With Anchorage' (2026-11-01T00:00Z) give a reason for the relative strength. Target +8% far exceeds round-trip cost. | https://www.newsbtc.com/news/hanwha-chooses-chainlink-data-and-ccip-for-global-tokenization-platform/; https://www.newsbtc.com/news/chainlink-unveils-24-7-pricing-for-tokenized-assets-as-aave-adopts-feeds/; https://www.newsbtc.com/news/chainlink-launches-custodysync-with-anchorage-to-link-custody-and-defi-loans/ | stop reached 2026-11-04 00:25 | loss -$17.40 (-6.9%) |
+| 2026-11-04 12:00 | ETH/USD | 1Hour bars x2 | ETH broke above its 2300 range top after a flush to 2223 was bought back within hours; headline 'Bitcoin Whipsaws After Democratic Sweep: BTC Reclaims $78K' (2026-11-04T08:28Z) marks the event risk as passed. Target ~+6.5% vs ~0.75% round-trip cost. | https://cryptopotato.com/bitcoin-whipsaws-after-democratic-sweep-btc-reclaims-78k/ | stop reached 2026-11-05 15:00 | win $0.06 (+0.0%) |
+| 2026-11-10 00:00 | AVAX/USD | 1Day bars x1, 1Hour bars x1 | Headline 'NYSE Picks Avalanche to Settle Tokenized Stock Trades on Planned 24/7 Venue' (2026-11-09T17:15Z) moved AVAX from ~8.0 to 8.99; it retraced to 8.54 and is holding 8.65. Target +8.7% vs ~0.75% round-trip cost; stop below the pre-news base. | https://cryptopotato.com/nyse-picks-avalanche-to-settle-tokenized-stock-trades-on-planned-24-7-venue/ | stop reached 2026-11-10 15:40 | loss -$12.53 (-6.2%) |
+| 2026-11-15 12:00 | BTC/USD | 1Hour bars x3 | Price only: capitulation flush to 62k at 01:00Z bought back to 65.3k with a higher low at 64.0k. Stop under that higher low, target +5.6% vs ~0.75% round-trip cost. | none | stop reached 2026-11-18 14:45 | loss -$11.63 (-3.9%) |
+| 2026-11-15 12:00 | ETH/USD | 1Hour bars x3 | Price only: ETH flushed to 1711 and bounced to 1823 with a higher low at 1781. Stop under 1760, target ~+7.5% vs ~0.75% round-trip cost. | none | stop reached 2026-11-18 16:20 | loss -$9.27 (-4.6%) |
+| 2026-11-18 00:00 | SOL/USD | 1Hour bars x1 | SOL leads the rebound (67.4 low to 75.1) with steady higher hourly lows, backed by headlines 'MoneyGram and Solflare Launch USDC Cash-Out at Participating Locations in 170-Plus Markets' (2026-11-17T21:00Z), 'Solana Drops Mainnet Beta Label as Foundation Introduces Protocol Version 1.0' (2026-11-17T18:00Z) and 'DTCC Adds Solana to Wall Street Tokenization Plans' (2026-11-15T23:51Z). Target +7.8% vs ~0.75% round-trip cost; stop under the last higher low. | https://www.newsbtc.com/crypto-news/moneygram-and-solflare-launch-usdc-cash-out-at-participating-locations-in-170-plus-markets/; https://www.newsbtc.com/news/solana/solana-drops-mainnet-beta-label-as-foundation-introduces-protocol-version-1-0/ | stop reached 2026-11-20 12:05 | loss -$11.06 (-5.5%) |
+| 2026-11-22 00:00 | BTC/USD | 1Hour bars x1 | Flush to 55.1k reversed to 60k and held a 59.8-60.4k shelf for ten hours; headline 'Short Traders Get Wrecked Too as Bitcoin Climbs Past $60K in Whipsaw Move' (2026-11-21T15:31Z) shows shorts being forced out. Stop -2.5% under the shelf, target +5.7% vs ~0.75% round-trip cost. | https://cryptopotato.com/short-traders-get-wrecked-too-as-bitcoin-climbs-past-60k-in-whipsaw-move/ | target reached 2026-11-23 14:00 | win $13.55 (+5.4%) |
+
+### November 1 to 24, GPT-6.2 Sol
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-11-04 00:00 | XRP/USD | 1Day bars x1, 1Hour bars x2 | XRP at 1.2754 held above the 1.2624 prior range ceiling after a breakout. As supporting evidence, 7,934 New XRP Wallets in One Day: Network Activity Defies Sunday Slowdown (2026-11-03T17:42:37Z) reported the sixth-highest daily new-wallet count this year, though it does not prove buying demand. | https://cryptopotato.com/7934-new-xrp-wallets-in-one-day-network-activity-defies-sunday-slowdown/ | stop reached 2026-11-04 00:35 | loss -$6.53 (-2.4%) |
+| 2026-11-05 00:00 | ETH/USD | 1Day bars x2, 1Hour bars x2 | At 2422.52, ETH retained most of the breakout above 2312 while repeated hourly touches near 2403 held; buy the consolidation rather than the original impulse. | none | stop reached 2026-11-05 12:40 | loss -$6.24 (-1.9%) |
+| 2026-11-10 00:00 | AVAX/USD | 1Day bars x2, 1Hour bars x1 | AVAX held near 8.65 after a pullback to 8.479. NYSE Picks Avalanche to Settle Tokenized Stock Trades on Planned 24/7 Venue (2026-11-09T17:15:55Z) reports a concrete platform selection, though launch and direct token demand are not established. | https://cryptopotato.com/nyse-picks-avalanche-to-settle-tokenized-stock-trades-on-planned-24-7-venue/ | stop reached 2026-11-10 07:15 | loss -$7.98 (-2.9%) |
+| 2026-11-18 00:00 | SOL/USD | 1Day bars x1, 1Hour bars x2 | At 75.112 SOL confirmed the second break of 73.30. MoneyGram and Solflare Launch USDC Cash-Out at Participating Locations in 170-Plus Markets (2026-11-17T21:00:00Z) and CoW Swap Adds Native Solana Trading With Solver Auctions and a One-Year Volume-Fee Waiver (2026-11-17T22:00:00Z) report live usage channels, not guarantees of SOL demand. | https://www.newsbtc.com/crypto-news/moneygram-and-solflare-launch-usdc-cash-out-at-participating-locations-in-170-plus-markets/; https://www.newsbtc.com/news/solana/cow-swap-adds-native-solana-trading-with-solver-auctions-and-a-one-year-volume-fee-waiver/ | stop reached 2026-11-18 16:20 | loss -$9.87 (-3.9%) |
 
 ### November 1 to 24, Claude Sonnet 5.5
 

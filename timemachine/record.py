@@ -796,6 +796,9 @@ def _format_8k_items(raw_items):
     return ", ".join(parts)
 
 
+SEC_STOCK_FORMS = ("8-K", "8-K/A", "10-Q", "10-Q/A", "10-K", "10-K/A")
+
+
 def _extract_sec_8k_rows(sym, cik, company_title, block, sd_str, ed_str):
     forms = block.get("form") or []
     accs = block.get("acceptanceDateTime") or []
@@ -806,7 +809,7 @@ def _extract_sec_8k_rows(sym, cik, company_title, block, sd_str, ed_str):
     report_dates = block.get("reportDate") or []
     out = []
     for i, form in enumerate(forms):
-        if form not in ("8-K", "8-K/A"):
+        if form not in SEC_STOCK_FORMS:
             continue
         acc_dt = (accs[i] if i < len(accs) else "") or ""
         if not acc_dt or len(acc_dt) < 10:
@@ -818,17 +821,30 @@ def _extract_sec_8k_rows(sym, cik, company_title, block, sd_str, ed_str):
         acc_num = acc_nums[i] if i < len(acc_nums) else ""
         prim_doc = prim_docs[i] if i < len(prim_docs) else ""
         acc_nodash = acc_num.replace("-", "")
-        if acc_nodash and prim_doc:
-            url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{acc_nodash}/{prim_doc}"
+        rep_date = report_dates[i] if i < len(report_dates) else ""
+        is_8k = form in ("8-K", "8-K/A")
+        if is_8k:
+            if acc_nodash and prim_doc:
+                url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{acc_nodash}/{prim_doc}"
+            else:
+                url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={int(cik):010d}&type=8-K&acc={acc_num}"
+            raw_items = items_col[i] if i < len(items_col) else ""
+            items_label = _format_8k_items(raw_items)
+            headline = f"{sym} Form {form} (Items {items_label}): {company_title}"
+            summary = f"SEC EDGAR {form} filed by {company_title} ({sym}), accepted {acc_dt}. Items: {items_label}."
         else:
-            url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={int(cik):010d}&type=8-K&acc={acc_num}"
-        raw_items = items_col[i] if i < len(items_col) else ""
-        items_label = _format_8k_items(raw_items)
-        headline = f"{sym} Form {form} (Items {items_label}): {company_title}"
+            if acc_nodash and acc_num:
+                url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{acc_nodash}/{acc_num}-index.htm"
+            else:
+                url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={int(cik):010d}&type={form}&acc={acc_num}"
+            raw_items = ""
+            period_part = f" (period {rep_date})" if rep_date else ""
+            headline = f"{sym} Form {form}{period_part}: {company_title}"
+            summary = f"SEC EDGAR {form} accepted {_ensure_utc_iso(acc_dt)}. Filing index: {url}"
         item = {
             "id": _keyless_news_id("sec_edgar", url),
             "headline": headline,
-            "summary": f"SEC EDGAR {form} filed by {company_title} ({sym}), accepted {acc_dt}. Items: {items_label}.",
+            "summary": summary,
             "source": "sec_edgar",
             "url": url,
             "created_at": _ensure_utc_iso(acc_dt),
@@ -838,7 +854,7 @@ def _extract_sec_8k_rows(sym, cik, company_title, block, sd_str, ed_str):
             "items": raw_items,
             "accession_number": acc_num,
             "filing_date": filing_dates[i] if i < len(filing_dates) else "",
-            "report_date": report_dates[i] if i < len(report_dates) else "",
+            "report_date": rep_date,
             "cik": f"{int(cik):010d}",
         }
         out.append(item)
@@ -846,7 +862,7 @@ def _extract_sec_8k_rows(sym, cik, company_title, block, sd_str, ed_str):
 
 
 def record_sec_news(tape, client, symbols, start_d, end_d, cfg=None):
-    """Record dated SEC EDGAR 8-K / 8-K/A filings using acceptanceDateTime (UTC to the second)."""
+    """Record dated SEC EDGAR 8-K, 10-Q, and 10-K filings (and amendments) using acceptanceDateTime (UTC to the second)."""
     sd_str, ed_str = _parse_date(start_d).isoformat(), _parse_date(end_d).isoformat()
     tickers_raw = json.loads(client.get_text(SEC_TICKERS_URL))
     by_sym = {}

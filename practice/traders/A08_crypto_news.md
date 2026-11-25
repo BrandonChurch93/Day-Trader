@@ -41,7 +41,7 @@ Every box must be ticked, written in the reason field:
 - Stop price: 5% below entry.
 - Target price: the expected move written at entry, capped at 15% above entry.
 - Exit-by time: 5 days after entry; or 24 hours if the model marks it as a short news trade.
-- Stops are checked about every 10 minutes and crypto can move fast between checks, so losses can exceed the stop.
+- Stops are checked about every 30 minutes and crypto can move fast between checks, so losses can exceed the stop.
 
 ## What it never does
 

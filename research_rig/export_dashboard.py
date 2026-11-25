@@ -418,7 +418,7 @@ WAIT = waiting()
 
 
 # ------------------------------------------------------------------ practice trader records, read from the practice-records branch. No price is touched.
-PRACTICE_LIVE = "https://raw.githubusercontent.com/BrandonChurch93/Day-Trader/practice-records/records/summary.json"
+PRACTICE_LIVE = None  # The repo is private since 2026-11-25, so a browser cannot read the records branch. The page shows the copy saved when it was last built.
 def practice():
     """The newest summary.json the practice desk wrote (Run.summary in practice/trader.py, all traders in one file), or None if the branch cannot be read."""
     import subprocess; root = os.path.abspath(os.path.join(HERE, ".."))

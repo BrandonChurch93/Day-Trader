@@ -335,9 +335,9 @@ practice_pick_max_actions:
   source: practice/picks.py
 
 practice_timer_minutes:
-  value: 10
+  value: 30
   status: builder
-  note: How often GitHub's timer runs the practice desk. The schedule line in the workflow has to match it by hand. GitHub can run late.
+  note: How often GitHub's timer runs the practice desk. The schedule line in the workflow has to match it by hand. GitHub can run late. Was 10 until 2026-11-25 16:36 UTC. The owner made the repo private that day, and a private repo on the free plan gets about 2,000 runner minutes a month. Each run is billed as one minute, so every 10 minutes would use about 4,300 and every 30 about 1,450.
   source: .github/workflows/practice-trader.yml
 
 tm_daily_lookback_days:
@@ -501,3 +501,54 @@ tm_knowledge_hit_within:
   status: builder
   note: A model's remembered month-end price counts as close when it is within this fraction of the tape's price. Used only by the memory test of the models.
   source: timemachine/knowledge_line.py
+
+tm_weights_min_change:
+  value: 0.05
+  status: builder
+  note: In a weights session, a change in one symbol's weight smaller than this share of the book is not traded. A move to zero weight is always traded.
+  source: timemachine/weights.py
+tm_weights_sum_tolerance:
+  value: 0.000001
+  status: builder
+  note: In a weights session, the answered weights may add up to at most 1 plus this, to allow for rounding in the trader's numbers.
+  source: timemachine/weights.py
+tm_weights_return_days:
+  value: [1, 7, 30, 91]
+  status: builder
+  note: Calendar days for the trailing returns in a weights packet (about 1 day, 1 week, 1 month, 3 months), worked out from closed 1Day bars only.
+  source: timemachine/weights.py
+tm_weights_weekly_weekday:
+  value: 4
+  status: builder
+  note: Weekday of the weekly wake in a weights session, Monday is 0 (4 is Friday). For stocks, if that day has no session the last session day before it in the same week is used.
+  source: timemachine/weights.py
+tm_weights_weekly_time_ny:
+  value: 15.5
+  status: builder
+  note: New York time of the weekly wake in a weights session, in hours (15.5 is 15:30).
+  source: timemachine/weights.py
+tm_weights_max_headlines:
+  value: 20
+  status: builder
+  note: At most this many headlines since the last wake in a weights packet (newest first), for a session with news.
+  source: timemachine/weights.py
+tm_weights_news_first_wake_hours:
+  value: 24
+  status: builder
+  note: At the first wake of a weights session with news, headlines from this many hours before the wake are shown.
+  source: timemachine/weights.py
+tm_weights_why_max_chars:
+  value: 2000
+  status: builder
+  note: Longest "why" text a weights answer may carry.
+  source: timemachine/weights.py
+tm_weights_twin_draws:
+  value: 1000
+  status: builder
+  note: Number of random draws for each random twin set (shuffle, random basket) in timemachine/score_weights.py.
+  source: timemachine/score_weights.py
+tm_weights_twin_seed:
+  value: 1
+  status: builder
+  note: Seed for the random twins in timemachine/score_weights.py. Draw i uses its own generator made from this seed, the twin kind and i.
+  source: timemachine/score_weights.py
