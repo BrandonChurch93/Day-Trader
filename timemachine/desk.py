@@ -1,0 +1,400 @@
+"""TM07 protocol. An operator supplies frozen local inputs; nothing fetches or calls a model."""
+from contextlib import closing, contextmanager
+from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+import hmac
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import sqlite3
+
+from timemachine import perp as P, desk_orders as orders, tm06, weights as W
+
+UTC = timezone.utc
+SCOUTS = ("price_scout", "news_scout")
+ARMS = ("A", "B", "C")
+BOSSES = ("claude_fable_5_2", "claude_opus_5_5")
+SETTINGS = dict(notes_per_scout=2, note_chars=280, looks=3, look_rows=120, max_conditions=2, max_hours=6,
+                headline_rows=3, attention_rows=7)
+SID = re.compile(r"TM07-[A-Za-z0-9_-]{1,72}\Z")
+OID = re.compile(r"[A-Za-z0-9_./:-]{1,180}\Z")
+
+
+def encode(obj):
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def digest(obj):
+    return sha256(encode(obj).encode()).hexdigest()
+
+
+def epoch(value):
+    return value if type(value) is int else int(P.parse(value).timestamp())
+
+
+def wall(value):
+    return datetime.fromtimestamp(value, UTC)
+
+
+def available(e, wake):
+    published, known = e.get("published"), e.get("known_at")
+    return (type(published) is int and type(known) is int and published <= known <= wake
+            and e.get("vintage") == "original" and e.get("licensed") is True
+            and (e["kind"] not in ("bars", "attention") or type(e.get("period_end")) is int and e["period_end"] <= published)
+            and (e["kind"] != "news" or e.get("primary") is True
+                 or (isinstance(e.get("origins"), list) and len(set(e["origins"])) >= 2)))
+
+
+def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake):
+    """Builder helper only. Reads a caller-supplied tape and separately vetted existing rows."""
+    a, b = epoch(start), epoch(end)
+    wakes = list(range(a, b, 3600))
+    watch = [c if "/" in c else c + "/USD" for c in cfg["tm06_plan"]["coins"]]
+    priced = list(dict.fromkeys(symbols + ["BTC/USD"]))
+    pp = tm06.fast_params(priced, cfg, tape, wall(a), wall(b))
+    mins = P.perp_minutes(tape, priced, wall(a), wall(b))
+    rows = [W.fill_row(tape, "crypto", priced, wall(t), wall(t + 3600)) for t in wakes]
+    evidence = []
+    for t in wakes:
+        w = wall(t)
+        packet = []
+        for s in watch:
+            mark = tm06.price_at(tape, s, w)
+            if mark is not None:
+                packet.append(dict(id=f"price:{t}:{s}", symbol=s, kind="price", published=t, known_at=t,
+                                   vintage="original", licensed=True, value=dict(price=mark,
+                                       change_1h=tm06.change_pct(tape, s, w, 1), change_24h=tm06.change_pct(tape, s, w, 24),
+                                       volume=tm06.volume_row(tape, s, w, cfg), funding=tm06.last_funding(tape, s, w, cfg))))
+            for size, count, tf in ((3600, 24, "1Hour"), (60, 30, "1Min")):
+                bs = (P.S.built_bars(tape, s, size, w-timedelta(seconds=size*(count+1)), w, count)
+                      if size == 3600 else tape.bars(s, tf, w-timedelta(minutes=count+1), w, limit=count))
+                for bar in bs:
+                    stamp = epoch(bar["t"])
+                    packet.append(dict(id=f"bar:{size}:{stamp}:{s}", symbol=s, kind="bars", published=stamp+size,
+                                       known_at=stamp+size, period_end=stamp+size, vintage="original", licensed=True,
+                                       packet=True, value=dict(t=stamp, timeframe=tf, **{k: bar.get(k) for k in "ohlcv"})))
+        packet += [e for e in evidence_by_wake.get(str(t), []) if e.get("kind") in ("news", "attention") and available(e, t)]
+        evidence.append(packet)
+    return dict(wakes=wakes, end=b, symbols=symbols, watch=watch, benchmark="BTC/USD", opening={},
+                rows=rows, minutes=list(mins), end_marks=W.end_marks(tape, "crypto", priced, wall(b)),
+                evidence=evidence, cfg=cfg, params=pp, gross=float(cfg["tm06_plan"]["swing_max_gross"]))
+
+
+def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None):
+    """Write one isolated off-repo session folder. Scout mode has no trading book access."""
+    if arm not in (*ARMS, "scout") or (arm != "scout" and boss not in BOSSES):
+        raise ValueError("unknown arm or boss")
+    roles = SCOUTS if arm == "scout" else ("boss",)
+    if (set(tokens) != set(roles) or any(not isinstance(t, str) or len(t) < 32 for t in tokens.values())
+            or len(set(tokens.values())) != len(roles)):
+        raise ValueError("use separate random role tokens")
+    if (arm in ("B", "C")) != (scout is not None):
+        raise ValueError("desk arms require a sealed neutral scout export")
+    spec = json.loads(encode(spec))
+    fixture = digest(spec)
+    # A shared frozen packet is evidence, not another boss's output.
+    if scout and (scout["fixture"] != fixture or len(scout["wakes"]) != len(spec["wakes"])):
+        raise ValueError("scout export belongs to another tape")
+    path = Path(path)
+    if not SID.fullmatch(path.name):
+        raise ValueError("invalid TM07 session id")
+    path.mkdir(mode=0o700, parents=False)
+    for name, obj in (("fixture.json", spec), ("manifest.json", dict(arm=arm, boss=boss, fixture=fixture,
+                       scout_hash=digest(scout) if scout else None, scout=scout, settings=dict(SETTINGS, **(settings or {})),
+                       tokens={role: sha256(t.encode()).hexdigest() for role, t in tokens.items()}))):
+        fd = os.open(path / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(encode(obj))
+    with closing(sqlite3.connect(path / "desk.sqlite")) as con, con:
+        con.executescript("CREATE TABLE state (id INTEGER PRIMARY KEY CHECK(id=0), data TEXT NOT NULL);"
+                          "CREATE TABLE journal (id INTEGER PRIMARY KEY, wake INTEGER, role TEXT, kind TEXT, data TEXT);"
+                          "CREATE TRIGGER no_change BEFORE UPDATE ON journal BEGIN SELECT RAISE(ABORT,'append only'); END;"
+                          "CREATE TRIGGER no_delete BEFORE DELETE ON journal BEGIN SELECT RAISE(ABORT,'append only'); END;")
+        con.execute("INSERT INTO state VALUES (0, ?)", (encode(dict(k=0, issued={}, scout={}, active={}, looks=[],
+                    book=P.new_book(spec["cfg"]["tm_account_start_usd"], spec.get("opening")))),))
+
+
+class DeskSession:
+    def __init__(self, path):
+        self.path = Path(path)
+        self.sid = self.path.name
+        self.manifest = json.loads((self.path / "manifest.json").read_text())
+        self.spec = json.loads((self.path / "fixture.json").read_text())
+        if digest(self.spec) != self.manifest["fixture"]:
+            raise ValueError("frozen fixture changed")
+        self.arm = self.manifest["arm"]
+        self.opts = self.manifest["settings"]
+        self.pp = self.spec["params"]
+        self.pp["funding"] = {s: {int(k): v for k, v in rows.items()} for s, rows in self.pp["funding"].items()}
+        self.minutes = P.Minutes(self.spec["minutes"])
+
+    def authenticate(self, token):
+        hashed = sha256(token.encode()).hexdigest()
+        return next((r for r, v in self.manifest["tokens"].items() if hmac.compare_digest(hashed, v)), None)
+
+    @contextmanager
+    def tx(self):
+        with closing(sqlite3.connect(self.path / "desk.sqlite")) as con, con:
+            con.execute("BEGIN IMMEDIATE")
+            st = json.loads(con.execute("SELECT data FROM state WHERE id=0").fetchone()[0])
+            yield con, st
+            con.execute("UPDATE state SET data=? WHERE id=0", (encode(st),))
+
+    @staticmethod
+    def log(con, at, role, kind, data):
+        con.execute("INSERT INTO journal(wake, role, kind, data) VALUES(?,?,?,?)", (at, role, kind, encode(data)))
+
+    def evidence(self, k):
+        at = self.spec["wakes"][k]
+        out = {}
+        for e in self.spec["evidence"][k]:
+            if (available(e, at) and e["symbol"] in self.spec["watch"] and isinstance(e.get("id"), str)
+                    and OID.fullmatch(e["id"]) and e["kind"] in ("price", "bars", "news", "attention")):
+                if e["id"] in out and out[e["id"]] != e:
+                    raise ValueError("conflicting evidence id")
+                out[e["id"]] = e
+        return out
+
+    def raw(self, pool, at):
+        result = []
+        for s in self.spec["watch"]:
+            for kind, limit in (("price", 1), ("bars", 54), ("news", self.opts["headline_rows"]), ("attention", self.opts["attention_rows"])):
+                es = [e for e in pool.values() if e["symbol"] == s and e["kind"] == kind
+                      and (kind != "news" or e["known_at"] >= at-86400)
+                      and (kind != "bars" or e.get("packet", True))]
+                result.extend(sorted(es, key=lambda e: (e["known_at"], e["id"]), reverse=True)[:limit])
+        return result
+
+    def merge_notes(self, by_role, k):
+        pool = self.evidence(k)
+        at = self.spec["wakes"][k]
+        raw = self.raw(pool, at)
+        exposed = {e["id"]: e for e in raw}
+        out, seen = [], set()
+        for rank in range(self.opts["notes_per_scout"]):
+            for role in SCOUTS:
+                ns = by_role[role]
+                if rank >= len(ns):
+                    continue
+                n = ns[rank]
+                ev = [exposed[i] for i in n["evidence_ids"]]
+                news = next((e for e in ev if e["kind"] == "news"), None)
+                key = (n["symbol"], news.get("event_id", news["id"]) if news else "price")
+                if key in seen:
+                    continue
+                seen.add(key)
+                price = next((e for e in raw if e["symbol"] == n["symbol"] and e["kind"] == "price"), None)
+                if price and price not in ev:
+                    ev.append(price)
+                out.append(dict(id=f"note:{at}:{role}:{rank}", wake=at, symbol=n["symbol"], text=n["text"], evidence=ev))
+        return out
+
+    def packet(self, con, st, role):
+        k = st["k"]
+        at = self.spec["wakes"][k]
+        issued = st["issued"]
+        if role not in issued:
+            issued[role] = secrets.token_hex(24)
+        result = dict(session=self.sid, role=role, utc=at, step=k+1, total=len(self.spec["wakes"]), wake_key=issued[role],
+                      tradable=self.spec["symbols"])
+        if role in SCOUTS or self.arm == "A":
+            result["evidence"] = self.raw(self.evidence(k), at)
+            result["watch"] = self.spec["watch"]
+        if role == "boss":
+            marks = self.spec["rows"][k]["marks"]
+            b = st["book"]
+            result.update(arm=self.arm, book=dict(cash=b["cash"], equity=P.value_at(b, marks),
+                          weights=P.weights_at(b, marks), current_target=b["target"], exits=b["exits"]),
+                          active=list(st["active"].values()), looks_left=self.opts["looks"]-len(st["looks"]),
+                          book_evidence=f"book:{at}")
+            if self.arm != "A":
+                result["notes"] = self.manifest["scout"]["wakes"][k]["notes"]
+        if not con.execute("SELECT 1 FROM journal WHERE wake=? AND role=? AND kind='packet'", (at, role)).fetchone():
+            self.log(con, at, role, "packet", dict(hash=digest(result)))
+        return result
+
+    def lookup(self, con, st, body):
+        if len(st["looks"]) >= self.opts["looks"]:
+            raise ValueError("no lookups left")
+        k = st["k"]
+        at = self.spec["wakes"][k]
+        sym, kind = body.get("symbol"), body.get("kind")
+        if sym not in self.spec["symbols"] or kind not in ("bars", "news", "attention"):
+            raise ValueError("lookup needs one tradable symbol and an approved view")
+        rows = [e for e in self.evidence(k).values() if e["symbol"] == sym and e["kind"] == kind and e["known_at"] >= at-86400]
+        rows = sorted(rows, key=lambda e: (e["known_at"], e["id"]), reverse=True)[:self.opts["look_rows"]]
+        ids = [e["id"] for e in rows]
+        st["looks"].append(ids)
+        self.log(con, at, "boss", "look", dict(symbol=sym, kind=kind, ids=ids, hash=digest(rows)))
+        return dict(rows=rows, looks_left=self.opts["looks"]-len(st["looks"]))
+
+    def scout_submit(self, con, st, role, items):
+        if role in st["scout"]:
+            raise ValueError("scout already filed for this wake")
+        if not isinstance(items, list) or len(items) > self.opts["notes_per_scout"]:
+            raise ValueError("too many scout notes")
+        k = st["k"]
+        at = self.spec["wakes"][k]
+        pool = {e["id"]: e for e in self.raw(self.evidence(k), at)}
+        for n in items:
+            if (not isinstance(n, dict) or set(n) != {"symbol", "text", "evidence_ids"}
+                    or n["symbol"] not in self.spec["watch"] or not isinstance(n["text"], str)
+                    or not n["text"].strip() or len(n["text"]) > self.opts["note_chars"]):
+                raise ValueError("bad scout note")
+            ids = n["evidence_ids"]
+            if (not isinstance(ids, list) or not 1 <= len(ids) <= 4
+                    or any(not isinstance(i, str) or i not in pool or pool[i]["symbol"] != n["symbol"] for i in ids)):
+                raise ValueError("scout evidence not visible for this coin")
+        st["scout"][role] = items
+        self.log(con, at, role, "scout", dict(notes=items))
+        if all(r in st["scout"] for r in SCOUTS):
+            notes = self.merge_notes(st["scout"], k)
+            self.log(con, at, "neutral", "seal", dict(notes=notes, count_before=sum(map(len, st["scout"].values()))))
+            self.next(st)
+        return dict(accepted=True)
+
+    def decision(self, con, st, body):
+        k = st["k"]
+        at = self.spec["wakes"][k]
+        end = self.spec["end"]
+        row = self.spec["rows"][k]
+        bare = {x: v for x, v in body.items() if x not in ("conditions", "keep", "citations")}
+        errs = P.check_answer(bare, self.spec["symbols"], self.spec["cfg"], self.spec["gross"], row["marks"])
+        if errs:
+            raise ValueError(errs[0])
+        if self.arm != "C" and body.keys() & {"conditions", "keep"}:
+            raise ValueError("standing orders are for arm C only")
+        cites = body.get("citations", {})
+        if not isinstance(cites, dict) or cites.keys() - set(self.spec["symbols"]):
+            raise ValueError("citations must be by tradable symbol")
+        notes = self.manifest["scout"]["wakes"][k]["notes"] if self.arm != "A" else []
+        note_ids = {n["id"] for n in notes}
+        ids = {f"book:{at}"} | {i for look in st["looks"] for i in look}
+        ids.update(e["id"] for n in notes for e in n["evidence"])
+        if self.arm == "A":
+            ids.update(e["id"] for e in self.raw(self.evidence(k), at))
+
+        def cite(obj):
+            if not isinstance(obj, dict):
+                raise ValueError("bad citation")
+            n, e = obj.get("note_ids", []), obj.get("evidence_ids", [])
+            if (not isinstance(n, list) or not isinstance(e, list) or not (n or e)
+                    or any(not isinstance(x, str) or x not in note_ids for x in n)
+                    or any(not isinstance(x, str) or x not in ids for x in e)):
+                raise ValueError("cite a visible note, tape row or book id")
+
+        weights = bare.get("weights")
+        if weights is not None:
+            old = st["book"]["target"]
+            for s in set(old) | set(weights):
+                if weights.get(s, 0) != old.get(s, 0):
+                    cite(cites.get(s))
+        for c in cites.values():
+            cite(c)
+        new = orders.normalize_conditions(body.get("conditions", []), row["marks"], self.spec["symbols"], at,
+                                          end, self.opts["max_hours"], self.spec["gross"])
+        decision_id = f"{self.sid}:{at}"
+        for c in new.values():
+            c["decision_id"] = decision_id
+            cite(c)
+        keep = body.get("keep", [])
+        if (not isinstance(keep, list) or len(keep) > self.opts["max_conditions"]
+                or any(not isinstance(i, str) or i not in {o["id"] for o in st["active"].values()} for i in keep)):
+            raise ValueError("keep must name active order ids")
+        kept = {s for s, o in st["active"].items() if o["id"] in keep}
+        if len(kept | new.keys()) > self.opts["max_conditions"]:
+            raise ValueError("too many live conditions")
+        bundle = dict(weights=weights, exits=bare.get("exits"), conditions=new, keep=keep,
+                      decision_id=decision_id, citations=cites, why=bare["why"])
+        nxt = self.spec["wakes"][k+1] if k+1 < len(self.spec["wakes"]) else end
+        rec, active, events = orders.step(st["book"], bundle, row, self.pp, self.minutes, at, nxt, nxt == end,
+                                          st["active"], self.spec["gross"], first=k == 0)
+        self.log(con, at, "boss", "decision", bundle)
+        for trade in rec["trades"]:
+            s = trade["symbol"]
+            self.log(con, at, "executor", "immediate", dict(decision_id=decision_id, order_id=None,
+                     citation=cites.get(s, {}), trade=trade, spread_usd=trade["qty"]*trade["open"]*self.pp["hs"][s],
+                     target=rec["target"].get(s, 0)))
+        for event in events:
+            self.log(con, at, "executor", "condition", event)
+        self.log(con, at, "executor", "scan", rec["scan"])
+        st["active"] = active
+        if nxt == end:
+            st["book"]["last_px"].update(self.spec["end_marks"])
+            self.log(con, at, "executor", "finish", dict(value=max(0.0, P.value_at(st["book"], self.spec["end_marks"])),
+                                                        book=st["book"]))
+        self.next(st)
+        # Only acknowledge. The next packet is the first place at which earlier fills may be observed.
+        return dict(accepted=True, done=nxt == end)
+
+    @staticmethod
+    def next(st):
+        st.update(k=st["k"]+1, issued={}, scout={}, looks=[])
+
+    def handle(self, role, action, body):
+        if role not in self.manifest["tokens"]:
+            raise PermissionError("bad role")
+        with self.tx() as (con, st):
+            k = st["k"]
+            done = k >= len(self.spec["wakes"])
+            if action == "status":
+                return dict(done=done, step=k, total=len(self.spec["wakes"]))
+            key = body.get("wake_key")
+            if action in ("notes", "pick", "usage") and isinstance(key, str):
+                rid = digest([role, action, key, body])
+                prev = con.execute("SELECT data FROM journal WHERE kind=? LIMIT 1", ("receipt:"+rid,)).fetchone()
+                if prev:
+                    return json.loads(prev[0])
+            if done:
+                return dict(done=True)
+            if action == "next":
+                return self.packet(con, st, role)
+            if not isinstance(key, str) or not hmac.compare_digest(st["issued"].get(role, "-"), key):
+                raise PermissionError("wrong wake key")
+            at = self.spec["wakes"][k]
+            if action == "look" and role == "boss":
+                return self.lookup(con, st, body)
+            if action == "notes" and role in SCOUTS:
+                result = self.scout_submit(con, st, role, body.get("notes"))
+            elif action == "pick" and role == "boss":
+                result = self.decision(con, st, {x: v for x, v in body.items() if x != "wake_key"})
+            elif action == "usage":
+                request, usage = body.get("request_id"), body.get("usage")
+                if not isinstance(request, str) or not OID.fullmatch(request) or not isinstance(usage, dict):
+                    raise ValueError("bad usage receipt")
+                kind = "usage:"+role+":"+request
+                if con.execute("SELECT 1 FROM journal WHERE kind=?", (kind,)).fetchone():
+                    raise ValueError("usage request already logged")
+                counts = body.get("counts")
+                if (not isinstance(counts, dict) or set(counts)-{"input", "output", "reasoning", "cache_read", "cache_write"}
+                        or any(type(x) is not int or x < 0 for x in counts.values())):
+                    raise ValueError("bad normalized token counts")
+                self.log(con, at, role, kind, dict(request_id=request, usage=usage, counts=counts))
+                result = dict(accepted=True)
+            else:
+                raise PermissionError("operation outside role")
+            self.log(con, at, role, "receipt:"+rid, result)
+            return result
+
+    def export_scout(self):
+        if self.arm != "scout":
+            raise ValueError("only the neutral scout can export notes")
+        with self.tx() as (con, st):
+            if st["k"] != len(self.spec["wakes"]):
+                raise ValueError("scout stream is not sealed")
+            items = [json.loads(x[0]) for x in con.execute("SELECT data FROM journal WHERE kind='seal' ORDER BY wake")]
+            usage = [(r, json.loads(x)) for r, x in con.execute("SELECT role, data FROM journal WHERE kind LIKE 'usage:%' ORDER BY id")]
+            return dict(fixture=self.manifest["fixture"], wakes=items, usage=usage)
+
+
+def open_desk(sid, root=None):
+    base = root or os.environ.get("TM07_RUNS_DIR")
+    if not base or not SID.fullmatch(sid):
+        raise FileNotFoundError("TM07 not enabled")
+    base = Path(base).resolve()
+    path = (base / sid).resolve()
+    if path.parent != base or path.name != sid or not path.is_dir():
+        raise FileNotFoundError("unknown TM07 session")
+    return DeskSession(path)

@@ -1,0 +1,227 @@
+"""TM07 fixtures only. No real tape, session registry, provider or HTTP listener."""
+import copy
+from pathlib import Path
+import random
+import tempfile
+import unittest
+
+from timemachine import desk as D, desk_orders as O, perp as P, perp_fast as F, score_tm07 as S, tm06
+
+A, B, BTC = "AAA/USD", "BBB/USD", "BTC/USD"
+T = 1784505600  # hourly anchor; prices and headlines below are invented
+TOKEN = "fake-boss-bearer-" * 4
+
+
+def world(minutes=None):
+    cfg = dict(tm_perp_funding_files={}, tm_perp_fee_bps_per_side={"default": 12},
+               tm_perp_half_spread_bps={"default": 4}, tm_perp_maintenance={"default": 0.05},
+               tm_perp_funding_hours={"default": 1}, tm_perp_fallback_rate_per_day=0.0003,
+               tm_perp_closeout_penalty=0.01, tm_perp_min_change=0.02, tm_account_start_usd=1000.0,
+               tm_weights_why_max_chars=1000, tm_weights_sum_tolerance=0.000001,
+               tm_weights_twin_draws=4, tm_weights_twin_seed=1, tm_weights_pass_percentile=90,
+               tm06_plan={"main_fee_bps": 12, "carried_leverage": [2, 3]}, tm_perp_fee_levels_bps=[1, 12, 25])
+    symbols = [A, B]
+    if minutes is None:
+        minutes = [(t, s, 100, 104 if (s, t) == (A, T+60) else 101, 97 if (s,t) == (B,T+120) else 99, 100)
+                   for t in range(T, T+2*3600, 60) for s in [A, B, BTC]]
+    rows, evidence = [], []
+    for i in range(2):
+        t = T+i*3600
+        rows.append(dict(marks={s:100 for s in [A,B,BTC]},
+                         fills={s:next(([P.iso(D.wall(r[0])), r[2]] for r in minutes if r[0] >= t and r[0] < t+3600 and r[1] == s), None)
+                                for s in [A,B,BTC]}))
+        common = dict(symbol=A, published=t-60, known_at=t-60, vintage="original", licensed=True)
+        evidence.append([dict(common, kind="price", id=f"p{i}", value={"price":100}),
+                         dict(common, kind="news", id=f"n{i}", value={"headline":"A made-up notice"}, primary=True),
+                         dict(common, kind="news", id=f"future{i}", known_at=t+1, primary=True),
+                         dict(common, kind="news", id=f"mirror{i}", origins=["wire","wire"]),
+                         dict(common, kind="attention", id=f"estimated{i}", period_end=t-60, vintage="assumed_lag"),
+                         dict(common, kind="bars", id=f"unfinished{i}", period_end=t+60),
+                         dict(common, kind="news", id=f"unlicensed{i}", primary=True, licensed=False)])
+    return dict(wakes=[T,T+3600], end=T+7200, symbols=symbols, watch=symbols, benchmark=BTC, opening={},
+                rows=rows, minutes=minutes, end_marks={s:100 for s in [A,B,BTC]}, evidence=evidence,
+                cfg=cfg, params=P.p_params([A,B,BTC], cfg, funding={A:{T:0.001}, B:{T:0.0}}), gross=1)
+
+
+def info(s, r="boss"):
+    payload = s.handle(r, "next", {})
+    return payload, payload["wake_key"]
+
+
+def condition(wake, symbol=A, **kw):
+    item = dict(symbol=symbol, direction="above", price=102, hours=2, weight=0.25, evidence_ids=["p0"])
+    item.update(kw)
+    return O.normalize_conditions([item], {symbol:100}, [symbol], wake, wake+7200, 6, 1)
+
+
+class DeskTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="tm07-fixture-")
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def create(self, arm, scout=None, spec=None, sid=None):
+        spec = spec or world()
+        path = self.root / (sid or f"TM07-test-{arm}")
+        tokens = {r: "fake-" + r*7 for r in D.SCOUTS} if arm == "scout" else {"boss":TOKEN}
+        D.create_desk(path, spec, arm, D.BOSSES[0], tokens, scout)
+        return D.DeskSession(path)
+
+    def scout_export(self, spec=None):
+        s = self.create("scout", spec=spec)
+        for k in range(2):
+            for r in D.SCOUTS:
+                _, key = info(s,r)
+                s.handle(r, "usage", dict(wake_key=key, request_id=f"call{k}",
+                                          usage={"in":10,"out":2}, counts={"input":10,"output":2}))
+                s.handle(r, "notes", dict(wake_key=key, notes=[dict(symbol=A,text="Found a fact",evidence_ids=[f"n{k}"])]))
+        return s.export_scout()
+
+    def test_no_condition_parity(self):
+        spec = world()
+        p = self.create("A", spec=spec)
+        _, k = info(p)
+        p.handle("boss","pick", dict(wake_key=k, weights={A:.3,B:-.2}, exits={B:{"stop":102,"target":98}}, why="Test",
+                                    citations={s:{"evidence_ids":[f"book:{T}"]} for s in (A,B)}))
+        _, k = info(p)
+        p.handle("boss","pick", dict(wake_key=k,no_change=True,why="Test"))
+        args = dict(wakes=[P.iso(D.wall(t)) for t in spec["wakes"]], end_utc=P.iso(D.wall(spec["end"])),opening={})
+        table = dict(rows=spec["rows"],end_marks=spec["end_marks"])
+        _, log = S.load_session(p.path)
+        bundles = [b for _,k,b in log if k == "decision"]
+        ans = [(b["weights"],b["exits"]) for b in bundles]
+        slow = P.run_perp(args, table, ans, p.pp, p.minutes, spec["cfg"])
+        fast = F.run_perp(args, table, ans, p.pp, p.minutes, spec["cfg"])
+        dsk = S.replay(p,bundles,journal=True)
+        self.assertEqual(slow,fast)
+        self.assertEqual(slow[0],dsk["book"])
+        self.assertEqual(slow[2],dsk["value"])
+        self.assertEqual([r["scan"] for r in slow[1]],dsk["scans"])
+        for seed in range(4):
+            twin = tm06.shuffle_answers(ans, spec["rows"], random.Random(seed))
+            got = S.shuffle_bundles(bundles, spec["rows"],spec["wakes"],spec["end"],random.Random(seed))
+            self.assertEqual(twin,[(x["weights"],x["exits"]) for x in got])
+        self.assertEqual(S.score_week(p.path)["main"]["value"],slow[2])
+
+    def test_no_lookahead_and_bad_note(self):
+        s = self.create("scout")
+        p,k = info(s,D.SCOUTS[0])
+        self.assertEqual({r["id"] for r in p["evidence"]},{"p0","n0"})
+        for value in ("future0","mirror0","estimated0","unlicensed0","unfinished0"):
+            with self.assertRaisesRegex(ValueError,"not visible"):
+                s.handle(D.SCOUTS[0],"notes",dict(wake_key=k,notes=[dict(symbol=A,text="bad",evidence_ids=[value])]))
+
+    def test_neutral_merge_and_hidden_arm(self):
+        neutral = self.scout_export()
+        self.assertEqual(len(neutral["wakes"][0]["notes"]),1)
+        a,b = self.create("A"), self.create("B", neutral)
+        p,ak = info(a)
+        q,bk = info(b)
+        self.assertNotIn("notes",p)
+        self.assertNotIn("evidence",q)
+        self.assertEqual(q["notes"],neutral["wakes"][0]["notes"])
+        self.assertNotEqual(ak,bk)
+        with self.assertRaises(PermissionError):
+            b.handle("boss","look",dict(wake_key=ak,symbol=A,kind="news"))
+        self.assertEqual(b.authenticate(TOKEN),"boss")
+        self.assertIsNone(b.authenticate("wrong"))
+
+    def test_three_lookups_and_no_other_role(self):
+        a = self.create("A")
+        _,key = info(a)
+        for i in range(3):
+            rows = a.handle("boss","look",dict(wake_key=key,symbol=A,kind="news"))
+            self.assertEqual([r["id"] for r in rows["rows"]],["n0"])
+            self.assertEqual(rows["looks_left"],2-i)
+        with self.assertRaisesRegex(ValueError,"no lookups left"):
+            a.handle("boss","look",dict(wake_key=key,symbol=A,kind="news"))
+        with self.assertRaises(PermissionError):
+            a.handle("news_scout","next",{})
+
+    def test_flat_trigger_uses_next_open(self):
+        neutral = self.scout_export()
+        s = self.create("C",neutral)
+        p,k = info(s)
+        s.handle("boss","pick",dict(wake_key=k,no_change=True,why="Wait.",conditions=[
+                 dict(symbol=A,direction="above",pct=2,hours=1,weight=.2,note_ids=[p["notes"][0]["id"]])]))
+        p,k = info(s)
+        self.assertGreater(p["book"]["weights"][A],.2)
+        s.handle("boss","pick",dict(wake_key=k,no_change=True,why="Hold."))
+        _,log = S.load_session(s.path)
+        events = [d for _,kind,d in log if kind=="condition"]
+        self.assertEqual([x["kind"] for x in events],["armed","triggered","filled"])
+        self.assertEqual(events[1]["utc"],T+120)
+        self.assertEqual(events[2]["utc"],T+120)
+        self.assertEqual(events[2]["open"],100)
+        self.assertEqual(events[2]["note_ids"],[neutral["wakes"][0]["notes"][0]["id"]])
+        self.assertGreater(events[2]["trade"]["fee_usd"],0)
+        self.assertEqual(S.score_week(s.path)["main"]["standing"],1)
+
+    def test_gaps_and_expiry(self):
+        spec = world()
+        engine, book = O.Orders(), P.new_book(1000)
+        new = condition(T,hours=1)
+        engine.submit({"conditions":new},book,T)
+        engine.advance(book,spec["params"],[(T+60,A,100,103,99,100),(T+3600,A,200,210,199,205)],T,T+3660,1)
+        self.assertFalse(book["qty"])
+        self.assertEqual([(e["kind"],e["utc"]) for e in engine.events],
+                         [("armed",T),("triggered",T+120),("expired",T+3600)])
+
+    def test_immediate_cancel_and_protection(self):
+        spec = world()
+        engine, book = O.Orders(), P.new_book(1000)
+        book.update(qty={A:1}, target={A:.1}, exits={A:{"stop":98}}, last_px={A:100},cash=900)
+        engine.submit({"conditions":condition(T)},book,T)
+        engine.advance(book,spec["params"],[(T,A,100,104,97,100),(T+60,A,100,104,99,100)],T,T+120,1)
+        self.assertEqual([e["kind"] for e in engine.events],["armed","cancelled"])
+        self.assertEqual(book["exits_hit"][0]["kind"],"stop")
+        engine.submit({"conditions":condition(T)},book,T)
+        engine.observe_close((T,A,100,104,99,100))
+        engine.submit({"weights":{A:.2},"keep":[engine.active[A]["id"]]},book,T+3600)
+        self.assertEqual(engine.events[-1]["reason"],"immediate_target")
+
+    def test_restart_exactly_once(self):
+        s = self.create("A")
+        _,k = info(s)
+        b = dict(wake_key=k,no_change=True,why="Test")
+        reply = s.handle("boss","pick",b)
+        r = D.DeskSession(s.path)
+        self.assertEqual(r.handle("boss","pick",b),reply)
+        self.assertEqual(r.handle("boss","status",{})["step"],1)
+        with self.assertRaises(PermissionError):
+            r.handle("boss","pick",dict(b,why="Changed retry"))
+
+    def test_sign_mark_gate_and_fixed_weeks(self):
+        self.assertEqual(len(S.EXTENSION),17)
+        self.assertEqual(S.WEEKS[-1],"2026-11-16")
+        self.assertEqual(S.sign_mark(20),16)
+        self.assertAlmostEqual(S.sign_tail(20,16),.005908966064453125)
+        boss=D.BOSSES[1]
+        specs=[dict(week=w, arm=a, boss=boss, fixture=w, main=dict(value=1000+5*(a=="B"), gain=.5,
+                     equal=0,twin=[0,.1,.2])) for w in S.WEEKS for a in ("A","B")]
+        got=S.paired(specs,boss,"B")
+        self.assertEqual(got["wins"],20)
+        self.assertTrue(got["passes"])
+        specs[2*S.WEEKS.index(S.SCREEN[0])+1]["main"]["value"]=1000
+        with self.assertRaisesRegex(ValueError,"screen gate"):
+            S.paired(specs,boss,"B")
+        self.assertEqual(S.select_five({str(i):100 for i in range(6)},{str(i):100 for i in range(6)}),list("12345"))
+
+    def test_token_usage_missing_fields(self):
+        s = self.create("B",self.scout_export())
+        _,key=info(s)
+        x=dict(wake_key=key,request_id="boss1",counts={"input":1},usage={"input_tokens":1})
+        self.assertEqual(s.handle("boss","usage",x),s.handle("boss","usage",x))
+        with self.assertRaises(ValueError):
+            s.handle("boss","usage",dict(x,usage={"input_tokens":99}))
+        for i in range(2):
+            _,key=info(s)
+            s.handle("boss","pick",dict(wake_key=key,no_change=True,why="Test"))
+        scored=S.score_week(s.path)
+        self.assertEqual(scored["usage"]["boss"]["calls"],1)
+        self.assertNotIn("output",scored["usage"]["boss"]["tokens"])
+        self.assertEqual(scored["usage"]["news_scout"]["tokens"]["output"],4)
+
+
+if __name__ == "__main__":
+    unittest.main()
