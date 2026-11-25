@@ -113,6 +113,23 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(got["book"],legacy[0])
         self.assertEqual(got["book"]["held_seconds"],7200)
 
+    def test_b02_immediate_cannot_size_from_a_later_open(self):
+        def execute(later):
+            spec = world()
+            book = P.new_book(1000)
+            book.update(cash=500, qty={B:5}, target={B:.5}, last_px={A:100,B:100})
+            fills = {A:[P.iso(D.wall(T)),100],B:[P.iso(D.wall(T+60)),later]}
+            bars = P.Minutes([(T,A,100,100,100,100),(T+60,A,105,105,105,105),
+                               (T+60,B,later,later,later,later)])
+            rec,_,_ = O.step(book,dict(weights={A:.5,B:.5}),dict(marks={A:100,B:100},fills=fills),
+                            spec["params"],bars,T,T+120,True,{},1)
+            return rec
+        for px in (100,200):
+            with self.subTest(later_open=px):
+                rec = execute(px)
+                self.assertFalse(any(t["fill_utc"] == P.iso(D.wall(T)) for t in rec["trades"]))
+                self.assertTrue(all(t["fill_utc"] == P.iso(D.wall(T+60)) for t in rec["trades"]))
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):

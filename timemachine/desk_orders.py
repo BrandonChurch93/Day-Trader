@@ -185,32 +185,46 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     orders.submit(bundle, book, at)
     weights, exits = bundle.get("weights"), bundle.get("exits")
     changed = first or book.get("pending") or (weights is not None and P.norm(weights) != P.norm(book["target"]))
-    if not orders.active:
-        wake = P.dt.datetime.fromtimestamp(at, P.UTC)
-        start = P.scan_from(row, wake)
-        bridge = P.p_scan(book, minutes, wake, start, pp) if start > wake else None
-        record = P.p_step(book, weights, exits, row, pp, first)
+    book["last_px"].update(row["marks"])
+    record = None
+
+    def immediate(tick, opens):
+        nonlocal record
+        if record is not None:
+            return
+        touched = set(book["qty"]) | set(weights if weights is not None else book["target"])
+        if changed and not touched <= opens.keys():
+            return
+        stamp = P.iso(P.dt.datetime.fromtimestamp(tick, P.UTC))
+        record = P.p_step(book, weights, exits, dict(marks=dict(book["last_px"]),
+                          fills={s:[stamp, opens[s]] for s in touched if changed}), pp, first)
         record["target"] = dict(record["target"])
-        record["scan"] = P.p_scan(book, minutes, start, P.dt.datetime.fromtimestamp(end, P.UTC), pp)
-        if bridge:
-            scan = record["scan"]
+
+    if not changed:
+        immediate(at, {})
+    symbols = set(pp["symbols"]) if changed else set(book["qty"])
+    active_rows = P.scan_rows(minutes, at, end, symbols, watched=orders.active)
+    if not orders.active:
+        def dt(t):
+            return P.dt.datetime.fromtimestamp(t, P.UTC)
+        touched = set(book["qty"]) | set(weights if weights is not None else book["target"])
+        match = next(((tick, opens) for tick, bars in groupby(active_rows, key=lambda r:r[0])
+                      if touched <= (opens := {r[1]:r[2] for r in bars}).keys()), None) if changed and touched else (at, {})
+        start, opens = match if match is not None else (end, {})
+        bridge = P.p_scan(book, minutes, dt(at), dt(start), pp) if start > at else None
+        if match is not None:
+            immediate(start, opens)
+        scan = P.p_scan(book, minutes, dt(start), dt(end), pp) if start < end else bridge
+        if bridge and bridge is not scan:
             scan["exits"] = bridge["exits"]+scan["exits"]
             scan["closeout"] = scan["closeout"] or bridge["closeout"]
             for field in ("held_seconds", "funding_usd", "fallback_hours"):
                 scan[field] += bridge[field]
     else:
-        # Only the simultaneous wake opens enter a rebalance calculation. Refuse
-        # asynchronous immediate opens in conditional mode, rather than spending
-        # at an earlier open using a later price.
-        touched = set(book["qty"]) | set(weights if weights is not None else book["target"])
-        if changed and any(not row["fills"].get(s) or int(P.parse(row["fills"][s][0]).timestamp()) != at for s in touched):
-            raise ValueError("conditional path needs simultaneous wake opens for the immediate move")
-        start_row = dict(row, fills={s: f for s, f in row["fills"].items()
-                                     if changed and s in touched and f and int(P.parse(f[0]).timestamp()) == at})
-        record = P.p_step(book, weights, exits, start_row, pp, first)
-        record["target"] = dict(record["target"])
-        active_rows = P.scan_rows(minutes, at, end, book["qty"], watched=orders.active)
-        record["scan"] = orders.advance(book, pp, active_rows, at, end, gross)
+        scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate)
+    if record is None:
+        record = dict(target=dict(book["target"]), trades=[], skipped=[{"why":"no_common_open"}], changed=False)
+    record["scan"] = scan
     if last:
         orders.expire(end)
     return record, orders.active, orders.events
