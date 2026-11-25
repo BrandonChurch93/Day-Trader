@@ -112,18 +112,19 @@ def asof_names(r):
 EXTRA_ASOF = {
     "BKNG@2016-01-04": ["PCLN@2016-01-04"], "CBRE@2016-01-04": ["CBG@2016-01-04"], "JEF@2016-01-04": ["LUK@2016-01-04"],
     "TPR@2016-01-04": ["COH@2016-01-04"], "WELL@2016-01-04": ["HCN@2016-01-04"], "GL@2019-08-08": ["TMK@2018-07-05"],
-    "BKR@2017-07-07": ["BHGE@2017-07-07"], "UAA@2016-04-08": ["UA@2016-04-08"], "SPGI@2016-01-04": ["MHFI@2016-01-04"],
+    "BKR@2017-07-07": ["BHGE@2017-07-07"], "SPGI@2016-01-04": ["MHFI@2016-01-04"],
     "LMT@2016-01-04": ["LMT@2016-09-01"], "WMB@2016-01-04": ["WMB@2017-01-03"], "XL@2016-01-04": ["XL@2017-01-03"],
     "CB@2016-01-04": ["ACE@2016-01-04", "CB@2016-02-01"], "META@2022-06-09": ["FB@2021-05-05"], "BNY@2026-05-21": ["BK@2025-04-16"],
     "DOC@2024-03-04": ["PEAK@2023-01-29"], "IR@2020-03-03": ["GDI@2019-01-28"], "CZR@2021-03-22": ["ERI@2020-02-16"],
 }
 
 def same_stock(F, G, days):
-    """Whether two files are the same stock on their common traded days: volumes in one fixed proportion (adjustments
-    scale volume by a constant) on at least 98% of them, within 1%."""
+    """Whether two files are the same stock on their common traded days: the ratio of their volumes stays the same
+    from one common day to the next (within 1%) on at least 98% of steps. Adjustments scale volume by a constant that
+    can step at a corporate action; two different stocks' volumes do not keep a fixed ratio."""
     q = np.array([float(F[d]["volume"]) / float(G[d]["volume"]) for d in days])
-    if len(q) == 0: return True
-    return float(np.mean(np.abs(q / np.median(q) - 1) < 0.01)) >= 0.98
+    if len(q) < 2: return len(q) == 0 or True
+    return float(np.mean(np.abs(q[1:] / q[:-1] - 1) < 0.01)) >= 0.98
 
 def data_checks(members, days, bars=None, asof=None):
     """Three checks on the bar files, using dates and volumes (never a return). Each flag is keyed ticker_then@date_from.

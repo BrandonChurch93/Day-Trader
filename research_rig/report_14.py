@@ -63,7 +63,7 @@ def build(src):
         v = dc.get(k, [])
         w(f"- Data check, {what}: {len(v)} rows" + (": " + ", ".join(x.get('key') or '+'.join(x['keys']) for x in v) + ". Each is listed with a reason in the plan." if v else ".") + " MEASURED.")
     w(f"- Inputs: members.csv sha256 `{inp['members_csv_sha256'][:16]}`, {inp['bars']['files']} price files sha256 `{inp['bars']['sha256'][:16]}`, config sha256 `{inp['config_replay_14_plan_sha256'][:16]}`. Full fingerprints in `research_rig/results_14.json`.")
-    w("- UNKNOWN: whether the price feed adjusts for spin-offs. A spin-off inside a holding month may show as a fall.")
+    w("- Adjustment: on five dividend payers and three companies with spin-offs, the feed's adjusted close is the raw close times a factor that stays constant between the feed's listed ex-dates and steps on them, spin-offs included (research_rig/check_adjust_14.py, before the run). MEASURED. Vendor errors in single corporate actions remain possible.")
     w("")
     w("## The four marks, after costs"); w("")
     w(f"Cost {P['cost_bps_per_side']} basis points per side on what is traded. SPY pays one buy and one sell. STATED in the plan. "

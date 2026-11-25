@@ -1,21 +1,108 @@
 {
  "made_by": "research_rig/test_14.py (made-up data only)",
- "worlds": 100,
- "passes": {
-  "small": {
-   "1_above_spy": "38/100",
-   "2_above_everyone": "37/100",
-   "3_above_random_percentile": "7/100",
-   "4_above_spy_each_half": "22/100",
-   "all_four": "6/100"
+ "worlds": 400,
+ "seeds": "1000 to 1399",
+ "by_cost": {
+  "cost_5_bps": {
+   "small": {
+    "passes": {
+     "1_above_spy": "138/400",
+     "2_above_everyone": "138/400",
+     "3_above_random_percentile": "18/400",
+     "4_above_spy_each_half": "65/400",
+     "all_four": "17/400"
+    },
+    "share_beaten_mean": 0.472,
+    "share_beaten_var": 0.083,
+    "share_beaten_by_tenths": [
+     44,
+     44,
+     47,
+     42,
+     42,
+     38,
+     32,
+     40,
+     37,
+     34
+    ]
+   },
+   "wide": {
+    "passes": {
+     "1_above_spy": "147/400",
+     "2_above_everyone": "134/400",
+     "3_above_random_percentile": "18/400",
+     "4_above_spy_each_half": "61/400",
+     "all_four": "16/400"
+    },
+    "share_beaten_mean": 0.461,
+    "share_beaten_var": 0.081,
+    "share_beaten_by_tenths": [
+     49,
+     47,
+     39,
+     42,
+     46,
+     43,
+     32,
+     41,
+     31,
+     30
+    ]
+   }
   },
-  "wide": {
-   "1_above_spy": "44/100",
-   "2_above_everyone": "38/100",
-   "3_above_random_percentile": "11/100",
-   "4_above_spy_each_half": "18/100",
-   "all_four": "11/100"
+  "cost_0_bps": {
+   "small": {
+    "passes": {
+     "1_above_spy": "156/400",
+     "2_above_everyone": "155/400",
+     "3_above_random_percentile": "18/400",
+     "4_above_spy_each_half": "71/400",
+     "all_four": "17/400"
+    },
+    "share_beaten_mean": 0.472,
+    "share_beaten_var": 0.083,
+    "share_beaten_by_tenths": [
+     44,
+     44,
+     47,
+     42,
+     41,
+     39,
+     32,
+     40,
+     37,
+     34
+    ]
+   },
+   "wide": {
+    "passes": {
+     "1_above_spy": "181/400",
+     "2_above_everyone": "167/400",
+     "3_above_random_percentile": "18/400",
+     "4_above_spy_each_half": "78/400",
+     "all_four": "16/400"
+    },
+    "share_beaten_mean": 0.461,
+    "share_beaten_var": 0.081,
+    "share_beaten_by_tenths": [
+     49,
+     47,
+     39,
+     42,
+     46,
+     43,
+     32,
+     41,
+     31,
+     30
+    ]
+   }
   }
  },
- "utc": "2026-11-25 20:12"
+ "uniform_reference": {
+  "mean": 0.5,
+  "var": 0.083
+ },
+ "utc": "2026-11-25 21:48"
 }

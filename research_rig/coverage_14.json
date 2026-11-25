@@ -1255,6 +1255,16 @@
    ]
   },
   {
+   "company": "Howmet Aerospace",
+   "files": [
+    "ARNC",
+    "HWM"
+   ],
+   "restarts": [
+    "2020-04-01"
+   ]
+  },
+  {
    "company": "Bath & Body Works, Inc.",
    "files": [
     "LB",
@@ -2562,108 +2572,84 @@
   "stale": [],
   "identity": [
    {
-    "key": "BKNG@2016-01-04",
-    "file": "BKNG",
-    "asof": "BKNG@2016-01-04",
-    "why": "2199 of 2740 trading days in common"
+    "key": "BNY@2026-05-21",
+    "file": "BNY",
+    "asof": "BNY@2025-04-16",
+    "why": "not the same stock on 204 common trading days"
    },
    {
     "key": "CB@2016-01-04",
     "file": "CB",
     "asof": "CB@2016-01-04",
-    "why": "9 of 2740 trading days in common"
+    "why": "not the same stock on 9 common trading days"
    },
    {
-    "key": "CBRE@2016-01-04",
-    "file": "CBRE",
-    "asof": "CBRE@2016-01-04",
-    "why": "2184 of 2740 trading days in common"
+    "key": "META@2022-06-09",
+    "file": "META",
+    "asof": "META@2021-05-05",
+    "why": "not the same stock on 1268 common trading days"
    },
    {
     "key": "TFCF@2019-03-19",
     "file": "FOX",
     "asof": "TFCF@2019-03-19",
-    "why": "4 of 275 trading days in common"
+    "why": "not the same stock on 4 common trading days"
    },
    {
     "key": "TFCFA@2019-03-19",
     "file": "FOXA",
     "asof": "TFCFA@2019-03-19",
-    "why": "4 of 275 trading days in common"
+    "why": "not the same stock on 4 common trading days"
    },
    {
-    "key": "IR@2016-01-04",
-    "file": "TT",
-    "asof": "IR@2016-01-04",
-    "why": "volumes not in one fixed proportion (spread 0.0069)"
+    "key": "DOC@2024-03-04",
+    "file": "DOC",
+    "asof": "DOC@2023-01-29",
+    "why": "not the same stock on 273 common trading days"
    },
    {
-    "key": "JEF@2016-01-04",
-    "file": "JEF",
-    "asof": "JEF@2016-01-04",
-    "why": "337 of 939 trading days in common"
+    "key": "IR@2020-03-03",
+    "file": "IR",
+    "asof": "IR@2019-01-28",
+    "why": "not the same stock on 1969 common trading days"
    },
    {
-    "key": "LMT@2016-01-04",
-    "file": "LMT",
-    "asof": "LMT@2016-01-04",
-    "why": "156 of 2740 trading days in common"
+    "key": "CZR@2021-03-22",
+    "file": "CZR",
+    "asof": "CZR@2020-02-16",
+    "why": "not the same stock on 107 common trading days"
+   }
+  ],
+  "duplicate": [],
+  "identity_unchecked": [
+   {
+    "key": "TFCF@2019-03-19",
+    "file": "FOX",
+    "days": 271,
+    "first": "2018-02-12",
+    "last": "2019-03-12"
    },
    {
-    "key": "GL@2019-08-08",
-    "file": "GL",
-    "asof": "GL@2019-08-08",
-    "why": "1834 of 2110 trading days in common"
+    "key": "TFCFA@2019-03-19",
+    "file": "FOXA",
+    "days": 271,
+    "first": "2018-02-12",
+    "last": "2019-03-12"
    },
    {
-    "key": "TPR@2016-01-04",
-    "file": "TPR",
-    "asof": "TPR@2016-01-04",
-    "why": "2279 of 2740 trading days in common"
+    "key": "NFX@2016-01-04",
+    "file": "NFX",
+    "days": 1,
+    "first": "2019-02-13",
+    "last": "2019-02-13"
    },
    {
     "key": "UAA@2016-04-08",
     "file": "UAA",
-    "asof": "UAA@2016-04-08",
-    "why": "1392 of 1561 trading days in common"
-   },
-   {
-    "key": "WELL@2016-01-04",
-    "file": "WELL",
-    "asof": "WELL@2016-01-04",
-    "why": "2198 of 2740 trading days in common"
-   },
-   {
-    "key": "WMB@2016-01-04",
-    "file": "WMB",
-    "asof": "WMB@2016-01-04",
-    "why": "123 of 2740 trading days in common"
-   },
-   {
-    "key": "XL@2016-01-04",
-    "file": "XL",
-    "asof": "XL@2016-01-04",
-    "why": "140 of 678 trading days in common"
-   },
-   {
-    "key": "EVHC@2016-12-02",
-    "file": "EVHC",
-    "asof": "EVHC@2016-12-02",
-    "why": "467 of 699 trading days in common"
-   },
-   {
-    "key": "BKR@2017-07-07",
-    "file": "BKR",
-    "asof": "BKR@2017-07-07",
-    "why": "1785 of 2362 trading days in common"
-   },
-   {
-    "key": "BMS@2019-06-07",
-    "file": "BMS",
-    "asof": "BMS@2019-06-07",
-    "why": "18 of 277 trading days in common"
+    "days": 169,
+    "first": "2016-04-08",
+    "last": "2016-12-06"
    }
-  ],
-  "duplicate": []
+  ]
  }
 }
