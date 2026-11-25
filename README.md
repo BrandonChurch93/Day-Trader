@@ -6,9 +6,10 @@ An AI-assisted trading system for US stocks and crypto. Status: research complet
 
 1. `AGENTS.md` - rules every agent and contributor follows. One page.
 2. `docs/playbook/00_START_HERE.md` - the whole picture in about two pages.
-3. `docs/playbook/01..06` - condensed decisions per topic. This is the layer agents load by default.
-4. `docs/research/01..06` - full reports with every source. Open only when a playbook line points there.
-5. `docs/decisions/` - dated record of choices and the audits of the playbook.
+3. `docs/quality/00_READ_FIRST.md` - the owner's quality bar and build method.
+4. `docs/playbook/01..06` - condensed decisions per topic. This is the layer agents load by default.
+5. `docs/research/01..06` - full reports with every source. Open only when a playbook line points there.
+6. `docs/decisions/` - dated record of choices and the audits of the playbook.
 
 ## What the evidence says, in five lines
 
@@ -26,6 +27,7 @@ Day-Trader/
 ├── README.md
 └── docs/
     ├── playbook/          condensed, decision-only (default reading)
+    ├── quality/           the owner's quality bar and build method
     ├── research/          full cited reports (audit trail)
     └── decisions/         decision log and playbook audits
 ```

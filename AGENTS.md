@@ -25,6 +25,7 @@ A deterministic, always-on trading service for US stocks and crypto, with an AI 
 ## How to use the docs
 
 - Load `docs/playbook/` by default. It is short on purpose.
+- Read docs/quality/00_READ_FIRST.md before planning, building or reviewing anything. It is the owner's standard for finished work and for how builds are run. Open the other files in docs/quality/ when their topic comes up.
 - Open `docs/research/` only to check a source or when a playbook line points you there. Do not paste research files into prompts wholesale.
 - Before reopening a settled question, read `docs/decisions/`.
 - When you learn something that changes a rule or number, update the playbook line, keep its evidence label honest, and add a dated note in `docs/decisions/`.
