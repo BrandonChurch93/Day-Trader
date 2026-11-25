@@ -55,7 +55,22 @@ A support would mean: worth a second test on the coins a US venue lists, then a 
 - The 7-day comparison inside the rule uses the contract's close 168 hours before the signal close. A contract with less history than that gives no signal.
 - A short's loss is not capped at its part at 1x. A loss beyond the part is taken from the rest of the account. If the account reaches zero the year ends there.
 - "Short, then the bounce": the long is opened on the same contract at the open where the short covered at its target, only then, and is closed at the next hour's open when the last close is `replay_17_plan.take_pct` percent above its entry, `replay_17_plan.stop_pct` percent below it, or after `replay_17_plan.max_hold_hours` hours. After it closes the part is in dollars again.
-- Random draws use coins with a live contract that Monday, the same weeks and the same rule.
+- Random draws: five coins from the rankable list each Monday as in plan 13, the same weeks and the same rule. A drawn coin with no live contract leaves its part in dollars, exactly as a hot coin does. Nothing is drawn again to fill the gap.
+
+## Definitions added 2026-11-25 19:54 UTC
+
+Written after the builder read the draft and listed what it left open. No futures price, no funding rate and no price of a held-back coin had been read.
+
+- A queued order whose next bar is missing waits for the next bar of the same contract, as in plan 13.
+- A part in a week is flagged when its contract misses more than `replay_16_plan.max_missing_hours` hours in the week, when an order was delayed by a missing bar, when it was closed at a last close, or when the coin list was carried. A part left in dollars because its coin had no live contract is counted and not flagged.
+- Rule S at 1x has no forced close. Its own stop is the exit, and a loss is whatever the fill gives. Yardstick (b) and the short of all coins are held for the week and use plan 16's forced close.
+- At `replay_17_plan.shown_leverage` times, a forced close costs the whole part and nothing more, as in plan 13. It is checked on each hour's high, the entry hour included. A cover order already queued fills at the next open; if that open is at or above the forced-close level the part is lost.
+- Exits are decided on the hourly close. If more than one holds at the same close the order is target, then stop, then time.
+- "Short, then the bounce": the long is at 1x, pays funding with the sign turned round, has no forced close, and is opened only after a short that covered at its target. No bounce follows a stop, a time exit, a contract that stopped paying or the week's end.
+- Each part is sized from its own value after each closed trade and compounds inside the week, as in plan 13's rule B. The five parts are made equal again each Monday. A part at or below zero stays idle until Monday and its shortfall is taken from the account then. The account is checked for zero at each closed trade and each Monday.
+- A contract closed because it stopped paying funding is not traded again that week, also if payments come back.
+- The year's end follows plan 16.
+- Reported beside the judged figures: each mark at the lower cost level and with no cost and no funding at all. "Failed on costs" means the marks hold with no cost and not at the judged cost.
 
 ## How this can fool us
 
