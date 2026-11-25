@@ -101,6 +101,51 @@
    "modified_first": "2026-11-25T12:34:04Z",
    "modified_last": "2026-11-25T12:34:04Z"
   },
+  "ALPACA_06/SPY.all.json": {
+   "bytes": 297975,
+   "sha256": "463094d8ef4e18153be72104629c7e1f126044042d43813fe6c81e8f40361881",
+   "modified": "2026-11-25T16:44:11Z"
+  },
+  "ALPACA_06/EFA.all.json": {
+   "bytes": 281986,
+   "sha256": "aa87ac3975d6eaae2a8cba2f993510bddfe63b9ba14386bf59da8a7444bed9b5",
+   "modified": "2026-11-25T16:44:27Z"
+  },
+  "ALPACA_06/IEF.all.json": {
+   "bytes": 278801,
+   "sha256": "84623de9b5659e796ffb30c2820e3574a80b0ed9a87632a579a3aa08a26c6a5c",
+   "modified": "2026-11-25T16:44:29Z"
+  },
+  "ALPACA_06/VNQ.all.json": {
+   "bytes": 278275,
+   "sha256": "a8149512995f9d4221fb9abd7a2a2f54ef31d75fc6307e2d403429bfc55e9890",
+   "modified": "2026-11-25T16:44:30Z"
+  },
+  "ALPACA_06/DBC.all.json": {
+   "bytes": 275632,
+   "sha256": "755c38c5a2916eb8666176ef461cbb8def1531811493a87205c0f5c621dc62aa",
+   "modified": "2026-11-25T16:44:32Z"
+  },
+  "ALPACA_06/GLD.all.json": {
+   "bytes": 305354,
+   "sha256": "280fcb1c22a0d07cc645959e7ccb6dcecdde3017de339919c1865ddeb49ffbf0",
+   "modified": "2026-11-25T16:44:34Z"
+  },
+  "ALPACA_06/QQQ.all.json": {
+   "bytes": 296524,
+   "sha256": "38ad3f698c18f9454e32b26cd442bc3da08809270f63e84e69374c09a7bdda1a",
+   "modified": "2026-11-25T16:44:35Z"
+  },
+  "ALPACA_06/IWM.all.json": {
+   "bytes": 296156,
+   "sha256": "203eb4e7da6952aa6e4553d8860fe8c3ef65370bb309d38fd6c64b13e18ee26b",
+   "modified": "2026-11-25T16:44:37Z"
+  },
+  "ALPACA_06/BIL.all.json": {
+   "bytes": 275077,
+   "sha256": "5ba4f59d121101dfb812b0ed7e23b98f94a3ada83d7d82f2135cc6ebc499d061",
+   "modified": "2026-11-25T16:44:38Z"
+  },
   "ALPACA_09/AAVE-USD_1Day.csv.gz": {
    "bytes": 49935,
    "sha256": "bc94bad07cafa8acfc1b8d63af9d02dd47d523782509ccf218bd3513d58bed20",
@@ -813,6 +858,38 @@
    "last_changed_in_commit": "1d748ba 2026-11-25T13:04:52Z",
    "inputs_modified_after_output_first_stored": [],
    "note": "The check's full output (integrity.json) and the original pulls are on the research machine and are not fingerprinted here; only the joined price files are. Dates, counts and file fingerprints of the stock prices collected through the workspace's own price lookup on 2026-11-25. No price is in it, no rule was run and no return was worked out. The price files are on the research machine only and cannot be fetched by a script; whether they may be kept is item 6 of the morning list."
+  },
+  "results_06.json": {
+   "kind": "held-back",
+   "command": "python3 run_06.py --held --prereg-commit af8554c",
+   "run_from": "research_rig/",
+   "code": [
+    "run_06.py",
+    "rig2.py",
+    "fixtures_06.py",
+    "../config/thresholds.yaml",
+    "PREREG_06_fund_trend_paid_data.md",
+    "TRIAL_LEDGER.md"
+   ],
+   "raw_inputs": [
+    "ALPACA_06/SPY.all.json",
+    "ALPACA_06/EFA.all.json",
+    "ALPACA_06/IEF.all.json",
+    "ALPACA_06/VNQ.all.json",
+    "ALPACA_06/DBC.all.json",
+    "ALPACA_06/GLD.all.json",
+    "ALPACA_06/QQQ.all.json",
+    "ALPACA_06/IWM.all.json",
+    "ALPACA_06/BIL.all.json"
+   ],
+   "reads_stored_outputs": [
+    "fund_adjustments_06.json"
+   ],
+   "sha256": "735b6d50418d42941db3ddfd12441bead76880e98222cd71c0b2ce6d39278ec3",
+   "first_stored_in_commit": "ca5974c 2026-11-25T17:09:11Z",
+   "last_changed_in_commit": "ca5974c 2026-11-25T17:09:11Z",
+   "inputs_modified_after_output_first_stored": [],
+   "note": "Held slice run once after the design run. The output carries hashes taken at run time. The split-only files were audit sidecars, not strategy price inputs."
   },
   "results_09.json": {
    "kind": "held-back",
