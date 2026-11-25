@@ -1,6 +1,8 @@
 """Checks that the repo's map is true. Run from the repo root before every commit: python3 tools/check_repo.py
 Fails (exit 1) if:
-  1. a tracked file is not listed in docs/INDEX.md (a folder listed with a trailing slash covers everything under it)
+  1. a tracked file is not listed in docs/INDEX.md. Listed means: the file's full path is in backticks in the first column
+     of a table row, or a folder with a trailing slash that holds it is. A path or folder named anywhere else on that page
+     does not count, so a new file under docs/research/ or research_rig/ needs its own row
   2. a path written in backticks in README.md, AGENTS.md, docs/STATUS.md, docs/INDEX.md, docs/GLOSSARY.md, research_rig/README.md,
      dashboard/README.md, or any file directly under docs/decisions/, docs/playbook/ or docs/research/ does not exist
      (a path that git ignores, such as research_rig/data/ or dashboard/data.json, is local only and is not flagged; the few
@@ -37,7 +39,10 @@ NOT_IN_REPO = {
 }
 tracked = subprocess.run(["git", "ls-files"], capture_output=True, text=True).stdout.split("\n"); tracked = [t for t in tracked if t]
 idx = open("docs/INDEX.md").read()
-listed = set(re.findall(r"`([^`\s]+)`", idx)); folders = [p for p in listed if p.endswith("/")]
+listed = set()
+for line in idx.split("\n"):
+    if line.startswith("|") and not line.startswith("|--"): listed |= set(re.findall(r"`([^`\s]+)`", line.split("|")[1]))
+folders = [p for p in listed if p.endswith("/")]
 for t in tracked:
     if t in listed or any(t.startswith(f) for f in folders): continue
     bad.append(f"not in docs/INDEX.md: {t}")

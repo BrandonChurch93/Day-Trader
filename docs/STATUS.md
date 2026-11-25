@@ -17,6 +17,7 @@ This page is the current state of the project. It is the second thing to read, a
 
 The Result column is written by `tools/status_table.py` from the output files. Do not edit it by hand.
 
+- No rule has a credited pass. Where the table says a rule passes, that is a measurement against a proposed bar. Research recommends none is credited, and the owner has not answered (question 18b).
 - Where the table shows a bar, it is the value stored in the output file when the test was run. The value in force is in `config/thresholds.yaml`.
 - The keys the tests are judged on have the status "proposed" in that file. Research uses them to judge research replays. That use approves nothing: no bar is an owner decision until he says so.
 - Pilot 02 was a replay on past prices. `AGENTS.md` hard rule 7 does not count that as evidence of model skill, for or against. It tested the harness and how the models behave.

@@ -251,3 +251,16 @@ What is still UNKNOWN: whether the prices are right (nothing has compared them w
 Not done: no rule was run on these prices, no return was worked out from them, and no price was committed. Item 6 of "Things only you can do" in the morning list asks the owner whether the files may be kept, and says research deletes them if he says no.
 
 Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold.
+
+## Tenth addendum, 2026-11-25 12:43 UTC: the third finding-test reader, and a hole in the repo check
+
+This is a record of what research did. It is not an owner decision.
+
+The third fresh model in the finding test reported. It answered all sixteen questions correctly, so three models from three makers each did. It read the repo before the eighth addendum's fixes were pushed, and three of the faults it listed were already fixed by them. Two were new:
+
+- The repo check did not do what three pages said it did. It was meant to fail when a tracked file has no row in `docs/INDEX.md`. It passed a new file under `docs/research/` or `research_rig/` with no row, because the index names those folders in passing and the check took any folder named anywhere on the page as covering everything under it. The reader showed this with a throwaway file. Research confirmed it, then changed the check: only a path or folder in the first column of a table row counts. Tested both ways with a throwaway file in each folder: the check now fails, and passes again when the file is removed. MEASURED. No tracked file turned out to be unlisted.
+- The status page did not say that no pass is credited until after the results table, whose rows say "pass". It now says so above the table.
+
+Left as they are, with the reason: the reading order in `AGENTS.md` still points to the playbook first (the owner's file, item 5 of "Things only you can do"); the status page gives the bar a test was run with and the config file gives the value in force (by design, so a number lives once).
+
+What this test does and does not show. Three fresh models found the right answer to sixteen set questions from the repo address alone. It does not show that a model would follow the rules under pressure, or find what the questions did not ask about. Every round of outside reading so far has found a real fault, this one included.

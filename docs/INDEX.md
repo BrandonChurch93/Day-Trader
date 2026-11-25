@@ -1,6 +1,6 @@
 # Index of every file
 
-What this page is: the map of the repository. Every tracked file is listed here, or sits under a folder listed here with a trailing slash. `tools/check_repo.py` fails if that stops being true.
+What this page is: the map of the repository. Every tracked file has its path in the first column of a table on this page, or sits under a folder that has its own row there with a trailing slash. `tools/check_repo.py` fails if that stops being true. A new file needs its own row: a folder named in passing does not cover it.
 
 What this page is not: the current state of the project. That is `docs/STATUS.md`. Read it first.
 
