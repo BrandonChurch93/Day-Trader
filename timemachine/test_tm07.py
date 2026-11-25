@@ -92,6 +92,8 @@ class DeskTest(unittest.TestCase):
         ans = [(b["weights"],b["exits"]) for b in bundles]
         slow = P.run_perp(args, table, ans, p.pp, p.minutes, spec["cfg"])
         fast = F.run_perp(args, table, ans, p.pp, p.minutes, spec["cfg"])
+        with self.assertRaisesRegex(ValueError, "conditional desk answers"):
+            F.run_perp(dict(args, tm07_arm="C"), table, ans, p.pp, p.minutes, spec["cfg"])
         dsk = S.replay(p,bundles,journal=True)
         self.assertEqual(slow,fast)
         self.assertEqual(slow[0],dsk["book"])
