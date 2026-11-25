@@ -9,3 +9,4 @@ Every rule variant is listed here before it is run. A result with no row here do
 | X1 | 2026-11-25 06:54 | PREREG_01 Amendment 1 (second-source cross-check) | Same P1 and P2, Kraken daily bars 2024-12-05 to 2026-11-24, against Bitstamp over the same dates. Not a new trial | logged before run. Run. Results in docs/research/12 |
 | S1 | 2026-11-25 06:54 | PREREG_01_S1_fill_delay.md | Fill-delay sensitivity on trials 1 to 18. Same rules, no new trials, no pass marks. (a) fill one hour after the daily close, (b) fill one full day late | logged before run. Run. Results in docs/research/12 |
 | 27 to 42 | 2026-11-25 07:04 | PREREG_03_intraday_crypto.md | H1 to H8 on BTC and on ETH, hourly bars | logged, not yet run |
+| X2, S2 | 2026-11-25 07:10 | PREREG_01_X2_kraken_full_history.md | The same 9 rules on Kraken's published full daily history. BTC from 2014-05-01, ETH from 2018-03-05, and ETH from 2016-03-01 as a longer sample. Not new trials | logged, not yet run |

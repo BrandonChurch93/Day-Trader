@@ -1,0 +1,12 @@
+UTC end 2026-11-25T06:33:45 rounds 10
+venue sym quoted_spread_bps(median,max) buy-side cost vs mid bps for $1k,$10k,$100k (median)
+Alpaca BTC 2.656 3.686 4.398 4.905 5.672
+Alpaca ETH 2.831 3.924 4.903 5.446 8.664
+Binance.US BTC 0.002 2.302 0.423 1.405 4.969
+Binance.US ETH 0.332 0.725 0.504 1.656 6.537
+Coinbase BTC 0.002 0.002 0.001 0.304 0.862
+Coinbase ETH 0.514 0.906 0.378 0.532 1.827
+Gemini BTC 0.853 2.19 0.898 1.355 1.659
+Gemini ETH 0.06 9.849 0.03 0.182 3.115
+Kraken BTC 0.017 0.017 0.008 0.009 0.241
+Kraken ETH 0.937 1.934 0.559 0.767 2.064
