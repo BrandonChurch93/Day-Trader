@@ -2,7 +2,7 @@
 
 The work list for the builder and its helpers. Take the top item that is not blocked, write its ledger row (`research_rig/TRIAL_LEDGER.md`), run it, put the result in `docs/STATUS.md`, then move the item to "Done" with one line saying what happened. Add new ideas at the bottom of "Ideas" with where the idea came from. Anyone may add an idea. Nothing here needs the owner's yes.
 
-Last changed: 2026-11-25 18:20 UTC
+Last changed: 2026-11-25 18:21 UTC
 
 ## Running now
 
@@ -12,6 +12,7 @@ As of 2026-11-25 17:52 UTC. Plans TM01 to TM04 are finished and are in Done or i
 |---|---|---|---|
 | 9b | The earnings release reader. Design sample scored 2026-11-25 18:11 UTC and Claude Sonnet 5.5 alone chosen (`docs/research/44_replay_11_earnings_reader.md`). The held-back half is read: 2,146 answers, hashes pushed 2026-11-25 18:20 UTC. Waiting: the last five-day exits fall after the prices on file end (2026-11-24). When those days have traded, collect daily prices again for every symbol at once, rerun the split check, then score the held-back half once | `research_rig/PREREG_11_earnings_release_reader.md`, ledger rows 121 to 134 | 2026-11-25 |
 | 9g | Fast lane, the owner's own method (`practice/traders/F01_hot_coin_swing.md`): a second price store from Coinbase minutes for smaller coins, and a futures book in the time machine that can go long or short with funding and forced close-out | plan TM06, written when both are in | 2026-11-25 |
+| 16 | Following the disclosed stock trades of members of Congress (the owner's idea, `docs/DECISIONS.md` 2026-11-25): buy on the day a trade becomes public, which can be up to 45 days after it was made, and compare with holding SPY. A helper is collecting the dated disclosures and the published evidence | reading and data first, then a plan with a ledger row | 2026-11-25 18:21 UTC |
 | - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
 
 ## Next, in order
