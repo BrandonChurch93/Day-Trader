@@ -396,7 +396,9 @@
   function renderWaiting(d) {
     var items = d.waiting_on_you || [];
     $('waitlist').innerHTML = items.length ? items.map(function (w) {
-      return '<li><div><strong>' + esc(w[0]) + '</strong><span>' + esc(w[1]) + '</span></div></li>';
+      var rec = w[2] ? '<span class="wait-rec">Research recommends: ' + esc(w[2]) + '</span>' : '';
+      var more = w[1] ? (w[2] ? '<details><summary>What this covers</summary><p>' + esc(w[1]) + '</p></details>' : '<span>' + esc(w[1]) + '</span>') : '';
+      return '<li><div><strong>' + esc(w[0]) + '</strong>' + rec + more + '</div></li>';
     }).join('') : '<li class="wait-empty"><div><strong>' + esc(d.waiting_problem || 'Nothing is listed.') + '</strong><span>Open the full list below.</span></div></li>';
     $('waitlink').innerHTML = d.waiting_link ? '<a href="' + esc(d.waiting_link) + '" target="_blank" rel="noopener">See the full list</a>' : '';
   }

@@ -275,7 +275,12 @@ select {
 .waitlist li { counter-increment: w; display: grid; grid-template-columns: 28px minmax(0, 1fr); padding: 10px 0; border-bottom: 1px solid var(--border); max-width: none; }
 .waitlist li::before { content: counter(w) '.'; color: var(--muted); font-variant-numeric: tabular-nums; }
 .waitlist strong { font-weight: 600; display: block; }
-.waitlist span { color: var(--muted); }
+.waitlist span { color: var(--muted); display: block; }
+.waitlist details { margin-top: 4px; }
+.waitlist summary { cursor: pointer; color: var(--muted); font-size: 13px; width: fit-content; padding: 4px 0; }
+.waitlist summary:hover { color: var(--text); }
+.waitlist summary:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 2px; border-radius: 2px; }
+.waitlist details p { color: var(--muted); margin-top: 4px; max-width: 90ch; }
 .waitlink { margin-top: 12px; }
 .glossary { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 0; }
 .glossary dt, .glossary dd { padding: 8px 0; border-bottom: 1px solid var(--border); }

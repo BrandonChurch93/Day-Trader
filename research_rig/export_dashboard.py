@@ -379,7 +379,10 @@ def waiting():
         it = re.sub(r"\*\*|__", "", re.sub(r"`([^`]*)`", r"\1", it)); it = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", it).replace("  ", " ").strip()
         parts = re.split(r"(?<=\.)\s+", it, maxsplit=1); note = parts[1] if len(parts) > 1 else ""
         note = " ".join(z for z in re.split(r"(?<=\.)\s+", note) if not re.search(r"docs/|research_rig/", z))  # sentences that only point at a repo file are left to the full list
-        out.append([parts[0].rstrip("."), note.strip()])
+        note = note.strip(); rec = ""
+        k = note.rfind("Recommended:")   # the closing recommendation is shown on its own line; the rest folds under it
+        if k >= 0: rec = note[k + len("Recommended:"):].strip(); note = note[:k].strip()
+        out.append([parts[0].rstrip("."), note, rec])
     return (out, None) if out else ([], "The morning list section has no items.")
 
 
