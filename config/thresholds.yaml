@@ -574,6 +574,41 @@ tm_adds_drops_chance_pct:
   status: builder
   note: Adds and drops (after the fact, not judged) - a model's mean is said to be beyond chance when fewer than this percent of random swaps reach it on that side. A reading aid, not a mark.
   source: timemachine/score_tm04.py
+tm_lev_fixed_rate_per_day:
+  value: 0.0002
+  status: builder
+  note: Leverage only. Financing per day on borrowed dollars when no stored funding covers the symbol or the hour (stocks always). About 7.3 percent a year, near a broker's margin rate for a small account. Charged a 24th at each whole UTC hour.
+  source: timemachine/weights.py
+tm_lev_maintenance_crypto:
+  value: 0.05
+  status: builder
+  note: Leverage only, crypto. If on any recorded minute the account value is below this share of gross position value (at the minute's low), the book is closed out. At 5x the account starts at 0.2, so a fall of about 16 percent closes it.
+  source: timemachine/weights.py
+tm_lev_maintenance_stocks:
+  value: 0.25
+  status: builder
+  note: Leverage only, stocks. The same rule at the usual 25 percent stock margin minimum. At 2x a fall of about a third closes it; above 4x a stock book would be closed at once.
+  source: timemachine/weights.py
+tm_lev_closeout_penalty:
+  value: 0.01
+  status: builder
+  note: Leverage only. A forced close-out sells at the minute's low less the half spread and fee, and less this share of what is sold, as a liquidation fee.
+  source: timemachine/weights.py
+tm_lev_funding_files:
+  value: {BTC/USD: rig/data/funding/kraken_PF_XBTUSD.json, ETH/USD: rig/data/funding/kraken_PF_ETHUSD.json}
+  status: builder
+  note: Leverage only, crypto. Stored hourly perpetual funding (Kraken, relativeFundingRate per hour, positive means longs pay) used as the hourly financing rate on borrowed dollars for these symbols; paths under the workspace. A negative rate is paid to the account. Hours not in the file use tm_lev_fixed_rate_per_day.
+  source: timemachine/weights.py
+tm_lev_replay_multiples:
+  value: [2, 3, 5]
+  status: builder
+  note: timemachine/leverage_replay_tm03.py only, looked at after the fact. Each stored TM03 answer, holding, and dials B and C are replayed at these multiples (and at 1x as the check).
+  source: timemachine/leverage_replay_tm03.py
+tm_lev_replay_low_share:
+  value: 0.5
+  status: builder
+  note: timemachine/leverage_replay_tm03.py only. A month counts as ended low when its final value is below this share of tm_account_start_usd.
+  source: timemachine/leverage_replay_tm03.py
 tm05_plan:
   value: {stretch_a: {start: "2026-04-01", end: "2026-05-29"}, stretch_b: {start: "2026-11-30", end: "2027-02-26"}, wake_time_ny: 15.5, leave_out_max: 8, min_change: 0.0, method_min_models_above_median: 5, method_min_models_above_percentile: 2}
   status: builder

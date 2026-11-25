@@ -121,6 +121,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/36_time_machine_tm04_stock_basket.md` | Results so far for plan TM04: six AI models name eight of 38 stocks to hold once a week, two runs each, against random baskets, with an after-the-fact, not-judged look at what they added and dropped. Written wholly by `timemachine/score_tm04.py` | CURRENT |
 | `docs/research/35_replay_06_fund_trend.md` | Replay 06 results on Alpaca daily fund bars, with yardsticks, costs, pass marks and timing controls | CURRENT |
 | `docs/research/37_tm03_plain_dials.md` | Plain fixed dials (A to E and hindsight F) run through `timemachine/weights.py` against the completed TM03 AI models, written wholly by `timemachine/dial_rules_tm03.py --write` | CURRENT |
+| `docs/research/39_leverage_replay_tm03.md` | The stored TM03 bitcoin dials, holding and dials B and C replayed at 2x, 3x and 5x with financing and forced close-outs. Looked at after the fact, not a counted trial. Written wholly by `timemachine/leverage_replay_tm03.py` | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -230,6 +231,7 @@ Working papers.
 | `timemachine/results_tm02.json` | Stored scores of plan TM02, written by `timemachine/score_tm01.py --plan TM02` | CURRENT |
 | `timemachine/score_tm03.py`, `timemachine/results_tm03.json` | Scores plan TM03 from the finished sessions with the weights scorer: each model's months against holding and its shuffled stretches, the plan's two lines, and the gain by stated driver. The JSON is its stored output | CURRENT |
 | `timemachine/score_tm04.py`, `timemachine/results_tm04.json` | Scores plan TM04 from the finished sessions with the weights scorer: each run against equal-weight hold and random baskets, run 1 against run 2, the method count, and the adds and drops against random swaps (not judged) | CURRENT |
+| `timemachine/leverage_replay_tm03.py`, `timemachine/leverage_replay_tm03.json` | Replays every finished TM03 session's answers at the multiples in `tm_lev_replay_multiples` through the weights book with leverage; 1x must match each session to the cent | CURRENT |
 | `timemachine/dial_rules_tm03.py`, `timemachine/dial_rules_tm03.json` | Runs fixed dials A to E and hindsight dial F through `timemachine/weights.py` against the completed TM03 models, writes `docs/research/37_tm03_plain_dials.md` (`--write`), checks freshness (`--check`), and tests made-up prices (`--test`). The JSON is its stored output | CURRENT |
 | `timemachine/PLAN_TMX1_exit_replay.md` | Plan for exit replay TMX1: five fixed exit templates on logged AI and random-twin crypto buys, with marks fixed before running | CURRENT |
 | `timemachine/exit_replay.py`, `timemachine/results_tmx1.json` | Replays logged TM01/TM02 AI and twin buys under templates A to E on 1Min tape bars and writes `docs/research/32_exit_replay.md`. The JSON is its stored output | CURRENT |

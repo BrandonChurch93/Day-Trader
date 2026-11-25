@@ -832,6 +832,56 @@ ok(d4 == d4b and f"Method: {me4['verdict']}." in d4 and "## What would count" in
    "score_tm03: the page is written wholly by the script, the same every time, with the plan's sections")
 nums_doc = set(re.findall(r"-?\$[0-9,]+\.[0-9]{2}", d4)); nums_js = {T3.usd(v) for v in re.findall(r"-?[0-9]+\.[0-9]+", json.dumps(o4)) for v in [float(v)]}
 ok(nums_doc and nums_doc <= nums_js, "score_tm03: every dollar figure on the page is in the results file")
+# leverage in the weights book (max_gross): made-up prices
+LC = dict(tm_lev_fixed_rate_per_day=0.0024, tm_lev_maintenance_crypto=0.05, tm_lev_maintenance_stocks=0.25, tm_lev_closeout_penalty=0.01, tm_lev_funding_files={})
+LCF = dict(W.full_config(), tm_crypto_half_spread_bps=0.0, practice_crypto_fee_bps_added=0.0)
+L0 = U(2026, 9, 1, 0)
+def lmeta(n_wakes=1, hours=2):
+    return dict(market="crypto", symbols=["X/USD"], opening={}, wakes=[S.iso(L0 + dt.timedelta(hours=hours * i)) for i in range(n_wakes)], end_utc=S.iso(L0 + dt.timedelta(hours=hours * n_wakes)))
+def lrow(t, p):
+    return dict(fills={"X/USD": [S.iso(t), p]}, marks={"X/USD": p})
+def lmins(path, start=L0):
+    return [(int((start + dt.timedelta(minutes=i)).timestamp()), "X/USD", lo, cl) for i, (lo, cl) in enumerate(path)]
+up = [(100.0 + 10.0 * i / 119, 100.0 + 10.0 * i / 119) for i in range(120)]
+tb1 = dict(rows=[lrow(L0, 100.0)], end_marks={"X/USD": 110.0})
+b1, r1_, f1 = W.run_answers(lmeta(), tb1, [{"X/USD": 1.0}], LCF)
+b1l, r1l, f1l = W.run_answers(lmeta(), tb1, [{"X/USD": 1.0}], LCF, lev=W.lev_params("crypto", ["X/USD"], 1.0, LC, funding={}), minutes=lmins(up))
+ok(abs(f1 - 1100.0) < 1e-9 and f1l == f1 and b1l["financing_usd"] == 0.0 and not b1l["closeouts"], "leverage: at 1x the leverage path gives the same result to the cent, with no financing and no close-out")
+lp2 = W.lev_params("crypto", ["X/USD"], 2.0, LC, funding={}); rh = 0.0024 / 24
+b2, r2_, f2 = W.run_answers(lmeta(), tb1, [{"X/USD": 2.0}], LCF, lev=lp2, minutes=lmins(up))
+fin = 1000 * rh + (1000 + 1000 * rh) * rh
+ok(abs(b2["financing_usd"] - fin) < 1e-9 and abs(f2 - (1000 + 2 * 100 - fin)) < 1e-9 and r2_[0]["lev"]["fixed_hours"] == 2,
+   "leverage: at 2x the gain is twice the move less financing on the borrowed dollars, charged at each whole hour")
+fall = [(100.0, 100.0)] * 10 + [(85.0, 90.0), (84.0, 86.0)] + [(120.0, 120.0)] * 20
+lp5 = W.lev_params("crypto", ["X/USD"], 5.0, dict(LC, tm_lev_fixed_rate_per_day=0.0), funding={})
+b5, r5_, f5 = W.run_answers(lmeta(), dict(rows=[lrow(L0, 100.0)], end_marks={"X/USD": 120.0}), [{"X/USD": 5.0}], LCF, lev=lp5, minutes=lmins(fall))
+co = b5["closeouts"]
+ok(len(co) == 1 and co[0]["utc"] == S.iso(L0 + dt.timedelta(minutes=11)) and abs(f5 - (50 * 84.0 * 0.99 - 4000)) < 1e-6 and not b5["qty"],
+   "leverage: at 5x a 15% low keeps the book, a 16% low closes it on that minute at the low less the penalty, and it stays in cash after")
+gap = [(100.0, 100.0)] * 5 + [(50.0, 60.0)] + [(100.0, 100.0)] * 5
+bg, rg, fg = W.run_answers(lmeta(), dict(rows=[lrow(L0, 100.0)], end_marks={"X/USD": 100.0}), [{"X/USD": 5.0}], LCF, lev=lp5, minutes=lmins(gap))
+ok(fg == 0.0 and bg["cash"] == 0.0 and abs(bg["shortfall_usd"] - (4000 - 50 * 50.0 * 0.99)) < 1e-6 and bg["lev_largest_drop"] == -1.0,
+   "leverage: a gap below zero ends the account at zero, never below, and the shortfall is recorded")
+tb2 = dict(rows=[lrow(L0, 100.0), lrow(L0 + dt.timedelta(hours=2), 100.0)], end_marks={"X/USD": 100.0})
+br, rr, fr = W.run_answers(lmeta(2), tb2, [{"X/USD": 5.0}, None], LCF, lev=lp5, minutes=lmins(fall + [(100.0, 100.0)] * 200))
+ok(len(br["closeouts"]) == 1 and rr[1]["retry"] and [t["side"] for t in rr[1]["trades"]] == ["buy"] and abs(sum(rr[1]["weights_after"].values()) - 5.0) < 1e-6,
+   "leverage: after a close-out the standing target is bought again at the next wake")
+ok(W.check_weights({"BTC/USD": 1.5}, ["BTC/USD"], WCFG) and not W.check_weights({"BTC/USD": 1.5}, ["BTC/USD"], WCFG, max_gross=2.0)
+   and W.check_weights({"BTC/USD": 2.5}, ["BTC/USD"], WCFG, max_gross=2.0), "leverage: weights above 1 are refused unless the session allows them, and never above max_gross")
+fh = {int(L0.timestamp()) + 3600: 0.001}
+b2f, _, _ = W.run_answers(lmeta(), tb1, [{"X/USD": 2.0}], LCF, lev=W.lev_params("crypto", ["X/USD"], 2.0, LC, funding={"X/USD": fh}), minutes=lmins(up))
+ok(abs(b2f["financing_usd"] - (1000 * 0.001 + (1000 + 1.0) * rh)) < 1e-9, "leverage: stored hourly funding is used where it has the hour, the fixed rate where it does not")
+sl = wmk("w_lev2", start="2026-09-01", end="2026-09-02", max_gross=2.0)
+ok(sl.meta["max_gross"] == 2.0 and "leverage" in sl.meta and "max_gross" not in json.loads((S.runs_dir() / "w_basic" / "session.json").read_text())
+   and not sl.submit(ans({"BTC/USD": 2.5}))["ok"], "leverage: max_gross is stored only on a leveraged session and its answers are checked against it")
+go(sl, ans({"BTC/USD": 2.0})); [go(sl, ans(None)) for _ in range(len(sl.meta["wakes"]) - 1)]
+rl = json.loads((S.runs_dir() / "w_lev2" / "result.json").read_text())["final"]
+ok(sl.done() and rl["max_gross"] == 2.0 and rl["financing_usd"] != 0 and rl["value_usd"] >= 0 and "closeouts" in rl, "leverage: a 2x session runs to the end and its result shows financing and close-outs")
+from timemachine import leverage_replay_tm03 as LR
+tt = LR.total([dict(gain_usd=100.0, final_usd=1100.0, largest_drop_pct=-5.0, closeouts=0, financing_usd=1.0, penalty_usd=0.0, shortfall_usd=0.0, fixed_rate_hours=0),
+               dict(gain_usd=-600.0, final_usd=400.0, largest_drop_pct=-70.0, closeouts=1, financing_usd=2.0, penalty_usd=3.0, shortfall_usd=0.0, fixed_rate_hours=0)], 1000.0, 0.5)
+ok(LR.scaled({"BTC/USD": 0.6}, 3) == {"BTC/USD": 0.6 * 3} and LR.scaled(None, 3) is None and tt["gain_usd"] == -500.0 and abs(tt["carried_gain_usd"] - (1000 * 1.1 * 0.4 - 1000)) < 1e-9
+   and tt["months_below_low"] == 1 and tt["closeouts"] == 1 and tt["worst_month_drop_pct"] == -70.0, "leverage replay: answers are scaled, no_change stays no_change, and months are summed and carried as one account")
 # score_tm04: plan TM04's scorer, its adds and drops, and its page
 from timemachine import score_tm04 as T4
 PX = [{"A": 10.0, "B": 20.0, "C": 5.0}, {"A": 11.0, "B": 18.0, "C": 5.0}, {"A": 12.1, "B": 18.0, "C": None}, {"A": 9.9, "B": 27.0, "C": 6.0}]

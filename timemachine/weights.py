@@ -10,6 +10,12 @@ the pick sessions, trading only the difference. A symbol whose weight would move
 is not traded; a move to zero weight is always traded. A repeated answer, like no_change, trades nothing, except that a
 move left unfilled because no minute was recorded before the next wake is tried again at the next wake.
 
+Leverage (optional): a session made with max_gross above 1 lets the weights add up to max_gross; borrowed dollars pay
+financing each whole UTC hour (stored perpetual funding where tm_lev_funding_files has the symbol, else
+tm_lev_fixed_rate_per_day), and on every recorded minute between wakes lev_scan() closes the whole book out when the
+account value at the minute's low falls below the maintenance share of gross position value. Without max_gross (or at
+1.0) none of this runs and every result is as before.
+
 The book arithmetic is one pure function, step_book(), used by the session, the twins and timemachine/score_weights.py
 alike. Prices come only from the tape: fill_row() reads the fill minute after the wake and the as-of price at the wake.
 
@@ -192,7 +198,7 @@ def weights_at(book, px):
     return {s: (q * px.get(s, book["last_px"].get(s, 0.0)) / v if v > 0 else 0.0) for s, q in sorted(book["qty"].items()) if q > 0}
 
 
-def step_book(book, answer, row, cfg, first):
+def step_book(book, answer, row, cfg, first, max_gross=1.0):
     """Moves `book` (changed in place) for one wake. `answer` is a weights dict, or None for no change.
     Returns a record of what was done. A trade happens at the first wake (to reach the opening or answered weights)
     and at any wake whose target differs from the standing one; otherwise nothing is traded."""
@@ -239,11 +245,15 @@ def step_book(book, answer, row, cfg, first):
     for s, w, c in buys:
         p = fp[s]; hs = hs_c if "/" in s else hs_s; fee = fee_c if "/" in s else 0.0; dv = (w - c) * V
         need.append((s, p, hs, fee, dv, dv * (1 + hs) * (1 + (0.0 if in_coin else fee))))
-    tot = sum(x[5] for x in need); scale = min(1.0, book["cash"] / tot) if tot > 0 else 1.0
+    tot = sum(x[5] for x in need)
+    if max_gross > 1.0:  # leverage: buys may borrow, up to gross positions of max_gross times the account value
+        room = book["cash"] + (max_gross - 1.0) * max(V, 0.0); scale = max(0.0, min(1.0, room / tot)) if tot > 0 else 1.0
+    else:
+        scale = min(1.0, book["cash"] / tot) if tot > 0 else 1.0
     for s, p, hs, fee, dv, cash_need in need:
         pay = cash_need * scale; notional = pay / (1 + (0.0 if in_coin else fee)); f = notional * fee
         qb = notional / (p * (1 + hs)) * ((1 - fee) if in_coin else 1.0)
-        book["cash"] = max(0.0, book["cash"] - pay); book["qty"][s] = book["qty"].get(s, 0.0) + qb
+        book["cash"] = (book["cash"] - pay) if max_gross > 1.0 else max(0.0, book["cash"] - pay); book["qty"][s] = book["qty"].get(s, 0.0) + qb
         book["spread_usd"] += notional - notional / (1 + hs); book["fee_usd"] += f; book["traded_usd"] += notional / (1 + hs)
         rec["trades"].append(dict(symbol=s, side="buy", qty=qb, open=p, price=p * (1 + hs), fee_usd=f, fill_utc=fills[s][0], scaled=scale))
     book["pending"] = any(x["why"].startswith("no recorded minute") for x in rec["skipped"])
@@ -252,18 +262,146 @@ def step_book(book, answer, row, cfg, first):
     return rec
 
 
-def run_answers(meta, table, answers, cfg):
+def run_answers(meta, table, answers, cfg, lev=None, minutes=None):
     """The whole session from a list of answers (weights dict or None per wake), with the stored price table.
-    Returns (book, records, final value). Used by the twins and the scorer."""
+    Returns (book, records, final value). Used by the twins and the scorer.
+    With lev (from lev_params) and minutes (from lev_minutes), the book may borrow up to lev["max_gross"] and between
+    wakes every recorded minute is checked by lev_scan for financing and the maintenance rule."""
     book = new_book(cfg["tm_account_start_usd"], meta.get("opening"))
+    if lev is not None:
+        lev_book(book, cfg); wakes = [parse(w) for w in meta["wakes"]]; end = parse(meta["end_utc"]); recs = []
+        for k, a in enumerate(answers):
+            r = step_book(book, a, table["rows"][k], cfg, k == 0, lev["max_gross"])
+            t0 = parse(r["fill_utc"]) if r["fill_utc"] else wakes[k]
+            r["lev"] = lev_scan(book, minutes, max(t0, wakes[k]), wakes[k + 1] if k + 1 < len(wakes) else end, lev, cfg); recs.append(r)
+        for s, p in table["end_marks"].items():
+            book["last_px"][s] = p
+        return book, recs, max(0.0, value_at(book, table["end_marks"]))
     recs = [step_book(book, a, table["rows"][k], cfg, k == 0) for k, a in enumerate(answers)]
     for s, p in table["end_marks"].items():
         book["last_px"][s] = p
     return book, recs, value_at(book, table["end_marks"])
 
 
+# ---- leverage (optional; a session without max_gross, or with 1.0, never reaches this code)
+LEV_KEYS = ["tm_lev_fixed_rate_per_day", "tm_lev_maintenance_crypto", "tm_lev_maintenance_stocks", "tm_lev_closeout_penalty", "tm_lev_funding_files"]
+LEV_PROPOSED = ROOT / "timemachine" / "leverage_keys_PROPOSED.yaml"
+
+
+def lev_config(path=ROOT / "config" / "thresholds.yaml", proposed=LEV_PROPOSED, keys=None):
+    """The leverage keys, from config/thresholds.yaml; any key not there yet is read from the proposal file, and the
+    result says which keys came from where."""
+    from timemachine.score_tm03 import flow
+    def read(fp):
+        out, key = {}, None
+        if not Path(fp).exists():
+            return out
+        for line in open(fp):
+            m = re.match(r"^([a-z0-9_]+):\s*$", line)
+            if m:
+                key = m.group(1); continue
+            m = re.match(r"^  value:\s*(.*)$", line)
+            if m and key in want:
+                v = m.group(1).strip(); out[key] = flow(v) if v.startswith(("{", "[")) else float(v)
+        return out
+    want = list(keys or LEV_KEYS); main, prop = read(path), read(proposed)
+    out = {k: main.get(k, prop.get(k)) for k in want}
+    bad = [k for k, v in out.items() if v is None]
+    assert not bad, f"leverage keys missing from config/thresholds.yaml and {proposed}: {bad}"
+    out["_from"] = {k: ("config/thresholds.yaml" if k in main else str(Path(proposed).relative_to(ROOT))) for k in want}
+    return out
+
+
+def load_funding(path):
+    """Hourly perpetual funding from a stored Kraken file: {hour epoch: relative rate per hour}. Positive: longs pay."""
+    p = Path(path); p = p if p.is_absolute() else ROOT.parent / p
+    rates = json.loads(p.read_text()).get("rates") or []
+    return {int(to_dt(r["timestamp"]).timestamp()) // 3600 * 3600: float(r["relativeFundingRate"]) for r in rates}
+
+
+def to_dt(x):
+    return dt.datetime.fromisoformat(x.replace("Z", "+00:00"))
+
+
+def lev_params(market, symbols, max_gross, lc=None, funding=None):
+    """Everything the leverage path needs. funding: {symbol: {hour epoch: rate}}; by default read from tm_lev_funding_files
+    for the symbols that have a file; the others pay tm_lev_fixed_rate_per_day."""
+    lc = lc or lev_config(); files = lc["tm_lev_funding_files"] or {}
+    if funding is None:
+        funding = {s: load_funding(files[s]) for s in symbols if s in files}
+    return dict(max_gross=float(max_gross), maint=float(lc["tm_lev_maintenance_crypto" if market == "crypto" else "tm_lev_maintenance_stocks"]),
+                penalty=float(lc["tm_lev_closeout_penalty"]), fixed_per_hour=float(lc["tm_lev_fixed_rate_per_day"]) / 24.0, funding=funding,
+                source={s: ("funding file " + str(files[s]) if s in funding and s in files else "funding given" if s in funding else "tm_lev_fixed_rate_per_day") for s in symbols})
+
+
+def lev_minutes(tape, symbols, t0, t1):
+    """Every recorded 1Min bar of the symbols from t0 to t1, sorted: (start epoch, symbol, low, close)."""
+    out = []
+    for s in symbols:
+        out += [(int(b["t"].timestamp()), s, b["l"], b["c"]) for b in tape.bars(s, "1Min", t0, t1) if b["t"] < t1]
+    return sorted(out)
+
+
+def lev_book(book, cfg):
+    book.update(financing_usd=0.0, penalty_usd=0.0, shortfall_usd=0.0, closeouts=[], lev_peak=float(cfg["tm_account_start_usd"]), lev_largest_drop=0.0)
+
+
+def lev_scan(book, minutes, t0, t1, lev, cfg):
+    """From t0 to t1 (a wake to the next): financing on borrowed dollars at each whole UTC hour, and the maintenance rule
+    on every recorded minute. A minute whose low puts the account value below lev["maint"] of gross position value closes
+    the whole book at that low, less the half spread, the crypto fee and lev["penalty"]; the book then stays in cash until
+    the next wake, where its standing target is bought again. The account value is never below zero: a shortfall is
+    recorded and set to zero. Also keeps the largest drop of the account value on minute lows."""
+    import bisect
+    a, b = int(t0.timestamp()), int(t1.timestamp()); keys = [m[0] for m in minutes]
+    i0, i1 = bisect.bisect_left(keys, a), bisect.bisect_left(keys, b)
+    hours = list(range((a // 3600 + 1) * 3600, b + 1, 3600))
+    hs_c, hs_s, fee_c = cfg["tm_crypto_half_spread_bps"] / 1e4, cfg["tm_stock_half_spread_bps"] / 1e4, cfg["practice_crypto_fee_bps_added"] / 1e4
+    px = dict(book["last_px"]); rec = dict(financing_usd=0.0, closeout=None, fixed_hours=0); hi = 0
+    def finance(h):
+        q = book["qty"]; borrowed = max(0.0, -book["cash"])
+        if borrowed <= 0 or not q:
+            return
+        vals = {s: x * px.get(s, 0.0) for s, x in q.items()}; tot = sum(vals.values()) or 1.0; cost = 0.0
+        for s, v in vals.items():
+            r = lev["funding"].get(s, {}).get(h)
+            if r is None:
+                r = lev["fixed_per_hour"]; rec["fixed_hours"] += 1
+            cost += borrowed * v / tot * r
+        book["cash"] -= cost; book["financing_usd"] += cost; rec["financing_usd"] += cost
+    for j in range(i0, i1):
+        t, s, lo, cl = minutes[j]
+        while hi < len(hours) and hours[hi] <= t:
+            finance(hours[hi]); hi += 1
+        if not book["qty"]:
+            px[s] = cl; continue
+        low_px = dict(px); low_px[s] = lo
+        gross = sum(q * low_px.get(x, 0.0) for x, q in book["qty"].items()); eq = book["cash"] + gross
+        book["lev_largest_drop"] = min(book["lev_largest_drop"], max(eq, 0.0) / book["lev_peak"] - 1 if book["lev_peak"] > 0 else 0.0)
+        if gross > 0 and eq < lev["maint"] * gross:
+            got = 0.0
+            for x, q in book["qty"].items():
+                hs = hs_c if "/" in x else hs_s; fee = fee_c if "/" in x else 0.0; g = q * low_px[x] * (1 - hs)
+                pen = g * lev["penalty"]; f = g * fee; got += g - pen - f
+                book["spread_usd"] += q * low_px[x] * hs; book["fee_usd"] += f; book["penalty_usd"] += pen; book["traded_usd"] += q * low_px[x]
+            book["cash"] += got; book["qty"] = {}; short = max(0.0, -book["cash"])
+            if short:
+                book["shortfall_usd"] += short; book["cash"] = 0.0
+            rec["closeout"] = dict(utc=iso(dt.datetime.fromtimestamp(t, UTC)), symbol=s, value_before=eq, value_after=book["cash"], shortfall_usd=short)
+            book["closeouts"].append(rec["closeout"]); book["pending"] = True; book["opening_retry"] = False
+            book["lev_largest_drop"] = min(book["lev_largest_drop"], book["cash"] / book["lev_peak"] - 1 if book["lev_peak"] > 0 else 0.0)
+        px[s] = cl
+        if book["qty"]:
+            book["lev_peak"] = max(book["lev_peak"], book["cash"] + sum(q * px.get(x, 0.0) for x, q in book["qty"].items()))
+    while hi < len(hours):
+        finance(hours[hi]); hi += 1
+    for s, p in px.items():
+        book["last_px"][s] = p
+    return rec
+
+
 # ---- answers
-def check_weights(w, allowed, cfg, what="weights"):
+def check_weights(w, allowed, cfg, what="weights", max_gross=1.0):
     errs = []
     if not isinstance(w, dict):
         return [f"{what} must be a JSON object of symbol to weight, for example {{\"{allowed[0]}\": 0.5}}."]
@@ -272,10 +410,12 @@ def check_weights(w, allowed, cfg, what="weights"):
             errs.append(f"{s} is not one of the allowed symbols: {', '.join(allowed)}.")
         if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v):
             errs.append(f"The weight for {s} is not a number.")
-        elif v < 0 or v > 1:
-            errs.append(f"The weight for {s} is {v}. Each weight must be from 0 to 1 (long only, no borrowing).")
-    if not errs and sum(w.values()) > 1 + cfg["tm_weights_sum_tolerance"]:
-        errs.append(f"The weights add up to {sum(w.values())}. They must add up to at most 1. The rest is cash.")
+        elif v < 0 or v > max_gross:
+            errs.append(f"The weight for {s} is {v}. Each weight must be from 0 to 1 (long only, no borrowing)." if max_gross <= 1 else
+                        f"The weight for {s} is {v}. Each weight must be from 0 to {max_gross:g} (long only).")
+    if not errs and sum(w.values()) > max_gross + cfg["tm_weights_sum_tolerance"]:
+        errs.append(f"The weights add up to {sum(w.values())}. They must add up to at most 1. The rest is cash." if max_gross <= 1 else
+                    f"The weights add up to {sum(w.values())}. They must add up to at most {max_gross:g}. Above 1 is borrowed.")
     return errs
 
 
@@ -283,7 +423,7 @@ DRIVERS = ["price", "news", "filing", "headline", "both", "more than one", "noth
 OPTIONAL = {"driver", "reasons"}
 
 
-def check_answer(body, allowed, cfg, basket_size=None):
+def check_answer(body, allowed, cfg, basket_size=None, max_gross=1.0):
     mx = int(cfg["tm_weights_why_max_chars"])
     if not isinstance(body, dict):
         return ["The body must be a JSON object."]
@@ -301,7 +441,7 @@ def check_answer(body, allowed, cfg, basket_size=None):
         return errs
     if set(body) - OPTIONAL != {"weights", "why"}:
         return errs + ['An answer is {"weights": {...}, "why": "..."} or {"no_change": true, "why": "..."} (driver and reasons may be added).']
-    errs += check_weights(body["weights"], allowed, cfg)
+    errs += check_weights(body["weights"], allowed, cfg, max_gross=max_gross)
     if not errs and basket_size:
         w = body["weights"]; names = [k for k, v in w.items() if v > 0]; tol = cfg["tm_weights_sum_tolerance"]
         if len(names) != basket_size or any(abs(w[k] - 1.0 / basket_size) > tol for k in names):
@@ -311,7 +451,7 @@ def check_answer(body, allowed, cfg, basket_size=None):
 
 # ---- making a session
 def create(session_id, trader_id, model, method_path, start_date, end_date, symbols, market="crypto", opening=None, rules=None, wake_kind="daily",
-           news=False, tape=None, note=None, benchmark=None, basket_size=None):
+           news=False, tape=None, note=None, benchmark=None, basket_size=None, max_gross=None):
     assert re.fullmatch(r"[A-Z0-9-]{2,12}", trader_id), "trader id: 2 to 12 capital letters, digits or dashes"
     assert re.fullmatch(r"[A-Za-z0-9_.-]{3,80}", session_id) and ".." not in session_id, "session id: 3 to 80 letters, digits, dot, dash or underscore"
     assert market in ("crypto", "stocks")
@@ -320,7 +460,8 @@ def create(session_id, trader_id, model, method_path, start_date, end_date, symb
     tape = tape or Tape(); cfg = full_config(); folder = S.runs_dir() / session_id
     if folder.exists():
         raise FileExistsError(f"session {session_id} already exists")
-    opening = dict(opening or {}); errs = check_weights(opening, symbols, cfg, "the opening weights")
+    mg = float(max_gross) if max_gross is not None else 1.0; assert mg >= 1.0, "max_gross is 1 or more"
+    opening = dict(opening or {}); errs = check_weights(opening, symbols, cfg, "the opening weights", max_gross=mg)
     assert not errs, " ".join(errs)
     assert basket_size is None or 0 < int(basket_size) <= len(symbols), "basket size: from 1 to the number of allowed symbols"
     rules = rules or default_rules(market, wake_kind, cfg)
@@ -333,6 +474,8 @@ def create(session_id, trader_id, model, method_path, start_date, end_date, symb
                 window=dict(start=start_date, end=end_date), symbols=symbols, watch=symbols, opening=dict(opening), wake_rules=rules,
                 wakes=[iso(w) for w in wl], end_utc=iso(end), benchmark=benchmark, config=cfg, config_hash=chash, created_utc=iso(dt.datetime.now(UTC)),
                 git=S.git_commit(), tape=str(tape.path), note=note, news=bool(news), basket_size=int(basket_size) if basket_size else None)
+    if mg > 1.0:  # only a leveraged session carries these, so every other session.json is as before
+        lc = lev_config(); meta.update(max_gross=mg, leverage={k: v for k, v in lc.items()})
     folder.mkdir(parents=True)
     (folder / "session.json").write_text(json.dumps(meta, indent=1, sort_keys=True) + "\n")
     line = dict(session=session_id, kind="weights", trader=trader_id, model=model, method=method_path, method_sha256=meta["method_sha256"], market=market,
@@ -342,7 +485,10 @@ def create(session_id, trader_id, model, method_path, start_date, end_date, symb
     log = S.sessions_log(); log.parent.mkdir(parents=True, exist_ok=True)
     with open(log, "a") as f:
         f.write(json.dumps(line, sort_keys=True) + "\n"); f.flush(); os.fsync(f.fileno())
-    S.save_json(folder / "progress.json", dict(k=0, done=False, bad={}, looks={}, steps=[], book=new_book(cfg["tm_account_start_usd"], opening), clock=meta["wakes"][0]))
+    book = new_book(cfg["tm_account_start_usd"], opening)
+    if mg > 1.0:
+        lev_book(book, cfg)
+    S.save_json(folder / "progress.json", dict(k=0, done=False, bad={}, looks={}, steps=[], book=book, clock=meta["wakes"][0]))
     return folder
 
 
@@ -374,7 +520,8 @@ class WSession(S.Session):
         self.tape = tape or Tape(self.meta.get("tape"))
         self.wakes = [parse(w) for w in self.meta["wakes"]]; self.end = parse(self.meta["end_utc"]); self.N = len(self.wakes)
         self.now = parse(self.prog["clock"]); self.tid = self.meta["trader"]; self.rec = _Rec(self.dir / "records")
-        self.allowed = self.meta["symbols"]
+        self.allowed = self.meta["symbols"]; self.mg = float(self.meta.get("max_gross") or 1.0)
+        self.lev = lev_params(self.meta["market"], priced(self.meta), self.mg, lc=self.meta["leverage"]) if self.mg > 1.0 else None
         if self.prog["k"] >= self.N and not self.prog["done"]:
             self.finish()  # a stop between the last answer and the result file: finish now
 
@@ -459,6 +606,9 @@ class WSession(S.Session):
                           "no_change, or the same weights as now, trades nothing. Prices drift between wakes and the desk does not move the book back on its own.",
                           "Nothing happens between wakes: no stops, no targets.",
                           f"You may add \"driver\" (one of: {', '.join(DRIVERS)}) and \"reasons\" (symbol to one plain line) to an answer."])
+        if self.lev:
+            out["rules"][0] = f"Each weight is from 0 to {self.mg:g}. The weights add up to at most {self.mg:g}; above 1 is borrowed and pays financing each hour. Long only."
+            out["rules"].append(f"If the account value falls below {self.lev['maint']:g} of the value of what it holds on any recorded minute, the desk sells everything at that minute's low, less a penalty, and holds cash until the next wake.")
         if self.meta.get("basket_size"):
             out["rules"].append(f"This session holds exactly {self.meta['basket_size']} names in equal shares: each named symbol gets the weight 1/{self.meta['basket_size']}.")
         if self.prog["k"] == 0 and self.meta.get("opening"):
@@ -472,17 +622,21 @@ class WSession(S.Session):
     def submit(self, body):
         if self.done():
             raise S.Done()
-        errs = check_answer(body, self.allowed, self.cfg, self.meta.get("basket_size"))
+        errs = check_answer(body, self.allowed, self.cfg, self.meta.get("basket_size"), max_gross=self.mg)
         if errs:
             return self.bad(errs)
         k = self.prog["k"]; wake = self.wakes[k]; nxt = self.next_time(k)
         answer = None if "no_change" in body else body["weights"]
         row = fill_row(self.tape, self.meta["market"], priced(self.meta), wake, nxt)
-        book = json.loads(json.dumps(self.prog["book"]))
-        r = step_book(book, answer, row, self.cfg, k == 0)
+        book = json.loads(json.dumps(self.prog["book"])); lev_before = None
+        if self.lev and k > 0:
+            lev_before = self.lev_between(book, k - 1, wake)
+        r = step_book(book, answer, row, self.cfg, k == 0, self.mg)
         step = dict(k=k, utc=iso(wake), asked=answer, why=body["why"], driver=body.get("driver"), reasons=body.get("reasons"), target=r["target"], changed=r["changed"], retry=r["retry"], trades=r["trades"], skipped=r["skipped"],
                     value_before=r["value_before"], value_after_fill=r["value_after"], weights_after=r["weights_after"], fill_utc=r["fill_utc"],
                     cash_after=book["cash"], row=row, looks=self.prog["looks"].get(str(k), 0), bad_attempts=self.prog["bad"].get(str(k), 0))
+        if self.lev:
+            step["lev_before"] = lev_before
         f = self.dir / "picks" / self.tid / f"{wake.strftime('%Y%m%dT%H%MZ')}.json"; f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(json.dumps(body, indent=1, sort_keys=True) + "\n")
         self.prog["book"] = book; self.prog["steps"].append(step); self.prog["k"] = k + 1
@@ -506,15 +660,27 @@ class WSession(S.Session):
                                for st in self.prog["steps"]))
         os.replace(tmp, self.dir / "records" / "wakes.jsonl")
 
+    def lev_between(self, book, j, until):
+        """Leverage only: financing and the maintenance rule from the fill of step j to `until`."""
+        st = self.prog["steps"][j]; t0 = max(parse(st["fill_utc"]) if st.get("fill_utc") else self.wakes[j], self.wakes[j])
+        return lev_scan(book, lev_minutes(self.tape, priced(self.meta), t0, until), t0, until, self.lev, self.cfg)
+
     def finish(self):
-        b = self.prog["book"]; em = end_marks(self.tape, priced(self.meta), self.end)
+        b = self.prog["book"]
+        if self.lev and self.prog["steps"] and not self.prog.get("lev_last"):
+            self.prog["lev_last"] = self.lev_between(b, len(self.prog["steps"]) - 1, self.end)
+        em = end_marks(self.tape, priced(self.meta), self.end)
         for s, p in em.items():
             b["last_px"][s] = p
         v = value_at(b, em); start = self.cfg["tm_account_start_usd"]
+        if self.lev:
+            v = max(0.0, v)
         meta = {k: v2 for k, v2 in self.meta.items() if k != "config"}
         res = dict(session=meta, config=self.cfg, steps=self.prog["steps"], end_marks=em, end_utc=self.meta["end_utc"],
                    final=dict(value_usd=v, gain_pct=(v / start - 1) * 100, cash_usd=b["cash"], holdings=b["qty"], spread_usd=b["spread_usd"], fee_usd=b["fee_usd"],
-                              costs_paid_usd=b["spread_usd"] + b["fee_usd"], traded_usd=b["traded_usd"]),
+                              costs_paid_usd=b["spread_usd"] + b["fee_usd"], traded_usd=b["traded_usd"],
+                              **({} if not self.lev else dict(max_gross=self.mg, financing_usd=b["financing_usd"], penalty_usd=b["penalty_usd"],
+                                                               shortfall_usd=b["shortfall_usd"], closeouts=b["closeouts"], largest_drop_on_minutes=b["lev_largest_drop"]))),
                    costs=dict(tm_crypto_half_spread_bps=self.cfg["tm_crypto_half_spread_bps"], tm_stock_half_spread_bps=self.cfg["tm_stock_half_spread_bps"],
                               practice_crypto_fee_bps_added=self.cfg["practice_crypto_fee_bps_added"], tm_weights_min_change=self.cfg["tm_weights_min_change"]),
                    limits=LIMITS)

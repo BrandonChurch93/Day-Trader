@@ -1,0 +1,3706 @@
+{
+ "account_start_usd": 1000.0,
+ "all_months": {
+  "dial_B": {
+   "1": {
+    "carried_gain_usd": 114.40020507430154,
+    "closeouts": 0,
+    "financing_usd": 0.0,
+    "fixed_rate_hours": 0,
+    "gain_usd": 132.07220802033976,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -9.765679324947419
+   },
+   "2": {
+    "carried_gain_usd": 168.89401421087655,
+    "closeouts": 0,
+    "financing_usd": 9.197661643970372,
+    "fixed_rate_hours": 1,
+    "gain_usd": 241.97901814360102,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -18.5420504773561
+   },
+   "3": {
+    "carried_gain_usd": 175.52930814717274,
+    "closeouts": 0,
+    "financing_usd": 18.124749093331623,
+    "fixed_rate_hours": 1,
+    "gain_usd": 339.59187497424546,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -26.402100244926373
+   },
+   "5": {
+    "carried_gain_usd": 68.36819176968265,
+    "closeouts": 0,
+    "financing_usd": 35.18873027172658,
+    "fixed_rate_hours": 1,
+    "gain_usd": 499.5270349577154,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -39.88545719074056
+   }
+  },
+  "dial_C": {
+   "1": {
+    "carried_gain_usd": 115.86660086116376,
+    "closeouts": 0,
+    "financing_usd": 0.0,
+    "fixed_rate_hours": 0,
+    "gain_usd": 132.51130753977452,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -8.10697804523981
+   },
+   "2": {
+    "carried_gain_usd": 182.9096272519978,
+    "closeouts": 0,
+    "financing_usd": 6.590033177680163,
+    "fixed_rate_hours": 1,
+    "gain_usd": 252.2521528268328,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -15.489354578654503
+   },
+   "3": {
+    "carried_gain_usd": 205.72215016963128,
+    "closeouts": 0,
+    "financing_usd": 14.318110238370993,
+    "fixed_rate_hours": 1,
+    "gain_usd": 364.5614061909174,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -22.25964088288206
+   },
+   "5": {
+    "carried_gain_usd": 126.86388277155993,
+    "closeouts": 0,
+    "financing_usd": 33.5539882487391,
+    "fixed_rate_hours": 1,
+    "gain_usd": 561.7212922436823,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -35.02859726372749
+   }
+  },
+  "hold": {
+   "1": {
+    "carried_gain_usd": -148.64692295160341,
+    "closeouts": 0,
+    "financing_usd": 0.0,
+    "fixed_rate_hours": 0,
+    "gain_usd": -64.31165696909318,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -31.918777762309126
+   },
+   "2": {
+    "carried_gain_usd": -442.7665774561124,
+    "closeouts": 0,
+    "financing_usd": 26.549408259589978,
+    "fixed_rate_hours": 2,
+    "gain_usd": -155.17272219777476,
+    "months": 8,
+    "months_below_low": 0,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -61.794061534931345
+   },
+   "3": {
+    "carried_gain_usd": -757.6128654233883,
+    "closeouts": 0,
+    "financing_usd": 53.098816519179955,
+    "fixed_rate_hours": 2,
+    "gain_usd": -246.0337874264569,
+    "months": 8,
+    "months_below_low": 2,
+    "penalty_usd": 0.0,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -89.5033200346191
+   },
+   "5": {
+    "carried_gain_usd": -976.722023842293,
+    "closeouts": 2,
+    "financing_usd": 99.52545983720003,
+    "fixed_rate_hours": 2,
+    "gain_usd": -29.454877825714675,
+    "months": 8,
+    "months_below_low": 2,
+    "penalty_usd": 84.24996072556951,
+    "shortfall_usd": 0.0,
+    "worst_month_drop_pct": -96.51169162101955
+   }
+  }
+ },
+ "funding_source": "funding file rig/data/funding/kraken_PF_XBTUSD.json",
+ "keys_from": {
+  "tm_lev_closeout_penalty": "config/thresholds.yaml",
+  "tm_lev_fixed_rate_per_day": "config/thresholds.yaml",
+  "tm_lev_funding_files": "config/thresholds.yaml",
+  "tm_lev_maintenance_crypto": "config/thresholds.yaml",
+  "tm_lev_maintenance_stocks": "config/thresholds.yaml",
+  "tm_lev_replay_low_share": "config/thresholds.yaml",
+  "tm_lev_replay_multiples": "config/thresholds.yaml"
+ },
+ "low_share": 0.5,
+ "models": {
+  "GROK": {
+   "months": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "Grok 4.7",
+   "per_month": {
+    "2026-04": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 5.652399404017173,
+      "final_usd": 1095.5784766174447,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 95.57847661744472,
+      "largest_drop_pct": -5.8242890428010785,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 11.476305013047316,
+      "final_usd": 1200.128977462179,
+      "financing_usd": -2.9700029031820723,
+      "fixed_rate_hours": 0,
+      "gain_usd": 200.1289774621789,
+      "largest_drop_pct": -11.078349474224469,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 17.500347037612972,
+      "final_usd": 1311.1790798215648,
+      "financing_usd": -6.262148256669997,
+      "fixed_rate_hours": 0,
+      "gain_usd": 311.17907982156476,
+      "largest_drop_pct": -15.867507350860045,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 30.260463701232307,
+      "final_usd": 1553.3503793028249,
+      "financing_usd": -13.701160465245074,
+      "fixed_rate_hours": 0,
+      "gain_usd": 553.3503793028249,
+      "largest_drop_pct": -25.387600795803777,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-05": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.994299951048694,
+      "final_usd": 998.3614908206022,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -1.638509179397829,
+      "largest_drop_pct": -7.675288080814113,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 13.983828850839979,
+      "final_usd": 995.765166308325,
+      "financing_usd": -0.40154549789509303,
+      "fixed_rate_hours": 1,
+      "gain_usd": -4.234833691675021,
+      "largest_drop_pct": -14.396823917630897,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 20.968712795559526,
+      "final_usd": 991.6923568710383,
+      "financing_usd": -0.6500397638434543,
+      "fixed_rate_hours": 1,
+      "gain_usd": -8.307643128961672,
+      "largest_drop_pct": -20.3516475736361,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 34.92503059678545,
+      "final_usd": 979.6273482888316,
+      "financing_usd": -1.0598177244063263,
+      "fixed_rate_hours": 1,
+      "gain_usd": -20.372651711168373,
+      "largest_drop_pct": -30.4603462438362,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-06": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.330062283050772,
+      "final_usd": 902.1669877648773,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -97.83301223512274,
+      "largest_drop_pct": -10.389929495168959,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 16.373337688982,
+      "final_usd": 811.1730165652409,
+      "financing_usd": 0.027396426426367245,
+      "fixed_rate_hours": 0,
+      "gain_usd": -188.8269834347591,
+      "largest_drop_pct": -19.986706708715673,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 24.15600951087129,
+      "final_usd": 726.6685910846015,
+      "financing_usd": 0.1039650980864389,
+      "fixed_rate_hours": 0,
+      "gain_usd": -273.33140891539847,
+      "largest_drop_pct": -28.834837896210107,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 39.03748020174173,
+      "final_usd": 576.1354877181157,
+      "financing_usd": 0.14403614805385515,
+      "fixed_rate_hours": 0,
+      "gain_usd": -423.86451228188434,
+      "largest_drop_pct": -44.42148941484676,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-07": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.558413853754963,
+      "final_usd": 1031.4501854034352,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 31.45018540343517,
+      "largest_drop_pct": -6.38028520823366,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 14.563604306121446,
+      "final_usd": 1053.0158398194767,
+      "financing_usd": 3.6161867251706057,
+      "fixed_rate_hours": 0,
+      "gain_usd": 53.015839819476696,
+      "largest_drop_pct": -12.759914928172723,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 24.155924908429014,
+      "final_usd": 1066.6232467177526,
+      "financing_usd": 8.437908200353673,
+      "fixed_rate_hours": 0,
+      "gain_usd": 66.62324671775264,
+      "largest_drop_pct": -19.02579245099798,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 48.667129945882635,
+      "final_usd": 1070.5437218722445,
+      "financing_usd": 19.390312641285746,
+      "fixed_rate_hours": 0,
+      "gain_usd": 70.54372187224453,
+      "largest_drop_pct": -31.1127796501833,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-08": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.972245267630135,
+      "final_usd": 1226.5904101041585,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 226.59041010415854,
+      "largest_drop_pct": -5.356964664313324,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 14.015095595701805,
+      "final_usd": 1451.431330149936,
+      "financing_usd": 4.7200931698724125,
+      "fixed_rate_hours": 0,
+      "gain_usd": 451.431330149936,
+      "largest_drop_pct": -8.91142003951928,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 21.12836168179383,
+      "final_usd": 1679.2444091796579,
+      "financing_usd": 9.427017742436508,
+      "fixed_rate_hours": 0,
+      "gain_usd": 679.2444091796579,
+      "largest_drop_pct": -12.573699919874626,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 35.56212699012086,
+      "final_usd": 2143.3574551711426,
+      "financing_usd": 18.984703507074485,
+      "fixed_rate_hours": 0,
+      "gain_usd": 1143.3574551711426,
+      "largest_drop_pct": -19.735751669902967,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-09": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.506370113588675,
+      "final_usd": 983.0536690497701,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -16.946330950229935,
+      "largest_drop_pct": -8.74288482272485,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 17.26702781235381,
+      "final_usd": 956.6419889924432,
+      "financing_usd": 3.7614346249207484,
+      "fixed_rate_hours": 0,
+      "gain_usd": -43.3580110075568,
+      "largest_drop_pct": -17.001727968712622,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 26.230611005613433,
+      "final_usd": 924.6982189432392,
+      "financing_usd": 7.684794404802007,
+      "fixed_rate_hours": 0,
+      "gain_usd": -75.30178105676077,
+      "largest_drop_pct": -24.66289748618824,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 44.55093037072393,
+      "final_usd": 846.0344492734457,
+      "financing_usd": 15.601344579469474,
+      "fixed_rate_hours": 0,
+      "gain_usd": -153.96555072655428,
+      "largest_drop_pct": -38.43421626089222,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-10": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.506786963700593,
+      "final_usd": 948.0654606800003,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -51.93453931999966,
+      "largest_drop_pct": -8.654141182055952,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 16.981386101184434,
+      "final_usd": 896.033846718926,
+      "financing_usd": 1.5525786992609785,
+      "fixed_rate_hours": 0,
+      "gain_usd": -103.96615328107396,
+      "largest_drop_pct": -16.678342215597286,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 25.389702761932327,
+      "final_usd": 843.3393703020784,
+      "financing_usd": 5.421398752056666,
+      "fixed_rate_hours": 0,
+      "gain_usd": -156.66062969792165,
+      "largest_drop_pct": -24.2173516400237,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 42.009552454704945,
+      "final_usd": 742.9191836786702,
+      "financing_usd": 12.922360060413324,
+      "fixed_rate_hours": 0,
+      "gain_usd": -257.08081632132985,
+      "largest_drop_pct": -37.44078750470613,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-11": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.8441703307369774,
+      "final_usd": 955.5867826105443,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -44.41321738945567,
+      "largest_drop_pct": -8.312105046388274,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 13.692364792008412,
+      "final_usd": 910.2777856844967,
+      "financing_usd": 2.0423288254889065,
+      "fixed_rate_hours": 0,
+      "gain_usd": -89.72221431550327,
+      "largest_drop_pct": -15.967274773133477,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 20.544584795783376,
+      "final_usd": 865.797443331691,
+      "financing_usd": 4.4029546627274225,
+      "fixed_rate_hours": 0,
+      "gain_usd": -134.20255666830894,
+      "largest_drop_pct": -22.992125766787808,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 34.26090823414758,
+      "final_usd": 780.0258614555686,
+      "financing_usd": 9.320912947446306,
+      "fixed_rate_hours": 0,
+      "gain_usd": -219.9741385444314,
+      "largest_drop_pct": -35.348005811247795,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    }
+   },
+   "sums": {
+    "dial_B": {
+     "1": {
+      "carried_gain_usd": 114.40020507430154,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.07220802033976,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -9.765679324947419
+     },
+     "2": {
+      "carried_gain_usd": 168.89401421087655,
+      "closeouts": 0,
+      "financing_usd": 9.197661643970372,
+      "fixed_rate_hours": 1,
+      "gain_usd": 241.97901814360102,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -18.5420504773561
+     },
+     "3": {
+      "carried_gain_usd": 175.52930814717274,
+      "closeouts": 0,
+      "financing_usd": 18.124749093331623,
+      "fixed_rate_hours": 1,
+      "gain_usd": 339.59187497424546,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -26.402100244926373
+     },
+     "5": {
+      "carried_gain_usd": 68.36819176968265,
+      "closeouts": 0,
+      "financing_usd": 35.18873027172658,
+      "fixed_rate_hours": 1,
+      "gain_usd": 499.5270349577154,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -39.88545719074056
+     }
+    },
+    "dial_C": {
+     "1": {
+      "carried_gain_usd": 115.86660086116376,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.51130753977452,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -8.10697804523981
+     },
+     "2": {
+      "carried_gain_usd": 182.9096272519978,
+      "closeouts": 0,
+      "financing_usd": 6.590033177680163,
+      "fixed_rate_hours": 1,
+      "gain_usd": 252.2521528268328,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -15.489354578654503
+     },
+     "3": {
+      "carried_gain_usd": 205.72215016963128,
+      "closeouts": 0,
+      "financing_usd": 14.318110238370993,
+      "fixed_rate_hours": 1,
+      "gain_usd": 364.5614061909174,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -22.25964088288206
+     },
+     "5": {
+      "carried_gain_usd": 126.86388277155993,
+      "closeouts": 0,
+      "financing_usd": 33.5539882487391,
+      "fixed_rate_hours": 1,
+      "gain_usd": 561.7212922436823,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -35.02859726372749
+     }
+    },
+    "hold": {
+     "1": {
+      "carried_gain_usd": -148.64692295160341,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -64.31165696909318,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -31.918777762309126
+     },
+     "2": {
+      "carried_gain_usd": -442.7665774561124,
+      "closeouts": 0,
+      "financing_usd": 26.549408259589978,
+      "fixed_rate_hours": 2,
+      "gain_usd": -155.17272219777476,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -61.794061534931345
+     },
+     "3": {
+      "carried_gain_usd": -757.6128654233883,
+      "closeouts": 0,
+      "financing_usd": 53.098816519179955,
+      "fixed_rate_hours": 2,
+      "gain_usd": -246.0337874264569,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -89.5033200346191
+     },
+     "5": {
+      "carried_gain_usd": -976.722023842293,
+      "closeouts": 2,
+      "financing_usd": 99.52545983720003,
+      "fixed_rate_hours": 2,
+      "gain_usd": -29.454877825714675,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 84.24996072556951,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -96.51169162101955
+     }
+    },
+    "model": {
+     "1": {
+      "carried_gain_usd": 111.86421917692587,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 140.8534630508326,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -10.389929495168959
+     },
+     "2": {
+      "carried_gain_usd": 156.0524627207999,
+      "closeouts": 0,
+      "financing_usd": 12.348470070062854,
+      "fixed_rate_hours": 1,
+      "gain_usd": 274.4679517010235,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -19.986706708715673
+     },
+     "3": {
+      "carried_gain_usd": 142.6652437636003,
+      "closeouts": 0,
+      "financing_usd": 28.565850839949263,
+      "fixed_rate_hours": 1,
+      "gain_usd": 409.24271625162373,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -28.834837896210107
+     },
+     "5": {
+      "carried_gain_usd": -13.737337180973782,
+      "closeouts": 0,
+      "financing_usd": 61.60269169409179,
+      "fixed_rate_hours": 1,
+      "gain_usd": 691.9938867608438,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -44.42148941484676
+     }
+    }
+   }
+  },
+  "KIMI": {
+   "months": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "Kimi K3",
+   "per_month": {
+    "2026-04": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 9.697338753386878,
+      "final_usd": 1057.1809205099528,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 57.180920509952784,
+      "largest_drop_pct": -5.8242890428010785,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 20.072857184900197,
+      "final_usd": 1116.1008012913646,
+      "financing_usd": -2.611558171603004,
+      "fixed_rate_hours": 0,
+      "gain_usd": 116.10080129136463,
+      "largest_drop_pct": -11.127470009150597,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 31.10167453585389,
+      "final_usd": 1174.111738911151,
+      "financing_usd": -5.532847061204606,
+      "fixed_rate_hours": 0,
+      "gain_usd": 174.11173891115095,
+      "largest_drop_pct": -16.000748600567317,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 54.98053184750431,
+      "final_usd": 1285.2736317590006,
+      "financing_usd": -11.69548372753263,
+      "fixed_rate_hours": 0,
+      "gain_usd": 285.27363175900064,
+      "largest_drop_pct": -25.387600795803777,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-05": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.699957317600136,
+      "final_usd": 1013.6764427042591,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 13.676442704259102,
+      "largest_drop_pct": -6.416494355507984,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 13.384987780585307,
+      "final_usd": 1026.6481449265443,
+      "financing_usd": -0.37032279977607213,
+      "fixed_rate_hours": 1,
+      "gain_usd": 26.64814492654432,
+      "largest_drop_pct": -12.039388046998257,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 20.05607829408926,
+      "final_usd": 1038.5476527340952,
+      "financing_usd": -0.7385852054166232,
+      "fixed_rate_hours": 1,
+      "gain_usd": 38.54765273409521,
+      "largest_drop_pct": -17.011548793468766,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 33.360649852388704,
+      "final_usd": 1059.0042967178135,
+      "financing_usd": -1.322207265526246,
+      "fixed_rate_hours": 1,
+      "gain_usd": 59.00429671781353,
+      "largest_drop_pct": -25.46563158555276,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-06": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 10.146367319569972,
+      "final_usd": 858.6646813747793,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -141.33531862522068,
+      "largest_drop_pct": -14.83058916694574,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 20.003516831909998,
+      "final_usd": 731.6754524772437,
+      "financing_usd": 0.17912089797162473,
+      "fixed_rate_hours": 0,
+      "gain_usd": -268.32454752275635,
+      "largest_drop_pct": -28.047250818990012,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 29.53048792838201,
+      "final_usd": 618.4404629679166,
+      "financing_usd": 0.29012196505461046,
+      "fixed_rate_hours": 0,
+      "gain_usd": -381.5595370320834,
+      "largest_drop_pct": -39.73231910141204,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 47.475774311333126,
+      "final_usd": 429.62287363494875,
+      "financing_usd": 0.47160618953059896,
+      "fixed_rate_hours": 0,
+      "gain_usd": -570.3771263650513,
+      "largest_drop_pct": -58.94246323988725,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-07": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 7.754897785176965,
+      "final_usd": 1022.6330459749497,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 22.63304597494971,
+      "largest_drop_pct": -4.460182994916528,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 16.570304377590062,
+      "final_usd": 1039.331652545978,
+      "financing_usd": 1.096125301764368,
+      "fixed_rate_hours": 0,
+      "gain_usd": 39.33165254597793,
+      "largest_drop_pct": -8.85295073079515,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 26.476244826504637,
+      "final_usd": 1049.112890885831,
+      "financing_usd": 4.204728647898879,
+      "fixed_rate_hours": 0,
+      "gain_usd": 49.11289088583089,
+      "largest_drop_pct": -13.219695479252302,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 49.69831559778079,
+      "final_usd": 1052.8341150047586,
+      "financing_usd": 11.107983210667909,
+      "fixed_rate_hours": 0,
+      "gain_usd": 52.83411500475859,
+      "largest_drop_pct": -22.527722002626092,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-08": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.945052165735301,
+      "final_usd": 1202.845220694279,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 202.84522069427908,
+      "largest_drop_pct": -4.428364259813722,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 18.46496662877225,
+      "final_usd": 1416.0488181959863,
+      "financing_usd": 1.7191374814983371,
+      "fixed_rate_hours": 0,
+      "gain_usd": 416.0488181959863,
+      "largest_drop_pct": -8.63617847044037,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 28.6385922252323,
+      "final_usd": 1639.4877026492575,
+      "financing_usd": 4.75571099046044,
+      "fixed_rate_hours": 0,
+      "gain_usd": 639.4877026492575,
+      "largest_drop_pct": -12.573699919874626,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 54.38911460663373,
+      "final_usd": 2112.840301989765,
+      "financing_usd": 13.854175325709313,
+      "fixed_rate_hours": 0,
+      "gain_usd": 1112.840301989765,
+      "largest_drop_pct": -19.735751669902967,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-09": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.198122186297471,
+      "final_usd": 984.9750807149675,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -15.024919285032524,
+      "largest_drop_pct": -8.081891122656504,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 16.692559325146973,
+      "final_usd": 962.3901702357161,
+      "financing_usd": 3.055660679821376,
+      "fixed_rate_hours": 0,
+      "gain_usd": -37.60982976428386,
+      "largest_drop_pct": -15.620856965724006,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 25.443919597972567,
+      "final_usd": 935.040904324113,
+      "financing_usd": 6.6153437235708585,
+      "fixed_rate_hours": 0,
+      "gain_usd": -64.95909567588706,
+      "largest_drop_pct": -22.575152107195485,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 43.56280453630994,
+      "final_usd": 868.3854224522956,
+      "financing_usd": 13.979020029605604,
+      "fixed_rate_hours": 0,
+      "gain_usd": -131.61457754770436,
+      "largest_drop_pct": -34.905391190089766,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-10": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.824135048338029,
+      "final_usd": 938.2058443498925,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -61.79415565010754,
+      "largest_drop_pct": -10.048860926735802,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 17.54970058252148,
+      "final_usd": 877.0582381151114,
+      "financing_usd": 1.6113698518869075,
+      "fixed_rate_hours": 0,
+      "gain_usd": -122.94176188488859,
+      "largest_drop_pct": -19.24747691573848,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 26.165685307351755,
+      "final_usd": 816.868175367466,
+      "financing_usd": 4.619339624660349,
+      "fixed_rate_hours": 0,
+      "gain_usd": -183.13182463253395,
+      "largest_drop_pct": -27.685266987496725,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 43.05152381097943,
+      "final_usd": 702.5425201600463,
+      "financing_usd": 11.60054534411797,
+      "fixed_rate_hours": 1,
+      "gain_usd": -297.45747983995375,
+      "largest_drop_pct": -42.31265310875608,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-11": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.647265685371916,
+      "final_usd": 934.4877660987502,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -65.51223390124983,
+      "largest_drop_pct": -8.474201941570602,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 13.257881956936806,
+      "final_usd": 869.6224420841394,
+      "financing_usd": 0.43660425025181815,
+      "fixed_rate_hours": 0,
+      "gain_usd": -130.37755791586062,
+      "largest_drop_pct": -16.53155853355922,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 19.82539935782261,
+      "final_usd": 805.0484456669404,
+      "financing_usd": 1.9381279401638467,
+      "fixed_rate_hours": 0,
+      "gain_usd": -194.95155433305956,
+      "largest_drop_pct": -24.209370080760195,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 32.83446728823327,
+      "final_usd": 680.0874331977267,
+      "financing_usd": 5.309436030151258,
+      "fixed_rate_hours": 0,
+      "gain_usd": -319.9125668022733,
+      "largest_drop_pct": -38.30939275969183,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    }
+   },
+   "sums": {
+    "dial_B": {
+     "1": {
+      "carried_gain_usd": 114.40020507430154,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.07220802033976,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -9.765679324947419
+     },
+     "2": {
+      "carried_gain_usd": 168.89401421087655,
+      "closeouts": 0,
+      "financing_usd": 9.197661643970372,
+      "fixed_rate_hours": 1,
+      "gain_usd": 241.97901814360102,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -18.5420504773561
+     },
+     "3": {
+      "carried_gain_usd": 175.52930814717274,
+      "closeouts": 0,
+      "financing_usd": 18.124749093331623,
+      "fixed_rate_hours": 1,
+      "gain_usd": 339.59187497424546,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -26.402100244926373
+     },
+     "5": {
+      "carried_gain_usd": 68.36819176968265,
+      "closeouts": 0,
+      "financing_usd": 35.18873027172658,
+      "fixed_rate_hours": 1,
+      "gain_usd": 499.5270349577154,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -39.88545719074056
+     }
+    },
+    "dial_C": {
+     "1": {
+      "carried_gain_usd": 115.86660086116376,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.51130753977452,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -8.10697804523981
+     },
+     "2": {
+      "carried_gain_usd": 182.9096272519978,
+      "closeouts": 0,
+      "financing_usd": 6.590033177680163,
+      "fixed_rate_hours": 1,
+      "gain_usd": 252.2521528268328,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -15.489354578654503
+     },
+     "3": {
+      "carried_gain_usd": 205.72215016963128,
+      "closeouts": 0,
+      "financing_usd": 14.318110238370993,
+      "fixed_rate_hours": 1,
+      "gain_usd": 364.5614061909174,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -22.25964088288206
+     },
+     "5": {
+      "carried_gain_usd": 126.86388277155993,
+      "closeouts": 0,
+      "financing_usd": 33.5539882487391,
+      "fixed_rate_hours": 1,
+      "gain_usd": 561.7212922436823,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -35.02859726372749
+     }
+    },
+    "hold": {
+     "1": {
+      "carried_gain_usd": -148.64692295160341,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -64.31165696909318,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -31.918777762309126
+     },
+     "2": {
+      "carried_gain_usd": -442.7665774561124,
+      "closeouts": 0,
+      "financing_usd": 26.549408259589978,
+      "fixed_rate_hours": 2,
+      "gain_usd": -155.17272219777476,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -61.794061534931345
+     },
+     "3": {
+      "carried_gain_usd": -757.6128654233883,
+      "closeouts": 0,
+      "financing_usd": 53.098816519179955,
+      "fixed_rate_hours": 2,
+      "gain_usd": -246.0337874264569,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -89.5033200346191
+     },
+     "5": {
+      "carried_gain_usd": -976.722023842293,
+      "closeouts": 2,
+      "financing_usd": 99.52545983720003,
+      "fixed_rate_hours": 2,
+      "gain_usd": -29.454877825714675,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 84.24996072556951,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -96.51169162101955
+     }
+    },
+    "model": {
+     "1": {
+      "carried_gain_usd": -22.540352914959158,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 12.6690024218301,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -14.83058916694574
+     },
+     "2": {
+      "carried_gain_usd": -94.29605207809425,
+      "closeouts": 0,
+      "financing_usd": 5.116137491815356,
+      "fixed_rate_hours": 1,
+      "gain_usd": 38.87571987208378,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -28.047250818990012
+     },
+     "3": {
+      "carried_gain_usd": -202.43012004991408,
+      "closeouts": 0,
+      "financing_usd": 16.151940625187756,
+      "fixed_rate_hours": 1,
+      "gain_usd": 76.65797350677053,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -39.73231910141204
+     },
+     "5": {
+      "carried_gain_usd": -460.29402570828995,
+      "closeouts": 0,
+      "financing_usd": 43.30507513672378,
+      "fixed_rate_hours": 2,
+      "gain_usd": 190.59059491635514,
+      "months": 8,
+      "months_below_low": 1,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -58.94246323988725
+     }
+    }
+   }
+  },
+  "NEON": {
+   "months": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "Gemini Neon",
+   "per_month": {
+    "2026-04": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 7.093815466212533,
+      "final_usd": 1083.0118797978923,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 83.01187979789233,
+      "largest_drop_pct": -5.824289042801056,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 14.37065870469587,
+      "final_usd": 1173.5351326311943,
+      "financing_usd": -2.8533452315773116,
+      "fixed_rate_hours": 0,
+      "gain_usd": 173.5351326311943,
+      "largest_drop_pct": -11.08486686989546,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 21.85153176567304,
+      "final_usd": 1269.1573997290561,
+      "financing_usd": -6.018982367878986,
+      "fixed_rate_hours": 0,
+      "gain_usd": 269.1573997290561,
+      "largest_drop_pct": -15.884338619832384,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 37.504546432316445,
+      "final_usd": 1475.9462485427275,
+      "financing_usd": -13.049217443427128,
+      "fixed_rate_hours": 0,
+      "gain_usd": 475.9462485427275,
+      "largest_drop_pct": -25.387600795803777,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-05": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 9.834998820850675,
+      "final_usd": 984.697537137916,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -15.302462862083985,
+      "largest_drop_pct": -8.940964183015087,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 20.040731693817893,
+      "final_usd": 966.774500846544,
+      "financing_usd": -0.4781092240872113,
+      "fixed_rate_hours": 1,
+      "gain_usd": -33.225499153455985,
+      "largest_drop_pct": -16.892909967584146,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 30.640018125936788,
+      "final_usd": 945.6099457936538,
+      "financing_usd": -0.7808617879090274,
+      "fixed_rate_hours": 1,
+      "gain_usd": -54.390054206346235,
+      "largest_drop_pct": -24.058090836065027,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 53.11258671148753,
+      "final_usd": 894.2587733729467,
+      "financing_usd": -1.4133573938701742,
+      "fixed_rate_hours": 1,
+      "gain_usd": -105.74122662705327,
+      "largest_drop_pct": -36.52791835293231,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-06": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 13.997877847887757,
+      "final_usd": 884.2665588192834,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -115.73344118071657,
+      "largest_drop_pct": -11.959188347660564,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 27.03942357375469,
+      "final_usd": 776.6493924899153,
+      "financing_usd": 0.2931919236179553,
+      "fixed_rate_hours": 0,
+      "gain_usd": -223.35060751008473,
+      "largest_drop_pct": -23.01689434956241,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 39.14836863537052,
+      "final_usd": 677.4461437450719,
+      "financing_usd": 0.5086934138146918,
+      "fixed_rate_hours": 0,
+      "gain_usd": -322.55385625492806,
+      "largest_drop_pct": -33.15291425112904,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 60.6929956760756,
+      "final_usd": 503.7266880424002,
+      "financing_usd": 0.6778773469435232,
+      "fixed_rate_hours": 0,
+      "gain_usd": -496.2733119575998,
+      "largest_drop_pct": -50.753447032636956,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-07": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 12.321890593621056,
+      "final_usd": 997.3368230441694,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -2.663176955830636,
+      "largest_drop_pct": -6.002581383707383,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 25.757449338436963,
+      "final_usd": 989.0961020679425,
+      "financing_usd": 2.474268511679933,
+      "fixed_rate_hours": 0,
+      "gain_usd": -10.903897932057475,
+      "largest_drop_pct": -11.978319887642098,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 40.29863821169111,
+      "final_usd": 976.7274049263315,
+      "financing_usd": 6.059419220289427,
+      "fixed_rate_hours": 0,
+      "gain_usd": -23.272595073668526,
+      "largest_drop_pct": -17.816574957249376,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 72.6986593945445,
+      "final_usd": 942.2800405303165,
+      "financing_usd": 14.032740787982519,
+      "fixed_rate_hours": 0,
+      "gain_usd": -57.719959469683545,
+      "largest_drop_pct": -28.89465473196452,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-08": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.672189739733973,
+      "final_usd": 1220.2998976172212,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 220.29989761722118,
+      "largest_drop_pct": -5.356964664313324,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 16.577254251645357,
+      "final_usd": 1442.473013011289,
+      "financing_usd": 4.197341201138007,
+      "fixed_rate_hours": 0,
+      "gain_usd": 442.4730130112889,
+      "largest_drop_pct": -8.91142003951928,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 23.697018868359105,
+      "final_usd": 1670.263370615033,
+      "financing_usd": 8.90293989184521,
+      "fixed_rate_hours": 0,
+      "gain_usd": 670.263370615033,
+      "largest_drop_pct": -12.573699919874626,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 35.56212699012086,
+      "final_usd": 2143.3574551711426,
+      "financing_usd": 18.984703507074485,
+      "fixed_rate_hours": 0,
+      "gain_usd": 1143.3574551711426,
+      "largest_drop_pct": -19.735751669902967,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-09": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.54055785517323,
+      "final_usd": 1023.6348746019025,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 23.63487460190254,
+      "largest_drop_pct": -7.916642697639409,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 17.145402622750822,
+      "final_usd": 1041.1060754259324,
+      "financing_usd": 3.3349920750129094,
+      "fixed_rate_hours": 0,
+      "gain_usd": 41.10607542593243,
+      "largest_drop_pct": -15.301977438136428,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 25.789634489415825,
+      "final_usd": 1055.1742634418029,
+      "financing_usd": 7.009738178582871,
+      "fixed_rate_hours": 0,
+      "gain_usd": 55.17426344180285,
+      "largest_drop_pct": -22.129371376282425,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 43.106937876132875,
+      "final_usd": 1073.6138493065696,
+      "financing_usd": 14.261735463531675,
+      "fixed_rate_hours": 0,
+      "gain_usd": 73.61384930656959,
+      "largest_drop_pct": -34.2599060041133,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-10": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 12.75849530224334,
+      "final_usd": 907.6726391949524,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -92.32736080504765,
+      "largest_drop_pct": -12.97645505850391,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 25.318914597126494,
+      "final_usd": 816.757281863867,
+      "financing_usd": 2.959338438547146,
+      "fixed_rate_hours": 0,
+      "gain_usd": -183.24271813613302,
+      "largest_drop_pct": -24.800255486098543,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 37.62847386492045,
+      "final_usd": 729.3932214122159,
+      "financing_usd": 7.053605941799341,
+      "fixed_rate_hours": 0,
+      "gain_usd": -270.6067785877841,
+      "largest_drop_pct": -35.43069782306261,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 61.376249746883126,
+      "final_usd": 569.1725272301097,
+      "financing_usd": 15.072511576182237,
+      "fixed_rate_hours": 1,
+      "gain_usd": -430.8274727698903,
+      "largest_drop_pct": -53.26745355931508,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-11": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 13.306004360484131,
+      "final_usd": 924.1261261421075,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -75.87387385789248,
+      "largest_drop_pct": -9.160259271968762,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 26.39224640846595,
+      "final_usd": 848.1546890346776,
+      "financing_usd": 1.4550060041277344,
+      "fixed_rate_hours": 0,
+      "gain_usd": -151.84531096532237,
+      "largest_drop_pct": -17.974528846565686,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 39.233174412259544,
+      "final_usd": 773.368457220137,
+      "financing_usd": 3.3541407910059204,
+      "fixed_rate_hours": 0,
+      "gain_usd": -226.63154277986303,
+      "largest_drop_pct": -26.42156029488315,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 64.133960654563,
+      "final_usd": 628.8293943719164,
+      "financing_usd": 7.615582122807914,
+      "fixed_rate_hours": 0,
+      "gain_usd": -371.17060562808365,
+      "largest_drop_pct": -42.07895483983698,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    }
+   },
+   "sums": {
+    "dial_B": {
+     "1": {
+      "carried_gain_usd": 114.40020507430154,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.07220802033976,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -9.765679324947419
+     },
+     "2": {
+      "carried_gain_usd": 168.89401421087655,
+      "closeouts": 0,
+      "financing_usd": 9.197661643970372,
+      "fixed_rate_hours": 1,
+      "gain_usd": 241.97901814360102,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -18.5420504773561
+     },
+     "3": {
+      "carried_gain_usd": 175.52930814717274,
+      "closeouts": 0,
+      "financing_usd": 18.124749093331623,
+      "fixed_rate_hours": 1,
+      "gain_usd": 339.59187497424546,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -26.402100244926373
+     },
+     "5": {
+      "carried_gain_usd": 68.36819176968265,
+      "closeouts": 0,
+      "financing_usd": 35.18873027172658,
+      "fixed_rate_hours": 1,
+      "gain_usd": 499.5270349577154,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -39.88545719074056
+     }
+    },
+    "dial_C": {
+     "1": {
+      "carried_gain_usd": 115.86660086116376,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.51130753977452,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -8.10697804523981
+     },
+     "2": {
+      "carried_gain_usd": 182.9096272519978,
+      "closeouts": 0,
+      "financing_usd": 6.590033177680163,
+      "fixed_rate_hours": 1,
+      "gain_usd": 252.2521528268328,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -15.489354578654503
+     },
+     "3": {
+      "carried_gain_usd": 205.72215016963128,
+      "closeouts": 0,
+      "financing_usd": 14.318110238370993,
+      "fixed_rate_hours": 1,
+      "gain_usd": 364.5614061909174,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -22.25964088288206
+     },
+     "5": {
+      "carried_gain_usd": 126.86388277155993,
+      "closeouts": 0,
+      "financing_usd": 33.5539882487391,
+      "fixed_rate_hours": 1,
+      "gain_usd": 561.7212922436823,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -35.02859726372749
+     }
+    },
+    "hold": {
+     "1": {
+      "carried_gain_usd": -148.64692295160341,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -64.31165696909318,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -31.918777762309126
+     },
+     "2": {
+      "carried_gain_usd": -442.7665774561124,
+      "closeouts": 0,
+      "financing_usd": 26.549408259589978,
+      "fixed_rate_hours": 2,
+      "gain_usd": -155.17272219777476,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -61.794061534931345
+     },
+     "3": {
+      "carried_gain_usd": -757.6128654233883,
+      "closeouts": 0,
+      "financing_usd": 53.098816519179955,
+      "fixed_rate_hours": 2,
+      "gain_usd": -246.0337874264569,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -89.5033200346191
+     },
+     "5": {
+      "carried_gain_usd": -976.722023842293,
+      "closeouts": 2,
+      "financing_usd": 99.52545983720003,
+      "fixed_rate_hours": 2,
+      "gain_usd": -29.454877825714675,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 84.24996072556951,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -96.51169162101955
+     }
+    },
+    "model": {
+     "1": {
+      "carried_gain_usd": -14.553006901084814,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 25.046336355444737,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -12.97645505850391
+     },
+     "2": {
+      "carried_gain_usd": -93.31685926143666,
+      "closeouts": 0,
+      "financing_usd": 11.382683698459163,
+      "fixed_rate_hours": 1,
+      "gain_usd": 54.546187371362066,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -24.800255486098543
+     },
+     "3": {
+      "carried_gain_usd": -210.53480058618402,
+      "closeouts": 0,
+      "financing_usd": 26.088693281549446,
+      "fixed_rate_hours": 1,
+      "gain_usd": 97.14020688330197,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -35.43069782306261
+     },
+     "5": {
+      "carried_gain_usd": -484.0255713210055,
+      "closeouts": 0,
+      "financing_usd": 56.18257596722505,
+      "fixed_rate_hours": 2,
+      "gain_usd": 231.18497656812923,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -53.26745355931508
+     }
+    }
+   }
+  },
+  "OPUS": {
+   "months": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "Claude Opus 5.5",
+   "per_month": {
+    "2026-04": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 3.490275310724103,
+      "final_usd": 1114.4283718467736,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 114.42837184677364,
+      "largest_drop_pct": -5.824289042801056,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 6.980550621448206,
+      "final_usd": 1231.684216771346,
+      "financing_usd": -2.8274730777977286,
+      "fixed_rate_hours": 0,
+      "gain_usd": 231.68421677134597,
+      "largest_drop_pct": -10.473592195460279,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 10.470825932172422,
+      "final_usd": 1348.9400616959183,
+      "financing_usd": -5.654946155595457,
+      "fixed_rate_hours": 0,
+      "gain_usd": 348.9400616959183,
+      "largest_drop_pct": -15.545054407643965,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 17.4513765536204,
+      "final_usd": 1583.4517515450625,
+      "financing_usd": -11.309892311190913,
+      "fixed_rate_hours": 0,
+      "gain_usd": 583.4517515450625,
+      "largest_drop_pct": -25.387600795803777,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-05": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.3042542732117495,
+      "final_usd": 1000.3506294957716,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 0.3506294957716136,
+      "largest_drop_pct": -7.795803461390305,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 12.600761896611983,
+      "final_usd": 999.3862487437385,
+      "financing_usd": -0.36896648357210166,
+      "fixed_rate_hours": 1,
+      "gain_usd": -0.6137512562614802,
+      "largest_drop_pct": -14.652342489270742,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 18.893362008486793,
+      "final_usd": 996.6211753247917,
+      "financing_usd": -0.5941797399024182,
+      "fixed_rate_hours": 1,
+      "gain_usd": -3.378824675208307,
+      "largest_drop_pct": -20.749737537579872,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 31.481093492082156,
+      "final_usd": 986.0372895957559,
+      "financing_usd": -0.8648958984391047,
+      "fixed_rate_hours": 1,
+      "gain_usd": -13.962710404244149,
+      "largest_drop_pct": -31.167946730081443,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-06": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.246133445057364,
+      "final_usd": 892.1077921762037,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -107.8922078237963,
+      "largest_drop_pct": -11.257448754090182,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 12.434360902905663,
+      "final_usd": 792.4176532109551,
+      "financing_usd": 0.1340740309464972,
+      "fixed_rate_hours": 0,
+      "gain_usd": -207.5823467890449,
+      "largest_drop_pct": -21.624957552307343,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 18.542182893509633,
+      "final_usd": 700.7961668856881,
+      "financing_usd": 0.19306220252038267,
+      "fixed_rate_hours": 0,
+      "gain_usd": -299.2038331143119,
+      "largest_drop_pct": -31.11914716150649,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 30.44599929366989,
+      "final_usd": 540.0966237247694,
+      "financing_usd": 0.33233111856826164,
+      "fixed_rate_hours": 0,
+      "gain_usd": -459.9033762752306,
+      "largest_drop_pct": -47.655074075974234,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-07": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 4.225389810148869,
+      "final_usd": 1033.5485041633315,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 33.54850416333147,
+      "largest_drop_pct": -6.239649614490094,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 9.466186900829866,
+      "final_usd": 1058.6890945414953,
+      "financing_usd": 3.1387265404768105,
+      "fixed_rate_hours": 0,
+      "gain_usd": 58.68909454149525,
+      "largest_drop_pct": -12.38893541932714,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 15.821856838423084,
+      "final_usd": 1077.0585233972574,
+      "financing_usd": 7.564407325953391,
+      "fixed_rate_hours": 0,
+      "gain_usd": 77.05852339725743,
+      "largest_drop_pct": -18.35611932437644,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 32.34349109074841,
+      "final_usd": 1095.1695509770593,
+      "financing_usd": 17.404061763282414,
+      "fixed_rate_hours": 0,
+      "gain_usd": 95.16955097705932,
+      "largest_drop_pct": -29.713913589260553,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-08": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 5.222761851849016,
+      "final_usd": 1241.6117062629253,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 241.61170626292528,
+      "largest_drop_pct": -5.356964664313335,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 9.499061106224516,
+      "final_usd": 1479.6966737792886,
+      "financing_usd": 4.967381624494752,
+      "fixed_rate_hours": 0,
+      "gain_usd": 479.69667377928863,
+      "largest_drop_pct": -10.440020986891586,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 15.681794030240624,
+      "final_usd": 1714.8437483713687,
+      "financing_usd": 11.449797281969298,
+      "fixed_rate_hours": 0,
+      "gain_usd": 714.8437483713687,
+      "largest_drop_pct": -15.265462208856984,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 34.89863394832727,
+      "final_usd": 2176.2214714637084,
+      "financing_usd": 27.888590762025117,
+      "fixed_rate_hours": 0,
+      "gain_usd": 1176.2214714637084,
+      "largest_drop_pct": -24.218856049136793,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-09": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.869041899224488,
+      "final_usd": 1014.5365792628714,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 14.536579262871442,
+      "largest_drop_pct": -7.746364398751027,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 14.32053980745069,
+      "final_usd": 1019.4877584992073,
+      "financing_usd": 3.2040621209796605,
+      "fixed_rate_hours": 0,
+      "gain_usd": 19.487758499207303,
+      "largest_drop_pct": -14.989223070543467,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 22.314047426724905,
+      "final_usd": 1017.1126486988624,
+      "financing_usd": 7.3490969382270155,
+      "fixed_rate_hours": 0,
+      "gain_usd": 17.11264869886236,
+      "largest_drop_pct": -21.70148318833491,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 39.77516566355078,
+      "final_usd": 993.6378289064669,
+      "financing_usd": 15.699701667254267,
+      "fixed_rate_hours": 0,
+      "gain_usd": -6.362171093533107,
+      "largest_drop_pct": -33.67032055615834,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-10": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.472048737007077,
+      "final_usd": 929.4126771807269,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -70.58732281927314,
+      "largest_drop_pct": -11.474130291731122,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 13.190793923524645,
+      "final_usd": 856.7699420806707,
+      "financing_usd": 3.694794511452603,
+      "fixed_rate_hours": 1,
+      "gain_usd": -143.23005791932928,
+      "largest_drop_pct": -22.155311513085675,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 20.125172554781518,
+      "final_usd": 783.9379315970928,
+      "financing_usd": 9.53519713380198,
+      "fixed_rate_hours": 1,
+      "gain_usd": -216.06206840290724,
+      "largest_drop_pct": -31.955717608336965,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 34.579582066809216,
+      "final_usd": 645.0831838674411,
+      "financing_usd": 20.341640805424223,
+      "fixed_rate_hours": 1,
+      "gain_usd": -354.9168161325589,
+      "largest_drop_pct": -48.762811394003045,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-11": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 7.456897191653043,
+      "final_usd": 898.3077254338486,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -101.69227456615135,
+      "largest_drop_pct": -13.394643226977443,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 15.010601187983125,
+      "final_usd": 801.9276861719202,
+      "financing_usd": 1.0039361228539232,
+      "fixed_rate_hours": 0,
+      "gain_usd": -198.0723138280798,
+      "largest_drop_pct": -25.38898791078853,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 22.659874556993557,
+      "final_usd": 711.0887404870234,
+      "financing_usd": 3.033625008708764,
+      "fixed_rate_hours": 0,
+      "gain_usd": -288.9112595129766,
+      "largest_drop_pct": -36.106221137681295,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 38.273629877337434,
+      "final_usd": 548.191735112184,
+      "financing_usd": 7.702056561429676,
+      "fixed_rate_hours": 0,
+      "gain_usd": -451.808264887816,
+      "largest_drop_pct": -54.02419112950958,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    }
+   },
+   "sums": {
+    "dial_B": {
+     "1": {
+      "carried_gain_usd": 114.40020507430154,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.07220802033976,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -9.765679324947419
+     },
+     "2": {
+      "carried_gain_usd": 168.89401421087655,
+      "closeouts": 0,
+      "financing_usd": 9.197661643970372,
+      "fixed_rate_hours": 1,
+      "gain_usd": 241.97901814360102,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -18.5420504773561
+     },
+     "3": {
+      "carried_gain_usd": 175.52930814717274,
+      "closeouts": 0,
+      "financing_usd": 18.124749093331623,
+      "fixed_rate_hours": 1,
+      "gain_usd": 339.59187497424546,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -26.402100244926373
+     },
+     "5": {
+      "carried_gain_usd": 68.36819176968265,
+      "closeouts": 0,
+      "financing_usd": 35.18873027172658,
+      "fixed_rate_hours": 1,
+      "gain_usd": 499.5270349577154,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -39.88545719074056
+     }
+    },
+    "dial_C": {
+     "1": {
+      "carried_gain_usd": 115.86660086116376,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.51130753977452,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -8.10697804523981
+     },
+     "2": {
+      "carried_gain_usd": 182.9096272519978,
+      "closeouts": 0,
+      "financing_usd": 6.590033177680163,
+      "fixed_rate_hours": 1,
+      "gain_usd": 252.2521528268328,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -15.489354578654503
+     },
+     "3": {
+      "carried_gain_usd": 205.72215016963128,
+      "closeouts": 0,
+      "financing_usd": 14.318110238370993,
+      "fixed_rate_hours": 1,
+      "gain_usd": 364.5614061909174,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -22.25964088288206
+     },
+     "5": {
+      "carried_gain_usd": 126.86388277155993,
+      "closeouts": 0,
+      "financing_usd": 33.5539882487391,
+      "fixed_rate_hours": 1,
+      "gain_usd": 561.7212922436823,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -35.02859726372749
+     }
+    },
+    "hold": {
+     "1": {
+      "carried_gain_usd": -148.64692295160341,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -64.31165696909318,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -31.918777762309126
+     },
+     "2": {
+      "carried_gain_usd": -442.7665774561124,
+      "closeouts": 0,
+      "financing_usd": 26.549408259589978,
+      "fixed_rate_hours": 2,
+      "gain_usd": -155.17272219777476,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -61.794061534931345
+     },
+     "3": {
+      "carried_gain_usd": -757.6128654233883,
+      "closeouts": 0,
+      "financing_usd": 53.098816519179955,
+      "fixed_rate_hours": 2,
+      "gain_usd": -246.0337874264569,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -89.5033200346191
+     },
+     "5": {
+      "carried_gain_usd": -976.722023842293,
+      "closeouts": 2,
+      "financing_usd": 99.52545983720003,
+      "fixed_rate_hours": 2,
+      "gain_usd": -29.454877825714675,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 84.24996072556951,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -96.51169162101955
+     }
+    },
+    "model": {
+     "1": {
+      "carried_gain_usd": 81.03521333598337,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 124.30398582245266,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -13.394643226977443
+     },
+     "2": {
+      "carried_gain_usd": 70.30971984885286,
+      "closeouts": 0,
+      "financing_usd": 12.946535389834416,
+      "fixed_rate_hours": 2,
+      "gain_usd": 240.0592737986217,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -25.38898791078853
+     },
+     "3": {
+      "carried_gain_usd": -13.373279157246657,
+      "closeouts": 0,
+      "financing_usd": 32.87605999568296,
+      "fixed_rate_hours": 2,
+      "gain_usd": 350.3989964580028,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -36.106221137681295
+     },
+     "5": {
+      "carried_gain_usd": -293.7956156440654,
+      "closeouts": 0,
+      "financing_usd": 77.19359446835394,
+      "fixed_rate_hours": 2,
+      "gain_usd": 567.8894351924475,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -54.02419112950958
+     }
+    }
+   }
+  },
+  "SOL": {
+   "months": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "GPT-6.2 Sol",
+   "per_month": {
+    "2026-04": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 5.193814814061115,
+      "final_usd": 1103.9494118165537,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 103.94941181655372,
+      "largest_drop_pct": -5.824289042801056,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 10.62048641579865,
+      "final_usd": 1208.974794521891,
+      "financing_usd": -2.748714968908593,
+      "fixed_rate_hours": 0,
+      "gain_usd": 208.974794521891,
+      "largest_drop_pct": -10.473592195460279,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 16.267615976654053,
+      "final_usd": 1311.9821054911113,
+      "financing_usd": -5.513633081841432,
+      "fixed_rate_hours": 0,
+      "gain_usd": 311.98210549111127,
+      "largest_drop_pct": -15.545054407643965,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 28.17184000878828,
+      "final_usd": 1510.3037204373995,
+      "financing_usd": -10.95229348342939,
+      "fixed_rate_hours": 0,
+      "gain_usd": 510.30372043739953,
+      "largest_drop_pct": -25.387600795803777,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-05": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.664004428111314,
+      "final_usd": 1004.8750929805482,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 4.875092980548175,
+      "largest_drop_pct": -7.330089012218122,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 13.320354783676834,
+      "final_usd": 1008.7923117387077,
+      "financing_usd": -0.39127292046573914,
+      "fixed_rate_hours": 1,
+      "gain_usd": 8.792311738707667,
+      "largest_drop_pct": -13.759236752311843,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 19.970539885833126,
+      "final_usd": 1011.4008475668367,
+      "financing_usd": -0.7890878263072114,
+      "fixed_rate_hours": 1,
+      "gain_usd": 11.40084756683666,
+      "largest_drop_pct": -19.44977587031077,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 33.25855658105609,
+      "final_usd": 1012.6040515173064,
+      "financing_usd": -1.3728990321807484,
+      "fixed_rate_hours": 1,
+      "gain_usd": 12.604051517306402,
+      "largest_drop_pct": -29.134158779913022,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-06": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 7.13668589004771,
+      "final_usd": 855.9463235512509,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -144.05367644874912,
+      "largest_drop_pct": -14.979271557277718,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 14.381147145919172,
+      "final_usd": 727.133737910953,
+      "financing_usd": 0.0014804794793471083,
+      "fixed_rate_hours": 0,
+      "gain_usd": -272.86626208904704,
+      "largest_drop_pct": -28.305208873008603,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 21.67873512935013,
+      "final_usd": 612.6413586936064,
+      "financing_usd": -0.03739056220694853,
+      "fixed_rate_hours": 0,
+      "gain_usd": -387.35864130639357,
+      "largest_drop_pct": -40.08205908428615,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 36.25647242849915,
+      "final_usd": 422.5849336375473,
+      "financing_usd": -0.07264248890271277,
+      "fixed_rate_hours": 0,
+      "gain_usd": -577.4150663624528,
+      "largest_drop_pct": -59.429813299758436,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-07": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.278048428591498,
+      "final_usd": 1062.8377937855253,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 62.837793785525264,
+      "largest_drop_pct": -6.317674876599355,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 12.730018598014516,
+      "final_usd": 1120.9665608521827,
+      "financing_usd": 4.58913937789141,
+      "fixed_rate_hours": 0,
+      "gain_usd": 120.96656085218274,
+      "largest_drop_pct": -12.251375718688273,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 19.407758896006623,
+      "final_usd": 1178.050158812024,
+      "financing_usd": 9.964604491369528,
+      "fixed_rate_hours": 0,
+      "gain_usd": 178.05015881202394,
+      "largest_drop_pct": -17.746476328654705,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 33.658755125177336,
+      "final_usd": 1289.2993878043417,
+      "financing_usd": 22.292931330507944,
+      "fixed_rate_hours": 0,
+      "gain_usd": 289.2993878043417,
+      "largest_drop_pct": -27.55988927983427,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-08": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.982986448858442,
+      "final_usd": 1207.940091322554,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 207.94009132255405,
+      "largest_drop_pct": -5.356964664313324,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 14.436697364027257,
+      "final_usd": 1429.2432495203875,
+      "financing_usd": 4.8239831400365265,
+      "fixed_rate_hours": 0,
+      "gain_usd": 429.2432495203875,
+      "largest_drop_pct": -9.372057237813092,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 22.371259575408853,
+      "final_usd": 1668.447989025683,
+      "financing_usd": 10.188815627614787,
+      "fixed_rate_hours": 0,
+      "gain_usd": 668.447989025683,
+      "largest_drop_pct": -12.492986397571782,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 39.719386470269235,
+      "final_usd": 2202.003083016165,
+      "financing_usd": 22.32013287604404,
+      "fixed_rate_hours": 0,
+      "gain_usd": 1202.003083016165,
+      "largest_drop_pct": -18.366015370658616,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-09": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.847708007276368,
+      "final_usd": 1023.8321592674231,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 23.832159267423094,
+      "largest_drop_pct": -8.329763760182118,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 13.932729559247967,
+      "final_usd": 1040.9803506551636,
+      "financing_usd": 3.601249065185395,
+      "fixed_rate_hours": 0,
+      "gain_usd": 40.98035065516365,
+      "largest_drop_pct": -16.099176257105352,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 21.219455477582862,
+      "final_usd": 1054.2836287064533,
+      "financing_usd": 7.730454835237555,
+      "fixed_rate_hours": 0,
+      "gain_usd": 54.28362870645333,
+      "largest_drop_pct": -23.24382320356504,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 36.28267222569349,
+      "final_usd": 1070.7636071561456,
+      "financing_usd": 15.62946801336317,
+      "fixed_rate_hours": 0,
+      "gain_usd": 70.76360715614555,
+      "largest_drop_pct": -35.87361896905439,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-10": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.816057016593912,
+      "final_usd": 938.963728748165,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -61.036271251835046,
+      "largest_drop_pct": -10.367830105576969,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 13.907407094071088,
+      "final_usd": 877.0733297695982,
+      "financing_usd": 2.5234964277569647,
+      "fixed_rate_hours": 0,
+      "gain_usd": -122.92667023040178,
+      "largest_drop_pct": -19.95379700018812,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 21.239712040868504,
+      "final_usd": 814.6616602712977,
+      "financing_usd": 7.5755772117630125,
+      "fixed_rate_hours": 1,
+      "gain_usd": -185.3383397287023,
+      "largest_drop_pct": -28.823055930147145,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 36.56224517167148,
+      "final_usd": 696.2837534094268,
+      "financing_usd": 17.184764117758984,
+      "fixed_rate_hours": 1,
+      "gain_usd": -303.7162465905732,
+      "largest_drop_pct": -44.05894780738141,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-11": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 8.190420050493229,
+      "final_usd": 927.8212469459853,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -72.17875305401469,
+      "largest_drop_pct": -10.279710291929067,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 16.850350404895615,
+      "final_usd": 853.9074415486506,
+      "financing_usd": 1.7664806629521752,
+      "fixed_rate_hours": 0,
+      "gain_usd": -146.09255845134942,
+      "largest_drop_pct": -19.952120880026,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 25.95771684561047,
+      "final_usd": 780.0799047508508,
+      "financing_usd": 3.9975606868189413,
+      "fixed_rate_hours": 0,
+      "gain_usd": -219.9200952491492,
+      "largest_drop_pct": -29.00054659060881,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 45.436258227820076,
+      "final_usd": 635.4699544230276,
+      "financing_usd": 8.616446344361847,
+      "fixed_rate_hours": 0,
+      "gain_usd": -364.5300455769724,
+      "largest_drop_pct": -45.27454316963685,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    }
+   },
+   "sums": {
+    "dial_B": {
+     "1": {
+      "carried_gain_usd": 114.40020507430154,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.07220802033976,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -9.765679324947419
+     },
+     "2": {
+      "carried_gain_usd": 168.89401421087655,
+      "closeouts": 0,
+      "financing_usd": 9.197661643970372,
+      "fixed_rate_hours": 1,
+      "gain_usd": 241.97901814360102,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -18.5420504773561
+     },
+     "3": {
+      "carried_gain_usd": 175.52930814717274,
+      "closeouts": 0,
+      "financing_usd": 18.124749093331623,
+      "fixed_rate_hours": 1,
+      "gain_usd": 339.59187497424546,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -26.402100244926373
+     },
+     "5": {
+      "carried_gain_usd": 68.36819176968265,
+      "closeouts": 0,
+      "financing_usd": 35.18873027172658,
+      "fixed_rate_hours": 1,
+      "gain_usd": 499.5270349577154,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -39.88545719074056
+     }
+    },
+    "dial_C": {
+     "1": {
+      "carried_gain_usd": 115.86660086116376,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.51130753977452,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -8.10697804523981
+     },
+     "2": {
+      "carried_gain_usd": 182.9096272519978,
+      "closeouts": 0,
+      "financing_usd": 6.590033177680163,
+      "fixed_rate_hours": 1,
+      "gain_usd": 252.2521528268328,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -15.489354578654503
+     },
+     "3": {
+      "carried_gain_usd": 205.72215016963128,
+      "closeouts": 0,
+      "financing_usd": 14.318110238370993,
+      "fixed_rate_hours": 1,
+      "gain_usd": 364.5614061909174,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -22.25964088288206
+     },
+     "5": {
+      "carried_gain_usd": 126.86388277155993,
+      "closeouts": 0,
+      "financing_usd": 33.5539882487391,
+      "fixed_rate_hours": 1,
+      "gain_usd": 561.7212922436823,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -35.02859726372749
+     }
+    },
+    "hold": {
+     "1": {
+      "carried_gain_usd": -148.64692295160341,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -64.31165696909318,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -31.918777762309126
+     },
+     "2": {
+      "carried_gain_usd": -442.7665774561124,
+      "closeouts": 0,
+      "financing_usd": 26.549408259589978,
+      "fixed_rate_hours": 2,
+      "gain_usd": -155.17272219777476,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -61.794061534931345
+     },
+     "3": {
+      "carried_gain_usd": -757.6128654233883,
+      "closeouts": 0,
+      "financing_usd": 53.098816519179955,
+      "fixed_rate_hours": 2,
+      "gain_usd": -246.0337874264569,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -89.5033200346191
+     },
+     "5": {
+      "carried_gain_usd": -976.722023842293,
+      "closeouts": 2,
+      "financing_usd": 99.52545983720003,
+      "fixed_rate_hours": 2,
+      "gain_usd": -29.454877825714675,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 84.24996072556951,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -96.51169162101955
+     }
+    },
+    "model": {
+     "1": {
+      "carried_gain_usd": 87.33174294842297,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 126.16584841800545,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -14.979271557277718
+     },
+     "2": {
+      "carried_gain_usd": 107.69794102883998,
+      "closeouts": 0,
+      "financing_usd": 14.165841263927486,
+      "fixed_rate_hours": 1,
+      "gain_usd": 267.0717765175343,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -28.305208873008603
+     },
+     "3": {
+      "carried_gain_usd": 70.5521377779778,
+      "closeouts": 0,
+      "financing_usd": 33.11690138244823,
+      "fixed_rate_hours": 2,
+      "gain_usd": 431.54765331786314,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -40.08205908428615
+     },
+     "5": {
+      "carried_gain_usd": -130.7102743550132,
+      "closeouts": 0,
+      "financing_usd": 73.64590767752313,
+      "fixed_rate_hours": 2,
+      "gain_usd": 839.3124914013598,
+      "months": 8,
+      "months_below_low": 1,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -59.429813299758436
+     }
+    }
+   }
+  },
+  "SONNET": {
+   "months": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "Claude Sonnet 5.5",
+   "per_month": {
+    "2026-04": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 3.490275310724103,
+      "final_usd": 1114.4283718467736,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 114.42837184677364,
+      "largest_drop_pct": -5.824289042801056,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 6.980550621448206,
+      "final_usd": 1231.684216771346,
+      "financing_usd": -2.8274730777977286,
+      "fixed_rate_hours": 0,
+      "gain_usd": 231.68421677134597,
+      "largest_drop_pct": -10.473592195460279,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 10.470825932172422,
+      "final_usd": 1348.9400616959183,
+      "financing_usd": -5.654946155595457,
+      "fixed_rate_hours": 0,
+      "gain_usd": 348.9400616959183,
+      "largest_drop_pct": -15.545054407643965,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 17.4513765536204,
+      "final_usd": 1583.4517515450625,
+      "financing_usd": -11.309892311190913,
+      "fixed_rate_hours": 0,
+      "gain_usd": 583.4517515450625,
+      "largest_drop_pct": -25.387600795803777,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-05": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.123616965533308,
+      "final_usd": 994.4943537841764,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -5.505646215823617,
+      "largest_drop_pct": -8.404807641082556,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 12.241278103258908,
+      "final_usd": 988.0111256341896,
+      "financing_usd": -0.42549029729666904,
+      "fixed_rate_hours": 1,
+      "gain_usd": -11.988874365810375,
+      "largest_drop_pct": -15.755173239615461,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 18.356971762290403,
+      "final_usd": 980.0202297639892,
+      "financing_usd": -0.6918963828851261,
+      "fixed_rate_hours": 1,
+      "gain_usd": -19.979770236010836,
+      "largest_drop_pct": -22.257516603495297,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 30.59584424164653,
+      "final_usd": 960.0695732582274,
+      "financing_usd": -1.0939240817571367,
+      "fixed_rate_hours": 1,
+      "gain_usd": -39.930426741772635,
+      "largest_drop_pct": -33.265814028219346,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-06": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 7.178181781972494,
+      "final_usd": 848.5481105431052,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -151.45188945689483,
+      "largest_drop_pct": -15.471176642107165,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 14.30798000034746,
+      "final_usd": 708.6393726695674,
+      "financing_usd": -0.15825868578023408,
+      "fixed_rate_hours": 0,
+      "gain_usd": -291.36062733043264,
+      "largest_drop_pct": -29.69394650297965,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 21.348293080496255,
+      "final_usd": 580.3423503159814,
+      "financing_usd": -0.51368178232663,
+      "fixed_rate_hours": 0,
+      "gain_usd": -419.65764968401857,
+      "largest_drop_pct": -42.66815913604791,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 35.029590040355785,
+      "final_usd": 357.54748039244345,
+      "financing_usd": -0.9527501178951339,
+      "fixed_rate_hours": 0,
+      "gain_usd": -642.4525196075565,
+      "largest_drop_pct": -65.00331078900778,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-07": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 3.490275310724046,
+      "final_usd": 1057.1023050969295,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 57.10230509692951,
+      "largest_drop_pct": -6.71695514195555,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 7.226164080821779,
+      "final_usd": 1110.5064651039604,
+      "financing_usd": 4.995464170915901,
+      "fixed_rate_hours": 0,
+      "gain_usd": 110.50646510396041,
+      "largest_drop_pct": -12.607224869813805,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 11.207552995677945,
+      "final_usd": 1164.869660846116,
+      "financing_usd": 10.32861316509674,
+      "fixed_rate_hours": 0,
+      "gain_usd": 164.86966084611595,
+      "largest_drop_pct": -17.70991851151106,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 19.906944574281155,
+      "final_usd": 1276.5062238684786,
+      "financing_usd": 21.97549981321202,
+      "fixed_rate_hours": 0,
+      "gain_usd": 276.5062238684786,
+      "largest_drop_pct": -26.11607772763225,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-08": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.605119727217458,
+      "final_usd": 1230.1820121047203,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 230.18201210472034,
+      "largest_drop_pct": -5.356964664313313,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 12.672345719570053,
+      "final_usd": 1460.4187809821544,
+      "financing_usd": 4.814876855025263,
+      "fixed_rate_hours": 0,
+      "gain_usd": 460.41878098215443,
+      "largest_drop_pct": -10.601999890550628,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 20.402296119243324,
+      "final_usd": 1691.1066517628933,
+      "financing_usd": 11.258544477957313,
+      "fixed_rate_hours": 0,
+      "gain_usd": 691.1066517628933,
+      "largest_drop_pct": -15.735011158278777,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 44.57431182661914,
+      "final_usd": 2148.800666623678,
+      "financing_usd": 27.982002098415645,
+      "fixed_rate_hours": 0,
+      "gain_usd": 1148.800666623678,
+      "largest_drop_pct": -25.683463181885923,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-09": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 5.49671323186992,
+      "final_usd": 1054.5477648368476,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 54.54776483684759,
+      "largest_drop_pct": -8.74288482272485,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 11.150266205816571,
+      "final_usd": 1096.578721017895,
+      "financing_usd": 4.360155212059461,
+      "fixed_rate_hours": 0,
+      "gain_usd": 96.57872101789508,
+      "largest_drop_pct": -17.001727968712622,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 16.950249043234944,
+      "final_usd": 1130.1508572008283,
+      "financing_usd": 8.75203383344869,
+      "fixed_rate_hours": 0,
+      "gain_usd": 130.15085720082834,
+      "largest_drop_pct": -24.66289748618824,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 28.95901504904748,
+      "final_usd": 1171.7813912628558,
+      "financing_usd": 16.976144765587797,
+      "fixed_rate_hours": 0,
+      "gain_usd": 171.78139126285578,
+      "largest_drop_pct": -38.43421626089222,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-10": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 7.310022696183756,
+      "final_usd": 939.1088287118979,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -60.8911712881021,
+      "largest_drop_pct": -10.060027556071095,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 14.720125967885075,
+      "final_usd": 877.5725843628355,
+      "financing_usd": 2.6691555272365455,
+      "fixed_rate_hours": 0,
+      "gain_usd": -122.42741563716447,
+      "largest_drop_pct": -19.37642924051921,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 22.20852703055798,
+      "final_usd": 815.9688087581267,
+      "financing_usd": 7.6324773781538315,
+      "fixed_rate_hours": 0,
+      "gain_usd": -184.03119124187333,
+      "largest_drop_pct": -28.002460521644878,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 37.38225937962734,
+      "final_usd": 699.7891189392892,
+      "financing_usd": 16.99434537195321,
+      "fixed_rate_hours": 1,
+      "gain_usd": -300.2108810607108,
+      "largest_drop_pct": -42.84410517605445,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    },
+    "2026-11": {
+     "1": {
+      "closeouts": 0,
+      "costs_usd": 6.352355469880502,
+      "final_usd": 899.9357644846425,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -100.0642355153575,
+      "largest_drop_pct": -14.25694125354573,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "2": {
+      "closeouts": 0,
+      "costs_usd": 12.789910991096402,
+      "final_usd": 804.4611762232289,
+      "financing_usd": 2.913983782004645,
+      "fixed_rate_hours": 0,
+      "gain_usd": -195.5388237767711,
+      "largest_drop_pct": -26.78472863797078,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "3": {
+      "closeouts": 0,
+      "costs_usd": 19.306092833944444,
+      "final_usd": 715.7968293305257,
+      "financing_usd": 6.223687980694396,
+      "fixed_rate_hours": 0,
+      "gain_usd": -284.2031706694743,
+      "largest_drop_pct": -37.693277169035674,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     },
+     "5": {
+      "closeouts": 0,
+      "costs_usd": 32.546683755796906,
+      "final_usd": 558.7489009333299,
+      "financing_usd": 12.754514098249581,
+      "fixed_rate_hours": 0,
+      "gain_usd": -441.2510990666701,
+      "largest_drop_pct": -55.363341059501856,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0
+     }
+    }
+   },
+   "sums": {
+    "dial_B": {
+     "1": {
+      "carried_gain_usd": 114.40020507430154,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.07220802033976,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -9.765679324947419
+     },
+     "2": {
+      "carried_gain_usd": 168.89401421087655,
+      "closeouts": 0,
+      "financing_usd": 9.197661643970372,
+      "fixed_rate_hours": 1,
+      "gain_usd": 241.97901814360102,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -18.5420504773561
+     },
+     "3": {
+      "carried_gain_usd": 175.52930814717274,
+      "closeouts": 0,
+      "financing_usd": 18.124749093331623,
+      "fixed_rate_hours": 1,
+      "gain_usd": 339.59187497424546,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -26.402100244926373
+     },
+     "5": {
+      "carried_gain_usd": 68.36819176968265,
+      "closeouts": 0,
+      "financing_usd": 35.18873027172658,
+      "fixed_rate_hours": 1,
+      "gain_usd": 499.5270349577154,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -39.88545719074056
+     }
+    },
+    "dial_C": {
+     "1": {
+      "carried_gain_usd": 115.86660086116376,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 132.51130753977452,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -8.10697804523981
+     },
+     "2": {
+      "carried_gain_usd": 182.9096272519978,
+      "closeouts": 0,
+      "financing_usd": 6.590033177680163,
+      "fixed_rate_hours": 1,
+      "gain_usd": 252.2521528268328,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -15.489354578654503
+     },
+     "3": {
+      "carried_gain_usd": 205.72215016963128,
+      "closeouts": 0,
+      "financing_usd": 14.318110238370993,
+      "fixed_rate_hours": 1,
+      "gain_usd": 364.5614061909174,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -22.25964088288206
+     },
+     "5": {
+      "carried_gain_usd": 126.86388277155993,
+      "closeouts": 0,
+      "financing_usd": 33.5539882487391,
+      "fixed_rate_hours": 1,
+      "gain_usd": 561.7212922436823,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -35.02859726372749
+     }
+    },
+    "hold": {
+     "1": {
+      "carried_gain_usd": -148.64692295160341,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": -64.31165696909318,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -31.918777762309126
+     },
+     "2": {
+      "carried_gain_usd": -442.7665774561124,
+      "closeouts": 0,
+      "financing_usd": 26.549408259589978,
+      "fixed_rate_hours": 2,
+      "gain_usd": -155.17272219777476,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -61.794061534931345
+     },
+     "3": {
+      "carried_gain_usd": -757.6128654233883,
+      "closeouts": 0,
+      "financing_usd": 53.098816519179955,
+      "fixed_rate_hours": 2,
+      "gain_usd": -246.0337874264569,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -89.5033200346191
+     },
+     "5": {
+      "carried_gain_usd": -976.722023842293,
+      "closeouts": 2,
+      "financing_usd": 99.52545983720003,
+      "fixed_rate_hours": 2,
+      "gain_usd": -29.454877825714675,
+      "months": 8,
+      "months_below_low": 2,
+      "penalty_usd": 84.24996072556951,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -96.51169162101955
+     }
+    },
+    "model": {
+     "1": {
+      "carried_gain_usd": 89.96119247181286,
+      "closeouts": 0,
+      "financing_usd": 0.0,
+      "fixed_rate_hours": 0,
+      "gain_usd": 138.34751140909304,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -15.471176642107165
+     },
+     "2": {
+      "carried_gain_usd": 82.71197824158821,
+      "closeouts": 0,
+      "financing_usd": 16.342413486367185,
+      "fixed_rate_hours": 1,
+      "gain_usd": 277.8724427651773,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -29.69394650297965
+     },
+     "3": {
+      "carried_gain_usd": -2.3917399022581094,
+      "closeouts": 0,
+      "financing_usd": 37.334832514543756,
+      "fixed_rate_hours": 1,
+      "gain_usd": 427.1954496743789,
+      "months": 8,
+      "months_below_low": 0,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -42.66815913604791
+     },
+     "5": {
+      "carried_gain_usd": -316.8897631182592,
+      "closeouts": 0,
+      "financing_usd": 83.32593963657507,
+      "fixed_rate_hours": 2,
+      "gain_usd": 756.6951068233648,
+      "months": 8,
+      "months_below_low": 1,
+      "penalty_usd": 0.0,
+      "shortfall_usd": 0.0,
+      "worst_month_drop_pct": -65.00331078900778
+     }
+    }
+   }
+  }
+ },
+ "months": [
+  "2026-04",
+  "2026-05",
+  "2026-06",
+  "2026-07",
+  "2026-08",
+  "2026-09",
+  "2026-10",
+  "2026-11"
+ ],
+ "months_with_every_model": [
+  "2026-04",
+  "2026-05",
+  "2026-06",
+  "2026-07",
+  "2026-08",
+  "2026-09",
+  "2026-10",
+  "2026-11"
+ ],
+ "multiples": [
+  1,
+  2,
+  3,
+  5
+ ],
+ "note": "Looked at after the fact. The models answered for a 1x account and did not know they were leveraged. Not a counted trial.",
+ "symbol": "BTC/USD"
+}
