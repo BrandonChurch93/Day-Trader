@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-25 08:35 UTC
+Last updated: 2026-11-25 08:36 UTC
 
 This page is the current state of the project. It is the second thing to read, after `AGENTS.md`. If another page disagrees with this one about a result or about where things stand, this page stands. The map of every file is `docs/INDEX.md`.
 
@@ -39,7 +39,7 @@ Each line says how far to trust it.
 - Nothing found so far supports fast money. MEASURED for what was tested. The reading agrees (`docs/research/25_what_the_evidence_supports.md`).
 - Pass mark 4, the overfitting estimate, is not steady enough to be a yes or no on its own. MEASURED three ways: it moves with the start date, it passes on made-up data with no edge in a share of samples that document 16 gives, and in replay 05 it moved from fail to pass for seven rules when an eighth was corrected (`docs/research/16_rig_audit.md`, `docs/research/22_replay_05_stock_trend.md`). The bar in `backtest_max_pbo` has not been changed.
 - AI models making the trading call: no evidence that it works, from our pilot or from live public records (`docs/research/14_ai_calls_pilot_02.md`, `docs/research/18_ai_systems_with_live_records.md`). Models stay out of the order path (`AGENTS.md` hard rule 1).
-- The closest thing to a lead on stocks is rule I2 in replay 05: hold the three strongest industry groups when the market is above its ten-month average. In the corrected run it grew nearly as much as holding with about half the largest drop. It carries three cautions listed in `docs/research/22_replay_05_stock_trend.md`, and it has not been tested on anything that can be bought. Treat it as a reason for the next test, not as a result.
+- The closest thing to a lead on stocks is rule I2 in replay 05: hold the three strongest industry groups when the market is above its ten-month average. In the corrected run it grew nearly as much as holding with a much smaller largest drop. It carries three cautions listed in `docs/research/22_replay_05_stock_trend.md`, and it has not been tested on anything that can be bought. Treat it as a reason for the next test, not as a result.
 - Stocks have been tested only on a free index that cannot be bought. Funds that can be bought, and day trading SPY and QQQ, are UNKNOWN until price data is purchased.
 
 ## What has been replaced
@@ -68,6 +68,8 @@ Things only he can do:
 1. Open an Alpaca account for practice trading and create practice keys.
 2. Buy one month of stock price data, so replays 06 and 07 can run.
 3. Say whether Kraken's published files may be the main crypto history.
+4. Say whether the order-book sampler may run again on Kraken's public price feed.
+5. Say whether one line may be added to `AGENTS.md` pointing to this page and to `docs/INDEX.md`.
 
 Open owner numbers, with no value yet: `live_starting_capital_usd`, `live_max_position_usd`, `live_max_daily_loss_usd`, `live_max_total_loss_usd`, `moonshot_sleeve_share`, `moonshot_max_position_share`, `api_model_spend_cap_usd_month`. Nothing may assume a value for any of them.
 
@@ -76,7 +78,7 @@ Open owner numbers, with no value yet: `live_starting_capital_usd`, `live_max_po
 Proposed order. The reasons are in `docs/research/25_what_the_evidence_supports.md`.
 
 1. Decide how pass mark 4 is measured from now on (owner question in `docs/research/16_rig_audit.md`).
-2. Replay 06: slow trend on funds that can be bought. Plan drafted in `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`. Needs the data purchase.
+2. Replay 06: slow trend on funds that can be bought. Plan drafted in `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`. Needs the data purchase. Proposed addition before it is frozen: the industry rule I2 on sector funds.
 3. Replay 07: day trading SPY and QQQ on one-minute bars. Plan drafted in `research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`. Needs the data purchase.
 4. Run one slow rule in the practice account as observation only, once practice keys exist.
 5. Fix the three faults in `research_rig/basket.py` before any further basket test.
