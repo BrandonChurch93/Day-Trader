@@ -8,7 +8,7 @@ An AI-assisted trading system for US stocks and crypto. Status: in research. The
 2. `docs/playbook/00_START_HERE.md` - the whole picture in about two pages.
 3. `docs/quality/00_READ_FIRST.md` - the owner's quality bar and build method.
 4. `docs/playbook/01..06` - condensed decisions per topic. This is the layer agents load by default.
-5. `docs/research/01..14` - full reports with every source. Open only when a playbook line points there. 09 is brokers and venues, 10 is historical data and practice accounts, 11 is the AI trader test design, 12 is the first replay results, 13 is the high-risk sleeve evidence, 14 is the first pilot of AI models making the calls.
+5. `docs/research/01..15` - full reports with every source. Open only when a playbook line points there. 09 is brokers and venues, 10 is historical data and practice accounts, 11 is the AI trader test design, 12 is the first replay results (slow trend rules on bitcoin and ether), 12b is the same replay on a second venue's prices, 13 is the high-risk sleeve evidence, 14 is the first pilot of AI models making the calls, 15 is the replay of rules that trade inside the day.
 6. `docs/decisions/` - dated record of choices, the audits of the playbook and the source checks.
 
 ## What the evidence says, in five lines

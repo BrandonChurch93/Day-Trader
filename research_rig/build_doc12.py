@@ -13,6 +13,8 @@ Run on 2026-11-25 (UTC), the evening of 2026-11-24 in Idaho. This is the first r
 
 Status: research evidence. Proposed by research. Nothing in this file is an owner decision. The rig is a research tool. It is not the product and no product code was written.
 
+Update, later the same night: a cross-check on a second venue's prices (`docs/research/12b_replay_01_kraken_crosscheck.md`) found that the bitcoin passes below depend on including 2013 and early 2014. On a history that starts 2014-05-01, no bitcoin rule passes mark 4, on either venue's prices. The numbers in this file were not changed. Read the passes below with that in mind.
+
 Tags: every result number in this file is MEASURED by our own rig from Bitstamp's public price bars, by the commands listed at the end. That means "our code worked this out from that data". It does not mean "this will happen with real money".
 
 ## The question
@@ -183,6 +185,8 @@ Crypto never closes, so on these bars the next open is the same moment as the cl
 ## What research proposes from this
 
 None of this is decided. Each line is for the owner to accept, change or decline.
+
+Update: research withdraws proposal 1 as worded here. The replacement is in `docs/research/12b_replay_01_kraken_crosscheck.md`. Proposal 5's first test is done: `docs/research/15_replay_03_intraday_crypto.md`.
 
 1. Carry three bitcoin rules into practice trading as candidates: P2, S50 and D20. They passed at Alpaca cost. P1 goes too, clearly labelled as having failed mark 1 at Alpaca cost, so its live behaviour can be compared.
 2. Run ether in practice for observation only, labelled as having failed the replay.
