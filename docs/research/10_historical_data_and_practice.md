@@ -82,9 +82,16 @@ What is UNKNOWN:
 
 ### What was collected, and what a gap check found
 
-Added 2026-11-25 after the collection finished. Research collected one-minute prices for SPY and QQQ and daily prices for 22 funds, all the funds named in the two draft stock plans. The files are on the research machine and not in the repo. No rule has been run on them and no return has been worked out from them.
+Added 2026-11-25 after the collection finished. Research collected one-minute prices for SPY and QQQ, and daily prices for the funds in the second table below. Those are the funds named in the draft fund plan (`research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`), plus a long bond fund, a whole-market fund and the sector funds, which no plan names yet. The files are on the research machine and not in the repo. STATED by research: no trading rule has been run on them and no return over time has been worked out from them. Nothing in the repo can prove that.
 
-How the tables below are made: `research_rig/platform_bars_consolidate.py` joined the pulls into one file per fund, and `research_rig/platform_bars_integrity.py` checked them. `tools/bars_coverage.py` copied the dates and counts from that check into `research_rig/platform_bars_coverage.json`, which holds no price, and wrote the tables from it. Nothing in them is typed. All MEASURED by that check, on files only the research machine has.
+How the tables below are made:
+
+- `research_rig/platform_bars_consolidate.py` joined the pulls into one file per fund.
+- `research_rig/platform_bars_integrity.py` checked them for gaps and broken rows.
+- `research_rig/platform_bars_crosscheck.py` compared the one-minute files with the daily files, day by day. Its bands were fixed and pushed before it was run.
+- `tools/bars_coverage.py` copied the dates and counts into `research_rig/platform_bars_coverage.json`, which holds no price, and wrote the tables from that file and from `research_rig/platform_bars_crosscheck.json`. Nothing in the tables is typed.
+
+Every figure in the tables is MEASURED by those scripts, on files only the research machine has. A reader of the repo can check that the tables match the two summary files, and that the summary names the same files as `research_rig/provenance.json`. A reader cannot check the counts themselves without the price files.
 
 <!-- bars:start (written by tools/bars_coverage.py, do not edit by hand) -->
 
@@ -92,7 +99,7 @@ One-minute prices, regular session only:
 
 | Fund | First day | Last day | Trading days | Rows | Days with all 390 minutes | Short days that are not a known early close | Weekdays with no data that are not a holiday | Repeated times |
 |---|---|---|---|---|---|---|---|---|
-| SPY | 2003-09-10 | 2026-11-24 | 5,838 | 2,264,958 | 5,759 | 27 | 2 | 0 |
+| SPY | 2003-09-10 | 2026-11-24 | 5,838 | 2,264,958 | 5,759 | 26 | 2 | 0 |
 | QQQ | 2011-03-23 | 2026-11-24 | 3,943 | 1,531,562 | 3,880 | 29 | 0 | 0 |
 
 Daily prices:
@@ -125,33 +132,80 @@ Daily prices:
 What the check found that looks wrong:
 
 - SPY one-minute: no data on 2004-12-31, 2010-12-31, which the check's calendar has as trading days.
-- SPY one-minute: 27 short days that are not a known early close, the first on 2003-09-12 with 150 rows and the last on 2026-03-09 with 389. Every date is in `research_rig/platform_bars_coverage.json`.
-- SPY one-minute: rows that are not on a whole minute: 4. Days with more than 390 rows because of it: 4.
+- SPY one-minute: 26 short days that are not a known early close, the first on 2003-09-12 with 150 rows and the last on 2026-03-09 with 389. Every date is in `research_rig/platform_bars_coverage.json`.
+- SPY one-minute: rows that are not on a whole minute: 4. Days with more than 390 rows: 4.
 - SPY one-minute: rows with zero volume: 164.
-- SPY one-minute: 19 requests returned no row inside the dates asked for. Of those, 17 were for dates before the first day in the table.
+- SPY one-minute: days whose last bar is not at the expected time (15:59 New York time, or 12:59 on a day the check's calendar has as an early close): 27. Every date is in the same file.
+- SPY one-minute: of the 49 days the check's calendar has as early closes, 13 do not have the 210 rows of a 13:00 close. The most rows on one is 227.
+- SPY one-minute: 19 request windows never returned a row inside the dates asked for, as the join script recorded them. Of those, 17 were for dates before the first day in the table.
 - QQQ one-minute: 29 short days that are not a known early close, the first on 2011-04-25 with 389 rows and the last on 2026-02-09 with 389. Every date is in `research_rig/platform_bars_coverage.json`.
-- QQQ one-minute: rows that are not on a whole minute: 1. Days with more than 390 rows because of it: 1.
+- QQQ one-minute: rows that are not on a whole minute: 1. Days with more than 390 rows: 1.
 - QQQ one-minute: rows with zero volume: 456.
 - QQQ one-minute: days that do not start at 09:30 New York time: 1.
-- QQQ one-minute: 20 requests returned no row inside the dates asked for. Of those, 20 were for dates before the first day in the table.
-- Daily: two pulls of the same day gave different values for SPY. The later pull was kept.
+- QQQ one-minute: 20 request windows never returned a row inside the dates asked for, as the join script recorded them. Of those, 20 were for dates before the first day in the table.
+- Daily: two pulls of the same day gave different values for SPY. The join script kept the row from the file written last. Nothing checked that the later one is the right one.
 
-What the check did not find in any file: a repeated time or day, a missing or zero price, a high below a low, a weekend row, or a bar outside the regular session.
+What the check counted and found none of: a repeated time in a one-minute file, a repeated day or a weekend row in a daily file, a missing or zero price, a high below a low, an open or close outside the bar's high and low, a row without six fields, a value that is not a number or is below zero, or a one-minute bar outside the regular session.
+
+Do the one-minute files and the daily files agree with each other? For every day in both, the day's open, high, low and close were rebuilt from the one-minute bars and compared with the daily row. The gap is in basis points of the daily figure (1 bps is 0.01%). Each cell is a count of days:
+
+| Fund | Figure | Days compared | Up to 1 bps | Over 1, up to 5 bps | Over 5, up to 10 bps | Over 10, up to 25 bps | Over 25 bps | Largest gap |
+|---|---|---|---|---|---|---|---|---|
+| SPY | open | 5,838 | 5,586 | 161 | 43 | 31 | 17 | -389.6 bps on 2008-12-16 |
+| SPY | high | 5,838 | 5,578 | 111 | 51 | 46 | 52 | +4,074.0 bps on 2005-02-17 |
+| SPY | low | 5,838 | 5,563 | 85 | 53 | 67 | 70 | -8,944.4 bps on 2004-03-16 |
+| SPY | close | 5,838 | 2,484 | 2,269 | 504 | 449 | 132 | +221.5 bps on 2008-10-10 |
+| QQQ | open | 3,943 | 3,899 | 36 | 1 | 6 | 1 | -27.5 bps on 2026-02-09 |
+| QQQ | high | 3,943 | 3,885 | 41 | 6 | 5 | 6 | +228.2 bps on 2016-08-01 |
+| QQQ | low | 3,943 | 3,911 | 19 | 5 | 2 | 6 | -273.3 bps on 2019-12-03 |
+| QQQ | close | 3,943 | 1,823 | 1,871 | 209 | 37 | 3 | +84.2 bps on 2020-03-13 |
+
+What that comparison found:
+
+- SPY: the middle close gap for each year lies between -2.90 bps (2003) and +0.93 bps (2009). It does not grow going back in time.
+- SPY: days where the one-minute high is above the daily high by more than 1 bps: 33. Days where the one-minute low is below the daily low by more than 1 bps: 43. Neither can happen if both files are right.
+- QQQ: the middle close gap for each year lies between -0.39 bps (2020) and +0.31 bps (2022). It does not grow going back in time.
+- QQQ: days where the one-minute high is above the daily high by more than 1 bps: 4. Days where the one-minute low is below the daily low by more than 1 bps: 2. Neither can happen if both files are right.
+- Every date with a gap over 25 bps is in `research_rig/platform_bars_crosscheck.json`, with the gap and no price.
 
 <!-- bars:end -->
 
 How to read this:
 
-- A first day in the one-minute table is the first day this lookup returned, not the fund's first trading day. Earlier requests came back empty.
-- A short day that is not a known early close may be a real gap in the data or a trading halt. Nobody has checked which.
-- The data is good enough to draft and debug a test on. It is not good enough to trust a result from, until a second source agrees with it.
+- A first day in the one-minute table is the first day this collection got. It is not proven to be the first day the lookup has. Requests for earlier dates returned no row inside the dates asked for.
+- The two days with no SPY one-minute data were trading days. The exchange index closed on Friday, December 31, 2004 ([Boston Fed year-end report](https://www.bostonfed.org/-/media/Documents/stock-market-report/smrye04.pdf)), and stocks traded on the last day of 2010 ([Reuters](https://www.reuters.com/article/markets/stocks/snapshot-wall-st-posts-double-digit-gains-in-2010-idUSWEN4939/)). MEASURED from those two pages. So these are gaps in the data.
+- The one-minute files and the daily files look to be adjusted the same way: the middle close gap does not grow going back in time, which it would if only one of them were adjusted for dividends. This is research's reading of the table, not a statement by the provider. It does not say which way they are adjusted.
+- A close gap of a few basis points on most days is what research expects, because the daily close is set after the last one-minute bar ends. Research has not checked that against a source.
+- The one-minute files hold some bad bars. On the worst day the lowest one-minute price is far below anything the daily file shows for that day. A stop or a breakout rule would trade on a bar like that. A test on this data needs a written rule for such bars before it runs.
+- Research's view, not a measurement: this data can be used to write and debug a test. A result from it should not be believed until a second source agrees, and nothing has compared it with one.
 
-What it changes, as a proposal:
+The short days are of three kinds, and only some have been told apart:
 
-- Replay 07 (day trading SPY and QQQ on one-minute prices) could run its day-only rules without a purchase, if the owner allows this data and it passes the gap check. As drafted it cannot run in full: its night-only rule N5 needs dividend history (`research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`). On this data alone N5 would have to be dropped, and the plan would have to say so before it is frozen.
+- Real halts. Trading stopped at 3:56 pm on June 1, 2005 and did not resume ([exchange record of special closings](https://www.ltadvisors.net/Info/research/closings.pdf)). All US stock trading stopped for 15 minutes on March 9, 12, 16 and 18, 2020 ([SEC filing on the circuit breaker](https://www.sec.gov/files/rules/sro/nyse/2021/34-92428-ex3.pdf)). Nasdaq-listed shares stopped for about three hours on August 22, 2013 ([CNBC](https://www.cnbc.com/2013/08/22/nasdaq-connectivity-issue-led-to-threehour-shutdown.html)). Each of these dates is in the list of short days in `research_rig/platform_bars_coverage.json`.
+- Days with one or two minutes missing. Whether no trade happened in that minute or the data lost it is UNKNOWN.
+- Days with a large part missing and no event research could find, the first weeks of the SPY data among them. Treat these as gaps in the data.
+
+About the calendar the check uses:
+
+- Its holidays and early closes were written from memory by the collecting agent.
+- An outside checker found three days it had as both a holiday and an early close, and one early close it missed in December 2003. Both are fixed in the script.
+- For September 2003 to December 2007 its early closes now match the exchange record linked above, whose last entry is dated December 24, 2007. MEASURED by research against that record. After 2007 they are unchecked.
+- On early closes up to 2009 the SPY files run some minutes past 13:00. Research has not found out why.
+
+What the join and check scripts do not do. An outside read of the code found these. They are not fixed, because the join cannot be run again without collecting the prices again:
+
+- The join script skips a pull file whose name or header it does not expect, and rows outside the dates asked for, without stopping. It counts them in its own log, which is not in the repo.
+- When two pulls disagree on a row it keeps the one from the file written last. Nothing shows the later one is better.
+- The check counts the different times in a day. It does not check that they are the expected minutes.
+- The check does not look for weekend rows in the one-minute files.
+- The original pulls and the check's full output are not fingerprinted in `research_rig/provenance.json`. Only the joined files are.
+
+What this means for the tests and the purchase:
+
+- Replay 07 (day trading SPY and QQQ on one-minute prices) could run its day-only rules without a purchase, if the owner allows this data and the plan first says how the faults listed above are handled. As drafted it cannot run in full: its night-only rule N5 needs dividend history (`research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`). On this data alone N5 would have to be dropped, and the plan would have to say so before it is frozen.
 - Replay 06 (slow trend on funds that can be bought) still needs dividend history, which this lookup does not have. The purchase above is still the recommended source for it.
 - The purchase is still worth making for a second reason. A second source changed a result once already: no bitcoin rule that passed on Bitstamp's history in the first run passed on Kraken's (`docs/research/12b_replay_01_kraken_crosscheck.md`). A test on one unchecked source should not be believed.
-- Until the owner answers, research collects and checks this data and runs no rule on it. The files stay out of the repo, like all raw prices.
+- Until the owner answers, research runs no rule on this data. The files stay out of the repo, like all raw prices.
 
 ## Crypto history
 

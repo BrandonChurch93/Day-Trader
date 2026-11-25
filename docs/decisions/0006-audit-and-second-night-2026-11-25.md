@@ -236,7 +236,7 @@ Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored resul
 
 This is a record of what research did. It is not an owner decision.
 
-The pull of stock prices from the workspace's own price history, started overnight under the owner's latitude, finished. It holds one-minute prices for SPY and QQQ and daily prices for the 22 funds named in the two draft stock plans. The files are on the research machine only.
+The pull of stock prices from the workspace's own price history, started overnight under the owner's latitude, finished. It holds one-minute prices for SPY and QQQ and daily prices for the funds named in the draft fund plan and some more that no plan names yet (wording corrected in the eleventh addendum). The files are on the research machine only.
 
 What was added to the repo:
 
@@ -244,11 +244,11 @@ What was added to the repo:
 - A summary with dates, counts and file fingerprints and no price (`research_rig/platform_bars_coverage.json`), and a script that writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from it (`tools/bars_coverage.py`). `tools/check_repo.py` now fails if those tables are not what the script writes.
 - The price files are in `research_rig/provenance.json` by fingerprint and in `research_rig/check_data.py` as a data set that a script cannot fetch.
 
-What the check showed, in words (the figures are in the tables): no repeated or broken rows; some short days and two missing days in the SPY one-minute files; one-minute history for QQQ starts years after SPY's. The draft plan for the day trading test now names that as a point to settle before it is frozen.
+What the check showed, in words (the figures are in the tables; MEASURED, on files only the research machine has; wording corrected in the eleventh addendum): no repeated time and no missing or zero price; some rows with no volume and a few rows not on a whole minute; some short days and some missing days in the SPY one-minute files; one-minute history for QQQ starts years after SPY's. The draft plan for the day trading test now names that as a point to settle before it is frozen.
 
 What is still UNKNOWN: whether the prices are right (nothing has compared them with a second source), whether the check's holiday calendar is right (the collecting agent wrote it from memory), who the data comes from, how it is adjusted, and what its terms say about keeping copies.
 
-Not done: no rule was run on these prices, no return was worked out from them, and no price was committed. Item 6 of "Things only you can do" in the morning list asks the owner whether the files may be kept, and says research deletes them if he says no.
+Not done, STATED by research: no rule was run on these prices and no return was worked out from them. No price was committed, which the repo history shows. Item 6 of "Things only you can do" in the morning list asks the owner whether the files may be kept, and says research deletes them if he says no.
 
 Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold.
 
@@ -256,11 +256,46 @@ Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored resul
 
 This is a record of what research did. It is not an owner decision.
 
-The third fresh model in the finding test reported. It answered all sixteen questions correctly, so three models from three makers each did. It read the repo before the eighth addendum's fixes were pushed, and three of the faults it listed were already fixed by them. Two were new:
+The third fresh model in the finding test reported. It answered all sixteen questions correctly against the answer key, so three models from three makers each did. MEASURED by research against a key research wrote; the key and the answers are not in the repo. It read the repo before the eighth addendum's fixes were pushed, and three of the faults it listed were already fixed by them. Two were new:
 
 - The repo check did not do what three pages said it did. It was meant to fail when a tracked file has no row in `docs/INDEX.md`. It passed a new file under `docs/research/` or `research_rig/` with no row, because the index names those folders in passing and the check took any folder named anywhere on the page as covering everything under it. The reader showed this with a throwaway file. Research confirmed it, then changed the check: only a path or folder in the first column of a table row counts. Tested both ways with a throwaway file in each folder: the check now fails, and passes again when the file is removed. MEASURED. No tracked file turned out to be unlisted.
 - The status page did not say that no pass is credited until after the results table, whose rows say "pass". It now says so above the table.
 
 Left as they are, with the reason: the reading order in `AGENTS.md` still points to the playbook first (the owner's file, item 5 of "Things only you can do"); the status page gives the bar a test was run with and the config file gives the value in force (by design, so a number lives once).
 
-What this test does and does not show. Three fresh models found the right answer to sixteen set questions from the repo address alone. It does not show that a model would follow the rules under pressure, or find what the questions did not ask about. Every round of outside reading so far has found a real fault, this one included.
+What this test does and does not show. Three fresh models found the right answer to sixteen set questions from the repo address alone (MEASURED as above). It does not show that a model would follow the rules under pressure, or find what the questions did not ask about. Every round of outside reading so far has found a real fault, this one included.
+
+## Eleventh addendum, 2026-11-25 12:55 UTC: a second check on the collected stock prices, and the faults an outside check found in the first
+
+This is a record of what research did. It is not an owner decision.
+
+What was run, under the same overnight latitude as the collection itself:
+
+- `research_rig/platform_bars_crosscheck.py`, once. For SPY and QQQ it rebuilds each day's open, high, low and close from the one-minute files and compares them with the daily file. Its bands were fixed in the script and pushed before it was run (commit 22b0f2a). It runs no trading rule and works out no return over time. Its output, `research_rig/platform_bars_crosscheck.json`, holds counts, dates and gaps in basis points, and no price.
+- `research_rig/platform_bars_integrity.py`, again, after the calendar fixes below.
+
+What the comparison showed, in words (the figures are in the tables in `docs/research/10_historical_data_and_practice.md`; MEASURED, on files only the research machine has):
+
+- The two sets of files look to be adjusted the same way. This is research's reading. It does not say which way.
+- The one-minute files hold some bad bars. On some days a one-minute high is above the daily high or a one-minute low is below the daily low, which cannot be if both are right.
+- Both sets come from the same lookup, so none of this shows that either is right.
+
+An outside model read the commits that added the coverage work (a832c01 to f5079be). What it found, and what was done:
+
+- The pages said the daily files cover the funds named in the two draft stock plans, with a typed count. Wrong: only the draft fund plan names funds, and it names fewer than were collected. Reworded with no count in document 10, the morning list, the ninth addendum and the rig's README.
+- "No repeated or broken rows" said too much: there are rows with no volume and rows not on a whole minute. Reworded to what was counted.
+- The check's calendar had three days as both a holiday and an early close, and missed one early close in December 2003. Fixed in the script. The December 2003 close is from the exchange's own record of special closings, linked in document 10. Research then compared the script's early closes with that record for September 2003 to December 2007: they match. MEASURED. After 2007 the calendar is still unchecked.
+- The two days with no SPY one-minute data were trading days, and several short days tie to known halts. The sources are in document 10.
+- The script that keeps the tables in step with the summary looked at the first block only. It now requires exactly one block. The repo check now also fails if the file fingerprints in the summary do not add up to the two in `research_rig/provenance.json`.
+- The repo check counted a file as listed if it was named in any table on the index page, the task table included. Now only a row in a file table counts.
+- `research_rig/check_data.py` looked for two of the price files. It now looks for every file the summary names.
+- Several sentences gave a cause, a judgment or a typed time as if measured. Reworded or labelled.
+- The join script has limits that cannot be fixed without collecting again. They are now listed in document 10 and not fixed.
+
+Added by research while fixing these: the gap check now also counts rows without six fields and values that are not a number or are below zero. It found none. MEASURED.
+
+What changed for the owner: item 6 of "Things only you can do" now says the one-minute files hold some bad bars. The draft plan for the day trading test says a rule for bad bars has to be written before it is frozen.
+
+Not done, STATED by research: no rule was run on these prices and no return over time was worked out from them.
+
+Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result of a test, any threshold.

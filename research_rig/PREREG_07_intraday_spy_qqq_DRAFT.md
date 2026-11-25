@@ -45,7 +45,7 @@ Each rule is compared with holding the fund.
 
 To settle before this plan is frozen: if a rule is added or dropped, the rule list, the trial count, the fixtures and the set of rules that mark 4 is worked out over are all rewritten here first. No rule is added or dropped to change how likely a tie is in mark 4.
 
-To settle before this plan is frozen: on the workspace's own price history, one-minute data for QQQ starts years later than for SPY (`docs/research/10_historical_data_and_practice.md`, "What was collected, and what a gap check found"). If that source is used, the plan has to say first whether the QQQ rules are judged on their own shorter development slice or left out. The short days and missing days that the gap check lists also have to be handled by a rule written here, not case by case.
+To settle before this plan is frozen: on the workspace's own price history, one-minute data for QQQ starts years later than for SPY (`docs/research/10_historical_data_and_practice.md`, "What was collected, and what a gap check found"). If that source is used, the plan has to say first whether the QQQ rules are judged on their own shorter development slice or left out. The short days and missing days that the gap check lists also have to be handled by a rule written here, not case by case. The one-minute files also hold some bad bars: on some days a one-minute price sits far outside anything the daily file shows for that day (MEASURED by `research_rig/platform_bars_crosscheck.py`, same section of that document). A stop or a breakout rule would trade on such a bar. The plan has to say, before it is frozen and before any rule sees the data, how a bad bar is found and what is done with it.
 
 ## Pass marks
 

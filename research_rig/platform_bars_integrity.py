@@ -3,7 +3,7 @@ Reads data/platform_bars/ (or PLATFORM_BARS_DIR) and writes integrity.json and I
 Runs no rule and works out no return. Written by a collection agent; the holiday calendar in it was written from memory.
 Checks only counts, dates, gaps, duplicates, timestamps, zero/missing values, high/low sanity and sha256.
 No returns or price-move statistics are computed."""
-import csv, glob, hashlib, json, os, datetime as dt
+import csv, glob, hashlib, json, math, os, datetime as dt
 from collections import defaultdict, Counter
 from zoneinfo import ZoneInfo
 
@@ -56,12 +56,18 @@ def early_closes(y):
     for d, n in [(dt.date(y, 12, 24), "Christmas Eve"), (dt.date(y, 7, 3), "July 3")]:
         if d.weekday() < 5:
             e[d] = n
-    return e
+    hol = holidays(y)   # added after an outside check: a day the market is shut is not an early close (2020-07-03, 2021-12-24, 2026-07-03)
+    return {d: n for d, n in e.items() if d not in hol}
 
 
 HOL, EARLY = {}, {}
 for y in range(1990, 2028):
     HOL.update(holidays(y)); EARLY.update(early_closes(y))
+# Added after an outside check. One early close the rules above miss, from the exchange's own record of special closings
+# (https://www.ltadvisors.net/Info/research/closings.pdf, "closed at 1:00 pm, Friday after Christmas Day").
+# That record runs to December 2007. For September 2003 to December 2007 the rules above now give the same early closes as it does.
+# After 2007 the early closes here are still from memory.
+EARLY[dt.date(2003, 12, 26)] = "Friday after Christmas (exchange record)"
 
 
 def sha(path):
@@ -87,6 +93,8 @@ def value_checks(rows):
         def flag(k):
             c[k] += 1
             if len(ex[k]) < 20: ex[k].append(r[0])
+        if len(r) != 6: flag("row_without_six_fields")
+        if any(x is not None and (not math.isfinite(x) or x < 0) for x in (o, h, l, cl, v)): flag("value_not_a_number_or_below_zero")
         if any(x is None for x in (o, h, l, cl)): flag("price_missing")
         elif any(x == 0 for x in (o, h, l, cl)): flag("price_zero")
         if v is None: flag("volume_missing")
@@ -228,7 +236,7 @@ def write_md(rep):
          "- MEASURED (pull log): daily requests for 1993-2004 returned no rows for DBC, BIL, XLC, XLRE, and for 2005-2016 for XLC. These are before each fund's first date.",
          "- MEASURED (pull log): rate-limit replies started around the 2022 SPY windows. Two windows failed after all retries and were pulled again later with success. The pull then ran one call at a time with a 1 s pause.",
          "- MEASURED (pull log): 13 older SPY and 10 older QQQ probe files hold only date, close, volume (or date, open, close, volume for two daily files). They are skipped. The SPY windows they covered were pulled again with all fields.",
-         "- MEASURED: one SPY daily row (2026-11-24) differs between two pulls in volume only. Both are in conflicts.csv. The later pull was kept.",
+         "- MEASURED: one SPY daily row (2026-11-24) differs between two pulls in volume only. Both are in conflicts.csv. The row from the file written last was kept. Nothing checked that it is the right one.",
          ""]
     src = rep.get("sources", {})
     conf = rep.get("conflicts_summary", {})

@@ -6,6 +6,9 @@ import os, glob, sys
 H = os.path.dirname(os.path.abspath(__file__)); D = os.path.join(H, "data")
 K = os.environ.get("KRAKEN_DIR", os.path.join(D, "kraken")); KD = os.environ.get("KRAKEN_DAILY_DIR", os.path.join(D, "kraken", "daily"))   # as basket.py: not moved by KRAKEN_DIR
 F = os.environ.get("FRENCH_DIR", os.path.join(D, "french"))
+import json
+_C = json.load(open(os.path.join(H, "platform_bars_coverage.json")))   # every price file the coverage summary names, not a sample
+PB = [os.path.join(os.environ.get("PLATFORM_BARS_DIR", f"{D}/platform_bars"), f) for part in ("one_minute", "daily") for v in _C[part].values() for f, _ in v["files"]]
 SETS = [
     ("Bitstamp daily bars, bitcoin and ether", [f"{D}/bitstamp_BTCUSD.csv", f"{D}/bitstamp_ETHUSD.csv"], "python3 fetch.py crypto", "replay 01, the rerun, pilot 02"),
     ("Bitstamp hourly bars, bitcoin and ether", [f"{D}/bitstamp_BTCUSD_1h.csv", f"{D}/bitstamp_ETHUSD_1h.csv"], "python3 fetch.py hourly", "replay 03, the rerun"),
@@ -14,7 +17,7 @@ SETS = [
     ("Kraken full daily history, built", [f"{D}/krakenfull_BTCUSD.csv", f"{D}/krakenfull_ETHUSD.csv"], "python3 build_kraken_daily.py   (needs Bitstamp daily, Kraken recent daily and the Kraken archive, all above)", "X2, S2, the rerun, document 16"),
     ("Kraken published archive, every US dollar pair, daily (KRAKEN_DAILY_DIR)", [f"{KD}/XBTUSD_1440.csv", f"{KD}/ETHUSD_1440.csv"], "python3 fetch_kraken_archive.py daily", "replay 04"),
     ("Kenneth French library, market and twelve industry groups (FRENCH_DIR)", [f"{F}/F-F_Research_Data_Factors_daily__main.csv", f"{F}/12_Industry_Portfolios_Daily__0_Average_Value_Weighted_Returns_Daily.csv"], "python3 fetch_french.py", "replay 05, i2_2020_note.py"),
-    ("Stock prices from the workspace's own price lookup (PLATFORM_BARS_DIR)", [os.path.join(os.environ.get("PLATFORM_BARS_DIR", f"{D}/platform_bars"), "1day", "SPY_1day.csv"), os.path.join(os.environ.get("PLATFORM_BARS_DIR", f"{D}/platform_bars"), "1min", "SPY_1min_2003.csv")], "not fetchable by a script: collected by an agent through the workspace on 2026-11-25. platform_bars_coverage.json in the repo holds the dates and counts", "nothing yet. No rule has been run on it"),
+    ("Stock prices from the workspace's own price lookup (PLATFORM_BARS_DIR)", PB, "not fetchable by a script: collected by an agent through the workspace on 2026-11-25. platform_bars_coverage.json in the repo holds the dates and counts", "nothing yet. No rule has been run on it"),
     ("Order-book samples", [f"{D}/books/books.csv"], "not fetchable: a one-night sample taken on 2026-11-25. books_summary.json in the repo holds the summary", "books_summary.py only"),
 ]
 miss = 0

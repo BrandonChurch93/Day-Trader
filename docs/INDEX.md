@@ -1,6 +1,6 @@
 # Index of every file
 
-What this page is: the map of the repository. Every tracked file has its path in the first column of a table on this page, or sits under a folder that has its own row there with a trailing slash. `tools/check_repo.py` fails if that stops being true. A new file needs its own row: a folder named in passing does not cover it.
+What this page is: the map of the repository. Every tracked file has its path in the first column of a table on this page, or sits under a folder that has its own row there with a trailing slash. `tools/check_repo.py` fails if that stops being true. A new file needs its own row unless it sits under a folder that has one. A folder named in passing, outside the first column, does not cover it.
 
 What this page is not: the current state of the project. That is `docs/STATUS.md`. Read it first.
 
@@ -44,9 +44,9 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 | `README.md` | Front page. Points here and to the status page | CURRENT |
 | `.gitignore` | Keeps price files, logs and private data out of the repo | CURRENT |
 | `config/thresholds.yaml` | Every threshold and every owner number, once. Documents name the key and never repeat the value | CURRENT |
-| `tools/check_repo.py` | Checks this index, the paths named in the map files and in every page under `docs/decisions/`, `docs/playbook/` and `docs/research/`, the config keys named in documents, the results table in the status page, the number tables in the morning list, and the stored outputs against `research_rig/provenance.json`. Run before every commit. With `--builders` it also runs every document builder and fails if a built page changes | CURRENT |
+| `tools/check_repo.py` | Checks this index, the paths named in the map files and in every page under `docs/decisions/`, `docs/playbook/` and `docs/research/`, the config keys named in documents, the results table in the status page, the number tables in the morning list, the coverage tables in `docs/research/10_historical_data_and_practice.md`, and the stored outputs against `research_rig/provenance.json`. Run before every commit. With `--builders` it also runs every document builder and fails if a built page changes | CURRENT |
 | `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from the output files | CURRENT |
-| `tools/bars_coverage.py` | Writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from `research_rig/platform_bars_coverage.json`, so no figure there is typed | CURRENT |
+| `tools/bars_coverage.py` | With `--write`, writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from `research_rig/platform_bars_coverage.json` and `research_rig/platform_bars_crosscheck.json`, so no figure there is typed. With `--summarise`, on a machine that has the price files, rebuilds the first of those two files from the gap check's output | CURRENT |
 | `tools/owner_numbers.py` | Writes the two number tables in the morning list from `config/thresholds.yaml`, so no value on the owner's list is typed | CURRENT |
 
 ## docs/
@@ -97,7 +97,7 @@ Written 2026-11-24 from reading, before the project ran any test of its own. Whe
 | `docs/decisions/0003-quality-bar-adopted.md` | The quality bar was adopted and wired into the repo | CURRENT |
 | `docs/decisions/0004-broker-research-2026-11-25.md` | What the broker research proposed | CURRENT |
 | `docs/decisions/0005-overnight-research-2026-11-25.md` | Record of the first overnight research run | RECORD. Its results are corrected by `docs/decisions/0006-audit-and-second-night-2026-11-25.md` |
-| `docs/decisions/0006-audit-and-second-night-2026-11-25.md` | Record of the code audits, the rerun, replays 04 and 05, the new research summaries and the repo map | CURRENT |
+| `docs/decisions/0006-audit-and-second-night-2026-11-25.md` | Record of the code audits, the rerun, replays 04 and 05, the new research summaries and the repo map. Its addenda, in time order, record the outside reads and their fixes, the finding test, and the collection and checks of stock prices | CURRENT |
 | `docs/decisions/audit_01_stocks_what_works.md`, `docs/decisions/audit_02_crypto_what_works.md`, `docs/decisions/audit_03_role_of_ai.md`, `docs/decisions/audit_04_brokers_data_rules.md`, `docs/decisions/audit_05_perplexity_and_costs.md`, `docs/decisions/audit_06_architecture_and_build.md` | Line by line audits of the six playbook pages against their sources, done 2026-11-24 | RECORD |
 | `docs/decisions/source_check_2026-11-24.md`, `docs/decisions/source_check_2026-11-24_crypto.md`, `docs/decisions/source_check_2026-11-24_role_of_ai.md`, `docs/decisions/source_check_2026-11-24_stocks.md` | Checks of cited sources on that date | RECORD |
 
@@ -190,7 +190,7 @@ Working papers.
 | `research_rig/check_data.py`, `research_rig/fetch.py`, `research_rig/fetch_kraken_archive.py`, `research_rig/fetch_french.py`, `research_rig/build_kraken_daily.py`, `research_rig/kraken_daily_build.json` | Say which raw data is present, and download and prepare public price history into `research_rig/data/`, a local folder that git ignores. The table of data sets is in `research_rig/README.md` | CURRENT |
 | `research_rig/books_summary.py`, `research_rig/books_summary.json`, `research_rig/build_doc24.py` | Order-book cost samples | CURRENT |
 | `research_rig/platform_bars_crosscheck.py` | Compares each day's open, high, low and close rebuilt from the one-minute files with the daily file, for SPY and QQQ, from the same lookup. Gaps in basis points only. No rule and no return | CURRENT |
-| `research_rig/platform_bars_consolidate.py`, `research_rig/platform_bars_integrity.py`, `research_rig/platform_bars_coverage.json` | How the stock prices collected through the workspace's own price lookup were joined and checked for gaps, and the dates and counts that check gave. No price is in the repo and no rule was run. Whether the files may be kept is item 6 of the morning list | CURRENT |
+| `research_rig/platform_bars_consolidate.py`, `research_rig/platform_bars_integrity.py`, `research_rig/platform_bars_coverage.json`, `research_rig/platform_bars_crosscheck.py`, `research_rig/platform_bars_crosscheck.json` | How the stock prices collected through the workspace's own price lookup were joined, checked for gaps and compared with each other (one-minute files against daily files), and the dates and counts those checks gave. No price is in the repo and no rule was run. Whether the files may be kept is item 6 of the morning list | CURRENT |
 | `research_rig/feeds/` | Collector of public context readings, its source notes and a trimmed sample | CURRENT |
 | `research_rig/export_dashboard.py` | Builds the data file for the owner's screen | CURRENT |
 
