@@ -60,7 +60,7 @@ A support would mean: worth a second test on the coins a US venue lists, then th
 - Contract identity: a contract maps to a coin only for the dates it traded under that coin. Contracts quoted per 1,000 coins map to the coin. A re-used ticker is never joined across a gap. Every hand-made mapping is listed in the result.
 - The short side's entry and exit are the contract's first open of the Monday hour. If that bar is missing the contract is not live that week.
 - The short's size is set once on Monday and not adjusted inside the week.
-- November 2026 funding, which the bulk archive does not hold yet, is read from the venue's public funding history for every contract used. A contract whose funding cannot be read for a week is not live that week, and the count is shown.
+- Funding comes from the venue's public bulk archive only. See the note on the last weeks of 2026 below.
 - Random draws use the same weeks, the same costs, the same short and the same rule for parts left in dollars.
 
 ## Definitions added 2026-11-25 19:46 UTC
@@ -84,6 +84,15 @@ Written after the builder read the draft and listed what it left open. No future
 - Scale figures: rule A without the short is the long side at full size with this plan's Monday-only fills. The short alone is the short side at the book's size with the long part left in dollars. The paper lean is each week's gain of the hot five less the gain of all rankable coins of the same sample, before costs, compounded week by week inside the year.
 - Contract maps: spot pairs and futures contracts each have their own dated segments. A bundled or re-used futures ticker gets its own segment and is never joined to another.
 - The held-back list is read again from the saved snapshot pages (the stored plan 13 lists stop too early). The top list must come out identical to plan 13's, and the fingerprints of both lists are stored before any price is collected for the new coins.
+
+## Definitions added 2026-11-25 19:48 UTC
+
+Still before any futures price or funding rate was read.
+
+- The venue's live data service refuses requests from this machine's location. It is not read by another route. Funding comes from the public bulk archive alone, which does not yet hold November 2026. So for this plan 2026 ends at the last Monday whose whole week of funding is in the archive, and the date is printed in the result. This shortens 2026 against plan 13.
+- Condition (iii) of "live" is a statement about which files we hold, fixed before collection. It is never read from a later payment.
+- At the exit hour only the open counts: the position is sold there, and that hour's high is not used. The entry hour's high does count.
+- The two coin lists were read from the saved pages and fingerprinted before any new price was collected: viewed list `ccb0fe0d5485`, held-back list `f5bea224faad`, both together `3cc9dcf9bed1` (first twelve characters).
 
 ## How this can fool us
 
