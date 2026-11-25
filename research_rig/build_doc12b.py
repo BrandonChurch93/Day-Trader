@@ -172,4 +172,6 @@ None of this is decided.
 
 From `research_rig/`: `python3 fetch_kraken_archive.py`, `python3 build_kraken_daily.py`, `python3 run_01x2.py` (writes `results_01x2.json`), `python3 diag_x2_pbo.py` (writes `diag_x2_pbo.json`), then `python3 build_doc12b.py` (writes this file). Seed 7.
 """
+BANNER = "Correction, 2026-11-25: two separate code audits found faults in how this run measured its results. The verdict tables below are the first run and are kept as the record. The corrected verdicts are in `docs/research/16_rig_audit.md`. Read that before using any number here."
+head, rest = doc.split("\n", 1); doc = head + "\n\n" + BANNER + "\n" + rest   # the correction note is part of the page, so a rebuild keeps it
 open("../docs/research/12b_replay_01_kraken_crosscheck.md","w").write(doc); print(same,tot,len(changes)); print(chg()); print("both",bothv,"\nbtc0",btc0,"\nbtcx",btcx,"eth",eth0,ethx,"s2",s2pass)

@@ -210,5 +210,7 @@ From `research_rig/`, with Python 3, numpy, pandas and scipy:
 
 Seed 7 throughout. Bars downloaded later will include new days, so the last rows will differ. The unfinished bar for the download day is dropped.
 """
+BANNER = "Correction, 2026-11-25: two separate code audits found faults in how this run measured its results. The verdict tables below are the first run and are kept as the record. The corrected verdicts are in `docs/research/16_rig_audit.md`. Read that before using any number here."
+head, rest = doc.split("\n", 1); doc = head + "\n\n" + BANNER + "\n" + rest   # the correction note is part of the page, so a rebuild keeps it
 open("../docs/research/12_replay_01_crypto_trend.md","w").write(doc)
 print(len(doc))

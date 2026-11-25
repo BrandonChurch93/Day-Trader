@@ -46,7 +46,9 @@ Side tools:
 |---|---|
 | `TRIAL_LEDGER.md` | The count of every rule variant tried and every rerun. A result with no row here does not count |
 | `ledger_count_check.py`, `ledger_count_check.json` | Works out pass mark 3 again from the stored outputs with both reruns counted as trials. Runs no rule and reads no prices |
-| `check_data.py` | Says in a second which raw data sets are present and how to get the missing ones |
+| `check_data.py` | Says in a second which raw data sets are present, whether they match the files the stored outputs were made from, and how to get the missing ones |
+| `provenance.py`, `provenance.json` | For each stored output: the command, the code files, the commits that first stored it and last changed it, its fingerprint, and the fingerprint of each raw input file. Built after the fact from git history and the files on the research machine, because the runs did not record it themselves |
+| `requirements.txt` | The Python package versions the stored outputs were made with |
 | `fetch.py`, `fetch_kraken_archive.py`, `fetch_french.py`, `build_kraken_daily.py`, `kraken_daily_build.json` | Download and prepare public price history into `research_rig/data/` |
 | `data_notes_french.md` | Where the stock index data for replay 05 came from and how each file is laid out |
 | `books_summary.py`, `books_summary.json` | What it cost to trade $100, $1,000 and $10,000 at once, from order-book samples taken overnight (`docs/research/24_order_book_costs.md`) |
@@ -74,43 +76,62 @@ A pass means "worth running in a practice account". It does not mean "makes mone
 
 ## How to add a test
 
-Steps 1 to 3 and the first half of step 6 are rules (`AGENTS.md` hard rule 8 and the owner's bar in `docs/quality/01_the_bar.md`). The rest is how research works now. Two parts of it, the independent audit in step 5 and the wider spread for mark 3, are proposals to the owner and are not approved rules (`docs/decisions/morning_list_2026-11-25.md`, decisions 2 and 3).
+Each step says where it comes from. "Rule" means `AGENTS.md` or a line marked OWNER in `docs/quality/01_the_bar.md`. "Practice" means how research works now, which the owner has not been asked to approve. "Proposal" means it is on the morning list and is not approved.
 
-1. Write `PREREG_NN_name.md`: question, data, fill and cost rules, the rules frozen, slices, comparisons, pass marks by config key, checks.
-2. Add its rows to `TRIAL_LEDGER.md` with the time, in the same commit as the plan. `AGENTS.md` hard rule 8.
-3. Commit and push. Only then run anything on the held-back slice.
-4. Write `run_NN.py` on `rig2.py`. It must run `fixtures2.py` first and stop if a check fails. It writes `results_NN.json`.
-5. Have a different model audit the code against the plan before the result is believed. The audit report goes in `audit/`. It should rebuild at least one rule from the raw data in its own code.
-6. If the audit proves the code was wrong or does not match the plan: write `AMENDMENT_NN_name.md`, add a rerun row to `TRIAL_LEDGER.md` in the same commit, and push. Then run once more into a new output file, using a trial count that includes the rerun. Keep the first output. Report both, and call the second one a rerun. This is the only case in which the held-back slice is run a second time.
-7. Write `build_docNN.py` that turns the output into `docs/research/NN_name.md`. No number is typed.
-8. Add a row function to `tools/status_table.py`, run `python3 tools/status_table.py --write`, and update `docs/STATUS.md`, `docs/INDEX.md` and the table above in the same commit. Run `python3 tools/check_repo.py`.
+| # | Step | Where it comes from |
+|---|---|---|
+| 1 | Write `PREREG_NN_name.md`: question, data, fill and cost rules, the rules frozen, slices, comparisons, pass marks by config key, checks | Rule. Thresholds, costs and the held-back window may not change after a result is seen (`docs/quality/01_the_bar.md`, "The Never list") |
+| 2 | Add its rows to `TRIAL_LEDGER.md` with the time, in the same commit as the plan | Rule. `AGENTS.md` hard rule 8. The same-commit part is practice |
+| 3 | Commit and push. Only then run anything on the held-back slice | Rule, same sources |
+| 4 | Write `run_NN.py` on `rig2.py`. It must run `fixtures2.py` first and stop if a check fails. It writes `results_NN.json` | Rule. The engine proves itself on fixtures with known answers before a result counts, and a result is a file a script produced (`docs/quality/01_the_bar.md`, "Numbers and results"). The file names are practice |
+| 5 | Have a different model audit the code against the plan before the result is believed. The report goes in `audit/`. It should rebuild at least one rule from the raw data in its own code | Proposal. Decision 3 in `docs/decisions/morning_list_2026-11-25.md`. Research does it already |
+| 6 | If a machine check proves the engine itself was wrong: write `AMENDMENT_NN_name.md`, add a rerun row to `TRIAL_LEDGER.md` in the same commit, and push. Then run once more into a new output file, with a trial count that includes the rerun. Keep the first output. Report both, and call the second one a rerun | Rule, in the owner's words: "when a machine check proves the engine itself was wrong, the slice is rerun once the fix is in. That rerun is written in the trial ledger, counted as a trial and reported as a rerun" (`docs/quality/01_the_bar.md`, "The Never list"). This is the only case in which the held-back slice is run a second time |
+| 6b | If the audit finds that a rule was coded differently from its pushed plan, and the engine was right: stop and ask the owner. Do not rerun | Not settled. The rule above names the engine only. Research reran replay 05 in this case (ledger row R2) before asking. It is question 18 in `docs/decisions/morning_list_2026-11-25.md`. Until he answers, the first run is the one that stands |
+| 7 | Write `build_docNN.py` that turns the output into `docs/research/NN_name.md`. No number is typed. NN here is the next free number in `docs/research/`, not the replay number: replay 04 is document 23, replay 05 is document 22, and the next free number is 26 | Rule. No result is typed into a document by hand (same section). The numbering is practice |
+| 8 | Add a row function to `tools/status_table.py`, run `python3 tools/status_table.py --write`, update `docs/STATUS.md`, `docs/INDEX.md` and the table of tests above in the same commit, and run `python3 tools/check_repo.py` | Practice. It keeps the map true |
+
+Things a new test must also get right:
+
+- Do not look early. While writing and debugging `run_NN.py`, use the fixtures and the development slice only. No current script has a switch that leaves the held-back dates out, so a test run of the whole script shows held-back results. Build that switch into the next run script, and do not run the whole script until step 3 is done.
+- The trial count for pass mark 3 is the count in `TRIAL_LEDGER.md` on the day the plan is frozen, plus the new trials, and it includes reruns. Write the number in the plan.
+- The wider spread for pass mark 3 (take it across all counted trials) is a proposal, decision 2 in the morning list. Until the owner decides, a plan says which spread it uses and why.
+- How pass mark 4 is measured is an open owner decision, decision 1. No new plan is frozen until he has made it (`docs/STATUS.md`, "Next in the queue").
+- Record with each output the command, the commit of the code and the fingerprint of the input data. `provenance.py` does this for the stored outputs after the fact. A new run script should write them into its own output.
+- `rig2.py` cannot yet judge a test with one rule. Measured on 2026-11-25: with one rule `pbo_cscv` returns 1.0, because every split is a tie and a tie counts as overfit, so mark 4 fails; and the spread of Sharpe ratios across one rule is undefined, so mark 3 comes back undefined and counts as a fail. A one-rule plan has to say how marks 3 and 4 are measured, and that waits on decisions 1 and 2.
+- `rig2.check_bars` expects a bar for every day or hour with no gaps, which is right for crypto. It rejects stock or gold bars, which have no weekends. Replay 05 did not use it: it read daily returns. A test on stock bars needs a calendar-aware check with its own fixtures first.
+- The pass marks say nothing about the practice account. What counts as a pass there is not fully defined yet (`docs/GLOSSARY.md`, "Practice account pass").
 
 ## Raw data
 
-Run `python3 check_data.py` from this folder first. It takes a second, lists each data set as present or missing, and prints the command that fetches a missing one. A script that needs a missing file stops with a file-not-found error. No script reads from anywhere outside the repo folder unless one of the variables below is set.
+Run `python3 check_data.py` from this folder first. It takes a few seconds, lists each data set as present or missing, says whether each present file matches the fingerprint on record in `provenance.json`, and prints the command that fetches a missing one. A script that needs a missing file stops with a file-not-found error. No script reads from anywhere outside the repo folder unless one of the variables below is set.
 
 | Data set | Where scripts look | Variable that overrides it | How to get it | Used by |
 |---|---|---|---|---|
 | Bitstamp daily and hourly bars, bitcoin and ether | `data/bitstamp_*.csv` | none | `python3 fetch.py crypto`, `python3 fetch.py hourly` | Replays 01 and 03, the rerun, pilot 02 |
 | Kraken recent daily bars from its public endpoint | `data/kraken_*.csv` | none | `python3 fetch.py kraken` | X1, `build_kraken_daily.py` |
 | Kraken published archive, bitcoin and ether, daily and hourly | `data/kraken/full_*.csv` | `KRAKEN_DIR` | `python3 fetch_kraken_archive.py full` | The rerun, `build_kraken_daily.py` |
-| Kraken full daily history, built from the two rows above | `data/krakenfull_*.csv` | none | `python3 build_kraken_daily.py` | X2, S2, the rerun, document 16 |
+| Kraken full daily history, built from the Kraken archive, the Kraken recent bars and the Bitstamp daily bars (all three rows above) | `data/krakenfull_*.csv` | none | `python3 build_kraken_daily.py` | X2, S2, the rerun, document 16 |
 | Kraken published archive, every US dollar pair, daily | `data/kraken/daily/` | `KRAKEN_DAILY_DIR` | `python3 fetch_kraken_archive.py daily` | Replay 04 |
 | Kenneth French library: market return and twelve industry groups, daily | `data/french/` | `FRENCH_DIR` | `python3 fetch_french.py` | Replay 05, `i2_2020_note.py` |
 | Order-book samples from one night | `data/books/books.csv` | first argument of `books_summary.py` | Cannot be fetched again. The summary is in `books_summary.json` | `books_summary.py` |
-| Context readings | `data/feeds_cache/` | `FEEDS_CACHE_DIR` | `python3 feeds/collect_context.py` from the repo root | Nothing yet |
+| Context readings | `data/feeds_cache/` | `FEEDS_CACHE_DIR` | From the repo root: `python3 research_rig/feeds/collect_context.py` | Nothing yet |
 
 - A fresh download is not the same data. The public endpoints return history up to today, Kraken's recent-bars endpoint reaches back about 720 days only, and the French library rebuilds its whole history at each update. The scripts cut every series at fixed dates, so most of it will match, and small differences are possible. A run on a fresh download is a new run. Say so when reporting it.
 - Terms of use differ by source and some are open questions for the owner (`docs/STATUS.md`, "Waiting on the owner"). Do not add a source without reading its terms.
 - Until 2026-11-25 the scripts defaulted to folders on the research machine. That was changed to the paths above. Only the path lines changed. In `basket.py` only line 4 changed, and its three known faults are still there.
 
-## How to run a test again
+## How each stored output was made
 
-Read this first. The commands below rebuild the documented outputs from the same code and data, to check that they can be reproduced. They are not permission to run the held-back slice again with anything changed. The owner's rule (`docs/quality/01_the_bar.md`): never change a threshold, a cost or a held-back window after seeing a result, and never run the held-back slice a second time for the same version of a rule. The one exception is a rerun after a check proves the engine was wrong, and that rerun gets a ledger row first, is counted as a trial and is reported as a rerun. The document builders (`build_docNN.py`) read stored outputs only and are safe to run. `build_doc16.py` also rebuilds `venue_price_gap.json` when the raw prices are present.
+Read this first. This table is a record of which command made which file. It is not permission to run anything.
+
+- The document builders (`build_docNN.py`), `compare_v1_v2.py`, `ledger_count_check.py`, `provenance.py`, `check_data.py` and `tools/status_table.py` read stored outputs only. `noise_pbo.py` reads no prices at all: it draws random numbers. None of these runs a rule on any price and all are safe to run at any time. On an unchanged copy of the repo they change no tracked file. `python3 tools/check_repo.py --builders` checks that.
+- The scripts that read held-back prices are `run_*.py`, `report_01d.py`, `diag_x2_pbo.py`, `score_02.py` and `i2_2020_note.py`. `provenance.json` marks each of their outputs "held-back". The owner's rule (`docs/quality/01_the_bar.md`, "The Never list"): never change a threshold, a cost or a held-back window after seeing a result, and never run the held-back slice a second time for the same version of a rule. The one exception is a rerun after a machine check proves the engine itself was wrong.
+- Whether running an unchanged script again on the same data, only to check that it gives the same file, counts as "a second time" is not settled. It is question 16 in `docs/decisions/morning_list_2026-11-25.md`. Until the owner answers, do not run any of those scripts. If he says yes, run it in a copy of this folder outside the repo so no stored output is overwritten, compare the new file with the stored one, and write the check in `TRIAL_LEDGER.md`.
+- A run on freshly downloaded data is a new run on different data, not a reproduction. `provenance.json` holds the fingerprint of every input file as it was on the research machine when the record was taken, on 2026-11-25 after the runs, and `check_data.py` says whether the files on this machine match. No input file was modified after the output that used it was first stored, which is what the record can show. It cannot prove the bytes were the same at run time.
 
 From this folder:
 
-| To rebuild | Run |
+| Output | Made by |
 |---|---|
 | The rerun of replays 01, X2, S2, 03 and document 16 | `python3 run_v2.py`, `python3 compare_v1_v2.py`, `python3 noise_pbo.py`, `python3 build_doc16.py` |
 | Replay 04 and document 23 | `python3 run_04.py`, `python3 build_doc23.py` |
@@ -118,6 +139,7 @@ From this folder:
 | The trial count check | `python3 ledger_count_check.py` |
 | Document 24 | `python3 books_summary.py`, `python3 build_doc24.py` |
 | The table in the status page | from the repo root, `python3 tools/status_table.py --write` |
+| The record of what made each output, from which inputs | `python3 provenance.py` checks the stored outputs and the present input files against `provenance.json` and writes nothing. `python3 provenance.py --record` rewrites the file after an output changes and has been committed |
 
 `R05_POOL=1` switches on the correction in `AMENDMENT_05_I2_equal_thirds.md`: when rule I2 comes back from all cash, the account is split into three equal thirds again. Without it the script reproduces the first run, where the thirds were set once in 1927 and drifted.
 
@@ -133,4 +155,4 @@ From this folder:
 - A slot that is split once and never again drifts. Replay 05's rule I2 ended up almost all in one slot (`AMENDMENT_05_I2_equal_thirds.md`).
 - A table column must say what it counts. "Trade sides" in replay 05 counted days with a trade.
 
-Needs Python 3 with numpy, pandas, scipy and PyYAML. The run scripts start worker processes with the "fork" method, so they need Linux or macOS. Run on Python 3.14. No version file is kept.
+Needs Python 3 with numpy, pandas, scipy and PyYAML. The run scripts start worker processes with the "fork" method, so they need Linux or macOS. The versions used are in `requirements.txt`. All stored outputs were made on Python 3.14.

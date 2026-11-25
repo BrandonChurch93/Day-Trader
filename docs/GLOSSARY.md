@@ -35,13 +35,13 @@ Plain definitions of the terms, test names and rule names used in this repo. Thi
 | Held-back slice | The later part of the history, kept unseen until the rules are fixed. Each frozen rule is meant to be run on it once. Also called out of sample |
 | Trial | One rule variant that was run. Every trial is counted, because the more rules are tried, the more likely one looks good by luck |
 | Trial ledger | The list of every trial and rerun. `research_rig/TRIAL_LEDGER.md`. A result with no row there does not count |
-| Rerun | A second run of the held-back slice after a check proved the engine or the code was wrong. It gets a ledger row first, is counted as a trial and is reported as a rerun. It is the only allowed second run |
+| Rerun | A second run of the held-back slice. The owner allows one case, in his words: "when a machine check proves the engine itself was wrong, the slice is rerun once the fix is in. That rerun is written in the trial ledger, counted as a trial and reported as a rerun" (`docs/quality/01_the_bar.md`). R1 was that case. R2 was not: the engine was right and one rule was coded differently from its plan. Whether that case is covered is question 18 in `docs/decisions/morning_list_2026-11-25.md` |
 | Pass marks | The five tests a replay must pass, listed in `research_rig/README.md`. The numbers are keys in `config/thresholds.yaml` |
 | Replay pass | All five marks met in a replay. It earns a place in a practice account test and nothing more |
-| Practice account pass | The bars a rule must meet in a practice account before live money is discussed. The keys start with `paper_` in `config/thresholds.yaml`. No rule has been run in a practice account yet |
+| Practice account pass | The bars a rule must meet in a practice account before live money is discussed. Not fully defined yet. The keys that start with `paper_` in `config/thresholds.yaml` set only the least number of days and trades. The playbook also asks for slippage and errors "within tolerance", and no number exists for that. Until the owner sets one, no rule can pass this gate. No rule has been run in a practice account yet |
 | Practice account | A broker account that trades with pretend money at real prices. Also called paper trading |
 | Fresh | Said of a held-back slice no rule has been run on. Once a rule has been run on it and the result seen, it is no longer fresh for that rule |
-| First run, corrected run | Where a test was run twice because of a proved fault, the first run is the record of what happened and the corrected run is the one judged. Both are reported |
+| First run, corrected run | Where a test was run twice because of a proved fault. Both are kept and both are reported. After an engine fault (R1) the rerun is the one judged. After a fault in one rule's code (R2, replay 05) which run is judged is not settled: the first run stands until the owner answers question 18 in `docs/decisions/morning_list_2026-11-25.md` |
 
 ## Evidence labels
 
@@ -52,7 +52,7 @@ Plain definitions of the terms, test names and rule names used in this repo. Thi
 | UNKNOWN | Could not be verified. A thing to test, not a fact |
 | OWNER | In `docs/quality/`: the owner's own rule |
 | TRANSLATED | In `docs/quality/`: a proposal that applies the owner's method to this project. Not a rule until he confirms it |
-| CURRENT, SUPERSEDED, RECORD | Page status used in `docs/INDEX.md`. CURRENT means not replaced. It does not mean approved or proven |
+| CURRENT, RECORD, DRAFT, RAW | Page status used in `docs/INDEX.md`, defined at the top of that file. A page that a later one corrects is marked RECORD. CURRENT means not replaced. It does not mean approved or proven |
 
 ## Tests
 
@@ -128,7 +128,20 @@ These come from the owner's files in `docs/quality/`. Read them there. Nothing i
 | Partner | The interactive mode that reviews a build with the owner and writes fix prompts. It writes no product code |
 | Gate | A checkable line at the end of a build phase |
 | Engine, service | In the planned product: the always-on program that reads prices, applies rules and risk limits, and places orders. It works with every model switched off |
-| Escalation gate | In the planned product: plain code that decides when a finding is worth sending to the top model. `AGENTS.md`, "Tier 2" |
+| Escalation gate | In the planned product: plain code that decides when a finding is worth sending to the top model. `AGENTS.md`, "Model tiers" |
 | Research rig | `research_rig/`. The code that ran the replays. Not product code |
 | Moonshot sleeve | A small, capped share of the account for high-risk ideas. Its size is an open owner number |
 | Owner decision | Something the owner said, recorded in `docs/decisions/` with the date. Nothing else is approved |
+| Trade intent, `TradeIntent` | In the planned product: the record that says "buy or sell this much of this". Only fixed-rule code may make one. A model never does (`AGENTS.md` hard rule 1) |
+| D1, D2, D3, D4 | Short labels the playbook pages use for four proposals in `docs/decisions/0001-starting-decisions.md`. That file says which row each one is |
+| v1 | Two meanings. In the playbook and `docs/quality/`: the first version of the product, which is not built. In `research_rig/`: the first test engine, replaced by v2 |
+
+## Other short names
+
+| Term | Meaning |
+|---|---|
+| CSCV | The method behind the overfitting estimate: the history is cut into blocks and every half-and-half split is tried. Named in the Bailey paper above |
+| CPCV | A related way to split history for testing, which leaves gaps between the parts so they do not leak into each other. Named in the playbook. Not used in any test here |
+| DSR, PBO | Deflated Sharpe ratio, and the overfitting estimate. Both defined under "Measures" |
+| Durbl, BusEq and the other industry names | The French library's short names for its twelve industry groups: NoDur consumer nondurables, Durbl consumer durables (cars, TVs, furniture, appliances), Manuf manufacturing, Enrgy oil, gas and coal, Chems chemicals, BusEq business equipment (computers, software, electronics), Telcm telephone and television, Utils utilities, Shops wholesale and retail, Hlth healthcare and drugs, Money finance, Other everything else. MEASURED from the library's [definitions file](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Siccodes12.zip) |
+| G1 to G6, N1 to N7 | Rule names in the two draft plans, replays 06 and 07. Defined in those drafts. Not run |

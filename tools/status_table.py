@@ -33,7 +33,7 @@ def stocks():
     both = [n for n in N if all(n in P(a, l) and n in P(b, l) for l in L)]; h = b["costs"]["base"]["bench"]["HOLD"]["held"]; t1 = b["costs"]["base"]["rules"]["T1"]["held"]
     return ("Replay 05, first run and corrected run", "Eight slow trend rules on the US stock market index from 1927, three cost levels",
             "First run: " + "; ".join(f"{ls(P(a, l))} at {cb(l)}" for l in L) + ". Corrected run, after an audit found one rule did not match the plan: " + "; ".join(f"{ls(P(b, l))} at {cb(l)}" for l in L)
-            + f". Pass in both runs at every cost: {ls(both)}. Held-back years at 5 bps: the ten-month rule T1 grew {pc(t1['cagr'])} a year with a largest drop of {pc(t1['maxdd'])}, holding the market grew {pc(h['cagr'])} with {pc(h['maxdd'])}.",
+            + f". Pass in both runs at every cost: {ls(both)}. Which run counts is the owner's to say (question 18 in the morning list); until then the first run stands. Held-back years at 5 bps: the ten-month rule T1 grew {pc(t1['cagr'])} a year with a largest drop of {pc(t1['maxdd'])}, holding the market grew {pc(h['cagr'])} with {pc(h['maxdd'])}.",
             "`docs/research/22_replay_05_stock_trend.md`")
 def books():
     b = J("books_summary.json"); P = b["pairs"]; k = P["Kraken|XXBTZUSD"]; n = P["Binance.US|BTCUSD"]; slip = J("results_04.json")["slippage_bps"]["XBTUSD_ETHUSD"]
@@ -50,7 +50,7 @@ def smaller():
 def count_check():
     c = J("ledger_count_check.json"); low = c["lowest_dsr_among_passes_at_count_all"]; n3 = len(c["mark3_passes_that_become_fails"])
     return ("Trial count check", "The owner's rule counts a rerun after an engine fault as a trial. The two reruns were not counted when they ran. Does counting them change a result",
-            f"Worked out from the stored outputs with {c['count_all']} trials counted. Of {c['passes_as_run']} passes across all runs and cost levels, {len(c['passes_that_become_fails']) or 'none'} become fails. "
+            f"Worked out from the stored outputs with {c['count_all']} trials counted. It covers the outputs now judged: the rerun of replays 01 and 03 with its cross-checks, replay 04, and both runs of replay 05. The first-run outputs of replays 01 and 03 came from the engine with the faults and are not worked out again. Of {c['passes_as_run']} passes in those outputs, across all cost levels, {len(c['passes_that_become_fails']) or 'none'} become fails. {c['rows_not_worked_out']} of {c['rows_checked']} rows could not be worked out again from what was stored, and {c['rows_not_worked_out_that_passed_mark3_as_run'] or 'none'} of those had passed mark 3. "
             f"The closest is {low['rule']} on {low['where']} in {low['test']}, at {low['dsr_at_count_all']:.3f} against a bar of {c['bar']} (`replay_min_deflated_sharpe`). "
             f"Pass mark 3 alone changes from pass to fail in {n3} rows that had already failed another mark.",
             "`research_rig/TRIAL_LEDGER.md`, `research_rig/ledger_count_check.json`")

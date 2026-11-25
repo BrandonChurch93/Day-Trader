@@ -16,7 +16,7 @@ Read the table in `docs/STATUS.md` for the figures. In words:
 
 | Idea | What happened | Trust |
 |---|---|---|
-| Slow trend rules on bitcoin | A few rules pass, only at the lowest venue cost, only after audit corrections, and within a hair of the bar on one mark. In the held-back years three of the four grew less than holding bitcoin, and all four fell much less | MEASURED. Not a clean pass |
+| Slow trend rules on bitcoin | A few rules pass on both price histories, only at the lowest venue cost, only after audit corrections, and within a hair of the bar on one mark. In the held-back years three of the four grew less than holding bitcoin, and all four fell much less | MEASURED. Not a clean pass |
 | Slow trend rules on ether | No pass | MEASURED |
 | Day trading rules on bitcoin and ether, hourly | No pass at any venue cost. Most rules show a small average gain per trade before fees. Measured against simply holding the coin, none stays ahead at twice the lowest fee modeled, which is what pass mark 2 asks. At the lowest fee a few ether rules keep a positive Sharpe ratio in the held-back years. At Alpaca's fee all sixteen lost money in those years (`docs/research/16_rig_audit.md`) | MEASURED |
 | Trend rules on a wide basket of coins | No pass. Grew far less than simply holding bitcoin in the held-back years | MEASURED, independently audited |
@@ -50,12 +50,12 @@ The owner asked for fast, and for a middle risk level with a small share for moo
 | Route | What it is | What the evidence says |
 |---|---|---|
 | Borrowed money or futures on a trend rule | Makes a small edge bigger and a normal drop fatal | Barred here until a decision record says otherwise (`AGENTS.md` hard rule 10). The contest winners used it. It multiplies whatever the rule is, and our rules have no clean pass yet |
-| Day trading | Many small trades | Fees ate every rule tested on crypto. SPY and QQQ at zero commission are the one untested case, and the one outside reproduction held puts the room for costs under the value in `intraday_trend_max_round_trip_bps` |
+| Day trading | Many small trades | No day trading rule tested on crypto passed. At every venue cost but the lowest, all of them lost money in the held-back years. SPY and QQQ at zero commission are the one untested case, and the one outside reproduction held puts the room for costs under the value in `intraday_trend_max_round_trip_bps` |
 | Small coins and new tokens | Big moves | The wide basket lost to holding bitcoin in our test. Launch buying loses in the studies found |
 | Letting an AI model pick trades | Hope that the model sees something | No funded record shows it. Our pilot was inconclusive |
 | Concentrated buying of stocks at new highs with tight exits | What the contest winners say they do | Untested here. Needs stock data that includes companies that later died, or the test flatters itself. This is the one fast-looking idea with a real record behind it, and it is in the queue below |
 
-A moonshot share makes sense only for an idea that has a reason and has passed a replay. Three such ideas are named in `docs/research/13_high_risk_sleeve_evidence.md`. None has been tested yet.
+A moonshot share makes sense only for an idea that has a reason and has passed a replay. No idea meets both today. Three ideas that have a reason are named in `docs/research/13_high_risk_sleeve_evidence.md`. None of them has been tested, so none has passed.
 
 ## What to test next, in order
 
@@ -65,10 +65,10 @@ The queue in force is "Next in the queue" in `docs/STATUS.md`. It has the same o
 
 | # | Test | Why this rank | Needs |
 |---|---|---|---|
-| 1 | Two slow rules in a practice account, as observation only and labelled as not passed: the bitcoin rule P1 and the ten-month rule on a total market fund | They are the nearest things to a pass on each market, watching costs nothing, and it starts the forward record that `paper_min_trading_days` and `paper_min_closed_trades` ask for | Practice keys from the owner |
-| 2 | Replay 06: slow trend on funds that can be bought | Turns the stock index result into something that could be traded, with real opening prices | The data purchase. Plan drafted |
-| 3 | Replay 07: day trading SPY and QQQ on one-minute bars | The only day trading case not yet ruled out. Research expects a fail and will measure it | The same data purchase. Plan drafted |
-| 4 | Credit interest on idle cash in every replay | Trend rules sit in cash a lot. Bills paid 4.11% to 4.59% on 2026-11-24 ([Treasury daily bill rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_bill_rates&field_tdr_date_value_month=202611)). The crypto replays credit nothing, which understates the rules. Small, near-certain | Nothing. A rig change with its own plan |
+| 1 | Two slow rules in a practice account, as observation only and labelled as not passed: the bitcoin rule P1 and the ten-month rule on a total market fund | They are the nearest things to a pass on each market, watching costs nothing, and it starts the forward record that `paper_min_trading_days` and `paper_min_closed_trades` ask for | Practice keys from the owner, and his yes to decision 5 in the morning list |
+| 2 | Replay 06: slow trend on funds that can be bought | Turns the stock index result into something that could be traded, with real opening prices | The data purchase, the owner's yes to decision 4, and his decision on pass mark 4 before the plan is frozen. Plan drafted |
+| 3 | Replay 07: day trading SPY and QQQ on one-minute bars | The only day trading case not yet ruled out. Research expects a fail and will measure it | The same three things. Plan drafted |
+| 4 | Credit interest on idle cash in every replay | Trend rules sit in cash a lot. Bills paid 4.11% to 4.59% on 2026-11-24 ([Treasury daily bill rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_bill_rates&field_tdr_date_value_month=202611)). The crypto replays credit nothing, which understates the rules. Small, near-certain | The owner's yes to decision 7 in the morning list. Then a rig change with its own plan |
 | 5 | Insider buying that is not routine, in listed stocks | The one stock-picking screen with a mechanism and a published study, though the study is from 2012 and must be redone on recent data after costs (`docs/research/19_information_feeds.md`) | Stock price data. SEC filings are free |
 | 6 | A plain statistical model against a simple tree model on bitcoin and ether, logged only | The best-supported machine learning result found is that the plain model won after costs (`docs/research/18_ai_systems_with_live_records.md`). Worth one cheap forward check | Nothing |
 | 7 | Holding a small-company fund overnight only | Beat holding in 2020 to 2026 and lost in 2010 to 2019, and the funds built on it closed (`docs/research/20_small_account_edges.md`). Low rank. Fails at a few bps of cost | The data purchase |

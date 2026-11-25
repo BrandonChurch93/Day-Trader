@@ -58,6 +58,8 @@ A Claude subscription is not a clean alternative: Anthropic's consumer terms bar
 
 Every threshold above is a key in `config/thresholds.yaml`, which is the only place its value lives. The three reports suggested different paper-trading lengths. The config reconciles them: the shorter figure gates tiny live capital, the longer one gates scaling. Recorded in `docs/decisions/0001-starting-decisions.md`. The phases are evidence gates, not deferred scope: the software that runs every one of them is finished in v1.
 
+> Note added 2026-11-25. Two things about the table above. "Is finished in v1" is a rule about scope for a product that is not built yet. It does not report that anything is finished. And "within tolerance" in phases 2 and 4 has no number: no key for it exists in `config/thresholds.yaml`, so the sentence above is not yet true for those two gates. Nothing may be promoted on a tolerance that someone made up. The gap is put to the owner in `docs/decisions/morning_list_2026-11-25.md`, question 17.
+
 ## Rules that protect you
 
 - The $25,000 pattern day trader minimum was replaced by intraday margin standards effective June 4, 2026, with broker phase-in until October 20, 2027 ([FINRA Notice 26-10](https://www.finra.org/rules-guidance/notices/26-10)). MEASURED. It removes a barrier, not the base rate.

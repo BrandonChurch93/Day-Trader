@@ -22,13 +22,15 @@ Then, only if your task needs it:
 - `research_rig/README.md` before you run or add a test.
 - `config/thresholds.yaml` before you use or change a number.
 
-## Five rules that are easy to break
+## Five things that are easy to break
 
-1. A number is written once, in `config/thresholds.yaml`. Documents name the key.
-2. A test's plan and its trial ledger rows are pushed before the test runs. A rerun after a fault gets its own ledger row first and is counted as a trial. The held-back slice is not run again for any other reason.
-3. Numbers in documents are written by a script from an output file, never typed.
-4. A result or decision changes `docs/STATUS.md` in the same commit. A new, moved or retired file changes `docs/INDEX.md` in the same commit.
-5. Run `python3 tools/check_repo.py` before every commit. It fails if the map is not true.
+The first three are the owner's rules (`AGENTS.md`, and lines marked OWNER in `docs/quality/01_the_bar.md`). The last two are how research keeps the map true. The owner has not been asked to approve them.
+
+1. Rule. A number is written once, in `config/thresholds.yaml`. Documents name the key.
+2. Rule. A test's plan and its trial ledger rows are pushed before the test runs. The held-back slice is run once for a version of a rule. The one exception is a rerun after a machine check proves the engine itself was wrong, and that rerun gets its own ledger row first and is counted as a trial.
+3. Rule. Numbers in documents are written by a script from an output file, never typed.
+4. Practice. A result or decision changes `docs/STATUS.md` in the same commit. A new, moved or retired file changes `docs/INDEX.md` in the same commit.
+5. Practice. Run `python3 tools/check_repo.py` before every commit. It fails if the map is not true. `python3 tools/check_repo.py --builders` also checks that no built document was edited by hand.
 
 ## Which file wins when two disagree
 

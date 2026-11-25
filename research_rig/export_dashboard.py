@@ -283,7 +283,8 @@ def card_05():
             per.append(f"At {bps(l)} bps, " + (f"{plist(bo)} {'passes' if len(bo) == 1 else 'pass'} in both runs" if bo else "no rule passes in both runs")
                        + (f"; {plist(ob)} {'passes' if len(ob) == 1 else 'pass'} only in the corrected run." if ob else "."))
         late = (" ".join(per) + " A pass that appears only in the corrected run came after a correction whose effect was already known, "
-                "so it counts for less than a pass in both runs.")
+                "so it counts for less than a pass in both runs. The correction was to one rule's code, not to the engine, and your rerun rule names the engine only. "
+                "Whether the corrected run counts is question 18 on your list. Until you answer, the first run stands.")
     else:
         late = "The corrected run is not in yet, so its result is UNKNOWN."
     r = b if b is not None else a; which = "corrected run" if b is not None else "first run"

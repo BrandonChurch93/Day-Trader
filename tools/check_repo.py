@@ -7,6 +7,11 @@ Fails (exit 1) if:
      (only names that look like keys of that file are checked: the known prefixes below)
   4. docs/STATUS.md has no line of the form 'Last updated: YYYY-MM-DD HH:MM UTC'
   5. the results table in docs/STATUS.md is not what tools/status_table.py writes from the output files
+  6. a stored output in research_rig/, or a raw input file present on this machine, differs from its fingerprint in
+     research_rig/provenance.json
+With --builders it also runs every research_rig/build_doc*.py and fails if a file that git tracks changes. A document that
+differs from what its builder writes was edited by hand or is stale. This takes a few seconds and reads no held-back slice anew:
+the builders read stored outputs only.
 It does not check that the status page is fresh. That is a rule for the person or model making the commit."""
 import subprocess, re, sys, os, glob
 bad = []
@@ -34,6 +39,17 @@ m = re.search(r"Last updated: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC", open("docs/S
 if not m: bad.append("docs/STATUS.md has no 'Last updated: YYYY-MM-DD HH:MM UTC' line")
 sys.path.insert(0, "tools"); import status_table
 if not status_table.in_sync(): bad.append("docs/STATUS.md results table is out of date: run python3 tools/status_table.py --write")
+pv = subprocess.run([sys.executable, "provenance.py"], cwd="research_rig", capture_output=True, text=True).stdout
+bad += [l for l in pv.split("\n") if l.startswith(("output differs", "input differs"))]
+if "--builders" in sys.argv:
+    def state(): return subprocess.run("git status --porcelain; git diff | sha256sum", shell=True, capture_output=True, text=True).stdout
+    before = state()
+    for b in sorted(glob.glob("research_rig/build_doc*.py")):
+        r = subprocess.run([sys.executable, os.path.basename(b)], cwd="research_rig", capture_output=True, text=True)
+        if r.returncode: bad.append(f"{b} stopped with an error: {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else r.returncode}")
+        after = state()
+        if after != before: bad.append(f"{b} changed a tracked file: the document was edited by hand or is stale"); before = after
+        print("ran " + b)
 if bad:
     print("\n".join(sorted(bad))); print(f"\n{len(bad)} problem(s)"); sys.exit(1)
 print(f"repo map ok: {len(tracked)} tracked files, all listed; paths and config keys resolve")

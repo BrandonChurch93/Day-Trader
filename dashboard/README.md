@@ -15,12 +15,12 @@ The chart library (Chart.js 4.4.6, MIT licence) is kept in `vendor/`, so the pag
 
 ## Where the data comes from
 
-`data.json` is made by `research_rig/export_dashboard.py` (run it from inside `research_rig/`). It reads the second rig (`rig2.py`) and its results, `results_v2.json` and `compare_v1_v2.json`, and re-simulates the curves and trade lists, stopping if they do not match those results. Stock and coin basket cards appear by themselves once `results_05.json` or `results_04.json` exist. The "Test results so far" panel uses the same row functions as `docs/STATUS.md` (`tools/status_table.py`), so the two cannot disagree. The "Waiting on you" list is read from `docs/decisions/morning_list_2026-11-25.md` each time the export runs; nothing in it is typed into the exporter. Stock cards read `results_05.json` (first run) and `results_05b.json` (corrected run). `data.json` is not stored in the repo; run the export script to create it in this folder. Every number and status line on the page is read from that file when the page loads, so a new export shows up on the next reload.
+`data.json` is made by `research_rig/export_dashboard.py` (run it from inside `research_rig/`). It reads the second rig (`rig2.py`) and its results, `results_v2.json` and `compare_v1_v2.json`, and re-simulates the curves and trade lists, stopping if they do not match those results. Stock and coin basket cards appear by themselves once `results_05.json` or `results_04.json` exist. The "Test results so far" panel uses the same row functions as `docs/STATUS.md` (`tools/status_table.py`), so the two cannot disagree. The "Waiting on you" list is read from `docs/decisions/morning_list_2026-11-25.md` each time the export runs; nothing in it is typed into the exporter. When the owner decides an item, record it like this, in one commit: a new file `docs/decisions/NNNN-short-name.md` with his words and the date; the item's row in the morning list gets "Decided, see NNNN" at the start of its second column and is not deleted; `docs/STATUS.md` is updated. A later list of open items is a new dated file, and the two lines in `research_rig/export_dashboard.py` that name the list are changed to point at it. Stock cards read `results_05.json` (first run) and `results_05b.json` (corrected run). `data.json` is not stored in the repo; run the export script to create it in this folder. Every number and status line on the page is read from that file when the page loads, so a new export shows up on the next reload.
 
 ## Files
 
 - `index.html`: page layout
 - `styles.css`: look, light and dark themes
 - `app.js`: reads `data.json` and fills the page
-- `fonts/`: interface font (falls back to the system font if missing)
+- `fonts/`: interface font. Git ignores this folder, so a fresh copy of the repo does not have it and the page falls back to the system font
 - `vendor/chart.umd.min.js`: Chart.js, unchanged copy of the published file

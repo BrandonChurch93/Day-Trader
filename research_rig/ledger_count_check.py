@@ -49,6 +49,6 @@ out = dict(bar=BAR, bar_key="replay_min_deflated_sharpe", count_all=COUNT_ALL, r
            passes_that_become_fails=flip, passes_that_could_not_be_worked_out=unknown, mark3_passes_that_become_fails=m3flip,
            lowest_dsr_among_passes_at_count_all=low, rows=rows)
 json.dump(out, open("ledger_count_check.json", "w"), indent=1)
-print("rows", len(rows), "passes as run", len(passes), "become fails", len(flip), "not worked out", len(unknown), "mark 3 alone flips", len(m3flip))
+print("rows", len(rows), "passes as run", len(passes), "become fails", len(flip), "passes that could not be worked out again", len(unknown), "mark 3 alone flips", len(m3flip))
 if low: print("lowest among passes at", COUNT_ALL, ":", low["test"], low["where"], low["rule"], round(low["dsr_at_count_all"], 4))
 for r in m3flip: print("  mark 3 flips:", r["test"], r["where"], r["rule"], round(r["dsr_as_run"], 4), "->", round(r["dsr_at_count_all"], 4), "passed as run:", r["passed_as_run"])

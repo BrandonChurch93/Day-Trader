@@ -179,4 +179,6 @@ None of this is decided.
 
 From `research_rig/`: `python3 fetch.py hourly`, then `python3 run_03.py` (writes `results_03.json`), then `python3 build_doc15.py` (writes this file). Seed 7.
 """
+BANNER = "Correction, 2026-11-25: two separate code audits found faults in how this run measured its results. The verdict tables below are the first run and are kept as the record. The corrected verdicts are in `docs/research/16_rig_audit.md`. Read that before using any number here."
+head, rest = doc.split("\n", 1); doc = head + "\n\n" + BANNER + "\n" + rest   # the correction note is part of the page, so a rebuild keeps it
 open("../docs/research/15_replay_03_intraday_crypto.md","w").write(doc); print(len(doc), npass, nmoney, nmoneyh)

@@ -85,6 +85,8 @@ doc = f"""# 22. Replay 05: slow trend rules on the US stock market, free data fr
 
 Status: research result. Proposed by research. No owner decision is recorded here.
 
+Note, 2026-11-25. Which of the two runs below counts is not settled. The corrected run fixed a fault in the code of one rule, not in the engine. The owner's rule allows a second run of the held-back slice only when the engine itself was wrong, so it may not cover this one. That is question 18 in `docs/decisions/morning_list_2026-11-25.md`. Until he answers, the first run is the one that stands, and the corrected run is shown beside it.
+
 Date: 2026-11-25. Plan written and pushed before the run: `research_rig/PREREG_05_stock_trend_free_data.md`. Correction written and pushed before the corrected run: `research_rig/AMENDMENT_05_I2_equal_thirds.md`. Every number below is MEASURED by `research_rig/run_05.py` and placed here by `research_rig/build_doc22.py`, unless it says it is the auditor's.
 
 ## How this was run, including what went wrong

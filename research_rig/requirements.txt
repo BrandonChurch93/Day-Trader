@@ -1,0 +1,6 @@
+# The package versions the stored outputs were made with, on Python 3.14.8.
+# Recorded after the fact on 2026-11-25 from the research machine. Nothing else is needed to run the rig.
+numpy==2.5.5
+pandas==3.1.1
+scipy==1.18.1
+PyYAML==6.0.3

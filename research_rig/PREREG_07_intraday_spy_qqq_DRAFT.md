@@ -45,7 +45,7 @@ Each rule is compared with holding the fund.
 
 ## Pass marks
 
-The five marks used in the other replays, numbers read from `config/thresholds.yaml`, with the methods of `AMENDMENT_2026-11-25_audit_fixes.md`. Shuffle for these rules: the rule's daily profit or loss is kept and the days it traded are redrawn at random with the same count, 1,000 times, seed 7. Trials counted in the deflated Sharpe ratio: every trial in the ledger on the day this is frozen, plus these 14.
+The five marks used in the other replays, numbers read from `config/thresholds.yaml`, with the methods of `AMENDMENT_2026-11-25_audit_fixes.md`. Shuffle for these rules: the rule's daily profit or loss is kept and the days it traded are redrawn at random with the same count, 1,000 times, seed 7. Trials counted in the deflated Sharpe ratio: every trial in the ledger on the day this is frozen, plus these 14. This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/STATUS.md`, "Next in the queue").
 
 Reported next to the marks: break-even cost for a round trip in bps, set beside `intraday_trend_max_round_trip_bps`; results year by year; the share of the profit that came from the best 10 days.
 

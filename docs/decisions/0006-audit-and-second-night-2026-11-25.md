@@ -94,3 +94,19 @@ Corrections to other pages:
 - Terms and test names were used without being defined. `docs/GLOSSARY.md` defines them.
 
 Still open, and only the owner can close it: `AGENTS.md` names the playbook as the second read and as the default source, and `docs/quality/00_READ_FIRST.md` names it as the winner on evidence. Research may not edit either file. The exact lines and the proposed wording are in `docs/decisions/morning_list_2026-11-25.md`, item 5.
+
+## Second addendum, 2026-11-25 09:11 UTC: what two more cold readers and a fresh-copy test found
+
+After the first addendum was pushed (commit c7956c4), the repo was copied fresh and every builder and check was run in the copy, and two more fresh models read that commit on clean machines. This is what they found. The text above is left as it was written.
+
+- Three document builders deleted the dated correction notes from documents 12, 12b and 15 when run again, because the notes had been added to the pages by hand and not to the builders. Document 24 no longer matched its builder. All four are fixed, and `python3 tools/check_repo.py --builders` now fails if any built page differs from what its builder writes.
+- The owner's rerun rule was written into `research_rig/README.md` and `docs/GLOSSARY.md` more widely than he wrote it. His words: "when a machine check proves the engine itself was wrong". The pages said "the engine or the code". Rerun R1 followed engine faults. The corrected run of replay 05, R2, did not: the engine was right and rule I2 was coded differently from its plan. Research reran before asking. Both pages now quote him, the first run of replay 05 stands until he answers, and it is question 18 in `docs/decisions/morning_list_2026-11-25.md`.
+- Ledger row R1 said the hourly rerun was done in one go. Document 16 records that it stopped twice on program errors and was started again. The row now says so. Whether any figure was seen at those stops was not recorded.
+- No stored output carried its command, commit or input fingerprints, which `docs/quality/01_the_bar.md` asks for. `research_rig/provenance.json` rebuilds that after the fact. MEASURED from it: no input file was modified after the output that used it was first stored. It cannot prove the bytes at run time.
+- `research_rig/README.md` listed `compare_v1_v2.py` and `noise_pbo.py` among the scripts that read the held-back slice. Read from the code: the first reads stored outputs only and the second draws random numbers. It left out `report_01d.py`, `diag_x2_pbo.py` and `score_02.py`, which do read held-back prices. Corrected.
+- `i2_2020_note.py` was run once more after its path line changed. Output identical. Disclosed in the ledger and not counted.
+- Document 16 said the engine has 27 fixture checks. Counted from the code: 19, numbered up to 27.
+- Rule and practice were mixed. The front page, the rig's "How to add a test" and the playbook notes now say for each line whether it is the owner's rule, research practice or a proposal.
+- `docs/decisions/0002-historical-testing-and-risk-posture.md` proposed counting a replay of a model on dates after its training cutoff. `AGENTS.md` hard rule 7 says only forward paper or shadow results count. Hard rule 7 stands, and it is question 19.
+- Never put to the owner and now on his list: the two scope calls of 2026-11-24 (14, 15), whether a stored test may be run again unchanged as a check (16), and what "within tolerance" means in the practice and live gates (17).
+- `rig2.py` cannot yet judge a one-rule test or check stock bars. Measured and written in `research_rig/README.md`.

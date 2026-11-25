@@ -3,7 +3,9 @@
 #
 # status:
 #   owner     set by the owner, with the date he said it
-#   proposed  a research recommendation the owner has not confirmed. Use it for planning only
+#   proposed  a research recommendation the owner has not confirmed. Research uses it to judge its own
+#             replays and for planning. That use approves nothing, and no product gate may rest on it
+#             until the owner confirms it
 #   open      an owner number with no value. Nothing may assume one. `recommended` is a suggestion to put to him, never a value to use
 #
 # Changing any value here needs a dated note in docs/decisions/.
@@ -45,7 +47,7 @@ backtest_max_pbo:
 backtest_min_breakeven_cost_multiple:
   value: 2
   status: proposed
-  note: A strategy is rejected if its break-even cost is under this multiple of modeled cost.
+  note: A strategy is rejected if its break-even cost is under this multiple of modeled cost. AGENTS.md hard rule 9 names the same number as a rule ("at least twice"), so this value may not go below 2 whatever its status here. Whether the key should be marked owner is put to him in the morning list.
   source: docs/playbook/01_stocks_what_works.md
 
 replay_max_drop_ratio_vs_hold:

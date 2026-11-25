@@ -261,7 +261,7 @@ Passes at any venue cost: 0 of 80 after the fixes, 0 of 80 in the first run. Doc
 ## Files
 
 - Plan for the fixes: `research_rig/AMENDMENT_2026-11-25_audit_fixes.md`
-- Code: `research_rig/rig2.py`, `fixtures2.py` (27 checks), `run_v2.py`, `compare_v1_v2.py`, `noise_pbo.py`, `build_doc16.py`
+- Code: `research_rig/rig2.py`, `fixtures2.py` (19 checks, numbered up to 27; numbers 6 to 8 and 10 to 14 are not used), `run_v2.py`, `compare_v1_v2.py`, `noise_pbo.py`, `build_doc16.py`
 - Outputs: `research_rig/results_v2.json`, `compare_v1_v2.json`, `noise_pbo.json`
 - First run, unchanged: `engine.py`, `run_01*.py`, `run_03.py`, `results_01.json`, `results_01x2.json`, `results_03.json`
 

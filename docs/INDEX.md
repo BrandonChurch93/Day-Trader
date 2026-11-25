@@ -42,7 +42,7 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 | `README.md` | Front page. Points here and to the status page | CURRENT |
 | `.gitignore` | Keeps price files, logs and private data out of the repo | CURRENT |
 | `config/thresholds.yaml` | Every threshold and every owner number, once. Documents name the key and never repeat the value | CURRENT |
-| `tools/check_repo.py` | Checks this index, the paths named in the main pages, the config keys named in documents and the results table in the status page. Run before every commit | CURRENT |
+| `tools/check_repo.py` | Checks this index, the paths named in the main pages, the config keys named in documents, the results table in the status page, and the stored outputs against `research_rig/provenance.json`. Run before every commit. With `--builders` it also runs every document builder and fails if a built page changes | CURRENT |
 | `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from the output files | CURRENT |
 
 ## docs/
@@ -147,6 +147,7 @@ Working papers.
 
 | File | What it is | State |
 |---|---|---|
+| `audit/README.md` | What the folder is, and why its scripts do not run on another machine as they stand | CURRENT |
 | `audit/2026-11-25_auditor_a.md` | First audit of the first rig's code, 18 findings | CURRENT |
 | `audit/2026-11-25_auditor_b.md` | Second audit, of the statistics, 11 findings | CURRENT |
 | `audit/replay_independent.py`, `audit/diagnostics.py` | Auditor A's own separate replay and checks | CURRENT |
@@ -163,6 +164,8 @@ Working papers.
 | `research_rig/README.md` | Map of the folder and how to add a test | CURRENT |
 | `research_rig/TRIAL_LEDGER.md` | Count of every rule variant tried, and of every rerun. Its Status column is the record of what was written at the time; current verdicts are in `docs/STATUS.md` | CURRENT |
 | `research_rig/ledger_count_check.py`, `research_rig/ledger_count_check.json` | Works out pass mark 3 again from the stored outputs with the two reruns counted as trials. Runs no rule | CURRENT |
+| `research_rig/provenance.py`, `research_rig/provenance.json` | The record of how each stored output was made: command, code files, commits, its fingerprint and the fingerprint of each raw input file. Built after the runs. `python3 provenance.py` checks the repo against it and writes nothing | CURRENT |
+| `research_rig/requirements.txt` | The Python package versions the stored outputs were made with | CURRENT |
 | `docs/GLOSSARY.md` | Plain definitions of the terms, test names and rule names used in the repo | CURRENT |
 | `research_rig/rig2.py`, `research_rig/fixtures2.py`, `research_rig/basket.py`, `research_rig/fixtures_basket.py` | Engine v2 and its checks | CURRENT |
 | `research_rig/rules.py`, `research_rig/common_03.py` | Rule definitions used by both engine versions | CURRENT |

@@ -2,7 +2,7 @@
 Source: docs/research/05_perplexity_platform_options.md
 Last verified: 2026-11-24
 
-> Note added 2026-11-25. This page is from reading only. No model cost has been measured by this project in a running system. Our one pilot of AI models making trading calls was inconclusive by design (`docs/research/14_ai_calls_pilot_02.md`), and a review of AI systems with live money found none that beat holding (`docs/research/18_ai_systems_with_live_records.md`). Current state: `docs/STATUS.md`.
+> Note added 2026-11-25. This page is from reading only. No model cost has been measured by this project in a running system. Our one pilot of AI models making trading calls was inconclusive by design (`docs/research/14_ai_calls_pilot_02.md`), and a review of AI systems with live money found none that beat holding (`docs/research/18_ai_systems_with_live_records.md`). The lines under "Rules for the build" on this page are research recommendations from reading. None is an owner decision. The owner's quality files pick no strategy and no stack, and nothing is built until he has approved a written spec (`docs/quality/00_READ_FIRST.md`). Current state: `docs/STATUS.md`.
 
 ## Bottom line
 Run market data, state, risk and paper execution in a deterministic service. Use Perplexity APIs for evidence triage and Computer for briefs, reviews and code maintenance. Models never emit orders or trade intents.

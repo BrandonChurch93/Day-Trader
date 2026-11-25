@@ -19,6 +19,8 @@ Status: the first section is what the owner said. Everything after it is propose
 
 Fable 5.2, Opus 5.5, Sonnet 5.5 and Haiku 5.5 all have a June 2026 training cutoff ([Anthropic models overview](https://docs.anthropic.com/en/docs/about-claude/models/overview)). [MEASURED] That leaves July 2026 onward as history none of them has seen, so the model comparison can start as a replay and does not need to wait for new market days. Cutoffs for non-Anthropic models must be checked individually before they join the comparison. [UNKNOWN]
 
+Note added 2026-11-25 09:10 UTC. The two rows above about comparing models, and the words "the model comparison can start as a replay", conflict with `AGENTS.md` hard rule 7, which ends: "Only forward paper or shadow results count." `AGENTS.md` wins. Until the owner says otherwise, a replay of a model on past dates, even dates after its training cutoff, is not counted as evidence. Pilot 02 was such a replay; it was reported as inconclusive and is not used as evidence for or against any model. The conflict is question 19 in `docs/decisions/morning_list_2026-11-25.md`.
+
 A pattern found in history is a hypothesis. Published predictors earned 58% less after publication ([McLean and Pontiff](https://onlinelibrary.wiley.com/doi/10.1111/jofi.12365)). [MEASURED] The held-back slice is how we tell a real pattern from a fitted one. It is a test of truth, not a safety measure.
 
 ## Proposed: core plus a moonshot sleeve

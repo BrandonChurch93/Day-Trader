@@ -56,7 +56,7 @@ Known weakness, stated now: the five-fund rules cannot start before 2007, so the
 
 ## Pass marks
 
-The five marks used in the other replays, with the tie rule and shuffle method of `AMENDMENT_2026-11-25_audit_fixes.md`, numbers read from `config/thresholds.yaml`. Trials counted in the deflated Sharpe ratio: every trial in the ledger on the day this is frozen, plus these 6. If the owner has by then settled how mark 4 is to be measured (`docs/research/16_rig_audit.md`), that method is used and named here before the run.
+The five marks used in the other replays, with the tie rule and shuffle method of `AMENDMENT_2026-11-25_audit_fixes.md`, numbers read from `config/thresholds.yaml`. Trials counted in the deflated Sharpe ratio: every trial in the ledger on the day this is frozen, plus these 6. This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/research/16_rig_audit.md`, and `docs/STATUS.md`, "Next in the queue"). The method he picks is named here before the plan is frozen.
 
 Also reported: whether each rule beat a fixed mix of its comparison and cash with the same average share invested, as in replay 05.
 

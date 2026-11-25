@@ -21,7 +21,7 @@ Every replay charges the venue's fee plus a fixed slippage of 5 bps per side for
 - Bitcoin on Binance.US: $1,000 cost 0.8 bps in the middle case and 1.5 bps in the worst 5%. $10,000 cost 1.8 and 2.4 bps. Ether: 0.9 and 1.5 bps for $1,000.
 - So on this night the 5 bps assumed for bitcoin and ether was higher than what the book charged at these sizes. The replays were not flattered by it.
 - Smaller coins on Kraken: of 21 coins sampled, 8 cost more than 5 bps for $1,000 in their worst 5% of samples, and 1 cost more than 25 bps for $10,000.
-- This is one night, in quiet hours, on a calm market. Costs are widest exactly when a trend rule wants to trade, in fast moves. Treat these as the floor, not the average.
+- This is one night. Books are usually thinner in fast moves, which is when trend rules trade. That is STATED from general knowledge and not measured here. Treat these numbers as a floor, not an average.
 
 ## Kraken
 
@@ -64,7 +64,7 @@ Every replay charges the venue's fee plus a fixed slippage of 5 bps per side for
 
 ## What this does not show
 
-- A stressed market. No fast move happened in the sample window as far as these numbers show.
+- A stressed market. Whether the sample window was calm or not was not measured.
 - Hidden costs of a market order that arrives a moment late, or of a book that changes between the read and the trade.
 - Coins outside the most traded 30. The wide basket in replay 04 reaches further down the list, where books are thinner.
 - Whether a resting limit order would be filled. That needs trade-by-trade data and is not tested.
