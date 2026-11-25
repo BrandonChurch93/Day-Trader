@@ -138,6 +138,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/54_replay_13_year_or_method.md` | Replay 13: the owner's dip-and-peak method as a fixed rule on the hottest coins, each year 2020 to 2026. The dip rule was not paid, 2021 included; holding the hot five met its marks and still lost money in three years | CURRENT |
 | `docs/research/55_stocks_in_play_evidence_checked.md` | Day trading stocks in play: the published opening-range rule, rebuilds that lose once real fills are charged, other single-stock day rules after costs, and what real day traders made. Checked reading, nothing measured by us | CURRENT |
 | `docs/research/58_crowded_trades_evidence_checked.md` | Shorting crowded coin futures and buying the bounce after a flush: what Binance's public archive holds, the published and public tests after costs (most lose once dead coins are kept), and which coins a US account can short today. Checked reading, nothing measured on our own prices | CURRENT |
+| `docs/research/59_why_the_ai_traders_lost.md` | Why the AI traders lost: every written reason in plans TM01 to TM04 sorted into fixed categories and joined to what happened next (entries, stops, costs, bitcoin dial moves, stock picks), with 12 quotes and record faults. After the fact, not a test. Written from `timemachine/autopsy/autopsy_results.json` | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -326,6 +327,19 @@ Working papers.
 | `timemachine/SESSIONS.jsonl` | One line for every session ever started, so no replay goes uncounted | CURRENT |
 | `timemachine/test_tape.py`, `timemachine/test_sim.py`, `timemachine/__init__.py` | Checks with no network, and the package marker | CURRENT |
 | `timemachine/perp_fast.py`, `timemachine/test_perp_fast.py` | A faster twin scorer for TM06 and its checks; not proven equal to the slow scorer on a stored session, so switched off by default | DRAFT |
+| `timemachine/autopsy/README.md` | Start here for the read-through of the traders' reasons: what it is, how to rerun, what it reads, paths and flags | CURRENT |
+| `timemachine/autopsy/autopsy.py` | The read-through script: reads TM01 to TM04 session folders, twins and the tape read only, writes `timemachine/autopsy/autopsy_results.json` | CURRENT |
+| `timemachine/autopsy/core.py` | Its pure helpers: table cells and the under-30 rule, spread per fill, round trips from the desk's closed list, label id check | CURRENT |
+| `timemachine/autopsy/load.py` | Reads answers, fills and per-stock reasons from TM01 to TM04 session folders, never TM06 or void sessions | CURRENT |
+| `timemachine/autopsy/prices.py` | Minute prices from the recorded tape, read only, at or before each time | CURRENT |
+| `timemachine/autopsy/classify.py` | Word rules that place each buy, sell, dial and basket reason in a category, and the buy flags | CURRENT |
+| `timemachine/autopsy/settings.py` | Run folder, tape and output paths of the read-through (flags, environment, defaults) | CURRENT |
+| `timemachine/autopsy/test_autopsy.py` | Offline tests of the read-through on made-up records | CURRENT |
+| `timemachine/autopsy/categories.md` | The category list, fixed 2026-11-25 21:27 UTC before any outcome was joined | RECORD |
+| `timemachine/autopsy/labels_by_hand.jsonl` | The analyst's hand labels, by id only (no text) | RECORD |
+| `timemachine/autopsy/hand_checks.json` | Hand checks by id only: blind sample ids, blind relabel, two rule checks, contradiction check, later-date and cross-session verdicts | RECORD |
+| `timemachine/autopsy/quotes.json` | The 12 quotes used in the page, with session and kind | RECORD |
+| `timemachine/autopsy/autopsy_results.json` | Results of the read-through, written by `timemachine/autopsy/autopsy.py` | CURRENT |
 
 ## dashboard/ (the owner's screen)
 

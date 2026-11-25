@@ -1,0 +1,110 @@
+[
+ {
+  "n": 1,
+  "kind": "winning buy (target reached)",
+  "model": "OPUS",
+  "month": "2026-08",
+  "plan": "TM01",
+  "session": "TM01-B01-OPUS-2026-08",
+  "quote": "Range breakout above 67k that held for eight hours."
+ },
+ {
+  "n": 2,
+  "kind": "winning buy (target reached)",
+  "model": "NEON",
+  "month": "2026-08",
+  "plan": "TM01",
+  "session": "TM01-B01-NEON-2026-08",
+  "quote": "High-volume 30-day breakout above 8.90 resistance with strong 7-day relative strength (+9.47%) and clean hourly uptrend."
+ },
+ {
+  "n": 3,
+  "kind": "losing buy, same pattern as the winners (stopped out)",
+  "model": "SONNET",
+  "month": "2026-10",
+  "plan": "TM01",
+  "session": "TM01-B01-SONNET-2026-10",
+  "quote": "Strongest 7d momentum (+16%), holding near highs"
+ },
+ {
+  "n": 4,
+  "kind": "losing buy, indicator reading (stopped out in a day)",
+  "model": "NEON",
+  "month": "2026-10",
+  "plan": "TM01",
+  "session": "TM01-B01-NEON-2026-10",
+  "quote": "Relative-strength leader reclaiming SMA5 (10.56), SMA10 (10.86), and SMA20 (10.84) at 10.937 on expanding volume; stop at 10.05."
+ },
+ {
+  "n": 5,
+  "kind": "mistake: a stated fact the data contradicts",
+  "model": "KIMI",
+  "month": "2026-10",
+  "plan": "TM01",
+  "session": "TM01-B01-KIMI-2026-10",
+  "quote": "Base at the 9.5-9.8 support after full washout; tight stop 9.45 gives ~3% risk for swing back to 10.7+."
+ },
+ {
+  "n": 6,
+  "kind": "mistake: buying a falling coin on a news item",
+  "model": "KIMI",
+  "month": "2026-10",
+  "plan": "TM02",
+  "session": "TM02-B02-KIMI-2026-10",
+  "quote": "Re-entering XRP at 1.404 as the Evernorth Nasdaq merger completed (headline 2026-10-10T07:31:15Z) with price still depressed near 1.39-1.40; the old 1.50-1.57 range is the magnet."
+ },
+ {
+  "n": 7,
+  "kind": "mistake: the same level bought again and again",
+  "model": "KIMI",
+  "month": "2026-10",
+  "plan": "TM02",
+  "session": "TM02-B02-KIMI-2026-10",
+  "quote": "Sweep-reclaim trade #7 of the month: hack-triggered $1.5B liquidation cascade printed its low at 76k"
+ },
+ {
+  "n": 8,
+  "kind": "the model naming its own fault: stops too tight",
+  "model": "OPUS",
+  "month": "2026-08",
+  "plan": "TM02",
+  "session": "TM02-B02-OPUS-2026-08",
+  "quote": "My stops sat inside normal noise for a market moving 3-5% a day."
+ },
+ {
+  "n": 9,
+  "kind": "the model naming its own fault: exit dates guessed",
+  "model": "OPUS",
+  "month": "2026-09",
+  "plan": "TM01",
+  "session": "TM01-B01-OPUS-2026-09",
+  "quote": "The ETH and SOL time exits on Sep 26 were a guess I made at entry"
+ },
+ {
+  "n": 10,
+  "kind": "sell by hand before the stop",
+  "model": "KIMI",
+  "month": "2026-07",
+  "plan": "TM01",
+  "session": "TM01-B01-KIMI-2026-07",
+  "quote": "momentum thesis failed; five sessions of relative weakness versus BTC; taking the small loss before the stop makes it bigger"
+ },
+ {
+  "n": 11,
+  "kind": "TM03 cut after a down day",
+  "model": "GROK",
+  "month": "2026-05",
+  "plan": "TM03",
+  "session": "TM03-D01-GROK-2026-05",
+  "quote": "Cut to half. Bitcoin closed at 78.1k after trading down to 77.6k, and US bitcoin ETFs shed about $1B as inflation fears reversed the inflow streak."
+ },
+ {
+  "n": 12,
+  "kind": "TM04 holding a falling stock into earnings",
+  "model": "KIMI",
+  "month": "run 2 (June to November)",
+  "plan": "TM04",
+  "session": "TM04-D02-KIMI-r2",
+  "quote": "selling before earnings has been my repeated mistake"
+ }
+]
