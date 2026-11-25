@@ -2,7 +2,7 @@
 
 Made by `timemachine/score_tm03.py` from `timemachine/results_tm03.json`. Do not edit by hand. Pretend money. The plan, with its pass mark fixed before any session ran, is `timemachine/PLAN_TM03_bitcoin_dial.md`.
 
-Sessions in: 30 of 48 are finished and scored here. 8 are running and 10 are not started; those are left out until they finish.
+Sessions in: 34 of 48 are finished and scored here. 11 are running and 3 are not started; those are left out until they finish.
 
 ## What was asked
 
@@ -35,9 +35,9 @@ MEASURED, pretend money, months finished so far, added up. "Percentile" is the s
 
 | Model | Months counted | Gain summed | Holding, same months | Shuffled stretches: median | Percentile | Line 1 | Line 2 | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| Claude Opus 5.5 | 7 of 8 | $123.95 | -$25.28 | $177.56 | 7.9 | not finished (so far yes) | not finished (so far no) | not finished |
-| GPT-6.2 Sol | 6 of 8 | $17.34 | -$139.71 | $82.95 | 11.7 | not finished (so far yes) | not finished (so far no) | not finished |
-| Gemini Neon | 5 of 8 | $33.21 | $91.40 | $150.79 | 3.7 | not finished (so far no) | not finished (so far no) | not finished |
+| Claude Opus 5.5 | 8 of 8 | $124.30 | -$64.31 | $140.40 | 37.7 | yes | no | passes line 1 only |
+| GPT-6.2 Sol | 8 of 8 | $126.17 | -$64.31 | $159.02 | 26.8 | yes | no | passes line 1 only |
+| Gemini Neon | 6 of 8 | $116.22 | $205.83 | $257.18 | 1.1 | not finished (so far no) | not finished (so far no) | not finished |
 | Claude Sonnet 5.5 | 8 of 8 | $138.35 | -$64.31 | $156.98 | 39.4 | yes | no | passes line 1 only |
 | Kimi K3 | 0 of 8 | n/a | n/a | n/a | n/a | not finished | not finished | not finished |
 | Grok 4.7 | 4 of 8 | $143.26 | $167.81 | $253.24 | 0.1 | not finished (so far no) | not finished (so far no) | not finished |
@@ -53,7 +53,7 @@ MEASURED. Gain and hold are in dollars on the month's account. "Shuffled stretch
 | Month | Gain | Hold | Shuffled stretches | Day by day (not judged) | Change days (not judged) | Average share held | Changes | Costs | Largest drop | Hold's largest drop |
 |---|---|---|---|---|---|---|---|---|---|---|
 | April 2026 | $114.43 | $114.43 | no timing to judge | 0.0 | 0.0 | 1.00 | 0 | $3.49 | -4.2% | -4.2% |
-| May 2026 | running | | | | | | | | | |
+| May 2026 | $0.35 | -$39.03 | 86.6 (of 120 orders) | 99.1 | 86.7 | 0.65 | 4 | $6.30 | -6.8% | -10.7% |
 | June 2026 | -$107.89 | -$207.22 | 38.6 | 60.7 | 61.7 | 0.45 | 9 | $6.25 | -10.8% | -20.7% |
 | July 2026 | $33.55 | $69.81 | 0.0 (of 24 orders) | 4.2 | 8.2 | 0.80 | 4 | $4.23 | -5.3% | -5.5% |
 | August 2026 | $241.61 | $245.33 | 0.0 (of 6 orders) | 77.1 | 31.7 | 0.98 | 2 | $5.22 | -3.2% | -3.2% |
@@ -65,8 +65,8 @@ MEASURED. Gain and hold are in dollars on the month's account. "Shuffled stretch
 
 | Month | Gain | Hold | Shuffled stretches | Day by day (not judged) | Change days (not judged) | Average share held | Changes | Costs | Largest drop | Hold's largest drop |
 |---|---|---|---|---|---|---|---|---|---|---|
-| April 2026 | running | | | | | | | | | |
-| May 2026 | running | | | | | | | | | |
+| April 2026 | $103.95 | $114.43 | 0.0 (of 6 orders) | 35.0 | 31.7 | 0.98 | 2 | $5.19 | -4.2% | -4.2% |
+| May 2026 | $4.88 | -$39.03 | 89.2 (of 120 orders) | 99.2 | 88.0 | 0.60 | 4 | $6.66 | -6.4% | -10.7% |
 | June 2026 | -$144.05 | -$207.22 | 5.9 | 3.7 | 25.7 | 0.47 | 7 | $7.14 | -14.4% | -20.7% |
 | July 2026 | $62.84 | $69.81 | 62.2 (of 24 orders) | 69.5 | 63.4 | 0.95 | 3 | $6.28 | -5.3% | -5.5% |
 | August 2026 | $207.94 | $245.33 | 23.4 (of 120 orders) | 55.2 | 75.9 | 0.91 | 4 | $6.98 | -3.2% | -3.2% |
@@ -78,8 +78,8 @@ MEASURED. Gain and hold are in dollars on the month's account. "Shuffled stretch
 
 | Month | Gain | Hold | Shuffled stretches | Day by day (not judged) | Change days (not judged) | Average share held | Changes | Costs | Largest drop | Hold's largest drop |
 |---|---|---|---|---|---|---|---|---|---|---|
-| April 2026 | not started | | | | | | | | | |
-| May 2026 | not started | | | | | | | | | |
+| April 2026 | $83.01 | $114.43 | 0.0 (of 6 orders) | 0.0 | 0.0 | 0.98 | 2 | $7.09 | -4.2% | -4.2% |
+| May 2026 | running | | | | | | | | | |
 | June 2026 | -$115.73 | -$207.22 | 39.0 | 62.8 | 44.5 | 0.42 | 10 | $14.00 | -11.6% | -20.7% |
 | July 2026 | -$2.66 | $69.81 | 1.1 | 5.6 | 0.9 | 0.72 | 10 | $12.32 | -5.1% | -5.5% |
 | August 2026 | $220.30 | $245.33 | 15.1 (of 24 orders) | 70.7 | 49.1 | 0.91 | 3 | $8.67 | -3.3% | -3.2% |
@@ -110,21 +110,21 @@ MEASURED. Gain and hold are in dollars on the month's account. "Shuffled stretch
 | July 2026 | running | | | | | | | | | |
 | August 2026 | running | | | | | | | | | |
 | September 2026 | running | | | | | | | | | |
-| October 2026 | not started | | | | | | | | | |
+| October 2026 | running | | | | | | | | | |
 | November 1 to 24, 2026 | not started | | | | | | | | | |
 
 ### Grok 4.7
 
 | Month | Gain | Hold | Shuffled stretches | Day by day (not judged) | Change days (not judged) | Average share held | Changes | Costs | Largest drop | Hold's largest drop |
 |---|---|---|---|---|---|---|---|---|---|---|
-| April 2026 | not started | | | | | | | | | |
-| May 2026 | not started | | | | | | | | | |
+| April 2026 | running | | | | | | | | | |
+| May 2026 | running | | | | | | | | | |
 | June 2026 | -$97.83 | -$207.22 | 32.6 (of 720 orders) | 31.0 | 47.8 | 0.30 | 5 | $8.33 | -9.8% | -20.7% |
 | July 2026 | $31.45 | $69.81 | 0.0 | 0.0 | 0.1 | 0.83 | 9 | $6.56 | -5.4% | -5.5% |
 | August 2026 | $226.59 | $245.33 | 0.0 (of 3 orders) | 53.2 | 33.9 | 0.95 | 2 | $6.97 | -3.2% | -3.2% |
 | September 2026 | -$16.95 | $59.89 | 2.9 (of 24 orders) | 4.9 | 8.6 | 0.90 | 3 | $8.51 | -7.1% | -7.0% |
-| October 2026 | not started | | | | | | | | | |
-| November 1 to 24, 2026 | not started | | | | | | | | | |
+| October 2026 | running | | | | | | | | | |
+| November 1 to 24, 2026 | running | | | | | | | | | |
 
 ## Gain by what the model said drove each change
 
@@ -132,14 +132,14 @@ MEASURED, months finished so far. The month is cut where the asked share changed
 
 | Model | Driver | Stretches | Wakes | Gain | Against holding |
 |---|---|---|---|---|---|
-| Claude Opus 5.5 | both | 19 | 97 | -$85.51 | $130.05 |
-| Claude Opus 5.5 | opening | 4 | 67 | $325.34 | -$15.47 |
+| Claude Opus 5.5 | both | 23 | 115 | -$120.55 | $169.96 |
+| Claude Opus 5.5 | opening | 5 | 80 | $360.73 | -$18.98 |
 | Claude Opus 5.5 | price | 12 | 43 | -$115.88 | $23.94 |
-| GPT-6.2 Sol | both | 15 | 81 | $36.17 | $135.65 |
-| GPT-6.2 Sol | opening | 6 | 39 | -$16.68 | -$20.86 |
-| GPT-6.2 Sol | price | 13 | 57 | -$2.15 | $32.67 |
-| Gemini Neon | both | 30 | 107 | $199.07 | -$62.50 |
-| Gemini Neon | opening | 4 | 33 | -$90.88 | -$13.65 |
+| GPT-6.2 Sol | both | 18 | 93 | $33.61 | $152.14 |
+| GPT-6.2 Sol | opening | 8 | 54 | -$4.12 | -$27.49 |
+| GPT-6.2 Sol | price | 16 | 91 | $96.68 | $50.85 |
+| Gemini Neon | both | 32 | 125 | $248.54 | -$93.56 |
+| Gemini Neon | opening | 5 | 45 | -$57.34 | -$16.92 |
 | Gemini Neon | price | 4 | 13 | -$74.98 | $7.24 |
 | Claude Sonnet 5.5 | both | 22 | 123 | $210.43 | $199.24 |
 | Claude Sonnet 5.5 | opening | 7 | 92 | -$57.17 | -$24.66 |
@@ -149,7 +149,7 @@ MEASURED, months finished so far. The month is cut where the asked share changed
 
 ## What it shows so far
 
-- 30 of 48 sessions (one per model per month) are finished. 1 of 6 models have all months in.
+- 34 of 48 sessions (one per model per month) are finished. 3 of 6 models have all months in.
 - On the months finished, 3 of 6 models gained more than holding, and 0 of 6 are above the pass percentile of their shuffled stretches.
 - No verdict is given for a model until all its months are in, and none for the method until every model is.
 
