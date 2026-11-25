@@ -1,84 +1,135 @@
 {
  "account": {
-  "gain_pct": 0.0,
-  "gain_usd": 0.0,
-  "hold_gain_pct": 0.0,
-  "hold_value_usd": 2000.0,
+  "gain_pct": -6.500000000009276e-05,
+  "gain_usd": -0.13,
   "pretend_start_usd": 2000.0,
-  "value_usd": 2000.0
+  "value_usd": 1999.87
  },
  "closed": [],
- "daily": [],
- "last_check_utc": null,
- "made_utc": "2026-11-25T14:29:48Z",
+ "last_check_utc": "2026-11-25T16:31:51Z",
+ "made_utc": "2026-11-25T16:31:51Z",
  "notes": {
-  "fee": "The practice account's fee on crypto fills is added by this program from config/thresholds.yaml (practice_crypto_fee_bps_added).",
+  "fee": "The fee on crypto fills is added by this program from config/thresholds.yaml (practice_crypto_fee_bps_added).",
   "gap": "Gap is how far the fill was from the newest price the program had read when it sent the order, in basis points. Plus means the fill was worse for the account.",
-  "not_added": "Not added yet: regulatory fees on stock sells, and dividends. Just holding is shown without dividends too."
+  "not_added": "Not counted: regulatory fees on stock sells, and dividends. The practice account does not model them. Just holding is shown without dividends too.",
+  "win": "A trade is counted when a holding goes back to nothing. It is a win if more dollars came back than went in, fees included."
  },
- "orders": [],
- "problems": [],
- "rules": [
+ "orders": [
   {
+   "asked_qty": null,
+   "asked_usd": 1000.0,
+   "assumed_price": 344.635,
+   "broker_status": "filled",
+   "client_order_id": "pt1.t1-vti.2026-10",
+   "fee_added_usd": 0.0,
+   "fill_price": 344.68,
+   "filled_utc": "2026-11-25T16:31:55.81403Z",
+   "gap_bps": 1.31,
+   "notional_usd": 999.99,
+   "order_id": "d7da4635-129f-4da8-8189-7ebefbb7eebd",
+   "qty": 2.901212719,
+   "reason": "The rule wants 100% in the market and has 0%.",
+   "side": "buy",
+   "status": "filled",
+   "symbol": "VTI",
+   "trader": "T1-VTI",
+   "utc": "2026-11-25T16:31:54.726576Z"
+  }
+ ],
+ "points": [
+  {
+   "hold_value_usd": 1997.5,
+   "traders": {
+    "P1-BTC": 1000.0,
+    "T1-VTI": 999.87
+   },
+   "utc": "2026-11-25T16:31:51Z",
+   "value_usd": 1999.87
+  }
+ ],
+ "problems": [],
+ "status": "running",
+ "status_text": "Running on a timer with pretend money.",
+ "symbols_stopped": [],
+ "totals": {
+  "closed_trades": 0,
+  "fees_added_usd": 0.0,
+  "flat": 0,
+  "losses": 0,
+  "orders": 1,
+  "realised_usd": 0,
+  "win_rate": null,
+  "wins": 0
+ },
+ "traders": [
+  {
+   "benchmark": "BTC/USD",
    "cash_usd": 1000.0,
    "closed_trades": 0,
+   "fees_added_usd": 0.0,
    "gain_pct": 0.0,
    "gain_usd": 0.0,
    "halt_reason": null,
    "halted": false,
-   "hold_gain_pct": 0.0,
-   "hold_value_usd": 1000.0,
+   "hold_gain_pct": -0.0024999999999999467,
+   "hold_value_usd": 997.5,
    "id": "P1-BTC",
+   "kind": "rule",
    "label": "not passed",
-   "last_check_utc": null,
-   "last_price": null,
+   "last_pick": null,
    "losses": 0,
+   "method": "practice/PLAN_02_ai_desk.md",
+   "model": null,
    "name": "Bitcoin trend rule P1",
-   "open_trade": null,
-   "position_qty": 0.0,
-   "position_value_usd": 0.0,
+   "orders_count": 0,
+   "positions": [],
+   "realised_usd": 0,
    "start_usd": 1000.0,
-   "started": false,
-   "symbol": "BTC/USD",
-   "target_weight": null,
+   "started": true,
+   "target_weight": 0.0,
    "value_usd": 1000.0,
+   "win_rate": null,
    "wins": 0
   },
   {
-   "cash_usd": 1000.0,
+   "benchmark": "VTI",
+   "cash_usd": 0.01,
    "closed_trades": 0,
-   "gain_pct": 0.0,
-   "gain_usd": 0.0,
+   "fees_added_usd": 0.0,
+   "gain_pct": -0.00013055457235500167,
+   "gain_usd": -0.13,
    "halt_reason": null,
    "halted": false,
    "hold_gain_pct": 0.0,
    "hold_value_usd": 1000.0,
    "id": "T1-VTI",
+   "kind": "rule",
    "label": "not passed",
-   "last_check_utc": null,
-   "last_price": null,
+   "last_pick": null,
    "losses": 0,
+   "method": "practice/PLAN_02_ai_desk.md",
+   "model": null,
    "name": "Ten-month rule T1 on a total market fund (VTI)",
-   "open_trade": null,
-   "position_qty": 0.0,
-   "position_value_usd": 0.0,
+   "orders_count": 1,
+   "positions": [
+    {
+     "cost_usd": 999.99,
+     "exit": null,
+     "gain_usd": -0.13,
+     "opened_utc": "2026-11-25T16:31:55.81403Z",
+     "price": 344.635,
+     "qty": 2.901212719,
+     "symbol": "VTI",
+     "value_usd": 999.86
+    }
+   ],
+   "realised_usd": 0,
    "start_usd": 1000.0,
-   "started": false,
-   "symbol": "VTI",
-   "target_weight": null,
-   "value_usd": 1000.0,
+   "started": true,
+   "target_weight": 1.0,
+   "value_usd": 999.87,
+   "win_rate": null,
    "wins": 0
   }
- ],
- "status": "waiting_for_key",
- "status_text": "No practice trades yet. The trader starts when the practice key is in place.",
- "totals": {
-  "closed_trades": 0,
-  "fees_added_usd": 0,
-  "losses": 0,
-  "orders": 0,
-  "realised_usd": 0,
-  "win_rate": null,
-  "wins": 0
- }
+ ]
 }

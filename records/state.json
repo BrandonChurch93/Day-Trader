@@ -8,7 +8,8 @@
  },
  "alarms": [],
  "done": {
-  "P1-BTC": "20261124T0000"
+  "P1-BTC": "20261124T0000",
+  "T1-VTI": "2026-10"
  },
  "key_refused": false,
  "last_px": {
