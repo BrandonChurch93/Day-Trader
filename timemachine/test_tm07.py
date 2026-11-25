@@ -64,6 +64,31 @@ def condition(wake, symbol=A, **kw):
     return O.normalize_conditions([item], {symbol:100}, [symbol], wake, wake+7200, 6, 1)
 
 
+def registered_fixture():
+    weeks = {}
+    for w in S.WEEKS:
+        item = dict(fixture=D.digest(w),neutral_id="TM07-scout-"+w)
+        if w in S.FIXED:
+            item["symbols"] = sorted(s+"/USD" for s in S.FIXED[w].split())
+        else:
+            prior = (S.date.fromisoformat(w)-S.timedelta(days=7)).isoformat()
+            preceding = {s:100 for s in S.WATCH}
+            item.update(before=preceding,last=preceding,before_known_on=prior,last_known_on=w,
+                        symbols=S.select_five(preceding,preceding))
+        weeks[w] = item
+    body = dict(version="TM07-v1",runner_id="toy-runner",ledger_ref="toy-no-run",
+                builds={s:{"id":s+"-toy","first_after_cutoff":"2026-07-01"}
+                        for s in (*D.BOSSES,"gemini_neon")},weeks=weeks)
+    return S.Registration(dict(body=body,seal=D.seal(SEAL_KEY,"registration",body)),SEAL_KEY)
+
+
+def synthetic_scores(reg,boss,draws=1000):
+    return [dict(week=w,arm=a,boss=boss,fixture=reg.weeks[w]["fixture"],registration=reg.hash,
+                 neutral_id=reg.weeks[w]["neutral_id"] if a=="B" else None,scout_hash=D.digest([w,"scout"]) if a=="B" else None,
+                 main=dict(value=1000+5*(a=="B"),gain=.5,equal=0,twin=[0]*draws))
+            for w in S.WEEKS for a in ("A","B")]
+
+
 class DeskTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix="tm07-fixture-")
@@ -260,6 +285,18 @@ class DeskTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"missing isolation"):
             D.validate_worker_boundary(SEAL_KEY,incomplete,D.seal(SEAL_KEY,"worker-boundary",incomplete),self.root)
 
+    def test_b09_one_draw_cannot_pass_the_registered_gate(self):
+        boss = D.BOSSES[0]
+        fake = [dict(week=w,arm=a,boss=boss,fixture=w,main=dict(value=1000+5*(a=="B"),gain=.5,equal=0,twin=[0]))
+                for w in S.WEEKS for a in ("A","B")]
+        with self.assertRaisesRegex(ValueError,"register|1,000"):
+            S.paired(fake,boss,"B")
+        reg = registered_fixture()
+        with self.assertRaisesRegex(ValueError,"1,000"):
+            S.paired([reg.attest_score(x) for x in synthetic_scores(reg,boss,draws=1)],boss,"B",registration=reg)
+        with self.assertRaisesRegex(ValueError,"sealed"):
+            reg.verify_gate(S.EXTENSION[0],boss,"B",[],SEAL_KEY)
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
@@ -423,14 +460,19 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(S.sign_mark(20),16)
         self.assertAlmostEqual(S.sign_tail(20,16),.005908966064453125)
         boss=D.BOSSES[1]
-        specs=[dict(week=w, arm=a, boss=boss, fixture=w, main=dict(value=1000+5*(a=="B"), gain=.5,
-                     equal=0,twin=[0,.1,.2])) for w in S.WEEKS for a in ("A","B")]
-        got=S.paired(specs,boss,"B")
+        reg = registered_fixture()
+        specs = synthetic_scores(reg,boss)
+        signed = [reg.attest_score(x) for x in specs]
+        got=S.paired(signed,boss,"B",registration=reg)
         self.assertEqual(got["wins"],20)
         self.assertTrue(got["passes"])
+        gate = S.seal_screen_gate(signed,boss,"B",reg,SEAL_KEY)
+        reg.verify_gate(S.EXTENSION[0],boss,"B",[gate],SEAL_KEY)
+        with self.assertRaisesRegex(ValueError,"screen gate"):
+            reg.verify_gate(S.EXTENSION[0],boss,"C",[gate],SEAL_KEY)
         specs[2*S.WEEKS.index(S.SCREEN[0])+1]["main"]["value"]=1000
         with self.assertRaisesRegex(ValueError,"screen gate"):
-            S.paired(specs,boss,"B")
+            S.paired([reg.attest_score(x) for x in specs],boss,"B",registration=reg)
         self.assertEqual(S.select_five({str(i):100 for i in range(6)},{str(i):100 for i in range(6)}),list("12345"))
 
     def test_token_usage_missing_fields(self):

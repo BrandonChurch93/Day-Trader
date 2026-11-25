@@ -10,6 +10,9 @@ from timemachine import desk_orders as O, desk, perp as P, score_weights as SW, 
 
 SCREEN = ("2026-07-20", "2026-08-31", "2026-10-05")
 DIAGNOSTIC = "2026-05-11"
+FIXED = dict(zip((DIAGNOSTIC,*SCREEN),("ENA NEAR ONDO SUI ZEC","LINK LTC ONDO PEPE ZEC","BNB HYPE LINK SOL ZEC","AAVE ADA BNB HBAR XLM")))
+WATCH = frozenset(s+"/USD" for s in "AAVE ADA AVAX BCH BNB DOGE DOT ENA HBAR HYPE LINK LTC NEAR ONDO PEPE SOL SUI XLM XRP ZEC".split())
+DRAW_COUNT, PERCENTILE, SEED = 1000, 90, 1
 ALPHA = 0.05/4
 FIRST, LAST = date(2026, 7, 6), date(2026, 11, 16)
 WEEKS = tuple((FIRST + timedelta(weeks=i)).isoformat() for i in range((LAST-FIRST).days//7+1))
@@ -18,6 +21,91 @@ EXTENSION = tuple(w for w in WEEKS if w not in SCREEN)
 
 class UnsupportedWeek(ValueError):
     """A frozen draw cannot be represented intact on its destination tape."""
+
+
+class Registration:
+    """A separately operator-sealed attempt, not inputs asserted by an arm."""
+    def __init__(self,document,key):
+        self._key = key
+        self.body = json.loads(desk.encode(document["body"]))
+        desk.verify_seal(key,"registration",self.body,document.get("seal"))
+        self.hash = desk.digest(self.body)
+        if self.body.get("version") != "TM07-v1" or not self.body.get("runner_id") or not self.body.get("ledger_ref"):
+            raise ValueError("register the runner and ledger reference before launch")
+        models = self.body.get("builds",{})
+        if set(models) != {*desk.BOSSES,"gemini_neon"} or any(not v.get("id") for v in models.values()):
+            raise ValueError("register all exact model builds")
+        self.earliest = max("2026-07-01",*(date.fromisoformat(v["first_after_cutoff"]).isoformat() for v in models.values()))
+        self.weeks = self.body["weeks"]
+        if set(self.weeks) not in (set(WEEKS),set(WEEKS)|{DIAGNOSTIC}):
+            raise ValueError("registration is missing the fixed calendar")
+        neutral_ids = set()
+        for w,item in self.weeks.items():
+            neutral_id = item.get("neutral_id","")
+            fixture_id = item.get("fixture","")
+            if (not desk.SID.fullmatch(neutral_id) or neutral_id in neutral_ids or len(fixture_id) != 64
+                    or any(c not in "0123456789abcdef" for c in fixture_id)):
+                raise ValueError("register the unique neutral run and fixture hash for each week")
+            neutral_ids.add(neutral_id)
+            if w in FIXED:
+                symbols = sorted(s+"/USD" for s in FIXED[w].split())
+            else:
+                d = date.fromisoformat(w)
+                if item.get("last_known_on") != w or item.get("before_known_on") != (d-timedelta(days=7)).isoformat():
+                    raise ValueError("extension selection requires two finished Sunday closes")
+                before,last = item["before"],item["last"]
+                if (set(before)|set(last))-WATCH:
+                    raise ValueError("extension selection is outside the fixed watch list")
+                symbols = select_five(before,last)
+            if item["symbols"] != symbols:
+                raise ValueError("wrong registered tradable list")
+
+    def validate(self,spec,manifest,sid):
+        w = desk.wall(spec["wakes"][0]).date().isoformat()
+        if w not in self.weeks or w != DIAGNOSTIC and w < self.earliest:
+            raise ValueError("unregistered week or model cutoff")
+        item = self.weeks[w]
+        start = desk.epoch(w+"T00:00:00Z")
+        if (spec["wakes"] != list(range(start,start+7*86400,3600)) or spec["end"] != start+7*86400
+                or spec["symbols"] != item["symbols"] or set(spec["watch"]) != WATCH
+                or spec.get("runner_id") != self.body["runner_id"] or manifest["fixture"] != item["fixture"]
+                or manifest["settings"] != desk.SETTINGS):
+            raise ValueError("fixture differs from registered windows, coins or runner")
+        cfg = spec["cfg"]
+        pp = spec["params"]
+        if (spec["gross"] != 1 or spec["opening"] or cfg["tm_account_start_usd"] != 1000
+                or cfg["tm06_plan"]["main_fee_bps"] != 12 or cfg["tm06_plan"]["carried_leverage"] != [2,3]
+                or sorted(cfg["tm_perp_fee_levels_bps"]) != [1,12,25]
+                or cfg["tm_weights_twin_draws"] != DRAW_COUNT or cfg["tm_weights_pass_percentile"] != PERCENTILE
+                or cfg["tm_weights_twin_seed"] != SEED or any(f != .0012 for f in pp["fee"].values())):
+            raise ValueError("registration requires fixed costs, 1,000 twins and 90th percentile")
+        arm, scout = manifest["arm"], manifest["scout"]
+        model = "gemini_neon" if arm == "scout" else manifest["boss"]
+        if manifest.get("model_build") != self.body["builds"][model]["id"]:
+            raise ValueError("unregistered model build")
+        if arm == "scout" and sid != item["neutral_id"] or arm in ("B","C") and scout["neutral_id"] != item["neutral_id"]:
+            raise ValueError("arm did not use designated neutral scout")
+        from itertools import groupby
+        good = {t//3600*3600 for t,rows in groupby(spec["minutes"],key=lambda r:r[0])
+                if set(spec["symbols"]) <= {r[1] for r in rows}}
+        if not set(spec["wakes"]) <= good or any(not set(spec["symbols"]) <= r["marks"].keys() for r in spec["rows"]):
+            raise ValueError("registered twin coverage lacks marks or a common open")
+        return w
+
+    def verify_gate(self,week,boss,arm,gates,key):
+        if week not in EXTENSION:
+            return
+        for envelope in gates or ():
+            item = envelope["body"]
+            desk.verify_seal(key,"screen-gate",item,envelope.get("seal"))
+            if (item.get("registration") == self.hash and item.get("wins") == 3
+                    and item.get("screen_weeks") == list(SCREEN)
+                    and (arm == "scout" or item.get("boss") == boss and (arm == "A" or item.get("arm") == arm))):
+                return
+        raise ValueError("extension launch requires a sealed 3/3 screen gate")
+
+    def attest_score(self,summary):
+        return dict(summary,attestation=desk.seal(self._key,"score",summary))
 
 
 def sign_tail(n, k):
@@ -121,10 +209,19 @@ def usage_totals(rows, neutral=(), expected=None):
     return out
 
 
-def score_week(path, draws=None, draw_sensitivities=False):
+def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None):
     sess, log = load_session(path)
     spec = sess.spec
     cfg = spec["cfg"]
+    registered = sess.manifest.get("registration")
+    if registered is not None:
+        if draws is not None:
+            raise ValueError("cannot override registered twin draws")
+        reg = Registration(registered,approval_key)
+        week = reg.validate(spec,sess.manifest,sess.sid)
+        reg.verify_gate(week,sess.manifest["boss"],sess.arm,sess.manifest.get("gates"),approval_key)
+    else:
+        reg = None
     fee = cfg["tm06_plan"]["main_fee_bps"]
     start = cfg["tm_account_start_usd"]
     draws = cfg["tm_weights_twin_draws"] if draws is None else draws
@@ -135,13 +232,15 @@ def score_week(path, draws=None, draw_sensitivities=False):
     stored = [d for _, k, d in log if k == "finish"][0]
     check = replay(sess, bundles, journal=True)
     ident = dict(week=desk.wall(spec["wakes"][0]).date().isoformat(), arm=sess.arm, boss=sess.manifest["boss"],
-                 fixture=sess.manifest["fixture"], scout_hash=sess.manifest["scout_hash"], settings=desk.digest(sess.opts))
+                 fixture=sess.manifest["fixture"], scout_hash=sess.manifest["scout_hash"], settings=desk.digest(sess.opts),
+                 neutral_id=(sess.manifest["scout"] or {}).get("neutral_id"),registration=reg.hash if reg else None)
+    emit = reg.attest_score if reg else lambda x:x
     if (cents(check["value"]) != cents(stored["value"]) or check["book"] != stored["book"]
             or check["events"] != [d for _, k, d in log if k == "condition"]
             or check["scans"] != [d for _, k, d in log if k == "scan"]):
         raise ValueError("journal does not match replay")
     if check["unsupported"]:
-        return dict(ident, invalid=f"original has no common open: {check['unsupported']}")
+        return emit(dict(ident, invalid=f"original has no common open: {check['unsupported']}"))
     n = len(bundles)
     hold = [{ "weights": {s: spec["gross"]/len(spec["symbols"]) for s in spec["symbols"]}}] + [{} for _ in range(n-1)]
     benchmark = spec["benchmark"]
@@ -162,10 +261,10 @@ def score_week(path, draws=None, draw_sensitivities=False):
                         shuffled = shuffle_bundles(bundles, spec["rows"], spec["wakes"], spec["end"],
                                                     random.Random(f'tm06_shuffle:{seed}:{sess.sid}:{i}'))
                     except UnsupportedWeek as exc:
-                        return dict(ident, invalid=str(exc), failed_draw=i)
+                        return emit(dict(ident, invalid=str(exc), failed_draw=i))
                     trial = replay(sess, shuffled, f, mult)
                     if trial["unsupported"]:
-                        return dict(ident, invalid=f"twin has no common open: {trial['unsupported']}", failed_draw=i)
+                        return emit(dict(ident, invalid=f"twin has no common open: {trial['unsupported']}", failed_draw=i))
                     twin.append(gain(trial["value"]))
                     activity.append(dict(immediate=trial["immediate"],standing=trial["standing"],turnover_usd=trial["book"]["traded_usd"]))
                 entry.update(twin=twin,twin_activity=activity,twin_trigger_counts=[x["standing"] for x in activity],
@@ -175,10 +274,10 @@ def score_week(path, draws=None, draw_sensitivities=False):
     expected = {"boss":spec["wakes"]}
     if sess.arm != "A":
         expected.update({role:spec["wakes"] for role in desk.SCOUTS})
-    return dict(ident, main=by[f"1x/{fee:g}"],
+    return emit(dict(ident, main=by[f"1x/{fee:g}"],
                 usage=usage_totals(log,neutral,expected), unique_boss_usage=usage_totals(log,expected={"boss":spec["wakes"]}),
                 neutral_scout_used=bool(neutral), by_fee_multiple=by,
-                delayed_value=replay(sess, bundles, fee, delay=60)["value"] if sess.arm == "C" else None)
+                delayed_value=replay(sess, bundles, fee, delay=60)["value"] if sess.arm == "C" else None))
 
 
 def cents(value):
@@ -189,12 +288,26 @@ def cent_lift(baseline, candidate):
     return float(cents(candidate)-cents(baseline))
 
 
-def paired(scores, boss, arm, percentile=90):
+def paired(scores, boss, arm, *, registration=None):
     """Four registered contrasts only. Missing weeks do not reduce the denominator."""
     if boss not in desk.BOSSES or arm not in ("B", "C"):
         raise ValueError("not a registered comparison")
+    if not isinstance(registration,Registration):
+        raise ValueError("provide the registered TM07 manifest, not preview scores")
     grouped = {}
+    scouts = {}
     for s in scores:
+        w = s["week"]
+        desk.verify_seal(registration._key,"score",{k:v for k,v in s.items() if k != "attestation"},s.get("attestation"))
+        if (s.get("registration") != registration.hash or w not in registration.weeks
+                or s["fixture"] != registration.weeks[w]["fixture"]):
+            raise ValueError("unregistered score or fixture")
+        if s["arm"] in ("B","C"):
+            if (not s.get("scout_hash") or s.get("neutral_id") != registration.weeks[w]["neutral_id"]
+                    or scouts.setdefault(w,s["scout_hash"]) != s["scout_hash"]):
+                raise ValueError("different neutral scout stream for the same week")
+        if not s.get("invalid") and len(s["main"]["twin"]) != DRAW_COUNT:
+            raise ValueError("registered comparison needs 1,000 timing draws")
         if s["boss"] != boss or s["arm"] not in ("A", arm):
             continue
         k = (s["week"], s["arm"])
@@ -229,8 +342,18 @@ def paired(scores, boss, arm, percentile=90):
         gain = join(b["gain"] for b in blocks)
         equal = join(b["equal"] for b in blocks)
         twin = [join(xs) for xs in zip(*(b["twin"] for b in blocks))]
-        mark = SW.judge(twin, gain, percentile)
+        mark = SW.judge(twin, gain, PERCENTILE)
         result.update(gain=gain, equal=equal, timing=mark, sign_p=sign_tail(len(weeks), wins),
                       lifts=[cent_lift(a["value"],b["value"]) for a, b in vals],
                       passes=gate and gain > equal and mark["model_above_pass_percentile"] and wins >= result["pass_mark"])
     return result
+
+
+def seal_screen_gate(scores,boss,arm,registration,key):
+    screened = [s for s in scores if s["week"] in SCREEN]
+    result = paired(screened,boss,arm,registration=registration)
+    if not result["extension_eligible"]:
+        raise ValueError("did not win all three screen weeks")
+    body = dict(registration=registration.hash,boss=boss,arm=arm,wins=3,screen_weeks=list(SCREEN),
+                screens=desk.digest(screened))
+    return dict(body=body,seal=desk.seal(key,"screen-gate",body))

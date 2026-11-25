@@ -155,7 +155,7 @@ def desk_funding(tape, symbols, cfg, start, end):
     return funding, sources, stamps
 
 
-def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_proofs=None):
+def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_proofs=None,runner_id=None):
     """Builder helper only. Reads a caller-supplied tape and separately vetted existing rows."""
     a, b = epoch(start), epoch(end)
     wakes = list(range(a, b, 3600))
@@ -198,10 +198,11 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
     return dict(wakes=wakes, end=b, symbols=symbols, watch=watch, benchmark="BTC/USD", opening={},
                 rows=rows, minutes=list(mins), end_marks=desk_marks(tape, priced, b),
                 evidence=evidence, cfg=cfg, params=pp, vendor_proofs=vendor_proofs or {},
-                gross=float(cfg["tm06_plan"]["swing_max_gross"]))
+                gross=float(cfg["tm06_plan"]["swing_max_gross"]),runner_id=runner_id)
 
 
-def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, approval_key=None, vendor_signature=None):
+def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, approval_key=None, vendor_signature=None,
+                registration=None,model_build=None,gates=None):
     """Write one isolated off-repo session folder. Scout mode has no trading book access."""
     if arm not in (*ARMS, "scout") or (arm != "scout" and boss not in BOSSES):
         raise ValueError("unknown arm or boss")
@@ -239,12 +240,19 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, app
     path = Path(path)
     if not SID.fullmatch(path.name):
         raise ValueError("invalid TM07 session id")
+    meta = dict(arm=arm,boss=boss,fixture=fixture,scout_hash=digest(scout) if scout else None,scout=scout,
+                settings=dict(SETTINGS,**(settings or {})),approval_scope=seal(approval_key,"scope",fixture) if approval_key else None,
+                tokens={role:sha256(t.encode()).hexdigest() for role,t in tokens.items()})
+    if registration is not None:
+        from timemachine.score_tm07 import Registration
+        reg = Registration(registration,approval_key)
+        meta.update(registration=registration,model_build=model_build,gates=gates or [])
+        week = reg.validate(spec,meta,path.name)
+        reg.verify_gate(week,boss,arm,gates,approval_key)
+        record_attempt(path,reg.hash,week,boss,arm,gates)
     claim_tokens(path.parent,path.name,tokens)
     path.mkdir(mode=0o700, parents=False)
-    for name, obj in (("fixture.json", spec), ("manifest.json", dict(arm=arm, boss=boss, fixture=fixture,
-                       scout_hash=digest(scout) if scout else None, scout=scout, settings=dict(SETTINGS, **(settings or {})),
-                       approval_scope=seal(approval_key,"scope",fixture) if approval_key else None,
-                       tokens={role: sha256(t.encode()).hexdigest() for role, t in tokens.items()}))):
+    for name, obj in (("fixture.json",spec),("manifest.json",meta)):
         fd = os.open(path / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "w") as f:
             f.write(encode(obj))
@@ -255,6 +263,18 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, app
                           "CREATE TRIGGER no_delete BEFORE DELETE ON journal BEGIN SELECT RAISE(ABORT,'append only'); END;")
         con.execute("INSERT INTO state VALUES (0, ?)", (encode(dict(k=0, issued={}, scout={}, active={}, looks=[],
                     book=P.new_book(spec["cfg"]["tm_account_start_usd"], spec.get("opening")))),))
+
+
+def record_attempt(path,reg,week,boss,arm,gates):
+    target = path.parent/".registered_attempts.sqlite"
+    with closing(sqlite3.connect(target)) as con,con:
+        target.chmod(0o600)
+        con.execute("CREATE TABLE IF NOT EXISTS attempts (reg TEXT, week TEXT, boss TEXT, arm TEXT, session TEXT, gate_hash TEXT,"
+                    "PRIMARY KEY(reg,week,boss,arm))")
+        try:
+            con.execute("INSERT INTO attempts VALUES(?,?,?,?,?,?)",(reg,week,boss or "scout",arm,path.name,digest(gates or [])))
+        except sqlite3.IntegrityError as exc:
+            raise ValueError("registered attempt already recorded; do not replace it") from exc
 
 
 class DeskSession:

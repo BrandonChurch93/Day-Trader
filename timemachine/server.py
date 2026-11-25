@@ -68,7 +68,7 @@ def done_answer(sess):
     return 200, dict(status="DONE", done=True, session=sess.meta["session"], result=str(sess.dir / "result.json"))
 
 
-def handle_desk(method, path, sid, body, authorization):
+def handle_desk(method, path, sid, body, authorization,registration=None):
     actions = {("GET", "/desk/next"): "next", ("GET", "/desk/status"): "status",
                ("POST", "/desk/look"): "look", ("POST", "/desk/notes"): "notes",
                ("POST", "/desk/pick"): "pick", ("POST", "/desk/usage"): "usage"}
@@ -81,6 +81,10 @@ def handle_desk(method, path, sid, body, authorization):
     try:
         token = authorization[len(prefix):]
         sess = W.open_session(sid, desk_token=token)
+        if registration is not None:
+            from timemachine.desk import digest
+            if digest((sess.manifest.get("registration") or {}).get("body")) != registration:
+                raise PermissionError
         role = sess.authenticate(token)
         if role is None:
             raise PermissionError
@@ -94,11 +98,11 @@ def handle_desk(method, path, sid, body, authorization):
         return 400, dict(ok=False, error=str(exc)[:300])
 
 
-def handle_desk_only(method,path,q,body,authorization):
+def handle_desk_only(method,path,q,body,authorization,registration=None):
     sid = (q.get("session") or [""])[0]
     if not path.startswith("/desk/") or not sid.startswith("TM07-"):
         return 404, dict(ok=False,error="unknown desk route")
-    return handle_desk(method,path,sid,body,authorization)
+    return handle_desk(method,path,sid,body,authorization,registration)
 
 
 def handle(method, path, q, body, authorization=None):
@@ -169,7 +173,7 @@ class H(BaseHTTPRequestHandler):
         body = self.rfile.read(size) if method == "POST" else None
         try:
             if self.desk_only:
-                code,obj = handle_desk_only(method,u.path,q,body,self.headers.get("Authorization"))
+                code,obj = handle_desk_only(method,u.path,q,body,self.headers.get("Authorization"),self.server.desk_registration)
             elif u.path.startswith("/desk/"):
                 code,obj = 404, dict(ok=False,error="use the isolated desk listener")
             else:
@@ -210,7 +214,12 @@ def serve_desk(port,*,approval_key,proof,signature):
     if not root:
         raise ValueError("set a separate TM07_RUNS_DIR")
     validate_worker_boundary(approval_key,proof,signature,root)
-    return ThreadingHTTPServer(("127.0.0.1",int(port)),DeskH)
+    registration = proof.get("registration")
+    if not isinstance(registration,str) or len(registration) != 64:
+        raise ValueError("sealed worker proof must name the registered attempt")
+    server = ThreadingHTTPServer(("127.0.0.1",int(port)),DeskH)
+    server.desk_registration = registration
+    return server
 
 
 if __name__ == "__main__":
