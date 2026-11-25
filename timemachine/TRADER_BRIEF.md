@@ -50,6 +50,6 @@ This is the exact text given to an AI trader for a replay. Pretend money only. N
 
 ## What to expect
 
-- Orders fill at the open of the next recorded minute after the desk sends them, with a spread added. These are assumed fills, not real ones.
+- Orders fill at the open of the next recorded minute after the desk sends them, with a spread added. These are assumed fills, not real ones. The fill is stamped with the start of that minute. Your packet holds only minutes that had finished, so a fill stamped with your wake time is the minute that began as you woke, not one you had seen. On a thin coin the next recorded minute can be several minutes later.
 - Stock orders are day orders and only go in while the market is open. Crypto orders are good till canceled.
 - Fees and order limits are the same as the live practice desk. They are named in the practice keys in `config/thresholds.yaml`.

@@ -6,6 +6,7 @@ python3 timemachine/score_tm01.py --check    exits 1 if the stored files differ 
 Reads only result.json and looks.jsonl of each session under $TM_RUNS. It runs no trader and reads no prices.
 A month counts for a model when its AI session, the bitcoin hold of that month and all 20 twins are finished.
 The verdict of the plan is written only when all five months count for a model."""
+import datetime as dt
 import json, os, sys
 from pathlib import Path
 
@@ -46,7 +47,16 @@ def why_rows(session, r):
         for line in lp.read_text().splitlines():
             d = json.loads(line); looks.setdefault(d["k"], []).append(d)
     orders = r["summary"]["orders"]; sells = [o for o in orders if o["side"] == "sell" and o["status"] == "filled"]
-    closed = {(c["symbol"], c["opened_utc"]): c for c in r["summary"]["closed"]}
+    left = sorted(r["summary"]["closed"], key=lambda c: c["opened_utc"])
+
+    def closed_for(symbol, wake_utc):
+        # The buy fills at the first recorded minute at or after the wake, which can be some minutes later on a thin coin.
+        # Take the first closed trade in that coin opened at or after the wake and within twelve hours, and use it once.
+        hi = (dt.datetime.fromisoformat(wake_utc.replace("Z", "+00:00")) + dt.timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        for c in left:
+            if c["symbol"] == symbol and wake_utc <= c["opened_utc"] < hi:
+                left.remove(c); return c
+        return None
     rows = []
     for st in r["steps"]:
         pick = st.get("pick") or {}
@@ -57,7 +67,7 @@ def why_rows(session, r):
             seen = {}
             for d in lk:
                 key = d["timeframe"] if d["what"] == "bars" else d["what"]; seen[key] = seen.get(key, 0) + 1
-            c = closed.get((a["symbol"], st["utc"]))
+            c = closed_for(a["symbol"], st["utc"])
             ex = next((o for o in sells if c and o["symbol"] == a["symbol"] and o["filled_utc"] == c["closed_utc"]), None)
             rows.append(dict(wake_utc=st["utc"], symbol=a["symbol"], usd=a.get("usd"), looked=seen, news_looked=seen.get("news", 0),
                              thesis=pick.get("thesis"), reason=a.get("reason"),
