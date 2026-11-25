@@ -30,9 +30,9 @@ From the plan: the news helped only if all six models gained more with it than w
 | Model | Months finished in both | With news | Prices alone | Better with news |
 |---|---|---|---|---|
 | Claude Opus 5.5 | 2 of 5 | -$48.70 | -$111.98 | yes |
-| GPT-6.2 Sol | 2 of 5 | -$15.57 | -$35.28 | yes |
+| GPT-6.2 Sol | 3 of 5 | $6.79 | -$31.11 | yes |
 | Gemini Neon | 1 of 5 | -$95.97 | -$162.36 | yes |
-| Claude Sonnet 5.5 | 3 of 5 | -$10.38 | -$63.18 | yes |
+| Claude Sonnet 5.5 | 4 of 5 | -$32.40 | -$63.45 | yes |
 | Kimi K3 | 0 of 5 | n/a | n/a | n/a |
 | Grok 4.7 | 1 of 5 | -$18.22 | -$37.59 | yes |
 
@@ -49,7 +49,7 @@ Verdict: not finished.
 | July | Kimi K3 | not finished | | | | | | | | | | | | |
 | July | Grok 4.7 | not finished | | | | | | | | | | | | |
 | August | Claude Opus 5.5 | not finished | | | | | | | | | | | | |
-| August | GPT-6.2 Sol | not finished | | | | | | | | | | | | |
+| August | GPT-6.2 Sol | $22.36 | $245.33 | n/a | n/a of 0 | 5 | 4 | 1 | $4.52 | -0.4% | 57 of 62 | 64 | 0 of 62 | 0 |
 | August | Gemini Neon | not finished | | | | | | | | | | | | |
 | August | Claude Sonnet 5.5 | $15.87 | $245.33 | n/a | n/a of 0 | 5 | 3 | 2 | $7.06 | -1.9% | 55 of 62 | 10 | 0 of 62 | 0 |
 | August | Kimi K3 | not finished | | | | | | | | | | | | |
@@ -57,7 +57,7 @@ Verdict: not finished.
 | September | Claude Opus 5.5 | not finished | | | | | | | | | | | | |
 | September | GPT-6.2 Sol | not finished | | | | | | | | | | | | |
 | September | Gemini Neon | not finished | | | | | | | | | | | | |
-| September | Claude Sonnet 5.5 | not finished | | | | | | | | | | | | |
+| September | Claude Sonnet 5.5 | -$22.02 | $59.89 | n/a | n/a of 0 | 5 | 2 | 3 | $6.46 | -2.9% | 51 of 60 | 18 | 0 of 60 | 0 |
 | September | Kimi K3 | not finished | | | | | | | | | | | | |
 | September | Grok 4.7 | not finished | | | | | | | | | | | | |
 | October | Claude Opus 5.5 | -$47.25 | -$76.42 | n/a | n/a of 0 | 6 | 1 | 5 | $8.40 | -5.7% | 53 of 62 | 17 | 21 of 62 | 0 |
@@ -103,6 +103,16 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-07-03 12:00 | ETH/USD | 1Hour bars x1 | Headlines 'Crypto ETF Inflow Split: Ether and Solana Products Gain While Bitcoin Outflows Exceed $290M' (2026-07-02T18:30Z) and 'US Spot Bitcoin ETF Outflows Clash With Ethereum Fund Demand' (2026-07-03T11:17Z) show relative ETH demand; price broke above 1710 resistance, 1741 now. | Crypto ETF Inflow Split: Ether and Solana Products Gain While Bitcoin Outflows Exceed $290M (2026-07-02T18:30:00Z); US Spot Bitcoin ETF Outflows Clash With Ethereum Fund Demand (2026-07-03T11:17:00Z) | stop reached 2026-07-08 08:20 | loss -$2.16 (-0.7%) |
 | 2026-07-15 00:00 | ETH/USD | 1Hour bars x2, news x1 | Price breakout above the 1805 range top at the 07-14 12:00 hour, held 1870-1890 for 11 hours, BTC also through 64K; no headline used. | none | stop reached 2026-07-17 13:10 | loss -$14.39 (-4.8%) |
 
+### August, GPT-6.2 Sol
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-08-06 00:00 | ETH/USD | 1Day bars x1, 1Hour bars x1 | Completed hourly bars held just above 1900 after the breakout, versus the early-August resistance near 1896. The stop below the breakout level tests that thesis. | none | time limit 2026-08-08 00:00 | loss -$0.75 (-0.3%) |
+| 2026-08-15 00:00 | LINK/USD | 1Day bars x1, 1Hour bars x1, news x1 | The Aug. 14 06:57:20 UTC headline Chainlink (LINK) Flashes a Rare Signal Linked to Triple-Digit Rallies highlighted unusual relative strength, which the desk confirms with a high-volume hourly breakout and later lows above 8.92. I am trading that confirmation, not the headline forecast. | https://cryptopotato.com/chainlink-link-flashes-a-rare-signal-linked-to-triple-digit-rallies/ | target reached 2026-08-15 02:00 | win $6.43 (+3.2%) |
+| 2026-08-20 12:00 | BTC/USD | 1Day bars x2, 1Hour bars x4, news x1 | The Aug. 20 10:40:17 UTC headline Bitcoin grabs 77% of $1.3 billion crypto fund surge as BlackRock leads the rebound supports BTC leadership, although issuer rows were missing. The actionable evidence is the completed hourly breakout and higher lows above 71.4k. | https://cryptoslate.com/bitcoin-grabs-77-of-1-3-billion-crypto-fund-surge-as-blackrock-leads-the-rebound/ | target reached 2026-08-21 01:20 | win $5.58 (+3.2%) |
+| 2026-08-23 12:00 | SOL/USD | 1Day bars x1, 1Hour bars x1 | The tape recovered from 91.46 to 94.61 and the latest hourly push strengthened, with BTC steady rather than making new lows. The stop below the rising hourly base invalidates the bounce. | none | time limit 2026-08-25 00:00 | win $5.80 (+3.9%) |
+| 2026-08-27 12:00 | SOL/USD | 1Hour bars x1, news x1 | The Aug. 27 02:00:25 UTC headline Solana takes its first step toward sub-second speed by cutting block confirmation times across the network describes faster measured slot spacing, with the next stage pending. Buy the completed high-volume close above 103 and subsequent hourly lows above 103.15, not the headline alone. | https://cryptoslate.com/solana-cuts-slot-time-to-350ms-as-early-telemetry-tests-its-path-to-200ms/ | target reached 2026-08-27 16:45 | win $5.31 (+3.8%) |
+
 ### August, Claude Sonnet 5.5
 
 | Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
@@ -112,6 +122,16 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-08-21 00:00 | BTC/USD | packet only | Headline 'Bitcoin ETF Inflows Hit $517M As Institutional Demand Returns' (2026-08-20T17:15:00Z) plus a held breakout above the 65k range; target 77k about 5% up vs stop 70.5k about 3.5% down. | Bitcoin ETF Inflows Hit $517M As Institutional Demand Returns (2026-08-20T17:15:00Z) | target reached 2026-08-21 08:20 | win $14.78 (+4.9%) |
 | 2026-08-23 12:00 | BTC/USD | packet only | Headline 'Institutional Demand Is Back: Bitcoin and Ethereum ETF Inflows Reached 10-Month High' (2026-08-23T11:02:27Z) plus a two-day hold at 77k; target 81k (+4.8%) vs stop 74.8k (-3.2%). | Institutional Demand Is Back: Bitcoin and Ethereum ETF Inflows Reached 10-Month High (2026-08-23T11:02:27Z) | time limit 2026-08-26 12:00 | win $2.09 (+0.8%) |
 | 2026-08-28 00:00 | BTC/USD | packet only | Price holds above the 80k resistance after a retest; target 84k (+4.6%) vs stop 77.8k (-3.1%). No headline used. | none | stop reached 2026-08-28 16:20 | loss -$11.91 (-4.0%) |
+
+### September, Claude Sonnet 5.5
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-09-04 00:00 | BTC/USD | 1Hour bars x1 | Hourly closes held above 80k from 14:00 to 23:00 on Sep 3 after a break of the August range top; supportive news: 'SEC Approves Options Trading For WisdomTree Bitcoin Fund' (2026-09-03 21:00Z). Needs a move well over the round-trip cost; target is about 6%, stop about 3%. | https://www.newsbtc.com/news/sec-approves-options-trading-for-wisdomtree-bitcoin-fund/; https://cryptopotato.com/bitcoin-btc-rally-driven-by-short-covering-not-fresh-leverage-qcp/ | stop reached 2026-09-04 14:50 | loss -$11.64 (-3.9%) |
+| 2026-09-07 12:00 | LINK/USD | packet only | Price technical only: held 13.1-13.2 for 16 hours after clearing the August high of 12.67, relative strength vs BTC; about 10% target against 5.5% stop, comfortably above round-trip cost of about 0.7%. | none | stop reached 2026-09-08 13:35 | loss -$15.81 (-6.3%) |
+| 2026-09-17 00:00 | BTC/USD | 1Day bars x1, 1Hour bars x1 | Technical: support at 75k held on two tests through CLARITY failure and the Fed; stop 74,600 (about 2% risk) against a 79,500 target (about 4.5%), larger than the roughly 0.7% round-trip cost. No headline is part of the reason. | none | target reached 2026-09-18 13:50 | win $12.77 (+4.2%) |
+| 2026-09-21 00:00 | ETH/USD | 1Day bars x1 | Technical: three consecutive daily closes above the 2.55k range top after a held pullback test near 2565; stop 2520 about 4.7% below, target 2900 about 9.7%, well above the roughly 0.7% round-trip cost. | none | stop reached 2026-09-23 14:15 | win $1.10 (+0.4%) |
+| 2026-09-25 12:00 | LINK/USD | 1Day bars x1, 1Hour bars x1 | Technical: rising daily closes and a break of the 13.5 high with a held base at 13.2-13.4 overnight; stop 13.15 about 7% below, target 15.5 about 10% above, above the roughly 0.7% round-trip cost. | none | stop reached 2026-09-28 09:10 | loss -$8.44 (-4.2%) |
 
 ### October, Claude Opus 5.5
 

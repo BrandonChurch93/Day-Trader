@@ -29,7 +29,7 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | July | Claude Opus 5.5 | -$50.63 | $69.81 | n/a | n/a of 0 | 10 | 3 | 6 | $14.66 | -8.3% | 44 of 62 | 18 | 28 of 62 | 0 |
 | July | GPT-6.2 Sol | -$2.78 | $69.81 | n/a | n/a of 0 | 5 | 2 | 3 | $6.16 | -1.9% | 57 of 62 | 92 | 10 of 62 | 0 |
-| July | Gemini Neon | $57.38 | $69.81 | n/a | n/a of 0 | 7 | 4 | 1 | $9.37 | -6.0% | 49 of 62 | 36 | 37 of 62 | 0 |
+| July | Gemini Neon | $57.38 | $69.81 | n/a | n/a of 15 | 7 | 4 | 1 | $9.37 | -6.0% | 49 of 62 | 36 | 37 of 62 | 0 |
 | July | Claude Sonnet 5.5 | -$25.70 | $69.81 | n/a | n/a of 0 | 3 | 0 | 3 | $4.45 | -2.9% | 58 of 62 | 20 | 0 of 62 | 0 |
 | July | Kimi K3 | -$24.12 | $69.81 | -$14.96 | 9 of 20 | 12 | 5 | 7 | $15.23 | -4.5% | 47 of 62 | 22 | 36 of 62 | 1 |
 | July | Grok 4.7 | -$9.66 | $69.81 | n/a | n/a of 0 | 8 | 3 | 5 | $12.66 | -3.5% | 54 of 62 | 93 | 31 of 62 | 0 |

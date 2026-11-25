@@ -692,8 +692,136 @@
      "wins": 1
     },
     "08": {
-     "finished": false,
-     "session": "TM02-B02-SOL-2026-08"
+     "benchmark_shown": "BTC/USD",
+     "buys": 5,
+     "closed": 5,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 460,
+     "fees_usd": 4.52,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": 22.36,
+     "git_dirty": true,
+     "hold_gain_usd": 245.33,
+     "lookups": 64,
+     "losses": 1,
+     "max_drop": -0.0036,
+     "model": "gpt_6_2_sol",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-SOL-2026-08",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 57,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-08-08T00:00:00Z",
+       "exit_reason": "Exit set in pick 20260806T0000Z: the exit time was reached.",
+       "gain_pct": -0.0033,
+       "gain_usd": -0.75,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Completed hourly bars held just above 1900 after the breakout, versus the early-August resistance near 1896. The stop below the breakout level tests that thesis.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "ETH leads the current recovery and has retested 1900 after clearing the early August range. This is a modest position because the 1926 to 1935 shelf could still block it. The roughly 2.8% gross path to 1960 leaves room for a conservative 1% round-trip cost allowance.",
+       "usd": 225,
+       "wake_utc": "2026-08-06T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-15T02:00:00Z",
+       "exit_reason": "Exit set in pick 20260815T0000Z: the target price was reached.",
+       "gain_pct": 0.0321,
+       "gain_usd": 6.43,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "The Aug. 14 06:57:20 UTC headline Chainlink (LINK) Flashes a Rare Signal Linked to Triple-Digit Rallies highlighted unusual relative strength, which the desk confirms with a high-volume hourly breakout and later lows above 8.92. I am trading that confirmation, not the headline forecast.",
+       "result": "win",
+       "sources": [
+        "https://cryptopotato.com/chainlink-link-flashes-a-rare-signal-linked-to-triple-digit-rallies/"
+       ],
+       "symbol": "LINK/USD",
+       "thesis": "LINK is outperforming Bitcoin and has turned late-July resistance near 8.90 into a tentative support zone. I will test a small continuation swing, not an analyst price prediction. A 9.30 target is roughly 3.8% gross from the mark, which clears the 1% round-trip allowance.",
+       "usd": 200,
+       "wake_utc": "2026-08-15T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-21T01:20:00Z",
+       "exit_reason": "Exit set in pick 20260820T1200Z: the target price was reached.",
+       "gain_pct": 0.0318,
+       "gain_usd": 5.58,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 2,
+        "1Hour": 4,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "The Aug. 20 10:40:17 UTC headline Bitcoin grabs 77% of $1.3 billion crypto fund surge as BlackRock leads the rebound supports BTC leadership, although issuer rows were missing. The actionable evidence is the completed hourly breakout and higher lows above 71.4k.",
+       "result": "win",
+       "sources": [
+        "https://cryptoslate.com/bitcoin-grabs-77-of-1-3-billion-crypto-fund-surge-as-blackrock-leads-the-rebound/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "BTC consolidated near 69k overnight before a volume-backed break above 70k, then held above 71.4k for three completed hours. I will take a small continuation trade because the preceding move was already large. The 74.6k target gives 3.8% gross against a 1% round-trip allowance.",
+       "usd": 175,
+       "wake_utc": "2026-08-20T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-25T00:00:00Z",
+       "exit_reason": "Exit set in pick 20260823T1200Z: the exit time was reached.",
+       "gain_pct": 0.0385,
+       "gain_usd": 5.8,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "The tape recovered from 91.46 to 94.61 and the latest hourly push strengthened, with BTC steady rather than making new lows. The stop below the rising hourly base invalidates the bounce.",
+       "result": "win",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "SOL has a tentative bounce setup after holding above 91.46 and putting in four rising hourly closes and lows, with greater activity on the latest bar. At 99.50 there is roughly 5.2% gross upside versus a 1% round-trip cost allowance, but the recent whipsaw merits small size.",
+       "usd": 150,
+       "wake_utc": "2026-08-23T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-27T16:45:00Z",
+       "exit_reason": "Exit set in pick 20260827T1200Z: the target price was reached.",
+       "gain_pct": 0.0378,
+       "gain_usd": 5.31,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "The Aug. 27 02:00:25 UTC headline Solana takes its first step toward sub-second speed by cutting block confirmation times across the network describes faster measured slot spacing, with the next stage pending. Buy the completed high-volume close above 103 and subsequent hourly lows above 103.15, not the headline alone.",
+       "result": "win",
+       "sources": [
+        "https://cryptoslate.com/solana-cuts-slot-time-to-350ms-as-early-telemetry-tests-its-path-to-200ms/"
+       ],
+       "symbol": "SOL/USD",
+       "thesis": "SOL cleared a repeatedly rejected 103 area on an hourly volume increase, and the trailing pullback has held near that former ceiling. The verified timing improvement is supportive context, not proof of price causation. The target is about 4.4% gross versus a 1% round-trip allowance and macro risk warrants modest size.",
+       "usd": 140,
+       "wake_utc": "2026-08-27T12:00:00Z"
+      }
+     ],
+     "wins": 4
     },
     "09": {
      "finished": false,
@@ -991,8 +1119,126 @@
      "wins": 3
     },
     "09": {
-     "finished": false,
-     "session": "TM02-B02-SONNET-2026-09"
+     "benchmark_shown": "BTC/USD",
+     "buys": 5,
+     "closed": 5,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 361,
+     "fees_usd": 6.46,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": -22.02,
+     "git_dirty": true,
+     "hold_gain_usd": 59.89,
+     "lookups": 18,
+     "losses": 3,
+     "max_drop": -0.0285,
+     "model": "claude_sonnet_5_5",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-SONNET-2026-09",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 60,
+     "wakes_no_pick": 51,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-09-04T14:50:00Z",
+       "exit_reason": "Exit set in pick 20260904T0000Z: the stop price was reached.",
+       "gain_pct": -0.0387,
+       "gain_usd": -11.64,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Hourly closes held above 80k from 14:00 to 23:00 on Sep 3 after a break of the August range top; supportive news: 'SEC Approves Options Trading For WisdomTree Bitcoin Fund' (2026-09-03 21:00Z). Needs a move well over the round-trip cost; target is about 6%, stop about 3%.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/sec-approves-options-trading-for-wisdomtree-bitcoin-fund/",
+        "https://cryptopotato.com/bitcoin-btc-rally-driven-by-short-covering-not-fresh-leverage-qcp/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "BTC broke out above the 80k ceiling that capped it all August and held above it for nine hours, closing at 81.3k. Small starter position on the breakout with a stop back inside the old range. Headlines are supportive but secondary; short-covering driven, so keep size modest.",
+       "usd": 300,
+       "wake_utc": "2026-09-04T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-08T13:35:00Z",
+       "exit_reason": "Exit set in pick 20260907T1200Z: the stop price was reached.",
+       "gain_pct": -0.0631,
+       "gain_usd": -15.81,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Price technical only: held 13.1-13.2 for 16 hours after clearing the August high of 12.67, relative strength vs BTC; about 10% target against 5.5% stop, comfortably above round-trip cost of about 0.7%.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "LINK broke above its August high (12.67) with a one-hour spike and has held the new level for 16 hours while BTC slipped, showing relative strength. Starter position with a stop under the pre-spike range. No headline is part of this reason; the news feed has nothing on LINK.",
+       "usd": 250,
+       "wake_utc": "2026-09-07T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-18T13:50:00Z",
+       "exit_reason": "Exit set in pick 20260918T1200Z: the target price was reached.",
+       "gain_pct": 0.0425,
+       "gain_usd": 12.77,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Technical: support at 75k held on two tests through CLARITY failure and the Fed; stop 74,600 (about 2% risk) against a 79,500 target (about 4.5%), larger than the roughly 0.7% round-trip cost. No headline is part of the reason.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC has defended 75k support twice in two days (Sep 15 low 74.9k, Sep 16 low 75.0k) through the CLARITY Act failure and the Fed meeting, which was widely priced (hike odds around 85% per a Sep 12 headline). With the two scheduled risk events behind it, a bounce toward the 78-79.5k band is a reasonable swing with a tight stop under support. I am not using the edited_later Fed headline as a reason.",
+       "usd": 300,
+       "wake_utc": "2026-09-17T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-23T14:15:00Z",
+       "exit_reason": "Exit set in pick 20260922T0000Z: the stop price was reached.",
+       "gain_pct": 0.0044,
+       "gain_usd": 1.1,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1
+       },
+       "news_looked": 0,
+       "reason": "Technical: three consecutive daily closes above the 2.55k range top after a held pullback test near 2565; stop 2520 about 4.7% below, target 2900 about 9.7%, well above the roughly 0.7% round-trip cost.",
+       "result": "win",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "ETH has closed above its four-week 2.4-2.55k range on Sep 18, 19 and 20 (2612, 2632, 2644) and held through a Sunday dip to 2565. It is the first multi-day close above the range, not a one-candle spike. Small position with a stop back inside the range. No headline is part of the reason.",
+       "usd": 250,
+       "wake_utc": "2026-09-21T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-28T09:10:00Z",
+       "exit_reason": "Exit set in pick 20260926T1200Z: the stop price was reached.",
+       "gain_pct": -0.0421,
+       "gain_usd": -8.44,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Technical: rising daily closes and a break of the 13.5 high with a held base at 13.2-13.4 overnight; stop 13.15 about 7% below, target 15.5 about 10% above, above the roughly 0.7% round-trip cost.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "LINK has made higher lows all week (11.05, 11.37, 12.23, 12.42, 12.52, 13.18, 13.21) and today pushed through the 13.5 high at 14.1, holding the new level for hours. Small position, stop below the 13.2 base. No headline is part of the reason.",
+       "usd": 200,
+       "wake_utc": "2026-09-25T12:00:00Z"
+      }
+     ],
+     "wins": 2
     },
     "10": {
      "benchmark_shown": "BTC/USD",
@@ -1133,10 +1379,11 @@
     "complete": false,
     "months_both_finished": [
      "07",
+     "08",
      "10"
     ],
-    "price_only_usd": -35.28,
-    "with_news_usd": -15.57
+    "price_only_usd": -31.11,
+    "with_news_usd": 6.79
    },
    "SONNET": {
     "better_with_news": true,
@@ -1144,10 +1391,11 @@
     "months_both_finished": [
      "07",
      "08",
+     "09",
      "10"
     ],
-    "price_only_usd": -63.18,
-    "with_news_usd": -10.38
+    "price_only_usd": -63.45,
+    "with_news_usd": -32.4
    }
   },
   "verdict": "not finished"
