@@ -115,7 +115,7 @@ Where checkers disagreed, the stricter verdict is used.
 
 ## Not verified or unfinished
 
-- UNKNOWN: whether the insider and 13D effects held up recently, after costs.
+- UNKNOWN: whether the insider and 13D effects held up recently, after costs. (Added 2026-11-25: the later reading on insider buying is in `docs/research/26_insider_buying_evidence.md`. It is weaker than the 2012 result. The 13D effect is still not read.)
 - UNKNOWN: a net, out-of-sample test of any crypto rule for this account. The 2026 momentum paper was read as an abstract only.
 - UNKNOWN: the share of all memecoins that go to zero.
 - STATED: the curated Alpaca OTC list rests on one Alpaca comment. No page gives a count.

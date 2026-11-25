@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-25 10:22 UTC
+Last updated: 2026-11-25 10:32 UTC
 
 This page is the current state of the project. It is the second thing to read, after `AGENTS.md`. If another page disagrees with this one about a result or about where things stand, this page stands. The map of every file is `docs/INDEX.md`. Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
 
@@ -107,7 +107,7 @@ Questions about scope and about his own rules, on the same list, one block each:
 
 Things only he can do:
 
-1. Open an Alpaca account for practice trading and create practice keys.
+1. Open an Alpaca practice account and make a key for it, read-only if the key screen offers one. Research reads the account and never sends an order, pretend ones included (`AGENTS.md` hard rules 1 and 13).
 2. Buy one month of stock price data. Replay 06 needs its dividend history. It also gives a second source to check item 6 against.
 3. Say whether Kraken's published files may be the main crypto history.
 4. Say whether the order-book sampler may run again on Kraken's public price feed.
@@ -125,7 +125,7 @@ This is the queue in force. If another page lists a different order, this one st
 3. Replay 06: slow trend on funds that can be bought. Plan drafted in `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`. Needs the data purchase for dividend history, the owner's yes to decision 4a, and his decision on pass mark 4 before the plan is frozen. Proposed addition before it is frozen: the industry rule I2 on sector funds, which was picked after seeing the corrected run of replay 05 and must be disclosed as that in the plan.
 4. Replay 07: day trading SPY and QQQ on one-minute bars. Plan drafted in `research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`. Needs one-minute prices, from the data purchase or from the workspace's own price history if the owner allows it (item 6 of "Things only he can do"), his yes to decision 4b, and his decision on pass mark 4. Its night-only rule N5 also needs dividend history, which the workspace's price history does not have, so on that source alone N5 is dropped or waits for the purchase, and the plan says which before it is frozen.
 5. Credit Treasury bill interest on idle cash in every replay. A rig change with its own plan. Needs the owner's yes to decision 7.
-6. Later, each with its own plan: insider buying that is not routine, a plain statistical model against a tree model logged only, a small-company fund held overnight only, and buying stocks at new highs with tight exits.
+6. Later, each with its own plan: insider buying (reading in `docs/research/26_insider_buying_evidence.md`, draft plan in `research_rig/PREREG_08_insider_buying_DRAFT.md`, which runs nothing and waits on decision 11, on prices that include dead stocks and on the owner's yes to reading SEC filing lists), a plain statistical model against a tree model logged only, a small-company fund held overnight only, and buying stocks at new highs with tight exits.
 7. Only if basket tests continue, which research recommends against (decision 6): fix the three faults in `research_rig/basket.py` first.
 
 Nothing in this queue can start today without the owner except drafting plans.

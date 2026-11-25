@@ -27,7 +27,8 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 | Talk to the owner or hand work to him | `docs/quality/03_working_with_the_owner.md`, `docs/decisions/morning_list_2026-11-25.md` |
 | Plan, build or review anything | `docs/quality/00_READ_FIRST.md`, then the file it points to for your topic |
 | Use or change a number | `config/thresholds.yaml`. Then add a dated note in `docs/decisions/` |
-| Run, rerun or add a test on past prices | `research_rig/README.md`, `docs/research/16_rig_audit.md`, `research_rig/TRIAL_LEDGER.md` |
+| Confirm a stored result, or asked to rerun a test | `research_rig/README.md`, "How each stored output was made". Short answer: do not run it. Check the stored output with `python3 tools/check_repo.py --builders` |
+| Add a new test on past prices | `research_rig/README.md`, then `research_rig/TRIAL_LEDGER.md`. `docs/research/16_rig_audit.md` for what the audits changed in the rig |
 | Judge whether a trading idea is worth testing | `docs/research/25_what_the_evidence_supports.md`, then the playbook page for that market |
 | Choose a broker, a venue or a data source | `docs/playbook/04_brokers_data_rules.md`, `docs/research/09_brokers_and_venues.md`, `docs/research/10_historical_data_and_practice.md` |
 | Put an AI model anywhere near a trading decision | `AGENTS.md` hard rules 1 and 7, `docs/playbook/03_role_of_ai.md`, `docs/research/11_ai_trader_experiment_design.md` |
@@ -53,10 +54,11 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 |---|---|---|
 | `docs/STATUS.md` | Where the project stands today: what was tested, what passed, what waits on the owner, what is next | CURRENT |
 | `docs/INDEX.md` | This page | CURRENT |
+| `docs/GLOSSARY.md` | Plain definitions of the terms, test names and rule names used in the repo | CURRENT |
 
 ## docs/quality/ (the owner's standard)
 
-Lines marked OWNER in these files are rules. Lines marked TRANSLATED are proposals.
+Lines marked OWNER in these files are rules. Lines marked TRANSLATED are proposals. Every file in this folder is the owner's. Only he changes them. A change research wants is written as a proposal in `docs/decisions/`.
 
 | File | What it is | State |
 |---|---|---|
@@ -122,6 +124,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/20_small_account_edges.md` | Small edges open to a small account | CURRENT |
 | `docs/research/21_systematic_funds_and_published_rules.md` | Rule-based funds and published rules, with their live records | CURRENT |
 | `docs/research/25_what_the_evidence_supports.md` | One page that pulls the reading and all our tests together, with the ranked list of what to test next | CURRENT |
+| `docs/research/26_insider_buying_evidence.md` | What the evidence says about buying after insiders buy: the 2012 paper, later samples, funds that tried it, the data a test needs. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
 
@@ -169,13 +172,13 @@ Working papers.
 | `research_rig/ledger_count_check.py`, `research_rig/ledger_count_check.json` | Works out pass mark 3 again from the stored outputs with the two reruns counted as trials. Runs no rule | CURRENT |
 | `research_rig/provenance.py`, `research_rig/provenance.json` | The record of how each stored output was made: command, code files, commits, its fingerprint and the fingerprint of each raw input file. Built after the runs. `python3 provenance.py` checks the repo against it and writes nothing | CURRENT |
 | `research_rig/requirements.txt` | The Python package versions the stored outputs were made with | CURRENT |
-| `docs/GLOSSARY.md` | Plain definitions of the terms, test names and rule names used in the repo | CURRENT |
 | `research_rig/rig2.py`, `research_rig/fixtures2.py`, `research_rig/basket.py`, `research_rig/fixtures_basket.py` | Engine v2 and its checks | CURRENT |
 | `research_rig/rules.py`, `research_rig/common_03.py` | Rule definitions used by both engine versions | CURRENT |
 | `research_rig/engine.py`, `research_rig/fixtures.py`, `research_rig/common_01.py` | Engine v1 | RECORD. Use v2 |
 | `research_rig/PREREG_01_daily_crypto_trend.md`, `research_rig/PREREG_01_S1_fill_delay.md`, `research_rig/PREREG_01_X2_kraken_full_history.md`, `research_rig/PREREG_02_ai_calls_pilot.md`, `research_rig/PREREG_03_intraday_crypto.md`, `research_rig/PREREG_04_coin_basket_trend.md`, `research_rig/PREREG_05_stock_trend_free_data.md` | Plans written before each test. Not edited after the run | CURRENT |
 | `research_rig/AMENDMENT_2026-11-25_audit_fixes.md` | The audit fixes, written before the rerun | CURRENT |
 | `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`, `research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md` | Plans for two stock tests that wait for a data purchase | DRAFT |
+| `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |
 | `research_rig/PRACTICE_01_two_rules_observation_DRAFT.md` | Draft plan for watching two rules in the practice account (decision 5): what is recorded, who may send the orders, and what is still to settle | DRAFT |
 | `research_rig/run_v2.py`, `research_rig/compare_v1_v2.py`, `research_rig/noise_pbo.py`, `research_rig/build_doc16.py`, `research_rig/results_v2.json`, `research_rig/compare_v1_v2.json`, `research_rig/noise_pbo.json`, `research_rig/venue_price_gap.json` | The rerun after the audits and its outputs | CURRENT |
 | `research_rig/run_04.py`, `research_rig/results_04.json`, `research_rig/build_doc23.py`, `research_rig/NOTES_04_builder.md` | Replay 04 | CURRENT |

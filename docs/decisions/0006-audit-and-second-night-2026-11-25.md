@@ -202,3 +202,32 @@ After the sixth addendum was pushed (commit efcde2e), a tenth fresh model, from 
 - The descriptions of pass marks 3 and 5 in the number table said "at least" where the code asks for "above". Corrected.
 
 Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold. No rule was run.
+
+## Eighth addendum, 2026-11-25 10:32 UTC: a check of the last fixes, a finding test, and the practice and insider drafts
+
+Four things happened after the seventh addendum (commit 7596e22).
+
+A draft plan for the practice account was written (`research_rig/PRACTICE_01_two_rules_observation_DRAFT.md`). It runs nothing. Writing it showed a gap in the morning list: item 1 said research would connect to the practice account and decision 5 spoke of placing practice trades, and neither said who sends the orders. `AGENTS.md` hard rule 1 keeps every model out of the order path, pretend money included, and hard rule 13 keeps tools that can cancel orders or close positions away from agents. Item 1 and decision 5 now say research reads only, that pretend orders would come from a plain timer program with no model in it, and that research does not hold a key that can trade. Item 1 had also said practice keys work only on Alpaca's practice address. Alpaca's page says only that the practice account has its own key. Corrected, and the rest marked UNKNOWN.
+
+A fresh model checked every change since the sixth addendum (commits efcde2e to 50a8f2b) for errors of fact, contradictions and asks that were wider than what they said they approve. It found eight. All eight were checked against the files and fixed:
+
+- The practice draft said replay 05 had month-end values only. It had daily closes, checked the rule at month end and filled at the next day's close.
+- The questions table in document 16 still said fixed start dates would "most likely" turn the bitcoin passes into fails. The seventh addendum had changed that to UNKNOWN elsewhere. Now the same there.
+- Two lines in the morning list still spoke of an AI test "in the practice account". Decision 10 makes it a shadow test with no orders. Both lines now say so.
+- Question 17's guard was missing from its approving line, and three pages that mention whether early practice days count did not point to it. Added.
+- The approving lines of decision 11 and of item 6 were narrower than what they proposed. Widened to match, with the parts answerable apart.
+- "Start here" item 4 described question 18b as one yes or no. It has three parts. Corrected.
+- Item 1 left open that research might hold a full key. It now says research does not.
+
+Three fresh models, from three makers, were each given only the repo address and sixteen questions a new agent has to be able to answer: what the state is, what must not be run, where a number lives, what waits on the owner, who may change which file. The questions and the expected answers were written down before any of them started. The two that have reported answered all sixteen correctly, most from the first three files. The third had not reported when this was written. What they said slowed them down, and what changed:
+
+- The owner's files still route a reader to the playbook first. That is item 5 of "Things only you can do" and is not research's to change.
+- No page said plainly that every file in `docs/quality/` is the owner's. `README.md` now has a short section, "Files you do not change", and `docs/INDEX.md` says it at the head of that folder's table.
+- `docs/INDEX.md` listed the glossary under the wrong folder. Moved.
+- The index sent anyone asked to rerun a test through three documents. It now has its own row with the short answer: do not run it.
+- `research_rig/README.md` told a reader how to rerun a test if the owner says yes to question 16a, without saying his yes would not cover last night's runs. It now says so.
+- The replay 05 report said eight rules cannot tie. They can. No tie occurred, and the line now says that.
+
+A researcher read what came after the 2012 paper on insider buying, and research opened the main sources again (`docs/research/26_insider_buying_evidence.md`). The case is weaker than decision 11 made it sound, and decision 11 now says so. One figure in the researcher's notes was wrong and was corrected before it reached the page. A draft plan that runs nothing is `research_rig/PREREG_08_insider_buying_DRAFT.md`.
+
+Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold. No rule was run and no price data was downloaded for the insider idea.

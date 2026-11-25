@@ -49,7 +49,7 @@ Date: 2026-11-25. Plan written and pushed before the run: `research_rig/PREREG_0
 | 5 bps | 0.307 | 0.319 | 0.174 | 0.183 | under 0.25 | 0.0% of cases |
 | 10 bps | 0.234 | 0.243 | 0.131 | 0.136 | under 0.25 | 0.0% of cases |
 
-With eight rules there are no ties, so the three tie readings are equal.
+No tie occurred in either run, so the three tie readings are equal. (Corrected 2026-11-25: this line first said eight rules cannot tie. They can, when two rules have the same result.)
 
 ## Rule I2, first run against corrected run, held-back slice
 

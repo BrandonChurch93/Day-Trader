@@ -152,7 +152,7 @@ Date: 2026-11-25. Plan written and pushed before the run: `research_rig/PREREG_0
 ## The overfitting estimate (mark 4), both runs
 
 {pbo_tab()}
-With eight rules there are no ties, so the three tie readings are equal.
+No tie occurred in either run, so the three tie readings are equal. (Corrected 2026-11-25: this line first said eight rules cannot tie. They can, when two rules have the same result.)
 
 ## Rule I2, first run against corrected run, held-back slice
 

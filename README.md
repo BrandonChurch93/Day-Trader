@@ -32,6 +32,12 @@ The first three are the owner's rules (`AGENTS.md`, and lines marked OWNER in `d
 4. Practice. A result or decision changes `docs/STATUS.md` in the same commit. A new, moved or retired file changes `docs/INDEX.md` in the same commit.
 5. Practice. Run `python3 tools/check_repo.py` before every commit. It fails if the map is not true. `python3 tools/check_repo.py --builders` also checks that no built document was edited by hand.
 
+## Files you do not change
+
+- `AGENTS.md` and every file in `docs/quality/` are the owner's. Only he changes them. Write the change you want as a proposal in `docs/decisions/`.
+- The open owner numbers in `config/thresholds.yaml` are his to set. Any other value there changes only with a dated note in `docs/decisions/`.
+- The audit reports in `audit/` and the frozen plans in `research_rig/` (`PREREG_*.md` without `_DRAFT`) are records. They are not edited after the fact. A correction is a new dated note or amendment. This line is research's practice.
+
 ## Which file wins when two disagree
 
 1. `AGENTS.md`

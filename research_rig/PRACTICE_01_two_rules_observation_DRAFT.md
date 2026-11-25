@@ -6,7 +6,7 @@ Status: DRAFT, written 2026-11-25 10:21 UTC by research. Not frozen. Nothing run
 
 - It is a forward record. Two rules that were already run on past prices are run day by day with pretend money, and every order and fill is written down.
 - It is not a test with a pass or a fail. Neither rule has a credited pass (question 18b on the morning list). Both stay labelled "not passed" while they are watched.
-- It is not a step through the practice gate. `docs/playbook/00_START_HERE.md` phase 2 asks for `paper_min_trading_days` and `paper_min_closed_trades`, and for slippage and errors "within tolerance". No tolerance is defined yet (question 17), so no rule can pass that gate. Whether these days ever count toward it is the owner's to say.
+- It is not a step through the practice gate. `docs/playbook/00_START_HERE.md` phase 2 asks for `paper_min_trading_days` and `paper_min_closed_trades`, and for slippage and errors "within tolerance". No tolerance is defined yet (question 17), so no rule can pass that gate. Whether these days ever count toward it is the owner's to say. Question 17 proposes that days before he sets the allowed amounts do not count.
 - It is not real money. `AGENTS.md` hard rule 3 keeps paper mode the default and needs the owner's written go for anything else.
 
 ## Why do it
@@ -73,7 +73,7 @@ Each is a choice for the owner, or a fact to check once keys exist. Research's s
 3. Which fund stands for "a total market fund". Research's suggestion: one large, low-fee fund that holds the whole US market.
 4. The pretend amount for each rule. It should be close to what would be used with real money, because what a fill costs depends on the size of the order. That real amount is `live_starting_capital_usd`, which is the owner's and has no value. Nothing here assumes one.
 5. Which prices the rules read. Research's suggestion: the practice account's own prices, because those are the prices a live service would see. The record then also says how far they were from the price history the replays used.
-6. The time of day of each check, and the kind of order. For bitcoin the replays used the close of each day in UTC. For the fund the replay had month-end values only, and the draft fund test fills at the next day's open (`research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`).
+6. The time of day of each check, and the kind of order. For bitcoin the replays used the close of each day in UTC. For the fund the replay had daily closes and no opening prices: it checked the ten-month rule at each month end and filled at the next day's close. The draft fund test fills at the next day's open (`research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`).
 7. What happens on the first day. A rule that already wants to be in the market either buys at once or waits for its next change. Research's suggestion: buy at once, and say so in the record, so that the record is the rule's position from day one.
 8. Whether a line goes in the trial ledger when the watching starts. Research's suggestion: yes, one line, marked as a forward record and not counted as a trial, since no new variant is tried.
 9. The UNKNOWN facts about the practice account listed above, the read-only key among them.
