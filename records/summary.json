@@ -1,13 +1,13 @@
 {
  "account": {
-  "gain_pct": -0.00044000000000010697,
-  "gain_usd": -0.88,
+  "gain_pct": 0.001695000000000002,
+  "gain_usd": 3.39,
   "pretend_start_usd": 2000.0,
-  "value_usd": 1999.12
+  "value_usd": 2003.39
  },
  "closed": [],
- "last_check_utc": "2026-11-25T16:49:31Z",
- "made_utc": "2026-11-25T16:49:31Z",
+ "last_check_utc": "2026-11-25T17:00:22Z",
+ "made_utc": "2026-11-25T17:00:22Z",
  "notes": {
   "fee": "The fee on crypto fills is added by this program from config/thresholds.yaml (practice_crypto_fee_bps_added).",
   "gap": "Gap is how far the fill was from the newest price the program had read when it sent the order, in basis points. Plus means the fill was worse for the account.",
@@ -45,6 +45,15 @@
    },
    "utc": "2026-11-25T16:31:51Z",
    "value_usd": 1999.87
+  },
+  {
+   "hold_value_usd": 2000.25,
+   "traders": {
+    "P1-BTC": 1000.0,
+    "T1-VTI": 1003.39
+   },
+   "utc": "2026-11-25T17:00:22Z",
+   "value_usd": 2003.39
   }
  ],
  "problems": [],
@@ -63,6 +72,46 @@
  },
  "traders": [
   {
+   "benchmark": "VTI",
+   "cash_usd": 0.01,
+   "closed_trades": 0,
+   "fees_added_usd": 0.0,
+   "gain_pct": 0.0033944188812300435,
+   "gain_usd": 3.39,
+   "halt_reason": null,
+   "halted": false,
+   "hold_gain_pct": 0.0035254689744221857,
+   "hold_value_usd": 1003.53,
+   "id": "T1-VTI",
+   "kind": "rule",
+   "label": "not passed",
+   "last_pick": null,
+   "losses": 0,
+   "method": "practice/PLAN_02_ai_desk.md",
+   "model": null,
+   "name": "Ten-month rule T1 on a total market fund (VTI)",
+   "orders_count": 1,
+   "positions": [
+    {
+     "cost_usd": 999.99,
+     "exit": null,
+     "gain_usd": 3.39,
+     "opened_utc": "2026-11-25T16:31:55.81403Z",
+     "price": 345.85,
+     "qty": 2.901212719,
+     "symbol": "VTI",
+     "value_usd": 1003.38
+    }
+   ],
+   "realised_usd": 0,
+   "start_usd": 1000.0,
+   "started": true,
+   "target_weight": 1.0,
+   "value_usd": 1003.39,
+   "win_rate": null,
+   "wins": 0
+  },
+  {
    "benchmark": "BTC/USD",
    "cash_usd": 1000.0,
    "closed_trades": 0,
@@ -71,8 +120,8 @@
    "gain_usd": 0.0,
    "halt_reason": null,
    "halted": false,
-   "hold_gain_pct": -0.007973244250421563,
-   "hold_value_usd": 992.03,
+   "hold_gain_pct": -0.003280134537409496,
+   "hold_value_usd": 996.72,
    "id": "P1-BTC",
    "kind": "rule",
    "label": "not passed",
@@ -88,46 +137,6 @@
    "started": true,
    "target_weight": 0.0,
    "value_usd": 1000.0,
-   "win_rate": null,
-   "wins": 0
-  },
-  {
-   "benchmark": "VTI",
-   "cash_usd": 0.01,
-   "closed_trades": 0,
-   "fees_added_usd": 0.0,
-   "gain_pct": -0.000884869879295036,
-   "gain_usd": -0.88,
-   "halt_reason": null,
-   "halted": false,
-   "hold_gain_pct": -0.0007544213443207992,
-   "hold_value_usd": 999.25,
-   "id": "T1-VTI",
-   "kind": "rule",
-   "label": "not passed",
-   "last_pick": null,
-   "losses": 0,
-   "method": "practice/PLAN_02_ai_desk.md",
-   "model": null,
-   "name": "Ten-month rule T1 on a total market fund (VTI)",
-   "orders_count": 1,
-   "positions": [
-    {
-     "cost_usd": 999.99,
-     "exit": null,
-     "gain_usd": -0.88,
-     "opened_utc": "2026-11-25T16:31:55.81403Z",
-     "price": 344.375,
-     "qty": 2.901212719,
-     "symbol": "VTI",
-     "value_usd": 999.11
-    }
-   ],
-   "realised_usd": 0,
-   "start_usd": 1000.0,
-   "started": true,
-   "target_weight": 1.0,
-   "value_usd": 999.12,
    "win_rate": null,
    "wins": 0
   }
