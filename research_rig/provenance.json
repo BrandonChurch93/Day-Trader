@@ -267,7 +267,9 @@
     "run_v2.py",
     "rig2.py",
     "rules.py",
-    "common_03.py"
+    "common_03.py",
+    "fixtures2.py",
+    "../config/thresholds.yaml"
    ],
    "raw_inputs": [
     "data/bitstamp_BTCUSD.csv",
@@ -294,7 +296,10 @@
     "run_04.py",
     "rig2.py",
     "basket.py",
-    "rules.py"
+    "rules.py",
+    "fixtures2.py",
+    "fixtures_basket.py",
+    "../config/thresholds.yaml"
    ],
    "raw_inputs": [
     "KRAKEN_DAILY_DIR/*USD_1440.csv"
@@ -311,7 +316,9 @@
    "run_from": "research_rig/",
    "code": [
     "run_05.py",
-    "rig2.py"
+    "rig2.py",
+    "fixtures2.py",
+    "../config/thresholds.yaml"
    ],
    "raw_inputs": [
     "FRENCH_DIR/F-F_Research_Data_Factors_daily__main.csv",
@@ -330,7 +337,9 @@
    "run_from": "research_rig/",
    "code": [
     "run_05.py",
-    "rig2.py"
+    "rig2.py",
+    "fixtures2.py",
+    "../config/thresholds.yaml"
    ],
    "raw_inputs": [
     "FRENCH_DIR/F-F_Research_Data_Factors_daily__main.csv",
@@ -344,7 +353,7 @@
    "note": "Corrected run, ledger row R2. The fault was in the rule code, not in the engine."
   },
   "i2_2020_note.json": {
-   "kind": "held-back",
+   "kind": "prices-no-rule",
    "command": "python3 i2_2020_note.py",
    "run_from": "research_rig/",
    "code": [
@@ -358,7 +367,7 @@
    "first_stored_in_commit": "d790acc 2026-11-25T08:35:31Z",
    "last_changed_in_commit": "d790acc 2026-11-25T08:35:31Z",
    "inputs_modified_after_output_first_stored": [],
-   "note": "A description of one year, not a rule trial. Run once more after the data path change in commit c7956c4; output identical; not counted."
+   "note": "Multiplies up each industry group's daily returns for 2020, a held-back year. No rule, no pass mark, not a trial. Run once more after its data path line changed in commit c7956c4, so the second run was not of unchanged code; output identical; not counted. Research keeps it on the do-not-run list all the same (README.md, \"Held-back scripts\")."
   },
   "pilot/decisions.jsonl": {
    "kind": "held-back",
