@@ -63,6 +63,6 @@ None is approved. Each is stated in the research file it comes from.
 | 5 | Do not day trade crypto at Alpaca, Kraken or Coinbase taker fees | research 15 |
 | 6 | Put the day trading question to stocks next, once minute data is bought, with the plan written first | research 15, research 10 |
 | 7 | Use Kraken's published files as the rig's main crypto history and Bitstamp as the second source | research 12b |
-| 8 | Buy one month of Kibot end-of-day data as a one-time download for stock replays (price in research 10) | research 10 |
+| 8 | Buy one month of data as a one-time download. EODHD's daily plus one-minute plan if the stock day trading test is next, because that test needs minute bars. Kibot's end-of-day plan if only daily replays are wanted. Prices and keep-after-cancel terms are in research 10 | research 10, research 15 |
 | 9 | Fund the high-risk sleeve only with ideas that pass a replay; first three replays named in research 13 | research 13 |
 | 10 | Possible next test, to be written down before it runs: one blended rule that holds the average of the nine trend rules, so nothing is picked | research 12b |
