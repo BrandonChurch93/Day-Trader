@@ -82,6 +82,11 @@
    "sha256": "7de81d561ecae7e080a603961ca99201e5d2952d62104b1f32cd9df1b0b8c3c0",
    "modified": "2026-11-25T07:32:24Z"
   },
+  "data/books/books.csv": {
+   "bytes": 1675552,
+   "sha256": "9f19f13c58d75324d045680ad763957dbf23d98eb9e554ce11612ebbd2753dac",
+   "modified": "2026-11-25T16:28:22Z"
+  },
   "data/platform_bars/1min/*.csv": {
    "files": 40,
    "bytes": 214350851,
@@ -763,11 +768,13 @@
     "data/books/books.csv"
    ],
    "reads_stored_outputs": [],
-   "sha256": "1bd2f6dca4533e51b6f34dadcfd340c2a362c2bc84f5a45b417698ec0459034e",
+   "sha256": "2c0075ba063bac6b0fda0b28ec185aa43cbec4f1c86a4b1e20db599fb5ad2a3d",
    "first_stored_in_commit": "d790acc 2026-11-25T08:35:31Z",
-   "last_changed_in_commit": "d790acc 2026-11-25T08:35:31Z",
-   "inputs_modified_after_output_first_stored": [],
-   "note": "As of 2026-11-25 09:55 UTC the sampler was still writing data/books/books.csv, and stops by itself at about 16:30 UTC. The summary stored here covers its first 34 minutes. The input fingerprint is added with --with-books once sampling ends, or as an interim one that says so."
+   "last_changed_in_commit": "18b07f6 2026-11-25T16:38:15Z",
+   "inputs_modified_after_output_first_stored": [
+    "data/books/books.csv"
+   ],
+   "note": "The sampler ran from 07:28 to 16:27 UTC on 2026-11-25 and stopped by itself. The summary stored here covers the whole sample. Only summary costs are kept; the sample file is on the research machine and is fingerprinted with --with-books."
   },
   "platform_bars_crosscheck.json": {
    "kind": "prices-no-rule",
