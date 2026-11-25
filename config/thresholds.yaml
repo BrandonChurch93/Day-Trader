@@ -466,6 +466,36 @@ tm_sec_edgar_max_rpm:
   status: builder
   note: Maximum requests per minute to SEC EDGAR submissions endpoints (5 req/s, half of SEC's 10 req/s fair-access limit).
   source: timemachine/record.py
+tm_weights_min_change:
+  value: 0.05
+  status: builder
+  note: In a weights session a change in a holding smaller than this share of the account is not traded.
+  source: timemachine/PLAN_TM03_bitcoin_dial.md
+
+tm_weights_twin_draws:
+  value: 1000
+  status: builder
+  note: Number of shuffled or random runs a weights session is compared with. Seeded, so a second scoring gives the same answer.
+  source: timemachine/PLAN_TM03_bitcoin_dial.md
+
+tm_weights_pass_percentile:
+  value: 90
+  status: builder
+  note: A weights session must end above this percentile of its shuffled or random runs. Fixed 2026-11-25 before any session.
+  source: timemachine/PLAN_TM03_bitcoin_dial.md
+
+tm03_plan:
+  value: {symbol: BTC/USD, months: ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11"], last_day: "2026-11-24", wake_hour_utc: 0, opening_weight: 1.0, method_min_models_beating_hold: 5, method_min_models_beating_shuffles: 2}
+  status: builder
+  note: Plan TM03. November ends on last_day, the last full day on the tape.
+  source: timemachine/PLAN_TM03_bitcoin_dial.md
+
+tm04_plan:
+  value: {start: "2026-06-05", end: "2026-11-20", wake_time_ny: 15.5, basket_size: 8, method_min_models_above_median: 5, method_min_models_above_percentile: 2, symbols: [AAPL, AMD, AMGN, AMZN, AVGO, AXP, BA, CAT, COIN, CRM, CSCO, CVX, DIS, GOOGL, GS, HD, HON, IBM, JNJ, JPM, KO, MCD, META, MMM, MRK, MSFT, MSTR, NFLX, NKE, NVDA, PG, PLTR, SHW, TRV, TSLA, UNH, V, WMT]}
+  status: builder
+  note: Plan TM04. The list is the single stocks recorded on the tape on 2026-11-25, funds left out.
+  source: timemachine/PLAN_TM04_stock_basket.md
+
 tm_knowledge_hit_within:
   value: 0.10
   status: builder

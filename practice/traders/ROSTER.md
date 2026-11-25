@@ -35,6 +35,17 @@ The builder sets the pretend-money settings before the test. Each trader below, 
 
 One card per trader: `practice/traders/A01_earnings_reader.md` and so on.
 
+Traders made for the time machine, each with its plan in `timemachine/`:
+
+| ID | Short name | Market | What it does | Plan |
+|---|---|---|---|---|
+| B01 | crypto_swing_price_only | Eight crypto pairs | Picks swing trades from prices alone, with a stop on every buy | `timemachine/PLAN_TM01_crypto_price_only.md` |
+| B02 | crypto_swing_with_news | Eight crypto pairs | The same with dated headlines | `timemachine/PLAN_TM02_crypto_with_news.md` |
+| D01 | bitcoin_dial | Bitcoin | Starts fully invested and says once a day how much to hold. No picks, stops or targets | `timemachine/PLAN_TM03_bitcoin_dial.md` |
+| D02 | stock_basket | 38 single stocks | Always fully invested, names eight stocks once a week | `timemachine/PLAN_TM04_stock_basket.md` |
+
+The letter C is taken by the controls below, so these go from B to D.
+
 What research could not support:
 
 - No trader on this list has evidence that it makes money after costs for a small account. The strongest evidence is for A03 and A07, and it says they grow less than holding with smaller drops (`docs/STATUS.md`).
