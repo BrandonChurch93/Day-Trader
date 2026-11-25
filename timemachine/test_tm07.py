@@ -130,6 +130,17 @@ class DeskTest(unittest.TestCase):
                 self.assertFalse(any(t["fill_utc"] == P.iso(D.wall(T)) for t in rec["trades"]))
                 self.assertTrue(all(t["fill_utc"] == P.iso(D.wall(T+60)) for t in rec["trades"]))
 
+    def test_b06_actual_rebalance_blocks_same_open_condition(self):
+        spec = world()
+        book = P.new_book(1000)
+        book.update(cash=900, qty={A:1}, target={A:.2}, last_px={A:100,B:100})
+        active = condition(T-3600, weight=.4)
+        active[A]["observed"] = T
+        bundle = dict(weights={A:.2,B:.2},keep=[active[A]["id"]])
+        rec,_,ev = O.step(book,bundle,spec["rows"][0],spec["params"],P.Minutes(spec["minutes"]),T,T+3600,False,active,1)
+        self.assertIn(A,[x["symbol"] for x in rec["trades"]])
+        self.assertEqual([(x["kind"],x.get("reason")) for x in ev],[("cancelled","immediate_fill")])
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):

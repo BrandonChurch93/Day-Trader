@@ -162,7 +162,10 @@ class Orders:
             bars = list(bars)
             opens = {r[1]: r[2] for r in bars}
             if on_open:
-                on_open(tick, opens)
+                for s in sorted(on_open(tick, opens) or ()):
+                    live = self.active.get(s)
+                    if live and "observed" in live:
+                        self.remove(s, "cancelled", tick, reason="immediate_fill")
             self.execute_open(book, pp, tick, opens, gross)
             at = tick + MINUTE
             exits = scan(bars, tick, at)
@@ -199,6 +202,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         record = P.p_step(book, weights, exits, dict(marks=dict(book["last_px"]),
                           fills={s:[stamp, opens[s]] for s in touched if changed}), pp, first)
         record["target"] = dict(record["target"])
+        return {tr["symbol"] for tr in record["trades"]}
 
     if not changed:
         immediate(at, {})
