@@ -215,7 +215,7 @@ Working papers.
 | `research_rig/results_13.json` | Plan 13 result: each year's figures for both rules and every yardstick at three cost levels, flags, and the finding. Written once by score_13.py --run | CURRENT |
 | `research_rig/score_13.lock` | Plan 13: marks that the run was made; a second run is refused | CURRENT |
 | `research_rig/report_13.py` | Writes the plan 13 result page from results_13.json; reads no price | CURRENT |
-| `research_rig/PREREG_14_large_stock_momentum_DRAFT.md` | Draft plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | DRAFT |
+| `research_rig/PREREG_14_large_stock_momentum.md` | Frozen plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | CURRENT |
 | `research_rig/build_members_14.py` | Plan 14 member list: S&P 500 members by date from two public sources, renames listed, written outside the repo | CURRENT |
 | `research_rig/fetch_14.py` | Plan 14 data: daily bars one ticker at a time, stored outside the repo, prints counts only | CURRENT |
 | `research_rig/common_14.py` | Plan 14 rules: calendar, 12-month ranking, the baskets, the yardsticks and the simulation | CURRENT |
