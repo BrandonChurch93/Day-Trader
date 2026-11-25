@@ -831,8 +831,8 @@
    ],
    "reads_stored_outputs": [],
    "sha256": "a19f6600c9e8460f52283613911adaf9ad1bbb901ecd4776170498ebb2e10586",
-   "first_stored_in_commit": null,
-   "last_changed_in_commit": null,
+   "first_stored_in_commit": "ef497f3 2026-11-25T15:28:02Z",
+   "last_changed_in_commit": "ef497f3 2026-11-25T15:28:02Z",
    "inputs_modified_after_output_first_stored": [],
    "note": "Alpaca bars and replay code carry run-time fingerprints in the output. Minute tape is coverage only."
   }
