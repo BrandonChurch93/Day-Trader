@@ -188,6 +188,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     if not orders.active:
         start = P.scan_from(row, P.dt.datetime.fromtimestamp(at, P.UTC))
         record = P.p_step(book, weights, exits, row, pp, first)
+        record["target"] = dict(record["target"])
         record["scan"] = P.p_scan(book, minutes, start, P.dt.datetime.fromtimestamp(end, P.UTC), pp)
     else:
         # Only the simultaneous wake opens enter a rebalance calculation. Refuse
@@ -199,6 +200,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         start_row = dict(row, fills={s: f for s, f in row["fills"].items()
                                      if changed and s in touched and f and int(P.parse(f[0]).timestamp()) == at})
         record = P.p_step(book, weights, exits, start_row, pp, first)
+        record["target"] = dict(record["target"])
         active_rows = P.scan_rows(minutes, at, end, book["qty"], watched=orders.active)
         record["scan"] = orders.advance(book, pp, active_rows, at, end, gross)
     if last:

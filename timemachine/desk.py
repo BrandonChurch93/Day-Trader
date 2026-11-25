@@ -124,6 +124,9 @@ class DeskSession:
         self.spec = json.loads((self.path / "fixture.json").read_text())
         if digest(self.spec) != self.manifest["fixture"]:
             raise ValueError("frozen fixture changed")
+        scout = self.manifest["scout"]
+        if scout is not None and (digest(scout) != self.manifest["scout_hash"] or scout["fixture"] != self.manifest["fixture"]):
+            raise ValueError("sealed scout stream changed")
         self.arm = self.manifest["arm"]
         self.opts = self.manifest["settings"]
         self.pp = self.spec["params"]
@@ -319,6 +322,40 @@ class DeskSession:
                      target=rec["target"].get(s, 0)))
         for event in events:
             self.log(con, at, "executor", "condition", event)
+        # Reconstruct lineage in bar order. An ordinary protective exit has no
+        # new note; it inherits the last decision that moved that position.
+        parents = st.setdefault("position_origin", {})
+        timeline = []
+        for tr in rec["trades"]:
+            s = tr["symbol"]
+            timeline.append((epoch(tr["fill_utc"]), 0, s, dict(decision_id=decision_id, order_id=None,
+                             note_ids=cites.get(s, {}).get("note_ids", []),
+                             evidence_ids=cites.get(s, {}).get("evidence_ids", [])) if rec["target"].get(s, 0) else None))
+        for e in events:
+            if e["kind"] == "filled":
+                timeline.append((e["utc"], 1, e["symbol"], {k:e[k] for k in ("decision_id","order_id","note_ids","evidence_ids")}
+                                 if e["target"] else None))
+        for e in rec["scan"]["exits"]:
+            timeline.append((epoch(e["utc"]), 2, e["symbol"], e))
+        if rec["scan"]["closeout"]:
+            e = rec["scan"]["closeout"]
+            timeline.append((epoch(e["utc"]), 3, "", e))
+        for tick, kind, s, data in sorted(timeline, key=lambda item: item[:3]):
+            if kind < 2:
+                if data:
+                    # A retried immediate move can have no new citation. Keep
+                    # the previously established decision lineage in that case.
+                    if data["note_ids"] or data["evidence_ids"] or s not in parents:
+                        parents[s] = data
+                else:
+                    parents.pop(s, None)
+            elif kind == 2:
+                self.log(con, at, "executor", "protective_exit", dict(utc=tick, execution=data,
+                         parent=parents.pop(s, None), order_id=None))
+            else:
+                self.log(con, at, "executor", "maintenance", dict(utc=tick, execution=data,
+                         parents=dict(parents), order_id=None))
+                parents.clear()
         self.log(con, at, "executor", "scan", rec["scan"])
         st["active"] = active
         if nxt == end:

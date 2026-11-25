@@ -89,6 +89,9 @@ class DeskTest(unittest.TestCase):
         args = dict(wakes=[P.iso(D.wall(t)) for t in spec["wakes"]], end_utc=P.iso(D.wall(spec["end"])),opening={})
         table = dict(rows=spec["rows"],end_marks=spec["end_marks"])
         _, log = S.load_session(p.path)
+        protective, = [d for _,kind,d in log if kind == "protective_exit"]
+        self.assertEqual(protective["execution"]["symbol"], B)
+        self.assertEqual(protective["parent"]["evidence_ids"], [f"book:{T}"])
         bundles = [b for _,k,b in log if k == "decision"]
         ans = [(b["weights"],b["exits"]) for b in bundles]
         slow = P.run_perp(args, table, ans, p.pp, p.minutes, spec["cfg"])

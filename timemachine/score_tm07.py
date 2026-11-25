@@ -145,6 +145,7 @@ def score_week(path, draws=None, draw_sensitivities=False):
     neutral = (sess.manifest["scout"] or {}).get("usage", [])
     return dict(week=desk.wall(spec["wakes"][0]).date().isoformat(), arm=sess.arm, boss=sess.manifest["boss"],
                 fixture=sess.manifest["fixture"], scout_hash=sess.manifest["scout_hash"], main=by[f"1x/{fee:g}"],
+                settings=desk.digest(sess.opts),
                 usage=usage_totals(log, neutral), unique_boss_usage=usage_totals(log), by_fee_multiple=by,
                 delayed_value=replay(sess, bundles, fee, delay=60)["value"] if sess.arm == "C" else None)
 
@@ -169,7 +170,7 @@ def paired(scores, boss, arm, percentile=90):
     for week in WEEKS:
         baseline, candidate = (grouped.get((week, a)) for a in ("A", arm))
         if baseline and candidate:
-            if baseline["fixture"] != candidate["fixture"]:
+            if baseline["fixture"] != candidate["fixture"] or baseline.get("settings") != candidate.get("settings"):
                 raise ValueError("unmatched input")
             pairs[week] = (baseline["main"], candidate["main"])
     win = lambda p: cents(p[1]["value"]) > cents(p[0]["value"])
