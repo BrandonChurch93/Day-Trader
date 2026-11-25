@@ -137,6 +137,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/53_prediction_markets_checked.md` | Prediction markets (Kalshi, Polymarket US, Interactive Brokers): fees, free history, AI forecasters against market prices, who makes money, what can be tested honestly; every source checked | CURRENT |
 | `docs/research/54_replay_13_year_or_method.md` | Replay 13: the owner's dip-and-peak method as a fixed rule on the hottest coins, each year 2020 to 2026. The dip rule was not paid, 2021 included; holding the hot five met its marks and still lost money in three years | CURRENT |
 | `docs/research/55_stocks_in_play_evidence_checked.md` | Day trading stocks in play: the published opening-range rule, rebuilds that lose once real fills are charged, other single-stock day rules after costs, and what real day traders made. Checked reading, nothing measured by us | CURRENT |
+| `docs/research/58_crowded_trades_evidence_checked.md` | Shorting crowded coin futures and buying the bounce after a flush: what Binance's public archive holds, the published and public tests after costs (most lose once dead coins are kept), and which coins a US account can short today. Checked reading, nothing measured on our own prices | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
