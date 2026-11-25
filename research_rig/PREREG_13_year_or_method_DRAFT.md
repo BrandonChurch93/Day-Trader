@@ -66,6 +66,20 @@ Written 2026-11-25 18:46 UTC after the code builder read the draft and listed wh
 - Costs are charged on the amount traded, each side. At `replay_13_plan.shown_leverage` times: fees on the full position, financing every `replay_13_plan.financing_interval_hours` hours on the borrowed two thirds, close-out when an hourly low, the entry bar included, is `replay_13_plan.liquidation_drop_pct` percent or more below the fill; the part of the account is then zero until the next Monday's re-split. This is a simulation and not any venue's margin rules. Judged leverage is `replay_13_plan.judged_leverage`.
 - The run refuses to start while this file is a draft, takes a lock before reading any real price, and refuses a second run. The self-test uses made-up bars only.
 
+Added 2026-11-25 19:03 UTC after a second model read the code against this plan. No return had been worked out.
+
+- Left out of the list, by the coin's identity in the snapshot and before the first 50 are counted: bitcoin and ether; coins made to track the dollar, also after they lost the peg; coins backed by gold; wrapped and staked copies of another coin; tokens issued by a central exchange other than BNB. The first build used a fixed ticker list and let ten such coins through (RLUSD, U, USDG, USDN, USTC, AMPL, WTRX, KCS, GT, ZB). They are added, the lists are rebuilt, and the full list of every coin that ever enters is stored with the result so it can be read.
+- A coin can be ranked on a Monday only when every hourly bar of the 7 days before is on file. A coin with a hole in those days is left out that week and counted.
+- The Monday re-split is the one exception to "no sale and new purchase at the same open": the new week's parts may buy at the same open at which last week's positions are sold, also in the same coin, and both costs are paid.
+- Stop and take are judged on hourly closes only, as written above. A bar that touched both levels inside the hour counts by its close.
+- Financing at 3x is charged by the hour held: one eighth of `replay_13_plan.financing_bps_per_8h` per hour on the borrowed part.
+- A sale that a missing bar delays past a year's end counts in the year the position was opened. The check of bar times found no such case.
+- "Bars stop for good" is read from the whole file. It changes no decision: the position is valued at its last close either way.
+- A part of the account in a week is flagged when the coin list was carried from an earlier snapshot, when its coin has a missing hourly bar in that week, when its sale was delayed by a missing bar, or when it was sold at a last close because bars stopped. A part left in cash because fewer than `replay_13_plan.hot_n` coins could be ranked is counted and not flagged.
+- Years that cannot count toward the mark are also left out when choosing between the three findings.
+- Every yardstick is worked out at each cost level, not only the judged one. The 3x figures are shown at the judged cost only.
+- The percentile of the random paths uses straight-line interpolation between sorted paths. The random draws come from one seeded stream in date order.
+
 ## How this can fool us
 
 - One venue's prices. Fills are at the next hour's open with a fixed cost; a fast coin's real spread at that moment can be wider.
