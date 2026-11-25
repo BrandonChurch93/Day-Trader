@@ -15,14 +15,14 @@ on:
         default: ""
 permissions:
   contents: write
-concurrency:
-  group: practice-trader
-  cancel-in-progress: false
 jobs:
   run:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:   # one desk run at a time. Set on this job, not the workflow, so the waiting job below does not hold up the next run
+      group: practice-trader
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
@@ -71,3 +71,31 @@ jobs:
         run: |
           echo "The practice desk stopped a trader, could not use its key, or could not save its records. Read records/summary.json on the practice-records branch."
           exit 1
+  # GitHub's own schedule above did not start one run in its first two hours (2026-11-25, 15:11 to 17:16 UTC).
+  # So every run starts the next one itself: it waits out the rest of the interval and starts a run unless a newer
+  # one has already begun (from the schedule, a person, or another link). That keeps exactly one chain going.
+  # If the repo is ever made private, remove this job: the wait is billed runner time.
+  next:
+    needs: run
+    if: always() && github.ref == 'refs/heads/main' && !github.event.inputs.clear
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    permissions:
+      actions: write
+    steps:
+      - name: Wait out the interval, then start the next run unless one has begun
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          INTERVAL_SECONDS: 600   # practice_timer_minutes in config/thresholds.yaml, in seconds
+        run: |
+          mine=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq .created_at)
+          wait=$(( $(date -u -d "$mine" +%s) + INTERVAL_SECONDS - $(date -u +%s) ))
+          if [ "$wait" -gt 0 ]; then sleep "$wait"; fi
+          newest=$(gh api "repos/$REPO/actions/workflows/practice-trader.yml/runs?per_page=1" --jq '.workflow_runs[0].id')
+          if [ "$newest" = "$RUN_ID" ]; then
+            gh workflow run practice-trader.yml -R "$REPO" --ref main && echo "Started the next run."
+          else
+            echo "A newer run ($newest) has already begun. Nothing to start."
+          fi

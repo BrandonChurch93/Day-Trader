@@ -8,7 +8,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 - Nothing tested so far is good enough to trade. That is the list below, and it is a short list.
 - Three machines exist or are being built: the rig (`research_rig/`, working), the practice desk (`practice/`, running), the time machine (`timemachine/`, working, running AI sessions on crypto since 2026-11-25).
-- The practice desk is running on GitHub's timer with pretend money since 2026-11-25 16:31 UTC, with the two fixed rules. What it has done is on the owner's screen and in the summary file on the `practice-records` branch. This page does not repeat it.
+- The practice desk is running with pretend money since 2026-11-25 16:31 UTC, with the two fixed rules. GitHub's own schedule did not start a single run in its first two hours, MEASURED 2026-11-25 17:16 UTC, cause UNKNOWN. Since 17:20 UTC each run starts the next one itself about ten minutes later, and the research machine starts one if none has begun for 14 minutes. What it has done is on the owner's screen and in the summary file on the `practice-records` branch. This page does not repeat it.
 - No real-money account. No purchases. No real trades.
 
 ## Every test so far

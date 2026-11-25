@@ -24,7 +24,7 @@ The program in `trader.py` is the hands, not the head. It reads decisions, keeps
 | `traders/` | `ROSTER.md` and one method card for each AI trader |
 | `test_trader.py`, `test_review.py`, `test_market.py` | Checks with a pretend broker and no network. The timer runs them before every real run. `test_review.py` was written by an outside reviewer to break the order code |
 
-The timer is `.github/workflows/practice-trader.yml`. Every setting is in `config/thresholds.yaml`, in the keys that start with `practice_`.
+The timer is `.github/workflows/practice-trader.yml`. GitHub's own schedule in that file did not fire in its first two hours, so each run also starts the next one itself after the interval, unless a newer run has already begun. Every setting is in `config/thresholds.yaml`, in the keys that start with `practice_`.
 
 ## Working here
 
