@@ -1,6 +1,249 @@
 {
  "hit_within": 0.1,
  "models": {
+  "FABLE": {
+   "answered": true,
+   "carried_forward_hits": [],
+   "hits_after_stated": [],
+   "how_sure": "2025 values are recalled month-end closes, good to roughly 1-3 percent, with the last quarter of 2025 a bit looser. The 2026-01 BTC figure is a shaky recollection, I only vaguely remember a sharp BTC drop toward about 60k in early February 2026 with no month-end value, and I remember nothing after that.",
+   "last_hit": "2025-12",
+   "months": {
+    "2025-01": {
+     "answers": {
+      "BTC/USD": 102400,
+      "ETH/USD": 3300,
+      "SOL/USD": 231
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-02": {
+     "answers": {
+      "BTC/USD": 84300,
+      "ETH/USD": 2240,
+      "SOL/USD": 148
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-03": {
+     "answers": {
+      "BTC/USD": 82500,
+      "ETH/USD": 1820,
+      "SOL/USD": 124.5
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-04": {
+     "answers": {
+      "BTC/USD": 94200,
+      "ETH/USD": 1795,
+      "SOL/USD": 147.5
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-05": {
+     "answers": {
+      "BTC/USD": 104600,
+      "ETH/USD": 2530,
+      "SOL/USD": 156
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-06": {
+     "answers": {
+      "BTC/USD": 107100,
+      "ETH/USD": 2485,
+      "SOL/USD": 154.5
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-07": {
+     "answers": {
+      "BTC/USD": 115700,
+      "ETH/USD": 3700,
+      "SOL/USD": 172
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-08": {
+     "answers": {
+      "BTC/USD": 108200,
+      "ETH/USD": 4390,
+      "SOL/USD": 200
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-09": {
+     "answers": {
+      "BTC/USD": 114000,
+      "ETH/USD": 4145,
+      "SOL/USD": 208
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-10": {
+     "answers": {
+      "BTC/USD": 109500,
+      "ETH/USD": 3850,
+      "SOL/USD": 187
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-11": {
+     "answers": {
+      "BTC/USD": 90400,
+      "ETH/USD": 2990,
+      "SOL/USD": 133
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2025-12": {
+     "answers": {
+      "BTC/USD": 87500,
+      "ETH/USD": 2970,
+      "SOL/USD": 124.5
+     },
+     "given": 3,
+     "hit": true,
+     "near": 3
+    },
+    "2026-01": {
+     "answers": {
+      "BTC/USD": 78600,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 1,
+     "hit": false,
+     "near": 1
+    },
+    "2026-02": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-03": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-04": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-05": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-06": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-07": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-08": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-09": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-10": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    },
+    "2026-11": {
+     "answers": {
+      "BTC/USD": null,
+      "ETH/USD": null,
+      "SOL/USD": null
+     },
+     "given": 0,
+     "hit": false,
+     "near": 0
+    }
+   },
+   "name": "Claude Fable 5.2",
+   "replay_given": [],
+   "replay_hits": [],
+   "stated_latest_month": "2026-02"
+  },
   "GROK": {
    "answered": true,
    "carried_forward_hits": [],

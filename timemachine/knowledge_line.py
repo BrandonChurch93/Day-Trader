@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT))
 NOTES = Path(os.environ.get("TM_NOTES", "/home/user/workspace/rig/tm_notes")) / "knowledge"
 OUT = ROOT / "timemachine" / "knowledge_lines.json"
 DOC = ROOT / "docs" / "research" / "31_model_knowledge_lines.md"
-MODELS = [("OPUS", "Claude Opus 5.5"), ("SOL", "GPT-6.2 Sol"), ("NEON", "Gemini Neon"), ("SONNET", "Claude Sonnet 5.5"), ("KIMI", "Kimi K3"), ("GROK", "Grok 4.7")]
+MODELS = [("OPUS", "Claude Opus 5.5"), ("SOL", "GPT-6.2 Sol"), ("NEON", "Gemini Neon"), ("SONNET", "Claude Sonnet 5.5"), ("KIMI", "Kimi K3"), ("GROK", "Grok 4.7"), ("FABLE", "Claude Fable 5.2")]
 COINS = ["BTC/USD", "ETH/USD", "SOL/USD"]
 MONTHS = [f"{y}-{m:02d}" for y in (2025, 2026) for m in range(1, 13) if (y, m) <= (2026, 11)]
 REPLAY = ["2026-07", "2026-08", "2026-09", "2026-10", "2026-11"]
