@@ -18,7 +18,7 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 |---|---|---|---|---|---|---|
 | Claude Opus 5.5 | 1 of 5 | -$61.35 | -$76.42 | -$41.50 | 11 of 20 | not finished |
 | GPT-6.2 Sol | 1 of 5 | -$32.50 | -$76.42 | -$21.92 | 0 of 20 | not finished |
-| Gemini Neon | 4 of 5 | $97.46 | $298.61 | $61.88 | 18 of 20 | not finished |
+| Gemini Neon | 5 of 5 | $12.96 | $67.51 | $38.86 | 12 of 20 | has shown nothing |
 | Claude Sonnet 5.5 | 1 of 5 | -$88.92 | -$76.42 | -$64.07 | 0 of 20 | not finished |
 | Kimi K3 | 2 of 5 | -$134.62 | -$6.61 | -$110.74 | 11 of 20 | not finished |
 | Grok 4.7 | 1 of 5 | -$37.59 | -$76.42 | -$34.52 | 14 of 20 | not finished |
@@ -27,7 +27,7 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 
 | Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups | Wakes that showed stock fund movers | Wakes answered unseen |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| July | Claude Opus 5.5 | -$50.63 | $69.81 | n/a | n/a of 0 | 10 | 3 | 6 | $14.66 | -8.3% | 44 of 62 | 18 | 28 of 62 | 0 |
+| July | Claude Opus 5.5 | -$50.63 | $69.81 | n/a | n/a of 1 | 10 | 3 | 6 | $14.66 | -8.3% | 44 of 62 | 18 | 28 of 62 | 0 |
 | July | GPT-6.2 Sol | -$2.78 | $69.81 | n/a | n/a of 0 | 5 | 2 | 3 | $6.16 | -1.9% | 57 of 62 | 92 | 10 of 62 | 0 |
 | July | Gemini Neon | $57.38 | $69.81 | $32.76 | 18 of 20 | 7 | 4 | 1 | $9.37 | -6.0% | 49 of 62 | 36 | 37 of 62 | 0 |
 | July | Claude Sonnet 5.5 | -$25.70 | $69.81 | n/a | n/a of 0 | 3 | 0 | 3 | $4.45 | -2.9% | 58 of 62 | 20 | 0 of 62 | 0 |
@@ -43,7 +43,7 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 | September | GPT-6.2 Sol | $6.89 | $59.89 | n/a | n/a of 0 | 5 | 3 | 2 | $5.53 | -0.5% | 55 of 60 | 90 | 60 of 60 | 0 |
 | September | Gemini Neon | $45.43 | $59.89 | $87.67 | 9 of 20 | 11 | 5 | 4 | $14.23 | -7.0% | 47 of 60 | 55 | 24 of 60 | 0 |
 | September | Claude Sonnet 5.5 | -$0.27 | $59.89 | n/a | n/a of 0 | 3 | 2 | 1 | $3.51 | -1.8% | 56 of 60 | 39 | 55 of 60 | 1 |
-| September | Kimi K3 | not finished | | | | | | | | | | | | |
+| September | Kimi K3 | -$29.77 | $59.89 | n/a | n/a of 0 | 8 | 2 | 6 | $11.86 | -3.1% | 50 of 60 | 21 | 0 of 60 | 0 |
 | September | Grok 4.7 | $0.66 | $59.89 | n/a | n/a of 0 | 2 | 1 | 1 | $3.26 | -1.1% | 58 of 60 | 61 | 0 of 60 | 0 |
 | October | Claude Opus 5.5 | -$61.35 | -$76.42 | -$41.50 | 11 of 20 | 6 | 0 | 6 | $7.37 | -8.0% | 55 of 62 | 250 | 0 of 62 | 0 |
 | October | GPT-6.2 Sol | -$32.50 | -$76.42 | -$21.92 | 0 of 20 | 4 | 0 | 4 | $4.45 | -3.6% | 58 of 62 | 37 | 0 of 62 | 0 |
@@ -53,7 +53,7 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 | October | Grok 4.7 | -$37.59 | -$76.42 | -$34.52 | 14 of 20 | 3 | 0 | 3 | $5.42 | -5.7% | 59 of 62 | 116 | 0 of 62 | 0 |
 | November 1 to 24 | Claude Opus 5.5 | -$45.01 | -$231.10 | n/a | n/a of 0 | 11 | 3 | 8 | $13.17 | -6.9% | 38 of 48 | 36 | 0 of 48 | 0 |
 | November 1 to 24 | GPT-6.2 Sol | -$10.01 | -$231.10 | n/a | n/a of 0 | 2 | 0 | 2 | $1.98 | -1.0% | 46 of 48 | 20 | 0 of 48 | 0 |
-| November 1 to 24 | Gemini Neon | -$84.50 | -$231.10 | n/a | n/a of 7 | 10 | 0 | 10 | $14.07 | -10.9% | 39 of 48 | 71 | 0 of 48 | 0 |
+| November 1 to 24 | Gemini Neon | -$84.50 | -$231.10 | -$12.58 | 0 of 20 | 10 | 0 | 10 | $14.07 | -10.9% | 39 of 48 | 71 | 0 of 48 | 0 |
 | November 1 to 24 | Claude Sonnet 5.5 | $0.07 | -$231.10 | n/a | n/a of 0 | 4 | 2 | 2 | $5.26 | -2.5% | 43 of 48 | 37 | 43 of 48 | 1 |
 | November 1 to 24 | Kimi K3 | -$36.20 | -$231.10 | n/a | n/a of 0 | 4 | 0 | 4 | $5.92 | -3.6% | 0 of 48 | 24 | 0 of 48 | 0 |
 | November 1 to 24 | Grok 4.7 | -$23.09 | -$231.10 | n/a | n/a of 0 | 1 | 0 | 1 | $1.95 | -2.3% | 47 of 48 | 55 | 0 of 48 | 0 |
@@ -251,6 +251,19 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-09-04 00:00 | BTC/USD | 1Day bars x1, 1Hour bars x1, 1Min bars x1 | Range breakout above 80.5k held for 10 hourly bars on rising volume. | stop reached 2026-09-04 14:50 | loss -$11.64 (-3.9%) |
 | 2026-09-19 00:00 | BTC/USD | 1Day bars x1, 1Hour bars x2 | Held above the 80.5k range top for 10 hourly bars after a jump. | stop reached 2026-09-23 16:00 | win $6.29 (+3.1%) |
 | 2026-09-19 00:00 | ETH/USD | 1Day bars x1, 1Hour bars x2 | ETH broke out with BTC and held 2600+ for 10 hours. | stop reached 2026-09-23 14:10 | win $5.09 (+2.5%) |
+
+### September, Kimi K3
+
+| Wake (UTC) | Coin | Looked at | Its reason | Ended | Result |
+|---|---|---|---|---|---|
+| 2026-09-01 00:00 | BTC/USD | 1Day bars x8, 1Hour bars x2 | Strongest coin in a choppy tape; flush-reclaim of 77k plus a full day of higher lows; swing toward the 81k range top. | stop reached 2026-09-01 18:00 | loss -$9.51 (-2.4%) |
+| 2026-09-02 00:00 | LTC/USD | 1Hour bars x2 | Strongest of the eight on a day BTC made new lows; flat all-day base at 49-50; long toward 51.5 with stop under 48.75. | stop reached 2026-09-02 09:40 | loss -$7.64 (-2.5%) |
+| 2026-09-03 00:00 | BTC/USD | 1Hour bars x1 | Two failed breakdowns plus 12h of higher lows; long toward 79.9k with stop under the higher-low structure. | target reached 2026-09-03 14:50 | win $11.35 (+3.2%) |
+| 2026-09-04 00:00 | BTC/USD | 1Hour bars x2 | Breakout above 81446 to 82233, now retesting the old range top as support; long with tight invalidation below 80250. | stop reached 2026-09-04 12:35 | loss -$9.32 (-2.5%) |
+| 2026-09-07 00:00 | LINK/USD | 1Hour bars x2 | First clean alt breakout of the month, holding above its old high; trend long with invalidation under 12.75. | stop reached 2026-09-07 18:30 | loss -$10.44 (-4.3%) |
+| 2026-09-11 00:00 | BTC/USD | 1Hour bars x1 | Third defense of 76-77k range lows; buying support with stop below 75350, target range top 81k. | stop reached 2026-09-15 13:40 | loss -$2.63 (-1.1%) |
+| 2026-09-21 00:00 | BTC/USD | packet only | Third press of range top with absorption (shallow dips, alt confirmation); long with stop under 79.4k, target 87.5k. | stop reached 2026-09-24 08:50 | win $4.27 (+1.9%) |
+| 2026-09-25 00:00 | BTC/USD | packet only | Bull flag holding above breakout lid, turning up; long 84386 with stop under 83k, target 88k. | stop reached 2026-09-28 05:35 | loss -$5.86 (-2.4%) |
 
 ### September, Grok 4.7
 

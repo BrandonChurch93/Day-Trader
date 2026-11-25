@@ -31,10 +31,10 @@ From the plan: the news helped only if all six models gained more with it than w
 |---|---|---|---|---|
 | Claude Opus 5.5 | 5 of 5 | -$70.27 | -$148.89 | yes |
 | GPT-6.2 Sol | 5 of 5 | -$28.00 | -$34.23 | yes |
-| Gemini Neon | 4 of 5 | $112.95 | $97.46 | yes |
+| Gemini Neon | 5 of 5 | $29.59 | $12.96 | yes |
 | Claude Sonnet 5.5 | 5 of 5 | -$10.18 | -$63.38 | yes |
 | Kimi K3 | 1 of 5 | -$69.90 | -$110.50 | yes |
-| Grok 4.7 | 3 of 5 | $13.62 | -$48.85 | yes |
+| Grok 4.7 | 4 of 5 | $13.62 | -$71.94 | yes |
 
 Verdict: not finished.
 
@@ -68,10 +68,10 @@ Verdict: not finished.
 | October | Grok 4.7 | -$18.22 | -$76.42 | n/a | n/a of 0 | 1 | 0 | 1 | $1.46 | -1.9% | 61 of 62 | 15 | 8 of 62 | 0 |
 | November 1 to 24 | Claude Opus 5.5 | -$48.28 | -$231.10 | n/a | n/a of 0 | 7 | 2 | 5 | $8.40 | -7.0% | 39 of 48 | 19 | 0 of 48 | 0 |
 | November 1 to 24 | GPT-6.2 Sol | -$30.61 | -$231.10 | n/a | n/a of 0 | 4 | 0 | 4 | $5.56 | -3.1% | 44 of 48 | 33 | 0 of 48 | 0 |
-| November 1 to 24 | Gemini Neon | not finished | | | | | | | | | | | | |
+| November 1 to 24 | Gemini Neon | -$83.36 | -$231.10 | n/a | n/a of 0 | 11 | 1 | 10 | $15.33 | -12.2% | 34 of 48 | 25 | 0 of 48 | 0 |
 | November 1 to 24 | Claude Sonnet 5.5 | $22.22 | -$231.10 | n/a | n/a of 0 | 2 | 1 | 1 | $3.31 | -1.1% | 44 of 48 | 13 | 0 of 48 | 0 |
 | November 1 to 24 | Kimi K3 | not finished | | | | | | | | | | | | |
-| November 1 to 24 | Grok 4.7 | not finished | | | | | | | | | | | | |
+| November 1 to 24 | Grok 4.7 | $0.00 | -$231.10 | n/a | n/a of 0 | 0 | 0 | 0 | $0.00 | 0.0% | 48 of 48 | 8 | 0 of 48 | 0 |
 
 ## Why each trade was made, and how it ended
 
@@ -312,6 +312,22 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 | 2026-11-05 00:00 | ETH/USD | 1Day bars x2, 1Hour bars x2 | At 2422.52, ETH retained most of the breakout above 2312 while repeated hourly touches near 2403 held; buy the consolidation rather than the original impulse. | none | stop reached 2026-11-05 12:40 | loss -$6.24 (-1.9%) |
 | 2026-11-10 00:00 | AVAX/USD | 1Day bars x2, 1Hour bars x1 | AVAX held near 8.65 after a pullback to 8.479. NYSE Picks Avalanche to Settle Tokenized Stock Trades on Planned 24/7 Venue (2026-11-09T17:15:55Z) reports a concrete platform selection, though launch and direct token demand are not established. | https://cryptopotato.com/nyse-picks-avalanche-to-settle-tokenized-stock-trades-on-planned-24-7-venue/ | stop reached 2026-11-10 07:15 | loss -$7.98 (-2.9%) |
 | 2026-11-18 00:00 | SOL/USD | 1Day bars x1, 1Hour bars x2 | At 75.112 SOL confirmed the second break of 73.30. MoneyGram and Solflare Launch USDC Cash-Out at Participating Locations in 170-Plus Markets (2026-11-17T21:00:00Z) and CoW Swap Adds Native Solana Trading With Solver Auctions and a One-Year Volume-Fee Waiver (2026-11-17T22:00:00Z) report live usage channels, not guarantees of SOL demand. | https://www.newsbtc.com/crypto-news/moneygram-and-solflare-launch-usdc-cash-out-at-participating-locations-in-170-plus-markets/; https://www.newsbtc.com/news/solana/cow-swap-adds-native-solana-trading-with-solver-auctions-and-a-one-year-volume-fee-waiver/ | stop reached 2026-11-18 16:20 | loss -$9.87 (-3.9%) |
+
+### November 1 to 24, Gemini Neon
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-11-01 12:00 | LINK/USD | 1Day bars x1, 1Hour bars x1, news x1 | Strong relative strength and higher hourly lows (11.46 to 11.69) backed by Further Asset Management Taps Chainlink ACE for Abu Dhabi Compliance Platform (2026-11-01T01:00:00Z) and Chainlink Launches CustodySync With Anchorage to Link Custody and DeFi Loans (2026-11-01T00:00:00Z). | https://www.newsbtc.com/news/further-asset-management-taps-chainlink-ace-for-abu-dhabi-compliance-platform/; https://www.newsbtc.com/news/chainlink-launches-custodysync-with-anchorage-to-link-custody-and-defi-loans/ | stop reached 2026-11-02 16:30 | loss -$16.83 (-5.6%) |
+| 2026-11-02 00:00 | BTC/USD | 1Hour bars x1 | BTC broke out to 78,233 (+0.67% in 23:00 hour) after absorbing Binance withdrawal reopening per Tracked Binance wallets record $2.5 billion in outflows as withdrawals reopen after hack (2026-11-01T21:00:31Z). Stop 75,500 below Oct 30 low, target 83,000. | https://cryptoslate.com/tracked-binance-wallets-record-2-5-billion-in-outflows-as-withdrawals-reopen-after-hack/ | stop reached 2026-11-05 15:05 | loss -$4.59 (-1.3%) |
+| 2026-11-04 00:00 | XRP/USD | 1Day bars x1, 1Hour bars x1 | Clean volume breakout above 4-day 1.235-1.262 base holding above 1.269, supported by 7,934 New XRP Wallets in One Day: Network Activity Defies Sunday Slowdown (2026-11-03T17:42:37Z). Stop 1.225, target 1.38. | https://cryptopotato.com/7934-new-xrp-wallets-in-one-day-network-activity-defies-sunday-slowdown/ | stop reached 2026-11-05 15:15 | loss -$6.46 (-2.6%) |
+| 2026-11-04 12:00 | ETH/USD | 1Hour bars x2 | Post-election V-reversal breaking above 2,301 to 2,325 per Bitcoin Whipsaws After Democratic Sweep: BTC Reclaims $78K (2026-11-04T08:28:30Z) and Ethereum Supply on Exchanges Hits a Decade Low: Is ETH Preparing for a Major Move? (2026-11-03T13:50:55Z). Stop 2,210, target 2,520. | https://cryptopotato.com/bitcoin-whipsaws-after-democratic-sweep-btc-reclaims-78k/; https://cryptopotato.com/ethereum-supply-on-exchanges-hits-a-decade-low-is-eth-preparing-for-a-major-move/ | stop reached 2026-11-05 15:10 | loss -$5.48 (-1.8%) |
+| 2026-11-09 12:00 | BTC/USD | 1Hour bars x2 | Hourly double-bottom higher lows (73,530 to 73,630 to 73,950) with 08:00 UTC volume reversal following BTC, ETH, XRP Crash Again as Liquidation Wave Hits $1B (2026-11-09T06:05:28Z). Stop 72,600, target 78,500. | https://cryptopotato.com/btc-eth-xrp-crash-again-as-liquidation-wave-hits-1b/ | stop reached 2026-11-12 13:10 | loss -$9.92 (-3.3%) |
+| 2026-11-10 00:00 | AVAX/USD | 1Hour bars x1 | Low-volume bull flag pullback with higher hourly lows (8.48 to 8.61) after Tier-1 catalyst NYSE Picks Avalanche to Settle Tokenized Stock Trades on Planned 24/7 Venue (2026-11-09T17:15:55Z). Stop 8.20, target 9.75. | https://cryptopotato.com/nyse-picks-avalanche-to-settle-tokenized-stock-trades-on-planned-24-7-venue/ | stop reached 2026-11-10 15:40 | loss -$18.79 (-6.2%) |
+| 2026-11-15 12:00 | BTC/USD | 1Hour bars x2 | Oversold capitulation reversal: 61,990 flush -> 65,550 bounce -> 63,740 higher low -> 66,090 higher high amid peak-fear coverage in The Hidden Reason Behind Bitcoin’s Massive Crash Below $62K (2026-11-15T06:46:36Z). Stop 62,900, target 71,000. | https://cryptopotato.com/the-hidden-reason-behind-bitcoins-massive-crash-below-62k/; https://cryptopotato.com/ethereum-price-analysis-can-eth-bounce-back-before-1-5k-comes-into-play/ | stop reached 2026-11-18 16:15 | loss -$13.96 (-4.6%) |
+| 2026-11-15 12:00 | ETH/USD | 1Hour bars x2 | Oversold capitulation reversal: 1,711 liquidity sweep -> 1,833 bounce -> 1,772 higher low -> 1,843 high-volume higher high per Ethereum Price Analysis: Can ETH Bounce Back Before $1.5K Comes Into Play? (2026-11-15T11:40:33Z). Stop 1,745, target 2,020. | https://cryptopotato.com/the-hidden-reason-behind-bitcoins-massive-crash-below-62k/; https://cryptopotato.com/ethereum-price-analysis-can-eth-bounce-back-before-1-5k-comes-into-play/ | stop reached 2026-11-18 16:40 | loss -$13.44 (-5.4%) |
+| 2026-11-18 00:00 | SOL/USD | 1Hour bars x1 | 7 straight green hourly candles breaking above 74.24 resistance on high volume, backed by MoneyGram and Solflare Launch USDC Cash-Out at Participating Locations in 170-Plus Markets (2026-11-17T21:00:00Z) and Solana Drops Mainnet Beta Label as Foundation Introduces Protocol Version 1.0 (2026-11-17T18:00:00Z). Stop 70.80, target 84.00. | https://www.newsbtc.com/crypto-news/moneygram-and-solflare-launch-usdc-cash-out-at-participating-locations-in-170-plus-markets/; https://www.newsbtc.com/news/solana/solana-drops-mainnet-beta-label-as-foundation-introduces-protocol-version-1-0/ | stop reached 2026-11-20 13:25 | loss -$15.82 (-6.3%) |
+| 2026-11-21 12:00 | ETH/USD | 1Hour bars x2 | ETH leading post-capitulation rebound (1,536 low -> 1,654 bounce -> 1,615 higher low -> 1,669 higher high on volume) amid extreme sentiment per Crypto Fear Reaches Extreme Levels as Bitcoin Plummets to $55K (2026-11-21T07:41:59Z). Stop 1,580, target 1,780. | https://cryptopotato.com/crypto-fear-reaches-extreme-levels-as-bitcoin-plummets-to-55k/ | target reached 2026-11-23 14:00 | win $21.97 (+8.8%) |
+| 2026-11-22 00:00 | BTC/USD | 1Hour bars x1 | High-volume breakout above 58.6K to 60,870 holding tight consolidation at 60K per Short Traders Get Wrecked Too as Bitcoin Climbs Past $60K in Whipsaw Move (2026-11-21T15:31:35Z) and Russia allows Bitcoin trading as sanctioned Moscow Exchange prepares December launch (2026-11-21T19:40:03Z). Stop 58,100, target 64,500. | https://cryptopotato.com/short-traders-get-wrecked-too-as-bitcoin-climbs-past-60k-in-whipsaw-move/; https://cryptoslate.com/russia-bitcoin-trading-rules-moscow-exchange/ | stop reached 2026-11-24 02:35 | loss -$0.05 (-0.0%) |
 
 ### November 1 to 24, Claude Sonnet 5.5
 

@@ -157,8 +157,32 @@
      "wins": 0
     },
     "11": {
-     "finished": false,
-     "session": "TM02-B02-GROK-2026-11"
+     "benchmark_shown": "BTC/USD",
+     "buys": 0,
+     "closed": 0,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 358,
+     "fees_usd": 0.0,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": 0.0,
+     "git_dirty": true,
+     "hold_gain_usd": -231.1,
+     "lookups": 8,
+     "losses": 0,
+     "max_drop": 0.0,
+     "model": "grok_4_7",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-GROK-2026-11",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 48,
+     "wakes_no_pick": 48,
+     "wakes_unseen": 0,
+     "why": [],
+     "wins": 0
     }
    },
    "months_counted": [],
@@ -1228,8 +1252,262 @@
      "wins": 0
     },
     "11": {
-     "finished": false,
-     "session": "TM02-B02-NEON-2026-11"
+     "benchmark_shown": "BTC/USD",
+     "buys": 11,
+     "closed": 11,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 358,
+     "fees_usd": 15.33,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": -83.36,
+     "git_dirty": true,
+     "hold_gain_usd": -231.1,
+     "lookups": 25,
+     "losses": 10,
+     "max_drop": -0.1222,
+     "model": "gemini_neon",
+     "news_on": true,
+     "refused_attempts": 1,
+     "session": "TM02-B02-NEON-2026-11",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 48,
+     "wakes_no_pick": 34,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-11-02T16:30:00Z",
+       "exit_reason": "Exit set in pick 20261101T1200Z: the stop price was reached.",
+       "gain_pct": -0.056,
+       "gain_usd": -16.83,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "Strong relative strength and higher hourly lows (11.46 to 11.69) backed by Further Asset Management Taps Chainlink ACE for Abu Dhabi Compliance Platform (2026-11-01T01:00:00Z) and Chainlink Launches CustodySync With Anchorage to Link Custody and DeFi Loans (2026-11-01T00:00:00Z).",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/further-asset-management-taps-chainlink-ace-for-abu-dhabi-compliance-platform/",
+        "https://www.newsbtc.com/news/chainlink-launches-custodysync-with-anchorage-to-link-custody-and-defi-loans/"
+       ],
+       "symbol": "LINK/USD",
+       "thesis": "LINK/USD shows the strongest post-Binance-hack recovery among watched pairs, reclaiming 11.72 with higher hourly lows (11.30, 11.46, 11.69) and high-volume buying backed by institutional adoption headlines. Taking a 30% swing long with stop at 11.15 and target at 12.80.",
+       "usd": 300,
+       "wake_utc": "2026-11-01T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-05T15:05:00Z",
+       "exit_reason": "Exit set in pick 20261105T0000Z: the stop price was reached.",
+       "gain_pct": -0.0131,
+       "gain_usd": -4.59,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "BTC broke out to 78,233 (+0.67% in 23:00 hour) after absorbing Binance withdrawal reopening per Tracked Binance wallets record $2.5 billion in outflows as withdrawals reopen after hack (2026-11-01T21:00:31Z). Stop 75,500 below Oct 30 low, target 83,000.",
+       "result": "loss",
+       "sources": [
+        "https://cryptoslate.com/tracked-binance-wallets-record-2-5-billion-in-outflows-as-withdrawals-reopen-after-hack/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "BTC/USD absorbed Binance withdrawal reopening without breaking 77.5K and broke out to 78.23K in the 23:00 UTC hour, signaling relief after the biggest post-hack overhang cleared. Entering a 35% swing long with stop below the Oct 30 wick low at 75,500 and target at 83,000.",
+       "usd": 350,
+       "wake_utc": "2026-11-02T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-05T15:15:00Z",
+       "exit_reason": "Exit set in pick 20261105T0000Z: the stop price was reached.",
+       "gain_pct": -0.0258,
+       "gain_usd": -6.46,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Clean volume breakout above 4-day 1.235-1.262 base holding above 1.269, supported by 7,934 New XRP Wallets in One Day: Network Activity Defies Sunday Slowdown (2026-11-03T17:42:37Z). Stop 1.225, target 1.38.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/7934-new-xrp-wallets-in-one-day-network-activity-defies-sunday-slowdown/"
+       ],
+       "symbol": "XRP/USD",
+       "thesis": "XRP/USD broke out cleanly above its 4-day compression range (1.235-1.262) on Nov 3 volume and held above 1.269 for 11 consecutive hours, outperforming peers amid strong on-chain wallet growth. Entering a $250 swing long with stop at 1.225 below the consolidation base and target at 1.38.",
+       "usd": 250,
+       "wake_utc": "2026-11-04T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-05T15:10:00Z",
+       "exit_reason": "Exit set in pick 20261105T0000Z: the stop price was reached.",
+       "gain_pct": -0.0182,
+       "gain_usd": -5.48,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Post-election V-reversal breaking above 2,301 to 2,325 per Bitcoin Whipsaws After Democratic Sweep: BTC Reclaims $78K (2026-11-04T08:28:30Z) and Ethereum Supply on Exchanges Hits a Decade Low: Is ETH Preparing for a Major Move? (2026-11-03T13:50:55Z). Stop 2,210, target 2,520.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/bitcoin-whipsaws-after-democratic-sweep-btc-reclaims-78k/",
+        "https://cryptopotato.com/ethereum-supply-on-exchanges-hits-a-decade-low-is-eth-preparing-for-a-major-move/"
+       ],
+       "symbol": "ETH/USD",
+       "thesis": "Crypto staged a sharp V-reversal after the Democratic midterm sweep flush (BTC wicked to 75,580 and reclaimed 78,375; ETH flushed to 2,223 and broke above 2,301 resistance to 2,325). With exchange ETH supply at a decade low, entering a $300 ETH/USD swing long with stop at 2,210 below the election low and target at 2,520.",
+       "usd": 300,
+       "wake_utc": "2026-11-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-12T13:10:00Z",
+       "exit_reason": "Exit set in pick 20261109T1200Z: the stop price was reached.",
+       "gain_pct": -0.033,
+       "gain_usd": -9.92,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Hourly double-bottom higher lows (73,530 to 73,630 to 73,950) with 08:00 UTC volume reversal following BTC, ETH, XRP Crash Again as Liquidation Wave Hits $1B (2026-11-09T06:05:28Z). Stop 72,600, target 78,500.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/btc-eth-xrp-crash-again-as-liquidation-wave-hits-1b/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "After a $1B liquidation flush drove BTC to 73,530, hourly bars formed a higher-low double bottom (73,530 -> 73,630 -> 73,950) with strong 08:00 UTC buying volume. Entering a modest $300 counter-trend relief swing with tight stop at 72,600 (-2.2%) and target at 78,500 (+5.7%).",
+       "usd": 300,
+       "wake_utc": "2026-11-09T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-10T15:40:00Z",
+       "exit_reason": "Exit set in pick 20261110T0000Z: the stop price was reached.",
+       "gain_pct": -0.0625,
+       "gain_usd": -18.79,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Low-volume bull flag pullback with higher hourly lows (8.48 to 8.61) after Tier-1 catalyst NYSE Picks Avalanche to Settle Tokenized Stock Trades on Planned 24/7 Venue (2026-11-09T17:15:55Z). Stop 8.20, target 9.75.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/nyse-picks-avalanche-to-settle-tokenized-stock-trades-on-planned-24-7-venue/"
+       ],
+       "symbol": "AVAX/USD",
+       "thesis": "AVAX/USD surged on heavy volume from 8.02 to 9.00 after the NYSE selected Avalanche to settle its planned 24/7 tokenized stock venue, then pulled back on low volume to 8.48 and formed higher hourly lows (8.48, 8.54, 8.59, 8.61). Entering a $300 swing long with stop at 8.20 and target at 9.75.",
+       "usd": 300,
+       "wake_utc": "2026-11-10T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-18T16:15:00Z",
+       "exit_reason": "Exit set in pick 20261115T1200Z: the stop price was reached.",
+       "gain_pct": -0.0464,
+       "gain_usd": -13.96,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Oversold capitulation reversal: 61,990 flush -> 65,550 bounce -> 63,740 higher low -> 66,090 higher high amid peak-fear coverage in The Hidden Reason Behind Bitcoin\u2019s Massive Crash Below $62K (2026-11-15T06:46:36Z). Stop 62,900, target 71,000.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/the-hidden-reason-behind-bitcoins-massive-crash-below-62k/",
+        "https://cryptopotato.com/ethereum-price-analysis-can-eth-bounce-back-before-1-5k-comes-into-play/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "After a vertical 10-day capitulation (-24% BTC to 61,990, -29% ETH to 1,711) and peak-fear headlines, both BTC and ETH printed strong hourly impulse bounces (+3.7% and +4.9%), followed by confirmed higher lows (63,740 and 1,772) and higher highs (66,090 and 1,843). Entering oversold relief swings in BTC ($300) and ETH ($250) with stops below the higher lows.",
+       "usd": 300,
+       "wake_utc": "2026-11-15T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-18T16:40:00Z",
+       "exit_reason": "Exit set in pick 20261115T1200Z: the stop price was reached.",
+       "gain_pct": -0.0536,
+       "gain_usd": -13.44,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Oversold capitulation reversal: 1,711 liquidity sweep -> 1,833 bounce -> 1,772 higher low -> 1,843 high-volume higher high per Ethereum Price Analysis: Can ETH Bounce Back Before $1.5K Comes Into Play? (2026-11-15T11:40:33Z). Stop 1,745, target 2,020.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/the-hidden-reason-behind-bitcoins-massive-crash-below-62k/",
+        "https://cryptopotato.com/ethereum-price-analysis-can-eth-bounce-back-before-1-5k-comes-into-play/"
+       ],
+       "symbol": "ETH/USD",
+       "thesis": "After a vertical 10-day capitulation (-24% BTC to 61,990, -29% ETH to 1,711) and peak-fear headlines, both BTC and ETH printed strong hourly impulse bounces (+3.7% and +4.9%), followed by confirmed higher lows (63,740 and 1,772) and higher highs (66,090 and 1,843). Entering oversold relief swings in BTC ($300) and ETH ($250) with stops below the higher lows.",
+       "usd": 250,
+       "wake_utc": "2026-11-15T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-20T13:25:00Z",
+       "exit_reason": "Exit set in pick 20261118T0000Z: the stop price was reached.",
+       "gain_pct": -0.0631,
+       "gain_usd": -15.82,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "7 straight green hourly candles breaking above 74.24 resistance on high volume, backed by MoneyGram and Solflare Launch USDC Cash-Out at Participating Locations in 170-Plus Markets (2026-11-17T21:00:00Z) and Solana Drops Mainnet Beta Label as Foundation Introduces Protocol Version 1.0 (2026-11-17T18:00:00Z). Stop 70.80, target 84.00.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/crypto-news/moneygram-and-solflare-launch-usdc-cash-out-at-participating-locations-in-170-plus-markets/",
+        "https://www.newsbtc.com/news/solana/solana-drops-mainnet-beta-label-as-foundation-introduces-protocol-version-1-0/"
+       ],
+       "symbol": "SOL/USD",
+       "thesis": "With BTC basing cleanly above $62K for 3 days and BlackRock IBIT ending the $1.9B ETF outflow streak, SOL/USD is leading the market (+5.3% over 36h) and broke above 74.24 resistance on strong 23:00 UTC volume (7 straight green hours) backed by Protocol v1.0 and MoneyGram USDC rollout. Entering $250 SOL swing long with stop at 70.80 and target at 84.00.",
+       "usd": 250,
+       "wake_utc": "2026-11-18T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-23T14:00:00Z",
+       "exit_reason": "Exit set in pick 20261123T0000Z: the target price was reached.",
+       "gain_pct": 0.0877,
+       "gain_usd": 21.97,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "ETH leading post-capitulation rebound (1,536 low -> 1,654 bounce -> 1,615 higher low -> 1,669 higher high on volume) amid extreme sentiment per Crypto Fear Reaches Extreme Levels as Bitcoin Plummets to $55K (2026-11-21T07:41:59Z). Stop 1,580, target 1,780.",
+       "result": "win",
+       "sources": [
+        "https://cryptopotato.com/crypto-fear-reaches-extreme-levels-as-bitcoin-plummets-to-55k/"
+       ],
+       "symbol": "ETH/USD",
+       "thesis": "After BTC capitulated to $55,120 and ETH to $1,536 amid extreme fear headlines, ETH led the rebound with a +5.0% impulse to 1,654, a higher low at 1,615, and a fresh higher high at 1,669 on volume. Entering a modest $250 relief swing in ETH/USD with tight stop at 1,580 (-4.2%) and target at 1,780 (+7.9%), keeping $645 cash.",
+       "usd": 250,
+       "wake_utc": "2026-11-21T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-11-24T02:35:00Z",
+       "exit_reason": "Exit set in pick 20261124T0000Z: the stop price was reached.",
+       "gain_pct": -0.0002,
+       "gain_usd": -0.05,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "High-volume breakout above 58.6K to 60,870 holding tight consolidation at 60K per Short Traders Get Wrecked Too as Bitcoin Climbs Past $60K in Whipsaw Move (2026-11-21T15:31:35Z) and Russia allows Bitcoin trading as sanctioned Moscow Exchange prepares December launch (2026-11-21T19:40:03Z). Stop 58,100, target 64,500.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/short-traders-get-wrecked-too-as-bitcoin-climbs-past-60k-in-whipsaw-move/",
+        "https://cryptoslate.com/russia-bitcoin-trading-rules-moscow-exchange/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "BTC/USD confirmed a strong capitulation reversal off 55,120 with a higher low at 57,270 and a high-volume breakout to 60,870, followed by 9 hours of tight consolidation above 59.6K. Adding a $250 BTC swing long (stop 58,100, target 64,500) and trailing ETH stop higher from 1,580 to 1,610.",
+       "usd": 250,
+       "wake_utc": "2026-11-22T00:00:00Z"
+      }
+     ],
+     "wins": 1
     }
    },
    "months_counted": [],
@@ -3307,9 +3585,10 @@
     "months_both_finished": [
      "07",
      "08",
-     "10"
+     "10",
+     "11"
     ],
-    "price_only_usd": -48.85,
+    "price_only_usd": -71.94,
     "with_news_usd": 13.62
    },
    "KIMI": {
@@ -3328,10 +3607,11 @@
      "07",
      "08",
      "09",
-     "10"
+     "10",
+     "11"
     ],
-    "price_only_usd": 97.46,
-    "with_news_usd": 112.95
+    "price_only_usd": 12.96,
+    "with_news_usd": 29.59
    },
    "OPUS": {
     "better_with_news": true,

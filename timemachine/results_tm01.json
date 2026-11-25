@@ -896,8 +896,174 @@
      "wins": 3
     },
     "09": {
-     "finished": false,
-     "session": "TM01-B01-KIMI-2026-09"
+     "benchmark_shown": "BTC/USD",
+     "buys": 8,
+     "closed": 8,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 11.86,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": -29.77,
+     "git_dirty": true,
+     "hold_gain_usd": 59.89,
+     "lookups": 21,
+     "losses": 6,
+     "max_drop": -0.0313,
+     "model": "kimi_k3",
+     "news_on": false,
+     "refused_attempts": 0,
+     "session": "TM01-B01-KIMI-2026-09",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 60,
+     "wakes_no_pick": 50,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-09-01T18:00:00Z",
+       "exit_reason": "Exit set in pick 20260901T0000Z: the stop price was reached.",
+       "gain_pct": -0.0237,
+       "gain_usd": -9.51,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 8,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Strongest coin in a choppy tape; flush-reclaim of 77k plus a full day of higher lows; swing toward the 81k range top.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Post-spike consolidation after the Aug 19-21 rally: alts are drifting down but BTC is the relative-strength leader, holding the upper half of its week-long range. BTC flushed to 77018 on Aug 30 23:00 and was instantly reclaimed, then printed higher lows all of Aug 31 back to 78567. I am buying the range trade in the strongest coin: long BTC toward the range top near 81.2k, stop below the Aug 31 low cluster at 77.3k. Risk about 1.6% to make about 3.3%, well above round-trip costs.",
+       "usd": 400,
+       "wake_utc": "2026-09-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-02T09:40:00Z",
+       "exit_reason": "Exit set in pick 20260902T0000Z: the stop price was reached.",
+       "gain_pct": -0.0254,
+       "gain_usd": -7.64,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Strongest of the eight on a day BTC made new lows; flat all-day base at 49-50; long toward 51.5 with stop under 48.75.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LTC/USD",
+       "thesis": "My BTC range long was stopped at 77.2k on a broad flush that briefly broke the week range (low 76378) before price reclaimed 77.4k. The tape is still a choppy post-euphoria consolidation, but one coin refused to break: LTC sat in a 48.9-50.0 box all day and closed +2% while BTC made new lows. That is the relative strength I want to be long if the market stabilizes at support. Buying LTC with a stop under today's box low; target the 51.5-51.6 area (Aug 24/26 highs).",
+       "usd": 300,
+       "wake_utc": "2026-09-02T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-03T14:50:00Z",
+       "exit_reason": "Exit set in pick 20260903T0000Z: the target price was reached.",
+       "gain_pct": 0.0324,
+       "gain_usd": 11.35,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Two failed breakdowns plus 12h of higher lows; long toward 79.9k with stop under the higher-low structure.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Second downside probe failed: BTC flushed to 76222 at 10:00 on Sep 2, then spent 12 hours reclaiming with stair-stepping higher lows (76567, 76700, 76927, 76990) back to 77313. Two sweeps of the 76-77k area were bought both times, so the range lows are defended. I am re-entering long BTC, smaller, with the stop under the last higher low at 76650; if that breaks the defense has failed. Target just under 80k, inside the old range top supply.",
+       "usd": 350,
+       "wake_utc": "2026-09-03T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-04T12:35:00Z",
+       "exit_reason": "Exit set in pick 20260904T0000Z: the stop price was reached.",
+       "gain_pct": -0.0245,
+       "gain_usd": -9.32,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Breakout above 81446 to 82233, now retesting the old range top as support; long with tight invalidation below 80250.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC broke out of the 17-day range: after taking my 79900 target it ran to 82233 (above the Aug 28 high of 81446) and is now retesting the old range top from above at 81.1-81.3k, a classic breakout-retest entry. Two failed breakdowns at the range bottom and now a thrust through the top flips the bias long. Buying the retest with a stop under the breakout bar low at 80353; if the retest fails and price re-enters the range, the breakout is a trap and I am out.",
+       "usd": 380,
+       "wake_utc": "2026-09-04T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-07T18:30:00Z",
+       "exit_reason": "Exit set in pick 20260907T0000Z: the stop price was reached.",
+       "gain_pct": -0.0434,
+       "gain_usd": -10.44,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "First clean alt breakout of the month, holding above its old high; trend long with invalidation under 12.75.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "The tape has shifted from two-way chop to a one-way staircase: six days of higher lows off the Sep 2 flush, and leadership is rotating outward (LINK is the first alt to clear its Aug 22 range high). LINK burst from 12.39 to 13.13 at 20:00 and then held 12.79-13.35 for three hours instead of fading, which reads as acceptance above the old 12.67 cap, blue sky overhead. Buying the fresh break with the stop under the post-burst shelf at 12.75; target 14.20 from the range-height measured move.",
+       "usd": 240,
+       "wake_utc": "2026-09-07T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-15T13:40:00Z",
+       "exit_reason": "Exit set in pick 20260915T0000Z: the stop price was reached.",
+       "gain_pct": -0.0105,
+       "gain_usd": -2.63,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Third defense of 76-77k range lows; buying support with stop below 75350, target range top 81k.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Third test of the 76-77k demand shelf: BTC sold off to 76450 in the last hour and sits at 76536, the same level that launched the Aug 19-21 ramp and was defended twice in early September. Hourly closes are weak, so this may slide a touch more, but my invalidation is unambiguous: below 75350 (under the Aug 23 low of 75569) the 20-day range is dead and I exit. Entry at support gives roughly 1.5% risk against a 6% rotation back to the range top, the best R:R this tape has offered me.",
+       "usd": 250,
+       "wake_utc": "2026-09-11T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-24T08:50:00Z",
+       "exit_reason": "Exit set in pick 20260922T0000Z: the stop price was reached.",
+       "gain_pct": 0.0194,
+       "gain_usd": 4.27,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Third press of range top with absorption (shallow dips, alt confirmation); long with stop under 79.4k, target 87.5k.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Third press of the 81-82.3k ceiling, and the character of the tape has changed: dips at the top are bought within 12h (last shallow low 80.4k), the Sep 16 floor break trapped shorts by reversing instantly, and this time the alts are confirming with sustained multi-day breakouts (AVAX, ETH, SOL, LTC) instead of one-day pops. Unlike Sep 4, when I bought a single V-spike with lagging alts, this is a five-day rebuild pressing the same lid with shrinking pullbacks. Buying the absorption with a stop under the last higher low at 79.4k; if the lid finally gives way the measured move is toward 87-88k, so the trade only needs to pay on the break.",
+       "usd": 220,
+       "wake_utc": "2026-09-21T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-28T05:35:00Z",
+       "exit_reason": "Exit set in pick 20260925T0000Z: the stop price was reached.",
+       "gain_pct": -0.0243,
+       "gain_usd": -5.86,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Bull flag holding above breakout lid, turning up; long 84386 with stop under 83k, target 88k.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "The 4-day bull flag held far above the 82.3k breakout lid (low 83.4k) and is turning up (84386): demand came in earlier and stronger than the textbook retest I was waiting for, which is itself bullish information in a confirmed uptrend with expanding breadth. Buying the flag continuation with the stop under today's reversal low at 83.0k; if the flag breaks down instead, the flag-failure gets me out with a small loss. Target 88k, just past the 86.6k flag high and the measured area.",
+       "usd": 240,
+       "wake_utc": "2026-09-25T00:00:00Z"
+      }
+     ],
+     "wins": 2
     },
     "10": {
      "benchmark_shown": "AVAX/USD",
@@ -1268,7 +1434,7 @@
   },
   "NEON": {
    "beats_hold": false,
-   "beats_twins": true,
+   "beats_twins": false,
    "months": {
     "07": {
      "benchmark_shown": "BTC/USD",
@@ -2116,7 +2282,7 @@
      "buys": 10,
      "closed": 10,
      "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
-     "counts": false,
+     "counts": true,
      "edited_later_news_seen": 0,
      "fees_usd": 14.07,
      "finished": true,
@@ -2133,14 +2299,30 @@
      "session": "TM01-B01-NEON-2026-11",
      "twin_gains": {
       "1": -5.09,
+      "10": -12.96,
+      "11": -9.4,
+      "12": -36.61,
+      "13": -27.47,
+      "14": -15.94,
+      "15": -14.61,
+      "16": -34.53,
+      "17": -58.07,
+      "18": -34.21,
+      "19": -28.99,
       "2": -48.53,
+      "20": -11.07,
       "3": -32.54,
       "4": -66.82,
       "5": -5.63,
       "6": -56.71,
-      "7": -19.22
+      "7": -19.22,
+      "8": -23.79,
+      "9": -36.18
      },
-     "twins_done": 7,
+     "twin_median_usd": -28.23,
+     "twin_p80_usd": -12.58,
+     "twins_beaten": 0,
+     "twins_done": 20,
      "wakes": 48,
      "wakes_no_pick": 39,
      "wakes_unseen": 0,
@@ -2336,14 +2518,15 @@
     "07",
     "08",
     "09",
-    "10"
+    "10",
+    "11"
    ],
    "name": "Gemini Neon",
-   "sum_gain_usd": 97.46,
-   "sum_hold_usd": 298.61,
-   "sum_twin_p80_usd": 61.88,
-   "sum_twins_beaten": 18,
-   "verdict": "not finished"
+   "sum_gain_usd": 12.96,
+   "sum_hold_usd": 67.51,
+   "sum_twin_p80_usd": 38.86,
+   "sum_twins_beaten": 12,
+   "verdict": "has shown nothing"
   },
   "OPUS": {
    "beats_hold": true,
@@ -2369,8 +2552,10 @@
      "news_on": false,
      "refused_attempts": 0,
      "session": "TM01-B01-OPUS-2026-07",
-     "twin_gains": {},
-     "twins_done": 0,
+     "twin_gains": {
+      "1": -45.97
+     },
+     "twins_done": 1,
      "wakes": 62,
      "wakes_no_pick": 44,
      "wakes_unseen": 0,
