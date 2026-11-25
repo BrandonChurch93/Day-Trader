@@ -1,13 +1,13 @@
 {
  "account": {
-  "gain_pct": 0.008850000000000025,
-  "gain_usd": 17.7,
+  "gain_pct": 0.008855000000000057,
+  "gain_usd": 17.71,
   "pretend_start_usd": 2000.0,
-  "value_usd": 2017.7
+  "value_usd": 2017.71
  },
  "closed": [],
- "last_check_utc": "2026-11-25T17:58:04Z",
- "made_utc": "2026-11-25T17:58:04Z",
+ "last_check_utc": "2026-11-25T18:08:05Z",
+ "made_utc": "2026-11-25T18:08:05Z",
  "notes": {
   "fee": "The fee on crypto fills is added by this program from config/thresholds.yaml (practice_crypto_fee_bps_added).",
   "gap": "Gap is how far the fill was from the newest price the program had read when it sent the order, in basis points. Plus means the fill was worse for the account.",
@@ -54,6 +54,15 @@
    },
    "utc": "2026-11-25T17:00:22Z",
    "value_usd": 2003.39
+  },
+  {
+   "hold_value_usd": 2035.38,
+   "traders": {
+    "P1-BTC": 1000.0,
+    "T1-VTI": 1017.71
+   },
+   "utc": "2026-11-25T18:08:05Z",
+   "value_usd": 2017.71
   }
  ],
  "problems": [],
@@ -76,12 +85,12 @@
    "cash_usd": 0.01,
    "closed_trades": 0,
    "fees_added_usd": 0.0,
-   "gain_pct": 0.017697397585899832,
-   "gain_usd": 17.7,
+   "gain_pct": 0.017711903649495042,
+   "gain_usd": 17.71,
    "halt_reason": null,
    "halted": false,
-   "hold_gain_pct": 0.017830458310966746,
-   "hold_value_usd": 1017.83,
+   "hold_gain_pct": 0.017844966413741892,
+   "hold_value_usd": 1017.84,
    "id": "T1-VTI",
    "kind": "rule",
    "label": "not passed",
@@ -95,19 +104,19 @@
     {
      "cost_usd": 999.99,
      "exit": null,
-     "gain_usd": 17.7,
+     "gain_usd": 17.71,
      "opened_utc": "2026-11-25T16:31:55.81403Z",
-     "price": 350.78,
+     "price": 350.78499999999997,
      "qty": 2.901212719,
      "symbol": "VTI",
-     "value_usd": 1017.69
+     "value_usd": 1017.7
     }
    ],
    "realised_usd": 0,
    "start_usd": 1000.0,
    "started": true,
    "target_weight": 1.0,
-   "value_usd": 1017.7,
+   "value_usd": 1017.71,
    "win_rate": null,
    "wins": 0
   },
@@ -120,8 +129,8 @@
    "gain_usd": 0.0,
    "halt_reason": null,
    "halted": false,
-   "hold_gain_pct": 0.014359776749792275,
-   "hold_value_usd": 1014.36,
+   "hold_gain_pct": 0.017539705929705773,
+   "hold_value_usd": 1017.54,
    "id": "P1-BTC",
    "kind": "rule",
    "label": "not passed",
