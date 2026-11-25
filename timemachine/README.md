@@ -87,6 +87,14 @@ The live research tape (`$TM_STORE/tape.sqlite`) holds both crypto and US stock/
 
 The default serves original and assumed-lag observations. An assumed lag is an estimate, not proof of the historical value. Use `min_vintage="original"` for verified archive snapshots only. Capture-only data is off by default. The store and the source checks stay off repo.
 
+## TM07 desk, draft
+
+- Read `PLAN_TM07_desk_DRAFT.md` and `TRADER_BRIEF_DESK.md`. The branch does not launch a desk, call a model, change the ledger or change the tape. Run `python3 -B -m unittest timemachine.test_tm07` for synthetic checks only.
+- Only a separate replay instance should set `TM07_RUNS_DIR`. The operator gives its worker separate process and file access. Put each `TM07-*` arm under that isolated off-repo directory. Create frozen inputs with `desk.prepare_week` and `desk.create_desk` after approval. Screen dates, fees, model IDs and the existing-tape evidence manifest must be signed off first. No role token or tape record belongs in git or a shared handoff file.
+- Start with the neutral scout stream. Run both scout roles on the same raw packet, then call `export_scout` after its last wake. Seal and copy that export to B and C. A takes the raw packet without the export. Use a different random role token per role and per arm.
+- Send `Authorization: Bearer TOKEN`. Read `GET /desk/next?session=ID` or `/desk/status`. POST to `/desk/notes`, `/desk/pick`, `/desk/look` or `/desk/usage` as the role allows. Send the current `wake_key` in each POST. A pick only acknowledges; later evidence belongs to the next packet. The legacy addresses do not serve TM07.
+- The runner still needs separate worker sandboxes and a provider wrapper that reports real usage before the wake advances. The operator must enforce the screen gate before scheduling extension arms. `score_tm07.score_week` checks replay against the journal. `score_tm07.paired` checks the fixed calendar and the screening gate. The TM06 archive is not the judged baseline.
+
 ## Weights sessions
 
 A second kind of session. The trader does not pick trades. At each wake it says what share of the book to hold in each allowed symbol. The rest is cash. Long only.
