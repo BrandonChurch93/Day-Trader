@@ -38,6 +38,16 @@ BD, BH = ["data/bitstamp_BTCUSD.csv", "data/bitstamp_ETHUSD.csv"], ["data/bitsta
 KA, KF = ["data/kraken_BTCUSD.csv", "data/kraken_ETHUSD.csv"], ["data/krakenfull_BTCUSD.csv", "data/krakenfull_ETHUSD.csv"]
 K1440, K60 = ["KRAKEN_DIR/full_XBTUSD_1440.csv", "KRAKEN_DIR/full_ETHUSD_1440.csv"], ["KRAKEN_DIR/full_XBTUSD_60.csv", "KRAKEN_DIR/full_ETHUSD_60.csv"]
 FR = ["FRENCH_DIR/F-F_Research_Data_Factors_daily__main.csv", "FRENCH_DIR/12_Industry_Portfolios_Daily__0_Average_Value_Weighted_Returns_Daily.csv"]
+ALPACA_06 = os.path.join(os.path.expanduser("~"), "workspace", "rig", "data", "funds_daily")
+RUN_06 = os.path.join(H, "results_06.json")
+RAW_06 = []
+if os.path.exists(RUN_06):
+    with open(RUN_06) as r06:
+        replay_06 = json.load(r06)["provenance"]
+    for meta in replay_06["input_files"].values():
+        name = "ALPACA_06/" + meta["file"]
+        INPUTS[name] = os.path.join(ALPACA_06, meta["file"])
+        RAW_06.append(name)
 ALPACA_09 = os.path.join(os.path.expanduser("~"), "workspace", "rig", "data", "alpaca_crypto")
 RUN_09 = os.path.join(H, "results_09.json")
 FULL_09 = os.path.join(H, "alpaca_coverage_09.json")
@@ -102,6 +112,15 @@ NOTES = {
     "pilot/decisions.jsonl": "Pilot 02. The server gave each model one day of prices at a time, 2026-06-30 to 2026-11-23, and logged its call. Run once. The models' replies cannot be made again from this record.",
     "kraken_daily_build.json": "Compares Kraken and Bitstamp daily closes while building the Kraken daily files. No rule.",
 }
+if RAW_06:
+    OUTPUTS["results_06.json"] = (
+        "held-back", "python3 run_06.py --held --prereg-commit " + replay_06["prereg_commit"][:7],
+        ["run_06.py", "rig2.py", "fixtures_06.py", "../config/thresholds.yaml",
+         "PREREG_06_fund_trend_paid_data.md", "TRIAL_LEDGER.md"],
+        RAW_06, ["fund_adjustments_06.json"],
+    )
+    NOTES["results_06.json"] = ("Held slice run once after the design run. The output carries hashes taken at run time. "
+                               "The split-only files were audit sidecars, not strategy price inputs.")
 if RAW_09:
     OUTPUTS["results_09.json"] = (
         "held-back", "python3 run_09.py --held --prereg-commit " + replay_09["provenance"]["prereg_commit"][:7],

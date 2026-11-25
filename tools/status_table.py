@@ -74,11 +74,21 @@ def intraday_stocks():
     s += ". " + (f"Highest break-even cost against holding, round trip, whole sample: {max(be)[0]:.1f} bps ({max(be)[1]} on {max(be)[2]})." if be else "No rule beats holding even at zero cost.")
     s += " Prices from the workspace's own price lookup, dividend adjustment UNKNOWN, days that failed the bar check not used."
     return ("Replay 07", "Eight day trading rules on SPY and QQQ one-minute bars, judged at 2 and 5 bps per side", s, "`docs/research/27_replay_07_intraday_spy_qqq.md`")
+def fund_trend():
+    r = J("results_06.json"); R = r["rules"]; H = r["slices"]["held"]; d = H["dates"]; y = lambda o: o["base"]["cagr"]
+    passes = sum(x["marks"]["passed"] for x in R.values()); best = max(R, key=lambda n: y(H["rules"][n]))
+    marks = sum(v for k, v in R[best]["marks"].items() if k != "passed")
+    spy = f" Holding SPY grew {pc(y(H['rules']['SPY']))} a year; the best rule's own yardstick grew {pc(y(H['rules'][R[best]['primary']]))}."
+    return ("Replay 06", "Six slow trend and allocation rules on nine funds that can be bought, daily bars with dividends",
+            f"{passes} of {len(R)} pass at {r['costs_bps_per_side']['base']} bps per side. Held back {d[0]} to {d[1]}, run once: "
+            f"best rule {best} grew {pc(y(H['rules'][best]))} a year and passed {marks} of 5 marks.{spy}", "`docs/research/35_replay_06_fund_trend.md`")
 ROWS = [crypto_trend, crypto_intraday, pilot, basket, stocks, books, smaller, count_check]
 if os.path.exists(RR + "results_09.json"):
     ROWS.insert(5, crypto_methods)
 if os.path.exists(RR + "results_07.json"):
     ROWS.insert(ROWS.index(books), intraday_stocks)
+if os.path.exists(RR + "results_06.json"):
+    ROWS.insert(ROWS.index(books), fund_trend)
 def table():
     t = "| Test | What was asked | Result, MEASURED | Full write-up |\n|---|---|---|---|\n"
     for f in ROWS:

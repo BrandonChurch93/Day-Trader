@@ -118,6 +118,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/32_exit_replay.md` | Exit replay (TMX1) of logged TM01 and TM02 AI and random-twin crypto buys under five fixed exit templates (A to E), written by `timemachine/exit_replay.py` | CURRENT |
 | `docs/research/33_ideas_round_2_and_3_checked.md` | Checked public AI trading results, twelve candidate ideas, and four published designs. Reading only, no test | CURRENT |
 | `docs/research/34_time_machine_tm03_bitcoin_dial.md` | Results so far for plan TM03: six AI models set how much bitcoin to hold once a day, against holding and their own shuffled stretches. Written wholly by `timemachine/score_tm03.py` | CURRENT |
+| `docs/research/35_replay_06_fund_trend.md` | Replay 06 results on Alpaca daily fund bars, with yardsticks, costs, pass marks and timing controls | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
 
@@ -161,7 +162,9 @@ Working papers.
 | `research_rig/PREREG_06_fund_trend_paid_data.md` | Frozen plan for slow trend rules on nine funds, Alpaca daily bars. Ledger rows 115 to 120 | CURRENT |
 | `research_rig/audit_06_fund_coverage.py`, `research_rig/fund_coverage_06.json` | NYSE dates and counts for the Alpaca daily fund bars. No prices or rule returns | CURRENT |
 | `research_rig/audit_06_fund_adjustments.py`, `research_rig/fund_adjustments_06.json` | Adjustment checks against issuer returns, and a power sketch for replay 06. No rule returns | CURRENT |
-| `research_rig/run_06.py`, `research_rig/fixtures_06.py` | Fund replay runner with freeze and holdout guards, and invented-price tests. Reads held-back dates with `--held`: one run only | CURRENT |
+| `research_rig/run_06.py`, `research_rig/fixtures_06.py` | Fund replay runner with freeze and holdout guards, and invented-price tests. Held slice already used once; do not rerun on real data | CURRENT |
+| `research_rig/results_06.json` | Replay 06 results for both slices, with frozen thresholds and run-time input fingerprints | CURRENT |
+| `research_rig/report_06.py` | Writes or checks the Replay 06 page from stored summaries; reads no market bars | CURRENT |
 | `research_rig/PREREG_07_intraday_spy_qqq.md` | Frozen plan for replay 07, day trading rules on SPY and QQQ one-minute bars. Ledger rows 56 to 71 | CURRENT |
 | `research_rig/run_07.py`, `research_rig/results_07.json`, `research_rig/build_doc27.py` | Replay 07: script with its checks, output from the one held-back run, and the builder of document 27 | CURRENT |
 | `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, decisions 1a and 1b, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |
