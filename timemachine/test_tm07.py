@@ -87,6 +87,20 @@ class DeskTest(unittest.TestCase):
         conn.execute("INSERT INTO bars VALUES(?,?,?,?)",(A,"1Min",T+60,200))
         self.assertEqual(quote(),(100,102))
 
+    def test_b03_off_hour_funding_never_rounded_back(self):
+        class Tape:
+            def _conn(self):
+                return conn
+        conn = sqlite3.connect(":memory:")
+        self.addCleanup(conn.close)
+        conn.execute("CREATE TABLE funding(symbol,venue,t,rate,interval_hours)")
+        conn.execute("INSERT INTO funding VALUES(?,?,?,?,?)",(A,"toy",T+1,.05,1))
+        cfg = dict(world()["cfg"], tm_fast_funding_venue={"default":"toy"})
+        read = getattr(D,"desk_funding",tm06.fast_funding)
+        result = read(Tape(),[A],cfg,D.wall(T),D.wall(T+7200))
+        self.assertEqual(result[0][A],{T+3600:.05})
+        self.assertEqual(result[2][A][T+3600],T+1)
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
