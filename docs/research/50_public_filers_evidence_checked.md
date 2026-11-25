@@ -14,6 +14,13 @@ Why: the owner's idea of following members of Congress (`docs/research/48_congre
 - Analyst upgrades and target changes: the move is in the opening price. Nothing left after it.
 - Drift after earnings, entered the next day: the one idea here with live support and free, exactly dated data. From 2023 to 2026 stocks with the best surprises beat those with the worst by 1.1 to 2.0 points over 60 days. Two warnings: in 2025 and 2026 that gap shrank to 0.5 points overall and held only in large companies, and in a 2000 to 2025 sample the gain was all on the losing side (bad surprises kept falling 1.46%; good ones did nothing, -0.04%). An account that only buys gets the weak half.
 
+## Two of the copy funds, measured
+
+MEASURED by the builder 2026-11-25 18:51 UTC from our price feed, daily prices with dividends, to 2026-11-24 (the full table is in `docs/research/51_stock_swing_evidence_checked.md`):
+
+- GURU from 2016-01-04: +191.1% against SPY +321.1%.
+- GVIP from its first day, 2016-11-03: +290.4% against SPY +301.2%. The lead reported above (17.3% a year against 15.9%) is true to mid-2026 by our feed too (+398.2% against +315.8% at 2026-06-30) and was gone by late November. Ahead of SPY in 5 of 10 calendar years.
+
 ## What this changes for our queue
 
 - Dropped: large-stake filings, ARK's list, analyst changes, lobbying and contracts as a copy method. Row 13 in the queue (contracts large against a company's sales) stays, because it is a narrower question than the one the reading answers.

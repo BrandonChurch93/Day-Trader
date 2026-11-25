@@ -129,9 +129,11 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/44_replay_11_earnings_reader.md` | Replay 11: an AI reads each earnings press release and says buy or skip. Design-sample table for six set-ups, reader agreement, the set-up chosen, and what is still to come. Held-back verdict is added when scored | CURRENT |
 | `docs/research/45_attention_feed_measured.md` | Which free attention counts per coin can be collected with honest dates (Wikipedia yes, Reddit partly, news counts and Trends no) and an after-the-fact look showing attention rises did not lead price | CURRENT |
 | `docs/research/46_becker_calls_measured.md` | 1,855 dated buy or hold mentions from Alex Becker's videos (2020 to 2025) set against prices before and after, other callers' records, what happened to AI and gaming coins after hot stretches, and free dated data for "what was hot" | CURRENT |
+| `docs/research/47_replay_12_congress_followers.md` | Replay 12: following stock purchases disclosed by members of Congress. Data in hand and counts now; design and held-back results are added when scored | CURRENT |
 | `docs/research/48_congress_trades_evidence.md` | Following members of Congress: the collected record of 85,291 dated trades and how it was checked, what the two real-money copy funds did against SPY, the published studies, the Pelosi figures and where they come from, and pending rule changes | CURRENT |
 | `docs/research/49_governance_votes_look.md` | A first look at coin returns around governance votes: 945 votes, nearly all on one coin, nothing after costs; parked | CURRENT |
 | `docs/research/50_public_filers_evidence_checked.md` | Copying other public filers after the public date (fund holdings, large-stake filings, ARK, short sellers, lobbying and contracts, analysts) and drift after earnings: the reading with every source checked, and what it changes in the queue | CURRENT |
+| `docs/research/51_stock_swing_evidence_checked.md` | Buy-only methods for single stocks held weeks to months: the reading with every source checked, and eight real-money funds measured against SPY from our own feed | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -185,6 +187,14 @@ Working papers.
 | `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, decisions 1a and 1b, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |
 | `research_rig/PREREG_11_earnings_release_reader.md` | Frozen plan for an AI that reads each earnings release and says buy or skip for the next open: 4,285 releases from large, mid and small companies, six set-ups, two holds, pass marks and costs fixed before any reader ran. Ledger rows 121 to 134. Queue row 9b | CURRENT |
 | `research_rig/PREREG_12_congress_followers_DRAFT.md` | Draft plan for following stock purchases disclosed by members of Congress: bought after the filing, three groups, three holds, design half chooses, held-back half judges once | DRAFT |
+| `research_rig/fetch_12_prices.py` | Plan 12: collects adjusted daily bars for every ticker in the buy and sell rows plus SPY, QQQ and NANC into the research machine, and writes a counts-only summary | CURRENT |
+| `research_rig/prices_12_summary.json` | Plan 12: counts and dates of the collected bars, no price values | CURRENT |
+| `research_rig/common_12.py` | Plan 12 shared code: events, entry days, trades, merging, the daily portfolio with turnover cost, the SPY mirror and the bootstrap | CURRENT |
+| `research_rig/score_12.py` | Plan 12 scoring: --counts, --selftest, --design once, --heldback once | CURRENT |
+| `research_rig/events_12_summary.json` | Plan 12: event counts, no-bar counts by year and named-member matches, no returns | CURRENT |
+| `research_rig/test_12.py` | Plan 12 tests on made-up data, with a planted-edge check and a no-edge check | CURRENT |
+| `research_rig/report_12.py` | Writes the Replay 12 page (research doc 47) from the stored summaries and results; reads no price | CURRENT |
+| `research_rig/missing_tickers_12.md` | Plan 12: what the tickers with no prices are, and a seeded look at 40 of them | CURRENT |
 | `research_rig/PREREG_13_year_or_method_DRAFT.md` | Draft plan: a fixed dip-and-peak rule on the hottest coins, scored year by year from 2020 to 2026, to tell the owner's method from the year he traded in | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
