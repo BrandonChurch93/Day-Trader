@@ -135,6 +135,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/50_public_filers_evidence_checked.md` | Copying other public filers after the public date (fund holdings, large-stake filings, ARK, short sellers, lobbying and contracts, analysts) and drift after earnings: the reading with every source checked, and what it changes in the queue | CURRENT |
 | `docs/research/51_stock_swing_evidence_checked.md` | Buy-only methods for single stocks held weeks to months: the reading with every source checked, and eight real-money funds measured against SPY from our own feed | CURRENT |
 | `docs/research/53_prediction_markets_checked.md` | Prediction markets (Kalshi, Polymarket US, Interactive Brokers): fees, free history, AI forecasters against market prices, who makes money, what can be tested honestly; every source checked | CURRENT |
+| `docs/research/52_replay_14_large_stock_momentum.md` | Replay 14: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, 2017 to 2026. Did not pass: behind SPY, above every member in equal parts, not above the 95th percentile of random baskets. Written by script from the one run | CURRENT |
 | `docs/research/54_replay_13_year_or_method.md` | Replay 13: the owner's dip-and-peak method as a fixed rule on the hottest coins, each year 2020 to 2026. The dip rule was not paid, 2021 included; holding the hot five met its marks and still lost money in three years | CURRENT |
 | `docs/research/55_stocks_in_play_evidence_checked.md` | Day trading stocks in play: the published opening-range rule, rebuilds that lose once real fills are charged, other single-stock day rules after costs, and what real day traders made. Checked reading, nothing measured by us | CURRENT |
 | `docs/research/58_crowded_trades_evidence_checked.md` | Shorting crowded coin futures and buying the bounce after a flush: what Binance's public archive holds, the published and public tests after costs (most lose once dead coins are kept), and which coins a US account can short today. Checked reading, nothing measured on our own prices | CURRENT |
@@ -215,7 +216,9 @@ Working papers.
 | `research_rig/results_13.json` | Plan 13 result: each year's figures for both rules and every yardstick at three cost levels, flags, and the finding. Written once by score_13.py --run | CURRENT |
 | `research_rig/score_13.lock` | Plan 13: marks that the run was made; a second run is refused | CURRENT |
 | `research_rig/report_13.py` | Writes the plan 13 result page from results_13.json; reads no price | CURRENT |
-| `research_rig/PREREG_14_large_stock_momentum.md` | Frozen plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | CURRENT |
+| `research_rig/PREREG_14_large_stock_momentum.md` | Plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets. Frozen 2026-11-25 22:23 UTC, run once 22:39 UTC | CURRENT |
+| `research_rig/results_14.json` | Plan 14 result: both set-ups against SPY, every member and random baskets, by half and by year, with flags and input fingerprints. Written once by score_14.py --run | CURRENT |
+| `research_rig/score_14.lock` | Plan 14: marks that the run was made; a second run is refused | CURRENT |
 | `research_rig/build_members_14.py` | Plan 14 member list: S&P 500 members by date from two public sources, renames listed, written outside the repo | CURRENT |
 | `research_rig/fetch_14.py` | Plan 14 data: daily bars one ticker at a time, stored outside the repo, prints counts only | CURRENT |
 | `research_rig/common_14.py` | Plan 14 rules: calendar, 12-month ranking, the baskets, the yardsticks and the simulation | CURRENT |
