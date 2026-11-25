@@ -199,6 +199,17 @@ class DeskTest(unittest.TestCase):
         more = a.handle("boss","look",dict(request,request_id="second"))
         self.assertEqual(more["looks_left"],1)
 
+    def test_s05_diagnostics_keep_twin_trades_and_cent_agreement(self):
+        a = self.create("A")
+        for at in world()["wakes"]:
+            _,key = info(a)
+            a.handle("boss","pick",dict(wake_key=key,no_change=True,why="No move"))
+        summary = S.score_week(a.path)
+        self.assertEqual(summary["main"]["twin_activity"],[
+            {"immediate":0,"standing":0,"turnover_usd":0.0} for _ in range(4)])
+        self.assertEqual(summary["usage"]["boss"]["status"],"UNKNOWN")
+        self.assertEqual(S.cent_lift(1000.0049,1000.005),.01)
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):

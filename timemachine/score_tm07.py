@@ -100,15 +100,24 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
     return dict(value=final, book=book, events=events, scans=scans, immediate=count, standing=hits, unsupported=unsupported)
 
 
-def usage_totals(rows, neutral=()):
+def usage_totals(rows, neutral=(), expected=None):
     """None means an unobserved field, not an observed zero. Cached/reasoning may be subsets."""
-    out = {}
+    out, seen = {}, {}
     for role, call in [(r, d) for r, k, d in rows if k.startswith("usage:")] + [tuple(x) for x in neutral]:
         entry = out.setdefault(role, {"calls": 0, "tokens": {}, "calls_with_field": {}})
         entry["calls"] += 1
+        seen.setdefault(role,set()).add(call.get("wake"))
         for field, n in call["counts"].items():
             entry["tokens"][field] = entry["tokens"].get(field, 0) + n
             entry["calls_with_field"][field] = entry["calls_with_field"].get(field, 0) + 1
+    for role, wakes in (expected or {}).items():
+        entry = out.setdefault(role,{"calls":0,"tokens":{},"calls_with_field":{}})
+        entry["wakes_without_receipt"] = sorted(set(wakes) - seen.get(role,set()))
+        entry["fields_unknown_or_partial"] = [field for field in ("input","output","reasoning","cache_read","cache_write")
+                                             if not entry["calls"] or entry["calls_with_field"].get(field,0) < entry["calls"]]
+        entry["status"] = ("UNKNOWN" if not entry["calls"] else "PARTIAL"
+                           if entry["wakes_without_receipt"] or any(f in entry["fields_unknown_or_partial"] for f in ("input","output"))
+                           else "MEASURED")
     return out
 
 
@@ -147,7 +156,7 @@ def score_week(path, draws=None, draw_sensitivities=False):
                          benchmark_short=gain(replay(sess, [{"weights": {benchmark: -1.0}}]+[{} for _ in range(n-1)], f, mult)["value"]),
                          stats=P.p_stats(run["book"], run["value"], start), immediate=run["immediate"], standing=run["standing"])
             if mult == 1 and f == fee or draw_sensitivities:
-                twin, trigger_counts = [], []
+                twin, activity = [], []
                 for i in range(draws):
                     try:
                         shuffled = shuffle_bundles(bundles, spec["rows"], spec["wakes"], spec["end"],
@@ -158,17 +167,26 @@ def score_week(path, draws=None, draw_sensitivities=False):
                     if trial["unsupported"]:
                         return dict(ident, invalid=f"twin has no common open: {trial['unsupported']}", failed_draw=i)
                     twin.append(gain(trial["value"]))
-                    trigger_counts.append(trial["standing"])
-                entry.update(twin=twin, twin_trigger_counts=trigger_counts, judge=SW.judge(twin, entry["gain"], cfg["tm_weights_pass_percentile"]))
+                    activity.append(dict(immediate=trial["immediate"],standing=trial["standing"],turnover_usd=trial["book"]["traded_usd"]))
+                entry.update(twin=twin,twin_activity=activity,twin_trigger_counts=[x["standing"] for x in activity],
+                             judge=SW.judge(twin, entry["gain"], cfg["tm_weights_pass_percentile"]))
             by[f"{mult}x/{f:g}"] = entry
     neutral = (sess.manifest["scout"] or {}).get("usage", [])
+    expected = {"boss":spec["wakes"]}
+    if sess.arm != "A":
+        expected.update({role:spec["wakes"] for role in desk.SCOUTS})
     return dict(ident, main=by[f"1x/{fee:g}"],
-                usage=usage_totals(log, neutral), unique_boss_usage=usage_totals(log), by_fee_multiple=by,
+                usage=usage_totals(log,neutral,expected), unique_boss_usage=usage_totals(log,expected={"boss":spec["wakes"]}),
+                neutral_scout_used=bool(neutral), by_fee_multiple=by,
                 delayed_value=replay(sess, bundles, fee, delay=60)["value"] if sess.arm == "C" else None)
 
 
 def cents(value):
     return Decimal(str(value)).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
+
+
+def cent_lift(baseline, candidate):
+    return float(cents(candidate)-cents(baseline))
 
 
 def paired(scores, boss, arm, percentile=90):
@@ -213,6 +231,6 @@ def paired(scores, boss, arm, percentile=90):
         twin = [join(xs) for xs in zip(*(b["twin"] for b in blocks))]
         mark = SW.judge(twin, gain, percentile)
         result.update(gain=gain, equal=equal, timing=mark, sign_p=sign_tail(len(weeks), wins),
-                      lifts=[round(b["value"] - a["value"], 2) for a, b in vals],
+                      lifts=[cent_lift(a["value"],b["value"]) for a, b in vals],
                       passes=gate and gain > equal and mark["model_above_pass_percentile"] and wins >= result["pass_mark"])
     return result

@@ -500,7 +500,7 @@ class DeskSession:
                 if (not isinstance(counts, dict) or set(counts)-{"input", "output", "reasoning", "cache_read", "cache_write"}
                         or any(type(x) is not int or x < 0 for x in counts.values())):
                     raise ValueError("bad normalized token counts")
-                self.log(con, at, role, kind, dict(request_id=request, usage=usage, counts=counts))
+                self.log(con, at, role, kind, dict(request_id=request, usage=usage, counts=counts, wake=at))
                 result = dict(accepted=True)
             else:
                 raise PermissionError("operation outside role")
