@@ -1,0 +1,21 @@
+{
+ "made_by": "research_rig/test_14.py (made-up data only)",
+ "worlds": 100,
+ "passes": {
+  "small": {
+   "1_above_spy": "38/100",
+   "2_above_everyone": "37/100",
+   "3_above_random_percentile": "7/100",
+   "4_above_spy_each_half": "22/100",
+   "all_four": "6/100"
+  },
+  "wide": {
+   "1_above_spy": "44/100",
+   "2_above_everyone": "38/100",
+   "3_above_random_percentile": "11/100",
+   "4_above_spy_each_half": "18/100",
+   "all_four": "11/100"
+  }
+ },
+ "utc": "2026-11-25 19:29"
+}

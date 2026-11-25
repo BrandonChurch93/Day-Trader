@@ -49,6 +49,10 @@ Each set-up is judged on its own. It passes when all four hold, after costs:
 
 No set-up is chosen after the fact; both are counted as trials. A pass means: worth running on the practice desk with pretend money as a slow sleeve, and the rule becomes the yardstick for AI stock pickers. It does not mean it makes money. Reported and not judged: each calendar year, the largest drop against SPY's, turnover, the result without flagged stocks, and how the top N overlap with what SPMO held where that is public.
 
+## How often this passes with no edge
+
+Measured 2026-11-25 19:47 UTC on 400 made-up worlds with no edge built in, before any return on real prices (`research_rig/noedge_14.json` holds the first 100): mark 3 alone passed in 30 of 400 worlds for the small basket and 36 of 400 for the wide one, more than the 5 in 100 its percentile suggests. All four marks together passed in 27 and 31 of 400. So one set-up passes by luck about 7 times in 100, and with two set-ups counted the chance that at least one passes by luck is higher than that. The cause is UNKNOWN; a likely one is that the rule picks the stocks that move most, which spreads its results wider than a random basket's. The marks are left as they are. A pass will be reported with this figure next to it.
+
 ## Definitions fixed before the run
 
 Written 2026-11-25 19:00 UTC after the code builder read the draft and listed what it left open. No price had been collected.

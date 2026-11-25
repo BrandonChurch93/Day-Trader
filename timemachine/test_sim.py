@@ -1059,6 +1059,7 @@ ok(o4_["sessions"] == dict(planned=12, finished=0, running=0, not_started=12) an
 # ---- plan TM06 (timemachine/tm06.py, score_tm06.py): a made-up fast tape, read-only, with funding, open interest and attention
 import sqlite3 as _sq
 from timemachine import tm06 as T6, perp as PP, weights as WW, score_tm06 as ST6
+K6 = lambda s, b: s.submit(dict(b, session=s.meta["session"], answer_key=s.packet()["answer_key"]))  # a TM06 answer carries its packet's key
 from timemachine.attention import SCHEMA as ATT_SCHEMA
 F0 = U(2026, 6, 1); FE = int(F0.timestamp()); JUMP = int(U(2026, 6, 9, 10, 5).timestamp())
 def fpx(s, t):  # A rises most, B a little, C falls, BTC flat but one step up at 10:05 on 2026-06-09
@@ -1172,16 +1173,25 @@ wa = int(S.parse(pa["utc"]).timestamp())
 ok(abs(ca["change_pct"]["24h"] - (fpx("A/USD", wa - 60) / fpx("A/USD", wa - 86400 - 60) - 1) * 100) < 1e-9 and abs(ca["volume"]["usd_24h"] - sum(10 * fpx("A/USD", wa - 60 * j) for j in range(1, 1441))) < 1e-6
    and ca["volume"]["usual_usd_per_day"] == 9000.0, "tm06 picker: changes from finished minutes only; volume over the last 24 hours against the mean of 1Day bars before")
 rj = lambda b: (not b["ok"]) and pk6.prog["k"] == 0
-ok(rj(pk6.submit({"coins": ["A/USD", "B/USD", "C/USD"], "reasons": {c: "r" for c in ("A/USD", "B/USD", "C/USD")}, "why": "x"})), "tm06 picker: more than tm06_plan.picker_max_names names is refused")
-ok(rj(pk6.submit({"coins": ["D/USD"], "reasons": {"D/USD": "r"}, "why": "x"})), "tm06 picker: a coin not on the list at this wake is refused")
-ok(rj(pk6.submit({"coins": ["A/USD"], "reasons": {}, "why": "x"})) and rj(pk6.submit({"coins": ["A/USD"], "reasons": {"A/USD": "two\nlines"}, "why": "x"})),
+ok(rj(K6(pk6, {"coins": ["A/USD", "B/USD", "C/USD"], "reasons": {c: "r" for c in ("A/USD", "B/USD", "C/USD")}, "why": "x"})), "tm06 picker: more than tm06_plan.picker_max_names names is refused")
+ok(rj(K6(pk6, {"coins": ["D/USD"], "reasons": {"D/USD": "r"}, "why": "x"})), "tm06 picker: a coin not on the list at this wake is refused")
+ok(rj(K6(pk6, {"coins": ["A/USD"], "reasons": {}, "why": "x"})) and rj(K6(pk6, {"coins": ["A/USD"], "reasons": {"A/USD": "two\nlines"}, "why": "x"})),
    "tm06 picker: a missing or many-line reason is refused")
-r1 = pk6.submit({"coins": ["A/USD", "B/USD"], "reasons": {"A/USD": "rising", "B/USD": "steady"}, "why": "x"}); nots = [t["qty"] * t["open"] for t in r1["trades"]]
+pa6 = pk6.packet(); body6 = {"coins": ["A/USD"], "reasons": {"A/USD": "r"}, "why": "x"}; k6 = pk6.prog["k"]
+ok(len(pa6["answer_key"]) == 16 and all(f["answer_key"] == pa6["answer_key"] and f["session"] == "f6_pick" for f in pa6["answer_forms"]) and T6.KEY_RULE in pa6["rules"],
+   "tm06 answer key: the packet carries a random answer_key and its answer forms show it with the session")
+rk = [pk6.submit(body6), pk6.submit(dict(body6, session="f6_pick")), pk6.submit(dict(body6, session="f6_pick", answer_key="0" * 16)),
+      pk6.submit(dict(body6, session="f6_swing", answer_key=pa6["answer_key"]))]
+ok(all(not r["ok"] for r in rk) and pk6.prog["k"] == k6 and "another session" in rk[3]["errors"][0] and "another session or an older step" in rk[2]["errors"][0]
+   and len((pk6.dir / "key_refusals.jsonl").read_text().splitlines()) == 4, "tm06 answer key: no key, a wrong key or another session's name is refused and logged; the clock does not move")
+r1 = K6(pk6, {"coins": ["A/USD", "B/USD"], "reasons": {"A/USD": "rising", "B/USD": "steady"}, "why": "x"}); nots = [t["qty"] * t["open"] for t in r1["trades"]]
 ok(r1["ok"] and sorted(t["symbol"] for t in r1["trades"]) == ["A/USD", "B/USD"] and all(t["side"] == "buy" for t in r1["trades"]) and abs(nots[0] - nots[1]) < 0.01 * nots[0]
    and 0.97 * CFG["tm_account_start_usd"] < sum(nots) <= CFG["tm_account_start_usd"], "tm06 picker: the named coins are bought in equal parts adding up to 1x")
-pk6.packet(); r2 = pk6.submit({"coins": ["B/USD", "A/USD"], "reasons": {"A/USD": "rising", "B/USD": "steady"}, "why": "same"})
+stale6 = pk6.packet(); ok(not pk6.submit(dict(body6, session="f6_pick", answer_key=pa6["answer_key"]))["ok"] and stale6["answer_key"] != pa6["answer_key"],
+   "tm06 answer key: the key of an older step is refused at the next step, and each step has its own key")
+pk6.packet(); r2 = K6(pk6, {"coins": ["B/USD", "A/USD"], "reasons": {"A/USD": "rising", "B/USD": "steady"}, "why": "same"})
 ok(r2["ok"] and r2["trades"] == [], "tm06 picker: naming the same coins again trades nothing")
-pk6.packet(); r3 = pk6.submit({"coins": [], "reasons": {}, "why": "cash"})
+pk6.packet(); r3 = K6(pk6, {"coins": [], "reasons": {}, "why": "cash"})
 ok(r3["ok"] and sorted((t["symbol"], t["side"]) for t in r3["trades"]) == [("A/USD", "sell"), ("B/USD", "sell")] and r3["done"], "tm06 picker: no names means cash")
 ok(T6.check_pick({"coins": ["A/USD"], "reasons": {"A/USD": "r"}, "why": "x"}, ["A/USD"], 1, C6) == [] and T6.check_pick({"weights": {}}, ["A/USD"], 1, C6), "tm06 picker: the answer form")
 
@@ -1226,14 +1236,17 @@ ok(T6.plan_month("2026-04", C6) == ("2026-04-01", "2026-04-30") and T6.plan_mont
    "tm06 picker --month: a calendar month clipped to the plan's dates")
 ok(sg.meta["long_only"] and len(sg.meta["wakes"]) == 24 and sg.max_gross == T6.plan(C6)["swing_max_gross"] if hasattr(sg, "max_gross") else len(sg.meta["wakes"]) == 24,
    "tm06 swing: hourly wakes on the coins given, long only, gross at most tm06_plan.swing_max_gross")
-bad = sg.submit({"weights": {"A/USD": 0.5, "C/USD": -0.5}, "why": "x"})
+bad = K6(sg, {"weights": {"A/USD": 0.5, "C/USD": -0.5}, "why": "x"})
 ok(not bad["ok"] and sg.prog["k"] == 0 and any("negative" in e or "long" in e for e in bad.get("errors", [json.dumps(bad)])), "tm06 swing: --long-only refuses a negative weight")
 ok(PP.check_answer({"weights": {"A/USD": -0.5}, "why": "x"}, ["A/USD"], C6, 1.0, {"A/USD": 10.0}, long_only=False) == [], "tm06 swing: without long_only the book takes a short")
+pg6 = sg.packet(); xs = sg.submit({"weights": {"A/USD": 0.5}, "why": "x", "session": "f6_pick", "answer_key": json.loads((pk6.dir / "packets" / "0.json").read_text())["answer_key"]})
+ok(not xs["ok"] and sg.prog["k"] == 0 and "another session" in xs["errors"][0] and pg6["answer_key"] != json.loads((pk6.dir / "packets" / "0.json").read_text())["answer_key"],
+   "tm06 answer key: an answer built from another session's packet is refused by the swing session")
 i6 = 0
 while not sg.done():
     pg = sg.packet(); px = pg["symbols"]["A/USD"]["price"]
     body = {"weights": {"A/USD": 0.5, "C/USD": 0.5} if i6 % 4 < 2 else {"A/USD": 1.0}, "exits": {"A/USD": {"stop": px * 0.9}}, "why": "x"} if i6 % 3 == 0 else {"no_change": True, "why": "x"}
-    ok(sg.submit(body)["ok"], "tm06 swing: a scripted answer is taken"); i6 += 1
+    ok(K6(sg, body)["ok"], "tm06 swing: a scripted answer is taken"); i6 += 1
 sc6 = T6.score_swing("f6_swing", draws=5); mults6 = ["1x"] + [f"{m:g}x" for m in T6.plan(C6)["carried"]]
 ok(list(sc6["by_multiple"]) == mults6 and all(list(v) == [f"{f:g}" for f in C6["tm_perp_fee_levels_bps"]] for v in sc6["by_multiple"].values())
    and all(set(b["yardsticks"]) == {"equal_hold_2", "hold_long_BTC/USD"} and b["shuffled_order_twins"]["final_gain_pct"]["n"] == 5 for v in sc6["by_multiple"].values() for b in v.values()),
@@ -1347,9 +1360,9 @@ except AssertionError:
 ok(caught, "tm06 handoff: refused where the next wake is not a hand-off point")
 hs = WW.open_session("f6_hand", tape=WT); hs2 = WW.open_session("f6_hand2", tape=WT)
 for _ in range(nh):
-    hs.packet(); hs.submit({"no_change": True, "why": "x"})
+    hs.packet(); K6(hs, {"no_change": True, "why": "x"})
 for _ in range(nh + 1):
-    hs2.packet(); hs2.submit({"no_change": True, "why": "x"})
+    hs2.packet(); K6(hs2, {"no_change": True, "why": "x"})
 n1 = T6.next_wake("f6_hand")
 ok(n1["is_handoff"] and n1["agent"] == 2 and n1["first_step"] == nh + 1 and n1["last_step"] == 2 * nh and n1["next_utc"].endswith(":00:00Z") and int(n1["next_utc"][11:13]) % nh == 0 and not n1["handoff_recorded"] and n1["ran_past"] == [],
    "tm06 next: at the hand-off the next agent's steps, at the same clock time every day")

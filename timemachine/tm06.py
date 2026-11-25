@@ -41,7 +41,7 @@ python3 timemachine/tm06.py swing --trader S01 --model M --method CARD.md --week
 python3 timemachine/tm06.py control --from 2026-03-01 --to 2026-03-31 [--session ID]     (runs the rule at once)
 python3 timemachine/tm06.py score SESSION [--draws N]
 """
-import argparse, datetime as dt, hashlib, json, math, os, random, shutil, sqlite3, sys
+import argparse, datetime as dt, hashlib, json, math, os, random, secrets, shutil, sqlite3, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -297,6 +297,43 @@ def check_pick(body, listed_now, max_names, cfg):
     return errs
 
 
+# ---- the answer key: traders share one machine, so an answer built from another session's (or an older) packet is refused
+KEY_RULE = ("Every answer carries \"session\" and \"answer_key\" copied from this packet. An answer whose session or answer_key is not "
+            "this session's current packet is refused: it was built from another session's packet or an older step.")
+
+
+def keyed(sess, out):
+    """Adds a fresh random answer_key (nothing in it depends on the date or the session) and puts it in the answer forms."""
+    out["answer_key"] = secrets.token_hex(8)
+    for f in out["answer_forms"]:
+        f["session"] = out["session"]; f["answer_key"] = out["answer_key"]
+    out["rules"].append(KEY_RULE)
+    return out
+
+
+def key_check(sess, body):
+    """None if the body is for this session's current packet, else the refusal. Logs each refusal to key_refusals.jsonl."""
+    if not isinstance(body, dict):
+        return None  # the usual checks answer this
+    sid = sess.meta["session"]; k = sess.prog["k"]; pk = sess.dir / "packets" / f"{k}.json"
+    want = json.loads(pk.read_text()).get("answer_key") if pk.exists() else None
+    if body.get("session") != sid:
+        why = (f"This answer names session {body.get('session')!r}, but it was sent to session {sid}. The packet it was built from belongs to "
+               f"another session. Call /next?session={sid} and build the answer from that packet only.")
+    elif want is None or body.get("answer_key") != want:
+        why = (f"The answer_key does not match the current packet of session {sid} (step {k + 1}). The packet it was built from belongs to "
+               "another session or an older step. Call /next for this session and build the answer from that packet only.")
+    else:
+        return None
+    with open(sess.dir / "key_refusals.jsonl", "a") as f:
+        f.write(json.dumps(dict(k=k, sent_session=body.get("session"), key_given=body.get("answer_key") is not None)) + "\n")
+    return sess.bad([why])
+
+
+def unkeyed(body):
+    return {x: v for x, v in body.items() if x not in ("session", "answer_key")}
+
+
 class PickerSession(P.PSession):
     """Part P: a daily perp session over the whole coin list, answered with coin names."""
 
@@ -335,12 +372,16 @@ class PickerSession(P.PSession):
                           "More bars: /look what=bars timeframe=1Min, 15Min, 1Hour, 4Hour or 1Day."])
         if fresh:
             return out
-        p.parent.mkdir(exist_ok=True); S.save_json(p, out)
+        keyed(self, out); p.parent.mkdir(exist_ok=True); S.save_json(p, out)
         return json.loads(p.read_text())
 
     def submit(self, body):
         if self.done():
             raise S.Done()
+        refused = key_check(self, body)
+        if refused:
+            return refused
+        body = unkeyed(body) if isinstance(body, dict) else body
         errs = check_pick(body, self.listed_now(), self.max_names, self.cfg)
         if errs:
             return self.bad(errs)
@@ -379,8 +420,16 @@ class SwingSession(P.PSession):
                                "finished one-minute bars. volume.ratio is the last 24 hours' dollar volume against the coin's own mean day of the 30 days before.")
         if fresh:
             return out
-        p.parent.mkdir(exist_ok=True); S.save_json(p, out)
+        keyed(self, out); p.parent.mkdir(exist_ok=True); S.save_json(p, out)
         return json.loads(p.read_text())
+
+    def submit(self, body):
+        if self.done():
+            raise S.Done()
+        refused = key_check(self, body)
+        if refused:
+            return refused
+        return super().submit(unkeyed(body) if isinstance(body, dict) else body)
 
 
 # ---- scoring: one replay setting, then the same book for the model and every yardstick
@@ -596,7 +645,8 @@ def brief_text(nx, port, notes_path):
     t = BRIEFS.read_text(); part = {"S": "swing", "P": "picker"}[nx["part"]]
     body = t.split(f"<!-- BRIEF {part} -->")[1].split("<!-- END -->")[0].strip()
     vals = dict(MODEL=nx["model"], METHOD_CARD=nx["method"], SESSION_ID=nx["session"], PORT=str(port), AGENT=str(nx["agent"]), AGENTS=str(nx["agents"]), FIRST_STEP=str(nx["first_step"]),
-                LAST_STEP=str(nx["last_step"]), WAKES=str(nx["wakes"]), NOTES_PATH=notes_path, HANDOFF_NOTES_PATH=nx["notes_for_agent"] or "none (you are the first agent)")
+                LAST_STEP=str(nx["last_step"]), WAKES=str(nx["wakes"]), NOTES_PATH=notes_path, HANDOFF_NOTES_PATH=nx["notes_for_agent"] or "none (you are the first agent)",
+                SCRATCH_DIR=str(Path(notes_path).parent / f"scratch_agent{nx['agent']}"), TAG=f"{nx['session']}_a{nx['agent']}")
     for k, v in vals.items():
         body = body.replace("{" + k + "}", v)
     return body

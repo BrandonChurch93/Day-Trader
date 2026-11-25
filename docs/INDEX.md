@@ -214,6 +214,14 @@ Working papers.
 | `research_rig/score_13.lock` | Plan 13: marks that the run was made; a second run is refused | CURRENT |
 | `research_rig/report_13.py` | Writes the plan 13 result page from results_13.json; reads no price | CURRENT |
 | `research_rig/PREREG_14_large_stock_momentum_DRAFT.md` | Draft plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | DRAFT |
+| `research_rig/build_members_14.py` | Plan 14 member list: S&P 500 members by date from two public sources, renames listed, written outside the repo | CURRENT |
+| `research_rig/fetch_14.py` | Plan 14 data: daily bars one ticker at a time, stored outside the repo, prints counts only | CURRENT |
+| `research_rig/common_14.py` | Plan 14 rules: calendar, 12-month ranking, the baskets, the yardsticks and the simulation | CURRENT |
+| `research_rig/score_14.py` | Plan 14 scorer: --selftest on made-up prices, --coverage for counts, --run once on the frozen plan with locks first | CURRENT |
+| `research_rig/test_14.py` | Plan 14 self-tests on made-up prices, 16 checks, and the no-edge worlds | CURRENT |
+| `research_rig/noedge_14.json` | Plan 14: how often each mark passes in made-up worlds with no edge. Made-up data only | CURRENT |
+| `research_rig/coverage_14.json` | Plan 14: counts of members, rankable stocks and missing price files by date. No prices | CURRENT |
+| `research_rig/report_14.py` | Writes the plan 14 result page from the stored result; reads no price | CURRENT |
 | `research_rig/PREREG_16_hot_five_hedged_DRAFT.md` | Draft plan 16: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Not frozen, nothing run | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
