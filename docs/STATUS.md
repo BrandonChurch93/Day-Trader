@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-25 16:34 UTC
+Last updated: 2026-11-25 16:41 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -75,7 +75,7 @@ Only what someone using the tools needs to know. The longer account of each slip
 - Stock prices collected from the workspace's built-in price history have gaps, and some one-minute prices sit outside the day's range in its daily file. They stay on the research machine, are never published, and any test that uses them says so.
 - Time machine, found and fixed on 2026-11-25 while sessions were running, each written into the plans with its time: crypto traders were shown the previous day's stock fund movers for about 18 minutes; a pick sent twice after a lost reply was taken twice (five wakes, all "no pick"); exits are checked every few minutes, so a one-minute spike through a stop or target between checks is missed. The results tables count the first two per session.
 - The time machine's stock list was chosen on 2026-11-25 from today's large companies. It leans toward companies that did well. Twins drawn from the same list share that lean, so compare with twins, not with zero.
-- The practice desk checks exits about every thirty minutes, GitHub's timer can run late, and stocks trade only in regular hours. A stop can be filled late. Results from the desk include that.
+- The practice desk checks exits about every ten minutes, GitHub's timer can run late, and stocks trade only in regular hours. A stop can be filled late. Results from the desk include that.
 
 ## Waiting on the owner
 
@@ -89,7 +89,7 @@ On 2026-11-25:
 
 - The data key, saved in the secure form. MEASURED at 16:23 UTC: it returns minute and daily prices for the whole US stock market back to 2016, the bid and ask at any past moment, and dated stock news from 2026-04-29 on and nothing older.
 - The practice account key, added to the repo's secrets at 16:31 UTC. The practice desk ran at 16:31 UTC and its first order filled.
-- He made the repo private. The desk's timer now runs every thirty minutes to stay inside GitHub's free allowance, and the owner's screen shows the practice records as of its last build.
+- He made the repo private at about 16:30 UTC and public again at about 16:40 UTC. The desk's timer is back to every ten minutes and the owner's screen reads the practice records live.
 
 ## Keeping this page true
 

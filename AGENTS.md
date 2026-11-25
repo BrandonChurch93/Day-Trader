@@ -81,7 +81,7 @@ These are his because they are his accounts and his money, not because the build
 
 ## Keeping the repo readable
 
-- No secrets. No vendor price data or news in the repo. The owner made the repo private on 2026-11-25. The rule stays, because the vendors' terms do not allow passing their data on and a repo can be opened again. Recorded data stays on the research machine.
+- No secrets. No vendor price data or news in the repo, because it is public. Recorded data stays on the research machine.
 - Every number lives once, in `config/thresholds.yaml`. Documents name the key.
 - Every file is listed in `docs/INDEX.md`. Run `python3 tools/check_repo.py` before a commit.
 - Commit to `main` and push. Never force push.

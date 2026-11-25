@@ -10,7 +10,7 @@ To find out, with live prices and no hindsight, which traders make pretend money
 
 1. An AI trader reads what its method card says to read, and writes a pick: a small file with its reason, its sources, what to buy or sell, and optional exits (a stop price, a target price, a time). The form is in `practice/picks.py`. A fixed rule has no pick: the program works its decision out from prices.
 2. The pick is pushed to the `practice-picks` branch. The trader has no broker key and cannot place an order.
-3. The timer runs `practice/trader.py` about every thirty minutes (`practice_timer_minutes`). It reads cash, holdings and every order from the broker and rebuilds each trader's books from the broker's order list.
+3. The timer runs `practice/trader.py` about every ten minutes (`practice_timer_minutes`). It reads cash, holdings and every order from the broker and rebuilds each trader's books from the broker's order list.
 4. The first time the program sees a pick it freezes a copy in the records. A later edit or removal of the file changes nothing. A pick that arrives after its own expiry is marked late and never traded.
 5. For each action the program checks: the pick fits the form, the trader has the pretend cash or the holding, the order is inside the size limits, the trader is inside its daily order count, the price is fresh, the market for that symbol is open, and nobody else on the desk has an open order in that symbol.
 6. It writes the intent down and saves it to the `practice-records` branch. If that save fails, the order is not sent.
@@ -62,7 +62,7 @@ Every AI trader gets two twins that cost almost nothing to run: one that holds i
 
 - Long only. No short sales, margin, options or futures.
 - Stocks trade only in regular hours, with market orders in dollar amounts.
-- Exits are checked about every thirty minutes (every ten until 2026-11-25 16:34 UTC), and GitHub's timer can run late. A stop can be filled well past its price.
+- Exits are checked about every ten minutes, and GitHub's timer can run late. A stop can be filled well past its price.
 - One practice account is shared by every trader, so two traders cannot have open orders in the same symbol at the same moment.
 - Crypto fees: the program adds `practice_crypto_fee_bps_added` to each crypto trade in the books until the first real fill shows how the practice account charges them.
 - The desk does not run the AI traders. Each one runs as an agent on a schedule and pushes picks. That scheduling is set up when the first AI trader joins.

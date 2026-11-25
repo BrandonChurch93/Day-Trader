@@ -335,9 +335,9 @@ practice_pick_max_actions:
   source: practice/picks.py
 
 practice_timer_minutes:
-  value: 30
+  value: 10
   status: builder
-  note: How often GitHub's timer runs the practice desk. The schedule line in the workflow has to match it by hand. GitHub can run late. Was 10 until 2026-11-25 16:34 UTC. The owner made the repo private that day, and a private repo on the free plan gets about 2,000 runner minutes a month. Each run is billed as one minute, so every 10 minutes would use about 4,300 and every 30 about 1,450.
+  note: How often GitHub's timer runs the practice desk. The schedule line in the workflow has to match it by hand. GitHub can run late. It was 30 from 16:34 to 16:40 UTC on 2026-11-25 while the repo was private, because a private repo on the free plan gets about 2,000 runner minutes a month and each run is billed as one minute. If the repo is made private again, set this and the schedule line back to 30.
   source: .github/workflows/practice-trader.yml
 
 tm_daily_lookback_days:

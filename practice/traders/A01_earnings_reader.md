@@ -43,7 +43,7 @@ Every box must be ticked, written in the reason field:
 - Stop price: the lower of today's low so far and 6% below entry.
 - Target price: 15% above entry, or none if the model writes a reason to let it run, in which case it raises the stop to entry once the price is 8% above entry (written as a new stop at a later wake).
 - Exit-by time: 10 trading days after entry, at 15:45 Eastern.
-- Stops are checked by the plain code about every 30 minutes and fill as market orders, so a loss can be larger than the stop.
+- Stops are checked by the plain code about every 10 minutes and fill as market orders, so a loss can be larger than the stop.
 
 ## What it never does
 

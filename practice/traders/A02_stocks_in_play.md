@@ -42,7 +42,7 @@ Every box must be ticked, written in the reason field:
 - Stop price: the day's low at the time of entry, but never more than 4% below entry.
 - Target price: 8% above entry.
 - Exit-by time: 15:45 Eastern on the day of entry, unless the model writes a reason to hold. Then the latest exit-by is 3 trading days after entry, at 15:45 Eastern.
-- Stops are checked about every 30 minutes and fill at market, so losses can exceed the stop.
+- Stops are checked about every 10 minutes and fill at market, so losses can exceed the stop.
 
 ## What it never does
 

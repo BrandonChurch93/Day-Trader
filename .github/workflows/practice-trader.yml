@@ -6,7 +6,7 @@
 name: Practice trader
 on:
   schedule:
-    - cron: "7,37 * * * *"   # must match practice_timer_minutes in config/thresholds.yaml. Every 30 minutes keeps a private repo inside GitHub's free monthly allowance
+    - cron: "7,17,27,37,47,57 * * * *"   # must match practice_timer_minutes in config/thresholds.yaml. If the repo is ever made private, change both to 30: a private repo on the free plan gets about 2,000 runner minutes a month
   workflow_dispatch:
     inputs:
       clear:
