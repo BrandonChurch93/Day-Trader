@@ -551,9 +551,12 @@ class Tape:
             expanded = []
             for s in symbols:
                 if isinstance(s, str) and s.strip():
-                    expanded.append(s.strip())
-                    if "/" in s:
-                        expanded.append(s.strip().replace("/", ""))
+                    ss = s.strip()
+                    expanded.append(ss)
+                    if "/" in ss:
+                        expanded.append(ss.replace("/", ""))
+                    elif len(ss) > 3 and ss.endswith("USD"):
+                        expanded.append(ss[:-3] + "/USD")
             sym_list = list(dict.fromkeys(expanded))
             if not sym_list:
                 return []

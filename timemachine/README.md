@@ -26,14 +26,14 @@ Pretend money only. Nothing here touches a real account.
 
 Run these from the repo root.
 
-- Make the session: `python3 timemachine/new_session.py --trader T01 --model MODEL --method PATH/TO/METHOD_CARD.md --market crypto --from 2026-10-01 --to 2026-10-31`
+- Make the session: `python3 timemachine/new_session.py --trader T01 --model MODEL --method PATH/TO/METHOD_CARD.md --market crypto --from 2026-10-01 --to 2026-10-31` (add `--news` for a trader that reads headlines)
 - It prints the session id and the curl lines.
 - Start the server in its own terminal: `python3 timemachine/server.py`
 - The port is `TM_PORT` if set, otherwise the default in `server.py`.
 - Give the trader agent `TRADER_BRIEF.md`, its trader id, the session id and the port. It loops on `/next` and `/pick` until DONE.
 - Check progress any time: `curl -s 'http://127.0.0.1:PORT/status?session=SESSION'`
 - When DONE, the result is `$TM_RUNS/SESSION/result.json`.
-- Run the hold baseline for the same window: `python3 timemachine/run_code_trader.py hold --symbol BTC/USD --market crypto --from 2026-10-01 --to 2026-10-31`
+- Run the hold baseline for the same window: `python3 timemachine/run_code_trader.py hold --symbol BTC/USD --market crypto --from 2026-10-01 --to 2026-10-31` (add `--news` for a trader that reads headlines)
 - Run a random twin of the AI session: `python3 timemachine/run_code_trader.py twin --result $TM_RUNS/SESSION/result.json --seed SEED`
 - For stocks, use `--market stocks`. The benchmark defaults to SPY.
 
@@ -82,5 +82,6 @@ Folders.
 - A stock order while the market is closed is refused. The real Alpaca would queue it for the open.
 - A stock order is refused if the tape has no minute bars for it that day.
 - Sell orders by dollar amount are refused. Buying power is cash less open buys.
-- The crypto tape recorded so far has bars only. If it has no news, a crypto packet shows no news. MEASURED for the current tape: news lookups returned no items.
+- News is off unless a session is made with `--news`. A session made without it shows no headlines in its packets and refuses news lookups, whatever the tape holds. That is how a prices-only trader and a news-reading trader can be run on the same days and compared.
+- The crypto tape holds dated headlines from three public news sites from 2026-06-01 (`python3 timemachine/record.py crypto-news`). The time on a headline is the site's own publish time. About one in eight was edited after it was published, and the text kept is the edited one; those are marked `edited_later`. A trader could learn a little from an edit that it should not know yet.
 - Real AI sessions have not been run yet. How long one takes is UNKNOWN.

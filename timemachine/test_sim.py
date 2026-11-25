@@ -154,6 +154,7 @@ def two_coins(packet):
                 exits=[dict(symbol="BTC/USD", stop=95.0), dict(symbol="ETH/USD", target=55.0)])
 
 def mk(sid, trader="A07", market="crypto", start="2026-10-01", end="2026-10-01", **kw):
+    kw.setdefault("news", True)
     S.create(sid, trader, "test", "practice/traders/A07_crypto_trend.md", start, end, market=market, tape=TAPE, **kw)
     return sid
 
@@ -358,6 +359,13 @@ ok(hb[0]["o"] == 100.0 and hb[0]["h"] == 160.0 and hb[0]["l"] == 99.0 and hb[0][
 hb2 = S.built_bars(BT, "BTC/USD", 1800, U(2026, 10, 1, 9), U(2026, 10, 1, 12, 30), 3)
 ok([x["t"] for x in hb2] == [U(2026, 10, 1, 11), U(2026, 10, 1, 11, 30), U(2026, 10, 1, 12)] and hb2[-1]["c"] == 249.5, "half-hour bars: a bucket that ended exactly at the look time is returned, and the limit keeps the newest")
 ok(json.loads((S.create("bm1", "BM", "m", "practice/traders/B01_crypto_swing_price_only.md", "2026-10-01", "2026-10-02", watch=["AVAX/USD", "BTC/USD"], tape=BT) / "session.json").read_text())["benchmark"] == "BTC/USD", "a coin session is measured against bitcoin when bitcoin is on its list")
+
+# ---- a session made without news shows none, even when the tape holds headlines for that time
+sn = S.Session(mk("nonews1", news=False, start="2026-10-01", end="2026-10-02"), tape=MAIN_TAPE); sw = S.Session(mk("withnews1", start="2026-10-01", end="2026-10-02"), tape=MAIN_TAPE)
+while not sw.done() and not sw.packet()["feed"]["news"]:
+    sn.submit({"no_pick": True, "why": "w"}); sw.submit({"no_pick": True, "why": "w"})
+ok(not sw.done() and sw.packet()["feed"]["news"] and sn.now == sw.now and sn.packet()["feed"]["news"] == [], "price-only session: the packet has no headlines at a time when a news session has some")
+lk = sn.look("news", symbols="BTC/USD", days=5); ok(not lk["ok"] and "no news" in lk["error"] and sn.looks_left() == CFG["tm_max_looks_per_wake"], "price-only session: a news lookup is refused and not counted")
 
 n_log = len(Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines())
 ok(n_log == log0 + len([d for d in p.iterdir() if (d / "session.json").exists()]), "every session made is one line in the sessions log")

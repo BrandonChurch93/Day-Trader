@@ -524,10 +524,12 @@ def test_recorder_fixtures():
         ok("edited_later" not in by_url["https://cryptoslate.com/btc-sol-rally/"], "scheduled post (modified <= date) not marked edited_later")
         ok(by_url["https://cryptoslate.com/btc-sol-rally/"]["headline"] == "Bitcoin & Solana Lead Market", "HTML entities unescaped in headline")
         ok(by_url["https://cryptoslate.com/link-update/"].get("edited_later") is True, "post modified after publish marked edited_later")
-        # SimData clamps updated_at <= now on edited keyless news
+        # SimData clamps updated_at <= now on edited keyless news; market.news strips '/' -> 'LINKUSD' and still matches!
         sim_cn = SimData(t, lambda: _iso("2026-07-02T14:40:00Z"))
         raw_cn = sim_cn.get(M.DATA, "/v1beta1/news", {"symbols": "LINK/USD"})
         ok(len(raw_cn["news"]) == 1 and raw_cn["news"][0]["updated_at"] == "2026-07-02T14:30:00Z", "SimData clamps future modified_gmt to created_at")
+        m_cn = M.news(sim_cn, symbols=["LINK/USD"], limit=10)
+        ok(len(m_cn) == 1 and m_cn[0]["source"] == "cryptoslate", "market.news slashless crypto ticker matches stored LINK/USD")
         t.close()
 
 

@@ -1,7 +1,7 @@
 """Makes a new time machine session and counts it in timemachine/SESSIONS.jsonl. Pretend money only.
 
 python3 timemachine/new_session.py --trader A07 --model <model build> --method practice/traders/A07_crypto_trend.md \
-    --market crypto --from 2026-10-01 --to 2026-10-31 [--session ID] [--watch BTC/USD,ETH/USD] [--benchmark BTC/USD] [--wakes T1,T2,...]
+    --market crypto --from 2026-10-01 --to 2026-10-31 [--session ID] [--watch BTC/USD,ETH/USD] [--benchmark BTC/USD] [--wakes T1,T2,...] [--news]
 Prints the session id and the curl lines a trader agent uses."""
 import argparse, datetime as dt, json, os, sys
 from pathlib import Path
@@ -17,11 +17,11 @@ def main(argv=None):
     a.add_argument("--trader", required=True); a.add_argument("--model", required=True); a.add_argument("--method", required=True)
     a.add_argument("--market", choices=["crypto", "stocks"], required=True)
     a.add_argument("--from", dest="start", required=True); a.add_argument("--to", dest="end", required=True)
-    a.add_argument("--session"); a.add_argument("--watch"); a.add_argument("--benchmark"); a.add_argument("--wakes"); a.add_argument("--note")
+    a.add_argument("--session"); a.add_argument("--watch"); a.add_argument("--benchmark"); a.add_argument("--wakes"); a.add_argument("--note"); a.add_argument("--news", action="store_true", help="show the trader dated headlines from the tape")
     x = a.parse_args(argv)
     sid = x.session or f"{x.trader}-{x.start}-{dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S')}"
     folder = S.create(sid, x.trader, x.model, x.method, x.start, x.end, wakes=x.wakes.split(",") if x.wakes else None, market=x.market,
-                      watch=[s for s in x.watch.split(",") if s] if x.watch is not None else None, benchmark=x.benchmark, note=x.note)
+                      watch=[s for s in x.watch.split(",") if s] if x.watch is not None else None, benchmark=x.benchmark, note=x.note, news=x.news)
     meta = json.loads((folder / "session.json").read_text()); port = os.environ.get("TM_PORT", "8765"); base = f"http://127.0.0.1:{port}"
     print(json.dumps(dict(session=sid, folder=str(folder), wakes=len(meta["wakes"]), first_wake=meta["wakes"][0], end_utc=meta["end_utc"]), indent=1))
     print(f"curl -s '{base}/next?session={sid}'")

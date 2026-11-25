@@ -63,4 +63,4 @@ Written 2026-11-25 15:22 UTC, after three of the six October sessions had finish
 - In October a lookup of half-hour bars for a coin came back empty, because the tape holds minutes and days. Models that asked lost a lookup. Fixed for the other months: half-hour and hour bars are built from the minutes, never including a bucket still open.
 - While the October sessions ran, the tape was extended backwards (days to 2024-01-01, minutes to 2026-01-01). Nothing after a session's clock was added, but a model that looked far back late in its session could see more history than one that looked early. The other months all run on the extended tape.
 - Because of these three points October stays what the plan already called it: the shakedown month. It is still counted in the five-month sum, as fixed above.
-
+- At 15:28 UTC dated headlines were recorded onto the tape for a later plan. From 15:29 UTC a session shows headlines only if it was made with `--news`; every session of this plan was made without it. Checked at 15:30 UTC (MEASURED): of the 551 packets handed out so far in this plan, none held a headline, and no trader had asked for news.

@@ -150,7 +150,7 @@ def built_bars(tape, symbol, secs, start, now, limit):
     return [out[k] for k in sorted(out)][-limit:]
 
 
-def create(session_id, trader_id, model, method_path, start_date, end_date, wakes=None, market="crypto", watch=None, benchmark=None, tape=None, note=None):
+def create(session_id, trader_id, model, method_path, start_date, end_date, wakes=None, market="crypto", watch=None, benchmark=None, tape=None, note=None, news=False):
     """Makes the session folder and counts the session in SESSIONS.jsonl. Returns the folder."""
     assert re.fullmatch(r"[A-Z0-9-]{2,12}", trader_id), "trader id: 2 to 12 capital letters, digits or dashes"
     assert re.fullmatch(r"[A-Za-z0-9_.-]{3,80}", session_id) and ".." not in session_id, "session id: 3 to 80 letters, digits, dot, dash or underscore"
@@ -171,7 +171,7 @@ def create(session_id, trader_id, model, method_path, start_date, end_date, wake
     chash = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()
     meta = dict(session=session_id, trader=trader_id, model=model, method=method_path, method_sha256=sha256_file(mp), market=market, window=dict(start=start_date, end=end_date),
                 wakes=[iso(w) for w in wl], end_utc=iso(end), watch=list(watch), benchmark=benchmark, config=cfg, config_hash=chash,
-                created_utc=iso(dt.datetime.now(UTC)), git=git_commit(), tape=str(tape.path), note=note)
+                created_utc=iso(dt.datetime.now(UTC)), git=git_commit(), tape=str(tape.path), note=note, news=bool(news))
     folder.mkdir(parents=True)
     (folder / "session.json").write_text(json.dumps(meta, indent=1, sort_keys=True) + "\n")
     line = dict(session=session_id, trader=trader_id, model=model, method=method_path, method_sha256=meta["method_sha256"], market=market, window=meta["window"],
@@ -322,6 +322,8 @@ class Session:
             return json.loads(p.read_text())
         bk = self.book(); held = [x["symbol"] for x in bk["positions"]]
         feed = M.build_feed(self.sd.get, self.meta["watch"], held, self.now)
+        if not self.meta.get("news"):
+            feed["news"] = []   # a session made without news shows none, whatever the tape holds
         all_syms = list(dict.fromkeys(list(self.meta["watch"]) + held))
         edited = {(iso(a["created"]) if isinstance(a["created"], dt.datetime) else a["created"], a["headline"].strip()) for a in self.tape.news(self.now, symbols=all_syms or None, limit=50) if a.get("edited_later")}
         for a in feed["news"]:
@@ -364,6 +366,8 @@ class Session:
             else:
                 rows = self.tape.bars(symbol, "30Min" if timeframe == "1Hour" else timeframe, start, self.now, limit=int(self.cfg["tm_look_max_bars"]))
             data = [dict(b, t=iso(b["t"])) for b in rows]
+        elif what == "news" and not self.meta.get("news"):
+            return dict(ok=False, error="This session has no news. It trades from prices alone.")
         elif what == "news":
             data = [{k2: (iso(v) if isinstance(v, dt.datetime) else v) for k2, v in a.items() if k2 != "updated"}  # the edit time may be after now: never shown
                     for a in self.tape.news(self.now, symbols=syms or None, since_utc=start, limit=50)]
