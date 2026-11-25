@@ -203,7 +203,11 @@ Working papers.
 | `research_rig/renames_12.csv` | Plan 12 rename list, frozen with the plan: old ticker, new ticker, date, public source and status (mapped, left_out, reuse_seen) | CURRENT |
 | `research_rig/noedge_12.py` | Plan 12: runs the block bootstrap mark on 1,000 made-up data sets with no edge and writes the pass rates | CURRENT |
 | `research_rig/noedge_12.json` | Plan 12: the measured no-edge pass rates of mark 2 at each hold, quoted by report_12.py | CURRENT |
-| `research_rig/PREREG_13_year_or_method_DRAFT.md` | Draft plan: a fixed dip-and-peak rule on the hottest coins, scored year by year from 2020 to 2026, to tell the owner's method from the year he traded in | DRAFT |
+| `research_rig/PREREG_13_year_or_method.md` | Plan: a fixed dip-and-peak rule on the five hottest coins, scored year by year 2020 to 2026 against all coins, random coins and bitcoin, to tell the method from the year. Frozen 2026-11-25 19:27 UTC | CURRENT |
+| `research_rig/common_13.py` | Plan 13 rules: weekly coin list, hot five, hold rule A, dip rule B, yardsticks, flags, the judge | CURRENT |
+| `research_rig/fetch_13.py` | Plan 13 data: monthly coin lists and hourly Binance archives, stored outside the repo with a manifest | CURRENT |
+| `research_rig/score_13.py` | Plan 13 scorer: --selftest on made-up bars; --run once on the frozen plan, lock first | CURRENT |
+| `research_rig/test_13.py` | Plan 13 self-tests on made-up bars, 34 checks | CURRENT |
 | `research_rig/PREREG_14_large_stock_momentum_DRAFT.md` | Draft plan: plain 12-month momentum on S&P 500 members by date, top 10 and top 50, monthly, against SPY, all members and random baskets | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |

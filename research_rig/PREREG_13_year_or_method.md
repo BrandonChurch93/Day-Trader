@@ -1,6 +1,6 @@
-# Pre-registration 13 (draft): the owner's method in 2021 and in every other year
+# Pre-registration 13: the owner's method in 2021 and in every other year
 
-Status: DRAFT written 2026-11-25 18:44 UTC by the builder, before any price was collected for it. It becomes final when the code has been checked by a second model and this line is changed to "frozen" with the time. Ledger rows 144 and 145 in `research_rig/TRIAL_LEDGER.md`. Pretend trades on past prices. No AI model takes part.
+Status: frozen 2026-11-25 19:27 UTC by the builder. Written 2026-11-25 18:44 UTC before any price was collected for it. The code was then checked by two other models: one read it against this text and found faults that were fixed; the other rebuilt the rules from this text alone and matched the code trade for trade on made-up data, and found the missing-hour fault fixed in the last block below. No return was worked out before this line. Nothing in this file or in `replay_13_plan` changes after it. Ledger rows 144 and 145 in `research_rig/TRIAL_LEDGER.md`. Pretend trades on past prices. No AI model takes part.
 
 ## The question
 
