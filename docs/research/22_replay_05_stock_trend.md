@@ -25,11 +25,12 @@ Date: 2026-11-25. Plan written and pushed before the run: `research_rig/PREREG_0
 - Verdicts that changed between the runs: T1 at 2 bps: fail to PASS; T2 at 2 bps: fail to PASS; T4 at 2 bps: fail to PASS; T5 at 2 bps: fail to PASS; V1 at 2 bps: fail to PASS; I1 at 2 bps: fail to PASS; I2 at 2 bps: fail to PASS; T1 at 5 bps: fail to PASS; T5 at 5 bps: fail to PASS; V1 at 5 bps: fail to PASS; I1 at 5 bps: fail to PASS; I2 at 5 bps: fail to PASS; I2 at 10 bps: fail to PASS.
 - Verdicts changed for rules whose own trades did not change at all (T1 at 2 bps: fail to PASS; T2 at 2 bps: fail to PASS; T4 at 2 bps: fail to PASS; T5 at 2 bps: fail to PASS; V1 at 2 bps: fail to PASS; I1 at 2 bps: fail to PASS; T1 at 5 bps: fail to PASS; T5 at 5 bps: fail to PASS; V1 at 5 bps: fail to PASS; I1 at 5 bps: fail to PASS). The only thing that moved for them is mark 4, which is worked out across the whole set of eight rules.
 - In the first run, the rules that failed mark 4 and nothing else: T1, T2, T4, T5, V1, I1 at 2 bps, T1, T5, V1, I1 at 5 bps, none at 10 bps.
-- What the rules did in the held-back slice, in plain terms: holding the market grew +11.5% a year with a largest drop of -54.6%. The seven rules other than I2 grew between +6.5% and +9.7% a year, with largest drops between -19.5% and -40.2%. Rules that grew more than their comparison at 5 bps: none.
-- Rules with a better Sharpe ratio than their comparison in the held-back slice: T1, T5, V1, I1, I2. Rules whose largest drop was small enough for mark 1: T1, T2, T4, T5, V1, I1, I2. Rules that pass mark 1: T1, T5, V1, I1, I2.
-- Rules that beat a fixed mix of stocks and cash on both Sharpe ratio and largest drop in the held-back slice: T1, T2, T5, V1, I1, I2. The fixed mix holds the rule's own average share in stocks from the development slice.
-- Rules whose Sharpe ratio is above the comparison's over the whole sample even at the low end of the resampled range: T2, V1, I2. For every other rule the range includes zero, so the gap could be chance.
-- The ten-month rule, the best known of these: +9.1% a year against +11.5% for holding, largest drop -21.9% against -54.6%, in stocks 79% of the time on average.
+- What the rules did in the held-back slice, in plain terms: holding the market grew +11.5% a year with a largest drop of -54.6%. The seven rules other than I2 grew between +6.5% and +9.7% a year, with largest drops between -19.5% and -40.2%. Rules that grew more than their comparison at 5 bps: first run I2; corrected run none. In the first run I2 grew +13.3% a year, but its largest drop was 73% of the market's, too large for mark 1.
+- Rules with a better Sharpe ratio than their comparison in the held-back slice: T1, T5, V1, I1, I2 (the same in both runs). Rules whose largest drop was small enough for mark 1: first run T1, T2, T4, T5, V1, I1; corrected run T1, T2, T4, T5, V1, I1, I2. Rules that pass mark 1: first run T1, T5, V1, I1; corrected run T1, T5, V1, I1, I2.
+- Rules that beat a fixed mix of stocks and cash on both Sharpe ratio and largest drop in the held-back slice: T1, T2, T5, V1, I1, I2 (the same in both runs). The fixed mix holds the rule's own average share in stocks from the development slice.
+
+- Rules whose Sharpe ratio is above the comparison's over the whole sample even at the low end of the resampled range: T2, V1, I2 (the same in both runs). For every other rule the range includes zero, so the gap could be chance.
+- The ten-month rule, the best known of these: +9.1% a year against +11.5% for holding, largest drop -21.9% against -54.6%, in stocks 79% of the time on average. These figures are the same in both runs.
 - Mark 3 screened nothing in this test. The lowest deflated Sharpe of any rule at any cost was 0.9978 against a bar of 0.95 (`replay_min_deflated_sharpe`). The plan takes the spread of Sharpe ratios across these eight rules. They all trade the same market and sit close together, so the hurdle is near zero (auditor's finding 2). The code follows the plan. The plan was not changed after the run.
 - Taxes are not in these numbers. A rule that sells pays tax sooner than holding does.
 
@@ -84,6 +85,8 @@ The twelve industry sleeves in I1, and in its comparison, start equal in 1927 an
 
 ## Held-back slice, 2006-06-01 to 2026-06-30, at 5 bps a side, corrected run
 
+Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. The first run is the one that stands for now; I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
+
 | Rule | Growth a year | Sharpe above bills | Largest drop | Average share in stocks | Days with a trade, a year |
 |---|---|---|---|---|---|
 | Hold the market | +11.5% | 0.56 | -54.6% | 100% | |
@@ -100,6 +103,8 @@ The twelve industry sleeves in I1, and in its comparison, start equal in 1927 an
 "Days with a trade" counts days, not sides. A switch between stocks and bills pays two sides, and the cost of every side is charged. An earlier draft of this table called the column trade sides (auditor's finding 3).
 
 ## Whole sample, 1927-08-01 to 2026-09-30, at 5 bps a side, corrected run
+
+Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. The first run is the one that stands for now; I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
 
 | Rule | Growth a year | Sharpe above bills | Largest drop | Average share in stocks | Days with a trade, a year |
 |---|---|---|---|---|---|
@@ -143,7 +148,7 @@ The twelve industry sleeves in I1, and in its comparison, start equal in 1927 an
 | I2 | 5 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
 | I2 | 10 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
 
-The numbers behind the marks, at 5 bps a side, corrected run:
+The numbers behind the marks, at 5 bps a side, corrected run. Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. The first run is the one that stands for now; I2's first-run figures are in the table "Rule I2, first run against corrected run" above. In this table the deflated Sharpe column also differs by run for every rule, and the lowest value in either run is 0.9978.
 
 | Rule | Held-back Sharpe, rule | Comparison | Drop as a share of the comparison's | Break-even cost per side | Deflated Sharpe | Share of shuffles beaten | Sharpe gap to the comparison, whole sample: low end, middle, high end of the resampled range | Fixed mix: share in stocks | Fixed mix: held-back Sharpe | Fixed mix: largest drop |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -157,6 +162,8 @@ The numbers behind the marks, at 5 bps a side, corrected run:
 | I2 | 0.65 | 0.56 | 49% | 55 bps | 1.000 | 99.1% | +0.05, +0.20, +0.36 | 70% | 0.58 | -41.5% |
 
 ## The three bad years, at 5 bps a side, corrected run
+
+Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. The first run is the one that stands for now; I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
 
 | Rule | 2008 | 2020 | 2022 | Largest drop in 2008 | Largest drop in 2020 | Largest drop in 2022 |
 |---|---|---|---|---|---|---|
@@ -173,7 +180,7 @@ The numbers behind the marks, at 5 bps a side, corrected run:
 
 ## Does the fill assumption matter
 
-Held-back Sharpe ratio at 5 bps a side, corrected run. The test trades one full day late. "Traded the same close" is the ideal case that cannot be done in practice.
+Held-back Sharpe ratio at 5 bps a side, corrected run. Only the I2 row differs from the first run. The test trades one full day late. "Traded the same close" is the ideal case that cannot be done in practice.
 
 | Rule | Held-back Sharpe as tested | Traded the same close | Cash earns nothing |
 |---|---|---|---|

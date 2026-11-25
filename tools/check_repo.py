@@ -10,8 +10,8 @@ Fails (exit 1) if:
   6. a stored output in research_rig/, or a raw input file present on this machine, differs from its fingerprint in
      research_rig/provenance.json
 With --builders it also runs every research_rig/build_doc*.py and fails if a file that git tracks changes. A document that
-differs from what its builder writes was edited by hand or is stale. This takes a few seconds and reads no held-back slice anew:
-the builders read stored outputs only.
+differs from what its builder writes was edited by hand or is stale. This takes a few seconds and runs no rule on any price.
+The builders read stored outputs only, except build_doc16.py, which also compares two raw price files when they are present.
 It does not check that the status page is fresh. That is a rule for the person or model making the commit."""
 import subprocess, re, sys, os, glob
 bad = []

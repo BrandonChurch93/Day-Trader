@@ -4,3 +4,4 @@ __pycache__/
 *.log
 dashboard/data.json
 dashboard/fonts/
+dashboard/curves_cache.json

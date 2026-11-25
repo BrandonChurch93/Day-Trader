@@ -30,16 +30,20 @@ def basket():
 def stocks():
     a = J("results_05.json"); b = J("results_05b.json"); L = ["low", "base", "high"]; N = list(b["costs"]["base"]["rules"])
     P = lambda r, lab: [n for n in N if r["costs"][lab]["rules"][n]["marks"]["passed"]]; cb = lambda lab: f"{b['costs'][lab]['cost_bps_per_side']} bps"
-    both = [n for n in N if all(n in P(a, l) and n in P(b, l) for l in L)]; h = b["costs"]["base"]["bench"]["HOLD"]["held"]; t1 = b["costs"]["base"]["rules"]["T1"]["held"]
+    both = [n for n in N if all(n in P(a, l) and n in P(b, l) for l in L)]; h = a["costs"]["base"]["bench"]["HOLD"]["held"]; t1 = a["costs"]["base"]["rules"]["T1"]["held"]
+    assert all(t1[k] == b["costs"]["base"]["rules"]["T1"]["held"][k] and h[k] == b["costs"]["base"]["bench"]["HOLD"]["held"][k] for k in ("cagr", "maxdd")), "T1 or hold differs between the two runs"
     return ("Replay 05, first run and corrected run", "Eight slow trend rules on the US stock market index from 1927, three cost levels",
             "First run: " + "; ".join(f"{ls(P(a, l))} at {cb(l)}" for l in L) + ". Corrected run, after an audit found one rule did not match the plan: " + "; ".join(f"{ls(P(b, l))} at {cb(l)}" for l in L)
-            + f". Pass in both runs at every cost: {ls(both)}. Which run counts is the owner's to say (question 18 in the morning list); until then the first run stands. Held-back years at 5 bps: the ten-month rule T1 grew {pc(t1['cagr'])} a year with a largest drop of {pc(t1['maxdd'])}, holding the market grew {pc(h['cagr'])} with {pc(h['maxdd'])}.",
+            + f". Pass in both runs at every cost: {ls(both)}. Which run counts is the owner's to say (questions 18a and 18b in the morning list); until then the first run stands, and research recommends it keep standing. Held-back years at 5 bps, the same in both runs: the ten-month rule T1 grew {pc(t1['cagr'])} a year with a largest drop of {pc(t1['maxdd'])}, holding the market grew {pc(h['cagr'])} with {pc(h['maxdd'])}.",
             "`docs/research/22_replay_05_stock_trend.md`")
 def books():
     b = J("books_summary.json"); P = b["pairs"]; k = P["Kraken|XXBTZUSD"]; n = P["Binance.US|BTCUSD"]; slip = J("results_04.json")["slippage_bps"]["XBTUSD_ETHUSD"]
-    return ("Order-book samples", "What it cost to trade a small size at once, sampled overnight on two venues",
+    import datetime as dt
+    t = lambda s: dt.datetime.strptime(s, "%Y-%m-%d %H:%M:%S"); mins = round((t(b["last_sample_utc"]) - t(b["first_sample_utc"])).total_seconds() / 60)
+    span = f"{mins} minutes" if mins < 120 else f"{mins / 60:.1f} hours"
+    return ("Order-book samples", "What it cost to trade a small size at once, sampled on two venues on one day",
             f"{b['rounds']} rounds from {b['first_sample_utc']} to {b['last_sample_utc']} UTC. Bitcoin, middle cost of one order, fees not included: $1,000 cost {k['cost_1k_bps']['median']:.1f} bps on Kraken and {n['cost_1k_bps']['median']:.1f} bps on Binance.US; "
-            f"$10,000 cost {k['cost_10k_bps']['median']:.1f} and {n['cost_10k_bps']['median']:.1f} bps. The crypto replays assume {slip} bps for this on bitcoin and ether. One night only.",
+            f"$10,000 cost {k['cost_10k_bps']['median']:.1f} and {n['cost_10k_bps']['median']:.1f} bps. The crypto replays assume {slip} bps for this on bitcoin and ether. One sample of {span} only.",
             "`docs/research/24_order_book_costs.md`")
 def smaller():
     s2 = J("compare_v1_v2.json")["counts"]["S2"]

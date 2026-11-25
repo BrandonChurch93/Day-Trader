@@ -33,6 +33,7 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 | Put an AI model anywhere near a trading decision | `AGENTS.md` hard rules 1 and 7, `docs/playbook/03_role_of_ai.md`, `docs/research/11_ai_trader_experiment_design.md` |
 | Design the product | `docs/playbook/06_architecture_and_build.md`, `docs/quality/02_how_we_build.md`. Nothing is built yet and building has not been approved |
 | Reopen something already settled | `docs/decisions/` first |
+| Record something the owner decided | `docs/decisions/README.md` |
 
 ## Top level
 
@@ -85,6 +86,7 @@ Written 2026-11-24 from reading, before the project ran any test of its own. Whe
 
 | File | What it is | State |
 |---|---|---|
+| `docs/decisions/README.md` | What is in this folder, what counts as an owner decision, and how to record one | CURRENT |
 | `docs/decisions/morning_list_2026-11-25.md` | What the owner is being asked to do and decide next, one item at a time | CURRENT |
 | `docs/decisions/0001-starting-decisions.md` | The first list of open decisions and proposed starting values | CURRENT |
 | `docs/decisions/0002-historical-testing-and-risk-posture.md` | Owner direction on testing with past data and on a middle risk level with a small moonshot share | CURRENT |
@@ -131,7 +133,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/16_rig_audit.md` | Two code audits, the fixes, and the corrected verdicts for replays 01 and 03. Also why pass mark 4 is unstable | CURRENT |
 | `docs/research/22_replay_05_stock_trend.md` | Replay 05: slow trend rules on the US stock market from 1927 | CURRENT |
 | `docs/research/23_replay_04_coin_basket.md` | Replay 04: trend rules on a wide basket of coins | CURRENT |
-| `docs/research/24_order_book_costs.md` | What it cost to trade small sizes on two venues, sampled overnight | CURRENT |
+| `docs/research/24_order_book_costs.md` | What it cost to trade small sizes on two venues, sampled on 2026-11-25 | CURRENT |
 
 Working papers.
 

@@ -30,18 +30,19 @@ Plain definitions of the terms, test names and rule names used in this repo. Thi
 |---|---|
 | Replay | A rule run over past prices with costs. Also called a backtest. It is not a practice account and not live trading |
 | Plan, PREREG | The file that fixes a test's rules, data, costs, slices and pass marks before the test runs. `research_rig/PREREG_*.md` |
-| Amendment | A dated file that records a change to a plan after a fault was proved, pushed before the rerun |
+| Amendment | A dated file that records a correction after a fault was proved. Whether a rerun may follow depends on the kind of fault (see Rerun) |
 | Development slice | The earlier part of the history. Free to look at |
 | Held-back slice | The later part of the history, kept unseen until the rules are fixed. Each frozen rule is meant to be run on it once. Also called out of sample |
 | Trial | One rule variant that was run. Every trial is counted, because the more rules are tried, the more likely one looks good by luck |
 | Trial ledger | The list of every trial and rerun. `research_rig/TRIAL_LEDGER.md`. A result with no row there does not count |
-| Rerun | A second run of the held-back slice. The owner allows one case, in his words: "when a machine check proves the engine itself was wrong, the slice is rerun once the fix is in. That rerun is written in the trial ledger, counted as a trial and reported as a rerun" (`docs/quality/01_the_bar.md`). R1 was that case. R2 was not: the engine was right and one rule was coded differently from its plan. Whether that case is covered is question 18 in `docs/decisions/morning_list_2026-11-25.md` |
+| Rerun | A second run of the held-back slice. The owner allows one case, in his words: "when a machine check proves the engine itself was wrong, the slice is rerun once the fix is in. That rerun is written in the trial ledger, counted as a trial and reported as a rerun" (`docs/quality/01_the_bar.md`). Research read R1 as that case: two code audits by other models found faults in how trades were simulated and how the pass marks were worked out. Whether a code audit is a "machine check", and whether the pass-mark code is "the engine itself", is research's reading and has not been put to the owner before (question 18c). R2 was not that case: the engine was right and one rule was coded differently from its plan (questions 18a and 18b in `docs/decisions/morning_list_2026-11-25.md`). He wrote the rule for the Builder; research applies it to its own tests |
+| Machine check | The owner's words in his rerun rule. He does not define them. Research's reading: a check a machine can repeat with the same answer each time, such as a fixture with a known answer (`research_rig/fixtures2.py`) or a second model rebuilding a result from the raw data in its own code. A model reading code and giving an opinion is weaker than that. Not settled (question 18c) |
 | Pass marks | The five tests a replay must pass, listed in `research_rig/README.md`. The numbers are keys in `config/thresholds.yaml` |
 | Replay pass | All five marks met in a replay. It earns a place in a practice account test and nothing more |
 | Practice account pass | The bars a rule must meet in a practice account before live money is discussed. Not fully defined yet. The keys that start with `paper_` in `config/thresholds.yaml` set only the least number of days and trades. The playbook also asks for slippage and errors "within tolerance", and no number exists for that. Until the owner sets one, no rule can pass this gate. No rule has been run in a practice account yet |
 | Practice account | A broker account that trades with pretend money at real prices. Also called paper trading |
 | Fresh | Said of a held-back slice no rule has been run on. Once a rule has been run on it and the result seen, it is no longer fresh for that rule |
-| First run, corrected run | Where a test was run twice because of a proved fault. Both are kept and both are reported. After an engine fault (R1) the rerun is the one judged. After a fault in one rule's code (R2, replay 05) which run is judged is not settled: the first run stands until the owner answers question 18 in `docs/decisions/morning_list_2026-11-25.md` |
+| First run, corrected run | Where a test was run twice because of a proved fault. Both are kept and both are reported. After an engine fault (R1) the rerun is the one judged, on research's reading of the owner's rule (question 18c). After a fault in one rule's code (R2, replay 05) which run is judged is not settled: the first run stands until the owner answers questions 18a and 18b in `docs/decisions/morning_list_2026-11-25.md` |
 
 ## Evidence labels
 
@@ -127,6 +128,7 @@ These come from the owner's files in `docs/quality/`. Read them there. Nothing i
 | Builder | The mode that builds unattended from the kit |
 | Partner | The interactive mode that reviews a build with the owner and writes fix prompts. It writes no product code |
 | Gate | A checkable line at the end of a build phase |
+| Engine | Two meanings. In the owner's rerun rule and in `research_rig/`: the test code that simulates trades on past prices and works out the pass marks (`rig.py`, then `rig2.py`). It is not the code of any one rule. In the planned product: see the next row |
 | Engine, service | In the planned product: the always-on program that reads prices, applies rules and risk limits, and places orders. It works with every model switched off |
 | Escalation gate | In the planned product: plain code that decides when a finding is worth sending to the top model. `AGENTS.md`, "Model tiers" |
 | Research rig | `research_rig/`. The code that ran the replays. Not product code |

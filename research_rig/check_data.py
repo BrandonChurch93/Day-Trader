@@ -31,5 +31,5 @@ for name, was in rec.items():
     if now is not None and not P.same(now, was):
         differ += 1; print("DIFFERS  " + name + " is not the file on record in provenance.json. A download taken later can hold different bars, so a script run on it need not give the stored numbers")
 print("\nAll present." if not miss else f"\n{miss} data set(s) missing. A script that needs one will stop with a file-not-found error.")
-if not differ: print("Every present file that has a fingerprint on record matches it.")
+if not differ: print("Every present file that has a fingerprint on record matches it." if miss < len(SETS) else "No data set is present, so no file was compared with the record.")
 sys.exit(1 if miss or differ else 0)

@@ -1,13 +1,19 @@
 """Writes dashboard/data.json for the owner's read-only screen.
 
 Every figure comes from the second rig (rig2.py) and its outputs: results_v2.json and compare_v1_v2.json, plus
-results_02.json for the AI pilot, and results_05.json / results_04.json when they exist. Curves and trade lists are
-re-simulated with rig2 and checked against results_v2.json before anything is written. Nothing is typed by hand
+results_02.json for the AI pilot, and results_05.json / results_04.json when they exist. Nothing is typed by hand
 except labels and plain-words wording. The output holds derived curves and is not committed.
 
-Usage: python3 export_dashboard.py      (run from research_rig/)
+The five charts need curves and trade lists that the output files do not hold. Making them replays five rules on raw
+prices that include the held-back years, so that step is a held-back run (research_rig/README.md, "Held-back scripts").
+By default this script does NOT do that: it reads the curves from dashboard/curves_cache.json, which is not committed.
+With --resimulate it replays the five rules with rig2, checks every figure against results_v2.json, and rewrites the
+cache. Do not pass --resimulate unless the owner has allowed a repeat (question 16 on the morning list).
+
+Usage: python3 export_dashboard.py                 (run from research_rig/; reads the cache, touches no raw prices)
+       python3 export_dashboard.py --resimulate    (held-back run; see above)
 """
-import json, os, re, datetime, numpy as np, pandas as pd
+import json, os, re, sys, copy, hashlib, datetime, numpy as np, pandas as pd
 import rig2 as R
 import run_v2 as V2
 from rules import RULES
@@ -15,6 +21,25 @@ from rules import RULES
 GH = "https://github.com/BrandonChurch93/Day-Trader/blob/main/"
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "dashboard", "data.json")
+CACHE = os.path.join(HERE, "..", "dashboard", "curves_cache.json")
+RESIM = "--resimulate" in sys.argv
+V2_SHA = hashlib.sha256(open(os.path.join(HERE, "results_v2.json"), "rb").read()).hexdigest()
+_cache = json.load(open(CACHE)) if os.path.exists(CACHE) else {}
+if _cache.get("results_v2_sha256") != V2_SHA: _cache = {"results_v2_sha256": V2_SHA, "series": {}}
+
+
+def cached(sid, make, max_trades=None):
+    """Curves for one chart. From the cache unless --resimulate is given; see the note at the top of this file."""
+    if not RESIM:
+        if sid not in _cache["series"]:
+            sys.exit(f"No cached curves for {sid} in dashboard/curves_cache.json (or results_v2.json has changed since they were made). "
+                     "Making them replays rules on raw prices that include the held-back years. That is a held-back run: read the note "
+                     "at the top of this file and research_rig/README.md before passing --resimulate.")
+        return copy.deepcopy(_cache["series"][sid])
+    s = make(); tl = s.pop("trades")
+    s["trades"] = tl[-max_trades:] if max_trades else tl; s["trades_total"] = len(tl)
+    _cache["series"][sid] = copy.deepcopy(s)
+    return s
 MORNING = os.path.join(HERE, "..", "docs", "decisions", "morning_list_2026-11-25.md")
 VEN = list(R.VENUES)                                   # Binance.US, Alpaca, Kraken $10k tier, Kraken entry, Coinbase entry
 COST = {v: R.VENUES[v] + R.SLIP for v in VEN}          # cost per side, fee plus slippage, bps
@@ -132,28 +157,29 @@ def hourly_series(asset, rule, venue):
                 equity=eqc, drawdown=ddc, yearly=yearly(ep, hp), trades=tl, start=str(ep.index[1])[:10], end=str(ep.index[-1])[:10], status=st)
 
 
-def series(sid, label, note, asset, venue, s, max_trades=None):
-    tl = s.pop("trades"); shown = tl[-max_trades:] if max_trades else tl
+def series(sid, label, note, asset, venue, make, max_trades=None):
+    s = cached(sid, make, max_trades); shown = s.pop("trades")
     return dict(id=sid, label=label, note=note, asset=AN[asset], kind="Past-price test", cost_bps_per_side=COST[venue], **s,
-                trades_total=len(tl), trades_shown=len(shown), trades_list=shown[::-1])
+                trades_shown=len(shown), trades_list=shown[::-1])
 
 
 P1_NOTE = ("Holds {coin} in quarters: one quarter for each of its 20, 50, 100 and 200 day averages the price is above. "
            "Sits in cash otherwise. Kraken's published daily prices. Fee and slippage {c} bps a side.")
 S = [
     series("btc_trend_binance", "Bitcoin: slow trend rule P1, at Binance.US cost", P1_NOTE.format(coin="bitcoin", c=COST["Binance.US"]),
-           "BTCUSD", "Binance.US", daily_series("BTCUSD", "P1", "Binance.US")),
+           "BTCUSD", "Binance.US", lambda: daily_series("BTCUSD", "P1", "Binance.US")),
     series("btc_trend_alpaca", "Bitcoin: slow trend rule P1, at Alpaca cost", P1_NOTE.format(coin="bitcoin", c=COST["Alpaca"]),
-           "BTCUSD", "Alpaca", daily_series("BTCUSD", "P1", "Alpaca")),
+           "BTCUSD", "Alpaca", lambda: daily_series("BTCUSD", "P1", "Alpaca")),
     series("eth_trend_alpaca", "Ether: slow trend rule P1, at Alpaca cost", P1_NOTE.format(coin="ether", c=COST["Alpaca"]),
-           "ETHUSD", "Alpaca", daily_series("ETHUSD", "P1", "Alpaca")),
+           "ETHUSD", "Alpaca", lambda: daily_series("ETHUSD", "P1", "Alpaca")),
     series("btc_day_h1_alpaca", "Bitcoin: day trading rule H1, at Alpaca cost",
            f"Each day at 12:00 UTC, buys if the price is above the day's open, sells at the end of the day. Bitstamp hourly prices. Fee and slippage {COST['Alpaca']} bps a side.",
-           "BTCUSD", "Alpaca", hourly_series("BTCUSD", "H1", "Alpaca"), max_trades=400),
+           "BTCUSD", "Alpaca", lambda: hourly_series("BTCUSD", "H1", "Alpaca"), max_trades=400),
     series("btc_day_h7_binance", "Bitcoin: day trading rule H7, at Binance.US cost",
            f"The same day trading rule, only on days when the slow trend is up. Bitstamp hourly prices. Fee and slippage {COST['Binance.US']} bps a side.",
-           "BTCUSD", "Binance.US", hourly_series("BTCUSD", "H7", "Binance.US"), max_trades=400),
+           "BTCUSD", "Binance.US", lambda: hourly_series("BTCUSD", "H7", "Binance.US"), max_trades=400),
 ]
+if RESIM: json.dump(_cache, open(CACHE, "w"), allow_nan=False)
 
 # ------------------------------------------------------------------ counts, all read from the JSON
 BOTH = [x for x in cmp_["both_histories"] if x["both"]]
@@ -287,15 +313,15 @@ def card_05():
                 "Whether the corrected run counts is question 18 on your list. Until you answer, the first run stands.")
     else:
         late = "The corrected run is not in yet, so its result is UNKNOWN."
-    r = b if b is not None else a; which = "corrected run" if b is not None else "first run"
-    base = "base" if "base" in r["costs"] else L[0]; cb = r["costs"][base]["cost_bps_per_side"]
-    x = r["costs"][base]["rules"]["T1"]["held"]; h = r["costs"][base]["bench"]["HOLD"]["held"]
-    rows += [[f"Example, T1 ten-month rule, held-back growth a year ({which}, {cb} bps)", pct(x["cagr"])], ["Holding the market, same years", pct(h["cagr"])],
-             [f"Example, T1, held-back largest drop ({which}, {cb} bps)", pct(x["maxdd"])], ["Holding the market, same years", pct(h["maxdd"])]]
-    nb = len(P(r, base))
+    base = "base" if "base" in a["costs"] else L[0]; cb = a["costs"][base]["cost_bps_per_side"]
+    x = a["costs"][base]["rules"]["T1"]["held"]; h = a["costs"][base]["bench"]["HOLD"]["held"]
+    rows += [[f"Example, T1 ten-month rule, held-back growth a year (first run, {cb} bps)", pct(x["cagr"])], ["Holding the market, same years", pct(h["cagr"])],
+             [f"Example, T1, held-back largest drop (first run, {cb} bps)", pct(x["maxdd"])], ["Holding the market, same years", pct(h["maxdd"])]]
+    na = len(P(a, base)); nb = len(P(b, base)) if b is not None else None
+    first = f"{na or 'None'} of {len(N)} pass at {cb} bps in the first run"
     return dict(id="replay05", title="Slow trend rules on the US stock market", date=None,
-                verdict=((f"{len(P(a, base)) or 'None'} of {len(N)} pass at {cb} bps in the first run, which stands for now; {nb} of {len(N)} in the corrected run" if b is not None
-                          else f"{nb} of {len(N)} pass at {cb} bps, first run") if nb else f"None pass at {cb} bps, {which}"), tone="mixed" if nb else "fail",
+                verdict=(first + f", which stands for now; {nb or 'none'} of {len(N)} in the corrected run" if b is not None else first),
+                tone="mixed" if na else "fail",
                 basis="MEASURED by run_05.py, read from results_05.json" + (" and results_05b.json." if b is not None else ". Corrected run UNKNOWN, not in yet."),
                 summary=(f"{len(N)} rules that hold the stock market while its trend is up, tested on free daily data from {str(a.get('start', ''))[:4] or 'the start'} on, "
                          "at three cost levels. An audit found that rule I2 did not match its plan, so the test was run again with only that fixed. " + late +

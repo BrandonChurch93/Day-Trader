@@ -2,9 +2,9 @@
 
 Status: DRAFT, written 2026-11-25. Not frozen and not in the trial ledger. It is frozen and logged on the day the price data is in hand, before any rule is run on it. Proposed by research. No owner decision is recorded here.
 
-Blocked on: one month of daily fund prices with opening prices and dividend adjustment (a purchase, `docs/decisions/morning_list_2026-11-25.md`).
+Blocked on: one month of daily fund prices with opening prices and dividend history (a purchase, `docs/decisions/morning_list_2026-11-25.md`). The workspace's own price history has daily prices and no dividends (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace"), so it can serve as a cross-check on prices only. Also waits on the owner's yes to decision 4 and his decision on pass mark 4.
 
-Written with this knowledge, stated so nobody has to guess: replay 05 (`docs/research/22_replay_05_stock_trend.md`) had already been run on index data when this draft was written. The rules below are published rules chosen from the reading in `docs/research/21_systematic_funds_and_published_rules.md`. None was tuned on replay 05.
+Written with this knowledge, stated so nobody has to guess: replay 05 (`docs/research/22_replay_05_stock_trend.md`) had already been run on index data when this draft was written. The rules below are published rules chosen from the reading in `docs/research/21_systematic_funds_and_published_rules.md`. None was tuned on replay 05. If the industry rule I2 is added on sector funds, as `docs/STATUS.md` proposes, that sentence stops being true for it: I2 was picked after seeing the corrected run of replay 05. The frozen plan must say so next to the rule.
 
 ## Why
 
@@ -31,7 +31,7 @@ Daily open, high, low, close, volume, splits and dividends. Before BIL exists, c
 - Cost per side at both ends of `cost_model_bps_per_side_liquid_etf`, and at twice the upper end. A move between a fund and cash pays two sides.
 - Dividends are added on the day they go ex. Fund fees are inside the fund prices already.
 - Long or cash only. No leverage, no shorting. 252 days a year. Sharpe ratios use returns above the bill rate.
-- Fractional weights are traded only when the target differs from the current weight by more than 0.10.
+- Fractional weights are traded only when the target differs from the current weight by more than 0.10. To settle before this plan is frozen: this number and the 0.1 percentage points under "Checks that must pass first" are typed here and are not keys in `config/thresholds.yaml`. Each needs a key, with a dated note in `docs/decisions/`, or a line saying why it is not a threshold.
 
 ## Rules (6 trials)
 
@@ -56,7 +56,7 @@ Known weakness, stated now: the five-fund rules cannot start before 2007, so the
 
 ## Pass marks
 
-The five marks used in the other replays, with the tie rule and shuffle method of `AMENDMENT_2026-11-25_audit_fixes.md`, numbers read from `config/thresholds.yaml`. Trials counted in the deflated Sharpe ratio: every trial in the ledger on the day this is frozen, plus these 6. This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/research/16_rig_audit.md`, and `docs/STATUS.md`, "Next in the queue"). The method he picks is named here before the plan is frozen.
+The five marks used in the other replays, with the tie rule and shuffle method of `AMENDMENT_2026-11-25_audit_fixes.md`, numbers read from `config/thresholds.yaml`. Trials counted in the deflated Sharpe ratio: every rule trial in the ledger on the day this is frozen, reruns included, plus these 6. Today that count is the one `TRIAL_LEDGER.md` gives under "Reruns and how they are counted"; the six AI model runs in rows 21 to 26 are scored a different way and are not in it. How a draft is frozen is in `research_rig/README.md`, "Things a new test must also get right". This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/research/16_rig_audit.md`, and `docs/STATUS.md`, "Next in the queue"). The method he picks is named here before the plan is frozen.
 
 Also reported: whether each rule beat a fixed mix of its comparison and cash with the same average share invested, as in replay 05.
 
@@ -64,4 +64,4 @@ A pass means "worth running in the practice account". It does not mean "makes mo
 
 ## Checks that must pass first
 
-`fixtures2.py`; dividend handling checked by hand on one fund and one ex date; a held fund's growth matches the provider's total-return figure for a full year within 0.1 percentage points.
+`fixtures2.py`; a bar check that knows the stock calendar, with its own fixtures, because `rig2.check_bars` rejects bars with no weekends (`research_rig/README.md`); dividend handling checked by hand on one fund and one ex date; a held fund's growth matches the provider's total-return figure for a full year within 0.1 percentage points.

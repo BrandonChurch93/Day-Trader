@@ -59,18 +59,18 @@ A moonshot share makes sense only for an idea that has a reason and has passed a
 
 ## What to test next, in order
 
-Ranked by how much could be learned for how little cost and risk. Each needs a plan written and pushed before it runs, with its ledger rows in the same commit. Research also has each one audited by a different model afterwards, which is its working practice and a proposal to the owner, not an approved rule.
+Ranked by how much could be learned for how little cost and risk. Each needs a plan written and pushed before it runs, with its ledger rows in the same commit. Research also has each one audited by a different model after the run and before the result is believed, which is its working practice and a proposal to the owner, not an approved rule.
 
 The queue in force is "Next in the queue" in `docs/STATUS.md`. It has the same order as this table, with one item in front: the owner's decision on how pass mark 4 is measured, because every replay depends on it. If the two ever differ, the status page stands.
 
 | # | Test | Why this rank | Needs |
 |---|---|---|---|
 | 1 | Two slow rules in a practice account, as observation only and labelled as not passed: the bitcoin rule P1 and the ten-month rule on a total market fund | They are the nearest things to a pass on each market, watching costs nothing, and it starts the forward record that `paper_min_trading_days` and `paper_min_closed_trades` ask for | Practice keys from the owner, and his yes to decision 5 in the morning list |
-| 2 | Replay 06: slow trend on funds that can be bought | Turns the stock index result into something that could be traded, with real opening prices | The data purchase, the owner's yes to decision 4, and his decision on pass mark 4 before the plan is frozen. Plan drafted |
-| 3 | Replay 07: day trading SPY and QQQ on one-minute bars | The only day trading case not yet ruled out. Research expects a fail and will measure it | The same three things. Plan drafted |
+| 2 | Replay 06: slow trend on funds that can be bought | Turns the stock index result into something that could be traded, with real opening prices | The data purchase for dividend history, the owner's yes to decision 4, and his decision on pass mark 4 before the plan is frozen. Plan drafted |
+| 3 | Replay 07: day trading SPY and QQQ on one-minute bars | The only day trading case not yet ruled out. Research expects a fail and will measure it | One-minute prices (the data purchase, or the workspace's own price history if the owner allows it), his yes to decision 4, and his decision on pass mark 4. Plan drafted |
 | 4 | Credit interest on idle cash in every replay | Trend rules sit in cash a lot. Bills paid 4.11% to 4.59% on 2026-11-24 ([Treasury daily bill rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_bill_rates&field_tdr_date_value_month=202611)). The crypto replays credit nothing, which understates the rules. Small, near-certain | The owner's yes to decision 7 in the morning list. Then a rig change with its own plan |
 | 5 | Insider buying that is not routine, in listed stocks | The one stock-picking screen with a mechanism and a published study, though the study is from 2012 and must be redone on recent data after costs (`docs/research/19_information_feeds.md`) | Stock price data. SEC filings are free |
-| 6 | A plain statistical model against a simple tree model on bitcoin and ether, logged only | The best-supported machine learning result found is that the plain model won after costs (`docs/research/18_ai_systems_with_live_records.md`). Worth one cheap forward check | Nothing |
+| 6 | A plain statistical model against a simple tree model on bitcoin and ether, logged only | The best-supported machine learning result found is that the plain model won after costs (`docs/research/18_ai_systems_with_live_records.md`). Worth one cheap forward check | A plan, and the owner's yes. Nothing in this queue starts without him (`docs/STATUS.md`, "Next in the queue") |
 | 7 | Holding a small-company fund overnight only | Beat holding in 2020 to 2026 and lost in 2010 to 2019, and the funds built on it closed (`docs/research/20_small_account_edges.md`). Low rank. Fails at a few bps of cost | The data purchase |
 | 8 | Buying stocks at new highs with tight exits | The contest winners' stated method. Fast if it works. Needs data with dead companies kept, which costs more | A larger data purchase. Decide after 2 and 3 |
 

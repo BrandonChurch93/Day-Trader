@@ -38,8 +38,10 @@ K1440, K60 = ["KRAKEN_DIR/full_XBTUSD_1440.csv", "KRAKEN_DIR/full_ETHUSD_1440.cs
 FR = ["FRENCH_DIR/F-F_Research_Data_Factors_daily__main.csv", "FRENCH_DIR/12_Industry_Portfolios_Daily__0_Average_Value_Weighted_Returns_Daily.csv"]
 
 # output -> (kind, command, code files, raw inputs, stored outputs it reads)
-# kind "held-back": the script runs a rule or a measure on prices that include the held-back slice.
-# kind "no-rule": it runs no rule on any price. It prepares a data file, compares stored outputs, or draws random numbers.
+# kind "held-back": the script runs a trading rule, or scores or collects trading calls, on prices that include held-back dates.
+# kind "prices-no-rule": it reads raw prices that include held-back dates and runs no trading rule. It builds a data file or
+#                        compares two price histories.
+# kind "no-rule": it reads no raw price that a rule was tested on. It compares stored outputs, draws random numbers, or sums up order-book samples.
 OUTPUTS = {
     "results_01.json": ("held-back", "python3 run_01.py", ["run_01.py", "engine.py", "rules.py"], BD, []),
     "passmarks_01.json": ("held-back", "python3 run_01b.py", ["run_01b.py", "engine.py", "rules.py", "common_01.py"], BD, ["results_01.json"]),
@@ -54,8 +56,9 @@ OUTPUTS = {
     "results_05.json": ("held-back", "python3 run_05.py", ["run_05.py", "rig2.py"], FR, []),
     "results_05b.json": ("held-back", "R05_POOL=1 python3 run_05.py", ["run_05.py", "rig2.py"], FR, []),
     "i2_2020_note.json": ("held-back", "python3 i2_2020_note.py", ["i2_2020_note.py"], FR[1:], []),
-    "kraken_daily_build.json": ("no-rule", "python3 build_kraken_daily.py", ["build_kraken_daily.py"], K1440 + KA + BD, []),
-    "venue_price_gap.json": ("no-rule", "python3 build_doc16.py", ["build_doc16.py"], BD[:1] + KF[:1], []),
+    "pilot/decisions.jsonl": ("held-back", "python3 pilot/server.py, with six AI model runs calling it over HTTP", ["pilot/server.py", "engine.py"], BD, []),
+    "kraken_daily_build.json": ("prices-no-rule", "python3 build_kraken_daily.py", ["build_kraken_daily.py"], K1440 + KA + BD, []),
+    "venue_price_gap.json": ("prices-no-rule", "python3 build_doc16.py", ["build_doc16.py"], BD[:1] + KF[:1], []),
     "compare_v1_v2.json": ("no-rule", "python3 compare_v1_v2.py", ["compare_v1_v2.py"], [], ["results_v2.json", "passmarks_01.json", "results_01x2.json", "results_03.json", "diag_x2_pbo.json"]),
     "noise_pbo.json": ("no-rule", "python3 noise_pbo.py", ["noise_pbo.py", "rig2.py"], [], []),
     "ledger_count_check.json": ("no-rule", "python3 ledger_count_check.py", ["ledger_count_check.py", "rig2.py"], [], ["results_v2.json", "results_04.json", "results_05.json", "results_05b.json"]),
@@ -69,6 +72,8 @@ NOTES = {
     "venue_price_gap.json": "Written by build_doc16.py only when both price files are present. Otherwise the stored file is read.",
     "books_summary.json": "The sampler was still writing data/books/books.csv when this record was first taken. Its fingerprint is added when sampling ends.",
     "results_01.json": "v1 engine. Kept as the record. Superseded by results_v2.json.",
+    "pilot/decisions.jsonl": "Pilot 02. The server gave each model one day of prices at a time, 2026-06-30 to 2026-11-23, and logged its call. Run once. The models' replies cannot be made again from this record.",
+    "kraken_daily_build.json": "Compares Kraken and Bitstamp daily closes while building the Kraken daily files. No rule.",
 }
 
 def sha(path):
@@ -117,8 +122,10 @@ def main():
         if out in NOTES: outputs[out]["note"] = NOTES[out]
     doc = dict(
         what_this_is="Record of how each stored output in research_rig/ was made. Built after the fact by provenance.py; see its first lines for what this can and cannot show.",
-        python="3.14.8", packages="research_rig/requirements.txt",
-        commit_fields="short hash and commit time. 'first_stored_in_commit' is the commit that added the file. The code a run used is the code at that commit, unless the note says otherwise.",
+        python_when_recorded=(old.get("python_when_recorded") if not record and old.get("python_when_recorded") else sys.version.split()[0]),
+        packages="research_rig/requirements.txt",
+        commit_fields="short hash and commit time. 'first_stored_in_commit' is the commit that added the file. The code a run used is taken to be the code at that commit; that is STATED by research, and nothing in this record can show it.",
+        not_in_this_record="dashboard/data.json and dashboard/curves_cache.json, which are not committed. export_dashboard.py --resimulate replays five rules on raw prices that include held-back dates to draw their curves. See README.md, 'How each stored output was made'.",
         inputs=inputs, outputs=outputs)
     text = json.dumps(doc, indent=1) + "\n"
     if record:
@@ -127,6 +134,9 @@ def main():
     for a in absent: print("input not on this machine (record kept): " + a)
     stale = (not record) and os.path.exists(path) and open(path).read() != text and not diffs
     if stale: print("provenance.json is not what this script would write (a commit field or the map changed): run python3 provenance.py --record")
-    if not diffs and not stale and not record: print(f"provenance ok: {len(outputs)} outputs match the record; {len(inputs) - len([a for a in absent if a in inputs])} of {len(inputs)} recorded inputs are present and match")
+    here = len(inputs) - len([a for a in absent if a in inputs])
+    if not diffs and not stale and not record:
+        print(f"{len(outputs)} stored outputs match the record. " + (f"{here} of {len(inputs)} recorded input files are on this machine and match."
+              if here else f"None of the {len(inputs)} recorded input files is on this machine, so no input was checked."))
     sys.exit(1 if (diffs or stale) and not record else 0)
 if __name__ == "__main__": main()

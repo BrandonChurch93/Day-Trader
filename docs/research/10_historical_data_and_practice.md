@@ -60,6 +60,33 @@ What matters for the choice:
 - If single stocks are ever tested, Norgate is the clearest option, though its delisted coverage is "for select delisted security types" ([Norgate packages](https://norgatedata.com/stockmarketpackages.php)). MEASURED.
 - Every planned ETF traded before 2008, HYG only from April 2007. Start dates are in `10_raw/stock_history_data.md`.
 
+## Price history inside the workspace
+
+Added 2026-11-25 by research. Status: a finding and a proposal. No rule has been run on this data, and no owner decision is recorded here.
+
+The Perplexity workspace that research runs in has its own price history lookup. Research had not tried it for bulk history until 2026-11-25. What a probe of it showed, MEASURED from the files it returned (kept outside the repo in `research_rig/data/platform_probe/`):
+
+- Daily prices go back to a fund's first trading day. The first SPY row is 1993-01-29 and the first XLE row is 1998-12-22.
+- One-minute prices exist for SPY in March 2005 and March 2012, the two months probed first, with 390 rows for each regular trading day. Times are in UTC. Hours outside the regular session are not included.
+- One request returns at most 5,000 daily rows, or 1,170 one-minute rows, which is three trading days. When a request covers more, it returns the last rows of the range and says nothing.
+- A request for dates with no data does not fail. It returns the most recent days. So every file has to be checked against the dates that were asked for.
+- It refused requests when six were sent at once.
+- It has no dividend history. Daily closes look adjusted for splits and not for dividends. That is research's inference from the first SPY rows, not a statement by the provider.
+
+What is UNKNOWN:
+
+- Who the data comes from, and how it is adjusted.
+- What its terms say about keeping copies and using them for tests. Research found no terms for it. The owner works at Perplexity and can ask. This is item 6 of "Things only you can do" in `docs/decisions/morning_list_2026-11-25.md`.
+- The first day of one-minute data for QQQ. A request for March 2004 to March 2005 returned nothing in range.
+- Whether it has gaps, repeated bars or wrong prices. A collection with a gap check is running. Its coverage table will be added below this line by a script from the check's own output file, with nothing typed.
+
+What it changes, as a proposal:
+
+- Replay 07 (day trading SPY and QQQ on one-minute prices) may not need a purchase, if the owner allows this data and it passes the gap check.
+- Replay 06 (slow trend on funds that can be bought) still needs dividend history, which this lookup does not have. The purchase above is still the recommended source for it.
+- The purchase is still worth making for a second reason. A second source changed a result once already: no bitcoin rule that passed on Bitstamp's history in the first run passed on Kraken's (`docs/research/12b_replay_01_kraken_crosscheck.md`). A test on one unchecked source should not be believed.
+- Until the owner answers, research collects and checks this data and runs no rule on it. The files stay out of the repo, like all raw prices.
+
 ## Crypto history
 
 | Source | Price | Bitcoin from | Ether from | Limits | Tag |

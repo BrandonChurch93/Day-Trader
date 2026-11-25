@@ -63,6 +63,28 @@ m1 = [n for n in N if b["rules"][n]["marks"]["m1"]]; fm = [n for n in N if b["ru
 better_sh = [n for n in N if b["rules"][n]["held"]["sharpe"] > b["bench"][BEN[n]]["held"]["sharpe"]]
 small_dd = [n for n in N if b["rules"][n]["dd_ratio"] <= TH["replay_max_drop_ratio_vs_hold"]]
 boot_pos = [n for n in N if b["rules"][n]["boot_sharpe_diff_vs_bench"][0] > 0]
+def lists(c):
+    """The lists in the bottom line, for one run at 5 bps."""
+    rr = c["rules"]
+    return dict(more=[n for n in N if rr[n]["held"]["cagr"] > c["bench"][BEN[n]]["held"]["cagr"]],
+                m1=[n for n in N if rr[n]["marks"]["m1"]], fm=[n for n in N if rr[n]["beats_fixed_mix_held"]],
+                sh=[n for n in N if rr[n]["held"]["sharpe"] > c["bench"][BEN[n]]["held"]["sharpe"]],
+                dd=[n for n in N if rr[n]["dd_ratio"] <= TH["replay_max_drop_ratio_vs_hold"]],
+                boot=[n for n in N if rr[n]["boot_sharpe_diff_vs_bench"][0] > 0])
+LF, LC = lists(b1), lists(b)
+assert LC == dict(more=more, m1=m1, fm=fm, sh=better_sh, dd=small_dd, boot=boot_pos)
+def by_run(k): return ls(LF[k]) + " (the same in both runs)" if LF[k] == LC[k] else f"first run {ls(LF[k])}; corrected run {ls(LC[k])}"
+_keys = lambda d, pre="": [x for k, v in d.items() for x in (_keys(v, pre + k + "/") if isinstance(v, dict) else [pre + k])]
+def _get(d, path):
+    for k in path.split("/"): d = d[k]
+    return d
+moved = sorted({k for lab in L for n in N if n != "I2" for k in _keys(C[lab]["rules"][n]) if _get(C[lab]["rules"][n], k) != _get(C1[lab]["rules"][n], k)})
+assert set(moved) <= {"dsr", "marks/m4", "marks/passed"}, moved   # for the seven other rules nothing else differs between the runs
+SAME_NOTE = ("Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their "
+             "figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the "
+             "whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone "
+             "is I2. The first run is the one that stands for now; I2's first-run figures are in the table \"Rule I2, first run against "
+             "corrected run\" above.")
 dsr_min = min(C[lab]["rules"][n]["dsr"] for lab in L for n in N)
 t1 = b["rules"]["T1"]; i2 = b["rules"]["I2"]; i2f = b1["rules"]["I2"]
 growth_lo = min(b["rules"][n]["held"]["cagr"] for n in N if n != "I2"); growth_hi = max(b["rules"][n]["held"]["cagr"] for n in N if n != "I2")
@@ -108,11 +130,12 @@ Date: 2026-11-25. Plan written and pushed before the run: `research_rig/PREREG_0
 - Verdicts that changed between the runs: {"; ".join(flips) if flips else "none"}.
 - {"Verdicts changed for rules whose own trades did not change at all (" + "; ".join(flips_own) + "). The only thing that moved for them is mark 4, which is worked out across the whole set of eight rules." if flips_own else "No verdict changed for a rule whose own trades did not change."}
 - In the first run, the rules that failed mark 4 and nothing else: {ls(only4_first['low'])} at 2 bps, {ls(only4_first['base'])} at 5 bps, {ls(only4_first['high'])} at 10 bps.
-- What the rules did in the held-back slice, in plain terms: holding the market grew {pc(hb['cagr'])} a year with a largest drop of {pc(hb['maxdd'])}. The seven rules other than I2 grew between {pc(growth_lo)} and {pc(growth_hi)} a year, with largest drops between {pc(dd_lo)} and {pc(dd_hi)}. Rules that grew more than their comparison at 5 bps: {ls(more)}.
-- Rules with a better Sharpe ratio than their comparison in the held-back slice: {ls(better_sh)}. Rules whose largest drop was small enough for mark 1: {ls(small_dd)}. Rules that pass mark 1: {ls(m1)}.
-- Rules that beat a fixed mix of stocks and cash on both Sharpe ratio and largest drop in the held-back slice: {ls(fm)}. The fixed mix holds the rule's own average share in stocks from the development slice.
-- Rules whose Sharpe ratio is above the comparison's over the whole sample even at the low end of the resampled range: {ls(boot_pos)}. For every other rule the range includes zero, so the gap could be chance.
-- The ten-month rule, the best known of these: {pc(t1['held']['cagr'])} a year against {pc(hb['cagr'])} for holding, largest drop {pc(t1['held']['maxdd'])} against {pc(hb['maxdd'])}, in stocks {t1['held']['avg_weight']*100:.0f}% of the time on average.
+- What the rules did in the held-back slice, in plain terms: holding the market grew {pc(hb['cagr'])} a year with a largest drop of {pc(hb['maxdd'])}. The seven rules other than I2 grew between {pc(growth_lo)} and {pc(growth_hi)} a year, with largest drops between {pc(dd_lo)} and {pc(dd_hi)}. Rules that grew more than their comparison at 5 bps: {by_run('more')}. In the first run I2 grew {pc(i2f['held']['cagr'])} a year, but its largest drop was {i2f['dd_ratio']*100:.0f}% of the market's, too large for mark 1.
+- Rules with a better Sharpe ratio than their comparison in the held-back slice: {by_run('sh')}. Rules whose largest drop was small enough for mark 1: {by_run('dd')}. Rules that pass mark 1: {by_run('m1')}.
+- Rules that beat a fixed mix of stocks and cash on both Sharpe ratio and largest drop in the held-back slice: {by_run('fm')}. The fixed mix holds the rule's own average share in stocks from the development slice.
+
+- Rules whose Sharpe ratio is above the comparison's over the whole sample even at the low end of the resampled range: {by_run('boot')}. For every other rule the range includes zero, so the gap could be chance.
+- The ten-month rule, the best known of these: {pc(t1['held']['cagr'])} a year against {pc(hb['cagr'])} for holding, largest drop {pc(t1['held']['maxdd'])} against {pc(hb['maxdd'])}, in stocks {t1['held']['avg_weight']*100:.0f}% of the time on average. These figures are the same in both runs.
 - Mark 3 screened nothing in this test. The lowest deflated Sharpe of any rule at any cost was {dsr_min:.4f} against a bar of {TH['replay_min_deflated_sharpe']} (`replay_min_deflated_sharpe`). The plan takes the spread of Sharpe ratios across these eight rules. They all trade the same market and sit close together, so the hurdle is near zero (auditor's finding 2). The code follows the plan. The plan was not changed after the run.
 - Taxes are not in these numbers. A rule that sells pays tax sooner than holding does.
 
@@ -154,24 +177,30 @@ The twelve industry sleeves in I1, and in its comparison, start equal in 1927 an
 
 ## Held-back slice, 2006-06-01 to 2026-06-30, at 5 bps a side, corrected run
 
+{SAME_NOTE}
+
 {slice_tab('base', 'held')}
 "Days with a trade" counts days, not sides. A switch between stocks and bills pays two sides, and the cost of every side is charged. An earlier draft of this table called the column trade sides (auditor's finding 3).
 
 ## Whole sample, {r['start']} to 2026-09-30, at 5 bps a side, corrected run
 
+{SAME_NOTE}
+
 {slice_tab('base', 'all')}
 ## Pass marks
 
 {marks_tab()}
-The numbers behind the marks, at 5 bps a side, corrected run:
+The numbers behind the marks, at 5 bps a side, corrected run. {SAME_NOTE} In this table the deflated Sharpe column also differs by run for every rule, and the lowest value in either run is {min(dsr_min, min(C1[lab]['rules'][n]['dsr'] for lab in L for n in N)):.4f}.
 
 {detail_tab('base')}
 ## The three bad years, at 5 bps a side, corrected run
 
+{SAME_NOTE}
+
 {years_tab('base')}
 ## Does the fill assumption matter
 
-Held-back Sharpe ratio at 5 bps a side, corrected run. The test trades one full day late. "Traded the same close" is the ideal case that cannot be done in practice.
+Held-back Sharpe ratio at 5 bps a side, corrected run. Only the I2 row differs from the first run. The test trades one full day late. "Traded the same close" is the ideal case that cannot be done in practice.
 
 {sens_tab('base')}
 ## What this does and does not show

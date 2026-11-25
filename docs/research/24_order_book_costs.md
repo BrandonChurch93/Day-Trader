@@ -19,9 +19,9 @@ Every replay charges the venue's fee plus a fixed slippage of 5 bps per side for
 
 - Bitcoin on Kraken: $1,000 cost 0.0 bps in the middle case and 1.8 bps in the worst 5%. $10,000 cost 0.2 and 2.2 bps. Ether: 0.5 and 2.1 bps for $1,000.
 - Bitcoin on Binance.US: $1,000 cost 0.8 bps in the middle case and 1.5 bps in the worst 5%. $10,000 cost 1.8 and 2.4 bps. Ether: 0.9 and 1.5 bps for $1,000.
-- So on this night the 5 bps assumed for bitcoin and ether was higher than what the book charged at these sizes. The replays were not flattered by it.
+- So in this sample the 5 bps assumed for bitcoin and ether was higher than what the book charged at these sizes. The replays were not flattered by it.
 - Smaller coins on Kraken: of 21 coins sampled, 8 cost more than 5 bps for $1,000 in their worst 5% of samples, and 1 cost more than 25 bps for $10,000.
-- This is one night. Books are usually thinner in fast moves, which is when trend rules trade. That is STATED from general knowledge and not measured here. Treat these numbers as a floor, not an average.
+- This is one sample: 18 rounds over 34 minutes on one day. Bitcoin on Kraken has 36 readings, counting the buy side and the sell side, so its worst 5% figures rest on about 2 of them. Books are usually thinner in fast moves, which is when trend rules trade. That is STATED from general knowledge and not measured here. Treat these numbers as a floor, not an average.
 
 ## Kraken
 

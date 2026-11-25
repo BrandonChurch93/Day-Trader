@@ -110,3 +110,22 @@ After the first addendum was pushed (commit c7956c4), the repo was copied fresh 
 - `docs/decisions/0002-historical-testing-and-risk-posture.md` proposed counting a replay of a model on dates after its training cutoff. `AGENTS.md` hard rule 7 says only forward paper or shadow results count. Hard rule 7 stands, and it is question 19.
 - Never put to the owner and now on his list: the two scope calls of 2026-11-24 (14, 15), whether a stored test may be run again unchanged as a check (16), and what "within tolerance" means in the practice and live gates (17).
 - `rig2.py` cannot yet judge a one-rule test or check stock bars. Measured and written in `research_rig/README.md`.
+
+## Third addendum, 2026-11-25 09:31 UTC: what a sixth cold reader found
+
+After the second addendum was pushed (commit 17f250c), one more fresh model read the repo cold on a clean machine. This is what it found and what was changed. Nothing here is an owner decision.
+
+- `research_rig/export_dashboard.py` replayed five already-tested rules on the whole price history, held-back years included, every time it ran, to draw the curves on the owner's screen. `research_rig/README.md` said it only read output files. It ran several times and the count was not recorded. It checked each figure against the stored results and made no new number. It now reads saved curves and replays nothing unless given `--resimulate`, which is a held-back run. Disclosed in `research_rig/TRIAL_LEDGER.md`.
+- The owner's screen showed the stock test with the corrected run's verdict and examples. It now leads with the first run, which is the one that stands.
+- Document 22 gave its bottom-line figures without saying which run each came from. It now names the run on each, and says which figures are the same in both.
+- One line in the ledger still gave the owner's rerun rule more widely than he wrote it. It now quotes him.
+- Question 18 recommended conditions that the corrected run of replay 05 did not meet: its ledger row was added after the rerun, and the auditor had measured the effect of the correction before it was written. The question is now in three parts. Research recommends that the first run of replay 05 stands (18b).
+- The rerun after the code audits (R1) rests on research's reading of "machine check" and "the engine itself". The owner was never asked. That is now question 18c, and both words are in `docs/GLOSSARY.md` with the two readings.
+- Several lines called research practice a rule, and the playbook notes called every line a proposal, including lines that repeat `AGENTS.md` hard rules. Both are corrected. The owner's lines in `docs/quality/01_the_bar.md` are written for the Builder; research applies them to itself by choice, and the pages now say so.
+- `research_rig/provenance.json` left out one output, called every input "held-back", and stated the commits of the code without saying they were not measured. Corrected, and the record says what it cannot prove.
+- Document 24 and the status table called a 34-minute sample "overnight". They now give the length.
+- There was no page saying how an owner decision gets recorded. `docs/decisions/README.md` is that page.
+- The two draft plans did not say everything that has to be settled before they are frozen. They do now.
+
+Found the same morning, not by the reader: the workspace's own price history has one-minute and daily stock prices. No rule has been run on it. It is in `docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace", and item 6 of the things only the owner can do.
+

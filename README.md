@@ -12,7 +12,7 @@ This page does not hold results. Results change, and they live in one place: `do
 | 2 | `docs/STATUS.md` | Where the project stands today: every test and its result, what is believed now, what waits on the owner, what is next | One page |
 | 3 | `docs/INDEX.md` | The map. Find your task in its first table and read only the files it names | Look up, do not read through |
 
-One conflict is known and open. `AGENTS.md` names `docs/playbook/00_START_HERE.md` as the second read and says to load the playbook by default. Only the owner may change that file. Until he decides, every playbook page opens with a dated note that sends the reader to `docs/STATUS.md`, so both routes end at the same page. The proposed wording is in `docs/decisions/morning_list_2026-11-25.md`.
+One conflict is known and open. `AGENTS.md` names `docs/playbook/00_START_HERE.md` as the second read and says to load the playbook by default, and `docs/quality/00_READ_FIRST.md` line 12 names `docs/playbook/` as the place for what the evidence says. Only the owner may change those files. Until he decides, every playbook page opens with a dated note that sends the reader to `docs/STATUS.md`, so both routes end at the same page. The proposed wording is in `docs/decisions/morning_list_2026-11-25.md`.
 
 Then, only if your task needs it:
 
@@ -24,10 +24,10 @@ Then, only if your task needs it:
 
 ## Five things that are easy to break
 
-The first three are the owner's rules (`AGENTS.md`, and lines marked OWNER in `docs/quality/01_the_bar.md`). The last two are how research keeps the map true. The owner has not been asked to approve them.
+The first three are the owner's rules (`AGENTS.md`, and lines marked OWNER in `docs/quality/01_the_bar.md`). Where a line adds research's own practice on top of a rule, it says so. The last two are how research keeps the map true. The owner has not been asked to approve them. The owner wrote the lines in `docs/quality/01_the_bar.md` for the Builder, the mode that builds from a kit. Research applies them to its own tests as well. That is research's choice, not his instruction.
 
 1. Rule. A number is written once, in `config/thresholds.yaml`. Documents name the key.
-2. Rule. A test's plan and its trial ledger rows are pushed before the test runs. The held-back slice is run once for a version of a rule. The one exception is a rerun after a machine check proves the engine itself was wrong, and that rerun gets its own ledger row first and is counted as a trial.
+2. Rule. Every rule variant is logged in the trial ledger before it is run (`AGENTS.md` hard rule 8). The held-back slice is run once for a version of a rule. The one exception, in the owner's words: "when a machine check proves the engine itself was wrong, the slice is rerun once the fix is in. That rerun is written in the trial ledger, counted as a trial and reported as a rerun". Practice on top of the rule: the test's written plan and its ledger rows are pushed before the test runs, and a rerun gets its ledger row before it runs.
 3. Rule. Numbers in documents are written by a script from an output file, never typed.
 4. Practice. A result or decision changes `docs/STATUS.md` in the same commit. A new, moved or retired file changes `docs/INDEX.md` in the same commit.
 5. Practice. Run `python3 tools/check_repo.py` before every commit. It fails if the map is not true. `python3 tools/check_repo.py --builders` also checks that no built document was edited by hand.
@@ -37,7 +37,7 @@ The first three are the owner's rules (`AGENTS.md`, and lines marked OWNER in `d
 1. `AGENTS.md`
 2. `config/thresholds.yaml` for any number
 3. `docs/quality/` for the standard of finished work and how work is planned and run. A line marked OWNER there is the owner's rule. A line marked TRANSLATED is a proposal
-4. `docs/STATUS.md` for any result or the current state
+4. `docs/STATUS.md` for any result or the current state. This line is research's practice and is not approved yet. `docs/quality/00_READ_FIRST.md` line 12 gives that place to `docs/playbook/`, which was written before any test here. Item 5 of "Things only you can do" in the morning list asks the owner to settle it
 5. A dated note in `docs/decisions/` over an undated page
 6. The newer of two dated pages
 
