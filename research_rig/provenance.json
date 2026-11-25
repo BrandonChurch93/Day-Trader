@@ -896,8 +896,8 @@
     "results_09.json"
    ],
    "sha256": "5b3d61ead9aa05d6ebd2abab90298b2bebd535d403b1933093207bbc075c09da",
-   "first_stored_in_commit": null,
-   "last_changed_in_commit": null,
+   "first_stored_in_commit": "3cd149b 2026-11-25T15:31:34Z",
+   "last_changed_in_commit": "3cd149b 2026-11-25T15:31:34Z",
    "inputs_modified_after_output_first_stored": [],
    "note": "Full-hourly gap check for steady-volume USD pairs. No rule rerun."
   }
