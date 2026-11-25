@@ -5,7 +5,7 @@ The words in WHAT and MARKS are descriptions. Every number comes from the config
 import re, sys
 PAGE = "docs/decisions/morning_list_2026-11-25.md"
 START, END = "<!-- numbers:start (written by tools/owner_numbers.py from config/thresholds.yaml, do not edit by hand) -->", "<!-- numbers:end -->"
-MARKS = [("1", "replay_max_drop_ratio_vs_hold", "In the held-back years the rule must have a better Sharpe ratio than holding, and its largest drop may be at most this share of holding's largest drop"),
+MARKS = [("1", "replay_max_drop_ratio_vs_hold", "In the held-back years the rule must have a better Sharpe ratio than holding, and its largest drop may be at most this share of holding's largest drop. Since the audits the crypto rules must also hold with the order filled one hour late"),
          ("2", "backtest_min_breakeven_cost_multiple", "The rule must stay ahead of holding up to a cost that is this many times the modeled cost"),
          ("3", "replay_min_deflated_sharpe", "The deflated Sharpe ratio, which marks a result down for every rule that was tried, must be at least this"),
          ("4", "backtest_max_pbo", "The overfitting estimate must be below this"),

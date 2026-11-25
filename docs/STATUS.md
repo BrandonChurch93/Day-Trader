@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-25 09:58 UTC
+Last updated: 2026-11-25 10:06 UTC
 
 This page is the current state of the project. It is the second thing to read, after `AGENTS.md`. If another page disagrees with this one about a result or about where things stand, this page stands. The map of every file is `docs/INDEX.md`. Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
 
@@ -79,6 +79,8 @@ Each line says how far to trust it.
 - The plans for replay 01 and pilot 02 were pushed in the same commit as their results (b393482). The plans carry their own written times, which say they came first. That is STATED and cannot be shown from the commit history. From replay 03 on, each plan was pushed before its run.
 - Pass mark 3 screened nothing in replay 05, because of how its plan defined the spread of Sharpe ratios. Research proposes that the next plan defines it across all counted trials. That is a proposal to the owner, not a rule yet.
 - Bitstamp's terms are unclear about collecting its prices. Kraken's published files are the proposed main crypto history. Waiting on the owner.
+- Two data collections were started on 2026-11-25 without asking the owner: the order-book sampler on Kraken's and Binance.US's public price feeds, and a pull of stock prices from the workspace's own price history. Neither ran a rule and neither is in the repo beyond a short summary of the first. Kraken's general terms bar automation on its content, and the workspace data's terms are UNKNOWN to research. Both are now put to him (items 4 and 6 of "Things only you can do" in the morning list).
+- Document 16 and the morning list recommended counting a tie in pass mark 4 as half and did not say plainly that this is the easier reading. Results had been seen, so that was a recommendation to loosen a mark. A ninth reader caught it. Research now recommends keeping the stricter count (decision 1b).
 
 ## Waiting on the owner
 
@@ -88,7 +90,7 @@ What research would ask him first, in this order. The same four are under "Start
 
 1. Practice account keys (item 1 of "Things only you can do").
 2. The data purchase (item 2).
-3. How pass mark 4 is measured from now on (decision 1).
+3. How pass mark 4 is measured from now on (decisions 1a and 1b). Research recommends measuring it over start dates fixed before the run, and keeping the stricter count of ties.
 4. Which of last night's results are credited (question 18b). Research recommends no pass is.
 
 Next after those: how pass mark 3 is measured (decision 2), whether every replay gets an independent audit (decision 3), what to test next (decisions 4a and 4b) and which rules to watch in the practice account (decision 5). Research works to decisions 2 and 3 already. Neither is an approved rule.
@@ -118,7 +120,7 @@ Open owner numbers, with no value yet: `live_starting_capital_usd`, `live_max_po
 
 This is the queue in force. If another page lists a different order, this one stands. It is proposed, not approved: nothing on it that needs the owner starts without him. The reasons for the order are in `docs/research/25_what_the_evidence_supports.md`.
 
-1. Owner decides how pass mark 4 is measured from now on (`docs/research/16_rig_audit.md`, "Questions for the owner"). Every later replay depends on it. He also says which of last night's results are credited (question 18b), so that every page can use one word for them.
+1. Owner decides how pass mark 4 is measured from now on (decisions 1a and 1b in the morning list; background in `docs/research/16_rig_audit.md`, "Questions for the owner"). Every later replay depends on it. He also says which of last night's results are credited (question 18b), so that every page can use one word for them.
 2. Watch two slow rules in the practice account with pretend money, as observation only and labelled as not passed: the bitcoin rule P1 and the ten-month rule on a total market fund. Needs practice keys and the owner's yes to decision 5 in the morning list.
 3. Replay 06: slow trend on funds that can be bought. Plan drafted in `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`. Needs the data purchase for dividend history, the owner's yes to decision 4a, and his decision on pass mark 4 before the plan is frozen. Proposed addition before it is frozen: the industry rule I2 on sector funds, which was picked after seeing the corrected run of replay 05 and must be disclosed as that in the plan.
 4. Replay 07: day trading SPY and QQQ on one-minute bars. Plan drafted in `research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`. Needs one-minute prices, from the data purchase or from the workspace's own price history if the owner allows it (item 6 of "Things only he can do"), his yes to decision 4b, and his decision on pass mark 4. Its night-only rule N5 also needs dividend history, which the workspace's price history does not have, so on that source alone N5 is dropped or waits for the purchase, and the plan says which before it is frozen.

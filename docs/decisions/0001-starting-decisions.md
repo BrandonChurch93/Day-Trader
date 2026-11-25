@@ -3,7 +3,7 @@
 Date: 2026-11-24
 Status: proposed by the research team. Nothing in this file is an owner decision until the owner confirms it. Confirmations are recorded with their date in a later decision file.
 
-Note added 2026-11-25. Row 7 below says the owner agreed in the thread on 2026-11-24. It is the one row recorded here as his. His words are not quoted in this file, so read it as STATED by research until a decision file quotes them. Rows 1 and 2 are now decisions 14 and 15 in `docs/decisions/morning_list_2026-11-25.md`.
+Note added 2026-11-25. Row 7 below says the owner agreed in the thread on 2026-11-24. It is the one row recorded here as his. His words are not quoted in this file, so read it as STATED by research until a decision file quotes them. Rows 1 and 2 are now questions 14 and 15 in `docs/decisions/morning_list_2026-11-25.md`.
 
 ## Proposed by the research team
 

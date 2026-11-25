@@ -166,3 +166,19 @@ After the fourth addendum was pushed (commit 47bd710), an eighth fresh model, fr
 - Thirteen terms used in the repo were not in the glossary. Added.
 
 Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, the audit reports, any stored result, any threshold. No rule was run.
+
+## Sixth addendum, 2026-11-25 10:07 UTC: a ninth reader on the morning list alone
+
+After the fifth addendum was pushed (commit 1aa4d69), a ninth fresh model read only what the owner will read first, the morning list, and checked it against the files behind it. It confirmed that the two number tables match the config file, that the four items under "Start here" match the status page, and that the quoted rules and line numbers are right. What it found, and what changed:
+
+- Decision 1 recommended two changes to pass mark 4 as one, and called the pair "steadier". One of the two, counting a tie as half, makes the mark easier to pass, and the audit had kept the stricter count for that reason. Results had been seen. This was a recommendation to loosen a mark without saying so. It is now two decisions. Research recommends yes to fixed start dates (1a) and no to the easier tie count (1b). Document 16's own recommendation is corrected with a dated note. This changes a recommendation, not a result or a number.
+- The item on `AGENTS.md` said its lines were quoted in full and that nothing was removed. Line 3 was quoted without its first and last sentences, and the last is the one that says `AGENTS.md` wins every conflict. It is now quoted whole and that sentence is kept word for word. The page now says plainly what does change.
+- "Start here" said three answers unblock the stock tests and the practice record. Each of those also needs its own yes. It now says so, and says no practice trading starts on the keys alone.
+- Decision 8 said the three bars "did their job", which contradicted decision 2 on the same page. It also did not say which form of pass mark 1 was being approved, and the bar for mark 4 was not put to the owner anywhere. All three are corrected.
+- Question 18b listed the runs with a problem but left out the first run of the bitcoin and ether tests, the two restarts of the hourly rerun, and the fact that keeping the fails is research's choice and not what hard rule 8 says when read strictly. Added.
+- Two data collections were started overnight without asking the owner, and neither was listed as a slip. Both are now in the status page and in the morning list under "What research got wrong".
+- Several lines read stronger than the status page: "the one lead worth following", "turns the stock index result into something that could be traded", a practice record that "starts the count", and "the honest next month", which is a time prediction. Each is reworded.
+- No block ended with the recommendation, which the owner's rules ask for. Every block now ends with it. Items 2, 3, 4 and 6 of "Things only you can do" now say what a yes covers. Item 1 now says where the practice keys go.
+- Counts and one config value typed into the page are replaced by pointers to the status table and the key.
+
+Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold. No rule was run.
