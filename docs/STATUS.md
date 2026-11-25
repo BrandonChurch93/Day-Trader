@@ -1,13 +1,13 @@
 # Status
 
-Last updated: 2026-11-25 15:10 UTC
+Last updated: 2026-11-25 16:12 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
 
 - Nothing tested so far is good enough to trade. That is the list below, and it is a short list.
-- Three machines exist or are being built: the rig (`research_rig/`, working), the practice desk (`practice/`, built, waiting for a practice account key), the time machine (`timemachine/`, being built).
+- Three machines exist or are being built: the rig (`research_rig/`, working), the practice desk (`practice/`, built, waiting for a practice account key), the time machine (`timemachine/`, working, running AI sessions on crypto since 2026-11-25).
 - The practice desk is on GitHub's timer and sends nothing until the owner adds a practice key to the repo's secrets. What it has done is on the owner's screen and in the summary file on the `practice-records` branch. This page does not repeat it.
 - No real-money account. No purchases. No real trades.
 
@@ -42,11 +42,13 @@ Each line says how far to trust it.
 - Slow trend rules cut the largest drop and give up growth. MEASURED on bitcoin and on the US stock market index, and it matches the live record of funds built on the same rules (`docs/research/21_systematic_funds_and_published_rules.md`). In the held-back years most grew less than holding.
 - A wide basket of smaller coins grew far less than holding bitcoin in the held-back years. MEASURED (`docs/research/23_replay_04_coin_basket.md`).
 - Fixed rules that anyone can write down in one line have not given fast money here. MEASURED for the rules in the table. It says nothing about ideas not yet tested, and it is the reason the next tests are of AI traders that read far more than a rule can.
-- AI models making the trading call: UNKNOWN. Public live records do not show it working (`docs/research/18_ai_systems_with_live_records.md`). Our own pilot was six model runs of 147 calls each, too few to tell skill from luck (`docs/research/14_ai_calls_pilot_02.md`). The time machine and the practice desk exist to measure this properly.
+- AI models making the trading call: nothing shown so far. Public live records do not show it working (`docs/research/18_ai_systems_with_live_records.md`). Our own pilot was six model runs of 147 calls each, too few to tell skill from luck (`docs/research/14_ai_calls_pilot_02.md`). In the time machine, MEASURED on the months finished by 2026-11-25 16:08 UTC (23 from prices alone, 9 with headlines, pretend 1,000 dollars each): no model is ahead of holding bitcoin over its finished months, 57 of 173 closed trades won, and in the one month where random twins are complete no model stands clear of them (`docs/research/29_time_machine_tm01_crypto_price_only.md`). The models stay in cash at most wakes, so they lose less than holding in falling months and fall far behind in rising ones. Not finished: the plan's verdict needs all five months and all twins.
+- Do dated headlines help an AI trader: early and not settled. In 8 of the first 9 paired months the same model ended higher with headlines than without, and it also bought less often, in months that mostly fell. The one rising month paired so far went the other way (`docs/research/30_time_machine_tm02_crypto_with_news.md`). The plan's test is six of six models over five months.
+- The six models do not know the replay months. MEASURED: asked for month-end prices of three coins from January 2025 to November 2026, none answered any month from July 2026 on; the latest any knows is about February 2026 (`docs/research/31_model_knowledge_lines.md`). Replays on months after that are not trading from memory. Not checked: whether a model can reach the web during a session against its instructions.
 - The closest thing to a lead on stocks is rule I2 in replay 05: hold the three strongest industry groups when the market is above its ten-month average. It grew nearly as much as holding with a much smaller largest drop, on an index that cannot be bought, in a run that is not counted. A reason for the next test, not a result (`docs/research/22_replay_05_stock_trend.md`).
 - Day trading SPY and QQQ with fixed rules does not pay after costs. MEASURED, eight rules on one-minute prices of each fund (`docs/research/27_replay_07_intraday_spy_qqq.md`): none beat holding the fund in the held-back years at either cost judged. One rule on QQQ beat holding only if a round trip costs less than about 1.8 hundredths of a percent, which has not been measured at a real desk.
 - Seven more crypto methods at Alpaca's fees: none passed. MEASURED (`docs/research/28_replay_09_crypto_methods.md`).
-- Single stocks that can be bought are UNKNOWN. No rule has been run on them.
+- Single stocks that can be bought are UNKNOWN. No rule has been run on them. The tape now holds 56 stocks and funds minute by minute from June 2026, with company filings and one headline site as dated news, so AI sessions on stocks are next.
 - Pass mark 4, the overfitting estimate, is not steady enough to be a yes or no on its own. MEASURED three ways (`docs/research/16_rig_audit.md`). From the next plan on it is measured over start dates fixed before the run.
 
 ## What has been replaced
@@ -70,6 +72,8 @@ Only what someone using the tools needs to know. The longer account of each slip
 - Pass mark 3 screened nothing in replay 05, because of how its plan defined the spread of Sharpe ratios. The next plan defines it across all counted trials.
 - Bitstamp's terms are unclear about collecting its prices. Kraken's published files are the main crypto history from here on.
 - Stock prices collected from the workspace's built-in price history have gaps, and some one-minute prices sit outside the day's range in its daily file. They stay on the research machine, are never published, and any test that uses them says so.
+- Time machine, found and fixed on 2026-11-25 while sessions were running, each written into the plans with its time: crypto traders were shown the previous day's stock fund movers for about 18 minutes; a pick sent twice after a lost reply was taken twice (five wakes, all "no pick"); exits are checked every few minutes, so a one-minute spike through a stop or target between checks is missed. The results tables count the first two per session.
+- The time machine's stock list was chosen on 2026-11-25 from today's large companies. It leans toward companies that did well. Twins drawn from the same list share that lean, so compare with twins, not with zero.
 - The practice desk checks exits about every ten minutes, GitHub's timer can run late, and stocks trade only in regular hours. A stop can be filled late. Results from the desk include that.
 
 ## Waiting on the owner
@@ -77,7 +81,7 @@ Only what someone using the tools needs to know. The longer account of each slip
 Two things only he can do. Nothing else waits on him.
 
 1. Practice account key. Add `ALPACA_PAPER_KEY_ID` and `ALPACA_PAPER_SECRET_KEY` to this repo's secrets. That starts the pretend trading in `practice/`. The builder says when the code is ready for it.
-2. Data key. The same practice account's key, entered once in the secure form, lets the time machine record past stock prices and dated news. Without it the time machine runs on crypto only.
+2. Data key. The same practice account's key, entered once in the secure form (opened for him 2026-11-25 16:03 UTC), lets the time machine record stock prices back to 2016 from a source that may be published about, and shows whether dated news history is included. Without it the time machine uses the built-in price history, which stays on the research machine.
 
 Real money, and the limits for it, are his when that day comes (`docs/DECISIONS.md`, "Not decided yet").
 
