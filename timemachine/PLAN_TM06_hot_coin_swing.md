@@ -60,7 +60,7 @@ What would count, fixed now. For one model, its eight months joined end to end: 
 | 2026-08-31 to 2026-09-07 | +14.6% | BNB, HYPE, LINK, SOL, ZEC |
 | 2026-10-05 to 2026-10-12 | -3.9% | AAVE, ADA, BNB, HBAR, XLM |
 
-- One wake every `tm06_plan.swing_wake_minutes` minutes, day and night. At each wake the model sets how much of the account is in each of the five coins: long or nothing, adding up to at most `tm06_plan.swing_max_gross`x. It may set a stop and a target on each.
+- One wake every `tm06_plan.swing_wake_minutes` minutes, day and night. At each wake the model sets how much of the account is in each of the five coins: long, short or nothing, with the sizes of all positions adding up to at most `tm06_plan.swing_max_gross`x whichever way they point. It may set a stop and a target on each.
 - The packet shows, for the five coins, the last 24 hourly bars and the last 30 one-minute bars, volume against usual, funding, and the account. The model can ask to look at more bars up to the wake.
 
 Yardsticks:
@@ -70,6 +70,8 @@ Yardsticks:
 3. Bitcoin held, for scale only.
 
 What would count, fixed now. For one model, its four weeks joined end to end at `tm06_plan.main_fee_bps` basis points: the gain is above yardstick 1 and above the `tm_weights_pass_percentile`th percentile of yardstick 2. For the method: at least `tm06_plan.method_min_models_above_median` of six models end above the middle of their shuffled runs and at least `tm06_plan.method_min_models_above_percentile` clear both marks. Fewer, and it is reported as not shown. Reported beside it and not judged: rising weeks and falling weeks apart, the number of trades, the share of time in the market, the result at each fee level, and the carried 2x and 3x results with any forced close-out.
+
+Change to part S, 2026-11-25 19:51 UTC, before any part S session had taken a packet. The owner said that day that most of his trades were shorts (`docs/DECISIONS.md`). Part S as first written let the model buy or sit out only, which did not test his method. It now allows shorts. Nothing else in part S changes: the weeks, the coins, the wakes, the fees, the yardsticks and the marks stay as fixed. What the change does to the yardsticks, stated now: against yardstick 1 a model that is short in the two falling weeks gains without any timing skill, so yardstick 2, which keeps each model's own mix of long and short and breaks only the timing, is the one that speaks about skill. A short pays or receives funding with the opposite sign to a long and is closed out when the price rises far enough, by the same futures book rules.
 
 ## What a pass earns
 

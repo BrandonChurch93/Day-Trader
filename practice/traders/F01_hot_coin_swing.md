@@ -11,13 +11,14 @@ The owner described how he traded crypto, in his words on 2026-11-25 (`docs/DECI
 - Prices "would move up and down like peaks of a mountain". He found the pattern with chart tools and bought the dips and sold the peaks, over and over.
 - He followed a few callers, Alex Becker among them, and got into some coins early.
 - He used leverage. He says $500 became $10,000 several times.
+- Added 2026-11-25 19:51 UTC from his answer that day: most of his trades were shorts. He waited for a peak, went short on the way down until the fall stalled, and took the gain. Sometimes he went long on the way back up and short again, several times, until the run had made 20 to 40%. The coins were lower market cap ones, Render the main one. He traded this way for almost two years and never traded stocks.
 
 ## What it tries to do
 
 Two jobs, tested apart so we can tell which one carries the result:
 
 1. The picker. Once a day it names up to five coins that attention is moving into, from what could be known at that time.
-2. The swing trader. On the picked coins only, it buys a dip inside a rising stretch and sells into the next peak, several times a day.
+2. The swing trader. On the picked coins only, it trades the swings both ways several times a day: short after a peak until the fall stalls, long on the way back up, or out.
 
 ## Why this might work, and why it might not
 

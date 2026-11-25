@@ -793,7 +793,7 @@ tm05_plan:
 tm06_plan:
   value: {coins: [AAVE, ADA, AVAX, BCH, BNB, DOGE, DOT, ENA, HBAR, HYPE, LINK, LTC, NEAR, ONDO, PEPE, SOL, SUI, XLM, XRP, ZEC], picker_start: "2026-04-01", picker_end: "2026-11-23", picker_wake_hour_utc: 14, picker_max_names: 5, picker_rise_days: 7, swing_weeks: [{start: "2026-05-11", end: "2026-05-18", coins: [ENA, NEAR, ONDO, SUI, ZEC]}, {start: "2026-07-20", end: "2026-07-27", coins: [LINK, LTC, ONDO, PEPE, ZEC]}, {start: "2026-08-31", end: "2026-09-07", coins: [BNB, HYPE, LINK, SOL, ZEC]}, {start: "2026-10-05", end: "2026-10-12", coins: [AAVE, ADA, BNB, HBAR, XLM]}], swing_wake_minutes: 60, swing_max_gross: 1, main_fee_bps: 12, carried_leverage: [2, 3], method_min_models_above_median: 5, method_min_models_above_percentile: 2, control_move_bps: 30, control_leverage: [1, 3]}
   status: builder
-  note: Plan TM06, the owner's method in two parts. coins is the fast tape's list without BTC, ETH and PAXG. swing_weeks and their coins were worked out once by timemachine/tm06_fix_weeks.py from daily bars (weeks at the 10th, 30th, 70th and 90th percentile of the list's weekly gain; coins are the five biggest risers of the seven days before each week). control_move_bps is the 15-minute move that triggers the negative-control rule. Fee levels are tm_perp_fee_levels_bps.
+  note: Plan TM06, the owner's method in two parts. coins is the fast tape's list without BTC, ETH and PAXG. swing_weeks and their coins were worked out once by timemachine/tm06_fix_weeks.py from daily bars (weeks at the 10th, 30th, 70th and 90th percentile of the list's weekly gain; coins are the five biggest risers of the seven days before each week). control_move_bps is the 15-minute move that triggers the negative-control rule. Fee levels are tm_perp_fee_levels_bps. Part S allows shorts from 2026-11-25 19.51 UTC, set before any part S session, after the owner said most of his trades were shorts; swing_max_gross is the cap on the summed sizes of longs and shorts.
   source: timemachine/PLAN_TM06_hot_coin_swing.md
 
 replay_12_plan:
@@ -813,6 +813,12 @@ replay_16_plan:
   status: builder
   note: Draft plan 16, written 2026-11-25 19.42 UTC, the hot five held long on spot with a same-size short on futures, weekly, judged on a held-back list of the next 50 coins down. Round figures set before any futures price was read. Draft until frozen.
   source: research_rig/PREREG_16_hot_five_hedged_DRAFT.md
+
+replay_17_plan:
+  value: {hot_n: 5, rise_days: 7, dip_pct: 5, dip_lookback_hours: 24, take_pct: 5, stop_pct: 5, max_hold_hours: 24, cost_bps_per_side: 10, other_costs_bps: [5, 20], shown_leverage: 3, forced_close_rise_pct: 30, random_draws: 200, seed: 17, min_years_above: 5, min_rising_years: 2, min_trades_per_year: 10, max_flagged_share_pct: 5}
+  status: builder
+  note: Draft plan 17, written 2026-11-25 19.52 UTC, the trigger of plan 13's rule B taken short on perpetual futures, on the held-back coin list of plan 16. Same round figures as plan 13, not tuned. Dates, lists and funding rules come from replay_16_plan. Draft until frozen.
+  source: research_rig/PREREG_17_short_the_peak_DRAFT.md
 
 replay_14_plan:
   value: {start: "2016-01-04", end: "2026-11-24", lookback_months: 12, skip_months: 1, n_small: 10, n_wide: 50, cost_bps_per_side: 5, random_draws: 1000, seed: 14, random_percentile: 95, first_half_end: "2021-12-31", new_trials: 2}

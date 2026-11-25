@@ -223,6 +223,7 @@ Working papers.
 | `research_rig/coverage_14.json` | Plan 14: counts of members, rankable stocks and missing price files by date. No prices | CURRENT |
 | `research_rig/report_14.py` | Writes the plan 14 result page from the stored result; reads no price | CURRENT |
 | `research_rig/PREREG_16_hot_five_hedged_DRAFT.md` | Draft plan 16: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Not frozen, nothing run | DRAFT |
+| `research_rig/PREREG_17_short_the_peak_DRAFT.md` | Draft plan 17: the short side of the owner's method as a fixed rule on futures, judged on the held-back coin list. Not frozen, nothing run | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |
 | `research_rig/common_11.py` | Plan 11 shared paths, calendar, event ids and the price-file map for renamed tickers | CURRENT |
