@@ -1,8 +1,9 @@
 {
  "what_this_is": "Record of how each stored output in research_rig/ was made. Built after the fact by provenance.py; see its first lines for what this can and cannot show.",
- "python": "3.14.8",
+ "python_when_recorded": "3.14.8",
  "packages": "research_rig/requirements.txt",
- "commit_fields": "short hash and commit time. 'first_stored_in_commit' is the commit that added the file. The code a run used is the code at that commit, unless the note says otherwise.",
+ "commit_fields": "short hash and commit time. 'first_stored_in_commit' is the commit that added the file. The code a run used is taken to be the code at that commit; that is STATED by research, and nothing in this record can show it.",
+ "not_in_this_record": "dashboard/data.json and dashboard/curves_cache.json, which are not committed. export_dashboard.py --resimulate replays five rules on raw prices that include held-back dates to draw their curves. See README.md, 'How each stored output was made'.",
  "inputs": {
   "data/bitstamp_BTCUSD.csv": {
    "bytes": 322629,
@@ -359,8 +360,27 @@
    "inputs_modified_after_output_first_stored": [],
    "note": "A description of one year, not a rule trial. Run once more after the data path change in commit c7956c4; output identical; not counted."
   },
+  "pilot/decisions.jsonl": {
+   "kind": "held-back",
+   "command": "python3 pilot/server.py, with six AI model runs calling it over HTTP",
+   "run_from": "research_rig/",
+   "code": [
+    "pilot/server.py",
+    "engine.py"
+   ],
+   "raw_inputs": [
+    "data/bitstamp_BTCUSD.csv",
+    "data/bitstamp_ETHUSD.csv"
+   ],
+   "reads_stored_outputs": [],
+   "sha256": "f5e319494e60209ba042f570aa147233e34561914d09ff29d59adbb382220f53",
+   "first_stored_in_commit": "b393482 2026-11-25T07:01:47Z",
+   "last_changed_in_commit": "b393482 2026-11-25T07:01:47Z",
+   "inputs_modified_after_output_first_stored": [],
+   "note": "Pilot 02. The server gave each model one day of prices at a time, 2026-06-30 to 2026-11-23, and logged its call. Run once. The models' replies cannot be made again from this record."
+  },
   "kraken_daily_build.json": {
-   "kind": "no-rule",
+   "kind": "prices-no-rule",
    "command": "python3 build_kraken_daily.py",
    "run_from": "research_rig/",
    "code": [
@@ -378,10 +398,11 @@
    "sha256": "5fb67201b8a5461b4214c12ac83ebb5f8abddaadc7ba89f3a6364aca2a6f3aab",
    "first_stored_in_commit": "e356095 2026-11-25T07:15:39Z",
    "last_changed_in_commit": "e356095 2026-11-25T07:15:39Z",
-   "inputs_modified_after_output_first_stored": []
+   "inputs_modified_after_output_first_stored": [],
+   "note": "Compares Kraken and Bitstamp daily closes while building the Kraken daily files. No rule."
   },
   "venue_price_gap.json": {
-   "kind": "no-rule",
+   "kind": "prices-no-rule",
    "command": "python3 build_doc16.py",
    "run_from": "research_rig/",
    "code": [
