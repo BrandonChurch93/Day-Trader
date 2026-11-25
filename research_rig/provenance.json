@@ -900,6 +900,33 @@
    "last_changed_in_commit": "3cd149b 2026-11-25T15:31:34Z",
    "inputs_modified_after_output_first_stored": [],
    "note": "Full-hourly gap check for steady-volume USD pairs. No rule rerun."
+  },
+  "results_07.json": {
+   "kind": "held-back",
+   "command": "python3 run_07.py --full",
+   "run_from": "research_rig/",
+   "code": [
+    "run_07.py",
+    "rig2.py",
+    "fixtures2.py",
+    "platform_bars_integrity.py",
+    "../config/thresholds.yaml"
+   ],
+   "raw_inputs": [
+    "data/platform_bars/1min/*.csv",
+    "data/platform_bars/1day/*.csv"
+   ],
+   "reads_stored_outputs": [
+    "results_v2.json",
+    "results_04.json",
+    "results_05.json",
+    "results_05b.json"
+   ],
+   "sha256": "e42f289125b9a266c59e2084a346233f5647d1afc5479fcfd4b38710e4927906",
+   "first_stored_in_commit": "9ae3844 2026-11-25T15:41:15Z",
+   "last_changed_in_commit": "9ae3844 2026-11-25T15:41:15Z",
+   "inputs_modified_after_output_first_stored": [],
+   "note": "Replay 07, run once on 2026-11-25. The output also holds the sha256 of each SPY and QQQ price file it read. run_07.py was uncommitted when it ran (sha256 aeffaeec647dd7a3267fdea225664bb861cbba7824de179fe9b1887a295c08d7)."
   }
  }
 }
