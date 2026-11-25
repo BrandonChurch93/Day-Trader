@@ -10,7 +10,6 @@ Last changed: 2026-11-25 16:26 UTC
 |---|---|---|---|
 | 1 | Six AI models trade crypto from prices alone in the time machine, October 2026 first, then four more months | `timemachine/PLAN_TM01_crypto_price_only.md` | 2026-11-25 |
 | 2 | The same six AI models trade crypto with dated headlines added, same five months | `timemachine/PLAN_TM02_crypto_with_news.md` | 2026-11-25 |
-| 4b | Order-book cost samples on Kraken and Binance.US, one full day. The sampler stops by itself at about 16:30 UTC. Then: `cd research_rig && python3 books_summary.py && python3 build_doc24.py`, `python3 tools/status_table.py --write`, commit, `python3 provenance.py --record --with-books`, commit | `docs/research/24_order_book_costs.md` | 2026-11-25 |
 
 ## Next, in order
 
@@ -72,3 +71,4 @@ The results of everything run before 2026-11-25 15:00 UTC are in the table in `d
 | - | Measure each model's knowledge line | Done 2026-11-25. None of the six models could give a month-end price for any replay month; the latest any knows is about February 2026 (`docs/research/31_model_knowledge_lines.md`) |
 | - | Tape: single stocks and company filings | Done 2026-11-25. 56 stocks and funds minute by minute from 2026-06-01 (99.99% of minutes present), 275 company filings stamped to the second, 537 headlines from one site. On the research machine only |
 | - | A "why" record for every replay trade | Built 2026-11-25 into the scoring script. One row per buy: what the trader looked up, its reason, the headlines it named, how the trade ended (`docs/research/29_time_machine_tm01_crypto_price_only.md`, `docs/research/30_time_machine_tm02_crypto_with_news.md`) |
+| 4b | Order-book cost samples on Kraken and Binance.US, 254 rounds over 9 hours on 2026-11-25 | Finished. Buying or selling $1,000 of bitcoin or ether cost less than the 5 bps the replays charge, in the middle case and in the worst 5% of readings. Smaller coins cost more. One calm-or-not-measured day. `docs/research/24_order_book_costs.md` |
