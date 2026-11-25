@@ -265,7 +265,8 @@ class DeskSession:
             marks = self.spec["rows"][k]["marks"]
             b = st["book"]
             result.update(arm=self.arm, book=dict(cash=b["cash"], equity=P.value_at(b, marks),
-                          weights=P.weights_at(b, marks), current_target=b["target"], exits=b["exits"]),
+                          weights=P.weights_at(b, marks), current_target=b["target"], exits=b["exits"],
+                          marks={s:marks[s] for s in b["qty"] if s in marks}),
                           active=list(st["active"].values()), looks_left=self.opts["looks"]-len(st["looks"]),
                           book_evidence=f"book:{at}")
             if self.arm != "A":
@@ -285,9 +286,29 @@ class DeskSession:
         rows = [e for e in self.evidence(k).values() if e["symbol"] == sym and e["kind"] == kind and e["known_at"] >= at-86400]
         rows = sorted(rows, key=lambda e: (e["known_at"], e["id"]), reverse=True)[:self.opts["look_rows"]]
         ids = [e["id"] for e in rows]
+        quote = self.quote(k,sym) if kind == "bars" else None
+        if quote:
+            ids.append(quote["id"])
         st["looks"].append(ids)
-        self.log(con, at, "boss", "look", dict(symbol=sym, kind=kind, ids=ids, hash=digest(rows)))
-        return dict(rows=rows, looks_left=self.opts["looks"]-len(st["looks"]))
+        result = dict(rows=rows, quote=quote, looks_left=self.opts["looks"]-len(st["looks"]))
+        self.log(con, at, "boss", "look", dict(symbol=sym, kind=kind, ids=ids, hash=digest(result)))
+        return result
+
+    def quote(self,k,symbol):
+        mark = self.spec["rows"][k]["marks"].get(symbol)
+        if mark is not None:
+            t = self.spec["wakes"][k]
+            return dict(id=f"quote:{t}:{symbol}",symbol=symbol,utc=t,price=mark)
+
+    def visible_marks(self,k,st,notes):
+        marks = self.spec["rows"][k]["marks"]
+        ids = {i for look in st["looks"] for i in look}
+        rows = self.raw(self.evidence(k),self.spec["wakes"][k]) if self.arm == "A" else [
+            e for n in notes for e in n["evidence"]]
+        quoted = {e["symbol"] for e in rows if e["kind"] == "price" and isinstance(e.get("value"),dict)
+                  and e["value"].get("price") == marks.get(e["symbol"])}
+        return {s:m for s,m in marks.items() if s in quoted or s in st["book"]["qty"]
+                or self.quote(k,s)["id"] in ids}
 
     def scout_submit(self, con, st, role, items):
         if role in st["scout"]:
@@ -320,7 +341,16 @@ class DeskSession:
         end = self.spec["end"]
         row = self.spec["rows"][k]
         bare = {x: v for x, v in body.items() if x not in ("conditions", "keep", "citations")}
-        errs = P.check_answer(bare, self.spec["symbols"], self.spec["cfg"], self.spec["gross"], row["marks"])
+        notes = self.manifest["scout"]["wakes"][k]["notes"] if self.arm != "A" else []
+        marks = self.visible_marks(k,st,notes)
+        mentioned = set(bare["exits"]) if isinstance(bare.get("exits"),dict) else set()
+        conditions = body.get("conditions",[])
+        if isinstance(conditions,list):
+            mentioned.update(x["symbol"] for x in conditions
+                             if isinstance(x,dict) and isinstance(x.get("symbol"),str))
+        if (mentioned & set(self.spec["symbols"])) - marks.keys():
+            raise ValueError("protective exits and conditions need a visible quote; request bars")
+        errs = P.check_answer(bare, self.spec["symbols"], self.spec["cfg"], self.spec["gross"], marks)
         if errs:
             raise ValueError(errs[0])
         if self.arm != "C" and body.keys() & {"conditions", "keep"}:
@@ -328,7 +358,6 @@ class DeskSession:
         cites = body.get("citations", {})
         if not isinstance(cites, dict) or cites.keys() - set(self.spec["symbols"]):
             raise ValueError("citations must be by tradable symbol")
-        notes = self.manifest["scout"]["wakes"][k]["notes"] if self.arm != "A" else []
         note_ids = {n["id"] for n in notes}
         ids = {f"book:{at}"} | {i for look in st["looks"] for i in look}
         ids.update(e["id"] for n in notes for e in n["evidence"])
@@ -352,7 +381,7 @@ class DeskSession:
                     cite(cites.get(s))
         for c in cites.values():
             cite(c)
-        new = orders.normalize_conditions(body.get("conditions", []), row["marks"], self.spec["symbols"], at,
+        new = orders.normalize_conditions(conditions, marks, self.spec["symbols"], at,
                                           end, self.opts["max_hours"], self.spec["gross"])
         decision_id = f"{self.sid}:{at}"
         for c in new.values():

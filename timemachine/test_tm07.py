@@ -34,6 +34,7 @@ def world(minutes=None):
                                 for s in [A,B,BTC]}))
         common = dict(symbol=A, published=t-60, known_at=t-60, vintage="original", licensed=True)
         evidence.append([dict(common, kind="price", id=f"p{i}", value={"price":100}),
+                         dict(common, symbol=B, kind="price", id=f"bp{i}", value={"price":100}),
                          dict(common, kind="news", id=f"n{i}", value={"headline":"A made-up notice"}, primary=True),
                          dict(common, kind="news", id=f"future{i}", known_at=t+1, primary=True),
                          dict(common, kind="news", id=f"mirror{i}", origins=["wire","wire"]),
@@ -175,6 +176,17 @@ class DeskTest(unittest.TestCase):
         s = self.create("A",spec=gap)
         self.assertEqual(S.replay(s,moved).get("unsupported"),[T+3600])
 
+    def test_s03_hidden_quote_cannot_validate_a_condition(self):
+        d = self.create("C",self.scout_export())
+        _,key = info(d)
+        pick = dict(wake_key=key,no_change=True,why="Wait",conditions=[
+            dict(symbol=B,direction="below",price=98,hours=1,weight=.2,evidence_ids=[f"book:{T}"])])
+        with self.assertRaisesRegex(ValueError,"visible quote"):
+            d.handle("boss","pick",pick)
+        found = d.handle("boss","look",dict(wake_key=key,symbol=B,kind="bars",request_id="price-b"))
+        self.assertEqual(found["quote"]["price"],100)
+        self.assertTrue(d.handle("boss","pick",pick)["accepted"])
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
@@ -222,7 +234,7 @@ class DeskTest(unittest.TestCase):
     def test_no_lookahead_and_bad_note(self):
         s = self.create("scout")
         p,k = info(s,D.SCOUTS[0])
-        self.assertEqual({r["id"] for r in p["evidence"]},{"p0","n0"})
+        self.assertEqual({r["id"] for r in p["evidence"]},{"p0","bp0","n0"})
         for value in ("future0","mirror0","estimated0","unlicensed0","unfinished0"):
             with self.assertRaisesRegex(ValueError,"not visible"):
                 s.handle(D.SCOUTS[0],"notes",dict(wake_key=k,notes=[dict(symbol=A,text="bad",evidence_ids=[value])]))
