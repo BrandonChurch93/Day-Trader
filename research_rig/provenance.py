@@ -40,7 +40,9 @@ K1440, K60 = ["KRAKEN_DIR/full_XBTUSD_1440.csv", "KRAKEN_DIR/full_ETHUSD_1440.cs
 FR = ["FRENCH_DIR/F-F_Research_Data_Factors_daily__main.csv", "FRENCH_DIR/12_Industry_Portfolios_Daily__0_Average_Value_Weighted_Returns_Daily.csv"]
 ALPACA_09 = os.path.join(os.path.expanduser("~"), "workspace", "rig", "data", "alpaca_crypto")
 RUN_09 = os.path.join(H, "results_09.json")
+FULL_09 = os.path.join(H, "alpaca_coverage_09.json")
 RAW_09 = []
+RAW_FULL_09 = []
 if os.path.exists(RUN_09):
     with open(RUN_09) as r09:
         replay_09 = json.load(r09)
@@ -50,6 +52,13 @@ if os.path.exists(RUN_09):
                 name = "ALPACA_09/" + meta["file"]
                 INPUTS[name] = os.path.join(ALPACA_09, meta["file"])
                 RAW_09.append(name)
+if os.path.exists(FULL_09):
+    with open(FULL_09) as full09:
+        history_09 = json.load(full09)
+    for meta in history_09["coverage"].values():
+        name = "ALPACA_09/" + meta["file"]
+        INPUTS[name] = os.path.join(ALPACA_09, meta["file"])
+        RAW_FULL_09.append(name)
 
 # output -> (kind, command, code files, raw inputs, stored outputs it reads)
 # kind "held-back": the script runs a trading rule, or scores or collects trading calls, on prices that include held-back dates.
@@ -99,6 +108,15 @@ if RAW_09:
         ["run_09.py", "fetch_09_alpaca.py", "rig2.py", "fixtures_09.py", "../config/thresholds.yaml"], RAW_09, [],
     )
     NOTES["results_09.json"] = "Alpaca bars and replay code carry run-time fingerprints in the output. Minute tape is coverage only."
+if RAW_FULL_09:
+    compared = ["ALPACA_09/" + replay_09["coverage"][sym]["1Hour"]["file"]
+                for sym, meta in history_09["coverage"].items() if "common_replay_hours" in meta]
+    OUTPUTS["alpaca_coverage_09.json"] = (
+        "prices-no-rule", "python3 audit_09_alpaca.py",
+        ["audit_09_alpaca.py", "run_09.py"], RAW_FULL_09 + compared,
+        ["results_09.json"],
+    )
+    NOTES["alpaca_coverage_09.json"] = "Full-hourly gap check for steady-volume USD pairs. No rule rerun."
 
 def sha(path):
     h = hashlib.sha256()

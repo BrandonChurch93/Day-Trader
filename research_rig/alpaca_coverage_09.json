@@ -1,0 +1,93 @@
+{
+  "source": "https://data.alpaca.markets/v1beta3/crypto/us/bars",
+  "end": "2026-11-24",
+  "replay_sha256": "a19f6600c9e8460f52283613911adaf9ad1bbb901ecd4776170498ebb2e10586",
+  "coverage": {
+    "BTC/USD": {
+      "rows": 51676,
+      "first": "2021-01-01 06:00:00",
+      "last": "2026-11-24 23:00:00",
+      "internal_missing": 14,
+      "longest_internal_gap": 7,
+      "zero_volume": 957,
+      "sha256": "16e6a7d0fc09f2b5a09d9c0f4f4ae49c54271e12eaf07f9a4227d04961ceebcc",
+      "file": "BTC-USD_1Hour.csv.gz",
+      "common_replay_hours": 26156,
+      "only_in_replay": 0,
+      "only_in_deeper_pull": 0,
+      "changed_shared_bars": 0
+    },
+    "ETH/USD": {
+      "rows": 51674,
+      "first": "2021-01-01 06:00:00",
+      "last": "2026-11-24 23:00:00",
+      "internal_missing": 16,
+      "longest_internal_gap": 7,
+      "zero_volume": 3016,
+      "sha256": "82330c4188407e17a95d418027c543a3721d16a7a07b67a0a0e12578ba25160e",
+      "file": "ETH-USD_1Hour.csv.gz",
+      "common_replay_hours": 26156,
+      "only_in_replay": 0,
+      "only_in_deeper_pull": 0,
+      "changed_shared_bars": 0
+    },
+    "SOL/USD": {
+      "rows": 41594,
+      "first": "2021-01-01 06:00:00",
+      "last": "2026-11-24 23:00:00",
+      "internal_missing": 10096,
+      "longest_internal_gap": 10012,
+      "zero_volume": 3531,
+      "sha256": "900f636f08a93e5eb396d2506c5af15599cef4d33b727fb3613945088c750b0c",
+      "file": "SOL-USD_1Hour.csv.gz",
+      "common_replay_hours": 19681,
+      "only_in_replay": 0,
+      "only_in_deeper_pull": 0,
+      "changed_shared_bars": 0
+    },
+    "USDC/USD": {
+      "rows": 26080,
+      "first": "2023-08-18 13:00:00",
+      "last": "2026-11-24 23:00:00",
+      "internal_missing": 2587,
+      "longest_internal_gap": 68,
+      "zero_volume": 21071,
+      "sha256": "51bef6043f5ef3add0148c183dabe71312533c0e4c28104c9ded3e71f329cd70",
+      "file": "USDC-USD_1Hour.csv.gz"
+    },
+    "USDG/USD": {
+      "rows": 9276,
+      "first": "2025-05-19 09:00:00",
+      "last": "2026-11-24 23:00:00",
+      "internal_missing": 4035,
+      "longest_internal_gap": 388,
+      "zero_volume": 8601,
+      "sha256": "83dcda51622287e75f478444c992008e2958bcca4a6e5abdf66342005b55dee1",
+      "file": "USDG-USD_1Hour.csv.gz"
+    },
+    "USDT/USD": {
+      "rows": 46217,
+      "first": "2021-01-01 06:00:00",
+      "last": "2026-11-24 23:00:00",
+      "internal_missing": 5473,
+      "longest_internal_gap": 44,
+      "zero_volume": 18072,
+      "sha256": "11a55e1616e5c9beec765f8569c44e587a6347faa2251dcaea06bf700f5151f0",
+      "file": "USDT-USD_1Hour.csv.gz"
+    },
+    "XRP/USD": {
+      "rows": 25373,
+      "first": "2024-01-01 06:00:00",
+      "last": "2026-11-24 23:00:00",
+      "internal_missing": 37,
+      "longest_internal_gap": 28,
+      "zero_volume": 976,
+      "sha256": "24b11462763e41ebd52d01017ef4e4c0ce2e7c50624b52f0c96d70b64c588d4d",
+      "file": "XRP-USD_1Hour.csv.gz",
+      "common_replay_hours": 25373,
+      "only_in_replay": 0,
+      "only_in_deeper_pull": 0,
+      "changed_shared_bars": 0
+    }
+  }
+}

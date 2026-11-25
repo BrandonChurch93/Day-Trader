@@ -144,6 +144,7 @@ From this folder:
 | Replay 04 and document 23 | `python3 run_04.py`, `python3 build_doc23.py` |
 | Replay 05 and document 22 | `python3 run_05.py` (first run, writes `results_05.json`), `R05_POOL=1 python3 run_05.py` (corrected run, writes `results_05b.json`), `python3 i2_2020_note.py`, `python3 build_doc22.py` |
 | Replay 09 and document 28 | `python3 run_09.py --held --prereg-commit 74ad30c` once, then `python3 build_doc28.py` from results only. `python3 fetch_09_alpaca.py` pulls data and runs no rule. The replay-only option to inspect rules before the held-back run is `python3 run_09.py --dev` |
+| Later full-hourly coverage for Replay 09 | `python3 fetch_09_alpaca.py --steady-only` then `python3 audit_09_alpaca.py`. This writes `alpaca_coverage_09.json`, reading prices but running no rule. The document builder uses that file and the unmodified replay results |
 | The trial count check | `python3 ledger_count_check.py` |
 | Document 24 | `python3 books_summary.py`, `python3 build_doc24.py` |
 | The coverage tables in document 10 | `python3 platform_bars_integrity.py` and `python3 platform_bars_crosscheck.py` (both need the price files), then from the repo root `python3 tools/bars_coverage.py --summarise` and `python3 tools/bars_coverage.py --write` |

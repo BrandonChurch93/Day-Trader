@@ -315,6 +315,41 @@
    "bytes": 48059,
    "sha256": "ef812cdce0117cb9e6130e577b5b8fca7150856a815a5d6a77be99434d2d4d43",
    "modified": "2026-11-25T15:16:14Z"
+  },
+  "ALPACA_09/BTC-USD_1Hour.csv.gz": {
+   "bytes": 1417736,
+   "sha256": "16e6a7d0fc09f2b5a09d9c0f4f4ae49c54271e12eaf07f9a4227d04961ceebcc",
+   "modified": "2026-11-25T15:29:58Z"
+  },
+  "ALPACA_09/ETH-USD_1Hour.csv.gz": {
+   "bytes": 1249638,
+   "sha256": "82330c4188407e17a95d418027c543a3721d16a7a07b67a0a0e12578ba25160e",
+   "modified": "2026-11-25T15:29:54Z"
+  },
+  "ALPACA_09/SOL-USD_1Hour.csv.gz": {
+   "bytes": 931247,
+   "sha256": "900f636f08a93e5eb396d2506c5af15599cef4d33b727fb3613945088c750b0c",
+   "modified": "2026-11-25T15:29:11Z"
+  },
+  "ALPACA_09/USDC-USD_1Hour.csv.gz": {
+   "bytes": 221793,
+   "sha256": "51bef6043f5ef3add0148c183dabe71312533c0e4c28104c9ded3e71f329cd70",
+   "modified": "2026-11-25T15:27:21Z"
+  },
+  "ALPACA_09/USDG-USD_1Hour.csv.gz": {
+   "bytes": 27528,
+   "sha256": "83dcda51622287e75f478444c992008e2958bcca4a6e5abdf66342005b55dee1",
+   "modified": "2026-11-25T15:24:40Z"
+  },
+  "ALPACA_09/USDT-USD_1Hour.csv.gz": {
+   "bytes": 617410,
+   "sha256": "11a55e1616e5c9beec765f8569c44e587a6347faa2251dcaea06bf700f5151f0",
+   "modified": "2026-11-25T15:29:18Z"
+  },
+  "ALPACA_09/XRP-USD_1Hour.csv.gz": {
+   "bytes": 495211,
+   "sha256": "24b11462763e41ebd52d01017ef4e4c0ce2e7c50624b52f0c96d70b64c588d4d",
+   "modified": "2026-11-25T15:26:12Z"
   }
  },
  "outputs": {
@@ -835,6 +870,36 @@
    "last_changed_in_commit": "ef497f3 2026-11-25T15:28:02Z",
    "inputs_modified_after_output_first_stored": [],
    "note": "Alpaca bars and replay code carry run-time fingerprints in the output. Minute tape is coverage only."
+  },
+  "alpaca_coverage_09.json": {
+   "kind": "prices-no-rule",
+   "command": "python3 audit_09_alpaca.py",
+   "run_from": "research_rig/",
+   "code": [
+    "audit_09_alpaca.py",
+    "run_09.py"
+   ],
+   "raw_inputs": [
+    "ALPACA_09/BTC-USD_1Hour.csv.gz",
+    "ALPACA_09/ETH-USD_1Hour.csv.gz",
+    "ALPACA_09/SOL-USD_1Hour.csv.gz",
+    "ALPACA_09/USDC-USD_1Hour.csv.gz",
+    "ALPACA_09/USDG-USD_1Hour.csv.gz",
+    "ALPACA_09/USDT-USD_1Hour.csv.gz",
+    "ALPACA_09/XRP-USD_1Hour.csv.gz",
+    "ALPACA_09/replay_window/BTC-USD_1Hour.csv.gz",
+    "ALPACA_09/replay_window/ETH-USD_1Hour.csv.gz",
+    "ALPACA_09/replay_window/SOL-USD_1Hour.csv.gz",
+    "ALPACA_09/replay_window/XRP-USD_1Hour.csv.gz"
+   ],
+   "reads_stored_outputs": [
+    "results_09.json"
+   ],
+   "sha256": "5b3d61ead9aa05d6ebd2abab90298b2bebd535d403b1933093207bbc075c09da",
+   "first_stored_in_commit": null,
+   "last_changed_in_commit": null,
+   "inputs_modified_after_output_first_stored": [],
+   "note": "Full-hourly gap check for steady-volume USD pairs. No rule rerun."
   }
  }
 }

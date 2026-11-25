@@ -93,6 +93,20 @@ MEASURED. The recorded tape was checked separately and not used for fills. Missi
 | SOL/USD | 2026-01-01T00:02:00+00:00 | 2026-11-24T23:59:00+00:00 | 351555 | 120763 | 296875 |
 | XRP/USD | 2026-01-01T00:00:00+00:00 | 2026-11-24T23:59:00+00:00 | 335540 | 136780 | 271263 |
 
+## Deeper hourly coverage, checked after the run
+
+MEASURED. The full hourly query completed for all 7 USD pairs that passed the recent liquidity screen. This later audit ran no rule. The replay used the original inputs and was not rerun.
+
+| USD pair | First UTC hour | Last UTC hour | Hourly bars | Internal missing hours | Longest gap, hours | Zero-volume hours | Replay/long pull mismatches in shared window |
+|---|---|---|---:|---:|---:|---:|---:|
+| BTC/USD | 2021-01-01 06:00:00 | 2026-11-24 23:00:00 | 51676 | 14 | 7 | 957 | 0 |
+| ETH/USD | 2021-01-01 06:00:00 | 2026-11-24 23:00:00 | 51674 | 16 | 7 | 3016 | 0 |
+| SOL/USD | 2021-01-01 06:00:00 | 2026-11-24 23:00:00 | 41594 | 10096 | 10012 | 3531 | 0 |
+| USDC/USD | 2023-08-18 13:00:00 | 2026-11-24 23:00:00 | 26080 | 2587 | 68 | 21071 | n/a |
+| USDG/USD | 2025-05-19 09:00:00 | 2026-11-24 23:00:00 | 9276 | 4035 | 388 | 8601 | n/a |
+| USDT/USD | 2021-01-01 06:00:00 | 2026-11-24 23:00:00 | 46217 | 5473 | 44 | 18072 | n/a |
+| XRP/USD | 2024-01-01 06:00:00 | 2026-11-24 23:00:00 | 25373 | 37 | 28 | 976 | 0 |
+
 ## What is still unknown
 
 - UNKNOWN. Live fills, actual spreads, depth, latency, adverse selection and venue size limits. A zero-volume bar may show quote marks ([Alpaca crypto bar notes](https://docs.alpaca.markets/us/docs/real-time-crypto-pricing-data)) but cannot fill an order here. Even on a bar with volume, the opening mark is only a proxy for a contemporaneous executable quote.

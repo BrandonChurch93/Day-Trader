@@ -24,6 +24,9 @@ import provenance as P
 if P.RAW_09:
     SETS.append(("Alpaca US crypto bars used or audited by replay 09", [P.INPUTS[n] for n in P.RAW_09],
                  "python3 fetch_09_alpaca.py --prioritize-replay-window", "replay 09"))
+if P.RAW_FULL_09:
+    SETS.append(("Alpaca US full hourly history for steady-volume USD pairs", [P.INPUTS[n] for n in P.RAW_FULL_09],
+                 "python3 fetch_09_alpaca.py --steady-only", "coverage checks only"))
 miss = 0
 for name, files, how, used in SETS:
     gone = [f for f in files if not os.path.exists(f)]; miss += bool(gone)
