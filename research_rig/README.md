@@ -39,6 +39,7 @@ What the engine is and is not:
 | Replay 05 | Slow trend rules on the US stock market from 1927, free index data | `PREREG_05_stock_trend_free_data.md`, `AMENDMENT_05_I2_equal_thirds.md` | `run_05.py` (corrected run: `R05_POOL=1`) | `results_05.json` (first run), `results_05b.json` (corrected run) | `build_doc22.py` | `docs/research/22_replay_05_stock_trend.md` | v2 | Current measurement, both runs. Passes not credited in either run: the first run's ledger row was late, and the corrected run was made before asking the owner (question 18b). Audited: `audit/2026-11-25_replay_05_audit.md` |
 | Replay 06 | Slow trend rules on funds that can be bought | `PREREG_06_fund_trend_paid_data_DRAFT.md` | not written | | | | v2 | Draft plan. Waits for a data purchase (dividend history) and for owner decisions 1a, 1b and 4a |
 | Replay 07 | Day trading SPY and QQQ on one-minute bars | `PREREG_07_intraday_spy_qqq_DRAFT.md` | not written | | | | v2 | Draft plan. Waits for one-minute prices (a purchase, or the workspace's price history if the owner allows it), for dividend history for rule N5, and for owner decisions 1a, 1b and 4b |
+| Practice plan 01 | Two slow rules watched in the practice account, as a forward record with no pass or fail | `PRACTICE_01_two_rules_observation_DRAFT.md` | not written | | | | | Draft plan. Runs nothing. Waits for practice keys, the owner's yes to decision 5, and the open points listed in the draft |
 
 Side tools:
 

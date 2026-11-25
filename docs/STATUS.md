@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-25 10:13 UTC
+Last updated: 2026-11-25 10:22 UTC
 
 This page is the current state of the project. It is the second thing to read, after `AGENTS.md`. If another page disagrees with this one about a result or about where things stand, this page stands. The map of every file is `docs/INDEX.md`. Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
 
@@ -121,7 +121,7 @@ Open owner numbers, with no value yet: `live_starting_capital_usd`, `live_max_po
 This is the queue in force. If another page lists a different order, this one stands. It is proposed, not approved: nothing on it that needs the owner starts without him. The reasons for the order are in `docs/research/25_what_the_evidence_supports.md`.
 
 1. Owner decides how pass mark 4 is measured from now on (decisions 1a and 1b in the morning list; background in `docs/research/16_rig_audit.md`, "Questions for the owner"). Every later replay depends on it. He also says which of last night's results are credited (question 18b), so that every page can use one word for them.
-2. Watch two slow rules in the practice account with pretend money, as observation only and labelled as not passed: the bitcoin rule P1 and the ten-month rule on a total market fund. Needs practice keys and the owner's yes to decision 5 in the morning list.
+2. Watch two slow rules in the practice account with pretend money, as observation only and labelled as not passed: the bitcoin rule P1 and the ten-month rule on a total market fund. Needs practice keys and the owner's yes to decision 5 in the morning list. Draft plan, which runs nothing: `research_rig/PRACTICE_01_two_rules_observation_DRAFT.md`. `AGENTS.md` hard rule 1 means the pretend orders come from a plain program on a timer, not from research.
 3. Replay 06: slow trend on funds that can be bought. Plan drafted in `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`. Needs the data purchase for dividend history, the owner's yes to decision 4a, and his decision on pass mark 4 before the plan is frozen. Proposed addition before it is frozen: the industry rule I2 on sector funds, which was picked after seeing the corrected run of replay 05 and must be disclosed as that in the plan.
 4. Replay 07: day trading SPY and QQQ on one-minute bars. Plan drafted in `research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`. Needs one-minute prices, from the data purchase or from the workspace's own price history if the owner allows it (item 6 of "Things only he can do"), his yes to decision 4b, and his decision on pass mark 4. Its night-only rule N5 also needs dividend history, which the workspace's price history does not have, so on that source alone N5 is dropped or waits for the purchase, and the plan says which before it is frozen.
 5. Credit Treasury bill interest on idle cash in every replay. A rig change with its own plan. Needs the owner's yes to decision 7.
