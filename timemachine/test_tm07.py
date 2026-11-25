@@ -4,8 +4,9 @@ from pathlib import Path
 import random
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from timemachine import desk as D, desk_orders as O, perp as P, perp_fast as F, score_tm07 as S, tm06
+from timemachine import desk as D, desk_orders as O, perp as P, perp_fast as F, score_tm07 as S, tm06, weights as W
 
 A, B, BTC = "AAA/USD", "BBB/USD", "BTC/USD"
 T = 1784505600  # hourly anchor; prices and headlines below are invented
@@ -192,6 +193,15 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(r.handle("boss","status",{})["step"],1)
         with self.assertRaises(PermissionError):
             r.handle("boss","pick",dict(b,why="Changed retry"))
+
+    def test_weights_dispatch_requires_role(self):
+        s = self.create("A")
+        with patch.dict("os.environ", TM07_RUNS_DIR=str(self.root)):
+            with self.assertRaises(PermissionError):
+                W.open_session(s.sid)
+            with self.assertRaises(FileNotFoundError):
+                W.open_session("TM07-../../other", desk_token=TOKEN)
+            self.assertEqual(W.open_session(s.sid, desk_token=TOKEN).sid, s.sid)
 
     def test_sign_mark_gate_and_fixed_weeks(self):
         self.assertEqual(len(S.EXTENSION),17)

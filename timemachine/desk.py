@@ -389,7 +389,7 @@ class DeskSession:
             return dict(fixture=self.manifest["fixture"], wakes=items, usage=usage)
 
 
-def open_desk(sid, root=None):
+def open_desk(sid, root=None, token=None):
     base = root or os.environ.get("TM07_RUNS_DIR")
     if not base or not SID.fullmatch(sid):
         raise FileNotFoundError("TM07 not enabled")
@@ -397,4 +397,10 @@ def open_desk(sid, root=None):
     path = (base / sid).resolve()
     if path.parent != base or path.name != sid or not path.is_dir():
         raise FileNotFoundError("unknown TM07 session")
+    if not isinstance(token, str) or len(token) > 512:
+        raise PermissionError("bad role token")
+    wanted = sha256(token.encode()).hexdigest()
+    manifest = json.loads((path / "manifest.json").read_text())
+    if not any(hmac.compare_digest(wanted, v) for v in manifest["tokens"].values()):
+        raise PermissionError("bad role token")
     return DeskSession(path)
