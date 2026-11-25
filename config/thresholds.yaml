@@ -759,6 +759,16 @@ tm06_attention_rule:
   status: builder
   note: Plan TM06 yardstick (c). Rise in attention is the latest daily count of this source known at the wake against the mean of the before_days days before it. A coin without all of those counts is left out. lookback_days is how far back the reader is asked; it must cover before_days plus one plus the reader's assumed lag (36 hours for wikipedia_daily).
   source: timemachine/tm06.py
+tm06_swing_packet_hour_bars:
+  value: 24
+  status: builder
+  note: Plan TM06 part S. The swing packet shows each coin's last this many finished hourly bars, built from its minutes.
+  source: timemachine/tm06.py
+tm06_swing_packet_minute_bars:
+  value: 30
+  status: builder
+  note: Plan TM06 part S. The swing packet shows each coin's last this many finished one-minute bars.
+  source: timemachine/tm06.py
 tm06_reversal:
   value: {symbol: BTC/USD, minutes: 15}
   status: builder
@@ -779,8 +789,8 @@ tm06_plan:
 replay_12_plan:
   value: {design_filed_from: "2019-01-01", design_filed_to: "2022-12-31", heldback_filed_from: "2023-01-01", holds_days: [21, 63, 126], main_hold_days: 63, cost_bps_per_side: 10, large_buy_min_usd: 50001, proven_lookback_days: 1095, proven_min_events: 10, proven_top_members: 10, proven_refresh_days: 63, bootstrap_draws: 5000, bootstrap_seed: 12, bootstrap_days_per_month: 21, min_events: 200, random_date_window_days: 90, random_date_draws: 200, late_entry_trading_days: 5, late_entry_calendar_days: 30, named_members: [Pelosi, Khanna, McCaul, Gottheimer, Cisneros, "Lisa C. McClain", Tuberville, Greene, Mullin, Bresnahan, Goldman, Crenshaw, "Wasserman Schultz"], new_trials: 9}
   status: builder
-  note: Draft plan 12, following disclosed stock buys of members of Congress. Filed dates split the record into a design half and a held-back half. holds_days are trading days from the entry open. large_buy_min_usd is the low end of the reported value range. proven_* define the point-in-time list of members whose earlier finished buys did best. late_entry_* are the later entries used because the filing day is not proof of the day the public could see it. new_trials is 3 groups times 3 holds. Draft until frozen.
-  source: research_rig/PREREG_12_congress_followers_DRAFT.md
+  note: Plan 12, frozen 2026-11-25 19.09 UTC, following disclosed stock buys of members of Congress. Filed dates split the record into a design half and a held-back half. holds_days are trading days from the entry open. large_buy_min_usd is the low end of the reported value range. proven_* define the point-in-time list of members whose earlier finished buys did best. late_entry_* are the later entries used because the filing day is not proof of the day the public could see it. new_trials is 3 groups times 3 holds. Draft until frozen.
+  source: research_rig/PREREG_12_congress_followers.md
 
 replay_13_plan:
   value: {start: "2020-01-01", end: "2026-11-24", universe_top_n: 50, rise_days: 7, dip_pct: 5, dip_lookback_hours: 24, take_pct: 5, stop_pct: 5, max_hold_hours: 24, cost_bps_per_side: 15, other_costs_bps: [5, 30], shown_leverage: 3, liquidation_drop_pct: 30, financing_bps_per_8h: 3, random_draws: 200, seed: 13, min_years_above: 5, hot_n: 5, random_percentile: 75, judged_leverage: 1, financing_interval_hours: 8, max_flagged_share_pct: 5, min_trades_per_year: 10, new_trials: 2}

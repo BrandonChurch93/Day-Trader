@@ -1,0 +1,23 @@
+{
+ "sets": 1000,
+ "months": 48,
+ "draws_per_set": 1000,
+ "written_utc": "2026-11-25 18:53",
+ "holds": {
+  "21": {
+   "block_months": 1,
+   "pass_rate_blocks": 0.048,
+   "pass_rate_single_months_not_used": 0.048
+  },
+  "63": {
+   "block_months": 3,
+   "pass_rate_blocks": 0.066,
+   "pass_rate_single_months_not_used": 0.06
+  },
+  "126": {
+   "block_months": 6,
+   "pass_rate_blocks": 0.071,
+   "pass_rate_single_months_not_used": 0.056
+  }
+ }
+}

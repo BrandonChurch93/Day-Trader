@@ -1,6 +1,6 @@
 # 48. Following members of Congress: the data, the real-money funds and the published evidence
 
-Status: gathered 2026-11-25 by a helper. A second helper then opened every source: 36 claims confirmed, 5 wrong as first written, 6 not found. The five are corrected on this page and listed at the end. The fund figures were also measured by the builder from our own price feed and agree. No return has been worked out on the collected trades; that is replay 12 (`research_rig/PREREG_12_congress_followers_DRAFT.md`). The trade list and the scripts are on the research machine, not in the repo.
+Status: gathered 2026-11-25 by a helper. A second helper then opened every source: 36 claims confirmed, 5 wrong as first written, 6 not found. The five are corrected on this page and listed at the end. The fund figures were also measured by the builder from our own price feed and agree. No return has been worked out on the collected trades; that is replay 12 (`research_rig/PREREG_12_congress_followers.md`). The trade list and the scripts are on the research machine, not in the repo.
 
 Why this was done: the owner, 2026-11-25 (`docs/DECISIONS.md`): "I hear you really can't go wrong by following them".
 

@@ -8,7 +8,7 @@ Why: the standing job is to keep finding places where an AI that reads a lot cou
 
 - Open to a US account with small money and an API: yes, three venues.
 - AI models beating the market price: not shown by anyone. The largest checks say the opposite.
-- The one result in this field that keeps coming back is not about forecasting at all: people who rest orders and wait (makers) do better than people who take the price (takers). We cannot test that honestly from free history, because the history has no order book.
+- The one result in this field that keeps coming back is not about forecasting at all: people who rest orders and wait (makers) do better than people who take the price (takers). We cannot test that honestly from free history, because the free history has no order book.
 - So: one cheap AI test is possible and is expected to fail; the more promising idea needs us to record order books first.
 
 ## Venues a US resident can use, STATED by the venues and reviewers
@@ -23,7 +23,7 @@ Why: the standing job is to keep finding places where an AI that reads a lot cou
 
 - Kalshi: every trade with price, size, which side took, and time, plus one-minute candles, back to 2021, with no key. Settled markets older than 2026-09-26 sit in a separate archive ([Kalshi historical data](https://docs.kalshi.com/getting_started/historical_data)).
 - Polymarket: market lists back to 2020 and price history for newer markets; the US venue from 2025-10-29.
-- What is missing everywhere: the order book of the past. Only today's book can be read.
+- What the free history does not have: the order book of the past. Only today's book can be read for free. A data vendor says it sells Kalshi's past order books ([BMLL announcement](https://www.bmlltech.com/news/press-releases-and-news/bmll-and-kalshi-partner-to-expand-institutional-access-to-prediction-market-data)); its price and coverage are UNKNOWN.
 
 ## AI forecasters against the market price, STATED by the studies
 
@@ -54,5 +54,5 @@ Why: the standing job is to keep finding places where an AI that reads a lot cou
 ## What this means for the project
 
 - The honest place for a small account here is as the patient side of the trade, which is a job for a fixed rule with good plumbing more than for an AI forecaster.
-- Recording Kalshi order books costs nothing and every day not recorded is lost, so the recorder is started now (`docs/QUEUE.md`).
+- Recording Kalshi order books ourselves is not open to us as things stand. Checked 2026-11-25 19:08 UTC before anything was recorded: the venue's developer agreement lets API data be stored only to help one's own trading on Kalshi ([Kalshi Developer Agreement](https://assets.kalshi.com/Kalshi-Developer-Agreement.pdf)), and we have no account there. No recorder was started. If the owner opens an account to trade there, recording for that trading is what the agreement allows.
 - A real account on any of these venues is the owner's to open. Nothing has been opened.

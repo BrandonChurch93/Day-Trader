@@ -1,6 +1,6 @@
-# Pre-registration 12 (draft): buying what members of Congress buy, after the trade becomes public
+# Pre-registration 12: buying what members of Congress buy, after the trade becomes public
 
-Status: DRAFT written 2026-11-25 18:27 UTC by the builder, before any price was joined to any disclosed trade. It becomes final when the code has been checked by a second model and this line is changed to "frozen" with the time. Ledger rows 135 to 143 in `research_rig/TRIAL_LEDGER.md`. Pretend trades on past prices.
+Status: frozen 2026-11-25 19:09 UTC by the builder. Written 2026-11-25 18:27 UTC before any price was joined to any disclosed trade; the code was then checked twice by a second model, which found seven faults that were fixed and said it was safe to run once. Nothing in this file or in `replay_12_plan` changes after this line. Ledger rows 135 to 143 in `research_rig/TRIAL_LEDGER.md`. Pretend trades on past prices.
 
 ## The claim
 

@@ -1,0 +1,82 @@
+old_ticker,new_ticker,effective_date,status,source_url,note
+MMC,MRSH,2026-01-14,mapped,https://www.marsh.com/en/corp/about/news/marsh-mclennan-to-change-nyse-symbol-to-mrsh.html,Marsh McLennan changed its NYSE symbol from MMC to MRSH
+FI,FISV,2025-11-11,mapped,https://www.nasdaqtrader.com/TraderNews.aspx?id=DTN2025-32,Fiserv used FI from 2023-06-07 (https://investors.fiserv.com/news-releases/news-release-details/fiserv-announces-transfer-stock-exchange-listing-nasdaq) and went back to FISV on Nasdaq
+SNE,SONY,2021-04-01,mapped,https://www.sec.gov/Archives/edgar/data/0000313838/000115752321000135/a52368172.htm,Sony Corporation renamed Sony Group and its NYSE ADS symbol changed from SNE to SONY
+WLTW,WTW,2022-01-10,mapped,https://www.sec.gov/Archives/edgar/data/1140536/000119312522004045/d267396d8k.htm,Willis Towers Watson Nasdaq symbol changed from WLTW to WTW with the CUSIP unchanged
+TOT,TTE,2021-06-11,mapped,https://www.businesswire.com/news/home/20210531005353/en/TotalEnergies-SE-Change-of-Names-and-Ticker-Symbols-on-Market-Places,Total SE renamed TotalEnergies and its NYSE ADR symbol changed from TOT to TTE (indicative date in the notice)
+BHGE,BKR,2019-10-18,mapped,https://www.sec.gov/Archives/edgar/data/1701605/000170160520000019/fiscalyear2019form10-k.htm,Baker Hughes a GE company renamed Baker Hughes Company and began trading as BKR
+JEC,J,2019-12-10,mapped,https://www.sec.gov/Archives/edgar/data/52988/000005298819000066/tickerchangeandcnbcrel.htm,Jacobs Engineering began trading on the NYSE under J
+UBNT,UI,2019-08-20,mapped,https://www.sec.gov/Archives/edgar/data/1511737/000151173719000026/ubnt-20190630.htm,Ubiquiti Networks renamed Ubiquiti Inc. and moved from Nasdaq UBNT to NYSE UI
+JBT,JBTM,2025-01-03,mapped,https://www.sec.gov/Archives/edgar/data/1433660/000143366026000053/jbt-20251231.htm,John Bean Technologies bought Marel and renamed itself JBT Marel; JBT was the buyer so the company is the same
+CNHI,CNH,2024-05-20,mapped,https://www.cnh.com/en-US/media/press_releases/2024/may/CNH-is-changing-its-NYSE-ticker-symbol-to-CNH-on-May-20,CNH Industrial NYSE symbol changed from CNHI to CNH with the CUSIP unchanged
+FBHS,FBIN,2022-12-15,mapped,https://ir.fbin.com/investor-faqs,Fortune Brands Home & Security renamed Fortune Brands Innovations after spinning off MasterBrand; the company that kept trading is the same one
+ROLL,RBC,2022-09-26,mapped,https://infomemo.theocc.com/infomemos?number=51075,RBC Bearings moved from Nasdaq ROLL to NYSE RBC
+BRP,BWIN,2024-05-20,mapped,https://ir.baldwin.com/news-releases/news-release-details/baldwin-group-change-ticker-symbol-bwin-may-20-2024,BRP Group renamed The Baldwin Insurance Group and its Nasdaq symbol changed from BRP to BWIN
+CCCS,CCC,2025-10-31,mapped,https://ir.cccis.com/news-releases/news-release-details/ccc-intelligent-solutions-announces-change-ticker-symbol-ccc-and,CCC Intelligent Solutions Nasdaq symbol changed from CCCS to CCC with the CUSIP unchanged
+BHLB,BBT,2025-09-02,mapped,https://www.sec.gov/Archives/edgar/data/1108134/000110465925086043/tm2524397d1_8k.htm,Berkshire Hills Bancorp merged Brookline into itself and renamed itself Beacon Financial; symbol BHLB to BBT effective 2025-09-01 (a market holiday) so first trading day 2025-09-02
+WGP,WES,2019-02-28,mapped,https://www.sec.gov/Archives/edgar/data/1423902/000119312519058073/d711784dex992.htm,Western Gas Equity Partners (WGP) bought Western Gas Partners and renamed itself Western Midstream Partners trading as WES; the old WES units were delisted
+AMGP,AM,2019-03-13,mapped,https://www.anteromidstream.com/investors/press-releases/detail/75/antero-midstream-and-amgp-announce-closing-of-midstream,Antero Midstream GP (AMGP) bought Antero Midstream Partners and converted into Antero Midstream Corporation trading as AM
+DEAC,DKNG,2020-04-24,mapped,https://www.nasdaqtrader.com/TraderNews.aspx?id=ECA2020-75,Diamond Eagle (DEAC) merged into its own subsidiary which took the DraftKings name and is the successor issuer; Nasdaq lists DEAC to DKNG as a name and symbol change; the record's text names DKNG
+BLFSD,BLFS,2014-01-29,mapped,https://www.prnewswire.com/news-releases/biolife-solutions-announces-114-reverse-stock-split-241355371.html,BLFSD was BioLife Solutions' temporary symbol for 20 days after its 2014 reverse split; same company and shares; a 2021 filing with this symbol is an old label
+RDSA,SHEL,2022-01-31,left_out,https://www.shell.com/investors/information-for-shareholders/share-information.html,Royal Dutch Shell A and B shares were folded into one Shell line; a share-class change; also SHEL bars start 2022-02-01
+BHI,BKR,,left_out,https://www.sec.gov/Archives/edgar/data/1701605/000170160520000019/fiscalyear2019form10-k.htm,Baker Hughes Incorporated was combined with GE Oil & Gas into a new company (BHGE) in 2017; not the same company
+BRCM,AVGO,,left_out,,Broadcom Corporation; taken over by Avago in 2016 (not checked here); a takeover is not a rename
+HTA,HR,2022-07-21,left_out,https://www.sec.gov/Archives/edgar/data/1360604/000136060422000123/hta-20220809.htm,HTA was the legal buyer of Healthcare Realty and took its name and HR symbol; the HR price file jumps on 2022-07-21 so which company its earlier prices belong to is UNKNOWN
+JIH,JBI,,left_out,https://www.sec.gov/Archives/edgar/data/1839839/000119312521184298/d153631dex991.htm,Juniper Industrial (a SPAC) became a subsidiary of a new holding company Janus International; not the same listed company
+ABB,ABBNY,2023-05-23,left_out,https://www.abb.com/global/en/company/investors/equity-info/share-listing/nyse-delisting,ABB delisted its ADRs from the NYSE and they now trade over the counter; not a rename and the source has no over-the-counter prices
+CAJ,,,left_out,https://global.canon/en/ir/release/2023/p2023mar07e.pdf,Canon delisted its ADRs from the NYSE on 2023-03-06 and they trade over the counter; not a rename
+TLRN,TELL,,left_out,https://www.sec.gov/Archives/edgar/data/61398/000006139824000009/tell-20231231.htm,Tellurian's symbol was TELL; TLRN is a slip in the record not a rename
+AAMA,,,left_out,,preferred share per the record's text; not checked
+ALYF,,,left_out,,not confirmed
+APPL,,,left_out,,record text says Appell Pete Corp; not confirmed
+BBTD,,,left_out,,preferred depositary share per the record's text; not checked
+BFET,,,left_out,,not confirmed
+BRK,,,left_out,,no class letter; record text says a Canadian depositary receipt
+BXSA,,,left_out,,preferred share per the record's text; not checked
+CBSI,,,left_out,,not confirmed
+COFI,,,left_out,,preferred depositary share per the record's text; not checked
+COLPAL,,,left_out,,not a US listing per the record's text; not checked
+DUKA,,,left_out,,preferred depositary share per the record's text; not checked
+EFCD,,,left_out,,preferred share per the record's text; not checked
+ENBP,,,left_out,https://www.otcmarkets.com/stock/ENBP/profile,over the counter
+FBSI,,,left_out,,not confirmed
+FMBA,,,left_out,,not confirmed
+FNMA,,,left_out,,over the counter; not checked
+JPMG,,,left_out,,preferred depositary share per the record's text; not checked
+JPMJ,,,left_out,,preferred depositary share per the record's text; not checked
+KEYJ,,,left_out,,preferred depositary share per the record's text; not checked
+MJNA,,,left_out,,not confirmed
+NGLS,,,left_out,,Targa Resources Partners units per the record's text; not confirmed
+NJ,,,left_out,,Nidec per the record's text; not confirmed
+NTT,,,left_out,,Nippon Telegraph and Telephone per the record's text; not confirmed
+OOCP,,,left_out,,not confirmed
+OTCM,,,left_out,https://www.otcmarkets.com/stock/OTCM,over the counter
+PASO,,,left_out,,not confirmed
+PHLD,,,left_out,,not confirmed
+RFE,,,left_out,,preferred depositary share per the record's text; not checked
+SWH,,,left_out,,corporate units per the record's text; not checked
+TFCR,,,left_out,,preferred depositary share per the record's text; not checked
+UHID,,,left_out,,not confirmed
+USBP,,,left_out,,preferred depositary share per the record's text; not checked
+UTGN,,,left_out,,not confirmed
+WFCD,,,left_out,,preferred depositary share per the record's text; not checked
+WFCV,,,left_out,,preferred depositary share per the record's text; not checked
+WFCY,,,left_out,,preferred depositary share per the record's text; not checked
+WNRP,,,left_out,,not confirmed
+XMEX,,,left_out,,not confirmed
+ZOOM,,,left_out,,record text says Zoom Technologies (not Zoom Video); not confirmed
+AAICB,,,left_out,https://www.sec.gov/Archives/edgar/data/1411342/000141134223000200/ex991-efcaaicmergerclosing.htm,preferred share of a company taken over by Ellington
+APPAD,,,left_out,,not confirmed
+ARINA,,,left_out,,not confirmed
+CADEA,,,left_out,,preferred share per the record's text; not checked
+HONAV,,,left_out,,when-issued shares of a spin-off per the record's text; a spin-off is not a rename
+INPAP,,,left_out,,preferred share per the record's text; not checked
+MICRD,,,left_out,,not confirmed
+SCHWD,,,left_out,,preferred depositary share per the record's text; not checked
+BBT,TFC,2025-09-02,mapped_before,https://www.sec.gov/Archives/edgar/data/92230/000119312519308844/d841243d8k.htm,BB&T merged SunTrust into itself on 2019-12-06 and became Truist trading as TFC from 2019-12-09; the BBT price file is the bank that took BBT on 2025-09-02 (https://www.sec.gov/Archives/edgar/data/1108134/000110465925086043/tm2524397d1_8k.htm); a row filed before that day under BBT is BB&T or Truist
+CCC,CLVT,2025-10-31,mapped_before,https://clarivate.com/news/clarivate-plc-to-change-nyse-ticker-symbol-to-clvt-on-february-1-2021/,Clarivate used CCC until 2021-02-01 and then CLVT; the CCC price file is CCC Intelligent Solutions which took CCC on 2025-10-31 (https://ir.cccis.com/news-releases/news-release-details/ccc-intelligent-solutions-announces-change-ticker-symbol-ccc-and); a row filed before that day under CCC is Clarivate
+AM,,2019-03-13,left_out_before,https://www.anteromidstream.com/investors/press-releases/detail/75/antero-midstream-and-amgp-announce-closing-of-midstream,AM before 2019-03-13 was Antero Midstream Partners LP which AMGP took over; the AM price file before that day is AMGP's; such rows are left out and counted
+HR,,2022-07-21,left_out_before,https://www.sec.gov/Archives/edgar/data/1360604/000136060422000123/hta-20220809.htm,HR before the 2022-07-20 merger was the old Healthcare Realty; the HR price file jumps on 2022-07-21 so whose prices it holds before that is UNKNOWN; such rows are left out and counted
+RBC,RRX,2021-10-05,mapped_before,https://www.sec.gov/Archives/edgar/data/82811/000110465921123795/tm2129180d1_ex99-1.htm,Regal Beloit used RBC until 2021-10-04 and then as Regal Rexnord RRX (the same company renamed); the RBC price file is RBC Bearings (ROLL until 2022-09-26)
+WTW,,2019-04-22,left_out_before,https://corporate.ww.com/news/news-details/2019/WW--the-new-Weight-Watchers--Announces-NASDAQ-Stock-Ticker-Symbol-Change-to-WW/default.aspx,Weight Watchers used WTW until 2019-04-19; the WTW price file is Willis's history throughout (MEASURED smooth on 2019-04-22) and the WW file starts 2019-04-22 so no price exists for these rows; left out and counted
+WTW,WW,2022-01-10,mapped_before,https://corporate.ww.com/news/news-details/2019/WW--the-new-Weight-Watchers--Announces-NASDAQ-Stock-Ticker-Symbol-Change-to-WW/default.aspx,from 2019-04-22 Weight Watchers traded as WW; Willis took WTW on 2022-01-10 (https://www.sec.gov/Archives/edgar/data/1140536/000119312522004045/d267396d8k.htm); a row filed in between under WTW is an old WW label

@@ -1,0 +1,207 @@
+{
+ "made_by": "research_rig/score_12.py --counts",
+ "made_utc": "2026-11-25 19:05",
+ "rows": 85291,
+ "buy_events": 29379,
+ "sell_events": 30565,
+ "call_buy_events_named_table_only": 152,
+ "buy_members": 204,
+ "buy_tickers": 2381,
+ "last_price_day": "2026-11-24",
+ "buy_design": {
+  "events": 15457,
+  "large": 1216,
+  "members": 153,
+  "no_bar_on_main_entry_day": 410,
+  "no_bar_share": 0.0265,
+  "no_bar_by_year": {
+   "2019": 99,
+   "2020": 215,
+   "2021": 55,
+   "2022": 41
+  },
+  "tickers_without_any_bar": 179,
+  "with_call_or_exercise_rows": 36,
+  "bar_on_entry_day_but_prices_start_after_filing": 0,
+  "renamed_events": 82,
+  "events_moved_by_rename_line": {
+   "AMGP": 1,
+   "BBT<2025-09-02": 2,
+   "BHGE": 4,
+   "BLFSD": 1,
+   "CCC<2025-10-31": 2,
+   "DEAC": 1,
+   "FBHS": 7,
+   "FI": 1,
+   "JEC": 3,
+   "MMC": 33,
+   "RBC<2021-10-05": 2,
+   "ROLL": 1,
+   "SNE": 10,
+   "TOT": 3,
+   "WGP": 1,
+   "WLTW": 8,
+   "WTW<2019-04-22": 1,
+   "WTW<2022-01-10": 1
+  },
+  "recovered_by_rename_list_by_year": {
+   "2019": 18,
+   "2020": 27,
+   "2021": 21,
+   "2022": 15
+  }
+ },
+ "buy_heldback": {
+  "events": 13922,
+  "large": 555,
+  "members": 116,
+  "no_bar_on_main_entry_day": 471,
+  "no_bar_share": 0.0338,
+  "no_bar_by_year": {
+   "2023": 128,
+   "2024": 43,
+   "2025": 104,
+   "2026": 196
+  },
+  "tickers_without_any_bar": 260,
+  "with_call_or_exercise_rows": 195,
+  "bar_on_entry_day_but_prices_start_after_filing": 0,
+  "renamed_events": 51,
+  "events_moved_by_rename_line": {
+   "BHLB": 1,
+   "FBHS": 1,
+   "FI": 27,
+   "MMC": 22
+  },
+  "recovered_by_rename_list_by_year": {
+   "2023": 14,
+   "2024": 11,
+   "2025": 24,
+   "2026": 2
+  }
+ },
+ "sell_design": {
+  "events": 15698,
+  "large": 1419,
+  "members": 184,
+  "no_bar_on_main_entry_day": 588,
+  "no_bar_share": 0.0375,
+  "no_bar_by_year": {
+   "2019": 199,
+   "2020": 186,
+   "2021": 124,
+   "2022": 79
+  },
+  "tickers_without_any_bar": 219,
+  "with_call_or_exercise_rows": 38,
+  "bar_on_entry_day_but_prices_start_after_filing": 0,
+  "renamed_events": 62,
+  "events_moved_by_rename_line": {
+   "AM<2019-03-13": 4,
+   "BBT<2025-09-02": 1,
+   "BHGE": 3,
+   "BRP": 2,
+   "FBHS": 10,
+   "FI": 1,
+   "HR<2022-07-21": 1,
+   "JBT": 2,
+   "MMC": 17,
+   "ROLL": 4,
+   "SNE": 6,
+   "TOT": 5,
+   "UBNT": 2,
+   "WLTW": 4
+  },
+  "recovered_by_rename_list_by_year": {
+   "2019": 12,
+   "2020": 22,
+   "2021": 12,
+   "2022": 11
+  }
+ },
+ "sell_heldback": {
+  "events": 14867,
+  "large": 1266,
+  "members": 183,
+  "no_bar_on_main_entry_day": 652,
+  "no_bar_share": 0.0439,
+  "no_bar_by_year": {
+   "2023": 375,
+   "2024": 57,
+   "2025": 132,
+   "2026": 88
+  },
+  "tickers_without_any_bar": 371,
+  "with_call_or_exercise_rows": 101,
+  "bar_on_entry_day_but_prices_start_after_filing": 0,
+  "renamed_events": 57,
+  "events_moved_by_rename_line": {
+   "BBT<2025-09-02": 1,
+   "BRP": 2,
+   "CCCS": 1,
+   "CNHI": 1,
+   "FBHS": 1,
+   "FI": 28,
+   "MMC": 23
+  },
+  "recovered_by_rename_list_by_year": {
+   "2023": 16,
+   "2024": 12,
+   "2025": 28,
+   "2026": 1
+  }
+ },
+ "busiest_buyer": {
+  "member": "Ro Khanna",
+  "buy_events": 12011,
+  "share": 0.4088
+ },
+ "named_members_matched": {
+  "Pelosi": {
+   "Nancy Pelosi": 142
+  },
+  "Khanna": {
+   "Ro Khanna": 32284
+  },
+  "McCaul": {
+   "Michael T. McCaul": 7659
+  },
+  "Gottheimer": {
+   "Josh Gottheimer": 3209
+  },
+  "Cisneros": {
+   "Gilbert Ray Cisneros, Jr.": 2781
+  },
+  "Lisa C. McClain": {
+   "Lisa C. McClain": 1421
+  },
+  "Tuberville": {
+   "Tommy Tuberville": 1192
+  },
+  "Greene": {
+   "Marjorie Taylor Greene": 507
+  },
+  "Mullin": {
+   "Markwayne Mullin": 386
+  },
+  "Bresnahan": {
+   "Robert P. Bresnahan, Jr.": 607
+  },
+  "Goldman": {
+   "Daniel S. Goldman": 1151
+  },
+  "Crenshaw": {
+   "Dan Crenshaw": 32
+  },
+  "Wasserman Schultz": {
+   "Debbie Wasserman Schultz": 47
+  }
+ },
+ "rename_list": {
+  "file": "research_rig/renames_12.csv",
+  "sha256": "a92baefc96ba573ea0df198eb9125fc78fd3ecb5e3b26eb0e512a807b95a1277",
+  "mapped": 19,
+  "dated_lines": 7,
+  "decided_by": "filed_date"
+ }
+}

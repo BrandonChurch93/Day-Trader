@@ -1,0 +1,36 @@
+{
+ "made_by": "research_rig/fetch_12_prices.py",
+ "collection": {
+  "started_utc": "2026-11-25 18:30:37",
+  "start": "2018-12-01",
+  "end": "2026-11-24",
+  "adjustment": "all",
+  "feed": "sip",
+  "symbols": 2998,
+  "finished_utc": "2026-11-25 18:38:49"
+ },
+ "tickers_in_buy_and_sell_rows": 2996,
+ "tickers_with_bars": 2390,
+ "tickers_without_bars": 606,
+ "bar_rows": 4096237,
+ "tickers_whose_bars_start_after_2019_01_02": 338,
+ "tickers_whose_bars_end_before_2026_11_24": 558,
+ "scale_funds": {
+  "SPY": {
+   "bars": 2005,
+   "first": "2018-12-03",
+   "last": "2026-11-24"
+  },
+  "QQQ": {
+   "bars": 2005,
+   "first": "2018-12-03",
+   "last": "2026-11-24"
+  },
+  "NANC": {
+   "bars": 954,
+   "first": "2023-02-07",
+   "last": "2026-11-24"
+  }
+ },
+ "note": "Counts and dates only. The list of tickers without bars is in ~/workspace/rig/data/congress_12/missing_tickers.json."
+}
