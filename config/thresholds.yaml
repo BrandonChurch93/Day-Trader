@@ -803,7 +803,7 @@ replay_12_plan:
   source: research_rig/PREREG_12_congress_followers_DRAFT.md
 
 replay_13_plan:
-  value: {start: "2020-01-01", end: "2026-11-24", universe_top_n: 50, rise_days: 7, dip_pct: 5, dip_lookback_hours: 24, take_pct: 5, stop_pct: 5, max_hold_hours: 24, cost_bps_per_side: 15, other_costs_bps: [5, 30], shown_leverage: 3, liquidation_drop_pct: 30, financing_bps_per_8h: 3, random_draws: 200, seed: 13, min_years_above: 5, new_trials: 2}
+  value: {start: "2020-01-01", end: "2026-11-24", universe_top_n: 50, rise_days: 7, dip_pct: 5, dip_lookback_hours: 24, take_pct: 5, stop_pct: 5, max_hold_hours: 24, cost_bps_per_side: 15, other_costs_bps: [5, 30], shown_leverage: 3, liquidation_drop_pct: 30, financing_bps_per_8h: 3, random_draws: 200, seed: 13, min_years_above: 5, hot_n: 5, random_percentile: 75, judged_leverage: 1, financing_interval_hours: 8, max_flagged_share_pct: 5, min_trades_per_year: 10, new_trials: 2}
   status: builder
   note: Draft plan 13, a fixed dip-and-peak rule on the hottest coins scored year by year from 2020 to 2026, to separate the method from the year the owner traded in. All settings are round figures fixed before any price was read. cost_bps_per_side is 10 for the venue fee plus 5 for half the spread. Draft until frozen.
   source: research_rig/PREREG_13_year_or_method_DRAFT.md

@@ -20,7 +20,7 @@ A fixed rule is not the owner. He chose coins by reading what people were talkin
 
 ## The rules
 
-Hot five: each Monday 00:00 UTC, the five listed coins with the largest gain over the `replay_13_plan.rise_days` days before.
+Hot five: each Monday 00:00 UTC, the `replay_13_plan.hot_n` listed coins with the largest gain over the `replay_13_plan.rise_days` days before.
 
 - Rule A (ledger 144), hold the hot five: buy the five in equal parts at Monday's first open, sell at the next Monday's first open.
 - Rule B (ledger 145), swing the hot five: the account is split in five, one part per coin. When a part is in cash, buy at the next hour's open if the last hourly close is at least `replay_13_plan.dip_pct` percent below the highest close of the `replay_13_plan.dip_lookback_hours` hours before and still above the close `replay_13_plan.rise_days` days ago. Sell at the next hour's open when the last close is `replay_13_plan.take_pct` percent above the entry, or `replay_13_plan.stop_pct` percent below it, or after `replay_13_plan.max_hold_hours` hours. Everything is sold at the week's end.
@@ -42,12 +42,29 @@ Leverage: judged at 1x. Shown and not judged: rule B at `replay_13_plan.shown_le
 Each calendar year is scored apart (2026 to its last day of prices). "The method, not the year" is supported for rule B when, at 1x after the judged cost, all three hold:
 
 1. It ends the year above yardstick (a) in at least `replay_13_plan.min_years_above` of the 7 years.
-2. In those same years it also ends above the 75th percentile of yardstick (b).
+2. In those same years it also ends above the `replay_13_plan.random_percentile`th percentile of yardstick (b).
 3. At least one of those years is a year in which yardstick (a) fell.
 
 Otherwise the finding is "the year": the rule was paid when coins rose and not otherwise. The same three lines are worked out for rule A. Reported and not judged: every year's figures for both rules and all yardsticks, the 3x version, the other cost levels, the number of trades and the share that hit the stop.
 
 A support here would mean worth a time machine test with a rule trader on 2026 months and then the practice desk. It would not mean it makes money.
+
+## Definitions fixed before the run
+
+Written 2026-11-25 18:46 UTC after the code builder read the draft and listed what it left open. No price had been collected.
+
+- When a coin list applies: a snapshot is dated on a Sunday. Its list is used from the Monday 00:00 UTC that follows, until the next snapshot's Monday. The December 2019 snapshot covers the first days of 2020. A missing snapshot is reported as a hole; the earlier list is carried and the weeks are flagged.
+- The list: the first `replay_13_plan.universe_top_n` coins by rank at the time after the exclusions, chosen before looking at whether Binance had a pair. A coin with no pair is not replaced by the next one down. BNB stays in: it trades freely on this venue. Coins are tracked by the snapshot's own coin identity, not by ticker. A renamed or re-issued coin maps only to the pair that traded at the time, every hand-made mapping is listed, and no price series is joined across a re-issue.
+- What is known at an hour: at hour t the close of the hour that just ended is known. The 7-day comparison uses the close 168 hours before that one. The dip is measured against the highest of the `replay_13_plan.dip_lookback_hours` closes before the signal close. A fill is always the next bar's open; nothing is bought or sold inside a bar at 1x.
+- The hot `replay_13_plan.hot_n` are the largest 7-day gains even when some are negative. Ties go by coin identity. If fewer coins can be ranked, the unused parts stay in cash.
+- Years: each calendar year is scored on its own, starting in cash with 1.00 at its first Monday 00:00 UTC. Everything is sold at the first open of the next January 1, and the new year waits for its first Monday. 2026 ends at Monday 2026-11-23 00:00 UTC, the end of the last whole week on file. Gains compound week to week. A year's figure is the compounded gain after costs.
+- Within a part of the account: no sale and new purchase at the same open, no new purchase at a forced week-end or year-end sale, idle cash earns nothing. The holding clock runs from the fill. When several reasons to sell hold at once the order is: forced close-out (3x only), end of week or year, stop, take, time limit. Stop and take count when the close reaches the level or beyond.
+- Missing prices: nothing trades at a missing bar; a queued sale waits for the next bar of the same pair. If a pair's bars stop for good, the position is sold at the last close seen, flagged and counted. A year in which more than `replay_13_plan.max_flagged_share_pct` percent of the account-part weeks are flagged is reported and cannot count toward the mark.
+- Random yardstick: five coins drawn without replacement each Monday from the same rankable list, each of the `replay_13_plan.random_draws` draws carried through the whole year as one path. For rule B it runs rule B on them. For rule A it holds them for the week. The percentile is `replay_13_plan.random_percentile`, and "above" means strictly above.
+- A year in which the rule closed fewer than `replay_13_plan.min_trades_per_year` trades is reported and cannot count toward the mark, so that sitting in cash through a bad year is not scored as skill.
+- The three possible findings: supported (the three lines under "What would count" hold); paid only when coins rose (it ended above yardstick (a) only in years when (a) rose); not paid (neither).
+- Costs are charged on the amount traded, each side. At `replay_13_plan.shown_leverage` times: fees on the full position, financing every `replay_13_plan.financing_interval_hours` hours on the borrowed two thirds, close-out when an hourly low, the entry bar included, is `replay_13_plan.liquidation_drop_pct` percent or more below the fill; the part of the account is then zero until the next Monday's re-split. This is a simulation and not any venue's margin rules. Judged leverage is `replay_13_plan.judged_leverage`.
+- The run refuses to start while this file is a draft, takes a lock before reading any real price, and refuses a second run. The self-test uses made-up bars only.
 
 ## How this can fool us
 
