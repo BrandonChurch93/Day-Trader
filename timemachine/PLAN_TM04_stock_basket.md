@@ -49,6 +49,6 @@ Run 2 is not part of the mark. It shows how much one model's answer changes from
 - About 25 weekly choices over one stretch of one market. One strong sector can carry a basket. A pass here earns a longer test, it is not proof.
 - Models tend to like the same well-known growth names. If those led over these months, all six look good together, and that is one bet, not six.
 - The list was picked with hindsight. Random baskets share that, the comparison with SPY does not, so SPY is for scale only.
-- Headlines on the tape come from one site and are tagged by company name, so some are missing and some are mis-tagged. Filings come from the SEC with their time to the second.
-- Fills are assumed at five hundredths of a percent a side. Not measured.
+- Headlines on the tape come from two places: one news site, tagged by company name, so some are missing and some are mis-tagged, and the broker's news feed, tagged by the feed (added to the tape on 2026-11-25 before any session of this plan was made; MEASURED: about 400 items a week for these 38 stocks, most of them analyst price targets). Filings come from the SEC with their time to the second. A packet shows at most `tm_weights_max_headlines_per_symbol` headlines per stock and says how many it left out.
+- Fills are assumed at five hundredths of a percent a side. MEASURED on 2026-11-25 from past bid and ask for these stocks, June to November 2026: the middle cost was about one hundredth of a percent in regular hours and less in the last half hour, when this trader trades. The assumed cost was left as it was, so it is on the careful side.
 - The no-web rule is by instruction.
