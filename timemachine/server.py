@@ -68,6 +68,10 @@ def handle(method, path, q, body):
                     obj = json.loads(body or b"null")
                 except ValueError:
                     return 400, sess.bad(["The body is not JSON."])
+                if not (sess.dir / "packets" / f"{sess.prog['k']}.json").exists():
+                    # a pick for a wake the trader has not been shown: most often a second send after a lost reply
+                    return 409, dict(ok=False, error="You have not asked for /next at this wake. If you sent a pick and got no answer, it was taken and the clock moved. "
+                                                    "Call /next to see where you are, then decide again. Nothing was traded just now and the clock did not move.")
                 r = sess.submit(obj)
                 return (200 if r.get("ok") else 400), r
         except S.Done:

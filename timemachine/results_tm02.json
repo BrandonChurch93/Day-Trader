@@ -96,8 +96,146 @@
      "session": "TM02-B02-OPUS-2026-09"
     },
     "10": {
-     "finished": false,
-     "session": "TM02-B02-OPUS-2026-10"
+     "benchmark_shown": "BTC/USD",
+     "buys": 6,
+     "closed": 6,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 291,
+     "fees_usd": 8.4,
+     "finished": true,
+     "fund_mover_wakes": 21,
+     "gain_usd": -47.25,
+     "git_dirty": true,
+     "hold_gain_usd": -76.42,
+     "lookups": 17,
+     "losses": 5,
+     "max_drop": -0.0572,
+     "model": "claude_opus_5_5",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-OPUS-2026-10",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 53,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-10-07T02:05:00Z",
+       "exit_reason": "Exit set in pick 20261005T1200Z: the stop price was reached.",
+       "gain_pct": -0.0039,
+       "gain_usd": -1.18,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 8
+       },
+       "news_looked": 0,
+       "reason": "Price-based: BTC at 83.6k sits near the bottom of a 10-day 83-87k range inside a 60-day uptrend; stop under the 29 Sep 82k low, target near range top 88k. About 5% up vs 3% down.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Crypto is up strongly over 60 days (BTC +32%, alts more) and BTC has been consolidating between about 83k and 87k for ten days. Headlines are mixed (CryptoQuant sees cooling, bond yields blamed for a failed 85k breakout, but cooler PCE). I take one moderate BTC position at the bottom of the range with a stop below the 82k low tested on 29 Sep, aiming for the top of the range.",
+       "usd": 300,
+       "wake_utc": "2026-10-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-07T02:05:00Z",
+       "exit_reason": "Exit set in pick 20261005T1200Z: the stop price was reached.",
+       "gain_pct": -0.061,
+       "gain_usd": -15.3,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Price-based: LTC at 71.2 is breaking above its 3 Oct high of about 71.1 after a week of higher lows near 67; stop at 67.4 under that base (-5%), target 76.5 just above the September high of 75 (+7.5%), well above the ~0.7% round-trip cost.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LTC/USD",
+       "thesis": "LTC is the strongest steady trend on the board (+38% in 30 days) and is pushing to a new local high above 71 after holding 67-69 all week, while the rest of the market drifts up quietly. I add a moderate LTC position with a stop under the week's lows and keep BTC.",
+       "usd": 250,
+       "wake_utc": "2026-10-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-15T00:00:00Z",
+       "exit_reason": "Range-hold thesis weakened: lower highs since 9 Oct, alts at new lows, and the 14 Oct headlines on doubled Fed hike odds and a surging dollar; exit before a likely third test of 80.3k.",
+       "gain_pct": -0.0187,
+       "gain_usd": -5.64,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Price-based: BTC at 82.55k has held above 82k for 24 hours after the 80.3k flush low on 8 Oct; stop 79,900 under that low (-3.2%), target 86,000 (+4.2%), more than twice the ~0.7% round-trip cost.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "After the liquidation flush to 80.3k on 8 Oct, BTC has held 82-83k for a full day. Over 60 days the trend is still up and the wider 80-87k range is intact. I buy a moderate BTC position with the stop under the flush low, so the risk is clear, and aim for the middle-upper part of the range. Alts are weaker so I stay with BTC.",
+       "usd": 300,
+       "wake_utc": "2026-10-10T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-21T12:00:00Z",
+       "exit_reason": "Exit set in pick 20261016T0000Z: the exit time was reached.",
+       "gain_pct": 0.0066,
+       "gain_usd": 1.65,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Headline 'Solana sets October 21 for massive Alpenglow upgrade that could make transactions 99% faster to finalize' (2026-10-15T00:00:17Z) is a dated catalyst; price held 100.5 on the 15 Oct flush and reclaimed 105. Stop 98.9 (-6%), target 114.5 (+8.7%), exit by 21 Oct; well above ~0.7% round-trip cost.",
+       "result": "win",
+       "sources": [
+        "https://cryptoslate.com/solana-sets-october-21-for-massive-alpenglow-upgrade-that-could-make-transactions-99-faster-to-finalize/"
+       ],
+       "symbol": "SOL/USD",
+       "thesis": "On 15 Oct BTC swept below 80k to 79.7k and snapped back to 82k within two hours, and SOL held 100.5 and bounced to 105. Solana has a dated catalyst: the headline 'Solana sets October 21 for massive Alpenglow upgrade' (15 Oct 00:00) gives a reason for buyers to step in ahead of the date. I take a moderate SOL swing into the upgrade with a stop under the 100 round number and exit by the upgrade day. Macro is still hawkish, so size is kept modest.",
+       "usd": 250,
+       "wake_utc": "2026-10-16T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-22T13:00:00Z",
+       "exit_reason": "Exit set in pick 20261022T0000Z: the stop price was reached.",
+       "gain_pct": -0.0358,
+       "gain_usd": -12.56,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "BTC reclaimed 84k on 21 Oct after a higher low near 82.4k; headline 'BlackRock Bitcoin ETF Pulls In $665 Million While Rivals Lose Money' (2026-10-20T10:20:00Z) shows returning spot demand. Stop 81,600 (-2.9%), target 87,300 (+3.9%), well above the ~0.7% round-trip cost.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/bitcoin-news/blackrock-bitcoin-etf-pulls-in-665-million-while-rivals-lose-money/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "BTC has held the 79.7-80.3k zone three times this month and has now made a higher low and pushed back above 84k, holding there for ten hours. Spot ETF money is returning to the largest fund (headline 'BlackRock Bitcoin ETF Pulls In $665 Million While Rivals Lose Money', 20 Oct 10:20). I buy BTC for a move back toward the 87k ceiling, with a stop under the 21 Oct breakout base.",
+       "usd": 350,
+       "wake_utc": "2026-10-22T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-29T20:45:00Z",
+       "exit_reason": "Exit set in pick 20261027T1200Z: the stop price was reached.",
+       "gain_pct": -0.0568,
+       "gain_usd": -14.22,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1
+       },
+       "news_looked": 0,
+       "reason": "Relative strength plus news: headline 'Ripple Clears Final OCC Hurdle for National Trust Bank' (2026-10-27T07:38:41Z) and 'XRP ETFs Resume Winning Streak While SOL Funds Stay in the Red' (2026-10-26T04:03:10Z); price held the 1.255 low twice (18 and 24 Oct). Stop 1.245 (-4.3%), target 1.39 (+6.8%), above twice the ~0.7% round-trip cost.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/ripple-clears-final-occ-hurdle-for-national-trust-bank/",
+        "https://cryptopotato.com/xrp-etfs-resume-winning-streak-while-sol-funds-stay-in-the-red/"
+       ],
+       "symbol": "XRP/USD",
+       "thesis": "While BTC lost 80k and most alts made new lows, XRP has held a flat 1.255-1.40 base for two weeks and is near the middle of it. It has its own positive news: 'Ripple Clears Final OCC Hurdle for National Trust Bank' (27 Oct 07:38) and XRP ETFs resumed inflows (26 Oct 04:03). I take one moderate XRP swing with the stop under the double low at 1.255 and a target just under the 21 Oct high. FOMC risk is real, so size stays modest.",
+       "usd": 250,
+       "wake_utc": "2026-10-27T12:00:00Z"
+      }
+     ],
+     "wins": 1
     },
     "11": {
      "finished": false,
@@ -111,8 +249,97 @@
   "SOL": {
    "months": {
     "07": {
-     "finished": false,
-     "session": "TM02-B02-SOL-2026-07"
+     "benchmark_shown": "BTC/USD",
+     "buys": 3,
+     "closed": 3,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 521,
+     "fees_usd": 3.02,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": 3.4,
+     "git_dirty": true,
+     "hold_gain_usd": 69.81,
+     "lookups": 51,
+     "losses": 2,
+     "max_drop": -0.0119,
+     "model": "gpt_6_2_sol",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-SOL-2026-07",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 59,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-07-02T10:55:00Z",
+       "exit_reason": "Exit set in pick 20260702T0000Z: the target price was reached.",
+       "gain_pct": 0.0476,
+       "gain_usd": 11.93,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "SOL closed at 77.37 above the June 29 high near 76.22; Solana USDC Liquidity Jumps As Circle Mints Another $1 Billion (2026-07-01T16:15:00Z) corroborates a liquidity tailwind but does not establish buying of SOL.",
+       "result": "win",
+       "sources": [
+        "https://www.newsbtc.com/news/solana-usdc-liquidity-jumps-as-circle-mints-another-1-billion/"
+       ],
+       "symbol": "SOL/USD",
+       "thesis": "SOL broke its late-June range and held above it for several completed hours despite BTC only retesting 60000. The reported Circle mint is supporting context, not proof of spot inflows; a 5% objective is large enough to budget for both sides of execution.",
+       "usd": 250,
+       "wake_utc": "2026-07-02T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-16T23:25:00Z",
+       "exit_reason": "Exit set in pick 20260715T0000Z: the stop price was reached.",
+       "gain_pct": -0.0246,
+       "gain_usd": -4.94,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 2,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "ETH at 1890.82 broke June and July resistance, then closed above its intraday consolidation. Bitcoin pushes toward $65,000 on US inflation relief that may already be fading (2026-07-14T19:30:28Z) describes a broader risk rally but also cautions against larger size.",
+       "result": "loss",
+       "sources": [
+        "https://cryptoslate.com/bitcoin-pushes-toward-65000-on-us-inflation-relief-that-may-already-be-fading/"
+       ],
+       "symbol": "ETH/USD",
+       "thesis": "ETH held the post-data range and made higher closes into midnight while BTC also rallied. A small position can test follow-through to the first historical supply area, with roughly 3.3% gross upside against about 1.7% to the stop before fees, spread and slippage.",
+       "usd": 200,
+       "wake_utc": "2026-07-15T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-23T05:16:00Z",
+       "exit_reason": "Exit set in pick 20260721T1200Z: the stop price was reached.",
+       "gain_pct": -0.0239,
+       "gain_usd": -3.6,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "LINK at 8.70048 held above the prior 8.635 high after Aave Picks Chainlink CCIP As Default Standard For Cross-Chain sGHO (2026-07-20T16:00:00Z), a concrete integration announcement but not evidence of direct token buying.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/aave-chainlink-ccip-default-cross-chain-sgho/"
+       ],
+       "symbol": "LINK/USD",
+       "thesis": "LINK has held above yesterday\u2019s resistance for several completed hours while BTC and ETH also moved higher. A modest position reflects sparse LINK prints; the move to 9.03 is about 3.8% gross, leaving room for a roughly 0.8% round-trip cost allowance.",
+       "usd": 150,
+       "wake_utc": "2026-07-21T12:00:00Z"
+      }
+     ],
+     "wins": 1
     },
     "08": {
      "finished": false,
@@ -123,8 +350,94 @@
      "session": "TM02-B02-SOL-2026-09"
     },
     "10": {
-     "finished": false,
-     "session": "TM02-B02-SOL-2026-10"
+     "benchmark_shown": "BTC/USD",
+     "buys": 3,
+     "closed": 3,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 291,
+     "fees_usd": 3.24,
+     "finished": true,
+     "fund_mover_wakes": 30,
+     "gain_usd": -18.97,
+     "git_dirty": true,
+     "hold_gain_usd": -76.42,
+     "lookups": 58,
+     "losses": 3,
+     "max_drop": -0.022,
+     "model": "gpt_6_2_sol",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-SOL-2026-10",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 59,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-10-07T02:05:00Z",
+       "exit_reason": "Exit set in pick 20261006T1200Z: the stop price was reached.",
+       "gain_pct": -0.0349,
+       "gain_usd": -8.05,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "Price-only entry near 11.43 after daily range expansion; stop below the hourly breakout base and target just below 11.997. Target move is about 4.6% gross.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "AVAX/USD",
+       "thesis": "AVAX leads the board and is clearing several days of 11.17 to 11.28 highs. The hourly advance held 11.19 to 11.24 before pushing above 11.40, with room toward the old 11.997 high. Size down for thin trading and allow for costs rather than taking a narrow scalp.",
+       "usd": 230,
+       "wake_utc": "2026-10-06T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-16T15:10:00Z",
+       "exit_reason": "Exit set in pick 20261016T1200Z: the stop price was reached.",
+       "gain_pct": -0.0244,
+       "gain_usd": -6.11,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "SOL at 106.45 is above the 104.86 hourly base, and Solana sets October 21 for massive Alpenglow upgrade that could make transactions 99% faster to finalize (2026-10-15T00:00:17Z) provides a dated mainnet catalyst. Target 111.65 is 4.9% gross versus about 1.7% to the stop; allow about 0.8% for round-trip costs.",
+       "result": "loss",
+       "sources": [
+        "https://cryptoslate.com/solana-sets-october-21-for-massive-alpenglow-upgrade-that-could-make-transactions-99-faster-to-finalize/"
+       ],
+       "symbol": "SOL/USD",
+       "thesis": "A broad rebound is firming as BTC and ETH expand on their latest hour. SOL is building above the prior wake and offers a defined swing before the planned network upgrade, not a bet that the upgrade is guaranteed.",
+       "usd": 250,
+       "wake_utc": "2026-10-16T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-22T05:25:00Z",
+       "exit_reason": "Exit set in pick 20261021T0000Z: the stop price was reached.",
+       "gain_pct": -0.0274,
+       "gain_usd": -4.81,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 3,
+        "news": 2
+       },
+       "news_looked": 2,
+       "reason": "Price-only range reclaim near 61.61; stop below the 60.50 breakout base, first supply near 62.61, and target 64.4 below the older high. The gross target move is about 4.5%, with roughly 0.8% allowed for round-trip costs.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LTC/USD",
+       "thesis": "LTC is leading a broad rebound and closed the completed day near its high, above the last several closes. The hourly tape shows a higher base near 60.50 to 60.75 and a push through 61.39. Keep the position small given sporadic volume and prior wide daily wicks.",
+       "usd": 175,
+       "wake_utc": "2026-10-21T00:00:00Z"
+      }
+     ],
+     "wins": 0
     },
     "11": {
      "finished": false,
@@ -138,8 +451,73 @@
   "SONNET": {
    "months": {
     "07": {
-     "finished": false,
-     "session": "TM02-B02-SONNET-2026-07"
+     "benchmark_shown": "BTC/USD",
+     "buys": 2,
+     "closed": 2,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 521,
+     "fees_usd": 2.97,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": -16.55,
+     "git_dirty": true,
+     "hold_gain_usd": 69.81,
+     "lookups": 30,
+     "losses": 2,
+     "max_drop": -0.0275,
+     "model": "claude_sonnet_5_5",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-SONNET-2026-07",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 58,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-07-08T08:20:00Z",
+       "exit_reason": "Exit set in pick 20260707T0000Z: the stop price was reached.",
+       "gain_pct": -0.0072,
+       "gain_usd": -2.16,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Headlines 'Crypto ETF Inflow Split: Ether and Solana Products Gain While Bitcoin Outflows Exceed $290M' (2026-07-02T18:30Z) and 'US Spot Bitcoin ETF Outflows Clash With Ethereum Fund Demand' (2026-07-03T11:17Z) show relative ETH demand; price broke above 1710 resistance, 1741 now.",
+       "result": "loss",
+       "sources": [
+        "Crypto ETF Inflow Split: Ether and Solana Products Gain While Bitcoin Outflows Exceed $290M (2026-07-02T18:30:00Z)",
+        "US Spot Bitcoin ETF Outflows Clash With Ethereum Fund Demand (2026-07-03T11:17:00Z)"
+       ],
+       "symbol": "ETH/USD",
+       "thesis": "ETH has led the bounce from 1568 to 1741 and just closed above the 1710 level that capped the last two days, while ETH funds take inflows and BTC funds see outflows. Small swing buy with a stop below the breakout base and a target near the mid-June highs.",
+       "usd": 300,
+       "wake_utc": "2026-07-03T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-17T13:10:00Z",
+       "exit_reason": "Exit set in pick 20260715T0000Z: the stop price was reached.",
+       "gain_pct": -0.0478,
+       "gain_usd": -14.39,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2,
+        "news": 1
+       },
+       "news_looked": 1,
+       "reason": "Price breakout above the 1805 range top at the 07-14 12:00 hour, held 1870-1890 for 11 hours, BTC also through 64K; no headline used.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "ETH broke out of its six-day 1750-1805 range right after the CPI hour, jumped to about 1860 and then held 1870-1890 for eleven hours without giving it back, and BTC cleared 64K to 65K at the same time. Buy a swing in ETH with a stop back inside the old range and a target near the 2000-2020 round-number resistance. Price-based; no headline is the reason.",
+       "usd": 300,
+       "wake_utc": "2026-07-15T00:00:00Z"
+      }
+     ],
+     "wins": 0
     },
     "08": {
      "finished": false,
@@ -150,8 +528,91 @@
      "session": "TM02-B02-SONNET-2026-09"
     },
     "10": {
-     "finished": false,
-     "session": "TM02-B02-SONNET-2026-10"
+     "benchmark_shown": "BTC/USD",
+     "buys": 3,
+     "closed": 3,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 291,
+     "fees_usd": 3.99,
+     "finished": true,
+     "fund_mover_wakes": 41,
+     "gain_usd": -9.7,
+     "git_dirty": true,
+     "hold_gain_usd": -76.42,
+     "lookups": 14,
+     "losses": 2,
+     "max_drop": -0.0114,
+     "model": "claude_sonnet_5_5",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-SONNET-2026-10",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 49,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-10-02T18:40:00Z",
+       "exit_reason": "Exit set in pick 20261002T1200Z: the stop price was reached.",
+       "gain_pct": -0.0339,
+       "gain_usd": -10.19,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Hourly bars show a breakout above 85k holding for ~8 hours with higher lows; stop under 84.3k limits loss to ~2.3%. Price-based only, no headline used.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC broke through the 85k ceiling that failed last week and has held above it for eight hours (hourly lows stay near 85.7k) rather than spiking back. Enter a modest position with a stop under the breakout base; the news is commentary and is not the reason.",
+       "usd": 300,
+       "wake_utc": "2026-10-02T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-11T17:40:00Z",
+       "exit_reason": "Exit set in pick 20261011T1200Z: the target price was reached.",
+       "gain_pct": 0.0214,
+       "gain_usd": 5.35,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "After the liquidation flush (headline 'Bitcoin crashes through $81,000 buy wall as $1 billion crypto liquidation bloodbath unfolds', 2026-10-08T21:00:13Z) the hourly bars show a six-hour base at 81.6-81.9k above the 80.3k low; stop under that low, target the 84k breakdown level.",
+       "result": "win",
+       "sources": [
+        "https://cryptoslate.com (headline: Bitcoin crashes through $81,000 buy wall as $1 billion crypto liquidation bloodbath unfolds, 2026-10-08T21:00:13Z)"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "BTC flushed to 80.3k on a $1B liquidation wave (headline 'Bitcoin crashes through $81,000 buy wall as $1 billion crypto liquidation bloodbath unfolds', 2026-10-08T21:00:13Z) and has since held 81.5-81.9k for six hourly bars with tight ranges, i.e. a base after forced selling. Small bounce trade with a stop just under the flush low.",
+       "usd": 250,
+       "wake_utc": "2026-10-09T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-27T12:00:00Z",
+       "exit_reason": "Exit set in pick 20261027T0000Z: the exit time was reached.",
+       "gain_pct": -0.0194,
+       "gain_usd": -4.86,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "After the liquidation flush (headline 'Bitcoin Price Suddenly Dumps Below $80K as Liquidations Surge to $670M', 2026-10-24T14:34:28Z) hourly bars show an 8-hour base at 80.1-80.8k above the 79.15k low; stop under the low, target 83k.",
+       "result": "loss",
+       "sources": [
+        "https://cryptoslate.com (headline: Bitcoin Price Suddenly Dumps Below $80K as Liquidations Surge to $670M, 2026-10-24T14:34:28Z)"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "BTC flushed to 79.15k on a $670M liquidation wave (headline 'Bitcoin Price Suddenly Dumps Below $80K as Liquidations Surge to $670M', 2026-10-24T14:34:28Z) and has since held 80.1-80.8k for eight hourly bars with a higher close each time it was tested, a base after forced selling, like the Oct 8-9 flush that bounced. Small bounce trade with a stop under the flush low and a time limit before the FOMC week.",
+       "usd": 250,
+       "wake_utc": "2026-10-25T00:00:00Z"
+      }
+     ],
+     "wins": 1
     },
     "11": {
      "finished": false,
@@ -185,22 +646,33 @@
     "with_news_usd": null
    },
    "OPUS": {
+    "better_with_news": true,
     "complete": false,
-    "months_both_finished": [],
-    "price_only_usd": null,
-    "with_news_usd": null
+    "months_both_finished": [
+     "10"
+    ],
+    "price_only_usd": -61.35,
+    "with_news_usd": -47.25
    },
    "SOL": {
+    "better_with_news": true,
     "complete": false,
-    "months_both_finished": [],
-    "price_only_usd": null,
-    "with_news_usd": null
+    "months_both_finished": [
+     "07",
+     "10"
+    ],
+    "price_only_usd": -35.28,
+    "with_news_usd": -15.57
    },
    "SONNET": {
+    "better_with_news": true,
     "complete": false,
-    "months_both_finished": [],
-    "price_only_usd": null,
-    "with_news_usd": null
+    "months_both_finished": [
+     "07",
+     "10"
+    ],
+    "price_only_usd": -114.62,
+    "with_news_usd": -26.25
    }
   },
   "verdict": "not finished"

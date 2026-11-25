@@ -296,6 +296,7 @@ code, pk = call("/next?session=http"); ok(code == 200 and pk["step"] == 1 and ca
 mk("http_look"); code, r = call("/look?session=http_look&what=bars&symbol=BTC/USD&timeframe=1Day&days=5"); ok(code == 200 and r["ok"] and r["data"], "GET /look works")
 code, r = call("/pick?session=http", {"thesis": "x", "actions": [{"symbol": "BTC/USD", "side": "buy", "usd": 0, "reason": "r"}]}); ok(code == 400 and not r["ok"], "a bad pick answers 400 with the error")
 code, r = call("/pick?session=http", plan[1](pk)); ok(code == 200 and r["ok"] and call("/status?session=http")[1]["step"] == 2, "POST /pick moves the clock")
+code, r = call("/pick?session=http", plan[1](pk)); ok(code == 409 and not r["ok"] and call("/status?session=http")[1]["step"] == 2, "a second send of a pick, before /next is asked again, is refused and moves nothing")
 srv.shutdown(); srv.server_close(); SV._sessions.clear()
 srv = SV.serve(0); port = srv.server_address[1]; threading.Thread(target=srv.serve_forever, daemon=True).start()
 ok(call("/status?session=http")[1]["step"] == 2, "a new server carries on at the same step")

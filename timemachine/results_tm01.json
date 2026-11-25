@@ -1,10 +1,181 @@
 {
  "models": {
   "GROK": {
+   "beats_hold": true,
+   "beats_twins": false,
    "months": {
     "07": {
-     "finished": false,
-     "session": "TM01-B01-GROK-2026-07"
+     "benchmark_shown": "BTC/USD",
+     "buys": 8,
+     "closed": 8,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 12.66,
+     "finished": true,
+     "fund_mover_wakes": 31,
+     "gain_usd": -9.66,
+     "git_dirty": true,
+     "hold_gain_usd": 69.81,
+     "lookups": 93,
+     "losses": 5,
+     "max_drop": -0.0352,
+     "model": "grok_4_7",
+     "news_on": false,
+     "refused_attempts": 0,
+     "session": "TM01-B01-GROK-2026-07",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 54,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-07-04T04:40:00Z",
+       "exit_reason": "Exit set in pick 20260704T0000Z: the target price was reached.",
+       "gain_pct": 0.0302,
+       "gain_usd": 10.29,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Pullback from 82.70 held 80.00 for hours; stop under that shelf and the breakout candle, target back through the high.",
+       "result": "win",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "SOL and LINK led the bounce and have spent the last several hours holding a pullback shelf, so the long is the shelf with a stop just under it and a target back through the spike high. Ether already tagged the June supply and faded, so it stays out.",
+       "usd": 340,
+       "wake_utc": "2026-07-03T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-04T09:46:00Z",
+       "exit_reason": "Exit set in pick 20260704T0000Z: the stop price was reached.",
+       "gain_pct": 0.0119,
+       "gain_usd": 3.34,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Cleared the late-June high near 7.85 and is holding 7.69; stop under the shelf, target under the mid-June high.",
+       "result": "win",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "SOL and LINK led the bounce and have spent the last several hours holding a pullback shelf, so the long is the shelf with a stop just under it and a target back through the spike high. Ether already tagged the June supply and faded, so it stays out.",
+       "usd": 280,
+       "wake_utc": "2026-07-03T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-05T01:35:00Z",
+       "exit_reason": "Exit set in pick 20260705T0000Z: the stop price was reached.",
+       "gain_pct": -0.0043,
+       "gain_usd": -1.47,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Pullback from 1773 has held 1743 for ten hours; stop under that shelf, target into the mid-June supply.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "The bounce is digesting, not breaking. Ether has held a ten-hour shelf under the June 22 high, and LINK's dip under 7.88 was a wick back above the late-June break. SOL's low is only two hours old, so it waits.",
+       "usd": 340,
+       "wake_utc": "2026-07-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-04T18:10:00Z",
+       "exit_reason": "Exit set in pick 20260704T1200Z: the target price was reached.",
+       "gain_pct": 0.0229,
+       "gain_usd": 5.96,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "The 7.87 print was a wick and price is back above the 7.85 break; stop under the wick, target at the mid-June high.",
+       "result": "win",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "The bounce is digesting, not breaking. Ether has held a ten-hour shelf under the June 22 high, and LINK's dip under 7.88 was a wick back above the late-June break. SOL's low is only two hours old, so it waits.",
+       "usd": 260,
+       "wake_utc": "2026-07-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-06T12:05:00Z",
+       "exit_reason": "Exit set in pick 20260705T1200Z: the stop price was reached.",
+       "gain_pct": -0.0179,
+       "gain_usd": -5.39,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Retest of the 1743 shelf held at 1749; stop under the shelf, target just under the 1805 rejection.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "The tight ether trail was the mistake, not the level. Price wicked to 1749 and held the same 1743 shelf, while bitcoin's pullback is holding above yesterday's lows. Rebuy ether against that shelf. Do not trail until the swing is clearly ahead.",
+       "usd": 300,
+       "wake_utc": "2026-07-05T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-08T08:20:00Z",
+       "exit_reason": "Exit set in pick 20260707T1200Z: the stop price was reached.",
+       "gain_pct": -0.0218,
+       "gain_usd": -7.43,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Seven-hour base above 63000 after the 62736 wick; stop under the wick, target just under the June 22 high.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Bitcoin's pullback from 64642 has based for seven hours above the prior breakout, with a wick low at 62736. That is a higher low with room back through the spike toward the mid-June high. Ether's matching base sits under a high it already rejected, so it stays out.",
+       "usd": 340,
+       "wake_utc": "2026-07-07T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-13T02:00:00Z",
+       "exit_reason": "Exit set in pick 20260712T1200Z: the stop price was reached.",
+       "gain_pct": -0.0165,
+       "gain_usd": -5.29,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Two tests of 63615 held; stop under them, target through 64682 toward 65300.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "Bitcoin tested 63619 and then 63614 and held both, so the pullback from 64682 has a twice-tested shelf. The long is that shelf, with a stop just under it and a target through the high toward the mid-June high.",
+       "usd": 320,
+       "wake_utc": "2026-07-12T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-17T02:40:00Z",
+       "exit_reason": "Exit set in pick 20260715T1200Z: the stop price was reached.",
+       "gain_pct": -0.0276,
+       "gain_usd": -9.67,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Pullback to 1864 held above the 1860 breakout shelf; stop under 1848, target 1960.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "Ether broke the June range high and pulled back to 1864, holding the post-breakout shelf. The long is that shelf, stop under the break, target into the late-May supply above 1890.",
+       "usd": 350,
+       "wake_utc": "2026-07-15T12:00:00Z"
+      }
+     ],
+     "wins": 3
     },
     "08": {
      "finished": false,
@@ -19,7 +190,7 @@
      "buys": 3,
      "closed": 3,
      "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
-     "counts": false,
+     "counts": true,
      "edited_later_news_seen": 0,
      "fees_usd": 5.42,
      "finished": true,
@@ -44,7 +215,10 @@
       "15": -43.42,
       "16": -42.25,
       "17": -49.48,
+      "18": -17.95,
+      "19": -50.02,
       "2": -46.82,
+      "20": -46.26,
       "3": -46.2,
       "4": -35.63,
       "5": -33.09,
@@ -53,9 +227,13 @@
       "8": -54.49,
       "9": -39.06
      },
-     "twins_done": 17,
+     "twin_median_usd": -44.38,
+     "twin_p80_usd": -34.52,
+     "twins_beaten": 14,
+     "twins_done": 20,
      "wakes": 62,
      "wakes_no_pick": 59,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-10-08T12:00:00Z",
@@ -119,8 +297,14 @@
      "session": "TM01-B01-GROK-2026-11"
     }
    },
-   "months_counted": [],
+   "months_counted": [
+    "10"
+   ],
    "name": "Grok 4.7",
+   "sum_gain_usd": -37.59,
+   "sum_hold_usd": -76.42,
+   "sum_twin_p80_usd": -34.52,
+   "sum_twins_beaten": 14,
    "verdict": "not finished"
   },
   "KIMI": {
@@ -145,10 +329,28 @@
      "news_on": false,
      "refused_attempts": 1,
      "session": "TM01-B01-KIMI-2026-07",
-     "twin_gains": {},
-     "twins_done": 0,
+     "twin_gains": {
+      "1": -44.24,
+      "10": -14.54,
+      "11": -29.12,
+      "12": -15.77,
+      "13": -9.6,
+      "14": -22.19,
+      "15": -27.05,
+      "16": -9.33,
+      "2": -18.43,
+      "3": -16.86,
+      "4": -8.5,
+      "5": -29.65,
+      "6": -26.03,
+      "7": -33.15,
+      "8": -34.26,
+      "9": -24.66
+     },
+     "twins_done": 16,
      "wakes": 62,
      "wakes_no_pick": 47,
+     "wakes_unseen": 1,
      "why": [
       {
        "closed_utc": "2026-07-01T21:35:00Z",
@@ -397,6 +599,7 @@
      "twins_done": 0,
      "wakes": 62,
      "wakes_no_pick": 54,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-10-07T00:02:00Z",
@@ -617,12 +820,358 @@
   "NEON": {
    "months": {
     "07": {
-     "finished": false,
-     "session": "TM01-B01-NEON-2026-07"
+     "benchmark_shown": "BTC/USD",
+     "buys": 7,
+     "closed": 5,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 9.37,
+     "finished": true,
+     "fund_mover_wakes": 37,
+     "gain_usd": 57.38,
+     "git_dirty": true,
+     "hold_gain_usd": 69.81,
+     "lookups": 36,
+     "losses": 1,
+     "max_drop": -0.0602,
+     "model": "gemini_neon",
+     "news_on": false,
+     "refused_attempts": 1,
+     "session": "TM01-B01-NEON-2026-07",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 49,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-07-02T10:50:00Z",
+       "exit_reason": "Exit set in pick 20260702T0000Z: the target price was reached.",
+       "gain_pct": 0.0941,
+       "gain_usd": 23.59,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 8,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Strongest daily uptrend and quick recovery off 71.31 low",
+       "result": "win",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "SOL/USD shows clear relative strength with higher daily highs and lows while BTC holds 58k support; taking a 25% swing long with stop below yesterday low.",
+       "usd": 250,
+       "wake_utc": "2026-07-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-28T01:10:00Z",
+       "exit_reason": "Exit set in pick 20260727T0000Z: the stop price was reached.",
+       "gain_pct": 0.0459,
+       "gain_usd": 13.82,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Pullback to 60k breakout shelf after 57.7k double-bottom reversal",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC/USD swept 57.7k double-bottom support, broke above its 6-day range to 61.25k, and pulled back to 60k support. Buying BTC/USD for a swing toward 66k while trailing SOL/USD stop higher.",
+       "usd": 300,
+       "wake_utc": "2026-07-02T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-17T13:35:00Z",
+       "exit_reason": "Exit set in pick 20260716T0000Z: the stop price was reached.",
+       "gain_pct": 0.0897,
+       "gain_usd": 31.48,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Range breakout above 1644 with strong hourly trend and room to 1800",
+       "result": "win",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "ETH/USD is breaking out above its 8-day range with clean hourly higher highs and higher lows alongside BTC strength. Taking a 35% swing long with stop below 1580 and target at 1800.",
+       "usd": 350,
+       "wake_utc": "2026-07-02T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-08T08:35:00Z",
+       "exit_reason": "Exit set in pick 20260707T0000Z: the stop price was reached.",
+       "gain_pct": -0.0493,
+       "gain_usd": -13.85,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Bull flag above 80.0 support after breaking 30-day high",
+       "result": "loss",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "SOL/USD broke above its June 1 high to 82.70 and has flagged tightly above 80.0 support for 10 hours. Re-entering SOL/USD as the relative-strength leader alongside BTC and ETH longs.",
+       "usd": 280,
+       "wake_utc": "2026-07-03T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-28T13:40:00Z",
+       "exit_reason": "Exit set in pick 20260727T0000Z: the stop price was reached.",
+       "gain_pct": 0.0204,
+       "gain_usd": 6.14,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 2,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Strong higher-low reversal from 7.52 back to 8.00 resistance alongside BTC breakout",
+       "result": "win",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "BTC and ETH resumed their uptrend off higher lows and are pressing fresh highs. LINK/USD shows strong relative bounce off 7.52 higher-low support to 7.98; buying LINK/USD for a continuation swing toward 9.20.",
+       "usd": 300,
+       "wake_utc": "2026-07-10T12:00:00Z"
+      },
+      {
+       "closed_utc": null,
+       "exit_reason": null,
+       "gain_pct": null,
+       "gain_usd": null,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Successful retest of 1800 breakout support and hourly SMA reclaim",
+       "result": "still held at the end or not filled",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "ETH/USD tested and held 1800 support (1801.7 low) after tagging my 1810 trailing stop, then reclaimed 1841 above hourly SMAs as BTC made a higher low at 62.45k. Re-entering ETH/USD with a wider stop at 1750.",
+       "usd": 380,
+       "wake_utc": "2026-07-18T00:00:00Z"
+      },
+      {
+       "closed_utc": null,
+       "exit_reason": null,
+       "gain_pct": null,
+       "gain_usd": null,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Post-sweep reclaim of 63.8k and hourly SMAs with defined risk below 62,665",
+       "result": "still held at the end or not filled",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC/USD swept 62,665 liquidity and reclaimed all hourly SMAs (5/10/20) with rising higher lows while ETH leads higher to 1919. Re-entering BTC/USD with tight stop below the 62,665 sweep low.",
+       "usd": 340,
+       "wake_utc": "2026-07-29T00:00:00Z"
+      }
+     ],
+     "wins": 4
     },
     "08": {
-     "finished": false,
-     "session": "TM01-B01-NEON-2026-08"
+     "benchmark_shown": "BTC/USD",
+     "buys": 9,
+     "closed": 8,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 13.84,
+     "finished": true,
+     "fund_mover_wakes": 34,
+     "gain_usd": 157.01,
+     "git_dirty": true,
+     "hold_gain_usd": 245.33,
+     "lookups": 66,
+     "losses": 3,
+     "max_drop": -0.0514,
+     "model": "gemini_neon",
+     "news_on": false,
+     "refused_attempts": 0,
+     "session": "TM01-B01-NEON-2026-08",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 46,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-08-03T08:25:00Z",
+       "exit_reason": "Exit set in pick 20260803T0000Z: the stop price was reached.",
+       "gain_pct": -0.0336,
+       "gain_usd": -11.79,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 2,
+        "1Hour": 4
+       },
+       "news_looked": 0,
+       "reason": "Bullish daily reversal (+2.25%) and clean hourly uptrend above 5/10/20/50h SMAs with healthy RSI (59.3).",
+       "result": "loss",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "ETH/USD put in a strong +2.25% daily reversal off the 1820 low on Aug 2, reclaiming its 5-day SMA and all hourly SMAs (5/10/20/50h) while leading the 24-day trend (+7.98%). Entering a moderate swing long with a stop below Sunday's 1841 base and target near the 1975 range high.",
+       "usd": 350,
+       "wake_utc": "2026-08-03T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-06T10:05:00Z",
+       "exit_reason": "Exit set in pick 20260804T1200Z: the stop price was reached.",
+       "gain_pct": -0.0657,
+       "gain_usd": -19.75,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "High-volume breakout above daily SMAs and 6.66 resistance followed by a clean bull-flag pullback to 6.74.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "AVAX/USD",
+       "thesis": "AVAX/USD broke out above its 5/10/20-day SMAs and 6.66 resistance on massive volume (V=1209 on Aug 3, V=927 on the 01:00 UTC breakout to 6.97), then pulled back in an orderly bull flag to 6.74 and is curling back up while BTC is making higher lows above all hourly SMAs. Entering a swing long on AVAX/USD with a stop below the 6.55 breakout base.",
+       "usd": 300,
+       "wake_utc": "2026-08-04T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-11T14:55:00Z",
+       "exit_reason": "Exit set in pick 20260810T1200Z: the stop price was reached.",
+       "gain_pct": -0.0123,
+       "gain_usd": -4.31,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 2,
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Daily close above 5d and 10d SMAs with clean higher-low base and hourly uptrend above 20/50h SMAs.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC/USD closed +0.95% at 64063, reclaiming its 5-day and 10-day SMAs after building a four-day sequence of higher lows (62216 -> 63246 -> 63374) and testing the 20-day SMA at 64328 on strong hourly momentum. Entering a $350 swing long on BTC/USD with a stop below Aug 4's low (62850) and target near the 30-day high (66800), while holding AVAX/USD.",
+       "usd": 350,
+       "wake_utc": "2026-08-05T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-19T15:30:00Z",
+       "exit_reason": "Exit set in pick 20260819T1200Z: the target price was reached.",
+       "gain_pct": 0.0795,
+       "gain_usd": 23.9,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 2,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Daily breakout (+2.00%) closing above 5/10/20-day SMAs alongside BTC clearing its 20-day SMA, entering on a minor hourly pullback from 1925.7.",
+       "result": "win",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "Both BTC/USD (+0.87% to 64595) and ETH/USD (+2.00% to 1906.38) closed cleanly above their 5-, 10-, and 20-day SMAs with a four-day sequence of higher lows. ETH pulled back slightly from its 1925.7 intraday high to 1906.4, offering a clean swing entry with a stop below Aug 5's low (1848) and target at 2040.",
+       "usd": 300,
+       "wake_utc": "2026-08-06T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-19T20:55:00Z",
+       "exit_reason": "Exit set in pick 20260819T1200Z: the target price was reached.",
+       "gain_pct": 0.0871,
+       "gain_usd": 21.83,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 2,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Confirmed daily breakout above 5/10/20d SMAs followed by orderly consolidation above 50h SMA and fresh curl higher.",
+       "result": "win",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "SOL/USD broke cleanly above its 5-, 10-, and 20-day SMAs on Aug 8 (+3.16%), held its gains through Aug 9, and consolidated above its 50-hour SMA (76.42) with hourly RSI resetting to 45.1 before curling higher to 76.97 as BTC pushes above 65,000. Entering a $250 swing long on SOL/USD with a stop below the 20-day SMA (74.20) and target at 83.50, while trailing our BTC/USD stop up to 63700 below five days of daily lows.",
+       "usd": 250,
+       "wake_utc": "2026-08-10T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-19T20:55:00Z",
+       "exit_reason": "Exit set in pick 20260819T1200Z: the target price was reached.",
+       "gain_pct": 0.1749,
+       "gain_usd": 52.6,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1,
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "High-volume 30-day breakout above 8.90 resistance with strong 7-day relative strength (+9.47%) and clean hourly uptrend.",
+       "result": "win",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "LINK/USD broke out to a fresh 30-day high (9.003, close 8.962) on heavy volume (V=850) after three days of high-volume accumulation above 8.57, showing standout relative strength (+9.47% over 7 days while BTC is flat). Entering a $300 swing long on LINK/USD with a stop below the 8.57 three-day base (8.54) and target at 9.85, while holding ETH and SOL.",
+       "usd": 300,
+       "wake_utc": "2026-08-15T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-30T23:40:00Z",
+       "exit_reason": "Exit set in pick 20260828T0000Z: the stop price was reached.",
+       "gain_pct": 0.0423,
+       "gain_usd": 16.12,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Strongest breakout leader (+19.4% 24h) resuming higher out of a tight 2222-2265 bull flag with hourly RSI reset to 53.0.",
+       "result": "win",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "After yesterday's regime-change breakout, BTC, ETH, and SOL all completed tight overnight bull-flag consolidations that reset hourly RSIs (ETH 53.0, SOL 55.9, BTC 73.3) and broke higher again (BTC clearing 70k to 71.8k, ETH pushing 2295, SOL pushing 87.2). Re-entering all three leaders with stops below their overnight consolidation lows and leaving targets open to trail stops if momentum extends.",
+       "usd": 380,
+       "wake_utc": "2026-08-20T12:00:00Z"
+      },
+      {
+       "closed_utc": null,
+       "exit_reason": null,
+       "gain_pct": null,
+       "gain_usd": null,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "High-volume breakout above 70k (to 72.4k/71.9k) after 10 hours of tight consolidation above 68.8k.",
+       "result": "still held at the end or not filled",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "After yesterday's regime-change breakout, BTC, ETH, and SOL all completed tight overnight bull-flag consolidations that reset hourly RSIs (ETH 53.0, SOL 55.9, BTC 73.3) and broke higher again (BTC clearing 70k to 71.8k, ETH pushing 2295, SOL pushing 87.2). Re-entering all three leaders with stops below their overnight consolidation lows and leaving targets open to trail stops if momentum extends.",
+       "usd": 380,
+       "wake_utc": "2026-08-20T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-08-30T23:30:00Z",
+       "exit_reason": "Exit set in pick 20260828T0000Z: the stop price was reached.",
+       "gain_pct": 0.1573,
+       "gain_usd": 44.15,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 3
+       },
+       "news_looked": 0,
+       "reason": "Clean bull-flag breakout to 88.0/87.2 after high-volume absorption and hourly RSI reset to 55.9.",
+       "result": "win",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "After yesterday's regime-change breakout, BTC, ETH, and SOL all completed tight overnight bull-flag consolidations that reset hourly RSIs (ETH 53.0, SOL 55.9, BTC 73.3) and broke higher again (BTC clearing 70k to 71.8k, ETH pushing 2295, SOL pushing 87.2). Re-entering all three leaders with stops below their overnight consolidation lows and leaving targets open to trail stops if momentum extends.",
+       "usd": 280,
+       "wake_utc": "2026-08-20T12:00:00Z"
+      }
+     ],
+     "wins": 5
     },
     "09": {
      "finished": false,
@@ -652,6 +1201,7 @@
      "twins_done": 0,
      "wakes": 62,
      "wakes_no_pick": 56,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-10-08T17:25:00Z",
@@ -827,6 +1377,7 @@
      "twins_done": 0,
      "wakes": 62,
      "wakes_no_pick": 44,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-07-02T10:35:00Z",
@@ -1033,6 +1584,7 @@
      "twins_done": 0,
      "wakes": 62,
      "wakes_no_pick": 46,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-08-11T17:10:00Z",
@@ -1184,8 +1736,227 @@
      "wins": 5
     },
     "09": {
-     "finished": false,
-     "session": "TM01-B01-OPUS-2026-09"
+     "benchmark_shown": "BTC/USD",
+     "buys": 11,
+     "closed": 11,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "edited_later_news_seen": 0,
+     "fees_usd": 15.45,
+     "finished": true,
+     "fund_mover_wakes": 44,
+     "gain_usd": -34.87,
+     "git_dirty": true,
+     "hold_gain_usd": 59.89,
+     "lookups": 25,
+     "losses": 7,
+     "max_drop": -0.0696,
+     "model": "claude_opus_5_5",
+     "news_on": false,
+     "refused_attempts": 0,
+     "session": "TM01-B01-OPUS-2026-09",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 60,
+     "wakes_no_pick": 47,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-09-02T09:45:00Z",
+       "exit_reason": "Exit set in pick 20260901T0000Z: the stop price was reached.",
+       "gain_pct": -0.053,
+       "gain_usd": -15.95,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 9
+       },
+       "news_looked": 0,
+       "reason": "Strongest relative chart: higher highs after the breakout, holding 100-105; stop below Aug 30 low of 99.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "All eight pairs broke out hard on Aug 19-21. Since then BTC has held a tight 77-81k range near its highs while most alts gave back part of the move; SOL is the exception, making a new high on Aug 27 and holding above 100. I buy the two strongest charts (BTC, SOL) in moderate size with stops under their recent range lows, betting the range resolves upward like the impulse that preceded it.",
+       "usd": 300,
+       "wake_utc": "2026-09-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-02T11:25:00Z",
+       "exit_reason": "Exit set in pick 20260901T0000Z: the stop price was reached.",
+       "gain_pct": -0.0346,
+       "gain_usd": -10.42,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 9
+       },
+       "news_looked": 0,
+       "reason": "Holding near breakout highs in a tight 77-81k range; stop below the range at 76.4k.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "All eight pairs broke out hard on Aug 19-21. Since then BTC has held a tight 77-81k range near its highs while most alts gave back part of the move; SOL is the exception, making a new high on Aug 27 and holding above 100. I buy the two strongest charts (BTC, SOL) in moderate size with stops under their recent range lows, betting the range resolves upward like the impulse that preceded it.",
+       "usd": 300,
+       "wake_utc": "2026-09-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-03T15:40:00Z",
+       "exit_reason": "Exit set in pick 20260903T1200Z: the target price was reached.",
+       "gain_pct": 0.0324,
+       "gain_usd": 11.37,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Range low held and reclaimed; buying the lower third of a 75.6k-81.4k range.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC dipped to 76.2k on Sep 2, just under its two-week range, and has climbed back to 77.9k. The range since Aug 22 is roughly 75.6k to 81.4k. I buy BTC in the lower part of the range with a stop under the Aug 23 low, so ordinary daily swings do not stop me out like last time, and aim for the upper part of the range.",
+       "usd": 350,
+       "wake_utc": "2026-09-03T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-04T14:50:00Z",
+       "exit_reason": "Exit set in pick 20260904T0000Z: the stop price was reached.",
+       "gain_pct": -0.0387,
+       "gain_usd": -13.59,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Breakout to a new high above the two-week range, holding the breakout level for eight hours.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC ran from 77.9k to 81-82k in one afternoon and printed a new high above the Aug 28 top of 81.45k, then held above 81k for eight hours. A range that breaks upward after a big impulse often extends. I buy BTC with a stop back inside the old range, wide enough to survive a normal day, and a target about one range-height above.",
+       "usd": 350,
+       "wake_utc": "2026-09-04T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-10T12:55:00Z",
+       "exit_reason": "Exit set in pick 20260906T0000Z: the stop price was reached.",
+       "gain_pct": -0.0596,
+       "gain_usd": -14.93,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 3
+       },
+       "news_looked": 0,
+       "reason": "Clear relative-strength leader, highest close since the Aug 21-22 breakout.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LTC/USD",
+       "thesis": "LTC has become the strongest of the eight: it closed Sep 5 at 54.7, its highest close since the August breakout, up 14% from the Aug 30 low while BTC is flat. I buy a small LTC position on that relative strength with a stop about 5% below, wider than my earlier stops that kept getting hit on ordinary wicks, and a target near 60.",
+       "usd": 250,
+       "wake_utc": "2026-09-06T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-08T13:35:00Z",
+       "exit_reason": "Exit set in pick 20260907T0000Z: the stop price was reached.",
+       "gain_pct": -0.0679,
+       "gain_usd": -13.61,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "New high above the Aug 22 top, gain held for three hours after the jump.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "LINK/USD",
+       "thesis": "Alts are leading a broad grind higher while BTC sits near 80k. LINK jumped 6% in one hour on Sep 6 and then held the gain for three hours, closing above its Aug 22 high of 12.67, so the August breakout is extending. I keep LTC and add a small LINK position with a stop under the level the jump started from, sized so the loss if stopped is about 12 dollars.",
+       "usd": 200,
+       "wake_utc": "2026-09-07T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-15T14:40:00Z",
+       "exit_reason": "Exit set in pick 20260915T0000Z: the stop price was reached.",
+       "gain_pct": -0.0224,
+       "gain_usd": -6.75,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Pullback to the three-week range floor that held again overnight; good reward against a stop under the whole range.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC has ranged between about 76.2k and 82.2k for three weeks. It touched 76.45k overnight, the floor held, and it has spent twelve hours at 76.7k-77.4k. Instead of chasing strength, which cost me four times, I buy near the floor with the stop under every low since Aug 21, so a normal wick will not stop me out, and I aim for the middle-upper part of the range.",
+       "usd": 300,
+       "wake_utc": "2026-09-11T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-18T13:55:00Z",
+       "exit_reason": "Exit set in pick 20260917T1200Z: the target price was reached.",
+       "gain_pct": 0.04,
+       "gain_usd": 12.02,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Breakdown under 76.2k found support at 75.3k and price is back at the old floor.",
+       "result": "win",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC broke under its 76.2k floor on Sep 15, found buyers at 75.3k, and has spent a day and a half grinding back to 76.4k. Alts are bouncing harder. If the breakdown fails, the range resumes. I buy BTC with a stop clearly under the 75.3k low and, this time, I will not tighten it early. The target is the upper half of the old range.",
+       "usd": 300,
+       "wake_utc": "2026-09-17T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-29T12:00:00Z",
+       "exit_reason": "Exit set in pick 20260926T0000Z: the exit time was reached.",
+       "gain_pct": 0.0375,
+       "gain_usd": 9.4,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "Closed above its Aug 27 high of 2566 in a market-wide breakout and held 2610-2640 for hours.",
+       "result": "win",
+       "sources": [],
+       "symbol": "ETH/USD",
+       "thesis": "On Sep 18 the whole market broke out together. ETH, SOL and LTC all closed above their August-September highs, and BTC rose 6% off its failed breakdown. That is different from my earlier failed buys, where one coin spiked alone. I buy ETH and SOL, the two large coins that cleared their old highs and held them for ten hours. Stops go under the level where the move started, and sizes are set so each stop loses about 12-14 dollars.",
+       "usd": 250,
+       "wake_utc": "2026-09-19T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-29T12:00:00Z",
+       "exit_reason": "Exit set in pick 20260926T0000Z: the exit time was reached.",
+       "gain_pct": 0.0579,
+       "gain_usd": 11.61,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 2
+       },
+       "news_looked": 0,
+       "reason": "New high above the Aug 27 top of 110.5, held 112-114 after the breakout.",
+       "result": "win",
+       "sources": [],
+       "symbol": "SOL/USD",
+       "thesis": "On Sep 18 the whole market broke out together. ETH, SOL and LTC all closed above their August-September highs, and BTC rose 6% off its failed breakdown. That is different from my earlier failed buys, where one coin spiked alone. I buy ETH and SOL, the two large coins that cleared their old highs and held them for ten hours. Stops go under the level where the move started, and sizes are set so each stop loses about 12-14 dollars.",
+       "usd": 200,
+       "wake_utc": "2026-09-19T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-09-29T12:00:00Z",
+       "exit_reason": "Exit set in pick 20260926T0000Z: the exit time was reached.",
+       "gain_pct": -0.0134,
+       "gain_usd": -4.04,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Clean break above the 82.2k range top on a day when every pair rose; trend confirmation.",
+       "result": "loss",
+       "sources": [],
+       "symbol": "BTC/USD",
+       "thesis": "BTC has now cleared its 82.2k high from Sep 3 and trades at 84.9k, and every pair is up 3-7% today. ETH and SOL bought on the Sep 18 breakout are both in profit. The market has moved from a range into an uptrend, so I add BTC as a third holding with a wide stop back inside the old range. I raise the ETH and SOL stops to just under their Sep 20 pullback lows to cut the risk, but not tight enough to be hit by a normal day.",
+       "usd": 300,
+       "wake_utc": "2026-09-21T12:00:00Z"
+      }
+     ],
+     "wins": 4
     },
     "10": {
      "benchmark_shown": "AVAX/USD",
@@ -1235,6 +2006,7 @@
      "twins_done": 20,
      "wakes": 62,
      "wakes_no_pick": 55,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-10-07T13:50:00Z",
@@ -1390,6 +2162,7 @@
      "twins_done": 0,
      "wakes": 62,
      "wakes_no_pick": 57,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-07-02T10:40:00Z",
@@ -1513,6 +2286,7 @@
      "twins_done": 0,
      "wakes": 62,
      "wakes_no_pick": 59,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-08-03T06:45:00Z",
@@ -1598,6 +2372,7 @@
      "twins_done": 0,
      "wakes": 60,
      "wakes_no_pick": 55,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-09-06T02:40:00Z",
@@ -1749,6 +2524,7 @@
      "twins_done": 20,
      "wakes": 62,
      "wakes_no_pick": 58,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-10-02T18:40:00Z",
@@ -1864,6 +2640,7 @@
      "twins_done": 0,
      "wakes": 62,
      "wakes_no_pick": 58,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-07-06T00:00:00Z",
@@ -1949,6 +2726,7 @@
      "twins_done": 0,
      "wakes": 62,
      "wakes_no_pick": 51,
+     "wakes_unseen": 0,
      "why": [
       {
        "closed_utc": "2026-08-11T00:00:00Z",
@@ -2085,6 +2863,7 @@
      "twins_done": 0,
      "wakes": 60,
      "wakes_no_pick": 56,
+     "wakes_unseen": 1,
      "why": [
       {
        "closed_utc": "2026-09-04T14:50:00Z",
@@ -2195,6 +2974,7 @@
      "twins_done": 20,
      "wakes": 62,
      "wakes_no_pick": 59,
+     "wakes_unseen": 1,
      "why": [
       {
        "closed_utc": "2026-10-08T17:00:00Z",
@@ -2293,6 +3073,7 @@
      "twins_done": 0,
      "wakes": 48,
      "wakes_no_pick": 43,
+     "wakes_unseen": 1,
      "why": [
       {
        "closed_utc": "2026-11-04T14:45:00Z",

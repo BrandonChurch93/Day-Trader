@@ -111,7 +111,8 @@ def session_row(tag, mo):
                buys=sum(1 for o in s["orders"] if o["side"] == "buy" and o["status"] == "filled"),
                closed=t["closed_trades"], wins=t["wins"], losses=t["losses"], fees_usd=t["fees_added_usd"], max_drop=round(max_drop(s["points"]), 4),
                wakes_no_pick=sum(1 for x in steps if x.get("pick") is None), refused_attempts=sum(x.get("bad_attempts", 0) for x in steps),
-               lookups=sum(x.get("looks", 0) for x in steps), fund_mover_wakes=fund_mover_wakes(sid), news_on=bool(r["session"].get("news")),
+               lookups=sum(x.get("looks", 0) for x in steps), fund_mover_wakes=fund_mover_wakes(sid),
+               wakes_unseen=sum(not (RUNS / sid / "packets" / f"{x['k']}.json").exists() for x in steps), news_on=bool(r["session"].get("news")),
                edited_later_news_seen=r.get("edited_later_news_seen"), git_dirty=r["session"]["git"]["dirty"], config_hash=r["session"]["config_hash"],
                benchmark_shown=r["session"]["benchmark"], hold_gain_usd=hold["summary"]["account"]["gain_usd"] if hold else None,
                twins_done=len(twins), twin_gains={str(k): v for k, v in sorted(twins.items())}, why=why_rows(sid, r))
@@ -191,14 +192,14 @@ def doc(o):
             L.append(f"| {name} | {len(r['months_both_finished'])} of {len(MONTHS)} | {usd(r['with_news_usd'])} | {usd(r['price_only_usd'])} | {('yes' if r['better_with_news'] else 'no') if 'better_with_news' in r else 'n/a'} |")
         L += ["", f"Verdict: {nt['verdict']}."]
     L += ["", "## Each session", "",
-          "| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups | Wakes that showed stock fund movers |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+          "| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups | Wakes that showed stock fund movers | Wakes answered unseen |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for mo, mname in MONTHS:
         for tag, _ in MODELS:
             r = o["models"][tag]["months"][mo]
             if not r["finished"]:
-                L.append(f"| {mname} | {o['models'][tag]['name']} | not finished | | | | | | | | | | | |"); continue
+                L.append(f"| {mname} | {o['models'][tag]['name']} | not finished | | | | | | | | | | | | |"); continue
             L.append(f"| {mname} | {o['models'][tag]['name']} | {usd(r['gain_usd'])} | {usd(r['hold_gain_usd'])} | {usd(r.get('twin_p80_usd'))} | "
-                     f"{r.get('twins_beaten', 'n/a')} of {r['twins_done']} | {r['buys']} | {r['wins']} | {r['losses']} | {usd(r['fees_usd'])} | {r['max_drop'] * 100:.1f}% | {r['wakes_no_pick']} of {r['wakes']} | {r['lookups']} | {r['fund_mover_wakes']} of {r['wakes']} |")
+                     f"{r.get('twins_beaten', 'n/a')} of {r['twins_done']} | {r['buys']} | {r['wins']} | {r['losses']} | {usd(r['fees_usd'])} | {r['max_drop'] * 100:.1f}% | {r['wakes_no_pick']} of {r['wakes']} | {r['lookups']} | {r['fund_mover_wakes']} of {r['wakes']} | {r['wakes_unseen']} |")
     L += ["", "## Why each trade was made, and how it ended", "",
           "One row per buy. \"Looked at\" is what the trader asked the desk for at that wake, beyond the packet it is always given. "
           + ("\"Headlines it named\" is the pick's own list of sources. Headlines are also in every packet, so a trader can use one without a lookup." if P["news"] else "No trader in this plan had news, so none looked at news."), ""]
@@ -223,6 +224,7 @@ def doc(o):
           "- October was the shakedown month. Its three known differences are listed at the end of the plan." if not P["news"] else
           "- A headline can remind a model of what it already knows about that period. That would look like skill and is not. About one headline in eight was edited after it was published; those are marked and the card says not to trade on them.",
           "- For a time on 2026-11-25 the packets of crypto sessions also listed the previous day's movers among stock funds, after those funds were loaded onto the tape. Nothing from the future was shown, and no trader looked up a stock. The last column of the session table counts the wakes this touched. It was switched off at 15:53 UTC.",
+          "- Until 2026-11-25 16:00 UTC, a pick sent twice after a lost reply was taken twice: once for the wake it was meant for, and again for the next wake, which the trader had not seen. The last column of the session table counts those wakes. Every one found so far was a repeated \"no pick\"; no buy or sell was doubled. The desk now refuses a pick for a wake the trader has not asked to see.",
           "- With six models, one looking good by luck is likely. That is why the bar is per model and was fixed before the run.", ""]
     return "\n".join(L)
 

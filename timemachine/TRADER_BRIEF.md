@@ -16,6 +16,7 @@ This is the exact text given to an AI trader for a replay. Pretend money only. N
 - Think. Keep any notes you want in your own notes folder.
 - If you need more, look. You have a few lookups per wake (`looks_left`, set by `tm_max_looks_per_wake`).
 - Send one answer: `curl -s -X POST 'http://127.0.0.1:PORT/pick?session=SESSION' -H 'Content-Type: application/json' -d @pick.json`
+- If a send comes back empty or fails, do not send it again. Ask `/next` first. If the time in it has moved, your pick was taken. The desk refuses a pick for a wake you have not asked `/next` for.
 - If the answer says `ok: false`, read the reasons, fix the pick, and send it again. The clock does not move until a pick is accepted.
 - Repeat until `/next` answers `"status": "DONE"`.
 - Then write a short report: what you did, why, what went wrong, and what you would change. Do not look up how the period really went.

@@ -78,8 +78,21 @@ class Records:
             f.write(json.dumps(row, sort_keys=True) + "\n")
 
     def rows(self, name):
+        """Every row of one record file. The files only ever grow, so rows read before are kept and only new lines are parsed."""
         p = self.dir / (name + ".jsonl")
-        return [json.loads(x) for x in open(p) if x.strip()] if p.exists() else []
+        if not p.exists():
+            return []
+        kept = self.__dict__.setdefault("_kept", {}); at, rows = kept.get(name, (0, []))
+        size = p.stat().st_size
+        if size < at:
+            at, rows = 0, []
+        if size > at:
+            with open(p, "rb") as f:
+                f.seek(at); chunk = f.read()
+            end = chunk.rfind(b"\n") + 1                      # a half-written last line waits for the next read
+            rows = rows + [json.loads(x) for x in chunk[:end].decode().split("\n") if x.strip()]
+            at += end; kept[name] = (at, rows)
+        return [dict(r) for r in rows]
 
     def load(self, name, default):
         p = self.dir / name
