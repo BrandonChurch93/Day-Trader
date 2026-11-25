@@ -307,6 +307,31 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(engine.events[-1].get("reason"),"target_gross_limit")
         self.assertLessEqual(sum(abs(w) for w in book["target"].values()),1)
 
+    def test_opus_r1_open_coverage_is_not_in_the_pick_reply(self):
+        def arm(gappy):
+            spec = world()
+            if gappy:
+                spec = world([r for r in spec["minutes"] if r[0] != T or r[1] != A])
+            # Keep the temp worker roots distinct, as in separate fixtures.
+            original = self.root
+            self.root = original / str(gappy)
+            self.root.mkdir()
+            try:
+                s = self.create("C",self.scout_export(spec),spec)
+                p,key = info(s)
+                cited = {"note_ids":[p["notes"][0]["id"]]}
+                response = s.handle("boss","pick",dict(wake_key=key,why="Test",weights={A:.3},citations={A:cited},
+                                    conditions=[dict(symbol=A,direction="above",price=110,hours=2,weight=.2,**cited)]))
+                with s.tx() as (con,_):
+                    fill = D.json.loads(con.execute("SELECT data FROM journal WHERE kind='immediate'").fetchone()[0])
+                return response,fill["trade"]["fill_utc"]
+            finally:
+                self.root = original
+        plain,gap = arm(False),arm(True)
+        self.assertEqual(plain[0],gap[0])
+        self.assertEqual(plain[1],P.iso(D.wall(T)))
+        self.assertEqual(gap[1],P.iso(D.wall(T+60)))
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
