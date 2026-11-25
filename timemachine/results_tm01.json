@@ -1,0 +1,490 @@
+{
+ "models": {
+  "GROK": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM01-B01-GROK-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM01-B01-GROK-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM01-B01-GROK-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM01-B01-GROK-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM01-B01-GROK-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Grok 4.7",
+   "verdict": "not finished"
+  },
+  "KIMI": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM01-B01-KIMI-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM01-B01-KIMI-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM01-B01-KIMI-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM01-B01-KIMI-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM01-B01-KIMI-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Kimi K3",
+   "verdict": "not finished"
+  },
+  "NEON": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM01-B01-NEON-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM01-B01-NEON-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM01-B01-NEON-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM01-B01-NEON-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM01-B01-NEON-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Gemini Neon",
+   "verdict": "not finished"
+  },
+  "OPUS": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM01-B01-OPUS-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM01-B01-OPUS-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM01-B01-OPUS-2026-09"
+    },
+    "10": {
+     "benchmark_shown": "AVAX/USD",
+     "buys": 6,
+     "closed": 6,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "fees_usd": 7.37,
+     "finished": true,
+     "gain_usd": -61.35,
+     "git_dirty": true,
+     "hold_gain_usd": -76.42,
+     "lookups": 250,
+     "losses": 6,
+     "max_drop": -0.0802,
+     "model": "claude_opus_5_5",
+     "refused_attempts": 0,
+     "session": "TM01-B01-OPUS-2026-10",
+     "twin_gains": {},
+     "twins_done": 0,
+     "wakes": 62,
+     "wakes_no_pick": 55,
+     "why": [
+      {
+       "closed_utc": "2026-10-07T13:50:00Z",
+       "exit_reason": "Exit set in pick 20261005T0000Z: the stop price was reached.",
+       "gain_pct": -0.0149,
+       "gain_usd": -4.48,
+       "looked": {
+        "1Day": 9
+       },
+       "news_looked": 0,
+       "reason": "Uptrend intact, tight week-long base near 83.5-84.5k above 20-day average",
+       "result": "loss",
+       "symbol": "BTC/USD",
+       "thesis": "After a strong mid-September rally, BTC and ETH have spent a week consolidating just above their 20-day averages without breaking down. I take a modest long in each, betting the trend resumes, with stops under the consolidation so a breakdown costs about 3.5%. Assumed round-trip cost is well under 1%, targets need 6%+.",
+       "usd": 300,
+       "wake_utc": "2026-10-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-07T02:05:00Z",
+       "exit_reason": "Exit set in pick 20261005T0000Z: the stop price was reached.",
+       "gain_pct": -0.0328,
+       "gain_usd": -8.21,
+       "looked": {
+        "1Day": 9
+       },
+       "news_looked": 0,
+       "reason": "Tight base 2676-2695 for a week after rally, above 20-day average",
+       "result": "loss",
+       "symbol": "ETH/USD",
+       "thesis": "After a strong mid-September rally, BTC and ETH have spent a week consolidating just above their 20-day averages without breaking down. I take a modest long in each, betting the trend resumes, with stops under the consolidation so a breakdown costs about 3.5%. Assumed round-trip cost is well under 1%, targets need 6%+.",
+       "usd": 250,
+       "wake_utc": "2026-10-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-08T12:45:00Z",
+       "exit_reason": "Exit set in pick 20261007T0000Z: the stop price was reached.",
+       "gain_pct": -0.0472,
+       "gain_usd": -7.1,
+       "looked": {
+        "1Day": 8
+       },
+       "news_looked": 0,
+       "reason": "Strongest two-week trend, holding a week-long range above its 20-day average; small size for its ~10% daily range",
+       "result": "loss",
+       "symbol": "AVAX/USD",
+       "thesis": "BTC firmed 1.5% on the day, ETH holding its base; keep both. AVAX is the strongest trend of the eight (+44% in two weeks) and has held 10.2-11.4 for a week, so I add a smaller position sized for its wider swings.",
+       "usd": 150,
+       "wake_utc": "2026-10-02T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-15T13:30:00Z",
+       "exit_reason": "Exit set in pick 20261010T0000Z: the stop price was reached.",
+       "gain_pct": -0.0359,
+       "gain_usd": -9.01,
+       "looked": {
+        "1Day": 8
+       },
+       "news_looked": 0,
+       "reason": "Held two-week support near 80.3k with an up close; strongest of the eight in the slide",
+       "result": "loss",
+       "symbol": "BTC/USD",
+       "thesis": "After a 3-5% slide, BTC held above its two-week low near 80.3k and closed up 1.1%, holding up better than the alts. I take a modest BTC long with a tight stop just under that low, aiming for the 86k area where it stalled before. Risk about 2.8% plus costs versus a 4-5% target.",
+       "usd": 250,
+       "wake_utc": "2026-10-10T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-13T00:10:00Z",
+       "exit_reason": "Exit set in pick 20261012T0000Z: the stop price was reached.",
+       "gain_pct": -0.0858,
+       "gain_usd": -17.2,
+       "looked": {
+        "1Day": 8
+       },
+       "news_looked": 0,
+       "reason": "First pair to reclaim its 7- and 20-day averages after the slide; relative strength leader",
+       "result": "loss",
+       "symbol": "AVAX/USD",
+       "thesis": "The slide looks to have based: three up days across the board. AVAX led the bounce (+5.6% on the day, +8.7% over three) and is back above its 7- and 20-day averages, the first pair to do so. I add a mid-size AVAX long with a stop under the recent swing low and a target at the range top near 12. BTC held.",
+       "usd": 200,
+       "wake_utc": "2026-10-12T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-22T16:55:00Z",
+       "exit_reason": "Exit set in pick 20261022T0000Z: the stop price was reached.",
+       "gain_pct": -0.0437,
+       "gain_usd": -15.34,
+       "looked": {
+        "1Day": 8
+       },
+       "news_looked": 0,
+       "reason": "First daily close back above the 20-day average, higher lows since the 79.7k dip",
+       "result": "loss",
+       "symbol": "BTC/USD",
+       "thesis": "BTC closed above its 20-day average (84.0k vs 83.2k) for the first time since the slide began, after three up days and a higher low over the past week. That is the condition I set before re-entering. I buy BTC only, leaving the weaker alts alone, with a stop at 81k under last week's lows (wider than before to avoid noise stops) and a target near 89k.",
+       "usd": 350,
+       "wake_utc": "2026-10-22T00:00:00Z"
+      }
+     ],
+     "wins": 0
+    },
+    "11": {
+     "finished": false,
+     "session": "TM01-B01-OPUS-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Claude Opus 5.5",
+   "verdict": "not finished"
+  },
+  "SOL": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM01-B01-SOL-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM01-B01-SOL-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM01-B01-SOL-2026-09"
+    },
+    "10": {
+     "benchmark_shown": "AVAX/USD",
+     "buys": 4,
+     "closed": 4,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": false,
+     "fees_usd": 4.45,
+     "finished": true,
+     "gain_usd": -32.5,
+     "git_dirty": true,
+     "hold_gain_usd": -76.42,
+     "lookups": 37,
+     "losses": 4,
+     "max_drop": -0.036,
+     "model": "gpt_6_2_sol",
+     "refused_attempts": 0,
+     "session": "TM01-B01-SOL-2026-10",
+     "twin_gains": {
+      "1": -25.55,
+      "2": -26.43,
+      "3": -25.95,
+      "4": -21.61,
+      "5": -27.11,
+      "6": -28.66,
+      "7": -18.51,
+      "8": -24.31
+     },
+     "twins_done": 8,
+     "wakes": 62,
+     "wakes_no_pick": 58,
+     "why": [
+      {
+       "closed_utc": "2026-10-02T18:40:00Z",
+       "exit_reason": "Exit set in pick 20261002T1200Z: the stop price was reached.",
+       "gain_pct": -0.0383,
+       "gain_usd": -9.22,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Buy the reclaim of 69 with renewed market breadth and a stop below the prior wake.",
+       "result": "loss",
+       "symbol": "LTC/USD",
+       "thesis": "BTC is advancing with broader participation now, and LTC has reclaimed 69 after spending two wakes below it. A move toward 74.5 leaves roughly 6.8% gross room, comfortably above my provisional 1% round-trip fee and spread allowance.",
+       "usd": 240,
+       "wake_utc": "2026-10-02T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-05T14:55:00Z",
+       "exit_reason": "Exit set in pick 20261005T0000Z: the stop price was reached.",
+       "gain_pct": -0.0427,
+       "gain_usd": -9.62,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Buy the recovery out of the 13.80 area with broader confirmation.",
+       "result": "loss",
+       "symbol": "LINK/USD",
+       "thesis": "The broader rebound has now lasted several wakes, and LINK has recovered from 13.80 to 14.28 while leaving about 6% to 15.15. The observed 25 bp fee and 10 bp simulated spread imply roughly 70 bp round trip before any additional opening gap.",
+       "usd": 225,
+       "wake_utc": "2026-10-05T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-12T16:50:00Z",
+       "exit_reason": "Exit set in pick 20261012T0000Z: the stop price was reached.",
+       "gain_pct": -0.038,
+       "gain_usd": -8.77,
+       "looked": {
+        "1Day": 3
+       },
+       "news_looked": 0,
+       "reason": "Enter the confirmed rebound from the multiday base, with the stop back below the breakout area.",
+       "result": "loss",
+       "symbol": "AVAX/USD",
+       "thesis": "After several wakes of basing, BTC has recovered above 83,500 and AVAX has cleared 10.66 with broader participation. A move to 11.58 offers about 5.9% gross room versus about 0.7% round-trip cost; I will use modest size because it has already moved sharply.",
+       "usd": 230,
+       "wake_utc": "2026-10-12T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-22T03:35:00Z",
+       "exit_reason": "Exit set in pick 20261021T1200Z: the stop price was reached.",
+       "gain_pct": -0.0232,
+       "gain_usd": -4.88,
+       "looked": {
+        "1Min": 1
+       },
+       "news_looked": 0,
+       "reason": "Buy the recovered retest with a stop below the observed pullback low.",
+       "result": "loss",
+       "symbol": "SOL/USD",
+       "thesis": "SOL pulled back to 105.33 in the minute bars and reclaimed 106.7 while BTC followed through. This is a tested rebound rather than the first push; 110.75 offers about 3.75% gross room versus about 0.7% round-trip cost.",
+       "usd": 210,
+       "wake_utc": "2026-10-21T12:00:00Z"
+      }
+     ],
+     "wins": 0
+    },
+    "11": {
+     "finished": false,
+     "session": "TM01-B01-SOL-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "GPT-6.2 Sol",
+   "verdict": "not finished"
+  },
+  "SONNET": {
+   "beats_hold": false,
+   "beats_twins": false,
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM01-B01-SONNET-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM01-B01-SONNET-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM01-B01-SONNET-2026-09"
+    },
+    "10": {
+     "benchmark_shown": "AVAX/USD",
+     "buys": 4,
+     "closed": 4,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": true,
+     "fees_usd": 5.79,
+     "finished": true,
+     "gain_usd": -88.92,
+     "git_dirty": true,
+     "hold_gain_usd": -76.42,
+     "lookups": 29,
+     "losses": 4,
+     "max_drop": -0.1047,
+     "model": "claude_sonnet_5_5",
+     "refused_attempts": 0,
+     "session": "TM01-B01-SONNET-2026-10",
+     "twin_gains": {
+      "1": -64.61,
+      "10": -54.56,
+      "11": -65.48,
+      "12": -39.64,
+      "13": -81.72,
+      "14": -75.49,
+      "15": -75.94,
+      "16": -71.23,
+      "17": -82.16,
+      "18": -44.89,
+      "19": -83.98,
+      "2": -79.1,
+      "20": -80.34,
+      "3": -69.59,
+      "4": -61.93,
+      "5": -66.97,
+      "6": -69.42,
+      "7": -76.18,
+      "8": -80.05,
+      "9": -73.4
+     },
+     "twin_median_usd": -72.31,
+     "twin_p80_usd": -64.07,
+     "twins_beaten": 0,
+     "twins_done": 20,
+     "wakes": 62,
+     "wakes_no_pick": 59,
+     "why": [
+      {
+       "closed_utc": "2026-10-08T17:00:00Z",
+       "exit_reason": "Exit set in pick 20261001T0000Z: the stop price was reached.",
+       "gain_pct": -0.0943,
+       "gain_usd": -28.35,
+       "looked": {
+        "1Day": 9
+       },
+       "news_looked": 0,
+       "reason": "Uptrend, +20% in 14d, consolidating around 118-122",
+       "result": "loss",
+       "symbol": "SOL/USD",
+       "thesis": "Crypto rallied hard over the last two weeks and is consolidating near highs. LINK and SOL show the strongest trend; buy a modest starter in each with stops under the recent consolidation lows.",
+       "usd": 300,
+       "wake_utc": "2026-10-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-08T03:10:00Z",
+       "exit_reason": "Exit set in pick 20261001T0000Z: the stop price was reached.",
+       "gain_pct": -0.0881,
+       "gain_usd": -26.48,
+       "looked": {
+        "1Day": 9
+       },
+       "news_looked": 0,
+       "reason": "Strongest 7d momentum (+16%), holding near highs",
+       "result": "loss",
+       "symbol": "LINK/USD",
+       "thesis": "Crypto rallied hard over the last two weeks and is consolidating near highs. LINK and SOL show the strongest trend; buy a modest starter in each with stops under the recent consolidation lows.",
+       "usd": 300,
+       "wake_utc": "2026-10-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-08T15:25:00Z",
+       "exit_reason": "Exit set in pick 20261005T0000Z: the stop price was reached.",
+       "gain_pct": -0.0646,
+       "gain_usd": -19.41,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Breakout attempt above the 83-85k base, lowest-vol of the group",
+       "result": "loss",
+       "symbol": "BTC/USD",
+       "thesis": "BTC is pressing the prior high near 87.4k after a firm base around 83-85k; add a third position. Keep SOL and LINK with their stops.",
+       "usd": 300,
+       "wake_utc": "2026-10-05T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-10-24T09:10:00Z",
+       "exit_reason": "Exit set in pick 20261022T0000Z: the stop price was reached.",
+       "gain_pct": -0.0488,
+       "gain_usd": -14.67,
+       "looked": {
+        "1Day": 3
+       },
+       "news_looked": 0,
+       "reason": "Range-top breakout attempt with a defined 4% risk; target retest of 86-88k",
+       "result": "loss",
+       "symbol": "BTC/USD",
+       "thesis": "BTC closed at the top of its 81-84k three-week range with higher lows; try a modest long with a stop under the range low.",
+       "usd": 300,
+       "wake_utc": "2026-10-22T00:00:00Z"
+      }
+     ],
+     "wins": 0
+    },
+    "11": {
+     "finished": false,
+     "session": "TM01-B01-SONNET-2026-11"
+    }
+   },
+   "months_counted": [
+    "10"
+   ],
+   "name": "Claude Sonnet 5.5",
+   "sum_gain_usd": -88.92,
+   "sum_hold_usd": -76.42,
+   "sum_twin_p80_usd": -64.07,
+   "sum_twins_beaten": 0,
+   "verdict": "not finished"
+  }
+ },
+ "plan": "timemachine/PLAN_TM01_crypto_price_only.md",
+ "start_usd": null
+}

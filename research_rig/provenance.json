@@ -95,6 +95,226 @@
    "sha256_of_name_and_sha256_lines": "1b3ed28df14d153fb5db753ef606ab0e09f508672d9e9ba118b662691e1add55",
    "modified_first": "2026-11-25T12:34:04Z",
    "modified_last": "2026-11-25T12:34:04Z"
+  },
+  "ALPACA_09/AAVE-USD_1Day.csv.gz": {
+   "bytes": 49935,
+   "sha256": "bc94bad07cafa8acfc1b8d63af9d02dd47d523782509ccf218bd3513d58bed20",
+   "modified": "2026-11-25T15:16:04Z"
+  },
+  "ALPACA_09/ADA-USD_1Day.csv.gz": {
+   "bytes": 7933,
+   "sha256": "a633a8f00546a85845fbe064ab014cbfc4cfaa54c52b58039be626524e77b943",
+   "modified": "2026-11-25T15:16:05Z"
+  },
+  "ALPACA_09/ARB-USD_1Day.csv.gz": {
+   "bytes": 7797,
+   "sha256": "526a4ef50fae8af873fb36411572f12e5f3892b3971fefd2a72a0afb731a22f1",
+   "modified": "2026-11-25T15:16:05Z"
+  },
+  "ALPACA_09/AVAX-USD_1Day.csv.gz": {
+   "bytes": 46926,
+   "sha256": "d6d31ad0fa6219d1d791d377dfd5e493446a17cf38789b2f8fb4a143a35dbfde",
+   "modified": "2026-11-25T15:11:02Z"
+  },
+  "ALPACA_09/replay_window/AVAX-USD_1Hour.csv.gz": {
+   "bytes": 505128,
+   "sha256": "dd603a2b964f4400cb8144f139aab3940cd81717ed83343113071628e3e11efd",
+   "modified": "2026-11-25T15:22:03Z"
+  },
+  "ALPACA_09/BAT-USD_1Day.csv.gz": {
+   "bytes": 54609,
+   "sha256": "47f1f8e8a060b60855462d61b25f46e04cddcd4c206aa0df0ceb036302bf794d",
+   "modified": "2026-11-25T15:16:05Z"
+  },
+  "ALPACA_09/BCH-USD_1Day.csv.gz": {
+   "bytes": 55539,
+   "sha256": "f669d66cbbe7c9ebda643f542c4ea17ea82ecc9ac510d40d1d8c812b430a6cea",
+   "modified": "2026-11-25T15:16:06Z"
+  },
+  "ALPACA_09/BONK-USD_1Day.csv.gz": {
+   "bytes": 6647,
+   "sha256": "a6c3acf7d1fd6a256f4aeb5a53601b30fe87ab3116c3faec3c0346748be46c59",
+   "modified": "2026-11-25T15:16:06Z"
+  },
+  "ALPACA_09/BTC-USD_1Day.csv.gz": {
+   "bytes": 67859,
+   "sha256": "827e272f0aa0c035669a31dad613a66805408289c3da0fc52c5495f31d735ddb",
+   "modified": "2026-11-25T15:11:03Z"
+  },
+  "ALPACA_09/replay_window/BTC-USD_1Hour.csv.gz": {
+   "bytes": 720332,
+   "sha256": "593c5e91113c99e7c3b99ce3559e292713e85a6bfbd668c12a758fc84514eac8",
+   "modified": "2026-11-25T15:22:00Z"
+  },
+  "ALPACA_09/CRV-USD_1Day.csv.gz": {
+   "bytes": 32500,
+   "sha256": "61056c202a2e7825d2d622c2843f56e6680213049832ef88cf54c030d0aa89a5",
+   "modified": "2026-11-25T15:16:07Z"
+  },
+  "ALPACA_09/DOGE-USD_1Day.csv.gz": {
+   "bytes": 56323,
+   "sha256": "f4f079abe7917c9c6ae3a1af999333c7f4e4720302493ebb1878c7223ed8878f",
+   "modified": "2026-11-25T15:11:04Z"
+  },
+  "ALPACA_09/replay_window/DOGE-USD_1Hour.csv.gz": {
+   "bytes": 561810,
+   "sha256": "7b904ed443341c9d99ee40323234a586debed1cdbf617323cb9a9738581b08f4",
+   "modified": "2026-11-25T15:21:58Z"
+  },
+  "ALPACA_09/DOT-USD_1Day.csv.gz": {
+   "bytes": 32644,
+   "sha256": "7a9c822aa608c18df0abebe141696f395658b80aeb69e84f76ff84f82f2a3d02",
+   "modified": "2026-11-25T15:16:07Z"
+  },
+  "ALPACA_09/ETH-USD_1Day.csv.gz": {
+   "bytes": 62087,
+   "sha256": "c5b435e3b5ff83e2cc2ab51f8f561718df86b796eb157eedbad415c89629f42c",
+   "modified": "2026-11-25T15:11:07Z"
+  },
+  "ALPACA_09/replay_window/ETH-USD_1Hour.csv.gz": {
+   "bytes": 629182,
+   "sha256": "b8bb7ec06b8788af0ea7d9afb5beaabd32414e7b2cf5d01fd20f71fe2c4e96e0",
+   "modified": "2026-11-25T15:21:43Z"
+  },
+  "ALPACA_09/FIL-USD_1Day.csv.gz": {
+   "bytes": 7648,
+   "sha256": "0636d92fabb24cc3726c7720a2b53693dd3e35fbe4758dccd150e6455923cf9c",
+   "modified": "2026-11-25T15:16:07Z"
+  },
+  "ALPACA_09/GRT-USD_1Day.csv.gz": {
+   "bytes": 52105,
+   "sha256": "dcf5f86b57f4ab470e42beb453d0c96fecf973664e6b65c0dce1e3c0ab9472fd",
+   "modified": "2026-11-25T15:16:08Z"
+  },
+  "ALPACA_09/HYPE-USD_1Day.csv.gz": {
+   "bytes": 7457,
+   "sha256": "619fffdf3ae285c3e50a6faf1b38423bbf460566d06f856712d3de81a8e0ebce",
+   "modified": "2026-11-25T15:16:08Z"
+  },
+  "ALPACA_09/LDO-USD_1Day.csv.gz": {
+   "bytes": 7239,
+   "sha256": "c2f2e156283fec5043b3badc6a1d75aed161854403a76af41b0b61a1670689ad",
+   "modified": "2026-11-25T15:16:08Z"
+  },
+  "ALPACA_09/LINK-USD_1Day.csv.gz": {
+   "bytes": 56681,
+   "sha256": "74aaae8c10d3c1b4fbdea8443650d5f4a8a047623a907ad43d0f0e327db09048",
+   "modified": "2026-11-25T15:16:03Z"
+  },
+  "ALPACA_09/replay_window/LINK-USD_1Hour.csv.gz": {
+   "bytes": 493377,
+   "sha256": "49f894978b4c157f7be9b969c519b335ac445e674283abf2f8137fe18c3f5daa",
+   "modified": "2026-11-25T15:22:03Z"
+  },
+  "ALPACA_09/LTC-USD_1Day.csv.gz": {
+   "bytes": 55547,
+   "sha256": "cfa488337b875b09432f445f6306a37e3696d68d6baa4844dfef2cd3ea6b0076",
+   "modified": "2026-11-25T15:16:03Z"
+  },
+  "ALPACA_09/replay_window/LTC-USD_1Hour.csv.gz": {
+   "bytes": 493848,
+   "sha256": "19387535eb739706b9a896b569c82109f52eff6aebeda43a30224a23ce6b34ec",
+   "modified": "2026-11-25T15:21:41Z"
+  },
+  "ALPACA_09/ONDO-USD_1Day.csv.gz": {
+   "bytes": 7621,
+   "sha256": "c768efa46bfe910967c506b0513e5fb27698e17deae8d39a0e649c1e3f69a686",
+   "modified": "2026-11-25T15:16:09Z"
+  },
+  "ALPACA_09/PAXG-USD_1Day.csv.gz": {
+   "bytes": 29360,
+   "sha256": "1f7b0af7e3dbfcae341cf5558c76effc03f57f984b7cd7a74b6c8f57617baac0",
+   "modified": "2026-11-25T15:16:09Z"
+  },
+  "ALPACA_09/PEPE-USD_1Day.csv.gz": {
+   "bytes": 16068,
+   "sha256": "6de3f7637fa93be67c76b48f351fcc151361059214dac8e853d5751b0306da46",
+   "modified": "2026-11-25T15:16:09Z"
+  },
+  "ALPACA_09/POL-USD_1Day.csv.gz": {
+   "bytes": 7166,
+   "sha256": "a35b6c32167739804b89cc8007402543baa97f5df358f9f9b4ba9b2934ae8882",
+   "modified": "2026-11-25T15:16:10Z"
+  },
+  "ALPACA_09/RENDER-USD_1Day.csv.gz": {
+   "bytes": 7141,
+   "sha256": "96dc447f1e78a1fdcb980947596190bed614df125c8111724126261abb65d8be",
+   "modified": "2026-11-25T15:16:10Z"
+  },
+  "ALPACA_09/SHIB-USD_1Day.csv.gz": {
+   "bytes": 34064,
+   "sha256": "649ddbb499eb2d51d3ef68e31f57f12c2b3ff9d54c270c75558623e9a6f83327",
+   "modified": "2026-11-25T15:16:11Z"
+  },
+  "ALPACA_09/SKY-USD_1Day.csv.gz": {
+   "bytes": 11452,
+   "sha256": "cded46b8a0d6d994d18b6bb252c5908664f36d4e638985bcbbb18e5afbb3a29a",
+   "modified": "2026-11-25T15:16:11Z"
+  },
+  "ALPACA_09/SOL-USD_1Day.csv.gz": {
+   "bytes": 47718,
+   "sha256": "dd1e9d0da51bca2d8c8f4d7122724d0af2cd26b32fff99c31aae3be5c8199794",
+   "modified": "2026-11-25T15:16:04Z"
+  },
+  "ALPACA_09/replay_window/SOL-USD_1Hour.csv.gz": {
+   "bytes": 420285,
+   "sha256": "06cd5df0bfd4c06c9bb0b03efcd6c76eee56853b72043a19edc9489d4df0707c",
+   "modified": "2026-11-25T15:21:03Z"
+  },
+  "ALPACA_09/SUSHI-USD_1Day.csv.gz": {
+   "bytes": 47942,
+   "sha256": "64c4268d37bad0e431bdbe4525beae1a7110261f538d0f96dfdb4f542c7a132f",
+   "modified": "2026-11-25T15:16:11Z"
+  },
+  "ALPACA_09/TRUMP-USD_1Day.csv.gz": {
+   "bytes": 16992,
+   "sha256": "7063d9a2b6051f0117a77bf72b87b5a84cfb3e318a2a58724daeaac177373ea7",
+   "modified": "2026-11-25T15:16:12Z"
+  },
+  "ALPACA_09/UNI-USD_1Day.csv.gz": {
+   "bytes": 55090,
+   "sha256": "57de8d3040431ee8ddd06fc7844e7caaf7e2ca5d7d7465d962b83e8ba411d211",
+   "modified": "2026-11-25T15:16:12Z"
+  },
+  "ALPACA_09/USDC-USD_1Day.csv.gz": {
+   "bytes": 20298,
+   "sha256": "a3c0890ba29000e26882ae1cc140c8cc4ea54f94366acb58c86cd3a400e12d6d",
+   "modified": "2026-11-25T15:16:12Z"
+  },
+  "ALPACA_09/USDG-USD_1Day.csv.gz": {
+   "bytes": 3271,
+   "sha256": "9ad0ec45b22c22613b370c1a1ca3c6afa4c541d0d8085993ec0a46f7f793c981",
+   "modified": "2026-11-25T15:16:13Z"
+  },
+  "ALPACA_09/USDT-USD_1Day.csv.gz": {
+   "bytes": 43177,
+   "sha256": "4307e84527a51cb43031da5563a7238f0bfdeea603c343ab06bab02197b9f8aa",
+   "modified": "2026-11-25T15:16:13Z"
+  },
+  "ALPACA_09/WIF-USD_1Day.csv.gz": {
+   "bytes": 7084,
+   "sha256": "eb97be061199da2b80e4db1ac3014a280c62952e27926dda291ff265c98a417d",
+   "modified": "2026-11-25T15:16:13Z"
+  },
+  "ALPACA_09/XRP-USD_1Day.csv.gz": {
+   "bytes": 26381,
+   "sha256": "54fdcb72efa61392cf8761cf5e445ec9aa27397ccb07b9736fe192745223b84f",
+   "modified": "2026-11-25T15:16:04Z"
+  },
+  "ALPACA_09/replay_window/XRP-USD_1Hour.csv.gz": {
+   "bytes": 495211,
+   "sha256": "7675f3818b80c8a67054df3519d38df24dcd61a861d6c68dd7230ae05ddbedf2",
+   "modified": "2026-11-25T15:20:53Z"
+  },
+  "ALPACA_09/XTZ-USD_1Day.csv.gz": {
+   "bytes": 31535,
+   "sha256": "1c75973d5d951317af306cd688941d69a47483eeb2c2aed3f56029f1acc866d4",
+   "modified": "2026-11-25T15:16:14Z"
+  },
+  "ALPACA_09/YFI-USD_1Day.csv.gz": {
+   "bytes": 48059,
+   "sha256": "ef812cdce0117cb9e6130e577b5b8fca7150856a815a5d6a77be99434d2d4d43",
+   "modified": "2026-11-25T15:16:14Z"
   }
  },
  "outputs": {
@@ -551,6 +771,70 @@
    "last_changed_in_commit": "1d748ba 2026-11-25T13:04:52Z",
    "inputs_modified_after_output_first_stored": [],
    "note": "The check's full output (integrity.json) and the original pulls are on the research machine and are not fingerprinted here; only the joined price files are. Dates, counts and file fingerprints of the stock prices collected through the workspace's own price lookup on 2026-11-25. No price is in it, no rule was run and no return was worked out. The price files are on the research machine only and cannot be fetched by a script; whether they may be kept is item 6 of the morning list."
+  },
+  "results_09.json": {
+   "kind": "held-back",
+   "command": "python3 run_09.py --held --prereg-commit 74ad30c",
+   "run_from": "research_rig/",
+   "code": [
+    "run_09.py",
+    "fetch_09_alpaca.py",
+    "rig2.py",
+    "fixtures_09.py",
+    "../config/thresholds.yaml"
+   ],
+   "raw_inputs": [
+    "ALPACA_09/AAVE-USD_1Day.csv.gz",
+    "ALPACA_09/ADA-USD_1Day.csv.gz",
+    "ALPACA_09/ARB-USD_1Day.csv.gz",
+    "ALPACA_09/AVAX-USD_1Day.csv.gz",
+    "ALPACA_09/replay_window/AVAX-USD_1Hour.csv.gz",
+    "ALPACA_09/BAT-USD_1Day.csv.gz",
+    "ALPACA_09/BCH-USD_1Day.csv.gz",
+    "ALPACA_09/BONK-USD_1Day.csv.gz",
+    "ALPACA_09/BTC-USD_1Day.csv.gz",
+    "ALPACA_09/replay_window/BTC-USD_1Hour.csv.gz",
+    "ALPACA_09/CRV-USD_1Day.csv.gz",
+    "ALPACA_09/DOGE-USD_1Day.csv.gz",
+    "ALPACA_09/replay_window/DOGE-USD_1Hour.csv.gz",
+    "ALPACA_09/DOT-USD_1Day.csv.gz",
+    "ALPACA_09/ETH-USD_1Day.csv.gz",
+    "ALPACA_09/replay_window/ETH-USD_1Hour.csv.gz",
+    "ALPACA_09/FIL-USD_1Day.csv.gz",
+    "ALPACA_09/GRT-USD_1Day.csv.gz",
+    "ALPACA_09/HYPE-USD_1Day.csv.gz",
+    "ALPACA_09/LDO-USD_1Day.csv.gz",
+    "ALPACA_09/LINK-USD_1Day.csv.gz",
+    "ALPACA_09/replay_window/LINK-USD_1Hour.csv.gz",
+    "ALPACA_09/LTC-USD_1Day.csv.gz",
+    "ALPACA_09/replay_window/LTC-USD_1Hour.csv.gz",
+    "ALPACA_09/ONDO-USD_1Day.csv.gz",
+    "ALPACA_09/PAXG-USD_1Day.csv.gz",
+    "ALPACA_09/PEPE-USD_1Day.csv.gz",
+    "ALPACA_09/POL-USD_1Day.csv.gz",
+    "ALPACA_09/RENDER-USD_1Day.csv.gz",
+    "ALPACA_09/SHIB-USD_1Day.csv.gz",
+    "ALPACA_09/SKY-USD_1Day.csv.gz",
+    "ALPACA_09/SOL-USD_1Day.csv.gz",
+    "ALPACA_09/replay_window/SOL-USD_1Hour.csv.gz",
+    "ALPACA_09/SUSHI-USD_1Day.csv.gz",
+    "ALPACA_09/TRUMP-USD_1Day.csv.gz",
+    "ALPACA_09/UNI-USD_1Day.csv.gz",
+    "ALPACA_09/USDC-USD_1Day.csv.gz",
+    "ALPACA_09/USDG-USD_1Day.csv.gz",
+    "ALPACA_09/USDT-USD_1Day.csv.gz",
+    "ALPACA_09/WIF-USD_1Day.csv.gz",
+    "ALPACA_09/XRP-USD_1Day.csv.gz",
+    "ALPACA_09/replay_window/XRP-USD_1Hour.csv.gz",
+    "ALPACA_09/XTZ-USD_1Day.csv.gz",
+    "ALPACA_09/YFI-USD_1Day.csv.gz"
+   ],
+   "reads_stored_outputs": [],
+   "sha256": "a19f6600c9e8460f52283613911adaf9ad1bbb901ecd4776170498ebb2e10586",
+   "first_stored_in_commit": null,
+   "last_changed_in_commit": null,
+   "inputs_modified_after_output_first_stored": [],
+   "note": "Alpaca bars and replay code carry run-time fingerprints in the output. Minute tape is coverage only."
   }
  }
 }

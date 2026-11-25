@@ -40,6 +40,7 @@ What the engine is and is not:
 | Replay 06 | Slow trend rules on funds that can be bought | `PREREG_06_fund_trend_paid_data_DRAFT.md` | not written | | | | v2 | Draft plan. Needs data with dividends and final test settings from the builder. See `docs/QUEUE.md` |
 | Replay 07 | Day trading SPY and QQQ on one-minute bars | `PREREG_07_intraday_spy_qqq.md` | being written | | | | v2 | Plan frozen 2026-11-25, ledger rows 56 to 71. Not run yet |
 | Replay 08 | Buying after insiders buy, daily, stocks that later died kept | `PREREG_08_insider_buying_DRAFT.md` | not written | | | | v2 | Draft plan. Runs nothing. Needs dated filings, prices that include stocks that later died, and final test settings from the builder. See `docs/QUEUE.md` |
+| Replay 09 | New long-only rules on Alpaca hourly and daily crypto bars | `PREREG_09_crypto_methods.md` | `run_09.py` | `results_09.json` | `build_doc28.py` | `docs/research/28_replay_09_crypto_methods.md` | replay 09 fills, v2 pass marks | Run once. See the write-up for coverage and verdicts |
 | Practice desk | Fixed rules and AI traders using pretend money on live prices | `practice/PLAN_02_ai_desk.md` | not a rig test | | | | | The program and its records are in `practice/`, not in the rig. See `practice/README.md` |
 
 Side tools:
@@ -116,6 +117,7 @@ Run `python3 check_data.py` from this folder first. It takes a few seconds, list
 | Kraken published archive, bitcoin and ether, daily and hourly | `data/kraken/full_*.csv` | `KRAKEN_DIR` | `python3 fetch_kraken_archive.py full` | The rerun, `build_kraken_daily.py` |
 | Kraken full daily history, built from the Kraken archive, the Kraken recent bars and the Bitstamp daily bars (all three rows above) | `data/krakenfull_*.csv` | none | `python3 build_kraken_daily.py` | X2, S2, the rerun, document 16 |
 | Kraken published archive, every US dollar pair, daily | `data/kraken/daily/` | `KRAKEN_DAILY_DIR` | `python3 fetch_kraken_archive.py daily` | Replay 04 |
+| Alpaca US crypto hourly and daily bars | ~/workspace/rig/data/alpaca_crypto/ | none | `python3 fetch_09_alpaca.py --prioritize-replay-window`; `--steady-only` pulls full hourly histories for recent steady-volume pairs | Replay 09. The minute tape is checked for gaps only and not used for rules |
 | Kenneth French library: market return and twelve industry groups, daily | `data/french/` | `FRENCH_DIR` | `python3 fetch_french.py` | Replay 05, `i2_2020_note.py` |
 | Stock prices from the workspace's own price lookup: one-minute SPY and QQQ, daily for the funds listed in document 10 | `data/platform_bars/` | `PLATFORM_BARS_DIR` | Cannot be fetched by a script. Collected by an agent on 2026-11-25. Dates and counts are in `platform_bars_coverage.json` | Nothing yet |
 | Order-book samples from one day | `data/books/books.csv` | first argument of `books_summary.py` | Cannot be fetched again. The summary is in `books_summary.json` | `books_summary.py` |
@@ -141,6 +143,7 @@ From this folder:
 | The rerun of replays 01, X2, S2, 03 and document 16 | `python3 run_v2.py`, `python3 compare_v1_v2.py`, `python3 noise_pbo.py`, `python3 build_doc16.py` |
 | Replay 04 and document 23 | `python3 run_04.py`, `python3 build_doc23.py` |
 | Replay 05 and document 22 | `python3 run_05.py` (first run, writes `results_05.json`), `R05_POOL=1 python3 run_05.py` (corrected run, writes `results_05b.json`), `python3 i2_2020_note.py`, `python3 build_doc22.py` |
+| Replay 09 and document 28 | `python3 run_09.py --held --prereg-commit 74ad30c` once, then `python3 build_doc28.py` from results only. `python3 fetch_09_alpaca.py` pulls data and runs no rule. The replay-only option to inspect rules before the held-back run is `python3 run_09.py --dev` |
 | The trial count check | `python3 ledger_count_check.py` |
 | Document 24 | `python3 books_summary.py`, `python3 build_doc24.py` |
 | The coverage tables in document 10 | `python3 platform_bars_integrity.py` and `python3 platform_bars_crosscheck.py` (both need the price files), then from the repo root `python3 tools/bars_coverage.py --summarise` and `python3 tools/bars_coverage.py --write` |

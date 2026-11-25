@@ -20,6 +20,10 @@ SETS = [
     ("Stock prices from the workspace's own price lookup (PLATFORM_BARS_DIR)", PB, "not fetchable by a script: collected by an agent through the workspace on 2026-11-25. platform_bars_coverage.json in the repo holds the dates and counts", "nothing yet. No rule has been run on it"),
     ("Order-book samples", [f"{D}/books/books.csv"], "not fetchable: a one-night sample taken on 2026-11-25. books_summary.json in the repo holds the summary", "books_summary.py only"),
 ]
+import provenance as P
+if P.RAW_09:
+    SETS.append(("Alpaca US crypto bars used or audited by replay 09", [P.INPUTS[n] for n in P.RAW_09],
+                 "python3 fetch_09_alpaca.py --prioritize-replay-window", "replay 09"))
 miss = 0
 for name, files, how, used in SETS:
     gone = [f for f in files if not os.path.exists(f)]; miss += bool(gone)
@@ -28,7 +32,6 @@ for name, files, how, used in SETS:
     if gone: print("           get it with: " + how)
 n = len(glob.glob(f"{KD}/*USD_1440.csv"))
 if n: print(f"note     {n} daily files in {os.path.relpath(KD, H)}. Replay 04 was run on 760")
-import json, provenance as P
 rec = json.load(open(os.path.join(H, "provenance.json")))["inputs"]; differ = 0
 for name, was in rec.items():
     now = P.fingerprint(name)

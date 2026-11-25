@@ -1,0 +1,1349 @@
+{
+  "rules": {
+    "ASIA": {
+      "dev": {
+        "cagr": -0.9032778236228275,
+        "vol": 0.24421101627910383,
+        "sharpe": -9.411554333534047,
+        "maxdd": -0.9970943188874951,
+        "total": -0.9970811966183791,
+        "n": 912,
+        "sides": 1718,
+        "closed": 859,
+        "open": 0,
+        "signal_count": 912,
+        "entry_missed": 53,
+        "delayed_exit": 26,
+        "blocked_while_held": 0
+      },
+      "held": {
+        "cagr": -0.9269460162501624,
+        "vol": 0.2232752866881435,
+        "sharpe": -11.566836708885377,
+        "maxdd": -0.6532203624326172,
+        "total": -0.6513864550329835,
+        "n": 147,
+        "sides": 294,
+        "closed": 147,
+        "open": 0,
+        "signal_count": 147,
+        "entry_missed": 0,
+        "delayed_exit": 0,
+        "blocked_while_held": 0
+      },
+      "break_even": {
+        "bps": 0.0,
+        "status": "below_at_zero",
+        "crossings": 0
+      },
+      "dsr": 1.0596177698450641e-142,
+      "deflated_reference_sharpe": 0.4678780500322451,
+      "shuffle_percentile": 0.547,
+      "twin": {
+        "dev": {
+          "total": -0.9956180326688283,
+          "sides": 1718
+        },
+        "held": {
+          "total": -0.6564593463537922,
+          "sides": 294
+        }
+      },
+      "marks": {
+        "m1": false,
+        "m2": false,
+        "m3": false,
+        "m4": false,
+        "m5": false,
+        "passed": false
+      }
+    },
+    "WKND": {
+      "dev": {
+        "cagr": -0.257583324023804,
+        "vol": 0.1784458176101682,
+        "sharpe": -1.5792140428601829,
+        "maxdd": -0.5580271375493233,
+        "total": -0.5248874627227141,
+        "n": 912,
+        "sides": 236,
+        "closed": 118,
+        "open": 0,
+        "signal_count": 130,
+        "entry_missed": 12,
+        "delayed_exit": 2,
+        "blocked_while_held": 0
+      },
+      "held": {
+        "cagr": -0.1603639175036381,
+        "vol": 0.1371109104498978,
+        "sharpe": -1.2049219714457111,
+        "maxdd": -0.12745982599822248,
+        "total": -0.06797305537453113,
+        "n": 147,
+        "sides": 42,
+        "closed": 21,
+        "open": 0,
+        "signal_count": 21,
+        "entry_missed": 0,
+        "delayed_exit": 0,
+        "blocked_while_held": 0
+      },
+      "break_even": {
+        "bps": 0.0,
+        "status": "below_at_zero",
+        "crossings": 0
+      },
+      "dsr": 7.014657351421374e-69,
+      "deflated_reference_sharpe": 0.4678780500322451,
+      "shuffle_percentile": 0.448,
+      "twin": {
+        "dev": {
+          "total": -0.3776127969014389,
+          "sides": 236
+        },
+        "held": {
+          "total": -0.15191907383012804,
+          "sides": 42
+        }
+      },
+      "marks": {
+        "m1": false,
+        "m2": false,
+        "m3": false,
+        "m4": false,
+        "m5": false,
+        "passed": false
+      }
+    },
+    "MOM": {
+      "dev": {
+        "cagr": 0.21264605373014822,
+        "vol": 0.7346278613078883,
+        "sharpe": 0.6205307742798284,
+        "maxdd": -0.6434529030121519,
+        "total": 0.6189015553251123,
+        "n": 912,
+        "sides": 224,
+        "closed": 112,
+        "open": 0,
+        "signal_count": 130,
+        "entry_missed": 14,
+        "delayed_exit": 10,
+        "blocked_while_held": 4
+      },
+      "held": {
+        "cagr": -0.6022217372806395,
+        "vol": 0.5639380791119677,
+        "sharpe": -1.3600641886780973,
+        "maxdd": -0.44694405722180497,
+        "total": -0.310142254427452,
+        "n": 147,
+        "sides": 40,
+        "closed": 20,
+        "open": 0,
+        "signal_count": 20,
+        "entry_missed": 0,
+        "delayed_exit": 1,
+        "blocked_while_held": 0
+      },
+      "break_even": {
+        "bps": 26.29188478924334,
+        "status": "bracketed",
+        "crossings": 1
+      },
+      "dsr": 2.5626158109926233e-49,
+      "deflated_reference_sharpe": 0.4678780500322451,
+      "shuffle_percentile": null,
+      "twin": {
+        "held": {
+          "total": -0.4773565857841672,
+          "sides": 40
+        }
+      },
+      "marks": {
+        "m1": false,
+        "m2": false,
+        "m3": false,
+        "m4": false,
+        "m5": false,
+        "passed": false
+      }
+    },
+    "REV": {
+      "dev": {
+        "cagr": -0.9139445308925986,
+        "vol": 0.6437196079916923,
+        "sharpe": -3.475787630260505,
+        "maxdd": -0.9978432701868435,
+        "total": -0.9978202564636324,
+        "n": 912,
+        "sides": 1510,
+        "closed": 755,
+        "open": 0,
+        "signal_count": 912,
+        "entry_missed": 134,
+        "delayed_exit": 95,
+        "blocked_while_held": 23
+      },
+      "held": {
+        "cagr": -0.9444274578704628,
+        "vol": 0.5579966406373912,
+        "sharpe": -4.8808741804301405,
+        "maxdd": -0.7100291548870643,
+        "total": -0.6877479009582395,
+        "n": 147,
+        "sides": 292,
+        "closed": 146,
+        "open": 0,
+        "signal_count": 147,
+        "entry_missed": 1,
+        "delayed_exit": 3,
+        "blocked_while_held": 0
+      },
+      "break_even": {
+        "bps": 0.0,
+        "status": "below_at_zero",
+        "crossings": 0
+      },
+      "dsr": 1.3742842298996124e-87,
+      "deflated_reference_sharpe": 0.4678780500322451,
+      "shuffle_percentile": null,
+      "twin": {
+        "held": {
+          "total": -0.6286129120683307,
+          "sides": 292
+        }
+      },
+      "marks": {
+        "m1": false,
+        "m2": false,
+        "m3": false,
+        "m4": false,
+        "m5": false,
+        "passed": false
+      }
+    },
+    "LEAD": {
+      "dev": {
+        "cagr": -0.015512059394998667,
+        "vol": 0.01693384886677239,
+        "sharpe": -0.9146864169388346,
+        "maxdd": -0.03836949876626328,
+        "total": -0.03830955193748942,
+        "n": 912,
+        "sides": 20,
+        "closed": 10,
+        "open": 0,
+        "signal_count": 11,
+        "entry_missed": 1,
+        "delayed_exit": 1,
+        "blocked_while_held": 0
+      },
+      "held": {
+        "cagr": -0.019743699951215388,
+        "vol": 0.012604365629125387,
+        "sharpe": -1.5757516293118372,
+        "maxdd": -0.007998954527262625,
+        "total": -0.007998954527262625,
+        "n": 147,
+        "sides": 2,
+        "closed": 1,
+        "open": 0,
+        "signal_count": 1,
+        "entry_missed": 0,
+        "delayed_exit": 0,
+        "blocked_while_held": 0
+      },
+      "break_even": {
+        "bps": 0.0,
+        "status": "below_at_zero",
+        "crossings": 0
+      },
+      "dsr": 8.91822009626572e-114,
+      "deflated_reference_sharpe": 0.4678780500322451,
+      "shuffle_percentile": 0.801,
+      "twin": {
+        "dev": {
+          "total": -0.033097891080163144,
+          "sides": 20
+        },
+        "held": {
+          "total": -0.002315649608566228,
+          "sides": 2
+        }
+      },
+      "marks": {
+        "m1": false,
+        "m2": false,
+        "m3": false,
+        "m4": false,
+        "m5": false,
+        "passed": false
+      }
+    },
+    "VOL": {
+      "dev": {
+        "cagr": -0.19348811889749173,
+        "vol": 0.4304832052147324,
+        "sharpe": -0.2849574125121701,
+        "maxdd": -0.6527151788643186,
+        "total": -0.4156744798074301,
+        "n": 912,
+        "sides": 248,
+        "closed": 124,
+        "open": 0,
+        "signal_count": 130,
+        "entry_missed": 5,
+        "delayed_exit": 6,
+        "blocked_while_held": 1
+      },
+      "held": {
+        "cagr": -0.3698621061508125,
+        "vol": 0.38554290939223895,
+        "sharpe": -1.006895707762176,
+        "maxdd": -0.3654754346560555,
+        "total": -0.16971967374652663,
+        "n": 147,
+        "sides": 40,
+        "closed": 20,
+        "open": 0,
+        "signal_count": 20,
+        "entry_missed": 0,
+        "delayed_exit": 0,
+        "blocked_while_held": 0
+      },
+      "break_even": {
+        "bps": 0.0,
+        "status": "below_at_zero",
+        "crossings": 0
+      },
+      "dsr": 1.5881524243365778e-56,
+      "deflated_reference_sharpe": 0.4678780500322451,
+      "shuffle_percentile": null,
+      "twin": {
+        "held": {
+          "total": -0.17418009053084815,
+          "sides": 40
+        }
+      },
+      "marks": {
+        "m1": false,
+        "m2": false,
+        "m3": false,
+        "m4": false,
+        "m5": false,
+        "passed": false
+      }
+    },
+    "CAP": {
+      "dev": {
+        "cagr": -0.016005934906589192,
+        "vol": 0.10312163014969873,
+        "sharpe": -0.1068552920798463,
+        "maxdd": -0.19173640918786683,
+        "total": -0.03951453543765637,
+        "n": 912,
+        "sides": 30,
+        "closed": 15,
+        "open": 0,
+        "signal_count": 15,
+        "entry_missed": 0,
+        "delayed_exit": 3,
+        "blocked_while_held": 0
+      },
+      "held": {
+        "cagr": 0.05368995813873134,
+        "vol": 0.03354139314536175,
+        "sharpe": 1.5757516293118379,
+        "maxdd": 0.0,
+        "total": 0.02128596443845021,
+        "n": 147,
+        "sides": 2,
+        "closed": 1,
+        "open": 0,
+        "signal_count": 1,
+        "entry_missed": 0,
+        "delayed_exit": 0,
+        "blocked_while_held": 0
+      },
+      "break_even": {
+        "bps": 0.0,
+        "status": "below_at_zero",
+        "crossings": 0
+      },
+      "dsr": 3.7350410232278704e-52,
+      "deflated_reference_sharpe": 0.4678780500322451,
+      "shuffle_percentile": 0.822,
+      "twin": {
+        "dev": {
+          "total": -0.11475940204708635,
+          "sides": 30
+        },
+        "held": {
+          "total": -0.01282244128317922,
+          "sides": 2
+        }
+      },
+      "marks": {
+        "m1": true,
+        "m2": false,
+        "m3": false,
+        "m4": false,
+        "m5": false,
+        "passed": false
+      }
+    }
+  },
+  "hold": {
+    "dev": {
+      "cagr": 0.1374891952050643,
+      "vol": 0.48280609785639456,
+      "sharpe": 0.5071242173419778,
+      "maxdd": -0.5307008986819254,
+      "total": 0.3797219071700768,
+      "n": 912,
+      "sides": 1,
+      "closed": 0,
+      "open": 1
+    },
+    "held": {
+      "cagr": 0.043390725415371145,
+      "vol": 0.40080590275934785,
+      "sharpe": 0.3036541340591586,
+      "maxdd": -0.32077549323586985,
+      "total": 0.017253817793269066,
+      "n": 147,
+      "sides": 1,
+      "closed": 0,
+      "open": 1
+    }
+  },
+  "pbo": {
+    "2024-01-01": {
+      "pbo": 0.14871794871794872,
+      "pbo_strict": 0.039160839160839164,
+      "pbo_half": 0.09393939393939393,
+      "tie_share": 0.10955710955710955,
+      "rows_used": 1056,
+      "rows_dropped": 3,
+      "zero_variance_cases": 2
+    },
+    "2025-01-01": {
+      "pbo": 0.38010878010878013,
+      "pbo_strict": 0.15633255633255633,
+      "pbo_half": 0.2682206682206682,
+      "tie_share": 0.22377622377622378,
+      "rows_used": 688,
+      "rows_dropped": 5,
+      "zero_variance_cases": 420
+    },
+    "2026-01-01": {
+      "pbo": 0.18904428904428905,
+      "pbo_strict": 0.07412587412587412,
+      "pbo_half": 0.1315850815850816,
+      "tie_share": 0.11491841491841492,
+      "rows_used": 320,
+      "rows_dropped": 8,
+      "zero_variance_cases": 8580
+    }
+  },
+  "max_pbo": 0.38010878010878013,
+  "trial_sharpe_std_daily": 0.18488797720467012,
+  "mode": "held",
+  "dates": {
+    "dev": [
+      "2024-01-01",
+      "2026-06-30"
+    ],
+    "held": [
+      "2026-07-01",
+      "2026-11-24"
+    ],
+    "pbo_starts": [
+      "2024-01-01",
+      "2025-01-01",
+      "2026-01-01"
+    ],
+    "pull_start": "2020-01-01"
+  },
+  "stats": {
+    "first_trial_id": 101,
+    "new_trials": 7,
+    "previous_trials": 93,
+    "trial_count": 100,
+    "pbo_blocks": 16,
+    "draws": 1000,
+    "seed": 9101
+  },
+  "coverage": {
+    "AAVE/USD": {
+      "1Day": {
+        "rows": 1959,
+        "first": "2021-07-15 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 35,
+        "sha256": "bc94bad07cafa8acfc1b8d63af9d02dd47d523782509ccf218bd3513d58bed20",
+        "status": "full query",
+        "file": "AAVE-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "ADA/USD": {
+      "1Day": {
+        "rows": 285,
+        "first": "2026-02-13 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 8,
+        "sha256": "a633a8f00546a85845fbe064ab014cbfc4cfaa54c52b58039be626524e77b943",
+        "status": "full query",
+        "file": "ADA-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "ARB/USD": {
+      "1Day": {
+        "rows": 282,
+        "first": "2026-02-16 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 17,
+        "sha256": "526a4ef50fae8af873fb36411572f12e5f3892b3971fefd2a72a0afb731a22f1",
+        "status": "full query",
+        "file": "ARB-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "AVAX/USD": {
+      "1Day": {
+        "rows": 1833,
+        "first": "2021-11-18 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 33,
+        "sha256": "d6d31ad0fa6219d1d791d377dfd5e493446a17cf38789b2f8fb4a143a35dbfde",
+        "status": "full query",
+        "file": "AVAX-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "rows": 26156,
+        "first": "2023-12-01 00:00:00",
+        "last": "2026-11-24 23:00:00",
+        "internal_missing": 4,
+        "longest_internal_gap": 2,
+        "zero_volume": 10356,
+        "sha256": "dd603a2b964f4400cb8144f139aab3940cd81717ed83343113071628e3e11efd",
+        "status": "replay window only",
+        "file": "replay_window/AVAX-USD_1Hour.csv.gz"
+      }
+    },
+    "BAT/USD": {
+      "1Day": {
+        "rows": 2154,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 52,
+        "sha256": "47f1f8e8a060b60855462d61b25f46e04cddcd4c206aa0df0ceb036302bf794d",
+        "status": "full query",
+        "file": "BAT-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "BCH/USD": {
+      "1Day": {
+        "rows": 2154,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 15,
+        "sha256": "f669d66cbbe7c9ebda643f542c4ea17ea82ecc9ac510d40d1d8c812b430a6cea",
+        "status": "full query",
+        "file": "BCH-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "BONK/USD": {
+      "1Day": {
+        "rows": 282,
+        "first": "2026-02-16 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 18,
+        "sha256": "a6c3acf7d1fd6a256f4aeb5a53601b30fe87ab3116c3faec3c0346748be46c59",
+        "status": "full query",
+        "file": "BONK-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "BTC/USD": {
+      "1Day": {
+        "rows": 2154,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 0,
+        "sha256": "827e272f0aa0c035669a31dad613a66805408289c3da0fc52c5495f31d735ddb",
+        "status": "full query",
+        "file": "BTC-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": true
+      },
+      "1Hour": {
+        "rows": 26156,
+        "first": "2023-12-01 00:00:00",
+        "last": "2026-11-24 23:00:00",
+        "internal_missing": 4,
+        "longest_internal_gap": 2,
+        "zero_volume": 732,
+        "sha256": "593c5e91113c99e7c3b99ce3559e292713e85a6bfbd668c12a758fc84514eac8",
+        "status": "replay window only",
+        "file": "replay_window/BTC-USD_1Hour.csv.gz"
+      }
+    },
+    "CRV/USD": {
+      "1Day": {
+        "rows": 1195,
+        "first": "2023-08-18 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 58,
+        "sha256": "61056c202a2e7825d2d622c2843f56e6680213049832ef88cf54c030d0aa89a5",
+        "status": "full query",
+        "file": "CRV-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "DOGE/USD": {
+      "1Day": {
+        "rows": 2154,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 2,
+        "sha256": "f4f079abe7917c9c6ae3a1af999333c7f4e4720302493ebb1878c7223ed8878f",
+        "status": "full query",
+        "file": "DOGE-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "rows": 26153,
+        "first": "2023-12-01 00:00:00",
+        "last": "2026-11-24 23:00:00",
+        "internal_missing": 7,
+        "longest_internal_gap": 3,
+        "zero_volume": 7364,
+        "sha256": "7b904ed443341c9d99ee40323234a586debed1cdbf617323cb9a9738581b08f4",
+        "status": "replay window only",
+        "file": "replay_window/DOGE-USD_1Hour.csv.gz"
+      }
+    },
+    "DOT/USD": {
+      "1Day": {
+        "rows": 1195,
+        "first": "2023-08-18 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 28,
+        "sha256": "7a9c822aa608c18df0abebe141696f395658b80aeb69e84f76ff84f82f2a3d02",
+        "status": "full query",
+        "file": "DOT-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "ETH/USD": {
+      "1Day": {
+        "rows": 2154,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 0,
+        "sha256": "c5b435e3b5ff83e2cc2ab51f8f561718df86b796eb157eedbad415c89629f42c",
+        "status": "full query",
+        "file": "ETH-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": true
+      },
+      "1Hour": {
+        "rows": 26156,
+        "first": "2023-12-01 00:00:00",
+        "last": "2026-11-24 23:00:00",
+        "internal_missing": 4,
+        "longest_internal_gap": 2,
+        "zero_volume": 2244,
+        "sha256": "b8bb7ec06b8788af0ea7d9afb5beaabd32414e7b2cf5d01fd20f71fe2c4e96e0",
+        "status": "replay window only",
+        "file": "replay_window/ETH-USD_1Hour.csv.gz"
+      }
+    },
+    "FIL/USD": {
+      "1Day": {
+        "rows": 282,
+        "first": "2026-02-16 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 16,
+        "sha256": "0636d92fabb24cc3726c7720a2b53693dd3e35fbe4758dccd150e6455923cf9c",
+        "status": "full query",
+        "file": "FIL-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "GRT/USD": {
+      "1Day": {
+        "rows": 1959,
+        "first": "2021-07-15 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 10,
+        "sha256": "dcf5f86b57f4ab470e42beb453d0c96fecf973664e6b65c0dce1e3c0ab9472fd",
+        "status": "full query",
+        "file": "GRT-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "HYPE/USD": {
+      "1Day": {
+        "rows": 281,
+        "first": "2026-02-17 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 16,
+        "sha256": "619fffdf3ae285c3e50a6faf1b38423bbf460566d06f856712d3de81a8e0ebce",
+        "status": "full query",
+        "file": "HYPE-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "LDO/USD": {
+      "1Day": {
+        "rows": 281,
+        "first": "2026-02-17 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 46,
+        "sha256": "c2f2e156283fec5043b3badc6a1d75aed161854403a76af41b0b61a1670689ad",
+        "status": "full query",
+        "file": "LDO-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "LINK/USD": {
+      "1Day": {
+        "rows": 2154,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 5,
+        "sha256": "74aaae8c10d3c1b4fbdea8443650d5f4a8a047623a907ad43d0f0e327db09048",
+        "status": "full query",
+        "file": "LINK-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "rows": 26151,
+        "first": "2023-12-01 00:00:00",
+        "last": "2026-11-24 23:00:00",
+        "internal_missing": 9,
+        "longest_internal_gap": 2,
+        "zero_volume": 10404,
+        "sha256": "49f894978b4c157f7be9b969c519b335ac445e674283abf2f8137fe18c3f5daa",
+        "status": "replay window only",
+        "file": "replay_window/LINK-USD_1Hour.csv.gz"
+      }
+    },
+    "LTC/USD": {
+      "1Day": {
+        "rows": 2154,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 5,
+        "sha256": "cfa488337b875b09432f445f6306a37e3696d68d6baa4844dfef2cd3ea6b0076",
+        "status": "full query",
+        "file": "LTC-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "rows": 26156,
+        "first": "2023-12-01 00:00:00",
+        "last": "2026-11-24 23:00:00",
+        "internal_missing": 4,
+        "longest_internal_gap": 2,
+        "zero_volume": 12579,
+        "sha256": "19387535eb739706b9a896b569c82109f52eff6aebeda43a30224a23ce6b34ec",
+        "status": "replay window only",
+        "file": "replay_window/LTC-USD_1Hour.csv.gz"
+      }
+    },
+    "ONDO/USD": {
+      "1Day": {
+        "rows": 281,
+        "first": "2026-02-17 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 18,
+        "sha256": "c768efa46bfe910967c506b0513e5fb27698e17deae8d39a0e649c1e3f69a686",
+        "status": "full query",
+        "file": "ONDO-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "PAXG/USD": {
+      "1Day": {
+        "rows": 1183,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 971,
+        "longest_internal_gap": 968,
+        "zero_volume": 8,
+        "sha256": "1f7b0af7e3dbfcae341cf5558c76effc03f57f984b7cd7a74b6c8f57617baac0",
+        "status": "full query",
+        "file": "PAXG-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "PEPE/USD": {
+      "1Day": {
+        "rows": 665,
+        "first": "2025-01-29 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 36,
+        "sha256": "6de3f7637fa93be67c76b48f351fcc151361059214dac8e853d5751b0306da46",
+        "status": "full query",
+        "file": "PEPE-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "POL/USD": {
+      "1Day": {
+        "rows": 279,
+        "first": "2026-02-19 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 52,
+        "sha256": "a35b6c32167739804b89cc8007402543baa97f5df358f9f9b4ba9b2934ae8882",
+        "status": "full query",
+        "file": "POL-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "RENDER/USD": {
+      "1Day": {
+        "rows": 279,
+        "first": "2026-02-19 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 18,
+        "sha256": "96dc447f1e78a1fdcb980947596190bed614df125c8111724126261abb65d8be",
+        "status": "full query",
+        "file": "RENDER-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "SHIB/USD": {
+      "1Day": {
+        "rows": 1352,
+        "first": "2023-03-14 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 41,
+        "sha256": "649ddbb499eb2d51d3ef68e31f57f12c2b3ff9d54c270c75558623e9a6f83327",
+        "status": "full query",
+        "file": "SHIB-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "SKY/USD": {
+      "1Day": {
+        "rows": 424,
+        "first": "2025-09-27 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 51,
+        "sha256": "cded46b8a0d6d994d18b6bb252c5908664f36d4e638985bcbbb18e5afbb3a29a",
+        "status": "full query",
+        "file": "SKY-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "SOL/USD": {
+      "1Day": {
+        "rows": 1736,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 418,
+        "longest_internal_gap": 416,
+        "zero_volume": 11,
+        "sha256": "dd1e9d0da51bca2d8c8f4d7122724d0af2cd26b32fff99c31aae3be5c8199794",
+        "status": "full query",
+        "file": "SOL-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": true
+      },
+      "1Hour": {
+        "rows": 19681,
+        "first": "2024-08-26 16:00:00",
+        "last": "2026-11-24 23:00:00",
+        "internal_missing": 7,
+        "longest_internal_gap": 2,
+        "zero_volume": 3126,
+        "sha256": "06cd5df0bfd4c06c9bb0b03efcd6c76eee56853b72043a19edc9489d4df0707c",
+        "status": "replay window only",
+        "file": "replay_window/SOL-USD_1Hour.csv.gz"
+      }
+    },
+    "SUSHI/USD": {
+      "1Day": {
+        "rows": 1951,
+        "first": "2021-07-23 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 212,
+        "sha256": "64c4268d37bad0e431bdbe4525beae1a7110261f538d0f96dfdb4f542c7a132f",
+        "status": "full query",
+        "file": "SUSHI-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "TRUMP/USD": {
+      "1Day": {
+        "rows": 672,
+        "first": "2025-01-22 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 91,
+        "sha256": "7063d9a2b6051f0117a77bf72b87b5a84cfb3e318a2a58724daeaac177373ea7",
+        "status": "full query",
+        "file": "TRUMP-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "UNI/USD": {
+      "1Day": {
+        "rows": 2154,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 126,
+        "sha256": "57de8d3040431ee8ddd06fc7844e7caaf7e2ca5d7d7465d962b83e8ba411d211",
+        "status": "full query",
+        "file": "UNI-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "USDC/USD": {
+      "1Day": {
+        "rows": 1191,
+        "first": "2023-08-18 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 4,
+        "longest_internal_gap": 2,
+        "zero_volume": 213,
+        "sha256": "a3c0890ba29000e26882ae1cc140c8cc4ea54f94366acb58c86cd3a400e12d6d",
+        "status": "full query",
+        "file": "USDC-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": true
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "USDG/USD": {
+      "1Day": {
+        "rows": 457,
+        "first": "2025-05-19 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 98,
+        "longest_internal_gap": 15,
+        "zero_volume": 178,
+        "sha256": "9ad0ec45b22c22613b370c1a1ca3c6afa4c541d0d8085993ec0a46f7f793c981",
+        "status": "full query",
+        "file": "USDG-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": true
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "USDT/USD": {
+      "1Day": {
+        "rows": 2153,
+        "first": "2021-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 1,
+        "longest_internal_gap": 1,
+        "zero_volume": 38,
+        "sha256": "4307e84527a51cb43031da5563a7238f0bfdeea603c343ab06bab02197b9f8aa",
+        "status": "full query",
+        "file": "USDT-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": true
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "WIF/USD": {
+      "1Day": {
+        "rows": 279,
+        "first": "2026-02-19 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 47,
+        "sha256": "eb97be061199da2b80e4db1ac3014a280c62952e27926dda291ff265c98a417d",
+        "status": "full query",
+        "file": "WIF-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "XRP/USD": {
+      "1Day": {
+        "rows": 1059,
+        "first": "2024-01-01 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 0,
+        "sha256": "54fdcb72efa61392cf8761cf5e445ec9aa27397ccb07b9736fe192745223b84f",
+        "status": "full query",
+        "file": "XRP-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": true
+      },
+      "1Hour": {
+        "rows": 25373,
+        "first": "2024-01-01 06:00:00",
+        "last": "2026-11-24 23:00:00",
+        "internal_missing": 37,
+        "longest_internal_gap": 28,
+        "zero_volume": 976,
+        "sha256": "7675f3818b80c8a67054df3519d38df24dcd61a861d6c68dd7230ae05ddbedf2",
+        "status": "replay window only",
+        "file": "replay_window/XRP-USD_1Hour.csv.gz"
+      }
+    },
+    "XTZ/USD": {
+      "1Day": {
+        "rows": 1195,
+        "first": "2023-08-18 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 81,
+        "sha256": "1c75973d5d951317af306cd688941d69a47483eeb2c2aed3f56029f1acc866d4",
+        "status": "full query",
+        "file": "XTZ-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    },
+    "YFI/USD": {
+      "1Day": {
+        "rows": 1819,
+        "first": "2021-12-02 00:00:00",
+        "last": "2026-11-24 00:00:00",
+        "internal_missing": 0,
+        "longest_internal_gap": 0,
+        "zero_volume": 448,
+        "sha256": "ef812cdce0117cb9e6130e577b5b8fca7150856a815a5d6a77be99434d2d4d43",
+        "status": "full query",
+        "file": "YFI-USD_1Day.csv.gz",
+        "recent_daily_liquidity_screen": false
+      },
+      "1Hour": {
+        "status": "not yet downloaded"
+      }
+    }
+  },
+  "tape": [
+    {
+      "symbol": "AVAX/USD",
+      "frame": "1Min",
+      "rows": 348517,
+      "first": "2026-01-01T00:00:00+00:00",
+      "last": "2026-11-24T23:59:00+00:00",
+      "internal_missing": 123803,
+      "zero_volume": 329816
+    },
+    {
+      "symbol": "AVAX/USD",
+      "frame": "1Day",
+      "rows": 1059,
+      "first": "2024-01-01T00:00:00+00:00",
+      "last": "2026-11-24T00:00:00+00:00",
+      "internal_missing": 0,
+      "zero_volume": 1
+    },
+    {
+      "symbol": "BTC/USD",
+      "frame": "1Min",
+      "rows": 458938,
+      "first": "2026-01-01T00:00:00+00:00",
+      "last": "2026-11-24T23:59:00+00:00",
+      "internal_missing": 13382,
+      "zero_volume": 299517
+    },
+    {
+      "symbol": "BTC/USD",
+      "frame": "1Day",
+      "rows": 1059,
+      "first": "2024-01-01T00:00:00+00:00",
+      "last": "2026-11-24T00:00:00+00:00",
+      "internal_missing": 0,
+      "zero_volume": 0
+    },
+    {
+      "symbol": "DOGE/USD",
+      "frame": "1Min",
+      "rows": 343346,
+      "first": "2026-01-01T00:01:00+00:00",
+      "last": "2026-11-24T23:59:00+00:00",
+      "internal_missing": 128973,
+      "zero_volume": 327546
+    },
+    {
+      "symbol": "DOGE/USD",
+      "frame": "1Day",
+      "rows": 1059,
+      "first": "2024-01-01T00:00:00+00:00",
+      "last": "2026-11-24T00:00:00+00:00",
+      "internal_missing": 0,
+      "zero_volume": 0
+    },
+    {
+      "symbol": "ETH/USD",
+      "frame": "1Min",
+      "rows": 329847,
+      "first": "2026-01-01T00:01:00+00:00",
+      "last": "2026-11-24T23:59:00+00:00",
+      "internal_missing": 142472,
+      "zero_volume": 252797
+    },
+    {
+      "symbol": "ETH/USD",
+      "frame": "1Day",
+      "rows": 1059,
+      "first": "2024-01-01T00:00:00+00:00",
+      "last": "2026-11-24T00:00:00+00:00",
+      "internal_missing": 0,
+      "zero_volume": 0
+    },
+    {
+      "symbol": "LINK/USD",
+      "frame": "1Min",
+      "rows": 348765,
+      "first": "2026-01-01T00:00:00+00:00",
+      "last": "2026-11-24T23:59:00+00:00",
+      "internal_missing": 123555,
+      "zero_volume": 329233
+    },
+    {
+      "symbol": "LINK/USD",
+      "frame": "1Day",
+      "rows": 1059,
+      "first": "2024-01-01T00:00:00+00:00",
+      "last": "2026-11-24T00:00:00+00:00",
+      "internal_missing": 0,
+      "zero_volume": 1
+    },
+    {
+      "symbol": "LTC/USD",
+      "frame": "1Min",
+      "rows": 318813,
+      "first": "2026-01-01T00:00:00+00:00",
+      "last": "2026-11-24T23:59:00+00:00",
+      "internal_missing": 153507,
+      "zero_volume": 307830
+    },
+    {
+      "symbol": "LTC/USD",
+      "frame": "1Day",
+      "rows": 1059,
+      "first": "2024-01-01T00:00:00+00:00",
+      "last": "2026-11-24T00:00:00+00:00",
+      "internal_missing": 0,
+      "zero_volume": 2
+    },
+    {
+      "symbol": "SOL/USD",
+      "frame": "1Min",
+      "rows": 351555,
+      "first": "2026-01-01T00:02:00+00:00",
+      "last": "2026-11-24T23:59:00+00:00",
+      "internal_missing": 120763,
+      "zero_volume": 296875
+    },
+    {
+      "symbol": "SOL/USD",
+      "frame": "1Day",
+      "rows": 821,
+      "first": "2024-08-26T00:00:00+00:00",
+      "last": "2026-11-24T00:00:00+00:00",
+      "internal_missing": 0,
+      "zero_volume": 1
+    },
+    {
+      "symbol": "XRP/USD",
+      "frame": "1Min",
+      "rows": 335540,
+      "first": "2026-01-01T00:00:00+00:00",
+      "last": "2026-11-24T23:59:00+00:00",
+      "internal_missing": 136780,
+      "zero_volume": 271263
+    },
+    {
+      "symbol": "XRP/USD",
+      "frame": "1Day",
+      "rows": 1059,
+      "first": "2024-01-01T00:00:00+00:00",
+      "last": "2026-11-24T00:00:00+00:00",
+      "internal_missing": 0,
+      "zero_volume": 0
+    }
+  ],
+  "source": "https://data.alpaca.markets/v1beta3/crypto/us/bars",
+  "inventory": "https://alpaca.markets/support/what-cryptocurrencies-does-alpaca-currently-support",
+  "symbols": [
+    "AVAX/USD",
+    "BTC/USD",
+    "DOGE/USD",
+    "ETH/USD",
+    "LINK/USD",
+    "LTC/USD",
+    "SOL/USD",
+    "XRP/USD"
+  ],
+  "thresholds": {
+    "backtest_max_pbo": 0.25,
+    "backtest_min_breakeven_cost_multiple": 2,
+    "replay_max_drop_ratio_vs_hold": 0.6,
+    "replay_min_deflated_sharpe": 0.95,
+    "replay_min_shuffle_percentile": 0.95
+  },
+  "liquidity": {
+    "days": 30,
+    "min_median_usd": 10000
+  },
+  "fee": {
+    "practice_crypto_fee_bps_added": 25,
+    "tm_crypto_half_spread_bps": 10,
+    "total_bps": 35
+  },
+  "provenance": {
+    "prereg_commit": "74ad30c54a506fc83c2b6a2a4bbd2fba05fa462f",
+    "plan_path": "research_rig/PREREG_09_crypto_methods.md",
+    "code_head": "eeddcdab14eb7207d647dbe1e4dc7a59ccabe953",
+    "command": [
+      "research_rig/run_09.py",
+      "--held",
+      "--prereg-commit",
+      "74ad30c"
+    ],
+    "code_sha256": {
+      "run_09.py": "31a1c41650cc411612d44f61811af22b7d4ac1e692f6d8f0ff26e464a1601db9",
+      "rig2.py": "19213fc9e89d029fa6be62cb8008543411680899f161368e43dc107ecdbc670a",
+      "fetch_09_alpaca.py": "c58f827ab32caec42c72636120ea80be4bc3aacf6aa5a47f8a790e0f79dd9818",
+      "fixtures_09.py": "6fbb8e1abfcc8c77392dd1194fd6ab1cecc0a312533daa3ed4d690ed160ef532"
+    },
+    "completed_utc": "2026-11-25T15:24:48.195224+00:00"
+  }
+}

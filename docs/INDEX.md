@@ -110,6 +110,8 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/21_systematic_funds_and_published_rules.md` | Rule-based funds and published rules, with their live records | CURRENT |
 | `docs/research/25_what_the_evidence_supports.md` | One page that pulls the reading and all our tests together, with the ranked list of what to test next | CURRENT |
 | `docs/research/26_insider_buying_evidence.md` | What the evidence says about buying after insiders buy: the 2012 paper, later samples, funds that tried it, the data a test needs. Reading only, no test | CURRENT |
+| `docs/research/28_replay_09_crypto_methods.md` | Results for new crypto timing, ranking, lead and risk rules on Alpaca | CURRENT |
+| `docs/research/29_time_machine_tm01_crypto_price_only.md` | Results so far for six AI models trading crypto from prices alone in the time machine, with why each trade was made. Rebuilt as sessions finish | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
 
@@ -156,7 +158,9 @@ Working papers.
 | `research_rig/PREREG_09_crypto_methods.md` | Frozen plan for new long-only crypto rules at Alpaca cost | CURRENT |
 | `research_rig/run_09.py`, `research_rig/fixtures_09.py` | Replay engine and synthetic timing, fees, gaps and matching checks for replay 09 | CURRENT |
 | `research_rig/fetch_09_alpaca.py` | Public Alpaca USD bar downloader; raw bars live on the research machine | CURRENT |
+| `research_rig/audit_09_alpaca.py` | Data-only gap check of the later full-hourly pulls for steady-volume USD pairs | CURRENT |
 | `research_rig/build_doc28.py` | Writes the replay 09 report from stored results, without replaying any price | CURRENT |
+| `research_rig/results_09.json` | Replay 09 results, input fingerprints and coverage snapshot | CURRENT |
 | `research_rig/run_v2.py`, `research_rig/compare_v1_v2.py`, `research_rig/noise_pbo.py`, `research_rig/build_doc16.py`, `research_rig/results_v2.json`, `research_rig/compare_v1_v2.json`, `research_rig/noise_pbo.json`, `research_rig/venue_price_gap.json` | The rerun after the audits and its outputs | CURRENT |
 | `research_rig/run_04.py`, `research_rig/results_04.json`, `research_rig/build_doc23.py`, `research_rig/NOTES_04_builder.md` | Replay 04 | CURRENT |
 | `research_rig/run_05.py`, `research_rig/AMENDMENT_05_I2_equal_thirds.md`, `research_rig/results_05.json`, `research_rig/results_05b.json`, `research_rig/build_doc22.py`, `research_rig/i2_2020_note.py`, `research_rig/i2_2020_note.json`, `research_rig/data_notes_french.md` | Replay 05: script, the correction to rule I2, first-run output, corrected-run output | CURRENT |
@@ -197,6 +201,7 @@ Working papers.
 | `timemachine/session.py`, `timemachine/server.py`, `timemachine/new_session.py` | One replay session, the local server a trader steps through, and the command that starts a session | CURRENT |
 | `timemachine/code_traders.py`, `timemachine/run_code_trader.py` | Traders that need no model (hold, random, the fixed rules), and the command that runs one through a session | CURRENT |
 | `timemachine/PLAN_TM01_crypto_price_only.md` | Plan for the first AI replays: six models, one card, crypto prices only, with the pass mark fixed before any session | CURRENT |
+| `timemachine/score_tm01.py`, `timemachine/results_tm01.json` | Scores plan TM01 from the finished sessions: each model against holding bitcoin and its random twins, and a "why" row for every buy. The JSON is its stored output | CURRENT |
 | `timemachine/SESSIONS.jsonl` | One line for every session ever started, so no replay goes uncounted | CURRENT |
 | `timemachine/test_tape.py`, `timemachine/test_sim.py`, `timemachine/__init__.py` | Checks with no network, and the package marker | CURRENT |
 

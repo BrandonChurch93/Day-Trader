@@ -58,7 +58,18 @@ def count_check():
             f"The closest is {low['rule']} on {low['where']} in {low['test']}, at {low['dsr_at_count_all']:.3f} against a bar of {c['bar']} (`replay_min_deflated_sharpe`). "
             f"Pass mark 3 alone changes from pass to fail in {n3} rows that had already failed another mark.",
             "`research_rig/TRIAL_LEDGER.md`, `research_rig/ledger_count_check.json`")
+def crypto_methods():
+    r = J("results_09.json"); rules = r["rules"]; h = r["hold"]["held"]; dates = r["dates"]["held"]
+    passes = sum(x["marks"]["passed"] for x in rules.values())
+    growth = max(rules, key=lambda n: rules[n]["held"]["total"])
+    return ("Replay 09", "New timing, rank, lead and risk rules on Alpaca crypto bars",
+            f"{passes} of {len(rules)} pass at {r['fee']['total_bps']} bps per side "
+            "(`practice_crypto_fee_bps_added` plus `tm_crypto_half_spread_bps`). "
+            f"Held back {dates[0]} to {dates[1]}: best rule {growth} grew {pc(rules[growth]['held']['total'])}; "
+            f"holding bitcoin grew {pc(h['total'])}.", "`docs/research/28_replay_09_crypto_methods.md`")
 ROWS = [crypto_trend, crypto_intraday, pilot, basket, stocks, books, smaller, count_check]
+if os.path.exists(RR + "results_09.json"):
+    ROWS.insert(5, crypto_methods)
 def table():
     t = "| Test | What was asked | Result, MEASURED | Full write-up |\n|---|---|---|---|\n"
     for f in ROWS:

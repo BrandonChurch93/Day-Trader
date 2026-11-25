@@ -38,6 +38,18 @@ BD, BH = ["data/bitstamp_BTCUSD.csv", "data/bitstamp_ETHUSD.csv"], ["data/bitsta
 KA, KF = ["data/kraken_BTCUSD.csv", "data/kraken_ETHUSD.csv"], ["data/krakenfull_BTCUSD.csv", "data/krakenfull_ETHUSD.csv"]
 K1440, K60 = ["KRAKEN_DIR/full_XBTUSD_1440.csv", "KRAKEN_DIR/full_ETHUSD_1440.csv"], ["KRAKEN_DIR/full_XBTUSD_60.csv", "KRAKEN_DIR/full_ETHUSD_60.csv"]
 FR = ["FRENCH_DIR/F-F_Research_Data_Factors_daily__main.csv", "FRENCH_DIR/12_Industry_Portfolios_Daily__0_Average_Value_Weighted_Returns_Daily.csv"]
+ALPACA_09 = os.path.join(os.path.expanduser("~"), "workspace", "rig", "data", "alpaca_crypto")
+RUN_09 = os.path.join(H, "results_09.json")
+RAW_09 = []
+if os.path.exists(RUN_09):
+    with open(RUN_09) as r09:
+        replay_09 = json.load(r09)
+    for frames in replay_09["coverage"].values():
+        for meta in frames.values():
+            if "file" in meta:
+                name = "ALPACA_09/" + meta["file"]
+                INPUTS[name] = os.path.join(ALPACA_09, meta["file"])
+                RAW_09.append(name)
 
 # output -> (kind, command, code files, raw inputs, stored outputs it reads)
 # kind "held-back": the script runs a trading rule, or scores or collects trading calls, on prices that include held-back dates.
@@ -81,6 +93,12 @@ NOTES = {
     "pilot/decisions.jsonl": "Pilot 02. The server gave each model one day of prices at a time, 2026-06-30 to 2026-11-23, and logged its call. Run once. The models' replies cannot be made again from this record.",
     "kraken_daily_build.json": "Compares Kraken and Bitstamp daily closes while building the Kraken daily files. No rule.",
 }
+if RAW_09:
+    OUTPUTS["results_09.json"] = (
+        "held-back", "python3 run_09.py --held --prereg-commit " + replay_09["provenance"]["prereg_commit"][:7],
+        ["run_09.py", "fetch_09_alpaca.py", "rig2.py", "fixtures_09.py", "../config/thresholds.yaml"], RAW_09, [],
+    )
+    NOTES["results_09.json"] = "Alpaca bars and replay code carry run-time fingerprints in the output. Minute tape is coverage only."
 
 def sha(path):
     h = hashlib.sha256()
