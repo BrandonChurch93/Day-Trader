@@ -6,7 +6,7 @@ Last changed: 2026-11-25 18:29 UTC
 
 ## Running now
 
-As of 2026-11-25 18:33 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
+As of 2026-11-25 18:38 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
 
 | # | What | Plan | Started |
 |---|---|---|---|
@@ -14,7 +14,6 @@ As of 2026-11-25 18:33 UTC. Plans TM01 to TM04 are finished and are in Done or i
 | 9g | Fast lane, the owner's own method (`practice/traders/F01_hot_coin_swing.md`). Plan written 2026-11-25 18:25 UTC: a control run of the futures book, then a daily picker and an hourly swing trader tested apart. Waiting on two things being built: the second price store's months after March 2026, and the session types the plan needs | `timemachine/PLAN_TM06_hot_coin_swing.md`, ledger rows TM06-0, TM06-P, TM06-S | 2026-11-25 |
 | 16 | Following the disclosed stock trades of members of Congress (the owner's idea, `docs/DECISIONS.md` 2026-11-25). 85,291 dated trades collected, 2019 to 2026. Draft plan written 2026-11-25 18:27 UTC. The reading is in (`docs/research/48_congress_trades_evidence.md`): published tests that buy after the filing found no gain for the average purchase, and the law allows 30 days before a filing must be public, so the plan now also scores later entry days. Now: prices for every ticker, the code, a check of the code by a second model, then freeze and score | `research_rig/PREREG_12_congress_followers_DRAFT.md`, ledger rows 135 to 143 | 2026-11-25 |
 | - | Ideas round 7: other trades and holdings that must be disclosed in public and could be copied after the public date. The write-up is in (2026-11-25 18:33 UTC); its sources are with a checker before it goes into `docs/research/` | reading, no plan | 2026-11-25 18:29 UTC |
-| 9j | Governance votes: for DAOs whose coins trade on Coinbase, what the coin did in the hours after a close vote ended, against the same coin at random hours. A description first, not a counted test (`docs/research/43_crypto_events_evidence_checked.md`) | description, no plan | 2026-11-25 18:33 UTC |
 | - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
 
 ## Next, in order
@@ -70,6 +69,7 @@ The results of everything run before 2026-11-25 15:00 UTC are in the table in `d
 | 9k | Dated calls by the crypto caller the owner followed, Alex Becker: what was said on what date and what the coin did after | Measured 2026-11-25 18:18 UTC (`docs/research/46_becker_calls_measured.md`): 1,591 priced calls on 186 coins; the middle call fell 30.6% in 90 days and 26% beat bitcoin; the coins had usually already risen before the video. Following a caller is not queued as a test. Three design points carried into plan TM06 |
 | 9l | A dated attention count per coin for the time machine | Built 2026-11-25 18:18 UTC (`timemachine/attention.py`, `docs/research/45_attention_feed_measured.md`): Wikipedia page views for 17 of 23 coins usable; attention rises showed no link to later returns |
 | 9m | Checked reading on dated crypto events | Done 2026-11-25 18:18 UTC (`docs/research/43_crypto_events_evidence_checked.md`): one cheap look kept (row 9j), the rest parked or dropped |
+| 9j | Governance votes, a first look | Done 2026-11-25 18:38 UTC (`docs/research/49_governance_votes_look.md`): 945 votes, 933 on one coin, nothing after costs. Parked |
 | - | Build the time machine | Built and pushed 2026-11-25. Tape and recorder 65 checks, pretend broker and server 93 checks. A hold of bitcoin over October 2026 ran end to end and its books matched the pretend broker to the cent |
 | - | Outside review of the practice desk's order code | Three passes by a different model. Faults found and fixed: overspending across traders, selling a shared holding twice, a stock order sent after the close, a pick edited after it was seen. Three test files pass |
 | - | Replay 07: eight day trading rules on SPY and QQQ one-minute prices | Run once 2026-11-25. No rule passed on either fund (`docs/research/27_replay_07_intraday_spy_qqq.md`). Follow-up worth doing: measure the real cost of a round trip in QQQ at the practice desk, since one rule beats holding only below about 1.8 hundredths of a percent |

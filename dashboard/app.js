@@ -100,6 +100,37 @@
     }).join('');
   }
 
+  // ---------- what we believe now ----------
+  var BELIEVED_FIRST = 6;
+  function believedLink(l) {
+    var m = /^(\d+)_/.exec(l[0]);
+    return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(m ? 'Write-up ' + String(+m[1]) : l[0]) + '</a>';
+  }
+  function renderBelieved(d) {
+    var body = $('believed-body');
+    if (!body) return;
+    var list = d.believed || [];
+    if (!list.length) { body.innerHTML = '<p class="meta">Nothing was read from the status page.</p>'; return; }
+    var html = '<ul class="believed-list" id="believed-list">' + list.map(function (b, i) {
+      var lead = String(b.lead || '');
+      var stop = /[.?:]$/.test(lead) ? '' : '.';
+      return '<li class="believed-item"' + (i >= BELIEVED_FIRST ? ' hidden' : '') + '><span class="believed-lead">' + esc(lead + stop) + '</span>' +
+        (b.body ? ' ' + esc(b.body).replace(/\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2} UTC)?/g, '<span class="believed-date">$&</span>') : '') +
+        ((b.links || []).length ? ' <span class="believed-links">' + b.links.map(believedLink).join(', ') + '</span>' : '') + '</li>';
+    }).join('') + '</ul>';
+    if (list.length > BELIEVED_FIRST) {
+      html += '<button type="button" class="btn believed-more" aria-expanded="false" aria-controls="believed-list">Show all ' + int(list.length) + '</button>';
+    }
+    body.innerHTML = html;
+    var btn = body.querySelector('.believed-more');
+    if (btn) btn.addEventListener('click', function () {
+      var open = btn.getAttribute('aria-expanded') !== 'true';
+      Array.prototype.forEach.call(body.querySelectorAll('.believed-item'), function (li, i) { if (i >= BELIEVED_FIRST) li.hidden = !open; });
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.textContent = open ? 'Show the first ' + BELIEVED_FIRST + ' only' : 'Show all ' + int(list.length);
+    });
+  }
+
   // ---------- section 2 ----------
   var TONE_MARK = { fail: '\u00d7', mixed: '~', unknown: '?', info: 'i' };
   function renderTests(d) {
@@ -1094,6 +1125,7 @@
       .then(function (d) {
         state.data = d;
         initPractice(d);
+        try { renderBelieved(d); } catch (e) { $('believed-body').innerHTML = '<p class="meta">The findings could not be shown.</p>'; }
         renderStatus(d);
         try { renderTimeMachine(d); } catch (e) { $('timemachine-body').innerHTML = '<div class="empty"><h3>The replay results could not be shown</h3><p>The results in data.json are not in the expected shape.</p></div>'; }
         $('compare-notes').innerHTML = (d.compare_notes || []).map(function (n) { return '<p>' + esc(n) + '</p>'; }).join('');

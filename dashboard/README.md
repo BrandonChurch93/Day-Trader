@@ -36,6 +36,10 @@ From the top, the section shows:
 
 The page shows the copy in `data.json` first. Then it asks `practice_live_url` for a newer copy. If that copy is newer, the section is redrawn from it. If the request fails, the page keeps the copy it has and says "Could not check for newer records". When `practice` is empty, or the desk is still waiting for its key, the section says so and shows no totals. The section only reads. It cannot place, change or cancel an order.
 
+## What we believe now section
+
+The "What we believe now" section sits right above "Where things stand". It shows `believed` from `data.json`, which `research_rig/export_dashboard.py` reads from the bullets under "## What is believed now" in `docs/STATUS.md` each time it runs. Nothing in it is typed into the exporter. Each bullet gives a short lead (up to the first colon or the first sentence end), the rest of the text without backticks or "(`path`)", and a link for each `docs/...` page it names that exists. Bullets with a time stamp "2026-11-25 HH:MM UTC" come first, newest first, then the rest in file order. The first 6 are shown, and "Show all" opens the rest.
+
 ## Time machine section
 
 The "Time machine" section comes right after the Practice account section. It shows the scored replay plans from `timemachine` in `data.json`, which `research_rig/export_dashboard.py` builds from the stored results files. It reads no prices and runs nothing.

@@ -130,6 +130,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/45_attention_feed_measured.md` | Which free attention counts per coin can be collected with honest dates (Wikipedia yes, Reddit partly, news counts and Trends no) and an after-the-fact look showing attention rises did not lead price | CURRENT |
 | `docs/research/46_becker_calls_measured.md` | 1,855 dated buy or hold mentions from Alex Becker's videos (2020 to 2025) set against prices before and after, other callers' records, what happened to AI and gaming coins after hot stretches, and free dated data for "what was hot" | CURRENT |
 | `docs/research/48_congress_trades_evidence.md` | Following members of Congress: the collected record of 85,291 dated trades and how it was checked, what the two real-money copy funds did against SPY, the published studies, the Pelosi figures and where they come from, and pending rule changes | CURRENT |
+| `docs/research/49_governance_votes_look.md` | A first look at coin returns around governance votes: 945 votes, nearly all on one coin, nothing after costs; parked | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
