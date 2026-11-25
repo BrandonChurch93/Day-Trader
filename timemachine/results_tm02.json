@@ -1,0 +1,210 @@
+{
+ "models": {
+  "GROK": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM02-B02-GROK-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM02-B02-GROK-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM02-B02-GROK-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM02-B02-GROK-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM02-B02-GROK-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Grok 4.7",
+   "verdict": "not finished"
+  },
+  "KIMI": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM02-B02-KIMI-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM02-B02-KIMI-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM02-B02-KIMI-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM02-B02-KIMI-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM02-B02-KIMI-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Kimi K3",
+   "verdict": "not finished"
+  },
+  "NEON": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM02-B02-NEON-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM02-B02-NEON-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM02-B02-NEON-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM02-B02-NEON-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM02-B02-NEON-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Gemini Neon",
+   "verdict": "not finished"
+  },
+  "OPUS": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM02-B02-OPUS-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM02-B02-OPUS-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM02-B02-OPUS-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM02-B02-OPUS-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM02-B02-OPUS-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Claude Opus 5.5",
+   "verdict": "not finished"
+  },
+  "SOL": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM02-B02-SOL-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM02-B02-SOL-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM02-B02-SOL-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM02-B02-SOL-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM02-B02-SOL-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "GPT-6.2 Sol",
+   "verdict": "not finished"
+  },
+  "SONNET": {
+   "months": {
+    "07": {
+     "finished": false,
+     "session": "TM02-B02-SONNET-2026-07"
+    },
+    "08": {
+     "finished": false,
+     "session": "TM02-B02-SONNET-2026-08"
+    },
+    "09": {
+     "finished": false,
+     "session": "TM02-B02-SONNET-2026-09"
+    },
+    "10": {
+     "finished": false,
+     "session": "TM02-B02-SONNET-2026-10"
+    },
+    "11": {
+     "finished": false,
+     "session": "TM02-B02-SONNET-2026-11"
+    }
+   },
+   "months_counted": [],
+   "name": "Claude Sonnet 5.5",
+   "verdict": "not finished"
+  }
+ },
+ "news_test": {
+  "complete": false,
+  "models": {
+   "GROK": {
+    "complete": false,
+    "months_both_finished": [],
+    "price_only_usd": null,
+    "with_news_usd": null
+   },
+   "KIMI": {
+    "complete": false,
+    "months_both_finished": [],
+    "price_only_usd": null,
+    "with_news_usd": null
+   },
+   "NEON": {
+    "complete": false,
+    "months_both_finished": [],
+    "price_only_usd": null,
+    "with_news_usd": null
+   },
+   "OPUS": {
+    "complete": false,
+    "months_both_finished": [],
+    "price_only_usd": null,
+    "with_news_usd": null
+   },
+   "SOL": {
+    "complete": false,
+    "months_both_finished": [],
+    "price_only_usd": null,
+    "with_news_usd": null
+   },
+   "SONNET": {
+    "complete": false,
+    "months_both_finished": [],
+    "price_only_usd": null,
+    "with_news_usd": null
+   }
+  },
+  "verdict": "not finished"
+ },
+ "plan": "timemachine/PLAN_TM02_crypto_with_news.md",
+ "start_usd": null
+}

@@ -45,12 +45,12 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 | September | Claude Sonnet 5.5 | not finished | | | | | | | | | | |
 | September | Kimi K3 | not finished | | | | | | | | | | |
 | September | Grok 4.7 | not finished | | | | | | | | | | |
-| October | Claude Opus 5.5 | -$61.35 | -$76.42 | n/a | n/a of 4 | 6 | 0 | 6 | $7.37 | -8.0% | 55 of 62 | 250 |
+| October | Claude Opus 5.5 | -$61.35 | -$76.42 | n/a | n/a of 8 | 6 | 0 | 6 | $7.37 | -8.0% | 55 of 62 | 250 |
 | October | GPT-6.2 Sol | -$32.50 | -$76.42 | -$21.92 | 0 of 20 | 4 | 0 | 4 | $4.45 | -3.6% | 58 of 62 | 37 |
 | October | Gemini Neon | -$162.36 | -$76.42 | n/a | n/a of 0 | 8 | 0 | 8 | $12.53 | -17.6% | 56 of 62 | 31 |
 | October | Claude Sonnet 5.5 | -$88.92 | -$76.42 | -$64.07 | 0 of 20 | 4 | 0 | 4 | $5.79 | -10.5% | 59 of 62 | 29 |
 | October | Kimi K3 | not finished | | | | | | | | | | |
-| October | Grok 4.7 | -$37.59 | -$76.42 | n/a | n/a of 3 | 3 | 0 | 3 | $5.42 | -5.7% | 59 of 62 | 116 |
+| October | Grok 4.7 | -$37.59 | -$76.42 | n/a | n/a of 4 | 3 | 0 | 3 | $5.42 | -5.7% | 59 of 62 | 116 |
 | November 1 to 24 | Claude Opus 5.5 | not finished | | | | | | | | | | |
 | November 1 to 24 | GPT-6.2 Sol | not finished | | | | | | | | | | |
 | November 1 to 24 | Gemini Neon | not finished | | | | | | | | | | |

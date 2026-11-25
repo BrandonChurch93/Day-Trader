@@ -52,3 +52,11 @@ For every buy: which headlines the trader named as its reason, what else it look
 - The same as plan TM01: assumed fills, thin crypto minutes, the no-web rule by instruction, the models' knowledge lines not measured.
 - New here: a headline can cue a model's memory of the period. If these months are before a model's knowledge line, a good result here may be memory. This plan cannot tell the two apart. Measuring the knowledge lines (`docs/QUEUE.md`) can.
 - The two plans were run hours apart by different fresh agents. A model's run-to-run variation is not measured, so a small difference between the two cards for one model means little. That is why the news question is asked across all six.
+
+## Checked before the first session started
+
+- 2026-11-25 15:39 UTC, MEASURED by `timemachine/check_news_dates.py` (stored in `timemachine/news_date_check.json`): are any stories on the three news sites dated earlier than they were made? Post numbers on these sites rise as posts are made, so a story dated early but numbered above stories dated two days later was made later. Of 6,964 posts dated 2026-06-01 to 2026-11-24, 2 were flagged, both casino adverts on one site, and neither is on the tape.
+- Many posts carry a last-edit time before their publish time (scheduled ahead, by up to 72 hours). The tape uses the publish time, so a trader sees such a story no earlier than readers did.
+- One site publishes batches of short filler stories on the hour. They are real posts with real dates and stay on the tape. A trader has to judge their worth, as a reader would.
+- What this check cannot see: a story whose text was changed after publishing without the site marking it.
+

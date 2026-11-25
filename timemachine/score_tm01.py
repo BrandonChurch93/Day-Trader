@@ -1,7 +1,8 @@
-"""Scores plan TM01 (timemachine/PLAN_TM01_crypto_price_only.md) from the finished session folders. Pretend money only.
+"""Scores the time machine plans TM01 and TM02 from the finished session folders. Pretend money only.
 
-python3 timemachine/score_tm01.py            writes timemachine/results_tm01.json and docs/research/29_time_machine_tm01_crypto_price_only.md
-python3 timemachine/score_tm01.py --check    exits 1 if the stored files differ from what the session folders give now
+python3 timemachine/score_tm01.py                 plan TM01: writes timemachine/results_tm01.json and docs/research/29_time_machine_tm01_crypto_price_only.md
+python3 timemachine/score_tm01.py --plan TM02     plan TM02: writes timemachine/results_tm02.json and docs/research/30_time_machine_tm02_crypto_with_news.md
+python3 timemachine/score_tm01.py --check         exits 1 if the stored files differ from what the session folders give now (add --plan TM02 for that plan)
 
 Reads only result.json and looks.jsonl of each session under $TM_RUNS. It runs no trader and reads no prices.
 A month counts for a model when its AI session, the bitcoin hold of that month and all 20 twins are finished.
@@ -12,8 +13,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RUNS = Path(os.environ.get("TM_RUNS", "/home/user/workspace/rig/tm_runs"))
-OUT = ROOT / "timemachine" / "results_tm01.json"
-DOC = ROOT / "docs" / "research" / "29_time_machine_tm01_crypto_price_only.md"
+PLANS = {
+    "TM01": dict(prefix="TM01-B01", out="timemachine/results_tm01.json", doc="docs/research/29_time_machine_tm01_crypto_price_only.md",
+                 plan="timemachine/PLAN_TM01_crypto_price_only.md", card="practice/traders/B01_crypto_swing_price_only.md", news=False,
+                 title="# Time machine plan TM01: six AI models trade crypto from prices alone"),
+    "TM02": dict(prefix="TM02-B02", out="timemachine/results_tm02.json", doc="docs/research/30_time_machine_tm02_crypto_with_news.md",
+                 plan="timemachine/PLAN_TM02_crypto_with_news.md", card="practice/traders/B02_crypto_swing_with_news.md", news=True,
+                 title="# Time machine plan TM02: the same six AI models trade crypto with dated headlines added"),
+}
+P = PLANS["TM01"]
 MODELS = [("OPUS", "Claude Opus 5.5"), ("SOL", "GPT-6.2 Sol"), ("NEON", "Gemini Neon"), ("SONNET", "Claude Sonnet 5.5"), ("KIMI", "Kimi K3"), ("GROK", "Grok 4.7")]
 MONTHS = [("07", "July"), ("08", "August"), ("09", "September"), ("10", "October"), ("11", "November 1 to 24")]
 SEEDS = list(range(1, 21))
@@ -70,7 +78,8 @@ def why_rows(session, r):
             c = closed_for(a["symbol"], st["utc"])
             ex = next((o for o in sells if c and o["symbol"] == a["symbol"] and o["filled_utc"] == c["closed_utc"]), None)
             rows.append(dict(wake_utc=st["utc"], symbol=a["symbol"], usd=a.get("usd"), looked=seen, news_looked=seen.get("news", 0),
-                             thesis=pick.get("thesis"), reason=a.get("reason"),
+                             thesis=pick.get("thesis"), reason=a.get("reason"), sources=pick.get("sources", []),
+                             headlines_in_packet=st.get("news_in_packet"),
                              closed_utc=c["closed_utc"] if c else None, result=c["result"] if c else "still held at the end or not filled",
                              gain_usd=c["gain_usd"] if c else None, gain_pct=round(c["gain_pct"], 4) if c else None,
                              exit_reason=ex["reason"] if ex else None))
@@ -78,7 +87,7 @@ def why_rows(session, r):
 
 
 def session_row(tag, mo):
-    sid = f"TM01-B01-{tag}-2026-{mo}"; r = load(sid)
+    sid = f"{P['prefix']}-{tag}-2026-{mo}"; r = load(sid)
     if r is None:
         return dict(session=sid, finished=False)
     s = r["summary"]; t = s["totals"]; steps = r["steps"]
@@ -92,7 +101,8 @@ def session_row(tag, mo):
                buys=sum(1 for o in s["orders"] if o["side"] == "buy" and o["status"] == "filled"),
                closed=t["closed_trades"], wins=t["wins"], losses=t["losses"], fees_usd=t["fees_added_usd"], max_drop=round(max_drop(s["points"]), 4),
                wakes_no_pick=sum(1 for x in steps if x.get("pick") is None), refused_attempts=sum(x.get("bad_attempts", 0) for x in steps),
-               lookups=sum(x.get("looks", 0) for x in steps), git_dirty=r["session"]["git"]["dirty"], config_hash=r["session"]["config_hash"],
+               lookups=sum(x.get("looks", 0) for x in steps), news_on=bool(r["session"].get("news")),
+               edited_later_news_seen=r.get("edited_later_news_seen"), git_dirty=r["session"]["git"]["dirty"], config_hash=r["session"]["config_hash"],
                benchmark_shown=r["session"]["benchmark"], hold_gain_usd=hold["summary"]["account"]["gain_usd"] if hold else None,
                twins_done=len(twins), twin_gains={str(k): v for k, v in sorted(twins.items())}, why=why_rows(sid, r))
     row["counts"] = hold is not None and len(twins) == len(SEEDS)
@@ -103,7 +113,7 @@ def session_row(tag, mo):
 
 
 def build():
-    out = dict(plan="timemachine/PLAN_TM01_crypto_price_only.md", start_usd=None, models={})
+    out = dict(plan=P["plan"], start_usd=None, models={})
     for tag, name in MODELS:
         rows = {mo: session_row(tag, mo) for mo, _ in MONTHS}
         done = [mo for mo, _ in MONTHS if rows[mo].get("counts")]
@@ -116,7 +126,28 @@ def build():
             m["beats_hold"] = m["sum_gain_usd"] > m["sum_hold_usd"]; m["beats_twins"] = m["sum_gain_usd"] > m["sum_twin_p80_usd"]
         m["verdict"] = ("counts: beat both yardsticks" if m.get("beats_hold") and m.get("beats_twins") else "has shown nothing") if len(done) == len(MONTHS) else "not finished"
         out["models"][tag] = m
+    if P["news"]:
+        out["news_test"] = news_test(out)
     return out
+
+
+def news_test(o):
+    """Plan TM02: the news helped only if every one of the six models gained more with news than without, over the five months added up.
+    Uses the stored TM01 results. A model is compared only when all five months count in both plans."""
+    base = json.loads((ROOT / PLANS["TM01"]["out"]).read_text())["models"]
+    rows = {}
+    for tag, _ in MODELS:
+        a, b = o["models"][tag], base[tag]
+        both = [mo for mo, _ in MONTHS if a["months"][mo].get("finished") and b["months"][mo].get("finished")]
+        full = len(a["months_counted"]) == len(MONTHS) and len(b["months_counted"]) == len(MONTHS)
+        rows[tag] = dict(months_both_finished=both, complete=full,
+                         with_news_usd=round(sum(a["months"][mo]["gain_usd"] for mo in both), 2) if both else None,
+                         price_only_usd=round(sum(b["months"][mo]["gain_usd"] for mo in both), 2) if both else None)
+        if both:
+            rows[tag]["better_with_news"] = rows[tag]["with_news_usd"] > rows[tag]["price_only_usd"]
+    done = all(r["complete"] for r in rows.values())
+    return dict(models=rows, complete=done,
+                verdict=("the news helped: six of six gained more with it" if all(r.get("better_with_news") for r in rows.values()) else "no sign the news helped") if done else "not finished")
 
 
 def usd(x):
@@ -124,11 +155,12 @@ def usd(x):
 
 
 def doc(o):
-    L = ["# Time machine plan TM01: six AI models trade crypto from prices alone", "",
-         "Made by `timemachine/score_tm01.py` from `timemachine/results_tm01.json`. Do not edit by hand. Pretend money. The plan, with its pass mark fixed before any session ran, is `timemachine/PLAN_TM01_crypto_price_only.md`.", "",
+    L = [P["title"], "",
+         f"Made by `timemachine/score_tm01.py`{' --plan TM02' if P['news'] else ''} from `{P['out']}`. Do not edit by hand. Pretend money. The plan, with its pass mark fixed before any session ran, is `{P['plan']}`.", "",
          "## What was run", "",
-         "- Each model follows the card `practice/traders/B01_crypto_swing_price_only.md` alone in a pretend account of `tm_account_start_usd`, one session per month, a fresh agent per session.",
-         "- It wakes at the hours in `tm_crypto_wake_hours_utc`, sees prices up to that minute and nothing later, and may buy any of eight coins. It cannot sell short.",
+         f"- Each model follows the card `{P['card']}` alone in a pretend account of `tm_account_start_usd`, one session per month, a fresh agent per session.",
+         "- It wakes at the hours in `tm_crypto_wake_hours_utc`, sees prices up to that minute and nothing later, and may buy any of eight coins. It cannot sell short."
+         + (" Its packet also holds crypto headlines dated up to that minute, and it may look up more." if P["news"] else ""),
          "- Costs: the fee `practice_crypto_fee_bps_added` and the spread `tm_crypto_half_spread_bps` on each side. Fills are assumed at the next recorded minute's open.",
          "- Yardsticks: holding bitcoin for the month, and 20 random twins per session that buy at the same wakes and sizes with the same exits, a coin drawn at random.",
          "- What counts, from the plan: over the five months added up, a model's gain is above holding bitcoin and above the 80th percentile of its twins. One month alone decides nothing.", "",
@@ -138,6 +170,16 @@ def doc(o):
     for tag, _ in MODELS:
         m = o["models"][tag]; n = len(m["months_counted"])
         L.append(f"| {m['name']} | {n} of {len(MONTHS)} | {usd(m.get('sum_gain_usd'))} | {usd(m.get('sum_hold_usd'))} | {usd(m.get('sum_twin_p80_usd'))} | {m.get('sum_twins_beaten', 'n/a')}{' of 20' if n else ''} | {m['verdict']} |")
+    if P["news"]:
+        nt = o["news_test"]
+        L += ["", "## Did the news help", "",
+              "From the plan: the news helped only if all six models gained more with it than without it over the five months added up. By luck alone that happens about 1 time in 64. "
+              "MEASURED so far, on the months finished in both plans:", "",
+              "| Model | Months finished in both | With news | Prices alone | Better with news |", "|---|---|---|---|---|"]
+        for tag, name in MODELS:
+            r = nt["models"][tag]
+            L.append(f"| {name} | {len(r['months_both_finished'])} of {len(MONTHS)} | {usd(r['with_news_usd'])} | {usd(r['price_only_usd'])} | {('yes' if r['better_with_news'] else 'no') if 'better_with_news' in r else 'n/a'} |")
+        L += ["", f"Verdict: {nt['verdict']}."]
     L += ["", "## Each session", "",
           "| Month | Model | Gain | Hold | Twin 80th pct | Twins beaten | Buys | Wins | Losses | Fees | Largest drop | Wakes with no pick | Lookups |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for mo, mname in MONTHS:
@@ -148,30 +190,37 @@ def doc(o):
             L.append(f"| {mname} | {o['models'][tag]['name']} | {usd(r['gain_usd'])} | {usd(r['hold_gain_usd'])} | {usd(r.get('twin_p80_usd'))} | "
                      f"{r.get('twins_beaten', 'n/a')} of {r['twins_done']} | {r['buys']} | {r['wins']} | {r['losses']} | {usd(r['fees_usd'])} | {r['max_drop'] * 100:.1f}% | {r['wakes_no_pick']} of {r['wakes']} | {r['lookups']} |")
     L += ["", "## Why each trade was made, and how it ended", "",
-          "One row per buy. \"Looked at\" is what the trader asked the desk for at that wake, beyond the packet it is always given. No trader in this plan had news, so none looked at news.", ""]
+          "One row per buy. \"Looked at\" is what the trader asked the desk for at that wake, beyond the packet it is always given. "
+          + ("\"Headlines it named\" is the pick's own list of sources. Headlines are also in every packet, so a trader can use one without a lookup." if P["news"] else "No trader in this plan had news, so none looked at news."), ""]
     for mo, mname in MONTHS:
         for tag, _ in MODELS:
             r = o["models"][tag]["months"][mo]
             if not r["finished"] or not r["why"]:
                 continue
-            L += [f"### {mname}, {o['models'][tag]['name']}", "", "| Wake (UTC) | Coin | Looked at | Its reason | Ended | Result |", "|---|---|---|---|---|---|"]
+            L += [f"### {mname}, {o['models'][tag]['name']}", "", "| Wake (UTC) | Coin | Looked at | Its reason |" + (" Headlines it named |" if P["news"] else "") + " Ended | Result |", "|---|---|---|---|---|---|" + ("---|" if P["news"] else "")]
             for w in r["why"]:
                 looked = ", ".join(f"{k} bars x{v}" if k not in ("news", "price") else f"{k} x{v}" for k, v in sorted(w["looked"].items())) or "packet only"
                 why = (w["reason"] or "").replace("|", "/").replace("\n", " ")
                 end = ("stop reached" if "stop" in (w["exit_reason"] or "") else "target reached" if "target" in (w["exit_reason"] or "") else "time limit" if "by_utc" in (w["exit_reason"] or "") or "time" in (w["exit_reason"] or "") else "sold by the trader") if w["closed_utc"] else "open at the end"
                 res = f"{w['result']} {usd(w['gain_usd'])} ({w['gain_pct'] * 100:+.1f}%)" if w["gain_usd"] is not None else w["result"]
-                L.append(f"| {w['wake_utc'][:16].replace('T', ' ')} | {w['symbol']} | {looked} | {why} | {end}{' ' + w['closed_utc'][:16].replace('T', ' ') if w['closed_utc'] else ''} | {res} |")
+                src = ("; ".join(x.replace("|", "/").replace("\n", " ") for x in w.get("sources") or []) or "none") + " | " if P["news"] else ""
+                L.append(f"| {w['wake_utc'][:16].replace('T', ' ')} | {w['symbol']} | {looked} | {why} | {src}{end}{' ' + w['closed_utc'][:16].replace('T', ' ') if w['closed_utc'] else ''} | {res} |")
             L.append("")
     L += ["## What this does not show", "",
           "- Fills are assumed, not real. Many crypto minutes on the tape are thin, so real fills could be worse.",
           "- The rule against outside knowledge is given by instruction. Each trader's lookups are logged; its memory is not.",
           "- Whether these months fall after each model's knowledge line is UNKNOWN. It has not been measured.",
-          "- October was the shakedown month. Its three known differences are listed at the end of the plan.",
+          "- October was the shakedown month. Its three known differences are listed at the end of the plan." if not P["news"] else
+          "- A headline can remind a model of what it already knows about that period. That would look like skill and is not. About one headline in eight was edited after it was published; those are marked and the card says not to trade on them.",
           "- With six models, one looking good by luck is likely. That is why the bar is per model and was fixed before the run.", ""]
     return "\n".join(L)
 
 
 def main():
+    global P
+    if "--plan" in sys.argv:
+        P = PLANS[sys.argv[sys.argv.index("--plan") + 1]]
+    OUT, DOC = ROOT / P["out"], ROOT / P["doc"]
     o = build(); js = json.dumps(o, indent=1, sort_keys=True) + "\n"; md = doc(o)
     if "--check" in sys.argv:
         bad = [str(p.relative_to(ROOT)) for p, t in ((OUT, js), (DOC, md)) if not p.exists() or p.read_text() != t]

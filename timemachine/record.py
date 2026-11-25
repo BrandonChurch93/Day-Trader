@@ -14,8 +14,10 @@ Commands:
   news        --from D --to D
   crypto      --symbols BTC/USD,ETH/USD --from D --to D [--tf both|1Day|1Min]
   crypto-news --from D --to D [--sources cryptoslate,cryptopotato,newsbtc]
+  load-csv    --tf 1Min|1Day (--file PATH --symbol SYM | --dir PATH) [--from D] [--to D]
+  sessions-from-tape [--symbol SPY] --from D --to D
 """
-import argparse, datetime as dt, hashlib, html, json, re, statistics, sys, time
+import argparse, csv, datetime as dt, hashlib, html, json, math, re, statistics, sys, time
 import urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
@@ -601,6 +603,110 @@ def record_crypto_news(tape, client, start_d, end_d, cfg, sources=None):
     return total_articles
 
 
+def _parse_csv_bar_ts(raw_date, tf, symbol):
+    """Parse platform_bars CSV `date` column into UTC epoch seconds.
+
+    - 1Day stock (`YYYY-MM-DD`): midnight America/New_York converted to UTC so
+      `from_epoch(t).astimezone(NY).strftime('%Y-%m-%d') == YYYY-MM-DD`.
+    - 1Min (`YYYY-MM-DDTHH:MM:SS` or with `Z`): UTC timestamp.
+    """
+    s = str(raw_date or "").strip()
+    if not s:
+        return None
+    if tf == "1Day" and len(s) == 10 and "/" not in symbol:
+        y, mo, d = (int(x) for x in s.split("-"))
+        return int(dt.datetime(y, mo, d, 0, 0, 0, tzinfo=NY).astimezone(UTC).timestamp())
+    return to_epoch(_ensure_utc_iso(s))
+
+
+def load_csv_file(tape, path, symbol, tf, start_d=None, end_d=None):
+    """Load stock bars from one platform_bars CSV file into the tape (WAL-safe)."""
+    p = Path(path)
+    sd = _parse_date(start_d) if start_d else None
+    ed = _parse_date(end_d) if end_d else None
+    rows = []
+    with open(p, newline="") as f:
+        rdr = csv.DictReader(f)
+        required = {"date", "open", "high", "low", "close", "volume"}
+        if not rdr.fieldnames or not required.issubset(set(rdr.fieldnames)):
+            return 0
+        for rec in rdr:
+            raw_d = (rec.get("date") or "").strip()
+            if not raw_d:
+                continue
+            try:
+                day = dt.date.fromisoformat(raw_d[:10])
+            except ValueError:
+                continue
+            if sd and day < sd:
+                continue
+            if ed and day > ed:
+                continue
+            try:
+                o = float(rec["open"])
+                h = float(rec["high"])
+                l = float(rec["low"])
+                c = float(rec["close"])
+                v = float(rec["volume"])
+            except (TypeError, ValueError):
+                continue
+            if not all(math.isfinite(x) for x in (o, h, l, c, v)):
+                continue
+            if o <= 0 or h <= 0 or l <= 0 or c <= 0 or v < 0 or h < l:
+                continue
+            ts = _parse_csv_bar_ts(raw_d, tf, symbol)
+            if ts is None:
+                continue
+            rows.append((symbol, tf, ts, o, h, l, c, v))
+    if not rows:
+        return 0
+    return tape.add_bars(rows)
+
+
+def load_csv_dir(tape, directory, tf, start_d=None, end_d=None, symbols=None):
+    """Load all matching platform_bars CSV files in `directory` into the tape."""
+    dpath = Path(directory)
+    want = set(symbols) if symbols else None
+    total = 0
+    for fpath in sorted(dpath.glob("*.csv")):
+        sym = fpath.name.split("_", 1)[0].upper()
+        if not sym or (want and sym not in want):
+            continue
+        n = load_csv_file(tape, fpath, sym, tf, start_d=start_d, end_d=end_d)
+        if n:
+            total += n
+            print(f"[load-csv:{tf}] {fpath.name} ({sym}): +{n} bars", flush=True)
+    return total
+
+
+def derive_sessions_from_tape(tape, start_d, end_d, symbol="SPY"):
+    """Derive NYSE regular sessions (open_utc, close_utc) from already-loaded 1Min bars."""
+    sd, ed = _parse_date(start_d), _parse_date(end_d)
+    start_ts = int(dt.datetime(sd.year, sd.month, sd.day, 0, 0, 0, tzinfo=NY).astimezone(UTC).timestamp())
+    end_ts = int(dt.datetime(ed.year, ed.month, ed.day, 23, 59, 59, tzinfo=NY).astimezone(UTC).timestamp())
+    rows = tape._conn().execute(
+        "SELECT t FROM bars WHERE symbol = ? AND tf = '1Min' AND t >= ? AND t <= ? ORDER BY t ASC",
+        (symbol, start_ts, end_ts),
+    ).fetchall()
+    by_day = {}
+    for (ep,) in rows:
+        t_ny = from_epoch(ep).astimezone(NY)
+        hm = (t_ny.hour, t_ny.minute)
+        if (9, 30) <= hm < (16, 0):
+            d_str = t_ny.strftime("%Y-%m-%d")
+            if d_str not in by_day:
+                by_day[d_str] = [ep, ep]
+            else:
+                if ep < by_day[d_str][0]:
+                    by_day[d_str][0] = ep
+                if ep > by_day[d_str][1]:
+                    by_day[d_str][1] = ep
+    sess_rows = [(d, o, c + 60) for d, (o, c) in sorted(by_day.items())]
+    n = tape.add_sessions(sess_rows)
+    print(f"[sessions-from-tape:{symbol}] {sd}..{ed}: {n} sessions", flush=True)
+    return n
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Record historical Alpaca market data into the time-machine tape.")
     ap.add_argument("--db", default=None, help="Path to tape.sqlite (default: $TM_STORE/tape.sqlite)")
@@ -615,6 +721,20 @@ def main(argv=None):
     p_cn.add_argument("--from", dest="start", required=True)
     p_cn.add_argument("--to", dest="end", required=True)
     p_cn.add_argument("--sources", default=",".join(KEYLESS_CRYPTO_NEWS_SOURCES.keys()), help="Comma-separated keyless sources")
+
+    p_lc = sub.add_parser("load-csv")
+    p_lc.add_argument("--tf", choices=("1Min", "1Day"), required=True)
+    p_lc.add_argument("--file", dest="file_path", default=None)
+    p_lc.add_argument("--symbol", default=None)
+    p_lc.add_argument("--dir", dest="dir_path", default=None)
+    p_lc.add_argument("--symbols", default=None, help="Optional comma-separated filter when using --dir")
+    p_lc.add_argument("--from", dest="start", default=None)
+    p_lc.add_argument("--to", dest="end", default=None)
+
+    p_st = sub.add_parser("sessions-from-tape")
+    p_st.add_argument("--symbol", default="SPY")
+    p_st.add_argument("--from", dest="start", required=True)
+    p_st.add_argument("--to", dest="end", required=True)
 
     for name in ("minutes", "crypto"):
         p = sub.add_parser(name)
@@ -650,6 +770,18 @@ def main(argv=None):
         elif args.cmd == "crypto-news":
             srcs = [s.strip() for s in args.sources.split(",") if s.strip()]
             record_crypto_news(tape, client, args.start, args.end, cfg, sources=srcs)
+        elif args.cmd == "load-csv":
+            if args.file_path:
+                sym = args.symbol or Path(args.file_path).name.split("_", 1)[0].upper()
+                n = load_csv_file(tape, args.file_path, sym, args.tf, start_d=args.start, end_d=args.end)
+                print(f"[load-csv:{args.tf}] {args.file_path} ({sym}): +{n} bars", flush=True)
+            elif args.dir_path:
+                syms = [s.strip().upper() for s in args.symbols.split(",") if s.strip()] if args.symbols else None
+                load_csv_dir(tape, args.dir_path, args.tf, start_d=args.start, end_d=args.end, symbols=syms)
+            else:
+                ap.error("load-csv requires --file or --dir")
+        elif args.cmd == "sessions-from-tape":
+            derive_sessions_from_tape(tape, args.start, args.end, symbol=args.symbol)
     finally:
         tape.close()
 

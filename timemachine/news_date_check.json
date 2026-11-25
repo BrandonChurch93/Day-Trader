@@ -1,0 +1,43 @@
+{
+ "checked_utc": "2026-11-25 15:39",
+ "cryptopotato": {
+  "first": "2026-06-01T04:55:48",
+  "flagged": [],
+  "flagged_dated_early": 0,
+  "last": "2026-11-24T22:33:21",
+  "max_hours_modified_before_date": 19.1,
+  "modified_before_date": 1154,
+  "posts": 2863
+ },
+ "cryptoslate": {
+  "first": "2026-06-01T08:53:28",
+  "flagged": [],
+  "flagged_dated_early": 0,
+  "last": "2026-11-24T23:50:36",
+  "max_hours_modified_before_date": 47.7,
+  "modified_before_date": 2050,
+  "posts": 2514
+ },
+ "newsbtc": {
+  "first": "2026-06-01T02:48:52",
+  "flagged": [
+   {
+    "date_gmt": "2026-06-05T21:30:19",
+    "id": 915639,
+    "later_median_id": 901418,
+    "link": "https://www.newsbtc.com/news/comparing-joy-casinos-bonuses-to-industry-standards/"
+   },
+   {
+    "date_gmt": "2026-07-07T18:53:19",
+    "id": 915638,
+    "later_median_id": 910570,
+    "link": "https://www.newsbtc.com/news/experience-the-adventure-at-admiral-shark-casino/"
+   }
+  ],
+  "flagged_dated_early": 2,
+  "last": "2026-11-24T20:05:15",
+  "max_hours_modified_before_date": 71.9,
+  "modified_before_date": 1250,
+  "posts": 1587
+ }
+}
