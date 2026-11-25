@@ -1,6 +1,6 @@
 # Morning list, 2026-11-25
 
-Written by research at the end of the overnight run. Rewritten at 08:36 UTC after the audits and the second set of tests, corrected at 08:51 UTC after three fresh models read the repo cold, rewritten again at 09:29 UTC after three more did, corrected at 09:44 UTC after a seventh, put in a new order at 09:55 UTC after an eighth, corrected at 10:06 UTC after a ninth read this page alone, and corrected again at 10:13 UTC after a tenth. Status: proposed. Nothing here is an owner decision. The record of the night is `docs/decisions/0005-overnight-research-2026-11-25.md` and `docs/decisions/0006-audit-and-second-night-2026-11-25.md`. The current state, with every result, is `docs/STATUS.md`. How your answers get recorded is in `docs/decisions/README.md`.
+Written by research at the end of the overnight run. Rewritten at 08:36 UTC after the audits and the second set of tests, corrected at 08:51 UTC after three fresh models read the repo cold, rewritten again at 09:29 UTC after three more did, corrected at 09:44 UTC after a seventh, put in a new order at 09:55 UTC after an eighth, corrected at 10:06 UTC after a ninth read this page alone, and corrected again at 10:18 UTC after a tenth. Status: proposed. Nothing here is an owner decision. The record of the night is `docs/decisions/0005-overnight-research-2026-11-25.md` and `docs/decisions/0006-audit-and-second-night-2026-11-25.md`. The current state, with every result, is `docs/STATUS.md`. How your answers get recorded is in `docs/decisions/README.md`.
 
 ## The short version
 
@@ -22,7 +22,7 @@ The four:
 
 1. Practice account keys. Item 1 under "Things only you can do". A yes lets research connect to a practice account. No practice trading starts until you also answer decision 5.
 2. The data purchase. Item 2 in the same list. One month only.
-3. Decisions 1a and 1b: how pass mark 4 is measured. Two separate asks. Research recommends yes to the one that makes the mark steadier, and no to the one that would make it easier to pass.
+3. Decisions 1a and 1b: how pass mark 4 is measured. Two separate asks. Research recommends yes to the one that stops a single start date from deciding, and no to the one that would make the mark easier to pass.
 4. Question 18b. Research asks you to say: no rule from last night counts as passed, and every number stays as a measurement. Say yes or no.
 
 Everything else on this page can wait for those four.
@@ -162,7 +162,7 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 ### 8. Are the bars for pass marks 1, 3, 4 and 5 yours, for research replays?
 
 - The issue: research proposed these bars on the first night and has judged every replay on them. The config file marks them "proposed". The first table under "The numbers" below shows what each asks and its value.
-- What is known to be wrong: mark 3 screened nothing in the stock test, and mark 4 is unsteady. Both are faults in how the mark is measured (decisions 1a, 1b and 2), not in where the bar sits.
+- What is known to be wrong: mark 3 screened nothing in the stock test, and mark 4 is unsteady. Research's view is that both are faults in how the mark is measured (decisions 1a, 1b and 2). That is a judgment. It has not been measured.
 - One thing to know about mark 1: in the rerun of the crypto tests the daily rules met a stricter form than their plans wrote. They also had to hold with the order filled one hour late. That change was made after results were seen (question 18b). It is not part of this decision. Each new plan says, before it runs, whether a late-fill check is part of its mark 1.
 - Why: changing a bar after results have been seen is what your bar forbids. The values are rules of thumb. None has been calibrated, and document 16 measured that rules with no edge clear mark 4 in a share of made-up samples. So research asks for them as provisional bars. If a value is ever changed, it is changed before a test and never after looking at one.
 - You would be approving: the values shown for marks 1, 3, 4 and 5 as provisional bars for research replays.
@@ -181,7 +181,7 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 ### 10. Leave the test of AI models making the call parked for now?
 
 - The proposal: leave the AI test parked for now.
-- Why: no AI system with a live record was found that beat holding, the test costs model usage, and the two rule observations in decision 5 come first. If you want the question answered anyway, it runs logged only, with the rules in `docs/research/11_ai_trader_experiment_design.md` fixed first and your number for `api_model_spend_cap_usd_month` set. `AGENTS.md` hard rule 1 holds there too: a model never sends an order or a trade intent, even with pretend money.
+- Why: no AI system with a live record was found that beat holding, the test costs model usage, and the two rule observations in decision 5 come first. If you want the question answered anyway, it runs as a shadow test, where the calls are logged and no order is sent, with the rules in `docs/research/11_ai_trader_experiment_design.md` fixed first and your number for `api_model_spend_cap_usd_month` set. `AGENTS.md` hard rule 1 holds there too: a model never sends an order or a trade intent, even with pretend money.
 - You would be approving: leaving the AI test parked.
 - You would not be approving: dropping it for good.
 - Recommended: yes, leave it parked.
@@ -284,7 +284,7 @@ These came out of the cold-read tests. Each stands alone. Answer any one without
 - You would be approving three things, which you can answer separately: no pass from last night is credited. Fails stay fails. Every run, reruns included, is counted as trials. All the figures stay in the repo as measurements, labelled by run.
 - You would not be approving: throwing any result away, or dropping these rules as leads.
 - The full account of each run is in `docs/STATUS.md` under "Known faults and slips".
-- Recommended: yes. Credit no pass from last night.
+- Recommended: yes to all three. Credit no pass from last night, keep the fails, and count every run.
 
 ### 18c. What do "machine check" and "the engine itself" mean in your rerun rule?
 
