@@ -41,6 +41,23 @@ backtest_min_breakeven_cost_multiple:
   note: A strategy is rejected in this test if its break-even cost is under this multiple of modeled cost.
   source: docs/playbook/01_stocks_what_works.md
 
+replay_06_data:
+  value: {symbols: [SPY, EFA, IEF, VNQ, DBC, GLD, QQQ, IWM, BIL], cash_fund: BIL, first_bar: "2016-01-04", design_start: "2017-02-01", held_start: "2023-01-03", last_bar: "2026-11-24", adjustment_check_year: 2021, iwm_additional_check_year: 2024, adjustment_max_error_bps: 25}
+  status: builder
+  note: Replay 06, frozen 2026-11-25 16:59 UTC. NYSE session dates; before design_start is warm-up. Last full design session is the one before held_start.
+  source: research_rig/PREREG_06_fund_trend_paid_data.md
+
+replay_06_rules:
+  value: {trend_months: 10, momentum_months: 12, ensemble_sessions: [20, 50, 100, 200], leader_slots: 3, g1_g2_funds: [SPY, EFA, IEF, VNQ, DBC], g6_spy_weight: 0.60}
+  status: builder
+  source: research_rig/PREREG_06_fund_trend_paid_data.md
+
+replay_06_statistics:
+  value: {prior_count_at_draft: 116, new_trials: 6, pbo_later_starts: ["2019-01-02", "2021-01-04"], shuffle_min_daily_shift: 30, shuffle_min_monthly_shift: 2, power_annual_active_sd: 0.10, power_goal: 0.80}
+  status: builder
+  note: Frozen 2026-11-25 16:59 UTC. prior_count_at_draft is the ledger count at freeze. Power inputs are assumptions, not price or rule measurements.
+  source: research_rig/PREREG_06_fund_trend_paid_data.md
+
 replay_07_costs:
   value: {low_bps_per_side: 0.5}
   status: builder

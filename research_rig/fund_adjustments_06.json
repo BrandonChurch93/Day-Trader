@@ -1,0 +1,90 @@
+{
+  "first_close_date": "2020-12-31",
+  "last_close_date": "2021-12-31",
+  "check_tolerance_bps": 25,
+  "checks": {
+    "SPY": {
+      "issuer_market_total_return_pct": 28.67,
+      "reference_url": "https://www.sec.gov/Archives/edgar/data/884394/000119312522022720/d284625d497.htm",
+      "alpaca_all_pct": 28.601102039638807,
+      "alpaca_split_only_pct": 26.909819639278556,
+      "all_minus_issuer_bps": -6.889796036119205,
+      "within_draft_tolerance": true
+    },
+    "IEF": {
+      "issuer_market_total_return_pct": -3.33,
+      "reference_url": "https://www.ishares.com/us/products/239456/IEF",
+      "alpaca_all_pct": -3.3356224860198176,
+      "alpaca_split_only_pct": -4.126719466444352,
+      "all_minus_issuer_bps": -0.5622486019817522,
+      "within_draft_tolerance": true
+    },
+    "IWM": {
+      "issuer_market_total_return_pct": 14.54,
+      "reference_url": "https://www.ishares.com/us/products/239710/ishares-russell-2000-etf",
+      "alpaca_all_pct": 14.3300992041862,
+      "alpaca_split_only_pct": 13.257980754544066,
+      "all_minus_issuer_bps": -20.990079581380137,
+      "within_draft_tolerance": true
+    }
+  },
+  "sampled_ex_date_adjustments": {
+    "SPY": {
+      "ex_date": "2021-12-17",
+      "all_minus_split_return_bps": 34.704463175340415
+    },
+    "IEF": {
+      "ex_date": "2021-12-16",
+      "all_minus_split_return_bps": 9.415540897311963
+    },
+    "IWM": {
+      "ex_date": "2021-12-13",
+      "all_minus_split_return_bps": 29.87695592579844
+    },
+    "EFA": {
+      "ex_date": "2021-12-13",
+      "all_minus_split_return_bps": 169.793801124602
+    },
+    "VNQ": {
+      "ex_date": "2021-12-27",
+      "all_minus_split_return_bps": 94.51558532662807
+    },
+    "QQQ": {
+      "ex_date": "2021-12-20",
+      "all_minus_split_return_bps": 12.561657703694987
+    },
+    "DBC": {
+      "ex_date": "2022-12-19",
+      "all_minus_split_return_bps": 59.612888387596804
+    },
+    "BIL": {
+      "ex_date": "2022-12-01",
+      "all_minus_split_return_bps": 28.782322966138665
+    }
+  },
+  "gld_design_closes_identical": true,
+  "iwm_split_prices_with_independent_payouts": {
+    "source_url": "https://www.dividendvision.com/dividends/iwm-dividend-history",
+    "ex_close_reinvest_pct": 14.334716076762914,
+    "minus_issuer_bps": -20.528392323708513
+  },
+  "iwm_additional_year": {
+    "first_close_date": "2023-12-29",
+    "last_close_date": "2024-12-31",
+    "issuer_market_total_return_pct": 11.39,
+    "reference_url": "https://www.ishares.com/us/products/239710/ishares-russell-2000-etf",
+    "alpaca_all_pct": 11.383115216833462,
+    "alpaca_split_only_pct": 10.089183398933786,
+    "all_minus_issuer_bps": -0.6884783166538363,
+    "within_draft_tolerance": true
+  },
+  "indicative_count_if_frozen_now": 122,
+  "illustrative_power": {
+    "complete_holdout_months": 46,
+    "assumed_annual_active_sd": 0.1,
+    "one_sided_percentile": 0.95,
+    "goal": 0.8,
+    "annual_se": 0.051075391845524926,
+    "detectable_annual_edge": 0.12699767781532995
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "expected_sessions": 2740,
+  "slices": {
+    "warmup": {
+      "first_ny": "2016-01-04",
+      "last_ny": "2017-01-31",
+      "sessions": 272,
+      "complete_month_end_sessions": 13
+    },
+    "design": {
+      "first_ny": "2017-02-01",
+      "last_ny": "2022-12-30",
+      "sessions": 1490,
+      "complete_month_end_sessions": 71
+    },
+    "held": {
+      "first_ny": "2023-01-03",
+      "last_ny": "2026-11-24",
+      "sessions": 978,
+      "complete_month_end_sessions": 46
+    }
+  },
+  "funds": {
+    "SPY": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    },
+    "EFA": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    },
+    "IEF": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    },
+    "VNQ": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    },
+    "DBC": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    },
+    "GLD": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    },
+    "QQQ": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    },
+    "IWM": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    },
+    "BIL": {
+      "all": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      },
+      "split": {
+        "rows": 2740,
+        "first_ny": "2016-01-04",
+        "last_ny": "2026-11-24",
+        "duplicate_dates": 0,
+        "non_midnight_bars": 0,
+        "non_increasing_pairs": 0,
+        "missing_sessions": [],
+        "unexpected_dates": []
+      }
+    }
+  }
+}

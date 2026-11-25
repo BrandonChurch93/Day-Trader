@@ -26,6 +26,7 @@ Read this before the table:
 | 101 to 107 | 2026-11-25 15:09 UTC | PREREG_09_crypto_methods.md | Seven Alpaca crypto rule trials: ASIA, WKND, MOM, REV, LEAD, VOL, CAP. Replay 09 starts at id 101 to leave room for replay 07. | Five marks fixed in plan. Pushed in 74ad30c before the run. Run once on held-back dates. Results in docs/research/28. |
 | 56 to 71 | 2026-11-25 15:14 | PREREG_07_intraday_spy_qqq.md | N1 to N8 on SPY (56 to 63) and on QQQ (64 to 71), one-minute bars from the workspace's own price lookup, costs 2 and 5 bps per side judged, 0.5 bps reported | logged before any rule was run on these prices, in the same change as the frozen plan. Deflated Sharpe count 116: the 93 below, the 7 of frozen plan 09 (no rows yet) and these 16 |
 | 108 to 113 | 2026-11-25 16:14 UTC | PREREG_10_negative_funding.md | The three funding thresholds on BTC, then the same three on ETH, in config order. Binance funding, Alpaca spot. | not run. Counting entries in the design years only (no price looked at) gave 1 to 11 entries per version against the 30 the plan asks for (`research_rig/design_counts_10.json`). Held-back days never opened. Not added to the count of trials |
+| 115 to 120 | 2026-11-25 16:59 UTC | PREREG_06_fund_trend_paid_data.md | G1 to G6: slow trend rules on nine funds that can be bought (SPY, EFA, IEF, VNQ, DBC, GLD, QQQ, IWM, with BIL as cash), Alpaca daily bars with dividends, design 2017-02-01 to the session before 2023-01-03, held back 2023-01-03 to 2026-11-24. G6 is a fixed mix, counted | logged before any rule was run. Five marks fixed in the plan. Not run |
 
 ## Reruns and how they are counted
 
@@ -42,10 +43,10 @@ Read this before the table:
 
 ## Counts
 
-- Trial ids in this ledger: 1 to 71, plus the rows named X1, S1, X2 and S2, diagnostic, R1 and R2.
+- Trial ids in this ledger: 1 to 71, 101 to 113 and 115 to 120, plus the rows named X1, S1, X2 and S2, diagnostic, R1 and R2.
 - Rule trials counted in the deflated Sharpe formula from now on: 116. That is rows 1 to 20, 27 to 42 and 43 to 55 (49 trials), plus 36 for rerun R1 and 8 for rerun R2 (93), plus rows 56 to 71 (16, replay 07) and rows 101 to 107 (7, replay 09). Rows 21 to 26 and the TM rows are AI model runs, which are scored a different way and are not in that count. Replay 09 was frozen first and used 100. Replay 07 was frozen second and used 116.
 - Cross-checks X1, X2 and S2, sensitivity S1 and the diagnostic ran the same rules on other prices, dates or fill times. They were logged as "not new trials" and are not in the count. Each is a further look at the held-back dates all the same, and `docs/research/16_rig_audit.md` treats the two price histories as one market seen twice, not as two independent tests.
-- Draft plan 06 is not counted until its plan is final and pushed. Plan 07 was frozen on 2026-11-25 and is rows 56 to 71.
+- Plan 06 was frozen on 2026-11-25 16:59 UTC and is rows 115 to 120. Its six trials make the count 122 from that run on. Plan 07 was frozen on 2026-11-25 and is rows 56 to 71. Rows 108 to 113 (plan 10) are logged and not run, so not yet counted. Ids 72 to 100 are unused.
 - Practice plan 01 (`archive/practice_PLAN_01_two_rules_observation.md`), first used 2026-11-25 and replaced by `practice/PLAN_02_ai_desk.md`: a forward record of P1 on bitcoin and T1 on a total market fund with pretend money. No setting of either rule was changed, so it was not a new trial and was not counted. It was not a look at the held-back years either, because it used forward prices.
 
 ## Time machine replays of AI traders

@@ -24,7 +24,7 @@ Last changed: 2026-11-25 16:26 UTC
 | 11 | A customer's good news, then buy its supplier before the supplier reports | free SEC filings for who sells to whom, stock prices, news | nothing |
 | 12 | Earnings call answers scored apart from the prepared remarks, held 15 days | filings, call text, stock prices | nothing |
 | 13 | New contracts that are large against a company's sales, from 8-K filings and the federal award list | free filings and award list, stock prices | nothing |
-| 14 | Fund trend rules on daily prices (`research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`) | daily fund prices with dividends (data key is in) | the plan being brought up to date |
+| 14 | Fund trend rules on daily prices (`research_rig/PREREG_06_fund_trend_paid_data.md`) | daily fund prices with dividends (data key is in) | plan frozen 2026-11-25 16:59 UTC; an independent check of the runner, then the one run |
 | 15 | Insider buying only when the news is bad and the price is far below its high (`research_rig/PREREG_08_insider_buying_DRAFT.md` is the plain version) | filings, prices, news (data key is in; stock news only from 2026-04-29) | a free slot |
 | 9e | A new swing card where the desk, not the model, sets the exit: a stop 8% below and five days, on months not yet traded. Earned by the exit replay (`docs/research/32_exit_replay.md`). Moved down by the builder 2026-11-25 16:44 UTC: the same replay showed the models' buys behind random buys under every exit, so the exit alone is unlikely to be the fix. Plan and ledger row first | a desk-exit option in the time machine | lower priority than 9b, 9c, 9d |
 
