@@ -2,7 +2,7 @@
 
 The work list for the builder and its helpers. Take the top item that is not blocked, write its ledger row (`research_rig/TRIAL_LEDGER.md`), run it, put the result in `docs/STATUS.md`, then move the item to "Done" with one line saying what happened. Add new ideas at the bottom of "Ideas" with where the idea came from. Anyone may add an idea. Nothing here needs the owner's yes.
 
-Last changed: 2026-11-25 16:26 UTC
+Last changed: 2026-11-25 18:18 UTC
 
 ## Running now
 
@@ -26,6 +26,7 @@ As of 2026-11-25 17:52 UTC. Plans TM01 to TM04 are finished and are in Done or i
 | 12 | Earnings call answers scored apart from the prepared remarks, held 15 days | filings, call text, stock prices | nothing |
 | 13 | New contracts that are large against a company's sales, from 8-K filings and the federal award list | free filings and award list, stock prices | nothing |
 | 15 | Insider buying only when the news is bad and the price is far below its high (`research_rig/PREREG_08_insider_buying_DRAFT.md` is the plain version) | filings, prices, news (data key is in; stock news only from 2026-04-29) | a free slot |
+| 9j | Governance votes: for DAOs whose coins trade on Coinbase, what the coin did in the hours after a close vote ended, against the same coin at random hours. A description first, not a counted test (`docs/research/43_crypto_events_evidence_checked.md`) | free Snapshot vote records, Coinbase minutes | a free slot |
 | 9e | A new swing card where the desk, not the model, sets the exit: a stop 8% below and five days, on months not yet traded. Earned by the exit replay (`docs/research/32_exit_replay.md`). Moved down by the builder 2026-11-25 16:44 UTC: the same replay showed the models' buys behind random buys under every exit, so the exit alone is unlikely to be the fix. Plan and ledger row first | a desk-exit option in the time machine | lower priority than 9b, 9c, 9d |
 
 ## Ideas, not yet shaped into a test
@@ -53,6 +54,7 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 
 Reported by the idea scout as dead, reversed or eaten by costs for an account that only buys. Each has its sources in the scout's write-up.
 
+- From the crypto events reading, 2026-11-25 (`docs/research/43_crypto_events_evidence_checked.md`): buying new listings (the gain comes before trading opens), trading after hacks (no free record of the minute of first word), token unlocks (no free dated calendar, about ten coins a US account can short), sector catch-up and attention spikes (the cited papers do not show it, and our own count shows no link: `docs/research/45_attention_feed_measured.md`).
 - Buying stocks added to the S&P 500 index.
 - Chasing coins on the day an exchange lists them, and following stablecoin issuance.
 - Holding stocks only overnight.
