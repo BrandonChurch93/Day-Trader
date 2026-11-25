@@ -265,7 +265,7 @@ Left as they are, with the reason: the reading order in `AGENTS.md` still points
 
 What this test does and does not show. Three fresh models found the right answer to sixteen set questions from the repo address alone (MEASURED as above). It does not show that a model would follow the rules under pressure, or find what the questions did not ask about. Every round of outside reading so far has found a real fault, this one included.
 
-## Eleventh addendum, 2026-11-25 12:55, added to at 13:04 UTC: a second check on the collected stock prices, and the faults an outside check found in the first
+## Eleventh addendum, 2026-11-25 12:55, added to at 13:04 and 13:09 UTC: a second check on the collected stock prices, and the faults an outside check found in the first
 
 This is a record of what research did. It is not an owner decision.
 
@@ -277,7 +277,7 @@ What was run, under the same overnight latitude as the collection itself:
 What the comparison showed, in words (the figures are in the tables in `docs/research/10_historical_data_and_practice.md`; MEASURED, on files only the research machine has):
 
 - The yearly middle gap between the two closes stays small. Research's reading, not a measurement: the two sets of files look to be adjusted the same way. It does not say which way.
-- On some days a one-minute high is above the daily high or a one-minute low is below the daily low, which cannot be if both files are right. Which file is wrong is not shown.
+- On some days a one-minute high is above the daily high or a one-minute low is below the daily low, which should not happen if both files are right and comparable. Which file is off is not shown.
 - Both sets come from the same lookup, so none of this shows that either is right.
 
 An outside model read the commits that added the coverage work (a832c01 to f5079be). What it found, and what was done:
@@ -290,17 +290,17 @@ An outside model read the commits that added the coverage work (a832c01 to f5079
 - The repo check counted a file as listed if it was named in any table on the index page, the task table included. Now only a row in a file table counts.
 - `research_rig/check_data.py` looked for two of the price files. It now looks for every file the summary names.
 - Several sentences gave a cause, a judgment or a typed time as if measured. Reworded or labelled.
-- The join script has limits that cannot be fixed without collecting again. They are now listed in document 10 and not fixed.
+- The join script has limits. They are now listed in document 10. They are not fixed, because research has not run the join again.
 
 Added by research while fixing these: the gap check now also counts rows without six fields and values that are not finite or are below zero. It found none. MEASURED.
 
 What changed for the owner: item 6 of "Things only you can do" now says the two sets of files disagree on some days. The draft plan for the day trading test says a rule for those days has to be written before it is frozen.
 
-A second outside model then read these fixes (commits 22b0f2a to afbe506). It opened all five linked sources and found each supports its sentence, tried four ways to break the repo check and failed, and found the calendar right for the span of the data. STATED by that checker. It also found faults, now fixed:
+A second outside model then read these fixes (commits 22b0f2a to afbe506). It opened all five linked sources and found each supports its sentence, tried four ways to break the repo check and failed, and found the calendar right for the span of the data. STATED by that checker. Research has checked the early closes against a source only up to December 2007. It also found faults, now fixed:
 
-- Research had written that the one-minute files hold bad bars, as if measured. The comparison shows only that the two files disagree in a way that cannot be if both are right. Reworded everywhere, with research's view labelled as a view.
+- Research had written that the one-minute files hold bad bars, as if measured. The comparison shows only that the two files disagree in a way that should not happen if both are right and comparable. Reworded everywhere, with research's view labelled as a view.
 - The script wrote "does not grow going back in time" into the table text with nothing computing it. The script now states only the yearly figures. The reading is in the prose, labelled as a reading.
-- The comparison did not leave out short days, where a gap is to be expected. The table text now counts how many of the large gaps fall on short days, and the prose says so.
+- The comparison did not leave out short days, where minutes are missing. The table text now counts how many of the large gaps fall on such days, and the prose says so. The comparison itself was not run again without them.
 - The new count of rows without six fields would have stopped with an error on a short row. Fixed and tried on made-up rows. MEASURED.
 - A sentence gave a wrong last year for the early closes that run past 13:00, and the halt on June 1, 2005 was given as the cause of a short day whose data stops before the halt. Both reworded.
 - Two limits listed as not fixable were limits of the gap check, which can be rerun. Both are now fixed and the check was run again.
@@ -309,3 +309,12 @@ A second outside model then read these fixes (commits 22b0f2a to afbe506). It op
 Not done, STATED by research: no rule was run on these prices and no return over time was worked out from them.
 
 Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result of a test, any threshold.
+
+A third outside model read those fixes in turn (commits afbe506 to 476cb8d). It worked the new figures in the table text out again from the two summary files and got the same ones, and found the earlier eleven faults fixed. STATED by that checker. It also found faults, now fixed:
+
+- The new count of days that hold exactly the minutes of a full session did not look at seconds, repeats or weekends. It does now. The check was run again.
+- The reading that the two sets of files are adjusted the same way claimed more than the yearly figures show. It now says the figures are what one would see if that were so, and that this does not prove it. The same line in the comparison script's own text was reworded, and the script says so. No code line in it changed.
+- "Cannot both be right" assumed the two files are comparable. Now "should not happen if both are right and comparable".
+- "A stop or a breakout rule would trade on such a bar" is now "could, if the one-minute bar is the wrong one". The morning list no longer gives research's guess about which file is off.
+- Smaller ones: an empty row could still stop the value check, a typed count, "one file per fund" (one-minute prices are one file per fund and year), and a sentence that still hinted the 2005 halt explained that day.
+

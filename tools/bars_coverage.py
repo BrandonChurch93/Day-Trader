@@ -83,7 +83,7 @@ def block():
 def cross():
     X = json.load(open(XC)); C = json.load(open(COV)); bands = X["bands_bps"]; top = bands[-1]; n = lambda x: f"{x:,}"
     head = ["Up to %d bps" % bands[0]] + ["Over %d, up to %d bps" % (a, b) for a, b in zip(bands, bands[1:])] + ["Over %d bps" % top, "Largest gap"]
-    L = ["", "Do the one-minute files and the daily files agree with each other? For every day in both, the day's open, high, low and close were rebuilt from the one-minute bars and compared with the daily row. The gap is in basis points of the daily figure (1 bps is 0.01%). Each cell is a count of days:", "",
+    L = ["", "Do the one-minute files and the daily files agree with each other? For every day in both, the day's open, high, low and close were rebuilt from the one-minute bars and compared with the daily row. The gap is in basis points of the daily figure (1 bps is 0.01%). Each cell is a count of days, except in the last column:", "",
          "| Fund | Figure | Days compared | " + " | ".join(head) + " |", "|---|---|---|" + "---|" * len(head)]
     for s, v in X["funds"].items():
         for f, x in v["fields"].items():
@@ -94,9 +94,9 @@ def cross():
         ys = v["median_close_gap_bps_by_year"]; lo = min(ys, key=ys.get); hi = max(ys, key=ys.get)
         far = max(ys, key=lambda y: abs(ys[y]))
         L.append(f"- {s}: the middle close gap for each year lies between {ys[lo]:+.2f} bps ({lo}) and {ys[hi]:+.2f} bps ({hi}). The year furthest from zero is {far}.")
-        L.append(f"- {s}: days where the one-minute high is above the daily high by more than 1 bps: {v['days_one_minute_high_above_daily_high_by_over_1_bps']}. Days where the one-minute low is below the daily low by more than 1 bps: {v['days_one_minute_low_below_daily_low_by_over_1_bps']}. Neither can happen if both files are right. The comparison does not show which file is wrong.")
+        L.append(f"- {s}: days where the one-minute high is above the daily high by more than 1 bps: {v['days_one_minute_high_above_daily_high_by_over_1_bps']}. Days where the one-minute low is below the daily low by more than 1 bps: {v['days_one_minute_low_below_daily_low_by_over_1_bps']}. Neither should happen if both files are right, cover the same session and are adjusted the same way. The comparison does not show which of those fails, or which file is off.")
         short = {d for d, _ in C["one_minute"][s]["short_days_not_known_early_close"]}
-        L.append(f"- {s}: the comparison did not leave out short days, where the one-minute files do not cover the whole day and a gap is to be expected. Days over {top} bps that are short days in the gap check: " + ", ".join(f"{f} {sum(1 for d, _ in x[f'dates_over_{top}_bps'] if d in short)} of {x[f'days_over_{top}_bps']}" for f, x in v["fields"].items()) + ".")
+        L.append(f"- {s}: the comparison did not leave out the short days that are not a known early close, where minutes are missing from the one-minute files. The yearly middle gaps above include them. Days over {top} bps that are such short days: " + ", ".join(f"{f} {sum(1 for d, _ in x[f'dates_over_{top}_bps'] if d in short)} of {x[f'days_over_{top}_bps']}" for f, x in v["fields"].items()) + ".")
         if v["days_in_one_minute_only"]: L.append(f"- {s}: days in the one-minute files and not in the daily file: {len(v['days_in_one_minute_only'])}.")
     L.append(f"- Every date with a gap over {top} bps is in `research_rig/platform_bars_crosscheck.json`, with the gap and no price.")
     return L

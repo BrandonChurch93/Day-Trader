@@ -86,7 +86,7 @@ Added 2026-11-25 after the collection finished. Research collected one-minute pr
 
 How the tables below are made:
 
-- `research_rig/platform_bars_consolidate.py` joined the pulls into one file per fund.
+- `research_rig/platform_bars_consolidate.py` joined the pulls into one file per fund for daily prices, and one per fund and year for one-minute prices.
 - `research_rig/platform_bars_integrity.py` checked them for gaps and broken rows.
 - `research_rig/platform_bars_crosscheck.py` compared the one-minute files with the daily files, day by day. Its bands were fixed and pushed before it was run.
 - `tools/bars_coverage.py` copied the dates and counts into `research_rig/platform_bars_coverage.json`, which holds no price, and wrote the tables from that file and from `research_rig/platform_bars_crosscheck.json`. Nothing in the tables is typed.
@@ -147,7 +147,7 @@ What the check found that looks wrong:
 
 What the check counted and found none of: a repeated time in a one-minute file, a repeated day in a daily file, a weekend row in any file, a missing or zero price (text that is not a number counts as missing), a high below a low, an open or close outside the bar's high and low, a row without six fields, a value that is not finite or is below zero, or a one-minute bar outside the regular session.
 
-Do the one-minute files and the daily files agree with each other? For every day in both, the day's open, high, low and close were rebuilt from the one-minute bars and compared with the daily row. The gap is in basis points of the daily figure (1 bps is 0.01%). Each cell is a count of days:
+Do the one-minute files and the daily files agree with each other? For every day in both, the day's open, high, low and close were rebuilt from the one-minute bars and compared with the daily row. The gap is in basis points of the daily figure (1 bps is 0.01%). Each cell is a count of days, except in the last column:
 
 | Fund | Figure | Days compared | Up to 1 bps | Over 1, up to 5 bps | Over 5, up to 10 bps | Over 10, up to 25 bps | Over 25 bps | Largest gap |
 |---|---|---|---|---|---|---|---|---|
@@ -163,11 +163,11 @@ Do the one-minute files and the daily files agree with each other? For every day
 What that comparison found:
 
 - SPY: the middle close gap for each year lies between -2.90 bps (2003) and +0.93 bps (2009). The year furthest from zero is 2003.
-- SPY: days where the one-minute high is above the daily high by more than 1 bps: 33. Days where the one-minute low is below the daily low by more than 1 bps: 43. Neither can happen if both files are right. The comparison does not show which file is wrong.
-- SPY: the comparison did not leave out short days, where the one-minute files do not cover the whole day and a gap is to be expected. Days over 25 bps that are short days in the gap check: open 0 of 17, high 4 of 52, low 3 of 70, close 7 of 132.
+- SPY: days where the one-minute high is above the daily high by more than 1 bps: 33. Days where the one-minute low is below the daily low by more than 1 bps: 43. Neither should happen if both files are right, cover the same session and are adjusted the same way. The comparison does not show which of those fails, or which file is off.
+- SPY: the comparison did not leave out the short days that are not a known early close, where minutes are missing from the one-minute files. The yearly middle gaps above include them. Days over 25 bps that are such short days: open 0 of 17, high 4 of 52, low 3 of 70, close 7 of 132.
 - QQQ: the middle close gap for each year lies between -0.39 bps (2020) and +0.31 bps (2022). The year furthest from zero is 2020.
-- QQQ: days where the one-minute high is above the daily high by more than 1 bps: 4. Days where the one-minute low is below the daily low by more than 1 bps: 2. Neither can happen if both files are right. The comparison does not show which file is wrong.
-- QQQ: the comparison did not leave out short days, where the one-minute files do not cover the whole day and a gap is to be expected. Days over 25 bps that are short days in the gap check: open 1 of 1, high 0 of 6, low 0 of 6, close 0 of 3.
+- QQQ: days where the one-minute high is above the daily high by more than 1 bps: 4. Days where the one-minute low is below the daily low by more than 1 bps: 2. Neither should happen if both files are right, cover the same session and are adjusted the same way. The comparison does not show which of those fails, or which file is off.
+- QQQ: the comparison did not leave out the short days that are not a known early close, where minutes are missing from the one-minute files. The yearly middle gaps above include them. Days over 25 bps that are such short days: open 1 of 1, high 0 of 6, low 0 of 6, close 0 of 3.
 - Every date with a gap over 25 bps is in `research_rig/platform_bars_crosscheck.json`, with the gap and no price.
 
 <!-- bars:end -->
@@ -176,22 +176,22 @@ How to read this:
 
 - A first day in the one-minute table is the first day this collection got. It is not proven to be the first day the lookup has. Requests for earlier dates returned no row inside the dates asked for.
 - The days with no SPY one-minute data, named in the list above, were trading days. The exchange index closed on Friday, December 31, 2004 ([Boston Fed year-end report](https://www.bostonfed.org/-/media/Documents/stock-market-report/smrye04.pdf)), and stocks traded on the last day of 2010 ([Reuters](https://www.reuters.com/article/markets/stocks/snapshot-wall-st-posts-double-digit-gains-in-2010-idUSWEN4939/)). MEASURED from those two pages. So these are gaps in the data.
-- Research's reading, not a measurement: the one-minute files and the daily files look to be adjusted the same way. If only one of them were adjusted for dividends, the gap between them would grow year after year going back, far past the yearly figures in the list above. The earliest SPY years are the furthest from zero, and they are also the years with the most short days, so this reading is weaker there. It does not say which way the files are adjusted, and the provider has not said.
+- Research's reading, not a measurement: the yearly middle gaps in the list above are small, which is what one would see if the one-minute files and the daily files are adjusted the same way. It does not prove it. No test against a dividend history was done, a yearly middle can hide errors that cancel, and those figures include days with minutes missing. Which way the files are adjusted is UNKNOWN, and the provider has not said.
 - A close gap of a few basis points on most days is what research expects, because the daily close is set after the last one-minute bar ends. Research has not checked that against a source.
-- On some days the two sets of files cannot both be right: a one-minute price sits outside the day's range in the daily file. MEASURED, in the list above. Which file is wrong on those days is not shown. Research's view: on the days with the largest gaps it is more likely a bad one-minute bar than a bad daily row, and nothing has tested that. Either way a stop or a breakout rule would trade on such a bar, so a test on this data needs a written rule for these days before it runs.
-- The comparison did not leave out short days. On a day where the one-minute files stop early, the last one-minute price is not the day's close, so a gap there says nothing about either file.
+- On some days a one-minute price sits outside the day's range in the daily file. MEASURED, in the list above. That should not happen if both files are right and comparable. Which file is off on those days is not shown, and nothing has tested it. If the one-minute bar is the wrong one, a stop or a breakout rule could trade on a price that never happened. So a test on this data needs a written rule for these days before it runs.
+- The comparison did not leave out the short days that are not a known early close. Where the missing minutes are at the end of the day, the last one-minute price is not the day's close, and a close gap there is not a fault in either file. Missing minutes cannot explain a one-minute price outside the daily range.
 - Research's view, not a measurement: this data can be used to write and debug a test. A result from it should not be believed until a second source agrees, and nothing has compared it with one.
 
 The short days are of three kinds, and only some have been told apart:
 
-- Days of known halts. Trading on the New York Stock Exchange stopped at 3:56 pm on June 1, 2005 and did not resume ([exchange record of special closings](https://www.ltadvisors.net/Info/research/closings.pdf)). The SPY data for that day stops earlier than that, so the halt does not fully explain it. All US stock trading stopped for 15 minutes on March 9, 12, 16 and 18, 2020 ([SEC filing on the circuit breaker](https://www.sec.gov/files/rules/sro/nyse/2021/34-92428-ex3.pdf)). Nasdaq-listed shares stopped for about three hours on August 22, 2013 ([CNBC](https://www.cnbc.com/2013/08/22/nasdaq-connectivity-issue-led-to-threehour-shutdown.html)). Each of these dates is in the list of short days in `research_rig/platform_bars_coverage.json`.
+- Days of known halts. Trading on the New York Stock Exchange stopped at 3:56 pm on June 1, 2005 and did not resume ([exchange record of special closings](https://www.ltadvisors.net/Info/research/closings.pdf)). The SPY data for that day stops earlier than that. The halt does not explain the minutes missing before it. All US stock trading stopped for 15 minutes on March 9, 12, 16 and 18, 2020 ([SEC filing on the circuit breaker](https://www.sec.gov/files/rules/sro/nyse/2021/34-92428-ex3.pdf)). Trading in Nasdaq-listed shares was shut for three hours on August 22, 2013, as reported by [CNBC](https://www.cnbc.com/2013/08/22/nasdaq-connectivity-issue-led-to-threehour-shutdown.html). Each of these dates is in the list of short days in `research_rig/platform_bars_coverage.json`.
 - Days with one or two minutes missing. Whether no trade happened in that minute or the data lost it is UNKNOWN.
 - Days with a large part missing and no event research could find, the first weeks of the SPY data among them. Treat these as gaps in the data.
 
 About the calendar the check uses:
 
 - Its holidays and early closes were written from memory by the collecting agent.
-- An outside checker found three days it had as both a holiday and an early close, and one early close it missed in December 2003. Both are fixed in the script.
+- An outside checker found some days it had as both a holiday and an early close, and one early close it missed in December 2003. Both are fixed in the script.
 - For September 2003 to December 2007 its early closes now match the exchange record linked above, whose last entry is dated December 24, 2007. MEASURED by research against that record. After 2007 they are unchecked.
 - On some early closes the SPY files run past 13:00. The dates and row counts are in `research_rig/platform_bars_coverage.json`. Research has not found out why.
 

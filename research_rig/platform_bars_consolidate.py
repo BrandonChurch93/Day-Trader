@@ -1,4 +1,4 @@
-"""Joins the files returned by the workspace's own price lookup into one file per fund. Runs no rule.
+"""Joins the files returned by the workspace's own price lookup into one file per fund for daily prices, and one file per fund and year for one-minute prices. Runs no rule.
 Only useful on the research machine, where the pulls were made on 2026-11-25. Kept as the record of how the files were built.
 
 Source: /home/user/workspace/.tool_artifacts/finance/*/*/<SYM>_price_history_<start>_<end>_<interval>_<tag>.csv

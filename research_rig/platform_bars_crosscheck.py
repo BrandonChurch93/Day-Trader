@@ -4,9 +4,12 @@ and compared with the daily row. The gap is in basis points of the daily figure 
 Reads data/platform_bars/ (or PLATFORM_BARS_DIR). Writes platform_bars_crosscheck.json next to this script: counts,
 dates and gaps in basis points only, no price.
 Runs no trading rule and works out no return over time. It compares two figures for the same day.
-What it can show: whether the two sets of files are adjusted the same way, and on which days one of them is off.
+What it can show: on which days the two sets of files disagree, and whether the yearly gap between them stays small, which is
+what one would see if they are adjusted the same way. It cannot prove that they are. (This line said "whether the two sets of
+files are adjusted the same way" when the script was run. An outside check found that too strong, and it was reworded after the run.
+No code line was changed.) It does not leave out days where the one-minute files have minutes missing.
 What it cannot show: whether either is right. Both come from the same lookup. A second source is still needed.
-The bands below and this text were committed and pushed before the script was first run.
+The bands below were committed and pushed before the script was first run, and so was this text apart from the line above.
   python3 platform_bars_crosscheck.py"""
 import csv, glob, json, os, datetime as dt, statistics
 from collections import defaultdict

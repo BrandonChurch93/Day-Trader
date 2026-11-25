@@ -93,7 +93,7 @@ def value_checks(rows):
         o, h, l, cl, v = (num(x) for x in (list(r[1:6]) + [None] * 5)[:5])   # a short row is counted below, not a crash
         def flag(k):
             c[k] += 1
-            if len(ex[k]) < 20: ex[k].append(r[0])
+            if len(ex[k]) < 20: ex[k].append(r[0] if r else "(empty row)")
         if len(r) != 6: flag("row_without_six_fields")
         # text that is not a number at all is counted as missing, below. This line counts NaN, infinity and anything below zero
         if any(x is not None and (not math.isfinite(x) or x < 0) for x in (o, h, l, cl, v)): flag("value_not_finite_or_below_zero")
@@ -151,7 +151,8 @@ def check_1min(sym):
         elif n < 390: fewer.append({"date": str(d), "rows": n, "known_early_close": EARLY.get(d)})
         else: more.append({"date": str(d), "rows": n})
         loc = [dt.datetime.fromisoformat(t).replace(tzinfo=UTC).astimezone(NY) for t in L]
-        if {x.strftime("%H:%M:%S") for x in loc} == FULL: exact_full += 1
+        # exactly the 390 minutes: a weekday, 390 rows, no time twice, every time on a whole minute, and the set is the full session
+        if d.weekday() < 5 and len(L) == 390 and n == 390 and all(len(t) == 19 for t in L) and {x.strftime("%H:%M:%S") for x in loc} == FULL: exact_full += 1
         if any(not (dt.time(9, 30) <= x.time() <= dt.time(15, 59)) or x.date() != d for x in loc):
             off_hours_days.append(str(d))
         if loc[0].time() != dt.time(9, 30): first_not_0930.append({"date": str(d), "first_ny": loc[0].strftime("%H:%M")})
@@ -208,7 +209,7 @@ def check_1day(sym):
             "calendar_holidays_with_row": [str(d) for d in dates if d in HOL],
             "duplicate_dates": len(dup), "non_plain_date_format": len(bad_fmt),
             "value_checks": vc, "value_check_examples": vex,
-            "first_close": first[4], "files": files_info([p])}
+            "first_close": first[4] if len(first) > 4 else None, "files": files_info([p])}
 
 
 def main():
@@ -257,7 +258,7 @@ def write_md(rep):
         vc = r["value_checks"]
         L += [f"- {M}: first day {r['first_date']}, last day {r['last_date']}.",
               f"- {M}: {r['trading_days']} trading days, {r['rows']} rows.",
-              f"- {M}: {r['days_with_390_rows']} days have exactly 390 rows. {len(r['days_with_fewer'])} days have fewer. {len(r['days_with_more'])} days have more.",
+              f"- {M}: {r['days_with_390_rows']} days have exactly 390 different times. {len(r['days_with_fewer'])} days have fewer. {len(r['days_with_more'])} days have more. Days that hold exactly the 390 minutes of a full session, each once: {r['days_with_exactly_the_390_expected_minutes']}. Weekend days with data: {len(r['weekend_days'])}.",
               f"- {M}: days with fewer rows (date:rows): " + fmt_list(f"{x['date']}:{x['rows']}" + ("(early close)" if x['known_early_close'] else "") for x in r['days_with_fewer']),
               f"- {M}: days with fewer rows that are not a known early close: " + fmt_list(f"{x['date']}:{x['rows']}" for x in r['days_fewer_not_known_early_close']),
               f"- {M}: days with more rows: " + fmt_list(f"{x['date']}:{x['rows']}" for x in r['days_with_more']),
@@ -267,7 +268,7 @@ def write_md(rep):
               f"- {M}: duplicate timestamps in the consolidated files: {r['duplicate_timestamps']}.",
               f"- {M}: timestamps not on a whole minute (seconds not 00): {len(r['timestamps_not_on_whole_minute'])}: " + fmt_list(r['timestamps_not_on_whole_minute']),
               f"- {M}: exact duplicate rows removed during consolidation: {ck.get('exact_duplicates_removed')}. Timestamps where two pulls disagreed: {ck.get('conflicting_timestamps')} (listed in conflicts.csv; the most recently written pull was kept).",
-              f"- {M}: zero volume rows {vc.get('volume_zero', 0)}, missing volume rows {vc.get('volume_missing', 0)}.",
+              f"- {M}: zero volume rows {vc.get('volume_zero', 0)}, missing volume rows {vc.get('volume_missing', 0)}. Rows without six fields {vc.get('row_without_six_fields', 0)}. Rows with a value that is not finite or is below zero {vc.get('value_not_finite_or_below_zero', 0)}.",
               f"- {M}: rows with high below low {vc.get('high_lt_low', 0)}. Rows with a zero price {vc.get('price_zero', 0)}. Rows with a missing price {vc.get('price_missing', 0)}. Rows where open or close lies outside high-low {vc.get('open_or_close_outside_high_low', 0)}.",
               f"- {M}: days with a bar outside 09:30-15:59 New York time: " + fmt_list(r['days_with_bars_outside_0930_1559_ny']),
               f"- {M}: days whose first bar is not 09:30 New York time: " + fmt_list(f"{x['date']}({x['first_ny']})" for x in r['days_first_bar_not_0930_ny']),
