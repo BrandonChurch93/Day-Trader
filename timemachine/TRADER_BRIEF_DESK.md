@@ -10,7 +10,7 @@ Send `{"wake_key":"...","notes":[{"symbol":"SOL/USD","text":"One sentence about 
 
 ## Boss
 
-Arm A sees the scouts' raw packet but not their notes. B and C get only the notes, their own book and the clock. You can make up to three lookups per wake. Each is one tradable coin and one view: bars, news, or attention. Cite visible note and row IDs. You can cite the current book ID. Do not trade just because a coin was mentioned.
+Arm A sees the scouts' raw packet but not their notes. B and C get only the notes, their own book and the clock. You can make up to three lookups per wake. Each is one tradable coin and one view: bars, news, or attention. Give each new lookup a different request ID. If you lose the reply, retry the same request with the same ID. Cite visible note and row IDs. You can cite the current book ID. Use a visible price from the book, note, raw packet or bars lookup before giving a stop, target or condition. Do not trade just because a coin was mentioned.
 
 Send a full vector of signed weights. Unlisted names go to zero. Total absolute weight cannot exceed 1x. Use `no_change` to keep the last target and its protective exits. Your reasons and citations must cover each change.
 

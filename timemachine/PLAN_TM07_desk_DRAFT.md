@@ -52,7 +52,8 @@ MEASURED by exact arithmetic, not market results. The test assumes independent w
 ## Orders and evidence
 
 - Weights and optional protective exits are the existing TM06 answers. In C the boss may also ask for a weight after a strict above/below signal. Use a price or a percent from the last finished mark. Use one to six hours and at most two active orders. Cancel a condition not kept at the next wake. A kept condition keeps its first price, expiry and source IDs.
-- Check the high or low only once the minute has ended. If touched, fill at the next recorded open before expiry. A flat coin is still checked. An immediate change takes priority over a queued fill on that coin. A protective exit or maintenance can cancel a condition. New conditions cannot read a bar from before acceptance. Reject a conditional-path wake if an immediate move needs asynchronous opens. That gap is an invalid pair, not a guessed fill.
+- Check the high or low only once the minute has ended. If touched, wait for the first recorded open with a price for the order and every held coin, strictly before expiry. A flat coin is still watched. Each immediate move waits for a common open for all held and affected coins, in all arms. A missing common open freezes that move, not the simulated clock. For the judged set, preflight coverage before workers start. A required twin that cannot replay the full move makes that fixed week invalid. Never replace it.
+- At an open, apply due funding, then mark the full book for maintenance, then handle protective gaps. A maintenance breach blocks new fills until the next wake. Immediate fills come before triggered orders; a coin cannot fill both ways at that open. Recheck the actual gross after each fill, including costs. If a book has already drifted over the cap, allow only a move that measurably reduces it. A new exact 1x target can be refused if costs would make actual gross exceed 1x. Missing simultaneous marks never authorize a new fill.
 - Role checks and wake keys guard all requests. Each recorded trade links to its cited evidence where available. Journal the wake, condition transitions, observable trigger, open, fee and spread. A note link says what the boss cited, not what made the gain. Save genuine provider token usage for each role and call. The cost of the reusable neutral stream is charged once in study totals and once per arm in standalone comparisons. No token telemetry means UNKNOWN.
 - Scouts can miss the one event that matters. An absence can mean tape failure. A small historical sample can reward simple drift. Bar opens are not executable quotes. A move may slip, arrive late or fill only in part. Show a delayed-open check and a higher fee check. Neither can rescue a failed main mark.
 
@@ -60,3 +61,22 @@ MEASURED by exact arithmetic, not market results. The test assumes independent w
 
 - `desk.py`: frozen packets, role checks, note storage, a short lookup list, decisions and usage. `desk_orders.py`: arm and cancel, scan bars, queue and fill. `score_tm07.py`: replay checks, twins, paired marks and the extension calendar. `test_tm07.py`: made-up bars and records only. `TRADER_BRIEF_DESK.md`: role and answer rules.
 - Separate small changes wire the guarded server, weights dispatch and replay helpers. Keep legacy paths when there is no desk. Prove parity with fixture books, records, fills and final value. No recorder, ledger or config change belongs in the build.
+
+## Review answers
+
+Sol's review of the first branch flagged the findings below. The fixes were tested on made-up bars. The 96 legacy perp parity checks were rerun after each commit. This does not clear a real-tape run.
+
+- B01: Wake and end marks now use only completed closes. A newer published close wins; the finer bar breaks ties. A later bar cannot change a past quote or a percent trigger.
+- B02: All arms wait for a common open. A later B open cannot size an earlier A fill. The same rule applies after C cancels its last standing order.
+- B03: Off-hour one-hour funding moves to the next lawful charge. Multi-hour rates begin at the first subsequent whole hour. Keep the source timestamp for each charge.
+- B04: Vendor evidence requires an operator seal over the exact version, rights, timing, and independence records. A claimed confirmation after the wake does not count. Note exports are sealed against their fixture, designated neutral run, wake, and visible evidence. Actual vendor coverage is UNKNOWN.
+- B05: A dedicated listener serves no legacy routes. Role tokens are unique across its root. The listener refuses launch without a sealed record of worker-isolation probes. Production sandbox and probe execution are not yet proven.
+- B06: A real immediate fill cancels a queued condition on that name at the same open, even if the submitted target for that name did not change.
+- B07: Use all held prices from the same open. Book due funding and check maintenance before new fills. Recompute after costs. A move over the gross cap can only reduce existing gross risk. No same-open maintenance breach may be traded through.
+- B08: Keep the whole shuffled bundle. Missing marks or no common required open make the fixed week invalid. Do not change the draw, resample it, or replace the week.
+- B09: Seal the registered calendar, exact model builds, cost and runner identity, fixture hashes and designated scout. The judged path uses exactly 1,000 twins, seed 1 and the 90th percentile. An extension needs a sealed 3/3 gate and a recorded attempt before its launch. Preview results cannot pass.
+- S01: Count exposure through gaps; book due funding without skipping a wake boundary. The complete made-up book matches TM06 in the gap fixture.
+- S02: A legacy session keeps its ID, including IDs that start with `TM07-`. The guarded desk route is separate.
+- S03: Stops and conditions validate only against visible marks in the book, a note, the solo packet, or a metered bars lookup.
+- S04: A lookup request ID is scoped to its wake. Retrying the same request returns the same saved reply, and changing it requires a new ID.
+- S05: Record each twin's immediate and standing fills and turnover. Compute lift from the cent-rounded endpoints used for wins. Missing token fields stay UNKNOWN and incomplete receipts are shown separately.
