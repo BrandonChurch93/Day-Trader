@@ -82,7 +82,7 @@ What is UNKNOWN:
 
 ### What was collected, and what a gap check found
 
-Added 2026-11-25 after the collection finished. Research collected one-minute prices for SPY and QQQ, and daily prices for the funds in the second table below. Those are the funds named in the draft fund plan (`research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`), plus a long bond fund, a whole-market fund and the sector funds, which no plan names yet. The files are on the research machine and not in the repo. STATED by research: no trading rule has been run on them and no return over time has been worked out from them. Nothing in the repo can prove that.
+Added 2026-11-25 after the collection finished. Research collected one-minute prices for SPY and QQQ, and daily prices for the funds in the second table below. Those are the funds named in the draft fund plan (`research_rig/PREREG_06_fund_trend_paid_data.md`), plus a long bond fund, a whole-market fund and the sector funds, which no plan names yet. The files are on the research machine and not in the repo. STATED by research: no trading rule has been run on them and no return over time has been worked out from them. Nothing in the repo can prove that.
 
 How the tables below are made:
 

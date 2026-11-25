@@ -200,7 +200,7 @@ Held-back Sharpe ratio at 5 bps a side, corrected run. Only the I2 row differs f
 - These are returns of an index that cannot be bought directly. A total market fund is the nearest thing. Fund fees and tracking gaps are left out for the rules and for holding alike.
 - The held-back slice holds 2008, 2020 and 2022. The table above shows each year one by one.
 - The three months after the designer's knowledge cutoff are far too short to mean anything and are in the output files only.
-- This is the cheap first look. A fair test of funds that can be bought needs daily fund prices with opening prices and dividend history. Dividend history is the part that still needs a purchase (`archive/decisions/morning_list_2026-11-25.md`, `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`).
+- This is the cheap first look. A fair test of funds that can be bought needs daily fund prices with opening prices and dividend history. Dividend history is the part that still needs a purchase (`archive/decisions/morning_list_2026-11-25.md`, `research_rig/PREREG_06_fund_trend_paid_data.md`).
 
 ## Files
 
