@@ -269,7 +269,9 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     orders = Orders(active, delay)
     orders.submit(bundle, book, at)
     weights, exits = bundle.get("weights"), bundle.get("exits")
-    changed = first or book.get("pending") or (weights is not None and P.norm(weights) != P.norm(book["target"]))
+    effective = P.norm(book["target"] if weights is None else weights)
+    needs_open = bool(book["qty"] or effective)
+    changed = needs_open and (first or book.get("pending") or effective != P.norm(book["target"]))
     book["last_px"].update(row["marks"])
     record = None
 
@@ -282,7 +284,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
             return
         planned = deepcopy(book)
         record = P.p_step(planned, weights, exits, dict(marks=dict(book["last_px"]),
-                          fills={s:[stamp(tick), opens[s]] for s in touched if changed}), pp, first)
+                          fills={s:[stamp(tick), opens[s]] for s in touched if changed}), pp, first and needs_open)
         target, old_exits = dict(planned["target"]), book["exits"]
         slots = [(tr["symbol"], tr["qty"]*(1 if tr["side"] == "buy" else -1)) for tr in record["trades"]]
         record["trades"] = []

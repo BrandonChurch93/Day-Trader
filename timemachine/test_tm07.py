@@ -150,6 +150,15 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(got["book"],legacy[0])
         self.assertEqual(got["book"]["held_seconds"],7200)
 
+    def test_reaudit_r6_flat_idle_wake_needs_no_open(self):
+        spec = world([(T+3600,A,100,100,100,100)])
+        session = self.create("A",spec=spec)
+        idle = S.replay(session,[{},{}])
+        self.assertEqual(idle["unsupported"],[])
+        self.assertEqual(idle["value"],1000)
+        move = S.replay(session,[{"weights":{A:.3}},{}])
+        self.assertEqual(move["unsupported"],[T])
+
     def test_b02_immediate_cannot_size_from_a_later_open(self):
         def execute(later):
             spec = world()
