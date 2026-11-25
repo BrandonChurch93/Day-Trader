@@ -54,7 +54,7 @@ Every replay charges the venue's fee plus a fixed slippage of {SLIP:.0f} bps per
 - Bitcoin on Binance.US: $1,000 cost {f(bb['cost_1k_bps']['median'])} bps in the middle case and {f(bb['cost_1k_bps']['p95'])} bps in the worst 5%. $10,000 cost {f(bb['cost_10k_bps']['median'])} and {f(bb['cost_10k_bps']['p95'])} bps. Ether: {f(be_['cost_1k_bps']['median'])} and {f(be_['cost_1k_bps']['p95'])} bps for $1,000.
 - So in this sample the {SLIP:.0f} bps assumed for bitcoin and ether was higher than what the book charged at these sizes. The replays were not flattered by it.
 - Smaller coins on Kraken: of {len(alts)} coins sampled, {over5} cost more than {SLIP:.0f} bps for $1,000 in their worst 5% of samples, and {over25} cost more than 25 bps for $10,000.
-- This is one sample: {o['rounds']} rounds over {SPAN_WORDS} on one day. Bitcoin on Kraken has {kb_n} readings, counting the buy side and the sell side, so its worst 5% figures rest on about {max(1, round(kb_n * 0.05))} of them. Books are usually thinner in fast moves, which is when trend rules trade. That is STATED from general knowledge and not measured here. Treat these numbers as a floor, not an average.
+- This is one sample: {o['rounds']} rounds over {SPAN_WORDS} on one day. The sampler was set to stop by itself at about 16:30 UTC on 2026-11-25. If the last time above is before that, this page is an interim summary of a sample still being taken. Bitcoin on Kraken has {kb_n} readings, counting the buy side and the sell side, so its worst 5% figures rest on about {max(1, round(kb_n * 0.05))} of them. Books are usually thinner in fast moves, which is when trend rules trade. That is STATED from general knowledge and not measured here. Treat these numbers as a floor, not an average.
 
 ## Kraken
 

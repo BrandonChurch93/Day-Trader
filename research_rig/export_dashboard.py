@@ -4,10 +4,10 @@ Every figure comes from the second rig (rig2.py) and its outputs: results_v2.jso
 results_02.json for the AI pilot, and results_05.json / results_04.json when they exist. Nothing is typed by hand
 except labels and plain-words wording. The output holds derived curves and is not committed.
 
-The five charts need curves and trade lists that the output files do not hold. Making them replays five rules on raw
+The five charts need curves and trade lists that the output files do not hold. Making them replays five stored runs, of three rules, on raw
 prices that include the held-back years, so that step is a held-back run (research_rig/README.md, "Held-back scripts").
 By default this script does NOT do that: it reads the curves from dashboard/curves_cache.json, which is not committed.
-With --resimulate it replays the five rules with rig2 and rewrites the cache. What it checks against results_v2.json
+With --resimulate it replays those five runs with rig2 and rewrites the cache. What it checks against results_v2.json
 is exactly this: growth a year, Sharpe ratio, largest drop and total return over the whole sample, for the rule and for
 holding, and for the three daily charts the number of trades. The curves, the year-by-year figures and the trade lists
 are derived in that replay and are compared with nothing; no stored output holds them. Do not pass --resimulate unless the owner has allowed a repeat (questions 16a and 16b on the morning list).

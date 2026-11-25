@@ -17,7 +17,7 @@ Status: research's working practice. Proposed by research. No owner decision is 
 ## How to record one, in one commit
 
 1. Add a new file `docs/decisions/NNNN-short-name.md`, where NNNN is the next free number. Put in it the date, his words as he wrote them, the item it answers, and what it does and does not approve.
-2. In the open list, do not delete the item. In the "Decisions waiting" table, start its second column with "Decided, see NNNN". In "Things only you can do", start the item with "Done, see NNNN".
+2. In the open list, do not delete the item. Under its heading in "Decisions waiting, one at a time" or in the questions section, add a first line "Decided, see NNNN". In "Things only you can do", start the item with "Done, see NNNN".
 3. If the decision sets or changes a number, change `config/thresholds.yaml` in the same commit and name the key in the file from step 1.
 4. Update `docs/STATUS.md`: the "Waiting on the owner" section, "Next in the queue" if the queue moves, and "Last updated".
 5. Add the new file to `docs/INDEX.md`.

@@ -115,7 +115,7 @@ After the first addendum was pushed (commit c7956c4), the repo was copied fresh 
 
 After the second addendum was pushed (commit 17f250c), one more fresh model read the repo cold on a clean machine. This is what it found and what was changed. Nothing here is an owner decision.
 
-- `research_rig/export_dashboard.py` replayed five already-tested rules on the whole price history, held-back years included, every time it ran, to draw the curves on the owner's screen. `research_rig/README.md` said it only read output files. It ran several times and the count was not recorded. It checked each figure against the stored results and made no new number. (Wrong on both counts. See the fourth addendum below.) It now reads saved curves and replays nothing unless given `--resimulate`, which is a held-back run. Disclosed in `research_rig/TRIAL_LEDGER.md`.
+- `research_rig/export_dashboard.py` replayed five stored runs, of three already-tested rules (wording corrected later the same day: it first said "five rules"), on the whole price history, held-back years included, every time it ran, to draw the curves on the owner's screen. `research_rig/README.md` said it only read output files. It ran several times and the count was not recorded. It checked each figure against the stored results and made no new number. (Wrong on both counts. See the fourth addendum below.) It now reads saved curves and replays nothing unless given `--resimulate`, which is a held-back run. Disclosed in `research_rig/TRIAL_LEDGER.md`.
 - The owner's screen showed the stock test with the corrected run's verdict and examples. It now leads with the first run, which is the one that stands.
 - Document 22 gave its bottom-line figures without saying which run each came from. It now names the run on each, and says which figures are the same in both.
 - One line in the ledger still gave the owner's rerun rule more widely than he wrote it. It now quotes him.
@@ -318,3 +318,20 @@ A third outside model read those fixes in turn (commits afbe506 to 476cb8d). It 
 - "A stop or a breakout rule would trade on such a bar" is now "could, if the one-minute bar is the wrong one". The morning list no longer gives research's guess about which file is off.
 - Smaller ones: an empty row could still stop the value check, a typed count, "one file per fund" (one-minute prices are one file per fund and year), and a sentence that still hinted the 2005 halt explained that day.
 
+## Twelfth addendum, 2026-11-25 13:15 UTC: a last read of the map pages against each other
+
+This is a record of what research did. It is not an owner decision.
+
+After a night of patches, a fresh model read `README.md`, `docs/STATUS.md`, `docs/INDEX.md`, `docs/GLOSSARY.md`, `docs/decisions/README.md`, `research_rig/README.md` and the morning list against each other, looking only for lines that disagree, stale lines and wrong pointers. It checked every pointer by number that it opened and found two wrong. It found the results, the four things under "Start here", the six things only the owner can do, the do-not-run list and the trial count the same on every page. STATED by that reader.
+
+What it found, now fixed:
+
+- Three pages and the ledger said the script behind the owner's screen replayed "five rules". It replayed five stored runs of three rules, which the morning list already said. Reworded, with a note in the ledger line and in this record that the wording changed.
+- The rig's README counted the rerun as carrying a rule fix besides the two changes that were not engine faults. The status page and the glossary say two. The README now matches them.
+- The status page told the owner to make a key and left out the limit the morning list gives: if only a full key can be made, it is not entered for research.
+- The status page said research already works to decision 2. Only decision 3 is worked to already. Decision 2 is a proposal for the next plan.
+- The status page's line on how often the held-back years were looked at left out a second run of the one-year industry note and two restarts of the stock test. Both were already disclosed in the morning list and in the stock test's write-up.
+- The order-book figures on the status page and in the write-up did not say they are interim. Both now say when the sampler was set to stop, so a reader can tell.
+- Smaller ones: a stale "next free number", a pointer to a table that is now a list of headings, "in the line above" pointing at the wrong line, the sampler item naming one venue where the morning list names two, the insider-buying draft's list of what it waits on, "owner decision" used for decisions he has not made, and three soft guesses about how long practice takes to show something.
+
+Not changed: `AGENTS.md`, the owner's files in `docs/quality/`, any stored result, any threshold, any ledger count.

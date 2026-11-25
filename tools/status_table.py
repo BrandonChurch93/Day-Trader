@@ -43,7 +43,7 @@ def books():
     span = f"{mins} minutes" if mins < 120 else f"{mins / 60:.1f} hours"
     return ("Order-book samples", "What it cost to trade a small size at once, sampled on two venues on one day",
             f"{b['rounds']} rounds from {b['first_sample_utc']} to {b['last_sample_utc']} UTC. Bitcoin, middle cost of one order, fees not included: $1,000 cost {k['cost_1k_bps']['median']:.1f} bps on Kraken and {n['cost_1k_bps']['median']:.1f} bps on Binance.US; "
-            f"$10,000 cost {k['cost_10k_bps']['median']:.1f} and {n['cost_10k_bps']['median']:.1f} bps. Replay 04 assumed {slip} bps for this on bitcoin and ether (read from its output). The rerun of replays 01 and 03 used the same figure, set in `research_rig/rig2.py` and not stored in its output. One sample of {span} only.",
+            f"$10,000 cost {k['cost_10k_bps']['median']:.1f} and {n['cost_10k_bps']['median']:.1f} bps. Replay 04 assumed {slip} bps for this on bitcoin and ether (read from its output). The rerun of replays 01 and 03 used the same figure, set in `research_rig/rig2.py` and not stored in its output. One sample of {span} only. The sampler was set to stop by itself at about 16:30 UTC on 2026-11-25, so a last time here before that means this is an interim summary.",
             "`docs/research/24_order_book_costs.md`")
 def smaller():
     s2 = J("compare_v1_v2.json")["counts"]["S2"]

@@ -1,18 +1,18 @@
 # Morning list, 2026-11-25
 
-Written by research at the end of the overnight run. Rewritten at 08:36 UTC after the audits and the second set of tests, corrected at 08:51 UTC after three fresh models read the repo cold, rewritten again at 09:29 UTC after three more did, corrected at 09:44 UTC after a seventh, put in a new order at 09:55 UTC after an eighth, corrected at 10:06 UTC after a ninth read this page alone, and corrected again at 10:22 UTC after a tenth. Last changed at 13:09 UTC after a second check on the collected stock prices and two outside checks of it; before that at 12:41 UTC after the price collection finished, and at 10:32 UTC after a check of those fixes and a test of whether new models can find their way around the repo. Status: proposed. Nothing here is an owner decision. The record of the night is `docs/decisions/0005-overnight-research-2026-11-25.md` and `docs/decisions/0006-audit-and-second-night-2026-11-25.md`. The current state, with every result, is `docs/STATUS.md`. How your answers get recorded is in `docs/decisions/README.md`.
+Written by research at the end of the overnight run. Rewritten at 08:36 UTC after the audits and the second set of tests, corrected at 08:51 UTC after three fresh models read the repo cold, rewritten again at 09:29 UTC after three more did, corrected at 09:44 UTC after a seventh, put in a new order at 09:55 UTC after an eighth, corrected at 10:06 UTC after a ninth read this page alone, and corrected again at 10:22 UTC after a tenth. Last changed at 13:15 UTC after a last read of the map pages against each other; before that at 13:09 UTC after a second check on the collected stock prices and two outside checks of it; before that at 12:41 UTC after the price collection finished, and at 10:32 UTC after a check of those fixes and a test of whether new models can find their way around the repo. Status: proposed. Nothing here is an owner decision. The record of the night is `docs/decisions/0005-overnight-research-2026-11-25.md` and `docs/decisions/0006-audit-and-second-night-2026-11-25.md`. The current state, with every result, is `docs/STATUS.md`. How your answers get recorded is in `docs/decisions/README.md`.
 
 ## The short version
 
 - No rule has a credited pass, and nothing tested or read supports fast money. The detail is under "Where things stand".
 - Four things from you unblock the most. They are under "Start here", next.
 - Research slipped against your rules several times overnight. Each slip is written down under "What research got wrong". Every pass in the table came from a run with one of those slips in it, so research recommends that none is credited (question 18b).
-- The repo now has a map, a status page, a glossary and a checker, and has been read cold by ten fresh models. Every round found real faults. The ones found are fixed and recorded. Expect more.
+- The repo now has a map, a status page, a glossary and a checker, and has been read cold by ten fresh models. Later changes were checked by more. Every round found real faults. The ones found are fixed and recorded. Expect more.
 - Plain meanings of the words on this page are at the very end, under "Words used in this list".
 
 ## Start here
 
-Four things, one at a time, in this order. The fourth settles what last night's numbers are called. The first three are what the next steps wait on:
+Four things, one at a time, in this order. The fourth settles what last night's numbers are called. The first three come first for the next steps. Each step also needs the yes named beside it:
 
 - The practice record needs the keys, and your yes to decision 5.
 - The fund test needs the data purchase, decisions 1a and 1b, and your yes to decision 4a.
@@ -140,7 +140,7 @@ Each block ends with what research recommends. The numbers are fixed so that oth
 - What it is: two slow rules run with pretend money as observation, labelled as not passed: the bitcoin trend rule P1, and the ten-month rule on a total market fund.
 - Why: the practice account is the one clean test left for rules already run on past prices.
 - One thing to know: `AGENTS.md` hard rule 1 keeps every model out of the path that sends an order, and research is a model. So the pretend orders would come from a plain program on a timer, with no model in it. Where that program runs and who writes it are small choices that are yours. They are listed with the rest of what is still open in `research_rig/PRACTICE_01_two_rules_observation_DRAFT.md`, a draft that runs nothing.
-- What it cannot show quickly: both rules trade rarely. The first weeks will say more about fills and the machinery than about either rule.
+- What it cannot show quickly: both rules trade rarely. Early practice orders say more about fills and the machinery than about either rule.
 - You would be approving: a forward record of these two rules with pretend money, once the open points in the draft are settled with you.
 - You would not be approving: calling either a strategy, or any real money. Whether these days later count toward `paper_min_trading_days` and `paper_min_closed_trades` is yours to say. Question 17 proposes that days before you set the allowed amounts do not count. No rule can pass the practice gate until question 17 is answered.
 - Recommended: yes.
@@ -257,9 +257,9 @@ These came out of the cold-read tests. Each stands alone. Answer any one without
 ### 17. What do "within tolerance" in the practice gate and the live gate mean?
 
 - The issue: `docs/playbook/00_START_HERE.md` says a rule leaves the practice account when "slippage and errors" are "within tolerance" (phase 2), and that more money waits until live results "track paper within tolerance" (phase 4). Neither says what is measured, in what unit, or how much is allowed. So today no rule can pass the practice gate, whatever it does.
-- The proposal: two steps. First, research proposes what to measure and in what unit. For practice: the gap between the price the rule assumed and the price the practice account gave, in basis points per order, and the number of orders that failed or went in wrong out of the orders sent. For live: the gap between live and practice results over the same days. Second, you set how much is allowed, after the first weeks of practice orders show what the numbers look like.
+- The proposal: two steps. First, research proposes what to measure and in what unit. For practice: the gap between the price the rule assumed and the price the practice account gave, in basis points per order, and the number of orders that failed or went in wrong out of the orders sent. For live: the gap between live and practice results over the same days. Second, you set how much is allowed, after the first practice orders show what the numbers look like.
 - Why: an allowed amount picked before a single order has been sent would be a guess. Practice orders are pretend. The broker simulates them and no money is at risk.
-- The guard: the first weeks only show what the numbers look like. They do not count toward the practice gate. Days count from the day you set the allowed amounts, so the amounts are never fitted to results that then pass them.
+- The guard: those first orders only show what the numbers look like. They do not count toward the practice gate. Days count from the day you set the allowed amounts, so the amounts are never fitted to results that then pass them.
 - You would be approving: that the measures get defined first, that the allowed amounts are yours to set, that both gates stay shut until you set them, and the guard above: days before you set the amounts do not count toward the practice gate.
 - You would not be approving: any value today, or any real money.
 - Recommended: yes to the two steps. No value is asked for today.
