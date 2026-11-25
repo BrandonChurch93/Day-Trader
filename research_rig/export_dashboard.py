@@ -428,7 +428,7 @@ def practice():
     except Exception as e:
         print("practice records not read:", type(e).__name__); return None
 def timemachine():
-    """The stored scores of the time machine plans (timemachine/results_tm01.json, results_tm02.json), shaped for the page. Reads no prices and runs nothing."""
+    """The stored scores of the time machine plans (timemachine/results_tm01.json to results_tm04.json), shaped for the page. Reads no prices and runs nothing."""
     root = os.path.abspath(os.path.join(HERE, "..")); plans = []
     names = {"07": "July", "08": "August", "09": "September", "10": "October", "11": "November 1 to 24"}
     for pid, label, f, doc, plan in (("TM01", "Prices alone", "results_tm01.json", "docs/research/29_time_machine_tm01_crypto_price_only.md", "timemachine/PLAN_TM01_crypto_price_only.md"),
@@ -455,7 +455,48 @@ def timemachine():
                                      twins_done=r["twins_done"], buys=r["buys"], wins=r["wins"], losses=r["losses"], max_drop=r["max_drop"], why=why))
         sessions.sort(key=lambda x: (x["mo"], x["model"]))
         plans.append(dict(id=pid, label=label, models=models, sessions=sessions, sessions_total=total, news_test=o.get("news_test"), doc=GH + doc, plan=GH + plan))
+    plans += [x for x in (tm03_plan(root), tm04_plan(root)) if x]
     return dict(start_usd=R.th("tm_account_start_usd"), plans=plans) if plans else None
+def tm03_plan(root):
+    """TM03, the bitcoin dial, from timemachine/results_tm03.json (score_tm03.py). A model whose months are not all in gets no figures, only "not finished".
+    The plain-rule line comes from timemachine/dial_rules_tm03.json when that file exists."""
+    fp = os.path.join(root, "timemachine", "results_tm03.json")
+    if not os.path.exists(fp):
+        return None
+    o = json.load(open(fp)); n = len(o["months"]); models = []
+    for tag, m in o["models"].items():
+        done = bool(m.get("complete")); sr = m.get("sum_shuffle_runs") or {}
+        models.append(dict(name=m["name"], months_in=len(m.get("months_counted") or []), months=n, complete=done,
+                           gain=m.get("sum_gain_usd") if done else None, hold=m.get("sum_hold_usd") if done else None,
+                           percentile=sr.get("model_percentile") if done else None, verdict=m["verdict"] if done else "not finished"))
+    rule = None; fr = os.path.join(root, "timemachine", "dial_rules_tm03.json")
+    if os.path.exists(fr):
+        dr = json.load(open(fr))
+        plain = [d for d in dr["dials"].values() if not d.get("hindsight") and "constant" not in d.get("description", "").lower()]
+        done = [dr["models"][t] for t in dr.get("complete_models", []) if t in dr["models"]]
+        if plain and done:
+            bm = max(done, key=lambda x: x["sum_gain_usd"])
+            rule = dict(rule_gain=round(max(d["sum_gain_usd"] for d in plain), 2), model_gain=round(bm["sum_gain_usd"], 2), model=bm["name"],
+                        doc=GH + "docs/research/37_tm03_plain_dials.md")
+    return dict(id="TM03", kind="dial", label="Bitcoin dial", models=models, sessions=o.get("sessions"), months=n, pass_percentile=o.get("pass_percentile"),
+                method=(o.get("method") or {}).get("verdict"), rule=rule, start_usd=o.get("account_start_usd"),
+                doc=GH + "docs/research/34_time_machine_tm03_bitcoin_dial.md", plan=GH + "timemachine/PLAN_TM03_bitcoin_dial.md")
+def tm04_plan(root):
+    """TM04, the stock basket, from timemachine/results_tm04.json (score_tm04.py). Until that file exists the plan shows as being scored.
+    A run that is not finished carries only its verdict ("running" or "not started"), never a figure."""
+    doc = "docs/research/36_time_machine_tm04_stock_basket.md"
+    base = dict(id="TM04", kind="basket", label="Stock basket", doc=GH + doc if os.path.exists(os.path.join(root, doc)) else None, plan=GH + "timemachine/PLAN_TM04_stock_basket.md")
+    fp = os.path.join(root, "timemachine", "results_tm04.json")
+    if not os.path.exists(fp):
+        return dict(base, scored=False)
+    o = json.load(open(fp)); rows = []
+    for tag, m in o["models"].items():
+        for run in o.get("runs_per_model") or sorted(m["runs"]):
+            r = m["runs"].get(run) or {}; fin = bool(r.get("finished")); rb = r.get("random_basket") or {}
+            rows.append(dict(name=m["name"], run=run, finished=fin, verdict=r.get("verdict") or "not started",
+                             gain=r.get("gain_usd") if fin else None, equal=r.get("equal_weight_gain_usd") if fin else None,
+                             percentile=rb.get("model_percentile") if fin else None))
+    return dict(base, scored=True, rows=rows, sessions=o.get("sessions"), pass_percentile=o.get("pass_percentile"), method=(o.get("method") or {}).get("verdict"))
 PR = practice()
 pr_on = bool(PR) and PR.get("status") in ("running", "halted")
 pr_n = PR["totals"]["orders"] if pr_on else 0

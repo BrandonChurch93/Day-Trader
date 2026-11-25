@@ -509,8 +509,68 @@
   // ---------- time machine ----------
   function tmMoney(x) { return isNum(x) ? '<span class="' + negCls(x) + '">' + esc(signedMoney(x)) + '</span>' : '<span class="muted">Not yet</span>'; }
   function tmVerdict(v) {
-    var cls = v === 'not finished' ? 'badge-neutral' : (/^counts|helped: six/.test(v) ? 'badge-pass' : 'badge-fail');
+    v = String(v || 'not finished');
+    var cls = /^(not finished|running|not started|being scored|passes line [12] only)$/.test(v) ? 'badge-neutral' :
+      (/^counts|helped: six|^passes both lines$|^passes$|^shown$/.test(v) ? 'badge-pass' : 'badge-fail');
     return '<span class="badge ' + cls + '">' + esc(capital(v)) + '</span>';
+  }
+  function tmPct(x) { return isNum(x) ? esc(num(x, 1)) : '<span class="muted">None</span>'; }
+  function tmLinks(pl) {
+    return '<p class="links">' + (pl.doc ? '<a href="' + esc(pl.doc) + '" target="_blank" rel="noopener noreferrer">Full results</a> ' : '') +
+      '<a href="' + esc(pl.plan) + '" target="_blank" rel="noopener noreferrer">The plan, fixed before the run</a></p>';
+  }
+  function tmSessions(se, unit) {
+    if (!se) return '';
+    return esc(int(se.finished)) + ' of ' + esc(int(se.planned)) + ' ' + unit + ' finished' +
+      (se.running ? ', ' + esc(int(se.running)) + ' still running' : '') + (se.not_started ? ', ' + esc(int(se.not_started)) + ' not started' : '') + '.';
+  }
+  var TM_NF = '<span class="muted">Not finished</span>';
+  function tmDial(pl, tm) {
+    var start = isNum(pl.start_usd) ? pl.start_usd : tm.start_usd;
+    var h = '<div class="card pr-block tm-plan" data-testid="tm-plan-TM03"><h3 class="h3">' + esc(pl.label) + '</h3>' +
+      '<p>Once a day each model sets how much of a ' + esc(money2(start)) + ' pretend-money account to keep in bitcoin, one month at a time, ' +
+      esc(int(pl.months)) + ' months in all. Ahead of holding with a low percentile means it held less bitcoin while bitcoin fell. That is less risk held, not timing skill.</p>' +
+      '<p class="meta">' + tmSessions(pl.sessions, 'month-long sessions') + ' A model gets figures only when all its months are in.</p>' +
+      '<div class="tablewrap"><table class="pr-stack tm-models"><caption class="sr-only">Bitcoin dial, one row per model, months added up</caption><thead><tr>' +
+      '<th scope="col">Model</th><th scope="col" class="n">Months in</th><th scope="col" class="n">Gain, months added up</th><th scope="col" class="n">Holding bitcoin, same months</th>' +
+      '<th scope="col" class="n">Percentile against its own answers in random order</th><th scope="col">Verdict</th></tr></thead><tbody>' +
+      pl.models.map(function (m) {
+        var f = m.complete;
+        return '<tr><th scope="row">' + esc(m.name) + '</th><td class="n" data-label="Months in">' + esc(int(m.months_in)) + ' of ' + esc(int(m.months)) + '</td>' +
+          '<td class="n" data-label="Gain, months added up">' + (f ? tmMoney(m.gain) : TM_NF) + '</td>' +
+          '<td class="n" data-label="Holding bitcoin, same months">' + (f ? tmMoney(m.hold) : TM_NF) + '</td>' +
+          '<td class="n" data-label="Percentile, own answers shuffled">' + (f ? tmPct(m.percentile) : TM_NF) + '</td>' +
+          '<td class="pr-state" data-label="Verdict">' + tmVerdict(f ? m.verdict : 'not finished') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="meta">MEASURED. Pretend money. Gain is in dollars on ' + esc(money2(start)) + ' a month, added up over the months. The percentile is the share of reshufflings of the model\'s own answers that ended below it.' +
+      (isNum(pl.pass_percentile) ? ' Line 1 is beating holding. Line 2 is a percentile above ' + esc(num(pl.pass_percentile, 0)) + '.' : '') + '</p>';
+    if (pl.rule) {
+      h += '<p data-testid="tm03-rule">MEASURED. A plain trend rule on the same months: ' + tmMoney(pl.rule.rule_gain) + ', against ' + tmMoney(pl.rule.model_gain) +
+        ' for the best model, ' + esc(pl.rule.model) + '. <a href="' + esc(pl.rule.doc) + '" target="_blank" rel="noopener noreferrer">The plain rules</a></p>';
+    }
+    h += '<p class="meta">Verdict for the method: ' + tmVerdict(pl.method) + '</p>';
+    return h + tmLinks(pl) + '</div>';
+  }
+  function tmBasket(pl, tm) {
+    var h = '<div class="card pr-block tm-plan" data-testid="tm-plan-TM04"><h3 class="h3">' + esc(pl.label) + '</h3>' +
+      '<p>Once a week each model picks which stocks to hold from a fixed list, always fully invested, with pretend money. It is measured against holding the whole list in equal shares and against baskets drawn at random from the same list.</p>';
+    if (!pl.scored) return h + '<p class="meta" data-testid="tm04-scoring">' + tmVerdict('being scored') + ' Results show here when the scores are written.</p>' + tmLinks(pl) + '</div>';
+    h += '<p class="meta">' + tmSessions(pl.sessions, 'runs') + ' Each model runs twice. A run gets figures only when it is finished.</p>' +
+      '<div class="tablewrap"><table class="pr-stack tm-models"><caption class="sr-only">Stock basket, one row per model and run</caption><thead><tr>' +
+      '<th scope="col">Model</th><th scope="col">Run</th><th scope="col" class="n">Gain</th><th scope="col" class="n">Equal shares of the list</th>' +
+      '<th scope="col" class="n">Percentile among random baskets</th><th scope="col">Verdict</th></tr></thead><tbody>' +
+      pl.rows.map(function (r) {
+        var f = r.finished;
+        return '<tr><th scope="row">' + esc(r.name) + '</th><td data-label="Run">' + esc(String(r.run).replace(/^r/, 'Run ')) + '</td>' +
+          '<td class="n" data-label="Gain">' + (f ? tmMoney(r.gain) : TM_NF) + '</td>' +
+          '<td class="n" data-label="Equal shares of the list">' + (f ? tmMoney(r.equal) : TM_NF) + '</td>' +
+          '<td class="n" data-label="Percentile, random baskets">' + (f ? tmPct(r.percentile) : TM_NF) + '</td>' +
+          '<td class="pr-state" data-label="Verdict">' + tmVerdict(r.verdict) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="meta">MEASURED. Pretend money. Gain is in dollars on the account. The percentile is the share of random baskets that ended below the run.' +
+      (isNum(pl.pass_percentile) ? ' A run passes only if it beats equal shares and its percentile is above ' + esc(num(pl.pass_percentile, 0)) + '.' : '') + '</p>' +
+      '<p class="meta">Verdict for the method, on run 1: ' + tmVerdict(pl.method) + '</p>';
+    return h + tmLinks(pl) + '</div>';
   }
   function renderTimeMachine(d) {
     var body = $('timemachine-body');
@@ -522,6 +582,8 @@
     }
     var html = '';
     tm.plans.forEach(function (pl) {
+      if (pl.kind === 'dial') { html += tmDial(pl, tm); return; }
+      if (pl.kind === 'basket') { html += tmBasket(pl, tm); return; }
       var done = pl.sessions.length;
       html += '<div class="card pr-block tm-plan" data-testid="tm-plan-' + esc(pl.id) + '"><h3 class="h3">' + esc(pl.label) + '</h3>' +
         '<p class="meta">' + esc(int(done)) + ' of ' + esc(int(pl.sessions_total)) + ' month-long sessions finished. Each starts with ' + esc(money2(tm.start_usd)) +
@@ -558,7 +620,7 @@
               (isNum(x.twins_beaten) ? ', beat ' + esc(int(x.twins_beaten)) + ' of 20 twins' : ', twins ' + esc(int(x.twins_done)) + ' of 20 run') + '</span></summary>' + why + '</details>';
           }).join('');
       }
-      html += '<p class="links"><a href="' + esc(pl.doc) + '" target="_blank" rel="noopener noreferrer">Full results</a> <a href="' + esc(pl.plan) + '" target="_blank" rel="noopener noreferrer">The plan, fixed before the run</a></p></div>';
+      html += tmLinks(pl) + '</div>';
     });
     body.innerHTML = html;
   }

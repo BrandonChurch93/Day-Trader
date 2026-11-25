@@ -832,6 +832,36 @@ ok(d4 == d4b and f"Method: {me4['verdict']}." in d4 and "## What would count" in
    "score_tm03: the page is written wholly by the script, the same every time, with the plan's sections")
 nums_doc = set(re.findall(r"-?\$[0-9,]+\.[0-9]{2}", d4)); nums_js = {T3.usd(v) for v in re.findall(r"-?[0-9]+\.[0-9]+", json.dumps(o4)) for v in [float(v)]}
 ok(nums_doc and nums_doc <= nums_js, "score_tm03: every dollar figure on the page is in the results file")
+# score_tm04: plan TM04's scorer, its adds and drops, and its page
+from timemachine import score_tm04 as T4
+PX = [{"A": 10.0, "B": 20.0, "C": 5.0}, {"A": 11.0, "B": 18.0, "C": 5.0}, {"A": 12.1, "B": 18.0, "C": None}, {"A": 9.9, "B": 27.0, "C": 6.0}]
+ok(abs(T4.ret(PX, "A", 0, 1) - 0.1) < 1e-12 and T4.ret(PX, "C", 1, 2) is None and T4.ret(PX, "A", -1, 1) is None and T4.ret(PX, "A", 1, 4) is None and T4.ret(PX, "A", 2, 2) is None,
+   "score_tm04: a stock's return between two grid points, or none when an end is missing or out of the window")
+ok(abs(T4.list_ret(PX, ["A", "B", "C"], 0, 1) - (0.1 - 0.1 + 0.0) / 3) < 1e-12 and abs(T4.list_ret(PX, ["A", "B", "C"], 1, 2) - (0.1 + 0.0) / 2) < 1e-12,
+   "score_tm04: the list's return is the mean of the listed stocks that have both prices")
+ev, sw = T4.events([["A"], ["A"], ["B"], ["B"]], PX, 0, ["A", "B", "C"], 1, [1, 4])
+lr = T4.list_ret(PX, ["A", "B", "C"], 1, 2)
+ok(sw == [2] and len(ev["add_before"]) == 1 and abs(ev["add_before"][0][0] - 0.0) < 1e-12 and abs(ev["add_before"][0][1] - (0.0 - lr)) < 1e-12
+   and abs(ev["add_held"][0][0] - 0.5) < 1e-12 and abs(ev["drop_after_1"][0][0] - (9.9 / 12.1 - 1)) < 1e-12 and ev["drop_after_4"] == [] and len(ev["drop_to_end"]) == 1
+   and "drop_after" not in ev, "score_tm04: an add is measured over the weeks before and while held, a drop over each count of weeks after and to the end; a span past the end is left out")
+evr, _ = T4.events([["A"], ["B"], ["B"], ["B"]], PX, 0, ["A", "B", "C"], 1, [1], picks=[(["C"], ["A"], [1])])
+ok(evr["add_before"][0][0] == 0.0 and evr["add_held"] == [] and abs(evr["drop_after_1"][0][0] - 0.1) < 1e-12, "score_tm04: a random swap adds and drops the names drawn, the add held as long as the model's add")
+pl = T4.place([(0.1, 0.05)], [[(0.0, 0.0)]] * 97 + [[(0.2, 0.05)]] + [[(0.3, 0.2)]] * 2, 5)
+ok(pl["pct_random_below"] == 97.0 and pl["pct_random_above"] == 2.0 and pl["reading"] == "higher than chance" and pl["mean_less_list_pct"] == 5.0, "score_tm04: random below counts draws strictly below; a model mean that fewer than tm_adds_drops_chance_pct of draws reach reads higher than chance")
+ok(T4.place([(0.1, -0.05)], [[(0.0, 0.0)]] * 100, 5)["reading"] == "lower than chance" and T4.place([(0.1, 0.0)], [[(0.0, 0.0)]] * 100, 5)["reading"] == "within chance" and T4.place([], [], 5) == dict(events=0),
+   "score_tm04: low reads lower than chance, a tie with every draw reads within chance, and no events gives none")
+ok(T4.order(dict(drop_to_end={}, drop_after_8={}, add_held={}, drop_after_1={}, add_before={})) == ["add_before", "add_held", "drop_after_1", "drop_after_8", "drop_to_end"]
+   and T4.label("drop_after_1").endswith("1 week after it was dropped") and T4.label("drop_after_4").endswith("4 weeks after it was dropped"), "score_tm04: the measures are shown in reading order with plain labels")
+ad = T4.adds_drops(mw, rw, tbw, WT, dict(tm_adds_drops_before_weeks=1, tm_adds_drops_after_weeks=[1]), 7, 1)
+ok(ad["swaps"] == 1 and len(ad["rand"]) == 7 and [len(ad["model"][k]) for k in ("add_before", "add_held", "drop_after_1", "drop_to_end")] == [1, 1, 1, 1]
+   and all(d == ad["model"] for d in ad["rand"]), "score_tm04: on a real session the swap is found, and with one name held and one not, every random swap is the model's own")
+ad2 = T4.adds_drops(mw, rw, tbw, WT, dict(tm_adds_drops_before_weeks=1, tm_adds_drops_after_weeks=[1]), 7, 1)
+ok(ad2 == ad, "score_tm04: the random swaps are drawn the same way every time")
+T4CFG = T4.tm04_config()
+ok(T4CFG["tm04_plan"]["basket_size"] == 8 and T4CFG["tm_adds_drops_after_weeks"] == [1, 4, 8] and len(T4CFG["tm04_plan"]["symbols"]) == 38, "score_tm04 reads tm04_plan and the adds and drops keys from config/thresholds.yaml")
+o4_ = T4.build(T4CFG, tape=WT); d4_ = T4.doc(o4_, T4CFG)
+ok(o4_["sessions"] == dict(planned=12, finished=0, running=0, not_started=12) and o4_["method"]["verdict"] == "not finished" and "Sessions in: 0 of 12 are finished" in d4_
+   and "No finished run has a swap yet." in d4_ and d4_ == T4.doc(T4.build(T4CFG, tape=WT), T4CFG), "score_tm04: with no session in, it says so, gives no verdict and writes the same page every time")
 n_log = len(Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines())
 ok(n_log == log0 + len([d for d in p.iterdir() if (d / "session.json").exists()]), "every session made is one line in the sessions log")
 

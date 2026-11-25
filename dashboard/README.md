@@ -36,7 +36,14 @@ From the top, the section shows:
 
 The page shows the copy in `data.json` first. Then it asks `practice_live_url` for a newer copy. If that copy is newer, the section is redrawn from it. If the request fails, the page keeps the copy it has and says "Could not check for newer records". When `practice` is empty, or the desk is still waiting for its key, the section says so and shows no totals. The section only reads. It cannot place, change or cancel an order.
 
-A second section, "Time machine", for replay sessions, is planned to go right after this one. There is a marked place for it in `index.html`. It is not built.
+## Time machine section
+
+The "Time machine" section comes right after the Practice account section. It shows the scored replay plans from `timemachine` in `data.json`, which `research_rig/export_dashboard.py` builds from the stored results files. It reads no prices and runs nothing.
+
+- TM01 and TM02: from `timemachine/results_tm01.json` and `timemachine/results_tm02.json`.
+- TM03, the bitcoin dial: from `timemachine/results_tm03.json` (`timemachine/score_tm03.py`). One row per model: months in, gain over the months added up, holding bitcoin over the same months, the percentile against the model's own answers in random order, and the plan's verdict words as the script writes them. A model whose months are not all in shows "Not finished" and no figures. When `timemachine/dial_rules_tm03.json` exists, one line shows the best plain trend rule's sum next to the best model's sum.
+- TM04, the stock basket: from `timemachine/results_tm04.json` (`timemachine/score_tm04.py`). One row per model and run: gain, equal shares of the list, the percentile among random baskets, and the verdict. A run that is not finished shows its verdict ("running" or "not started") and no figures. Until the file exists the plan says "Being scored".
+
 
 ## Files
 

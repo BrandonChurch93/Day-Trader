@@ -559,3 +559,23 @@ tm_weights_twin_seed:
   status: builder
   note: Seed for the random twins in timemachine/score_weights.py. Draw i uses its own generator made from this seed, the twin kind and i.
   source: timemachine/score_weights.py
+tm_adds_drops_before_weeks:
+  value: 4
+  status: builder
+  note: Adds and drops (after the fact, not judged) in timemachine/score_tm04.py - an added stock's return is measured over this many weekly wakes before it was added.
+  source: timemachine/score_tm04.py
+tm_adds_drops_after_weeks:
+  value: [1, 4, 8]
+  status: builder
+  note: Adds and drops (after the fact, not judged) - a dropped stock's return is measured over these numbers of weekly wakes after it was dropped, and to the end of the window.
+  source: timemachine/score_tm04.py
+tm_adds_drops_chance_pct:
+  value: 5
+  status: builder
+  note: Adds and drops (after the fact, not judged) - a model's mean is said to be beyond chance when fewer than this percent of random swaps reach it on that side. A reading aid, not a mark.
+  source: timemachine/score_tm04.py
+tm05_plan:
+  value: {stretch_a: {start: "2026-04-01", end: "2026-05-29"}, stretch_b: {start: "2026-11-30", end: "2027-02-26"}, wake_time_ny: 15.5, leave_out_max: 8, min_change: 0.0, method_min_models_above_median: 5, method_min_models_above_percentile: 2}
+  status: builder
+  note: DRAFT plan TM05, not yet run and not final. Each week the model leaves out up to leave_out_max of tm04_plan.symbols and holds the rest in equal shares. Stretch A is before TM04 on the tape; stretch B is forward and must be recorded first. min_change replaces tm_weights_min_change for this plan only, because equal shares of 30 to 38 names are below it.
+  source: timemachine/PLAN_TM05_avoid_list_DRAFT.md
