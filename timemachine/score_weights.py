@@ -187,7 +187,12 @@ def sum_sessions(ids, tape=None, draws=None, seed=None):
     """Sums one model's sessions (for example its months): the model's gains added up, and for each twin set, draw by draw,
     draw i of the first session plus draw i of the second and so on. The percentile is of the summed model gain against the
     summed draws. Each session's draws are seeded from tm_weights_twin_seed and the session id, so the months draw independently and the sum is fixed by the session ids."""
-    rs = [score(i, tape=tape, draws=draws, seed=seed) for i in ids]
+    return sum_results([score(i, tape=tape, draws=draws, seed=seed) for i in ids])
+
+
+def sum_results(rs):
+    """sum_sessions on results of score() already made."""
+    ids = [r["session"] for r in rs]
     pp = rs[0]["pass_percentile"]; model = sum(r["model_stats"]["final_gain_pct"] for r in rs)
     out = dict(sessions=list(ids), model=sorted({r["model"] for r in rs}), pass_percentile=pp, model_gain_pct_sum=model,
                model_costs_paid_usd_sum=sum(r["model_stats"]["costs_paid_usd"] for r in rs), sets={})

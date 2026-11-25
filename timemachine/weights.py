@@ -25,7 +25,7 @@ A session folder under $TM_RUNS (the same layout as a pick session):
 Every session is one line in timemachine/SESSIONS.jsonl with kind "weights". Standard library only.
 
 python3 timemachine/weights.py new --trader W01 --model M --method CARD.md --market crypto --symbols BTC/USD \
-    --from 2026-04-01 --to 2026-11-23 [--open cash | --open '{"BTC/USD": 1}'] [--wakes daily|weekly|JSON] [--news] [--session ID]
+    --from 2026-04-01 --to 2026-11-23 [--open cash | --open '{"BTC/USD": 1}'] [--wakes pick-hours|weekly|JSON] [--news] [--session ID]
 """
 import argparse, datetime as dt, hashlib, json, math, os, re, sys
 from pathlib import Path
@@ -202,6 +202,9 @@ def step_book(book, answer, row, cfg, first):
     value_before = value_at(book, marks)
     target = norm(book["target"]) if answer is None else norm(answer)
     retry = bool(book.get("pending"))  # the last move left a symbol unfilled for want of a recorded minute: try again now
+    # the opening book (kept at the first wake, or retried after a missing minute) is bought whole: tm_weights_min_change
+    # is for changes the trader asks for, and an opening share below it (an equal share of a long list) must still be bought
+    opening_buy = (first and answer is None) or (retry and answer is None and bool(book.get("opening_retry")))
     changed = first or retry or target != norm(book["target"])
     book["target"] = target
     rec = dict(target=target, changed=changed, retry=retry, value_before=value_before, trades=[], skipped=[])
@@ -220,7 +223,7 @@ def step_book(book, answer, row, cfg, first):
             continue
         if s not in fp:
             rec["skipped"].append(dict(symbol=s, why="no recorded minute to fill in before the next wake", want=w, held=c)); continue
-        if abs(w - c) < mc and not (w <= 0 < q):
+        if abs(w - c) < mc and not (w <= 0 < q) and not opening_buy:
             rec["skipped"].append(dict(symbol=s, why="change smaller than tm_weights_min_change", want=w, held=c)); continue
         (sells if w < c else buys).append((s, w, c))
     for s, w, c in sells:
@@ -244,6 +247,7 @@ def step_book(book, answer, row, cfg, first):
         book["spread_usd"] += notional - notional / (1 + hs); book["fee_usd"] += f; book["traded_usd"] += notional / (1 + hs)
         rec["trades"].append(dict(symbol=s, side="buy", qty=qb, open=p, price=p * (1 + hs), fee_usd=f, fill_utc=fills[s][0], scaled=scale))
     book["pending"] = any(x["why"].startswith("no recorded minute") for x in rec["skipped"])
+    book["opening_retry"] = opening_buy and book["pending"]
     rec.update(value_after=value_at(book, px), weights_after=weights_at(book, px), fill_utc=min([t["fill_utc"] for t in rec["trades"]], default=None))
     return rec
 
@@ -529,6 +533,34 @@ def run_scripted(session_id, answers, tape=None):
     return s
 
 
+WAKE_WORDS = ("pick-hours", "weekly")
+
+
+def wake_choice(word, market):
+    """The --wakes word of the command line, as (kind, rules). "daily" is refused: for crypto it once meant the two pick-session
+    hours, which is easy to take for one wake a day. Give a JSON list for one wake a day, or "pick-hours" for the pick-session hours."""
+    if word is None:
+        if market == "stocks":
+            return "weekly", None
+        raise SystemExit('--wakes is needed for a crypto weights session: "pick-hours" (the hours in tm_crypto_wake_hours_utc), "weekly", '
+                         'or a JSON list such as \'[{"every": "day", "utc_hours": [0]}]\' for one wake a day at 00:00 UTC.')
+    if word == "daily":
+        raise SystemExit('--wakes daily is refused because it is unclear how many wakes a day it means. Use "pick-hours" for the pick-session '
+                         'hours (tm_crypto_wake_hours_utc for crypto, tm_stock_wake_times_ny for stocks), or a JSON list such as '
+                         '\'[{"every": "day", "utc_hours": [0]}]\' for one wake a day at 00:00 UTC.')
+    if word == "pick-hours":
+        return "daily", None
+    if word == "weekly":
+        return "weekly", None
+    try:
+        rules = json.loads(word)
+    except ValueError:
+        raise SystemExit(f'--wakes {word!r} is not one of {", ".join(WAKE_WORDS)} and not a JSON list of wake rules.')
+    if not isinstance(rules, list) or not rules:
+        raise SystemExit("--wakes as JSON must be a list of wake rules.")
+    return "rules", rules
+
+
 def main(argv=None):
     a = argparse.ArgumentParser(description="Makes a weights session and counts it in timemachine/SESSIONS.jsonl. Pretend money only.")
     sub = a.add_subparsers(dest="cmd", required=True); n = sub.add_parser("new")
@@ -536,14 +568,12 @@ def main(argv=None):
     n.add_argument("--market", choices=["crypto", "stocks"], required=True); n.add_argument("--symbols", required=True, help="allowed symbols, comma separated")
     n.add_argument("--from", dest="start", required=True); n.add_argument("--to", dest="end", required=True)
     n.add_argument("--open", default="cash", help='"cash" or a JSON object of opening weights, for example \'{"BTC/USD": 1}\'')
-    n.add_argument("--wakes", default=None, help='"daily", "weekly", or a JSON list of wake rules (see make_wakes)')
+    n.add_argument("--wakes", default=None, help='"pick-hours", "weekly", or a JSON list of wake rules (see make_wakes); "daily" is refused')
     n.add_argument("--news", action="store_true"); n.add_argument("--session"); n.add_argument("--note"); n.add_argument("--benchmark")
     n.add_argument("--basket-size", type=int, help="answers must name exactly this many symbols in equal shares")
     x = a.parse_args(argv)
     opening = None if x.open == "cash" else json.loads(x.open)
-    kind, rules = ("daily", None) if x.wakes in (None, "daily") else ("weekly", None) if x.wakes == "weekly" else ("rules", json.loads(x.wakes))
-    if x.wakes is None and x.market == "stocks":
-        kind = "weekly"
+    kind, rules = wake_choice(x.wakes, x.market)
     sid = x.session or f"W-{x.trader}-{x.start}-{dt.datetime.now(UTC).strftime('%Y%m%dT%H%M%S')}"
     folder = create(sid, x.trader, x.model, x.method, x.start, x.end, [s.strip() for s in x.symbols.split(",") if s.strip()], market=x.market,
                     opening=opening, rules=rules, wake_kind=kind, news=x.news, note=x.note, benchmark=x.benchmark, basket_size=x.basket_size)

@@ -100,8 +100,8 @@ def read_market(folder, end, data):
     from exchange_calendars import get_calendar
 
     start = data["first_bar"]
-    # Calendar may look beyond the last bar; prices may not.
-    cal = get_calendar("XNYS", start=start, end=end[:4] + "-12-31")
+    # Calendar may look beyond the last bar (into Jan of next year so Dec year-end is recognized); prices may not.
+    cal = get_calendar("XNYS", start=start, end=f"{int(end[:4]) + 1}-01-15")
     schedule = tuple(d.date().isoformat() for d in cal.sessions)
     expected = tuple(d for d in schedule if start <= d <= end)
     symbols = tuple(data["symbols"])
@@ -327,7 +327,9 @@ def timing(r, phases, config, rng):
             row = phase.run(r, phase.cost, plan=p)
             memo[offset] = (row["eq"][-1], row["turnover"], row["risk_weight"], row["sides"])
         v = np.asarray([memo[k] for k in offsets])
-        audit.append(dict(mean_turnover=float(v[:, 1].mean()), mean_risk_weight=float(v[:, 2].mean()),
+        audit.append(dict(mean_turnover=float(v[:, 1].mean()),
+                          mean_turnover_py=float(v[:, 1].mean() * phase.ppy / len(phase.dates)),
+                          mean_risk_weight=float(v[:, 2].mean()),
                           mean_sides=float(v[:, 3].mean()), random_twin_total=float(v[0, 0] - 1)))
         controls.append(v[:, 0])
     actual = np.prod([p.base[r]["eq"][-1] for p in phases])

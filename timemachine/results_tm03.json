@@ -1,0 +1,1803 @@
+{
+ "account_start_usd": 1000.0,
+ "judged_set": "shuffle_runs",
+ "method": {
+  "complete": false,
+  "models_line1_so_far": 3,
+  "models_line2_so_far": 0,
+  "verdict": "not finished"
+ },
+ "method_min_models_beating_hold": 5,
+ "method_min_models_beating_shuffles": 2,
+ "models": {
+  "GROK": {
+   "complete": false,
+   "drivers": {
+    "both": {
+     "gain_usd": 220.45,
+     "gain_vs_hold_usd": -17.91,
+     "stretches": 19,
+     "wakes": 92
+    },
+    "opening": {
+     "gain_usd": -77.2,
+     "gain_vs_hold_usd": -10.29,
+     "stretches": 3,
+     "wakes": 30
+    }
+   },
+   "line1": "not finished",
+   "line1_so_far": false,
+   "line2": "not finished",
+   "line2_so_far": false,
+   "months": {
+    "2026-04": {
+     "finished": false,
+     "session": "TM03-D01-GROK-2026-04",
+     "started": false
+    },
+    "2026-05": {
+     "finished": false,
+     "session": "TM03-D01-GROK-2026-05",
+     "started": false
+    },
+    "2026-06": {
+     "above_hold": true,
+     "avg_weight": 0.2982,
+     "changes": 5,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 8.33,
+     "drivers": {
+      "both": {
+       "gain_usd": -63.68,
+       "gain_vs_hold_usd": 116.37,
+       "stretches": 5,
+       "wakes": 29
+      },
+      "opening": {
+       "gain_usd": -34.16,
+       "gain_vs_hold_usd": -3.27,
+       "stretches": 1,
+       "wakes": 1
+      }
+     },
+     "finished": true,
+     "gain_usd": -97.83,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": -207.22,
+     "hold_largest_drop_pct": -20.72,
+     "largest_drop_pct": -9.78,
+     "session": "TM03-D01-GROK-2026-06",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 8.26,
+      "model_percentile": 47.8
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 21.75,
+      "model_percentile": 31.0
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 720,
+      "median_gain_usd": -82.36,
+      "model_percentile": 32.6,
+      "note": null,
+      "runs": 6
+     },
+     "wakes": 30
+    },
+    "2026-07": {
+     "above_hold": false,
+     "avg_weight": 0.8298,
+     "changes": 9,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.56,
+     "drivers": {
+      "both": {
+       "gain_usd": 31.45,
+       "gain_vs_hold_usd": -42.83,
+       "stretches": 9,
+       "wakes": 31
+      }
+     },
+     "finished": true,
+     "gain_usd": 31.45,
+     "git_commit": "1f933e206768bda9e7cf975b0ae7d6f72393a15c",
+     "hold_gain_usd": 69.81,
+     "hold_largest_drop_pct": -5.55,
+     "largest_drop_pct": -5.39,
+     "session": "TM03-D01-GROK-2026-07",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 5.9,
+      "model_percentile": 0.1
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 10.55,
+      "model_percentile": 0.0
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": null,
+      "median_gain_usd": 54.65,
+      "model_percentile": 0.0,
+      "note": null,
+      "runs": 9
+     },
+     "wakes": 31
+    },
+    "2026-08": {
+     "above_hold": false,
+     "avg_weight": 0.9517,
+     "changes": 2,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.97,
+     "drivers": {
+      "both": {
+       "gain_usd": 228.35,
+       "gain_vs_hold_usd": -15.67,
+       "stretches": 2,
+       "wakes": 17
+      },
+      "opening": {
+       "gain_usd": -1.76,
+       "gain_vs_hold_usd": -3.59,
+       "stretches": 1,
+       "wakes": 14
+      }
+     },
+     "finished": true,
+     "gain_usd": 226.59,
+     "git_commit": "1f933e206768bda9e7cf975b0ae7d6f72393a15c",
+     "hold_gain_usd": 245.33,
+     "hold_largest_drop_pct": -3.23,
+     "largest_drop_pct": -3.23,
+     "session": "TM03-D01-GROK-2026-08",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 5.28,
+      "model_percentile": 33.9
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 14.18,
+      "model_percentile": 53.2
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 3,
+      "median_gain_usd": 237.35,
+      "model_percentile": 0.0,
+      "note": null,
+      "runs": 3
+     },
+     "wakes": 31
+    },
+    "2026-09": {
+     "above_hold": false,
+     "avg_weight": 0.8953,
+     "changes": 3,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 8.51,
+     "drivers": {
+      "both": {
+       "gain_usd": 24.33,
+       "gain_vs_hold_usd": -75.78,
+       "stretches": 3,
+       "wakes": 15
+      },
+      "opening": {
+       "gain_usd": -41.28,
+       "gain_vs_hold_usd": -3.43,
+       "stretches": 1,
+       "wakes": 15
+      }
+     },
+     "finished": true,
+     "gain_usd": -16.95,
+     "git_commit": "9558dd4035199431203ecc689d3a7d7879f2c6ee",
+     "hold_gain_usd": 59.89,
+     "hold_largest_drop_pct": -6.99,
+     "largest_drop_pct": -7.06,
+     "session": "TM03-D01-GROK-2026-09",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 6.49,
+      "model_percentile": 8.6
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 22.22,
+      "model_percentile": 4.9
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 24,
+      "median_gain_usd": 55.06,
+      "model_percentile": 2.9,
+      "note": null,
+      "runs": 4
+     },
+     "wakes": 30
+    },
+    "2026-10": {
+     "finished": false,
+     "session": "TM03-D01-GROK-2026-10",
+     "started": false
+    },
+    "2026-11": {
+     "finished": false,
+     "session": "TM03-D01-GROK-2026-11",
+     "started": false
+    }
+   },
+   "months_counted": [
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09"
+   ],
+   "name": "Grok 4.7",
+   "sum_changes": 19,
+   "sum_costs_usd": 30.37,
+   "sum_gain_usd": 143.26,
+   "sum_hold_usd": 167.81,
+   "sum_shuffle_decisions_not_judged": {
+    "model_percentile": 19.3
+   },
+   "sum_shuffle_not_judged": {
+    "model_percentile": 4.2
+   },
+   "sum_shuffle_runs": {
+    "above_median": false,
+    "above_pass_percentile": false,
+    "distinct_orders": null,
+    "median_gain_usd": 253.24,
+    "model_percentile": 0.1,
+    "note": null
+   },
+   "verdict": "not finished"
+  },
+  "KIMI": {
+   "complete": false,
+   "line1": "not finished",
+   "line2": "not finished",
+   "months": {
+    "2026-04": {
+     "finished": false,
+     "session": "TM03-D01-KIMI-2026-04",
+     "started": false
+    },
+    "2026-05": {
+     "finished": false,
+     "session": "TM03-D01-KIMI-2026-05",
+     "started": false
+    },
+    "2026-06": {
+     "finished": false,
+     "session": "TM03-D01-KIMI-2026-06",
+     "started": true
+    },
+    "2026-07": {
+     "finished": false,
+     "session": "TM03-D01-KIMI-2026-07",
+     "started": true
+    },
+    "2026-08": {
+     "finished": false,
+     "session": "TM03-D01-KIMI-2026-08",
+     "started": true
+    },
+    "2026-09": {
+     "finished": false,
+     "session": "TM03-D01-KIMI-2026-09",
+     "started": true
+    },
+    "2026-10": {
+     "finished": false,
+     "session": "TM03-D01-KIMI-2026-10",
+     "started": false
+    },
+    "2026-11": {
+     "finished": false,
+     "session": "TM03-D01-KIMI-2026-11",
+     "started": false
+    }
+   },
+   "months_counted": [],
+   "name": "Kimi K3",
+   "verdict": "not finished"
+  },
+  "NEON": {
+   "complete": false,
+   "drivers": {
+    "both": {
+     "gain_usd": 199.07,
+     "gain_vs_hold_usd": -62.5,
+     "stretches": 30,
+     "wakes": 107
+    },
+    "opening": {
+     "gain_usd": -90.88,
+     "gain_vs_hold_usd": -13.65,
+     "stretches": 4,
+     "wakes": 33
+    },
+    "price": {
+     "gain_usd": -74.98,
+     "gain_vs_hold_usd": 7.24,
+     "stretches": 4,
+     "wakes": 13
+    }
+   },
+   "line1": "not finished",
+   "line1_so_far": false,
+   "line2": "not finished",
+   "line2_so_far": false,
+   "months": {
+    "2026-04": {
+     "finished": false,
+     "session": "TM03-D01-NEON-2026-04",
+     "started": false
+    },
+    "2026-05": {
+     "finished": false,
+     "session": "TM03-D01-NEON-2026-05",
+     "started": false
+    },
+    "2026-06": {
+     "above_hold": true,
+     "avg_weight": 0.4233,
+     "changes": 10,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 14.0,
+     "drivers": {
+      "both": {
+       "gain_usd": -82.34,
+       "gain_vs_hold_usd": 99.37,
+       "stretches": 9,
+       "wakes": 25
+      },
+      "opening": {
+       "gain_usd": -34.16,
+       "gain_vs_hold_usd": -3.27,
+       "stretches": 1,
+       "wakes": 1
+      },
+      "price": {
+       "gain_usd": 0.76,
+       "gain_vs_hold_usd": -3.05,
+       "stretches": 1,
+       "wakes": 4
+      }
+     },
+     "finished": true,
+     "gain_usd": -115.73,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": -207.22,
+     "hold_largest_drop_pct": -20.72,
+     "largest_drop_pct": -11.57,
+     "session": "TM03-D01-NEON-2026-06",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 14.4,
+      "model_percentile": 44.5
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 37.29,
+      "model_percentile": 62.8
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": null,
+      "median_gain_usd": -102.82,
+      "model_percentile": 39.0,
+      "note": null,
+      "runs": 11
+     },
+     "wakes": 30
+    },
+    "2026-07": {
+     "above_hold": false,
+     "avg_weight": 0.716,
+     "changes": 10,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 12.32,
+     "drivers": {
+      "both": {
+       "gain_usd": 25.84,
+       "gain_vs_hold_usd": -87.94,
+       "stretches": 8,
+       "wakes": 26
+      },
+      "price": {
+       "gain_usd": -28.5,
+       "gain_vs_hold_usd": 10.9,
+       "stretches": 2,
+       "wakes": 5
+      }
+     },
+     "finished": true,
+     "gain_usd": -2.66,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": 69.81,
+     "hold_largest_drop_pct": -5.55,
+     "largest_drop_pct": -5.13,
+     "session": "TM03-D01-NEON-2026-07",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 10.18,
+      "model_percentile": 0.9
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 26.33,
+      "model_percentile": 5.6
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": null,
+      "median_gain_usd": 38.63,
+      "model_percentile": 1.1,
+      "note": null,
+      "runs": 10
+     },
+     "wakes": 31
+    },
+    "2026-08": {
+     "above_hold": false,
+     "avg_weight": 0.9131,
+     "changes": 3,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 8.67,
+     "drivers": {
+      "both": {
+       "gain_usd": 222.06,
+       "gain_vs_hold_usd": -21.94,
+       "stretches": 3,
+       "wakes": 17
+      },
+      "opening": {
+       "gain_usd": -1.76,
+       "gain_vs_hold_usd": -3.59,
+       "stretches": 1,
+       "wakes": 14
+      }
+     },
+     "finished": true,
+     "gain_usd": 220.3,
+     "git_commit": "1f933e206768bda9e7cf975b0ae7d6f72393a15c",
+     "hold_gain_usd": 245.33,
+     "hold_largest_drop_pct": -3.23,
+     "largest_drop_pct": -3.29,
+     "session": "TM03-D01-NEON-2026-08",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 5.99,
+      "model_percentile": 49.1
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 20.21,
+      "model_percentile": 70.7
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 24,
+      "median_gain_usd": 232.75,
+      "model_percentile": 15.1,
+      "note": null,
+      "runs": 4
+     },
+     "wakes": 31
+    },
+    "2026-09": {
+     "above_hold": false,
+     "avg_weight": 0.8506,
+     "changes": 4,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 8.54,
+     "drivers": {
+      "both": {
+       "gain_usd": 52.87,
+       "gain_vs_hold_usd": -35.01,
+       "stretches": 4,
+       "wakes": 20
+      },
+      "opening": {
+       "gain_usd": -29.23,
+       "gain_vs_hold_usd": -3.36,
+       "stretches": 1,
+       "wakes": 10
+      }
+     },
+     "finished": true,
+     "gain_usd": 23.63,
+     "git_commit": "9558dd4035199431203ecc689d3a7d7879f2c6ee",
+     "hold_gain_usd": 59.89,
+     "hold_largest_drop_pct": -6.99,
+     "largest_drop_pct": -6.58,
+     "session": "TM03-D01-NEON-2026-09",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 8.57,
+      "model_percentile": 31.8
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 26.97,
+      "model_percentile": 40.9
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 120,
+      "median_gain_usd": 50.18,
+      "model_percentile": 15.8,
+      "note": null,
+      "runs": 5
+     },
+     "wakes": 30
+    },
+    "2026-10": {
+     "above_hold": false,
+     "avg_weight": 0.643,
+     "changes": 7,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 12.76,
+     "drivers": {
+      "both": {
+       "gain_usd": -19.36,
+       "gain_vs_hold_usd": -16.98,
+       "stretches": 6,
+       "wakes": 19
+      },
+      "opening": {
+       "gain_usd": -25.73,
+       "gain_vs_hold_usd": -3.43,
+       "stretches": 1,
+       "wakes": 8
+      },
+      "price": {
+       "gain_usd": -47.24,
+       "gain_vs_hold_usd": -0.61,
+       "stretches": 1,
+       "wakes": 4
+      }
+     },
+     "finished": true,
+     "gain_usd": -92.33,
+     "git_commit": "9558dd4035199431203ecc689d3a7d7879f2c6ee",
+     "hold_gain_usd": -76.42,
+     "hold_largest_drop_pct": -10.78,
+     "largest_drop_pct": -12.09,
+     "session": "TM03-D01-NEON-2026-10",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 10.82,
+      "model_percentile": 4.1
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 38.53,
+      "model_percentile": 38.2
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": null,
+      "median_gain_usd": -60.13,
+      "model_percentile": 2.8,
+      "note": null,
+      "runs": 8
+     },
+     "wakes": 31
+    },
+    "2026-11": {
+     "finished": false,
+     "session": "TM03-D01-NEON-2026-11",
+     "started": true
+    }
+   },
+   "months_counted": [
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10"
+   ],
+   "name": "Gemini Neon",
+   "sum_changes": 34,
+   "sum_costs_usd": 56.29,
+   "sum_gain_usd": 33.21,
+   "sum_hold_usd": 91.4,
+   "sum_shuffle_decisions_not_judged": {
+    "model_percentile": 21.1
+   },
+   "sum_shuffle_not_judged": {
+    "model_percentile": 42.2
+   },
+   "sum_shuffle_runs": {
+    "above_median": false,
+    "above_pass_percentile": false,
+    "distinct_orders": null,
+    "median_gain_usd": 150.79,
+    "model_percentile": 3.7,
+    "note": null
+   },
+   "verdict": "not finished"
+  },
+  "OPUS": {
+   "complete": false,
+   "drivers": {
+    "both": {
+     "gain_usd": -85.51,
+     "gain_vs_hold_usd": 130.05,
+     "stretches": 19,
+     "wakes": 97
+    },
+    "opening": {
+     "gain_usd": 325.34,
+     "gain_vs_hold_usd": -15.47,
+     "stretches": 4,
+     "wakes": 67
+    },
+    "price": {
+     "gain_usd": -115.88,
+     "gain_vs_hold_usd": 23.94,
+     "stretches": 12,
+     "wakes": 43
+    }
+   },
+   "line1": "not finished",
+   "line1_so_far": true,
+   "line2": "not finished",
+   "line2_so_far": false,
+   "months": {
+    "2026-04": {
+     "above_hold": false,
+     "avg_weight": 1.0,
+     "changes": 0,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 3.49,
+     "drivers": {
+      "opening": {
+       "gain_usd": 114.43,
+       "gain_vs_hold_usd": -3.9,
+       "stretches": 1,
+       "wakes": 30
+      }
+     },
+     "finished": true,
+     "gain_usd": 114.43,
+     "git_commit": "c419d9818cc98bc792be38f29c895207f9a55451",
+     "hold_gain_usd": 114.43,
+     "hold_largest_drop_pct": -4.23,
+     "largest_drop_pct": -4.23,
+     "session": "TM03-D01-OPUS-2026-04",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 3.49,
+      "model_percentile": 0.0
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 3.49,
+      "model_percentile": 0.0
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": null,
+      "distinct_orders": 1,
+      "median_gain_usd": 114.43,
+      "model_percentile": null,
+      "note": "no timing to judge",
+      "runs": 1
+     },
+     "wakes": 30
+    },
+    "2026-05": {
+     "finished": false,
+     "session": "TM03-D01-OPUS-2026-05",
+     "started": true
+    },
+    "2026-06": {
+     "above_hold": true,
+     "avg_weight": 0.4516,
+     "changes": 9,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.25,
+     "drivers": {
+      "both": {
+       "gain_usd": -101.56,
+       "gain_vs_hold_usd": 114.33,
+       "stretches": 6,
+       "wakes": 22
+      },
+      "price": {
+       "gain_usd": -6.33,
+       "gain_vs_hold_usd": -10.69,
+       "stretches": 3,
+       "wakes": 8
+      }
+     },
+     "finished": true,
+     "gain_usd": -107.89,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": -207.22,
+     "hold_largest_drop_pct": -20.72,
+     "largest_drop_pct": -10.79,
+     "session": "TM03-D01-OPUS-2026-06",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 6.44,
+      "model_percentile": 61.7
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 16.22,
+      "model_percentile": 60.7
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": null,
+      "median_gain_usd": -100.75,
+      "model_percentile": 38.6,
+      "note": null,
+      "runs": 9
+     },
+     "wakes": 30
+    },
+    "2026-07": {
+     "above_hold": false,
+     "avg_weight": 0.803,
+     "changes": 4,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 4.23,
+     "drivers": {
+      "both": {
+       "gain_usd": 74.12,
+       "gain_vs_hold_usd": -39.84,
+       "stretches": 3,
+       "wakes": 28
+      },
+      "price": {
+       "gain_usd": -40.58,
+       "gain_vs_hold_usd": -0.81,
+       "stretches": 1,
+       "wakes": 3
+      }
+     },
+     "finished": true,
+     "gain_usd": 33.55,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": 69.81,
+     "hold_largest_drop_pct": -5.55,
+     "largest_drop_pct": -5.3,
+     "session": "TM03-D01-OPUS-2026-07",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 5.05,
+      "model_percentile": 8.2
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 11.14,
+      "model_percentile": 4.2
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 24,
+      "median_gain_usd": 56.04,
+      "model_percentile": 0.0,
+      "note": null,
+      "runs": 4
+     },
+     "wakes": 31
+    },
+    "2026-08": {
+     "above_hold": false,
+     "avg_weight": 0.9806,
+     "changes": 2,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 5.22,
+     "drivers": {
+      "opening": {
+       "gain_usd": 241.61,
+       "gain_vs_hold_usd": -4.57,
+       "stretches": 1,
+       "wakes": 21
+      },
+      "price": {
+       "gain_usd": 0.0,
+       "gain_vs_hold_usd": -3.52,
+       "stretches": 2,
+       "wakes": 10
+      }
+     },
+     "finished": true,
+     "gain_usd": 241.61,
+     "git_commit": "1f933e206768bda9e7cf975b0ae7d6f72393a15c",
+     "hold_gain_usd": 245.33,
+     "hold_largest_drop_pct": -3.23,
+     "largest_drop_pct": -3.23,
+     "session": "TM03-D01-OPUS-2026-08",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 4.37,
+      "model_percentile": 31.7
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 7.93,
+      "model_percentile": 77.1
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 6,
+      "median_gain_usd": 243.04,
+      "model_percentile": 0.0,
+      "note": null,
+      "runs": 3
+     },
+     "wakes": 31
+    },
+    "2026-09": {
+     "above_hold": false,
+     "avg_weight": 0.8666,
+     "changes": 4,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.87,
+     "drivers": {
+      "both": {
+       "gain_usd": 4.93,
+       "gain_vs_hold_usd": -26.35,
+       "stretches": 2,
+       "wakes": 10
+      },
+      "opening": {
+       "gain_usd": -4.97,
+       "gain_vs_hold_usd": -3.57,
+       "stretches": 1,
+       "wakes": 8
+      },
+      "price": {
+       "gain_usd": 14.58,
+       "gain_vs_hold_usd": -19.27,
+       "stretches": 2,
+       "wakes": 12
+      }
+     },
+     "finished": true,
+     "gain_usd": 14.54,
+     "git_commit": "1f933e206768bda9e7cf975b0ae7d6f72393a15c",
+     "hold_gain_usd": 59.89,
+     "hold_largest_drop_pct": -6.99,
+     "largest_drop_pct": -6.19,
+     "session": "TM03-D01-OPUS-2026-09",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 6.22,
+      "model_percentile": 13.8
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 20.86,
+      "model_percentile": 17.2
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 120,
+      "median_gain_usd": 39.21,
+      "model_percentile": 10.0,
+      "note": null,
+      "runs": 5
+     },
+     "wakes": 30
+    },
+    "2026-10": {
+     "above_hold": true,
+     "avg_weight": 0.7549,
+     "changes": 3,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.47,
+     "drivers": {
+      "both": {
+       "gain_usd": -44.86,
+       "gain_vs_hold_usd": 5.42,
+       "stretches": 3,
+       "wakes": 23
+      },
+      "opening": {
+       "gain_usd": -25.73,
+       "gain_vs_hold_usd": -3.43,
+       "stretches": 1,
+       "wakes": 8
+      }
+     },
+     "finished": true,
+     "gain_usd": -70.59,
+     "git_commit": "9558dd4035199431203ecc689d3a7d7879f2c6ee",
+     "hold_gain_usd": -76.42,
+     "hold_largest_drop_pct": -10.78,
+     "largest_drop_pct": -10.07,
+     "session": "TM03-D01-OPUS-2026-10",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 5.53,
+      "model_percentile": 19.9
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 22.71,
+      "model_percentile": 67.5
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 24,
+      "median_gain_usd": -62.81,
+      "model_percentile": 8.2,
+      "note": null,
+      "runs": 4
+     },
+     "wakes": 31
+    },
+    "2026-11": {
+     "above_hold": true,
+     "avg_weight": 0.4226,
+     "changes": 9,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 7.46,
+     "drivers": {
+      "both": {
+       "gain_usd": -18.14,
+       "gain_vs_hold_usd": 76.49,
+       "stretches": 5,
+       "wakes": 14
+      },
+      "price": {
+       "gain_usd": -83.55,
+       "gain_vs_hold_usd": 58.23,
+       "stretches": 4,
+       "wakes": 10
+      }
+     },
+     "finished": true,
+     "gain_usd": -101.69,
+     "git_commit": "e8b0a65108f40d687ae2a43f0c5aaa86ef5ba51f",
+     "hold_gain_usd": -231.1,
+     "hold_largest_drop_pct": -26.88,
+     "largest_drop_pct": -11.74,
+     "session": "TM03-D01-OPUS-2026-11",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 8.48,
+      "model_percentile": 79.5
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 16.8,
+      "model_percentile": 75.9
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": null,
+      "median_gain_usd": -108.23,
+      "model_percentile": 65.2,
+      "note": null,
+      "runs": 9
+     },
+     "wakes": 24
+    }
+   },
+   "months_counted": [
+    "2026-04",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "Claude Opus 5.5",
+   "sum_changes": 31,
+   "sum_costs_usd": 39.98,
+   "sum_gain_usd": 123.95,
+   "sum_hold_usd": -25.28,
+   "sum_shuffle_decisions_not_judged": {
+    "model_percentile": 29.3
+   },
+   "sum_shuffle_not_judged": {
+    "model_percentile": 46.5
+   },
+   "sum_shuffle_runs": {
+    "above_median": false,
+    "above_pass_percentile": false,
+    "distinct_orders": null,
+    "median_gain_usd": 177.56,
+    "model_percentile": 7.9,
+    "note": null
+   },
+   "verdict": "not finished"
+  },
+  "SOL": {
+   "complete": false,
+   "drivers": {
+    "both": {
+     "gain_usd": 36.17,
+     "gain_vs_hold_usd": 135.65,
+     "stretches": 15,
+     "wakes": 81
+    },
+    "opening": {
+     "gain_usd": -16.68,
+     "gain_vs_hold_usd": -20.86,
+     "stretches": 6,
+     "wakes": 39
+    },
+    "price": {
+     "gain_usd": -2.15,
+     "gain_vs_hold_usd": 32.67,
+     "stretches": 13,
+     "wakes": 57
+    }
+   },
+   "line1": "not finished",
+   "line1_so_far": true,
+   "line2": "not finished",
+   "line2_so_far": false,
+   "months": {
+    "2026-04": {
+     "finished": false,
+     "session": "TM03-D01-SOL-2026-04",
+     "started": true
+    },
+    "2026-05": {
+     "finished": false,
+     "session": "TM03-D01-SOL-2026-05",
+     "started": true
+    },
+    "2026-06": {
+     "above_hold": true,
+     "avg_weight": 0.4652,
+     "changes": 7,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 7.14,
+     "drivers": {
+      "both": {
+       "gain_usd": -72.7,
+       "gain_vs_hold_usd": 45.9,
+       "stretches": 4,
+       "wakes": 23
+      },
+      "opening": {
+       "gain_usd": -34.16,
+       "gain_vs_hold_usd": -3.27,
+       "stretches": 1,
+       "wakes": 1
+      },
+      "price": {
+       "gain_usd": -37.2,
+       "gain_vs_hold_usd": 20.16,
+       "stretches": 3,
+       "wakes": 6
+      }
+     },
+     "finished": true,
+     "gain_usd": -144.05,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": -207.22,
+     "hold_largest_drop_pct": -20.72,
+     "largest_drop_pct": -14.41,
+     "session": "TM03-D01-SOL-2026-06",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 7.91,
+      "model_percentile": 25.7
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 15.71,
+      "model_percentile": 3.7
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": null,
+      "median_gain_usd": -114.47,
+      "model_percentile": 5.9,
+      "note": null,
+      "runs": 8
+     },
+     "wakes": 30
+    },
+    "2026-07": {
+     "above_hold": false,
+     "avg_weight": 0.952,
+     "changes": 3,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.28,
+     "drivers": {
+      "both": {
+       "gain_usd": 23.06,
+       "gain_vs_hold_usd": -9.04,
+       "stretches": 1,
+       "wakes": 2
+      },
+      "opening": {
+       "gain_usd": 59.8,
+       "gain_vs_hold_usd": -3.66,
+       "stretches": 1,
+       "wakes": 8
+      },
+      "price": {
+       "gain_usd": -20.02,
+       "gain_vs_hold_usd": 1.82,
+       "stretches": 2,
+       "wakes": 21
+      }
+     },
+     "finished": true,
+     "gain_usd": 62.84,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": 69.81,
+     "hold_largest_drop_pct": -5.55,
+     "largest_drop_pct": -5.31,
+     "session": "TM03-D01-SOL-2026-07",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 5.34,
+      "model_percentile": 63.4
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 12.83,
+      "model_percentile": 69.5
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 24,
+      "median_gain_usd": 56.62,
+      "model_percentile": 62.2,
+      "note": null,
+      "runs": 4
+     },
+     "wakes": 31
+    },
+    "2026-08": {
+     "above_hold": false,
+     "avg_weight": 0.9114,
+     "changes": 4,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.98,
+     "drivers": {
+      "both": {
+       "gain_usd": 11.11,
+       "gain_vs_hold_usd": -12.72,
+       "stretches": 1,
+       "wakes": 3
+      },
+      "opening": {
+       "gain_usd": 6.92,
+       "gain_vs_hold_usd": -3.73,
+       "stretches": 1,
+       "wakes": 11
+      },
+      "price": {
+       "gain_usd": 189.91,
+       "gain_vs_hold_usd": -19.34,
+       "stretches": 3,
+       "wakes": 17
+      }
+     },
+     "finished": true,
+     "gain_usd": 207.94,
+     "git_commit": "1f933e206768bda9e7cf975b0ae7d6f72393a15c",
+     "hold_gain_usd": 245.33,
+     "hold_largest_drop_pct": -3.23,
+     "largest_drop_pct": -3.23,
+     "session": "TM03-D01-SOL-2026-08",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 6.23,
+      "model_percentile": 75.9
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 19.74,
+      "model_percentile": 55.2
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 120,
+      "median_gain_usd": 230.07,
+      "model_percentile": 23.4,
+      "note": null,
+      "runs": 5
+     },
+     "wakes": 31
+    },
+    "2026-09": {
+     "above_hold": false,
+     "avg_weight": 0.9006,
+     "changes": 4,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.85,
+     "drivers": {
+      "both": {
+       "gain_usd": 53.06,
+       "gain_vs_hold_usd": -35.12,
+       "stretches": 4,
+       "wakes": 20
+      },
+      "opening": {
+       "gain_usd": -29.23,
+       "gain_vs_hold_usd": -3.36,
+       "stretches": 1,
+       "wakes": 10
+      }
+     },
+     "finished": true,
+     "gain_usd": 23.83,
+     "git_commit": "9558dd4035199431203ecc689d3a7d7879f2c6ee",
+     "hold_gain_usd": 59.89,
+     "hold_largest_drop_pct": -6.99,
+     "largest_drop_pct": -6.78,
+     "session": "TM03-D01-SOL-2026-09",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 6.19,
+      "model_percentile": 10.6
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 19.15,
+      "model_percentile": 24.7
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 120,
+      "median_gain_usd": 53.52,
+      "model_percentile": 6.9,
+      "note": null,
+      "runs": 5
+     },
+     "wakes": 30
+    },
+    "2026-10": {
+     "above_hold": true,
+     "avg_weight": 0.6909,
+     "changes": 5,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.82,
+     "drivers": {
+      "both": {
+       "gain_usd": 13.67,
+       "gain_vs_hold_usd": -9.99,
+       "stretches": 2,
+       "wakes": 15
+      },
+      "opening": {
+       "gain_usd": -6.79,
+       "gain_vs_hold_usd": -3.3,
+       "stretches": 1,
+       "wakes": 7
+      },
+      "price": {
+       "gain_usd": -67.92,
+       "gain_vs_hold_usd": 24.77,
+       "stretches": 3,
+       "wakes": 9
+      }
+     },
+     "finished": true,
+     "gain_usd": -61.04,
+     "git_commit": "9558dd4035199431203ecc689d3a7d7879f2c6ee",
+     "hold_gain_usd": -76.42,
+     "hold_largest_drop_pct": -10.78,
+     "largest_drop_pct": -9.11,
+     "session": "TM03-D01-SOL-2026-10",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 6.9,
+      "model_percentile": 42.9
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 21.22,
+      "model_percentile": 73.1
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 360,
+      "median_gain_usd": -57.98,
+      "model_percentile": 38.2,
+      "note": null,
+      "runs": 6
+     },
+     "wakes": 31
+    },
+    "2026-11": {
+     "above_hold": true,
+     "avg_weight": 0.3369,
+     "changes": 5,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 8.19,
+     "drivers": {
+      "both": {
+       "gain_usd": 7.97,
+       "gain_vs_hold_usd": 156.62,
+       "stretches": 3,
+       "wakes": 18
+      },
+      "opening": {
+       "gain_usd": -13.22,
+       "gain_vs_hold_usd": -3.54,
+       "stretches": 1,
+       "wakes": 2
+      },
+      "price": {
+       "gain_usd": -66.92,
+       "gain_vs_hold_usd": 5.26,
+       "stretches": 2,
+       "wakes": 4
+      }
+     },
+     "finished": true,
+     "gain_usd": -72.18,
+     "git_commit": "e8b0a65108f40d687ae2a43f0c5aaa86ef5ba51f",
+     "hold_gain_usd": -231.1,
+     "hold_largest_drop_pct": -26.88,
+     "largest_drop_pct": -9.36,
+     "session": "TM03-D01-SOL-2026-11",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 10.04,
+      "model_percentile": 90.7
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 27.23,
+      "model_percentile": 84.1
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 720,
+      "median_gain_usd": -80.68,
+      "model_percentile": 58.1,
+      "note": null,
+      "runs": 6
+     },
+     "wakes": 24
+    }
+   },
+   "months_counted": [
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "GPT-6.2 Sol",
+   "sum_changes": 28,
+   "sum_costs_usd": 42.25,
+   "sum_gain_usd": 17.34,
+   "sum_hold_usd": -139.71,
+   "sum_shuffle_decisions_not_judged": {
+    "model_percentile": 81.8
+   },
+   "sum_shuffle_not_judged": {
+    "model_percentile": 58.4
+   },
+   "sum_shuffle_runs": {
+    "above_median": false,
+    "above_pass_percentile": false,
+    "distinct_orders": null,
+    "median_gain_usd": 82.95,
+    "model_percentile": 11.7,
+    "note": null
+   },
+   "verdict": "not finished"
+  },
+  "SONNET": {
+   "complete": true,
+   "drivers": {
+    "both": {
+     "gain_usd": 210.43,
+     "gain_vs_hold_usd": 199.24,
+     "stretches": 22,
+     "wakes": 123
+    },
+    "opening": {
+     "gain_usd": -57.17,
+     "gain_vs_hold_usd": -24.66,
+     "stretches": 7,
+     "wakes": 92
+    },
+    "price": {
+     "gain_usd": -14.91,
+     "gain_vs_hold_usd": 7.75,
+     "stretches": 3,
+     "wakes": 23
+    }
+   },
+   "line1": true,
+   "line1_so_far": true,
+   "line2": false,
+   "line2_so_far": false,
+   "months": {
+    "2026-04": {
+     "above_hold": false,
+     "avg_weight": 1.0,
+     "changes": 0,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 3.49,
+     "drivers": {
+      "opening": {
+       "gain_usd": 114.43,
+       "gain_vs_hold_usd": -3.9,
+       "stretches": 1,
+       "wakes": 30
+      }
+     },
+     "finished": true,
+     "gain_usd": 114.43,
+     "git_commit": "c419d9818cc98bc792be38f29c895207f9a55451",
+     "hold_gain_usd": 114.43,
+     "hold_largest_drop_pct": -4.23,
+     "largest_drop_pct": -4.23,
+     "session": "TM03-D01-SONNET-2026-04",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 3.49,
+      "model_percentile": 0.0
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 3.49,
+      "model_percentile": 0.0
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": null,
+      "distinct_orders": 1,
+      "median_gain_usd": 114.43,
+      "model_percentile": null,
+      "note": "no timing to judge",
+      "runs": 1
+     },
+     "wakes": 30
+    },
+    "2026-05": {
+     "above_hold": true,
+     "avg_weight": 0.6853,
+     "changes": 3,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.12,
+     "drivers": {
+      "both": {
+       "gain_usd": -37.91,
+       "gain_vs_hold_usd": 33.97,
+       "stretches": 3,
+       "wakes": 16
+      },
+      "opening": {
+       "gain_usd": 32.41,
+       "gain_vs_hold_usd": -3.54,
+       "stretches": 1,
+       "wakes": 15
+      }
+     },
+     "finished": true,
+     "gain_usd": -5.51,
+     "git_commit": "c419d9818cc98bc792be38f29c895207f9a55451",
+     "hold_gain_usd": -39.03,
+     "hold_largest_drop_pct": -10.73,
+     "largest_drop_pct": -7.41,
+     "session": "TM03-D01-SONNET-2026-05",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 6.19,
+      "model_percentile": 95.4
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 39.77,
+      "model_percentile": 98.4
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 24,
+      "median_gain_usd": -48.28,
+      "model_percentile": 88.4,
+      "note": null,
+      "runs": 4
+     },
+     "wakes": 31
+    },
+    "2026-06": {
+     "above_hold": true,
+     "avg_weight": 0.3959,
+     "changes": 5,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 7.18,
+     "drivers": {
+      "both": {
+       "gain_usd": -73.55,
+       "gain_vs_hold_usd": 101.09,
+       "stretches": 4,
+       "wakes": 19
+      },
+      "opening": {
+       "gain_usd": -97.31,
+       "gain_vs_hold_usd": -3.46,
+       "stretches": 1,
+       "wakes": 2
+      },
+      "price": {
+       "gain_usd": 19.41,
+       "gain_vs_hold_usd": -46.72,
+       "stretches": 1,
+       "wakes": 9
+      }
+     },
+     "finished": true,
+     "gain_usd": -151.45,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": -207.22,
+     "hold_largest_drop_pct": -20.72,
+     "largest_drop_pct": -15.15,
+     "session": "TM03-D01-SONNET-2026-06",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 7.25,
+      "model_percentile": 6.6
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 21.96,
+      "model_percentile": 2.9
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 720,
+      "median_gain_usd": -92.94,
+      "model_percentile": 3.4,
+      "note": null,
+      "runs": 6
+     },
+     "wakes": 30
+    },
+    "2026-07": {
+     "above_hold": false,
+     "avg_weight": 0.9841,
+     "changes": 2,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 3.49,
+     "drivers": {
+      "both": {
+       "gain_usd": 57.1,
+       "gain_vs_hold_usd": -16.12,
+       "stretches": 2,
+       "wakes": 31
+      }
+     },
+     "finished": true,
+     "gain_usd": 57.1,
+     "git_commit": "9e970b2af51e7afbb596984ba5433ef3d0187aab",
+     "hold_gain_usd": 69.81,
+     "hold_largest_drop_pct": -5.55,
+     "largest_drop_pct": -5.55,
+     "session": "TM03-D01-SONNET-2026-07",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 3.49,
+      "model_percentile": 0.0
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 7.27,
+      "model_percentile": 6.4
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 2,
+      "median_gain_usd": 73.35,
+      "model_percentile": 0.0,
+      "note": null,
+      "runs": 2
+     },
+     "wakes": 31
+    },
+    "2026-08": {
+     "above_hold": false,
+     "avg_weight": 0.9421,
+     "changes": 4,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.61,
+     "drivers": {
+      "both": {
+       "gain_usd": 259.51,
+       "gain_vs_hold_usd": -13.3,
+       "stretches": 3,
+       "wakes": 13
+      },
+      "opening": {
+       "gain_usd": -1.76,
+       "gain_vs_hold_usd": -3.59,
+       "stretches": 1,
+       "wakes": 14
+      },
+      "price": {
+       "gain_usd": -27.57,
+       "gain_vs_hold_usd": -0.71,
+       "stretches": 1,
+       "wakes": 4
+      }
+     },
+     "finished": true,
+     "gain_usd": 230.18,
+     "git_commit": "1f933e206768bda9e7cf975b0ae7d6f72393a15c",
+     "hold_gain_usd": 245.33,
+     "hold_largest_drop_pct": -3.23,
+     "largest_drop_pct": -3.3,
+     "session": "TM03-D01-SONNET-2026-08",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 4.92,
+      "model_percentile": 42.4
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 12.81,
+      "model_percentile": 75.9
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 60,
+      "median_gain_usd": 237.88,
+      "model_percentile": 23.0,
+      "note": null,
+      "runs": 5
+     },
+     "wakes": 31
+    },
+    "2026-09": {
+     "above_hold": false,
+     "avg_weight": 0.9801,
+     "changes": 2,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 5.5,
+     "drivers": {
+      "both": {
+       "gain_usd": 95.82,
+       "gain_vs_hold_usd": -4.92,
+       "stretches": 2,
+       "wakes": 15
+      },
+      "opening": {
+       "gain_usd": -41.28,
+       "gain_vs_hold_usd": -3.43,
+       "stretches": 1,
+       "wakes": 15
+      }
+     },
+     "finished": true,
+     "gain_usd": 54.55,
+     "git_commit": "9558dd4035199431203ecc689d3a7d7879f2c6ee",
+     "hold_gain_usd": 59.89,
+     "hold_largest_drop_pct": -6.99,
+     "largest_drop_pct": -6.99,
+     "session": "TM03-D01-SONNET-2026-09",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 4.51,
+      "model_percentile": 31.9
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 7.69,
+      "model_percentile": 36.1
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 6,
+      "median_gain_usd": 62.79,
+      "model_percentile": 0.0,
+      "note": null,
+      "runs": 3
+     },
+     "wakes": 30
+    },
+    "2026-10": {
+     "above_hold": true,
+     "avg_weight": 0.6908,
+     "changes": 5,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 7.31,
+     "drivers": {
+      "both": {
+       "gain_usd": -35.16,
+       "gain_vs_hold_usd": 15.3,
+       "stretches": 5,
+       "wakes": 23
+      },
+      "opening": {
+       "gain_usd": -25.73,
+       "gain_vs_hold_usd": -3.43,
+       "stretches": 1,
+       "wakes": 8
+      }
+     },
+     "finished": true,
+     "gain_usd": -60.89,
+     "git_commit": "e8b0a65108f40d687ae2a43f0c5aaa86ef5ba51f",
+     "hold_gain_usd": -76.42,
+     "hold_largest_drop_pct": -10.78,
+     "largest_drop_pct": -9.06,
+     "session": "TM03-D01-SONNET-2026-10",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 7.45,
+      "model_percentile": 22.5
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 27.53,
+      "model_percentile": 80.3
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 360,
+      "median_gain_usd": -60.59,
+      "model_percentile": 48.9,
+      "note": null,
+      "runs": 6
+     },
+     "wakes": 31
+    },
+    "2026-11": {
+     "above_hold": true,
+     "avg_weight": 0.4989,
+     "changes": 4,
+     "config_hash": "ed30cc58d6b79c7a30a767e6331cc7f5e14c06be911a716d2a0d8572728dbf6f",
+     "costs_usd": 6.35,
+     "drivers": {
+      "both": {
+       "gain_usd": -55.38,
+       "gain_vs_hold_usd": 83.22,
+       "stretches": 3,
+       "wakes": 6
+      },
+      "opening": {
+       "gain_usd": -37.93,
+       "gain_vs_hold_usd": -3.31,
+       "stretches": 1,
+       "wakes": 8
+      },
+      "price": {
+       "gain_usd": -6.75,
+       "gain_vs_hold_usd": 55.18,
+       "stretches": 1,
+       "wakes": 10
+      }
+     },
+     "finished": true,
+     "gain_usd": -100.06,
+     "git_commit": "c419d9818cc98bc792be38f29c895207f9a55451",
+     "hold_gain_usd": -231.1,
+     "hold_largest_drop_pct": -26.88,
+     "largest_drop_pct": -13.19,
+     "session": "TM03-D01-SONNET-2026-11",
+     "shuffle_decisions_not_judged": {
+      "median_costs_usd": 7.66,
+      "model_percentile": 90.3
+     },
+     "shuffle_not_judged": {
+      "median_costs_usd": 35.39,
+      "model_percentile": 87.5
+     },
+     "shuffle_runs": {
+      "above_pass_percentile": false,
+      "distinct_orders": 120,
+      "median_gain_usd": -120.71,
+      "model_percentile": 64.9,
+      "note": null,
+      "runs": 5
+     },
+     "wakes": 24
+    }
+   },
+   "months_counted": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11"
+   ],
+   "name": "Claude Sonnet 5.5",
+   "sum_changes": 25,
+   "sum_costs_usd": 46.05,
+   "sum_gain_usd": 138.35,
+   "sum_hold_usd": -64.31,
+   "sum_shuffle_decisions_not_judged": {
+    "model_percentile": 53.1
+   },
+   "sum_shuffle_not_judged": {
+    "model_percentile": 90.4
+   },
+   "sum_shuffle_runs": {
+    "above_median": false,
+    "above_pass_percentile": false,
+    "distinct_orders": null,
+    "median_gain_usd": 156.98,
+    "model_percentile": 39.4,
+    "note": null
+   },
+   "verdict": "passes line 1 only"
+  }
+ },
+ "months": [
+  "2026-04",
+  "2026-05",
+  "2026-06",
+  "2026-07",
+  "2026-08",
+  "2026-09",
+  "2026-10",
+  "2026-11"
+ ],
+ "pass_percentile": 90.0,
+ "plan": "timemachine/PLAN_TM03_bitcoin_dial.md",
+ "sessions": {
+  "finished": 30,
+  "not_started": 10,
+  "planned": 48,
+  "running": 8
+ }
+}

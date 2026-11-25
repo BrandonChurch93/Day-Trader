@@ -87,16 +87,18 @@ A second kind of session. The trader does not pick trades. At each wake it says 
 
 - Code: `weights.py` (the session, the book, the packet), `score_weights.py` (the scorer and the twins), `TRADER_BRIEF_WEIGHTS.md` (the exact text given to the trader).
 - The same server serves both kinds. It opens a weights session when `session.json` has kind `weights`. Pick sessions are unchanged.
-- Make a crypto session that starts fully in bitcoin: `python3 timemachine/weights.py new --trader T01 --model MODEL --method practice/traders/D01_bitcoin_dial.md --market crypto --symbols BTC/USD --from 2026-04-01 --to 2026-04-30 --open '{"BTC/USD": 1}' --wakes daily`
+- Make a crypto session that starts fully in bitcoin: `python3 timemachine/weights.py new --trader T01 --model MODEL --method practice/traders/D01_bitcoin_dial.md --market crypto --symbols BTC/USD --from 2026-04-01 --to 2026-04-30 --open '{"BTC/USD": 1}' --wakes '[{"every": "day", "utc_hours": [0]}]'` (one wake a day at 00:00 UTC, as plan TM03)
 - Make a stock session, weekly, starting in cash, with a basket of 8 and news: `python3 timemachine/weights.py new --trader T02 --model MODEL --method practice/traders/D02_stock_basket.md --market stocks --symbols NVDA,JPM,... --from 2026-06-05 --to 2026-11-20 --wakes weekly --basket-size 8 --news`
-- Other options: `--open cash` (the default), `--wakes` as a JSON list of wake rules, `--benchmark SYMBOL` (default BTC/USD for crypto, SPY for stocks), `--session ID`, `--note TEXT`.
+- `--wakes` takes `pick-hours` (the hours of pick sessions), `weekly`, or a JSON list of wake rules. `daily` is refused because it was easy to read as one wake a day when for crypto it meant two. A crypto session must say which.
+- Other options: `--open cash` (the default), `--benchmark SYMBOL` (default BTC/USD for crypto, SPY for stocks), `--session ID`, `--note TEXT`.
 - Start the server: `TM_PORT=PORT python3 timemachine/server.py`. The trader calls `/next`, `/look`, `/pick` and `/status` with `?session=ID`, as the brief says.
 - Score it: `python3 timemachine/score_weights.py ID` (add `--json` for the full output).
 
 Wakes.
 
-- Crypto daily: at the hours in `tm_crypto_wake_hours_utc`.
-- Stocks daily: at the times in `tm_stock_wake_times_ny` on session days.
+- `pick-hours`, crypto: at the hours in `tm_crypto_wake_hours_utc`.
+- `pick-hours`, stocks: at the times in `tm_stock_wake_times_ny` on session days.
+- One wake a day: `[{"every": "day", "utc_hours": [H]}]`.
 - Weekly: `tm_weights_weekly_weekday` at `tm_weights_weekly_time_ny` New York time. If that day is not a session day, the last session day before it in that week is used.
 - The rules are stored in `session.json` as a list, so a session can have its own.
 - A session may span many months. The wake list is made once, when the session is made.
@@ -128,6 +130,11 @@ Twins, in `score_weights.py`. All run through the same book function, without th
 - Draws are seeded from `tm_weights_twin_seed` and the session id.
 - Sum one model's sessions: `python3 timemachine/score_weights.py --sum ID1 ID2 ...`. It adds the model's gains, adds each twin set's gains draw by draw (draw i of each session), and gives the percentile of the summed model gain.
 - The scorer reads the tape again, checks it gives the prices the session recorded, and checks the replay of the model's answers gives the recorded final value to the cent. It stops if not.
+
+Plan TM03 results.
+
+- `python3 timemachine/score_tm03.py` scores every finished session TM03-D01-<MODEL>-<YYYY-MM> under `$TM_RUNS` with the weights scorer and writes `timemachine/results_tm03.json` and `docs/research/34_time_machine_tm03_bitcoin_dial.md`. `--check` exits 1 if those files are stale.
+- The months and method counts come from `tm03_plan`, the pass percentile from `tm_weights_pass_percentile`. The judged set is `shuffle_runs`. It reads the session folders and changes nothing in them.
 
 MEASURED, scripted answers, temp folders.
 

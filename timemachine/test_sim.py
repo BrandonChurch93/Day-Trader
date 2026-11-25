@@ -1,6 +1,6 @@
 """Checks for the time machine's pretend broker, sessions and server, on a small made-up tape. No network.
 Run: python3 timemachine/test_sim.py"""
-import copy, datetime as dt, json, math, os, shutil, sys, tempfile, threading, urllib.request
+import copy, datetime as dt, json, math, os, random, shutil, sys, tempfile, threading, urllib.request
 from pathlib import Path
 
 TMP = tempfile.mkdtemp(prefix="tm_test_")
@@ -725,6 +725,23 @@ go(s, dict(ans({"BBB": 1.0}, "swap"), driver="news")); scs = SW.score("w_stk_wee
 ok(s.prog["steps"][0]["driver"] == "price" and s.prog["steps"][0]["reasons"] == {"AAA": "added: steady"}, "the driver and the reasons are recorded with the step")
 ok("random_basket" in scs["twins"] and scs["twins"]["random_basket"]["final_gain_pct"]["n"] == 20 and "hold_SPY" in scs["twins"] and "hold_BTC/USD" not in scs["twins"],
    "stock sessions get a random basket twin set and a SPY hold, even when SPY is not on the allowed list")
+# an opening book is bought whole even when its shares are under tm_weights_min_change (hold_equal_weight of a long list from cash)
+mw = json.loads((S.runs_dir() / "w_stk_week" / "session.json").read_text()); rw = json.loads((S.runs_dir() / "w_stk_week" / "result.json").read_text())
+tbw = W.price_table(WT, mw); cfg_big = dict(rw["config"], tm_weights_min_change=0.6); nw_ = len(mw["wakes"])
+bq, rq, fq = W.run_answers(dict(mw, opening={"AAA": 0.5, "BBB": 0.5}), tbw, [None] * nw_, cfg_big)
+ok(len(rq[0]["trades"]) == 2 and not rq[0]["skipped"] and abs(sum(rq[0]["weights_after"].values()) - 1) < 0.01 and bq["spread_usd"] > 0,
+   "an opening book with shares under tm_weights_min_change is still bought whole at the first wake, with costs")
+bq2, rq2, _ = W.run_answers(mw, tbw, [{"AAA": 0.5, "BBB": 0.5}] + [None] * (nw_ - 1), cfg_big)
+ok(not rq2[0]["trades"] and len(rq2[0]["skipped"]) == 2, "an answer the trader gives at the first wake still follows tm_weights_min_change")
+hew = scs["twins"]["hold_equal_weight"]["stats"]
+ok(hew["costs_paid_usd"] > 0 and hew["avg_weight"] > 0.99, "the scorer's equal-weight hold of a session opened in cash buys the list and holds it")
+# the shuffle twins hold only the model's own targets: the same baskets, never a cash week the model did not have
+tsk = [W.norm(x["target"]) for x in rw["steps"]]; kk = lambda xs: sorted(json.dumps(W.norm(x or {}), sort_keys=True) for x in xs)
+sh_ok = True
+for i in range(30):
+    for name, ser in (("shuffle", random.Random(f"shuffle:{rw['config']['tm_weights_twin_seed']}:w_stk_week:{i}").sample(tsk, len(tsk))),):
+        _, rr_, _ = W.run_answers(mw, tbw, ser, rw["config"]); sh_ok &= kk(x["target"] for x in rr_) == kk(tsk) and min(sum(x["weights_after"].values()) for x in rr_) > 0.9
+ok(sh_ok, "the day-by-day shuffle holds the model's own baskets for the same number of wakes, fully invested like the model")
 mt, rs_, held = twin_held("w_stk_week", 30)
 ok(len(rs_) == 2 and all(wcount(h) == wcount(mt) for h in held), "shuffle_runs on stocks: whole baskets, each held for the same number of weeks as the model")
 
@@ -744,6 +761,77 @@ for _ in range(5):
 ok(call("/next?session=w_http")[1]["status"] == "DONE", "after the last wake the server answers DONE")
 srv.shutdown(); srv.server_close(); SV._sessions.clear()
 
+# --wakes words for a weights session: "daily" is refused (for crypto it meant two wakes a day)
+for word, mk in (("daily", "crypto"), ("daily", "stocks"), (None, "crypto"), ("not json", "crypto")):
+    try:
+        W.wake_choice(word, mk); refused = False
+    except SystemExit as e:
+        refused = "--wakes" in str(e)
+    ok(refused, f"--wakes {word!r} for {mk} is refused with a message that names --wakes")
+ok(W.wake_choice("pick-hours", "crypto") == ("daily", None) and W.wake_choice(None, "stocks") == ("weekly", None)
+   and W.wake_choice('[{"every": "day", "utc_hours": [0]}]', "crypto") == ("rules", [{"every": "day", "utc_hours": [0]}]),
+   "--wakes pick-hours, weekly by default for stocks, and a JSON list are taken as said")
+
+# score_tm03: plan TM03's scorer and page, on made-up sessions
+from timemachine import score_tm03 as T3
+ok(T3.flow('{symbol: BTC/USD, months: ["2026-04", "2026-05"], wake_hour_utc: 0, opening_weight: 1.0, x: true}') ==
+   dict(symbol="BTC/USD", months=["2026-04", "2026-05"], wake_hour_utc=0, opening_weight=1.0, x=True), "score_tm03 reads the plan's one-line config value")
+ok(T3.plan_config()["months"] == sorted(T3.plan_config()["months"]) and "wake_hour_utc" in T3.plan_config(), "score_tm03 reads tm03_plan from config/thresholds.yaml")
+ONE = [{"every": "day", "utc_hours": [0]}]
+T3W = {"M1": ("2026-09-01", "2026-09-04"), "M2": ("2026-09-05", "2026-09-08")}
+def t3mk(tag, mo, script):
+    sid_ = T3.sid(tag, mo); a_, b_ = T3W[mo]
+    W.create(sid_, f"D01-{tag}", "script", "practice/traders/D01_bitcoin_dial.md", a_, b_, ["BTC/USD"], tape=WT, opening={"BTC/USD": 1.0}, rules=ONE)
+    ss = W.WSession(sid_, tape=WT)
+    for x in script:
+        go(ss, x)
+    return ss
+dial = lambda v, d="price": dict(ans({"BTC/USD": v}, "dial"), driver=d)
+SCRIPTS = {"OPUS": [dial(0.5), ans(None), dial(1.0, "news"), ans(None)], "SOL": [ans(None), dial(0.2, "both"), ans(None), dial(0.9)],
+           "NEON": [ans(None)] * 4, "SONNET": [dial(0.0, "nothing new"), ans(None), ans(None), dial(1.0)], "KIMI": [dial(0.3)] * 4, "GROK": [ans(None), ans(None), dial(0.6), ans(None)]}
+T3CFG = dict(W.full_config(), tm03_plan=dict(T3.plan_config(), months=["M1", "M2"], symbol="BTC/USD"))
+for tag in SCRIPTS:
+    t3mk(tag, "M1", SCRIPTS[tag])
+t3mk("OPUS", "M2", SCRIPTS["SOL"]); W.create(T3.sid("SOL", "M2"), "D01-SOL", "script", "practice/traders/D01_bitcoin_dial.md", "2026-09-05", "2026-09-08", ["BTC/USD"], tape=WT, opening={"BTC/USD": 1.0}, rules=ONE)
+o3 = T3.build(T3CFG, tape=WT); op = o3["models"]["OPUS"]; so = o3["models"]["SOL"]; ne = o3["models"]["NEON"]
+ok(op["complete"] and not so["complete"] and so["verdict"] == "not finished" and so["line1"] == "not finished" and so["months"]["M2"] == dict(session=T3.sid("SOL", "M2"), finished=False, started=True)
+   and o3["models"]["GROK"]["months"]["M2"]["started"] is False, "score_tm03: a model with a month running or not started is not finished, and its lines say so")
+ok(o3["method"]["verdict"] == "not finished", "score_tm03: no method verdict until every model is finished")
+ok(o3["sessions"] == dict(planned=12, finished=7, running=1, not_started=4) and "Sessions in: 7 of 12 are finished" in T3.doc(o3, T3CFG),
+   "score_tm03: takes the sessions that are finished and says plainly how many of the planned sessions are in")
+sc_a, sc_b = SW.score(T3.sid("OPUS", "M1"), tape=WT), SW.score(T3.sid("OPUS", "M2"), tape=WT); su = SW.sum_results([sc_a, sc_b]); st0 = T3CFG["tm_account_start_usd"]
+ok(abs(op["sum_gain_usd"] - (op["months"]["M1"]["gain_usd"] + op["months"]["M2"]["gain_usd"])) <= 0.011
+   and op["sum_shuffle_runs"]["model_percentile"] == su["sets"]["shuffle_runs"]["model_percentile"] and op["line1"] == (op["sum_gain_usd"] > op["sum_hold_usd"])
+   and op["line2"] == bool(su["sets"]["shuffle_runs"]["model_above_pass_percentile"]), "score_tm03: the summed gain, the summed-draw percentile of shuffle_runs and both lines, from the weights scorer")
+ok(op["months"]["M1"]["gain_usd"] == round(sc_a["model_stats"]["final_value_usd"] - st0, 2) and op["months"]["M1"]["hold_gain_usd"] == round(sc_a["twins"]["hold_BTC/USD"]["stats"]["final_value_usd"] - st0, 2)
+   and op["months"]["M1"]["changes"] == 2 and o3["models"]["SOL"]["months"]["M1"]["changes"] == 2 and ne["months"]["M1"]["changes"] == 0 and o3["models"]["KIMI"]["months"]["M1"]["changes"] == 1,
+   "score_tm03: each month's gain and hold's gain in dollars, and the changes counted from the opening position")
+ok(ne["months"]["M1"]["shuffle_runs"]["note"] == "no timing to judge" and ne["sum_shuffle_runs"]["note"] == "no timing to judge" and ne["months"]["M1"]["gain_usd"] == ne["months"]["M1"]["hold_gain_usd"]
+   and ne["line2_so_far"] is False and ne["line1_so_far"] is False, "score_tm03: a model that never moves equals hold, has no timing to judge, and meets neither line")
+m3 = json.loads((S.runs_dir() / T3.sid("OPUS", "M1") / "session.json").read_text()); r3 = json.loads((S.runs_dir() / T3.sid("OPUS", "M1") / "result.json").read_text())
+st3, ch3 = T3.stretches(m3, r3, r3["config"], WT)
+ok(abs(sum(x["gain_usd"] for x in st3) - (r3["final"]["value_usd"] - st0)) < 1e-9 and [x["driver"] for x in st3] == ["price", "news"] and [x["wakes"] for x in st3] == [2, 2] and ch3 == 2,
+   "score_tm03: the stretches are cut at each change, filed under the driver given with it, and add up to the month's gain")
+st4, _ = T3.stretches(json.loads((S.runs_dir() / T3.sid("SOL", "M1") / "session.json").read_text()), json.loads((S.runs_dir() / T3.sid("SOL", "M1") / "result.json").read_text()), r3["config"], WT)
+ok([(x["driver"], x["wakes"], x["changed"]) for x in st4] == [("opening", 1, False), ("both", 2, True), ("price", 1, True)],
+   "score_tm03: the kept opening position is its own stretch, filed as opening")
+for tag in ("SOL", "NEON", "SONNET", "KIMI", "GROK"):
+    if tag == "SOL":
+        ss = W.WSession(T3.sid("SOL", "M2"), tape=WT)
+        for x in SCRIPTS["OPUS"]:
+            go(ss, x)
+    else:
+        t3mk(tag, "M2", SCRIPTS[tag])
+o4 = T3.build(T3CFG, tape=WT); me4 = o4["method"]
+n1 = sum(1 for m in o4["models"].values() if m["line1"] is True); n2 = sum(1 for m in o4["models"].values() if m["line2"] is True)
+ok(me4["complete"] and me4["models_line1_so_far"] == n1 and me4["models_line2_so_far"] == n2
+   and me4["verdict"] == ("shown" if n1 >= T3CFG["tm03_plan"]["method_min_models_beating_hold"] and n2 >= T3CFG["tm03_plan"]["method_min_models_beating_shuffles"] else "not shown")
+   and all(m["verdict"] != "not finished" for m in o4["models"].values()), "score_tm03: with every month in, each model and the method get a verdict by the plan's counts")
+d4 = T3.doc(o4, T3CFG); d4b = T3.doc(T3.build(T3CFG, tape=WT), T3CFG)
+ok(d4 == d4b and f"Method: {me4['verdict']}." in d4 and "## What would count" in d4 and "## What it does not show" in d4 and "## Files" in d4 and "—" not in d4,
+   "score_tm03: the page is written wholly by the script, the same every time, with the plan's sections")
+nums_doc = set(re.findall(r"-?\$[0-9,]+\.[0-9]{2}", d4)); nums_js = {T3.usd(v) for v in re.findall(r"-?[0-9]+\.[0-9]+", json.dumps(o4)) for v in [float(v)]}
+ok(nums_doc and nums_doc <= nums_js, "score_tm03: every dollar figure on the page is in the results file")
 n_log = len(Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines())
 ok(n_log == log0 + len([d for d in p.iterdir() if (d / "session.json").exists()]), "every session made is one line in the sessions log")
 
