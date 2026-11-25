@@ -64,7 +64,7 @@ def condition(wake, symbol=A, **kw):
     return O.normalize_conditions([item], {symbol:100}, [symbol], wake, wake+7200, 6, 1)
 
 
-def registered_fixture():
+def registered_fixture(spec=None):
     weeks = {}
     for w in S.WEEKS:
         item = dict(fixture=D.digest(w),neutral_id="TM07-scout-"+w)
@@ -76,6 +76,9 @@ def registered_fixture():
             item.update(before=preceding,last=preceding,before_known_on=prior,last_known_on=w,
                         symbols=S.select_five(preceding,preceding))
         weeks[w] = item
+    if spec is not None:
+        w = D.wall(spec["wakes"][0]).date().isoformat()
+        weeks[w]["fixture"] = D.digest(D.json.loads(D.encode(spec)))
     body = dict(version="TM07-v1",runner_id="toy-runner",ledger_ref="toy-no-run",
                 builds={s:{"id":s+"-toy","first_after_cutoff":"2026-07-01"}
                         for s in (*D.BOSSES,"gemini_neon")},weeks=weeks)
@@ -296,6 +299,28 @@ class DeskTest(unittest.TestCase):
             S.paired([reg.attest_score(x) for x in synthetic_scores(reg,boss,draws=1)],boss,"B",registration=reg)
         with self.assertRaisesRegex(ValueError,"sealed"):
             reg.verify_gate(S.EXTENSION[0],boss,"B",[],SEAL_KEY)
+
+    def test_registered_create_checks_full_week_and_records_attempt_once(self):
+        spec = world()
+        cfg = spec["cfg"]
+        cfg["tm_weights_twin_draws"] = 1000
+        symbols = sorted(s+"/USD" for s in S.FIXED[S.SCREEN[0]].split())
+        priced = symbols+[BTC]
+        wakes = list(range(T,T+7*86400,3600))
+        spec.update(symbols=symbols,watch=sorted(S.WATCH),wakes=wakes,end=T+7*86400,runner_id="toy-runner",
+                    evidence=[[] for _ in wakes],vendor_proofs={},params=P.p_params(priced,cfg,funding={}),
+                    minutes=[(t,s,100,101,99,100) for t in wakes for s in priced],end_marks={s:100 for s in priced},
+                    rows=[dict(marks={s:100 for s in priced}) for _ in wakes])
+        reg = registered_fixture(spec)
+        envelope = dict(body=reg.body,seal=D.seal(SEAL_KEY,"registration",reg.body))
+        boss = D.BOSSES[0]
+        settings = dict(approval_key=SEAL_KEY,registration=envelope,model_build=boss+"-toy")
+        D.create_desk(self.root/"TM07-registered",spec,"A",boss,D.issue_role_tokens("A"),**settings)
+        with self.assertRaisesRegex(ValueError,"already recorded"):
+            D.create_desk(self.root/"TM07-repeat",spec,"A",boss,D.issue_role_tokens("A"),**settings)
+        spec["end"] -= 60
+        with self.assertRaisesRegex(ValueError,"registered windows"):
+            D.create_desk(self.root/"TM07-wrong-window",spec,"A",boss,D.issue_role_tokens("A"),**settings)
 
     def test_opus_r2_drift_does_not_allow_an_over_cap_saved_target(self):
         spec = world()
