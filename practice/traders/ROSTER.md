@@ -10,7 +10,7 @@ On 2026-11-25 the owner decided that AI traders make the trading decisions with 
 
 The desk trades only cash-account assets it can buy. It does not place short sales (`AGENTS.md`, "How a trader behaves", item 6). Every card that uses news requires independent confirmation or a primary filing (item 4).
 
-The builder sets the pretend-money settings before the test. Each trader below, with its card, model and settings, is one trial and gets a ledger row before it runs. A changed card, model or setting is a new trial. Dropped traders stay counted (`AGENTS.md`, "Honest testing", items 1 and 2). Real money needs the owner's written go (`AGENTS.md`, "Only the owner").
+The builder sets the pretend-money settings before the test. Each trader below, with its card, model and settings, is one trial and gets a ledger row before it runs. A changed card, model or setting is a new trial. Dropped traders stay counted (`AGENTS.md`, "Honest testing", items 1 and 2). Real money starts when the owner funds an account (`AGENTS.md`, "What comes from the owner").
 
 ## Why the model family matters little
 
@@ -78,7 +78,7 @@ Rules for dropping:
 Rules for keeping:
 
 5. A trader is called "promising" only if, at the end of its trial, the lower end of its confidence range for the gap to its comparator is above zero after correcting for every trader ever started on the desk, dropped ones included (a Bonferroni correction: the 90% level becomes stricter the more traders have been tried). It must also beat its random twin by the same test.
-6. "Promising" means it gets a varied copy, logged as a new trial. It does not mean real money. Real money needs the owner's written go (`AGENTS.md`, "Only the owner").
+6. "Promising" means it gets a varied copy, logged as a new trial. It does not mean real money. Real money starts when the owner funds an account (`AGENTS.md`, "What comes from the owner").
 7. Results are never cut short or extended because they look good or bad. A changed card, model or setting starts a new trial and a new count.
 
 What research expects, said plainly: most traders will be dropped or end inconclusive. That is the honest base rate in `docs/research/25_what_the_evidence_supports.md`.

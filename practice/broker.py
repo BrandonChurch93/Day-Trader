@@ -4,7 +4,7 @@ What it can do is a short fixed list (ALLOWED below, plus the read-only price ad
 account, positions and orders, read prices, and send one order. It has no code to cancel an order, close a position or
 change the account, and it refuses any address that is not on the list, so it cannot reach a real-money address
 (AGENTS.md, "What the order program always does"). It does not follow redirects. The key is read from the environment
-and is never printed or written anywhere (AGENTS.md, "Only the owner"): broker error text is cut down to plain letters and
+and is never printed or written anywhere (AGENTS.md, "What comes from the owner"): broker error text is cut down to plain letters and
 the key is removed from it before anyone sees it. Standard library only."""
 import json, os, re, time, urllib.error, urllib.parse, urllib.request
 

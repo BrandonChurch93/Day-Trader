@@ -54,3 +54,13 @@ Number of trades, win rate, largest drop during a month, fees paid, how many pic
 - The no-web rule is by instruction. A trader could break it. Each trader's lookups are logged by the server, and its report is read for signs of outside knowledge.
 - Six models and five months is 30 sessions. With that many, one model looking good by luck is likely. That is why the twin test is per model and the bar is set before the run.
 - Crypto minutes on this tape are often thin. Real fills could be worse than assumed.
+
+## What changed after the first sessions started, and what did not
+
+Written 2026-11-25 15:22 UTC, after three of the six October sessions had finished. The pass mark, months, card, costs and yardsticks above are unchanged.
+
+- The October sessions were made with the benchmark shown in the packet set to AVAX/USD by mistake (the first pair on the list). The yardstick of this plan is the separate hold of bitcoin, so the scoring is not touched, but all six models saw an AVAX figure in their packets in October. Fixed in `timemachine/session.py` for the other months: a coin session is shown bitcoin.
+- In October a lookup of half-hour bars for a coin came back empty, because the tape holds minutes and days. Models that asked lost a lookup. Fixed for the other months: half-hour and hour bars are built from the minutes, never including a bucket still open.
+- While the October sessions ran, the tape was extended backwards (days to 2024-01-01, minutes to 2026-01-01). Nothing after a session's clock was added, but a model that looked far back late in its session could see more history than one that looked early. The other months all run on the extended tape.
+- Because of these three points October stays what the plan already called it: the shakedown month. It is still counted in the five-month sum, as fixed above.
+

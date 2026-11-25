@@ -420,3 +420,15 @@ tm_skip_idle_ticks:
   status: builder
   note: 1 skips a desk run when the trader holds nothing, has no open order and no pick left to act on, except the first run of each hour and the last run. Results are the same either way (checked in timemachine/test_sim.py). 0 runs every tick.
   source: timemachine/session.py
+
+tm_keyless_news_max_rpm:
+  value: 30
+  status: builder
+  note: Maximum requests per minute when fetching keyless dated crypto news from public WordPress REST endpoints (2 seconds between requests).
+  source: timemachine/record.py
+
+tm_keyless_news_per_page:
+  value: 100
+  status: builder
+  note: Number of articles requested per page from public WordPress REST endpoints (WordPress maximum is 100).
+  source: timemachine/record.py

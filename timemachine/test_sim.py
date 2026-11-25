@@ -349,6 +349,16 @@ ok(o["AAAbuy"]["filled_utc"] == "2026-10-01T14:00:00Z" and o["AAAsell"]["utc"] =
 ok(o["BBBbuy"]["status"] == "rejected" and r["summary"]["traders"][0]["closed_trades"] == 1, "a stock with no minute bars is refused by the pretend broker and shown as refused")
 ok(abs(r["summary"]["traders"][0]["cash_usd"] - r["account"]["cash_usd"]) < 0.005, "stock session: books and account agree to the cent")
 
+# ---- half-hour and hour bars for a coin are built from minutes, and never include a bucket that is still open
+BT = Tape(TMP + "/tape_built.sqlite"); t0 = U(2026, 10, 1, 10)
+BT.add_bars([("BTC/USD", "1Min", t0 + dt.timedelta(minutes=i), 100.0 + i, 101.0 + i, 99.0 + i, 100.5 + i, 1.0) for i in range(150)])
+hb = S.built_bars(BT, "BTC/USD", 3600, U(2026, 10, 1, 9), U(2026, 10, 1, 12, 17), 2000)
+ok([x["t"] for x in hb] == [U(2026, 10, 1, 10), U(2026, 10, 1, 11)], "hour bars: the hour still open at the look time is not returned")
+ok(hb[0]["o"] == 100.0 and hb[0]["h"] == 160.0 and hb[0]["l"] == 99.0 and hb[0]["c"] == 159.5 and hb[0]["v"] == 60.0, "an hour bar is the first open, highest high, lowest low, last close and summed volume of its minutes")
+hb2 = S.built_bars(BT, "BTC/USD", 1800, U(2026, 10, 1, 9), U(2026, 10, 1, 12, 30), 3)
+ok([x["t"] for x in hb2] == [U(2026, 10, 1, 11), U(2026, 10, 1, 11, 30), U(2026, 10, 1, 12)] and hb2[-1]["c"] == 249.5, "half-hour bars: a bucket that ended exactly at the look time is returned, and the limit keeps the newest")
+ok(json.loads((S.create("bm1", "BM", "m", "practice/traders/B01_crypto_swing_price_only.md", "2026-10-01", "2026-10-02", watch=["AVAX/USD", "BTC/USD"], tape=BT) / "session.json").read_text())["benchmark"] == "BTC/USD", "a coin session is measured against bitcoin when bitcoin is on its list")
+
 n_log = len(Path(os.environ["TM_SESSIONS_LOG"]).read_text().splitlines())
 ok(n_log == log0 + len([d for d in p.iterdir() if (d / "session.json").exists()]), "every session made is one line in the sessions log")
 

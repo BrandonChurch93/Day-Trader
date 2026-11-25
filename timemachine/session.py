@@ -129,6 +129,27 @@ def make_wakes(tape, market, start_date, end_date, cfg):
     return sorted(set(out)), end
 
 
+def built_bars(tape, symbol, secs, start, now, limit):
+    """Half-hour or hour bars for a coin, built from the recorded minutes. Only buckets that have ended by `now` are returned,
+    so the newest bar never holds a minute the trader could not have seen. Oldest first, at most `limit`."""
+    end_ts = int(now.timestamp()) // secs * secs                      # the start of the bucket that is still open
+    start_ts = max(int(start.timestamp()) // secs * secs, end_ts - limit * secs)
+    if start_ts >= end_ts:
+        return []
+    mins = tape.bars(symbol, "1Min", dt.datetime.fromtimestamp(start_ts, UTC), dt.datetime.fromtimestamp(end_ts, UTC))
+    out = {}
+    for m in mins:
+        ts = int(m["t"].timestamp()) // secs * secs
+        if ts < start_ts or ts >= end_ts:
+            continue
+        x = out.get(ts)
+        if x is None:
+            out[ts] = dict(t=dt.datetime.fromtimestamp(ts, UTC), o=m["o"], h=m["h"], l=m["l"], c=m["c"], v=m.get("v") or 0.0)
+        else:
+            x["h"] = max(x["h"], m["h"]); x["l"] = min(x["l"], m["l"]); x["c"] = m["c"]; x["v"] += m.get("v") or 0.0
+    return [out[k] for k in sorted(out)][-limit:]
+
+
 def create(session_id, trader_id, model, method_path, start_date, end_date, wakes=None, market="crypto", watch=None, benchmark=None, tape=None, note=None):
     """Makes the session folder and counts the session in SESSIONS.jsonl. Returns the folder."""
     assert re.fullmatch(r"[A-Z0-9-]{2,12}", trader_id), "trader id: 2 to 12 capital letters, digits or dashes"
@@ -145,7 +166,7 @@ def create(session_id, trader_id, model, method_path, start_date, end_date, wake
     assert wl and wl[-1] < end, "no wake falls inside the window"
     if watch is None:
         watch = crypto_symbols(tape, wl[0]) if market == "crypto" else []
-    benchmark = benchmark or ((watch[0] if watch else "BTC/USD") if market == "crypto" else "SPY")
+    benchmark = benchmark or (("BTC/USD" if (not watch or "BTC/USD" in watch) else watch[0]) if market == "crypto" else "SPY")
     mp = Path(method_path.split("#")[0]); mp = mp if mp.is_absolute() else ROOT / mp
     chash = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()
     meta = dict(session=session_id, trader=trader_id, model=model, method=method_path, method_sha256=sha256_file(mp), market=market, window=dict(start=start_date, end=end_date),
@@ -331,14 +352,17 @@ class Session:
         days = min(float(days if days is not None else 5), self.cfg["tm_look_max_days"]); start = self.now - dt.timedelta(days=days)
         syms = [s.strip() for s in (symbols or "").split(",") if s.strip()]
         if what == "bars":
-            assert timeframe in ("1Min", "30Min", "1Day") and symbol, "bars needs symbol and timeframe 1Min, 30Min or 1Day"
+            assert timeframe in ("1Min", "30Min", "1Hour", "1Day") and symbol, "bars needs symbol and timeframe 1Min, 30Min, 1Hour or 1Day"
             if timeframe == "1Min" and "/" not in symbol:
                 d = start.astimezone(NY).date()
                 while d <= self.now.astimezone(NY).date():
                     if self.tape.session(d.isoformat()) and not self.tape.has_minutes(symbol, d.isoformat()):
                         self.tape.ensure_minutes(symbol, d.isoformat())
                     d += dt.timedelta(days=1)
-            rows = self.tape.bars(symbol, timeframe, start, self.now, limit=int(self.cfg["tm_look_max_bars"]))
+            if timeframe in ("30Min", "1Hour") and "/" in symbol:
+                rows = built_bars(self.tape, symbol, 1800 if timeframe == "30Min" else 3600, start, self.now, int(self.cfg["tm_look_max_bars"]))
+            else:
+                rows = self.tape.bars(symbol, "30Min" if timeframe == "1Hour" else timeframe, start, self.now, limit=int(self.cfg["tm_look_max_bars"]))
             data = [dict(b, t=iso(b["t"])) for b in rows]
         elif what == "news":
             data = [{k2: (iso(v) if isinstance(v, dt.datetime) else v) for k2, v in a.items() if k2 != "updated"}  # the edit time may be after now: never shown

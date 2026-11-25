@@ -456,9 +456,78 @@ def test_recorder_fixtures():
         n_nw = R.record_news(t, cli2, "2026-07-02", "2026-07-03")
         ok(n_nw == 2 and len(t.news("2026-07-02T16:00:00Z")) == 2, "record_news paginates and stores articles")
 
-        # 6. crypto (keyless)
-        n_cr = R.record_crypto(t, cli2, ["BTC/USD"], "2026-07-02", "2026-07-02")
-        ok(n_cr == 2, f"record_crypto stores 1Day and 1Min bars (got {n_cr})")
+        # 6. crypto (keyless) + --tf filter
+        n_cr = R.record_crypto(t, cli2, ["BTC/USD"], "2026-07-02", "2026-07-02", tf="1Day")
+        ok(n_cr == 1, f"record_crypto tf=1Day stores only 1Day bar (got {n_cr})")
+        n_cr2 = R.record_crypto(t, cli2, ["BTC/USD"], "2026-07-02", "2026-07-02", tf="1Min")
+        ok(n_cr2 == 1, f"record_crypto tf=1Min stores only 1Min bar (got {n_cr2})")
+
+        # 7. crypto-news (keyless WordPress REST)
+        wp_pages = [
+            [
+                {
+                    "id": 1,
+                    "date_gmt": "2026-07-02T14:00:00",
+                    "modified_gmt": "2026-07-02T12:00:00",  # scheduled before publish -> NOT edited_later
+                    "link": "https://cryptoslate.com/btc-sol-rally/",
+                    "title": {"rendered": "Bitcoin &amp; Solana Lead Market"},
+                    "excerpt": {"rendered": "<p>BTC and SOL rose in early trading.</p>"},
+                },
+                {
+                    "id": 2,
+                    "date_gmt": "2026-07-02T14:30:00",
+                    "modified_gmt": "2026-07-02T18:00:00",  # edited AFTER publish -> edited_later=True
+                    "link": "https://cryptoslate.com/link-update/",
+                    "title": {"rendered": "Chainlink Expands Oracle Network"},
+                    "excerpt": {"rendered": "<p>LINK adoption grows across DeFi.</p>"},
+                },
+                {
+                    "id": 3,
+                    "date_gmt": "2026-07-02T14:45:00",
+                    "modified_gmt": "2026-07-02T14:45:00",
+                    "link": "https://cryptoslate.com/off-topic/",
+                    "title": {"rendered": "Follow this link for weather"},
+                    "excerpt": {"rendered": "<p>Sunny skies ahead.</p>"},  # lowercase 'link', no crypto terms -> skipped!
+                },
+            ],
+            [
+                {
+                    "id": 4,
+                    "date_gmt": "2026-07-02T15:00:00",
+                    "modified_gmt": "2026-07-02T15:00:00",
+                    "link": "https://cryptoslate.com/sec-etf-news/",
+                    "title": {"rendered": "SEC Reviews New Crypto ETF"},
+                    "excerpt": {"rendered": "<p>Regulators examine digital asset filings.</p>"},
+                },
+            ],
+        ]
+
+        def fake_wp(url):
+            u = urllib.parse.urlparse(url)
+            q = urllib.parse.parse_qs(u.query)
+            pg = int(q.get("page", ["1"])[0])
+            return 200, json.dumps(wp_pages[pg - 1]), {"X-WP-TotalPages": str(len(wp_pages))}
+
+        cli_wp = R.Client(max_rpm=30, http_get=fake_wp, sleep_fn=lambda _: None, now_fn=lambda: 0.0)
+        n_cn = R.record_crypto_news(t, cli_wp, "2026-07-02", "2026-07-02", cfg, sources=["cryptoslate"])
+        ok(n_cn == 3, f"record_crypto_news stores 3 relevant articles and skips off-topic (got {n_cn})")
+        # Resume skips completed chunk
+        reqs_before = cli_wp.requests_made
+        R.record_crypto_news(t, cli_wp, "2026-07-02", "2026-07-02", cfg, sources=["cryptoslate"])
+        ok(cli_wp.requests_made == reqs_before, "record_crypto_news resumes without re-fetching completed chunk")
+
+        # Strict as-of check at 14:40Z: sees #1 (BTC/USD, SOL/USD) and #2 (LINK/USD, edited_later=True), NOT #4 (15:00Z)!
+        nw_asof = t.news("2026-07-02T14:40:00Z", symbols=["BTC/USD", "LINK/USD", "CRYPTO"])
+        cs_items = [a for a in nw_asof if a["source"] == "cryptoslate"]
+        ok(len(cs_items) == 2, f"keyless crypto-news as-of 14:40Z hides 15:00Z article (got {len(cs_items)})")
+        by_url = {a["url"]: a for a in cs_items}
+        ok("edited_later" not in by_url["https://cryptoslate.com/btc-sol-rally/"], "scheduled post (modified <= date) not marked edited_later")
+        ok(by_url["https://cryptoslate.com/btc-sol-rally/"]["headline"] == "Bitcoin & Solana Lead Market", "HTML entities unescaped in headline")
+        ok(by_url["https://cryptoslate.com/link-update/"].get("edited_later") is True, "post modified after publish marked edited_later")
+        # SimData clamps updated_at <= now on edited keyless news
+        sim_cn = SimData(t, lambda: _iso("2026-07-02T14:40:00Z"))
+        raw_cn = sim_cn.get(M.DATA, "/v1beta1/news", {"symbols": "LINK/USD"})
+        ok(len(raw_cn["news"]) == 1 and raw_cn["news"][0]["updated_at"] == "2026-07-02T14:30:00Z", "SimData clamps future modified_gmt to created_at")
         t.close()
 
 

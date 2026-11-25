@@ -2,7 +2,7 @@
 
 The work list for the builder and its helpers. Take the top item that is not blocked, write its ledger row (`research_rig/TRIAL_LEDGER.md`), run it, put the result in `docs/STATUS.md`, then move the item to "Done" with one line saying what happened. Add new ideas at the bottom of "Ideas" with where the idea came from. Anyone may add an idea. Nothing here needs the owner's yes.
 
-Last changed: 2026-11-25 15:16 UTC
+Last changed: 2026-11-25 15:22 UTC
 
 ## Running now
 
@@ -12,12 +12,14 @@ Last changed: 2026-11-25 15:16 UTC
 | 2 | Replay 07: eight day trading rules on SPY and QQQ one-minute prices | `research_rig/PREREG_07_intraday_spy_qqq.md` | 2026-11-25 |
 | 3 | Replay 09: seven crypto methods not tried before, at Alpaca's fees | `research_rig/PREREG_09_crypto_methods.md` | 2026-11-25 |
 | 4 | Tape: crypto prices further back, and a source of dated headlines that needs no key | none, tooling | 2026-11-25 |
+| 4b | Order-book cost samples on Kraken and Binance.US, one full day. The sampler stops by itself at about 16:30 UTC. Then: `cd research_rig && python3 books_summary.py && python3 build_doc24.py`, `python3 tools/status_table.py --write`, commit, `python3 provenance.py --record --with-books`, commit | `docs/research/24_order_book_costs.md` | 2026-11-25 |
 
 ## Next, in order
 
 | # | What | Needs | Blocked by |
 |---|---|---|---|
 | 5 | Crypto traders that read dated headlines as well as prices (`practice/traders/A08_crypto_news.md` and a news version of card B01), against the price-only traders of item 1 | headlines on the tape | item 4 |
+| 5b | A "why" record for every replay trade: what the trader looked at before it (which bars, which headlines), its stated reason, and how the trade ended, gathered into one table per session so wins and losses can be traced to a cause. The owner asked for this on 2026-11-25 | lookups log and picks, both already kept by the time machine | nothing |
 | 6 | Measure each model's knowledge line with dated questions, so replays only use days after it | nothing | nothing |
 | 7 | Buy bitcoin or ether when the cost of holding futures has been sharply negative for a day, sell when it turns positive. A fixed rule on one year of free Kraken futures history | Kraken futures funding history | nothing |
 | 8 | Start the practice desk with the two fixed rules and the first AI traders | practice account key in the repo's secrets | the owner's key |

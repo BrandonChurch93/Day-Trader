@@ -25,7 +25,9 @@ This is the exact text given to an AI trader for a replay. Pretend money only. N
 - Bars: `curl -s 'http://127.0.0.1:PORT/look?session=SESSION&what=bars&symbol=BTC/USD&timeframe=1Day&days=DAYS'`
 - News: `curl -s 'http://127.0.0.1:PORT/look?session=SESSION&what=news&symbols=BTC/USD,ETH/USD'`
 - Price now: `curl -s 'http://127.0.0.1:PORT/look?session=SESSION&what=price&symbols=BTC/USD'`
+- Timeframes: `1Min`, `30Min`, `1Hour`, `1Day`. For coins, half-hour and hour bars are built from the minutes and stop at the last bucket that has ended.
 - Every lookup only shows what was known at the packet time. Every lookup is logged.
+- Numbers named `gain_pct` and `hold_gain_pct` are fractions: -0.05 means down 5 percent.
 - How far back you can look is capped by `tm_look_max_bars` and `tm_look_max_days`.
 
 ## The pick format

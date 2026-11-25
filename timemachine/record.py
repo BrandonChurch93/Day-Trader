@@ -10,11 +10,12 @@ Commands:
   daily     --from D --to D
   universe  --from D --to D
   halfhours --from D --to D
-  minutes   --symbols A,B --from D --to D
-  news      --from D --to D
-  crypto    --symbols BTC/USD,ETH/USD --from D --to D
+  minutes     --symbols A,B --from D --to D
+  news        --from D --to D
+  crypto      --symbols BTC/USD,ETH/USD --from D --to D [--tf both|1Day|1Min]
+  crypto-news --from D --to D [--sources cryptoslate,cryptopotato,newsbtc]
 """
-import argparse, datetime as dt, json, re, statistics, sys, time
+import argparse, datetime as dt, hashlib, html, json, re, statistics, sys, time
 import urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
@@ -26,6 +27,13 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent.parent
 DATA = "https://data.alpaca.markets"
 NASDAQ_URL = "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqtraded.txt"
+USER_AGENT = "Day-Trader research modernsoftworks@gmail.com"
+
+KEYLESS_CRYPTO_NEWS_SOURCES = {
+    "cryptoslate": "https://cryptoslate.com/wp-json/wp/v2/posts",
+    "cryptopotato": "https://cryptopotato.com/wp-json/wp/v2/posts",
+    "newsbtc": "https://www.newsbtc.com/wp-json/wp/v2/posts",
+}
 
 TM_KEYS = [
     "tm_daily_lookback_days",
@@ -34,6 +42,8 @@ TM_KEYS = [
     "tm_universe_lookback_days",
     "tm_record_max_rpm",
     "tm_record_batch_size",
+    "tm_keyless_news_max_rpm",
+    "tm_keyless_news_per_page",
 ]
 
 
@@ -63,7 +73,7 @@ class HttpError(Exception):
 
 
 def default_http_get(url, timeout=30):
-    req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "timemachine-recorder/1.0"}, method="GET")
+    req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": USER_AGENT}, method="GET")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.status, resp.read().decode("utf-8", errors="replace"), dict(resp.headers)
@@ -95,13 +105,13 @@ class Client:
                 self.sleep_fn(gap)
         self._last_req = self.now_fn()
 
-    def get_text(self, url):
+    def get_text_with_headers(self, url):
         for attempt in range(self.max_retries + 1):
             self._pace()
             self.requests_made += 1
             try:
-                status, body, _ = self.http_get(url)
-                return body
+                status, body, headers = self.http_get(url)
+                return body, headers
             except HttpError as e:
                 if e.code == 429 or 500 <= e.code < 600:
                     if attempt >= self.max_retries:
@@ -114,10 +124,19 @@ class Client:
                 raise
         raise RuntimeError("unreachable")
 
-    def get_json(self, base, path, params=None):
+    def get_text(self, url):
+        body, _ = self.get_text_with_headers(url)
+        return body
+
+    def get_json_with_headers(self, base, path, params=None):
         q = urllib.parse.urlencode({k: v for k, v in (params or {}).items() if v is not None})
         url = f"{base}{path}" + (f"?{q}" if q else "")
-        return json.loads(self.get_text(url))
+        body, headers = self.get_text_with_headers(url)
+        return json.loads(body), headers
+
+    def get_json(self, base, path, params=None):
+        data, _ = self.get_json_with_headers(base, path, params)
+        return data
 
 
 def _parse_date(s):
@@ -408,39 +427,178 @@ def record_news(tape, client, start_d, end_d):
     return total_articles
 
 
-def record_crypto(tape, client, symbols, start_d, end_d):
-    """Record 1Day and 1Min crypto bars (keyless)."""
+def record_crypto(tape, client, symbols, start_d, end_d, tf="both"):
+    """Record 1Day and/or 1Min crypto bars (keyless)."""
     sd, ed = _parse_date(start_d), _parse_date(end_d)
     total_bars = 0
 
-    # 1Day bars across full range (one request per symbol batch)
-    day_key = f"crypto_1Day:{sd.isoformat()}:{ed.isoformat()}:{','.join(symbols)}"
-    if not tape.get_meta(day_key):
-        bars_by_sym = _fetch_crypto_bars_paged(
-            client, symbols, "1Day", f"{sd.isoformat()}T00:00:00Z", f"{ed.isoformat()}T23:59:59Z"
-        )
-        n = tape.add_bars(_rows_from_bars_dict(bars_by_sym, "1Day"))
-        total_bars += n
-        tape.set_meta(day_key, str(n))
-        print(f"[crypto 1Day] {sd}..{ed} ({len(symbols)} pairs): +{n} bars", flush=True)
-    else:
-        print(f"[crypto 1Day] skip completed {sd}..{ed}", flush=True)
-
-    # 1Min bars in 7-day chunks per batch of up to 5 pairs (keeps pages small & resumable)
-    for c_start, c_end in _date_chunks(sd, ed, 7):
-        start_iso = f"{c_start.isoformat()}T00:00:00Z"
-        end_iso = f"{c_end.isoformat()}T23:59:59Z"
-        for i in range(0, len(symbols), 5):
-            batch = symbols[i : i + 5]
-            meta_key = f"crypto_1Min:{c_start.isoformat()}:{c_end.isoformat()}:{','.join(batch)}"
-            if tape.get_meta(meta_key):
-                continue
-            bars_by_sym = _fetch_crypto_bars_paged(client, batch, "1Min", start_iso, end_iso)
-            n = tape.add_bars(_rows_from_bars_dict(bars_by_sym, "1Min"))
+    if tf in ("both", "1Day"):
+        # 1Day bars across full range (one request per symbol batch)
+        day_key = f"crypto_1Day:{sd.isoformat()}:{ed.isoformat()}:{','.join(symbols)}"
+        if not tape.get_meta(day_key):
+            bars_by_sym = _fetch_crypto_bars_paged(
+                client, symbols, "1Day", f"{sd.isoformat()}T00:00:00Z", f"{ed.isoformat()}T23:59:59Z"
+            )
+            n = tape.add_bars(_rows_from_bars_dict(bars_by_sym, "1Day"))
             total_bars += n
-            tape.set_meta(meta_key, str(n))
-            print(f"[crypto 1Min] {c_start}..{c_end} {','.join(batch)}: +{n} bars", flush=True)
+            tape.set_meta(day_key, str(n))
+            print(f"[crypto 1Day] {sd}..{ed} ({len(symbols)} pairs): +{n} bars", flush=True)
+        else:
+            print(f"[crypto 1Day] skip completed {sd}..{ed}", flush=True)
+
+    if tf in ("both", "1Min"):
+        # 1Min bars in 7-day chunks per batch of up to 5 pairs (keeps pages small & resumable)
+        for c_start, c_end in _date_chunks(sd, ed, 7):
+            start_iso = f"{c_start.isoformat()}T00:00:00Z"
+            end_iso = f"{c_end.isoformat()}T23:59:59Z"
+            for i in range(0, len(symbols), 5):
+                batch = symbols[i : i + 5]
+                meta_key = f"crypto_1Min:{c_start.isoformat()}:{c_end.isoformat()}:{','.join(batch)}"
+                if tape.get_meta(meta_key):
+                    continue
+                bars_by_sym = _fetch_crypto_bars_paged(client, batch, "1Min", start_iso, end_iso)
+                n = tape.add_bars(_rows_from_bars_dict(bars_by_sym, "1Min"))
+                total_bars += n
+                tape.set_meta(meta_key, str(n))
+                print(f"[crypto 1Min] {c_start}..{c_end} {','.join(batch)}: +{n} bars", flush=True)
     return total_bars
+
+
+_TAG_RE = re.compile(r"<[^>]+>")
+_SPACE_RE = re.compile(r"\s+")
+_CRYPTO_PATTERNS = [
+    ("BTC/USD", re.compile(r"\b(bitcoin|btc)\b", re.I)),
+    ("ETH/USD", re.compile(r"\b(ethereum|ether|eth)\b", re.I)),
+    ("SOL/USD", re.compile(r"\b(solana|sol)\b", re.I)),
+    ("XRP/USD", re.compile(r"\b(xrp|ripple)\b", re.I)),
+    ("DOGE/USD", re.compile(r"\b(dogecoin|doge)\b", re.I)),
+    ("AVAX/USD", re.compile(r"\b(avalanche|avax)\b", re.I)),
+    ("LINK/USD", re.compile(r"\bchainlink\b", re.I)),
+    ("LTC/USD", re.compile(r"\b(litecoin|ltc)\b", re.I)),
+]
+_LINK_TICKER_RE = re.compile(r"\bLINK\b")
+_GENERAL_CRYPTO_RE = re.compile(
+    r"\b(crypto|cryptocurrency|cryptocurrencies|altcoin|altcoins|defi|stablecoin|stablecoins|"
+    r"blockchain|web3|memecoin|memecoins|binance|coinbase|kraken|sec|etf|etfs|fomc|fed|"
+    r"digital asset|digital assets|crypto market)\b",
+    re.I,
+)
+
+
+def _clean_html(text):
+    if not text:
+        return ""
+    s = html.unescape(_TAG_RE.sub(" ", str(text)))
+    return _SPACE_RE.sub(" ", s).strip()
+
+
+def _match_crypto_symbols(headline, summary):
+    blob = f"{headline} {summary}"
+    syms = []
+    for sym, pat in _CRYPTO_PATTERNS:
+        if pat.search(blob):
+            syms.append(sym)
+    if "LINK/USD" not in syms and _LINK_TICKER_RE.search(blob):
+        syms.append("LINK/USD")
+    if syms:
+        return syms
+    if _GENERAL_CRYPTO_RE.search(blob):
+        return ["CRYPTO"]
+    return []
+
+
+def _keyless_news_id(source, url):
+    digest = hashlib.sha256(f"{source}:{url}".encode("utf-8")).digest()
+    return (1 << 60) | (int.from_bytes(digest[:8], "big") & ((1 << 60) - 1))
+
+
+def _ensure_utc_iso(s):
+    if not s:
+        return None
+    s = str(s).strip()
+    if s.endswith("Z") or re.search(r"[+-]\d{2}:\d{2}$", s):
+        return s
+    return s + "Z"
+
+
+def record_crypto_news(tape, client, start_d, end_d, cfg, sources=None):
+    """Record keyless dated crypto headlines from public WordPress REST endpoints."""
+    sd, ed = _parse_date(start_d), _parse_date(end_d)
+    per_page = int(cfg["tm_keyless_news_per_page"])
+    chosen = list(sources) if sources else list(KEYLESS_CRYPTO_NEWS_SOURCES.keys())
+    unknown = [s for s in chosen if s not in KEYLESS_CRYPTO_NEWS_SOURCES]
+    if unknown:
+        raise ValueError(f"unknown keyless crypto news sources: {unknown}")
+
+    total_articles = 0
+    for src in chosen:
+        endpoint = KEYLESS_CRYPTO_NEWS_SOURCES[src]
+        for c_start, c_end in _date_chunks(sd, ed, 14):
+            meta_key = f"crypto_news_done:{src}:{c_start.isoformat()}:{c_end.isoformat()}"
+            if tape.get_meta(meta_key):
+                print(f"[crypto-news:{src}] skip completed chunk {c_start}..{c_end}", flush=True)
+                continue
+            after_iso = f"{c_start.isoformat()}T00:00:00Z"
+            before_iso = f"{c_end.isoformat()}T23:59:59Z"
+            page = 1
+            chunk_articles = []
+            while True:
+                params = {
+                    "after": after_iso,
+                    "before": before_iso,
+                    "per_page": per_page,
+                    "page": page,
+                    "orderby": "date",
+                    "order": "asc",
+                    "_fields": "id,date_gmt,modified_gmt,link,title,excerpt",
+                }
+                try:
+                    posts, headers = client.get_json_with_headers(endpoint, "", params)
+                except HttpError as e:
+                    if e.code == 400 and "rest_post_invalid_page_number" in e.body:
+                        break
+                    raise
+                if not isinstance(posts, list) or not posts:
+                    break
+                for p in posts:
+                    created_iso = _ensure_utc_iso(p.get("date_gmt"))
+                    if not created_iso:
+                        continue
+                    mod_iso = _ensure_utc_iso(p.get("modified_gmt")) or created_iso
+                    c_ep, m_ep = to_epoch(created_iso), to_epoch(mod_iso)
+                    # Scheduled posts often have modified_gmt <= date_gmt; only mark edited_later when modified > published
+                    upd_iso = mod_iso if m_ep > c_ep else created_iso
+                    headline = _clean_html((p.get("title") or {}).get("rendered"))
+                    summary = _clean_html((p.get("excerpt") or {}).get("rendered"))
+                    url = str(p.get("link") or "").strip()
+                    if not headline or not url:
+                        continue
+                    syms = _match_crypto_symbols(headline, summary)
+                    if not syms:
+                        continue
+                    chunk_articles.append({
+                        "id": _keyless_news_id(src, url),
+                        "created_at": created_iso,
+                        "updated_at": upd_iso,
+                        "headline": headline,
+                        "summary": summary[:600],
+                        "source": src,
+                        "url": url,
+                        "symbols": syms,
+                    })
+                total_pages_hdr = headers.get("X-WP-TotalPages") or headers.get("x-wp-totalpages")
+                if total_pages_hdr and str(total_pages_hdr).isdigit():
+                    if page >= int(total_pages_hdr):
+                        break
+                elif len(posts) < per_page:
+                    break
+                page += 1
+
+            n = tape.add_news(chunk_articles) if chunk_articles else 0
+            total_articles += n
+            tape.set_meta(meta_key, str(n))
+            print(f"[crypto-news:{src}] {c_start}..{c_end}: +{n} articles", flush=True)
+    return total_articles
 
 
 def main(argv=None):
@@ -453,16 +611,24 @@ def main(argv=None):
         p.add_argument("--from", dest="start", required=True)
         p.add_argument("--to", dest="end", required=True)
 
+    p_cn = sub.add_parser("crypto-news")
+    p_cn.add_argument("--from", dest="start", required=True)
+    p_cn.add_argument("--to", dest="end", required=True)
+    p_cn.add_argument("--sources", default=",".join(KEYLESS_CRYPTO_NEWS_SOURCES.keys()), help="Comma-separated keyless sources")
+
     for name in ("minutes", "crypto"):
         p = sub.add_parser(name)
         p.add_argument("--symbols", required=True, help="Comma-separated symbols")
         p.add_argument("--from", dest="start", required=True)
         p.add_argument("--to", dest="end", required=True)
+        if name == "crypto":
+            p.add_argument("--tf", choices=("both", "1Day", "1Min"), default="both")
 
     args = ap.parse_args(argv)
     cfg = config()
     tape = Tape(args.db)
-    client = Client(max_rpm=cfg["tm_record_max_rpm"])
+    rpm = cfg["tm_keyless_news_max_rpm"] if args.cmd == "crypto-news" else cfg["tm_record_max_rpm"]
+    client = Client(max_rpm=rpm)
 
     try:
         if args.cmd == "sessions":
@@ -480,7 +646,10 @@ def main(argv=None):
             record_news(tape, client, args.start, args.end)
         elif args.cmd == "crypto":
             syms = [s.strip() for s in args.symbols.split(",") if s.strip()]
-            record_crypto(tape, client, syms, args.start, args.end)
+            record_crypto(tape, client, syms, args.start, args.end, tf=args.tf)
+        elif args.cmd == "crypto-news":
+            srcs = [s.strip() for s in args.sources.split(",") if s.strip()]
+            record_crypto_news(tape, client, args.start, args.end, cfg, sources=srcs)
     finally:
         tape.close()
 

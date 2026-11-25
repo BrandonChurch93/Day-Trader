@@ -25,9 +25,9 @@ Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEU
 | Do anything at all | `AGENTS.md`, then `docs/STATUS.md` and `docs/QUEUE.md` |
 | Understand a term, a test name or a rule name | `docs/GLOSSARY.md` |
 | Work on the practice trader, or read what it did | `practice/README.md`, then `practice/PLAN_02_ai_desk.md` |
-| Talk to the owner or hand work to him | `AGENTS.md`, "Writing to the owner" and "Only the owner" |
+| Talk to the owner or hand work to him | `AGENTS.md`, "Writing to the owner" and "What comes from the owner" |
 | Plan, build or review anything | `AGENTS.md`, "How the work goes", and `docs/QUEUE.md` |
-| Use or change a number | `config/thresholds.yaml` and `AGENTS.md`, "Honest testing" and "Only the owner" |
+| Use or change a number | `config/thresholds.yaml` and `AGENTS.md`, "Honest testing" and "What comes from the owner" |
 | Confirm a stored result or plan a new attempt | `research_rig/README.md`, "How each stored output was made", and `AGENTS.md`, "Honest testing". Check stored output with `python3 tools/check_repo.py --builders` |
 | Add a new test on past prices | `research_rig/README.md`, then `research_rig/TRIAL_LEDGER.md`. `docs/research/16_rig_audit.md` for what the audits changed in the rig |
 | Judge whether a trading idea is worth testing | `docs/research/25_what_the_evidence_supports.md`, then the playbook page for that market |
@@ -154,6 +154,9 @@ Working papers.
 | `research_rig/PREREG_07_intraday_spy_qqq.md` | Frozen plan for replay 07, day trading rules on SPY and QQQ one-minute bars. Ledger rows 56 to 71 | CURRENT |
 | `research_rig/PREREG_08_insider_buying_DRAFT.md` | Plan for a test of buying after insiders buy. Runs nothing. Waits on decision 11, decisions 1a and 1b, prices that include dead stocks, and the owner's yes to reading SEC filing lists | DRAFT |
 | `research_rig/PREREG_09_crypto_methods.md` | Frozen plan for new long-only crypto rules at Alpaca cost | CURRENT |
+| `research_rig/run_09.py`, `research_rig/fixtures_09.py` | Replay engine and synthetic timing, fees, gaps and matching checks for replay 09 | CURRENT |
+| `research_rig/fetch_09_alpaca.py` | Public Alpaca USD bar downloader; raw bars live on the research machine | CURRENT |
+| `research_rig/build_doc28.py` | Writes the replay 09 report from stored results, without replaying any price | CURRENT |
 | `research_rig/run_v2.py`, `research_rig/compare_v1_v2.py`, `research_rig/noise_pbo.py`, `research_rig/build_doc16.py`, `research_rig/results_v2.json`, `research_rig/compare_v1_v2.json`, `research_rig/noise_pbo.json`, `research_rig/venue_price_gap.json` | The rerun after the audits and its outputs | CURRENT |
 | `research_rig/run_04.py`, `research_rig/results_04.json`, `research_rig/build_doc23.py`, `research_rig/NOTES_04_builder.md` | Replay 04 | CURRENT |
 | `research_rig/run_05.py`, `research_rig/AMENDMENT_05_I2_equal_thirds.md`, `research_rig/results_05.json`, `research_rig/results_05b.json`, `research_rig/build_doc22.py`, `research_rig/i2_2020_note.py`, `research_rig/i2_2020_note.json`, `research_rig/data_notes_french.md` | Replay 05: script, the correction to rule I2, first-run output, corrected-run output | CURRENT |
