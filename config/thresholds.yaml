@@ -626,6 +626,12 @@ tm_perp_fee_bps_per_side:
   status: builder
   note: Perp sessions only. Fee per fill on the notional traded, in basis points, by symbol, with default for any symbol not named. 5 is Kraken Derivatives' lowest-volume taker fee (0.05 percent), read 2026-11-25. Separate from practice_crypto_fee_bps_added, which spot sessions keep.
   source: timemachine/perp.py
+tm_perp_fee_levels_bps:
+  value: [1, 12, 25]
+  status: builder
+  note: Perp sessions only. The three fees per side, in basis points, at which every leveraged result is scored, fixed 2026-11-25 before any perp session ran. 1 is Robinhood's posted rate, 12 is Kalshi's entry taker rate charged to brokers, 25 is Kraken's fractional futures rate. The middle one is the main line.
+  source: docs/research/40_leverage_venues_checked.md
+
 tm_perp_half_spread_bps:
   value: {default: 10}
   status: builder

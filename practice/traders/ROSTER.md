@@ -43,6 +43,7 @@ Traders made for the time machine, each with its plan in `timemachine/`:
 | B02 | crypto_swing_with_news | Eight crypto pairs | The same with dated headlines | `timemachine/PLAN_TM02_crypto_with_news.md` |
 | D01 | bitcoin_dial | Bitcoin | Starts fully invested and says once a day how much to hold. No picks, stops or targets | `timemachine/PLAN_TM03_bitcoin_dial.md` |
 | D02 | stock_basket | 38 single stocks | Always fully invested, names eight stocks once a week | `timemachine/PLAN_TM04_stock_basket.md` |
+| F01 | hot_coin_swing | Smaller coins priced on Coinbase | The owner's method: name the coins attention is moving into, then trade their swings over a few hours | plan not written yet (queue row 9g) |
 
 The letter C is taken by the controls below, so these go from B to D.
 
