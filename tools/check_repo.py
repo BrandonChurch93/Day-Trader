@@ -2,6 +2,7 @@
 Fails (exit 1) if:
   1. a tracked file is not listed in docs/INDEX.md (a folder listed with a trailing slash covers everything under it)
   2. a path written in backticks in README.md, AGENTS.md, docs/STATUS.md, docs/INDEX.md or research_rig/README.md does not exist
+     (a path that git ignores, such as research_rig/data/ or dashboard/data.json, is local only and is not flagged)
   3. a config key written in backticks anywhere under docs/ or research_rig/*.md is missing from config/thresholds.yaml
      (only names that look like keys of that file are checked: the known prefixes below)
   4. docs/STATUS.md has no line of the form 'Last updated: YYYY-MM-DD HH:MM UTC'
@@ -20,7 +21,9 @@ for f in ["README.md", "AGENTS.md", "docs/STATUS.md", "docs/INDEX.md", "research
         if "/" not in p and not re.search(r"\.(md|py|json|yaml|csv|html|js|css)$", p): continue
         if "*" in p or ".." in p or p.startswith("/") or "NN" in p: continue  # NN marks a pattern, not a file
         cands = [p, os.path.join(os.path.dirname(f), p), os.path.join("research_rig", p), os.path.join("docs", p)]
-        if not any(os.path.exists(c) for c in cands): bad.append(f"{f} names a path that does not exist: {p}")
+        if any(os.path.exists(c) for c in cands): continue
+        if any(subprocess.run(["git", "check-ignore", "-q", c.rstrip("/")]).returncode == 0 for c in cands): continue  # a local-only path that git ignores, such as research_rig/data/
+        bad.append(f"{f} names a path that does not exist: {p}")
 keys = set(re.findall(r"^([a-z0-9_]+):", open("config/thresholds.yaml").read(), re.M))
 pref = ("backtest_", "replay_", "paper_", "live_", "moonshot_", "api_model_", "cost_model_", "shadow_", "intraday_trend_", "research_run_", "scale_live_", "max_kelly", "drawdown_derisk")
 for f in glob.glob("docs/**/*.md", recursive=True) + glob.glob("research_rig/*.md"):

@@ -3,7 +3,7 @@ Writes results_05.json. Not the product."""
 import numpy as np, pandas as pd, json, sys, os, subprocess, math
 from multiprocessing import Pool
 import rig2 as R
-F = os.environ.get("FRENCH_DIR", "/home/user/workspace/rig/stocks_free/french/clean")
+F = os.environ.get("FRENCH_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "french"))
 PPY = 252; NSHUF = 1000; N_TRIALS = 44; COSTS = {"low": 2, "base": 5, "high": 10}
 SL = {"dev": (None, "2006-05-31"), "held": ("2006-06-01", "2026-06-30"), "post": ("2026-07-01", "2026-09-30"), "all": (None, "2026-09-30"),
       "y2008": ("2008-01-01", "2008-12-31"), "y2020": ("2020-01-01", "2020-12-31"), "y2022": ("2022-01-01", "2022-12-31")}

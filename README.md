@@ -12,8 +12,11 @@ This page does not hold results. Results change, and they live in one place: `do
 | 2 | `docs/STATUS.md` | Where the project stands today: every test and its result, what is believed now, what waits on the owner, what is next | One page |
 | 3 | `docs/INDEX.md` | The map. Find your task in its first table and read only the files it names | Look up, do not read through |
 
+One conflict is known and open. `AGENTS.md` names `docs/playbook/00_START_HERE.md` as the second read and says to load the playbook by default. Only the owner may change that file. Until he decides, every playbook page opens with a dated note that sends the reader to `docs/STATUS.md`, so both routes end at the same page. The proposed wording is in `docs/decisions/morning_list_2026-11-25.md`.
+
 Then, only if your task needs it:
 
+- `docs/GLOSSARY.md` when a term, a test name or a rule name is not clear.
 - `docs/quality/00_READ_FIRST.md` before you plan, build or review anything. It is the owner's standard.
 - `docs/playbook/00_START_HERE.md` for the shape of the product and where Perplexity fits.
 - `research_rig/README.md` before you run or add a test.
@@ -22,7 +25,7 @@ Then, only if your task needs it:
 ## Five rules that are easy to break
 
 1. A number is written once, in `config/thresholds.yaml`. Documents name the key.
-2. A test's plan and its trial ledger rows are pushed before the test runs.
+2. A test's plan and its trial ledger rows are pushed before the test runs. A rerun after a fault gets its own ledger row first and is counted as a trial. The held-back slice is not run again for any other reason.
 3. Numbers in documents are written by a script from an output file, never typed.
 4. A result or decision changes `docs/STATUS.md` in the same commit. A new, moved or retired file changes `docs/INDEX.md` in the same commit.
 5. Run `python3 tools/check_repo.py` before every commit. It fails if the map is not true.
@@ -31,9 +34,12 @@ Then, only if your task needs it:
 
 1. `AGENTS.md`
 2. `config/thresholds.yaml` for any number
-3. `docs/STATUS.md` for any result or the current state
-4. A dated note in `docs/decisions/` over an undated page
-5. The newer of two dated pages
+3. `docs/quality/` for the standard of finished work and how work is planned and run. A line marked OWNER there is the owner's rule. A line marked TRANSLATED is a proposal
+4. `docs/STATUS.md` for any result or the current state
+5. A dated note in `docs/decisions/` over an undated page
+6. The newer of two dated pages
+
+Only what `docs/decisions/` records as an owner decision, with a date, is approved. Everything else that research wrote is a proposal or a working practice, even when it is worded as a step to follow.
 
 The playbook pages were written from reading on 2026-11-24, before the project ran a test of its own. Where they and the status page disagree, the status page stands.
 
@@ -47,6 +53,7 @@ Day-Trader/
 ├── docs/
 │   ├── STATUS.md          the current state (read second)
 │   ├── INDEX.md           the map of every file
+│   ├── GLOSSARY.md        terms, test names and rule names in plain words
 │   ├── quality/           the owner's quality bar and build method
 │   ├── playbook/          short decision pages per topic
 │   ├── research/          full reports and the results of our own tests

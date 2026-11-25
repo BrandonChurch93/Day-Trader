@@ -256,7 +256,7 @@ Passes at any venue cost: 0 of 80 after the fixes, 0 of 80 in the first run. Doc
 |---|---|---|
 | How should a tie be counted in mark 4 from now on? | As half | It is the neutral reading. Counting as overfit pushes a no-edge result from 0.50 to about 0.56 with 9 rules |
 | Should mark 4 be measured over several start dates and block counts? | Yes, fixed in the plan before each run | One start date decides the result today. Said plainly: this would most likely turn the bitcoin passes back into fails. With the first-run code at Alpaca cost the middle value over 25 start dates was 0.603. It has not been measured at Binance.US cost, and research has not run it, so that the choice of method is not made by looking at its result |
-| Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the single rule | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
+| Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the only bitcoin rule. The morning list proposes one stock rule beside it (`docs/decisions/morning_list_2026-11-25.md`, decision 5) | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
 
 ## Files
 

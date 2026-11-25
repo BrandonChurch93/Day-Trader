@@ -1,7 +1,7 @@
-"""Summarises the order-book samples (rig/books/books.csv, not in the repo) into books_summary.json.
+"""Summarises the order-book samples (data/books/books.csv, not in the repo) into books_summary.json.
 Cost is in bps against the mid price for buying or selling a given dollar amount at once. One side."""
-import pandas as pd, numpy as np, json, sys
-src = sys.argv[1] if len(sys.argv) > 1 else "/home/user/workspace/rig/books/books.csv"
+import pandas as pd, numpy as np, json, sys, os
+src = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "books", "books.csv")
 d = pd.read_csv(src); err = d[d.mid == "ERR"]; d = d[d.mid != "ERR"].copy()
 for c in d.columns[3:]: d[c] = pd.to_numeric(d[c], errors="coerce")
 out = {"first_sample_utc": str(pd.to_datetime(d.ts.min(), unit="s")), "last_sample_utc": str(pd.to_datetime(d.ts.max(), unit="s")),

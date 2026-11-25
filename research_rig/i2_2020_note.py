@@ -1,7 +1,7 @@
 """Reads the twelve industry file and writes each group's 2020 return, to show what sat behind rule I2's 2020 year in replay 05.
 A description of one year, not a rule trial. Output: i2_2020_note.json. Run: python3 i2_2020_note.py"""
 import csv, json, os
-F = os.environ.get("FRENCH_DIR", "/home/user/workspace/rig/stocks_free/french/clean")
+F = os.environ.get("FRENCH_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "french"))
 rows = list(csv.reader(open(F + "/12_Industry_Portfolios_Daily__0_Average_Value_Weighted_Returns_Daily.csv"))); h = rows[0][1:]; acc = {c: 1.0 for c in h}; n = 0
 for r in rows[1:]:
     if r[0].replace("-", "").startswith("2020"):

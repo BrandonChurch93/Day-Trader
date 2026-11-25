@@ -51,6 +51,8 @@ def pbo():
             t += f"| {x['run']} | {x['venue']} | {AN[x['asset']]} | {f4(x['first'])} | {x['rerun']:.4f} | {x['ties_half']:.4f} | {x['ties_not_overfit']:.4f} | {x['tie_share']*100:.1f}% | {x['latest_days_dropped']:.4f} |\n"
     return t
 def price_gap():
+    import os
+    if not (os.path.exists("data/bitstamp_BTCUSD.csv") and os.path.exists("data/krakenfull_BTCUSD.csv")): return json.load(open("venue_price_gap.json"))   # raw prices absent: use the stored summary
     import pandas as pd
     b = pd.read_csv("data/bitstamp_BTCUSD.csv", parse_dates=["date"]).set_index("date"); k = pd.read_csv("data/krakenfull_BTCUSD.csv", parse_dates=["date"]).set_index("date")
     j = b.join(k, lsuffix="_b", rsuffix="_k", how="inner"); j = j[(j.index >= "2014-05-01") & (j.index <= "2026-11-24")]; d = (j.close_k / j.close_b - 1).abs() * 1e4
@@ -217,7 +219,7 @@ Passes at any venue cost: {r03_pass} of {r03_n} after the fixes, {cn['R03']['pas
 |---|---|---|
 | How should a tie be counted in mark 4 from now on? | As half | It is the neutral reading. Counting as overfit pushes a no-edge result from 0.50 to about 0.56 with 9 rules |
 | Should mark 4 be measured over several start dates and block counts? | Yes, fixed in the plan before each run | One start date decides the result today. Said plainly: this would most likely turn the bitcoin passes back into fails. With the first-run code at Alpaca cost the middle value over {len(ps['dates'])} start dates was {st.median([x['pbo_le0'] for x in ps['dates']]):.3f}. It has not been measured at Binance.US cost, and research has not run it, so that the choice of method is not made by looking at its result |
-| Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the single rule | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
+| Do the four bitcoin rules go forward to the practice account? | Yes, as a practice test only, with P1 as the only bitcoin rule. The morning list proposes one stock rule beside it (`docs/decisions/morning_list_2026-11-25.md`, decision 5) | It is the plainest of the four, it was named as the primary rule before the first run, and practice trading is the only fresh test left |
 
 ## Files
 

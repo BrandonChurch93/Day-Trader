@@ -10,6 +10,8 @@ Tags: MEASURED means read on a primary page or measured from a public endpoint. 
 
 Status of everything recommended here: proposed by the research team. Nothing in this file is an owner decision.
 
+> Note added 2026-11-25. The first data purchase recommended below is the Kibot end-of-day plan. Later the same night two stock tests were planned that need one-minute prices as well as daily ones, so the purchase now put to the owner is one month of the EODHD plan with both (`docs/decisions/morning_list_2026-11-25.md`). The rest of this page stands.
+
 ## Words used here
 
 | Word | Meaning |

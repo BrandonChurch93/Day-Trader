@@ -1,6 +1,6 @@
-"""Builds data/krakenfull_{BTCUSD,ETHUSD}.csv from Kraken's published archive files (read by fetch_kraken_archive.py into ../../rig/kraken or KRAKEN_DIR) plus the public daily bars already in data/kraken_*.csv."""
+"""Builds data/krakenfull_{BTCUSD,ETHUSD}.csv from Kraken's published archive files (written by fetch_kraken_archive.py into data/kraken, or KRAKEN_DIR) plus the public daily bars already in data/kraken_*.csv."""
 import pandas as pd, os, json
-K=os.environ.get("KRAKEN_DIR","/home/user/workspace/rig/kraken"); out={}
+K=os.environ.get("KRAKEN_DIR",os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "kraken")); out={}
 for pair,a in [("XBTUSD","BTCUSD"),("ETHUSD","ETHUSD")]:
     d=pd.read_csv(f"{K}/full_{pair}_1440.csv",header=None,names=["ts","open","high","low","close","volume","trades"])
     d.index=pd.to_datetime(d.ts,unit="s"); d=d.drop(columns=["ts","trades"]); d=d[d.index<="2026-09-30"]

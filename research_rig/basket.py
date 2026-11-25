@@ -1,7 +1,7 @@
 """Replay 04 helpers: many coins, one account, shared cash. Long or cash only. Not the product.
 Signals use bars up to and including day t. Fills happen at the open of day t+1."""
 import numpy as np, pandas as pd, glob, os
-KDIR="/home/user/workspace/rig/kraken/daily"
+KDIR=os.environ.get("KRAKEN_DAILY_DIR",os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "kraken", "daily"))
 OTHER_QUOTE=("PYUSD","RLUSD")           # files whose name ends in USD but whose quote is another coin
 def load_all():
     """Returns dict pair -> DataFrame(open, close, dv) on a full daily calendar from the pair's first to last bar.

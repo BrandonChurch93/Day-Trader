@@ -1,4 +1,6 @@
-# DATA_NOTES
+# Notes on the Kenneth French data files
+
+> Note added 2026-11-25. These notes were written beside the downloaded files on the research machine, and "this folder", `download_log.txt`, the zips and `REPORT.md` below refer to that download. None of those files are in the repo. To get the two files replay 05 uses, run `python3 fetch_french.py` from `research_rig/`. It writes them to `research_rig/data/french/`, which git ignores. Only those two files are read by any script. Every other file listed below, including the `aqr/` and `shiller/` files, was downloaded for possible use and has not been used in a test. What follows is still the right description of where the data comes from and how each file is laid out.
 
 All files in this folder were downloaded on 2026-11-25 (UTC) with plain HTTPS requests, no key and no login. Download times are in `download_log.txt`. Each Kenneth French file is kept three ways: the original zip, the unzipped original CSV (in `french/`), and one tidy CSV per section (in `french/clean/`, first row = header, first column `date` as YYYYMMDD, values copied as they are, missing codes left in place).
 

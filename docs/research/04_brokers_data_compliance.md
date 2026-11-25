@@ -2,6 +2,8 @@
 
 Research date: November 24, 2026. Scope: an individual in Idaho trading only their own money through AI agents. Evidence tags: MEASURED = official rule text, regulator page, or vendor's own pricing/limits page (a primary source for what the vendor charges or allows); STATED = vendor marketing or secondary-source claim not independently verified; UNKNOWN = could not verify. A vendor pricing page is tagged MEASURED for the price itself, but any vendor claim about quality, speed, or reliability is STATED.
 
+> Note added 2026-11-25. The broker and venue findings here were checked again and extended in `docs/research/09_brokers_and_venues.md`. Where the two differ, 09 is right.
+
 ## Headline: the Pattern Day Trader rule is gone (mostly)
 
 - The SEC approved FINRA's amendments to Rule 4210 on April 14, 2026 (File SR-FINRA-2025-017, Release 34-105226), and FINRA set an effective date of June 4, 2026 ([FINRA Regulatory Notice 26-10](https://www.finra.org/sites/default/files/2026-04/Regulatory-Notice-26-10.pdf); [Federal Register approval order](https://www.federalregister.gov/documents/full_text/text/2026/04/17/2026-07485.txt)). MEASURED.

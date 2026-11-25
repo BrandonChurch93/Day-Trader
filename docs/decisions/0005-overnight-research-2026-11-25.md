@@ -3,6 +3,8 @@
 Date: 2026-11-25 (UTC). The night of 2026-11-24 in Idaho.
 Status: proposed by the research team. Nothing here is an owner decision.
 
+> Note added 2026-11-25. This is the record of the first half of the night. Two code audits later found faults in the rig, the tests were rerun, and several results named here changed. Read `docs/decisions/0006-audit-and-second-night-2026-11-25.md` for what changed and `docs/STATUS.md` for the current state. The pass-mark numbers this note proposed are still proposals.
+
 What the owner said, 2026-11-24: "Feel free to continue doing your research, anything else that would benefit the project". Later the same night: "you free to do anything that will benefit the project and the overall goal of you being successful at making money day trading crypto and stocks. Free for you to look up to penny stocks and high-risk, high-return crypto as well".
 
 What research did with that, and what it kept to: research only. No account was opened, no key was requested, no order was placed and no product code was written. A small research rig was built to test ideas on past prices. It is kept apart from the product in `research_rig/`. `AGENTS.md` was not changed.

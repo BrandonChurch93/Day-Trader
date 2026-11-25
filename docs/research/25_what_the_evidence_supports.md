@@ -16,16 +16,16 @@ Read the table in `docs/STATUS.md` for the figures. In words:
 
 | Idea | What happened | Trust |
 |---|---|---|
-| Slow trend rules on bitcoin | A few rules pass, only at the lowest venue cost, only after audit corrections, and within a hair of the bar on one mark. In the held-back years they grew less than holding bitcoin and fell much less | MEASURED. Not a clean pass |
+| Slow trend rules on bitcoin | A few rules pass, only at the lowest venue cost, only after audit corrections, and within a hair of the bar on one mark. In the held-back years three of the four grew less than holding bitcoin, and all four fell much less | MEASURED. Not a clean pass |
 | Slow trend rules on ether | No pass | MEASURED |
-| Day trading rules on bitcoin and ether, hourly | No pass at any venue cost. The patterns are there before fees and the fees are larger | MEASURED |
-| Trend rules on a wide basket of coins | No pass. Did worse than simply holding bitcoin | MEASURED, independently audited |
+| Day trading rules on bitcoin and ether, hourly | No pass at any venue cost. Most rules show a small average gain per trade before fees. Measured against simply holding the coin, none stays ahead at twice the lowest fee modeled, which is what pass mark 2 asks. At the lowest fee a few ether rules keep a positive Sharpe ratio in the held-back years. At Alpaca's fee all sixteen lost money in those years (`docs/research/16_rig_audit.md`) | MEASURED |
+| Trend rules on a wide basket of coins | No pass. Grew far less than simply holding bitcoin in the held-back years | MEASURED, independently audited |
 | Slow trend rules on the US stock market, free index | Same shape as bitcoin: less growth than holding, a much smaller worst drop. Whether any rule "passes" hangs on one unsteady mark | MEASURED, independently audited. The index cannot be bought, so this is a first look |
 | AI models making the daily call | Inconclusive by design. Every run behaved like a simple trend rule | MEASURED, too short to mean anything |
 
 Two things about our own method were learned the hard way and matter for everything next:
 
-- The first rig had faults. Two outside audits found them, and verdicts changed in the rerun (`docs/research/16_rig_audit.md`). Replays 04 and 05 were audited too, and one rule in replay 05 turned out not to match its plan (`docs/research/22_replay_05_stock_trend.md`). Every test from now on gets an independent audit before its result is believed.
+- The first rig had faults. Two outside audits found them, and verdicts changed in the rerun (`docs/research/16_rig_audit.md`). Replays 04 and 05 were audited too, and one rule in replay 05 turned out not to match its plan (`docs/research/22_replay_05_stock_trend.md`). Research now has each test audited by a different model before its result is believed, and proposes that to the owner as a standing rule. It is not approved yet.
 - Pass mark 4, the overfitting estimate, moves too much to be a yes or no by itself. How to measure it more steadily is an open question for the owner.
 
 ## What outside records with real money say
@@ -59,11 +59,13 @@ A moonshot share makes sense only for an idea that has a reason and has passed a
 
 ## What to test next, in order
 
-Ranked by how much could be learned for how little cost and risk. Each needs a plan written and pushed before it runs, ledger rows first, and an independent audit after.
+Ranked by how much could be learned for how little cost and risk. Each needs a plan written and pushed before it runs, with its ledger rows in the same commit. Research also has each one audited by a different model afterwards, which is its working practice and a proposal to the owner, not an approved rule.
+
+The queue in force is "Next in the queue" in `docs/STATUS.md`. It has the same order as this table, with one item in front: the owner's decision on how pass mark 4 is measured, because every replay depends on it. If the two ever differ, the status page stands.
 
 | # | Test | Why this rank | Needs |
 |---|---|---|---|
-| 1 | One slow bitcoin rule in a practice account, as observation only | It is the nearest thing to a pass, it costs nothing, and it starts the forward record that `paper_min_trading_days` and `paper_min_closed_trades` ask for | Practice keys from the owner |
+| 1 | Two slow rules in a practice account, as observation only and labelled as not passed: the bitcoin rule P1 and the ten-month rule on a total market fund | They are the nearest things to a pass on each market, watching costs nothing, and it starts the forward record that `paper_min_trading_days` and `paper_min_closed_trades` ask for | Practice keys from the owner |
 | 2 | Replay 06: slow trend on funds that can be bought | Turns the stock index result into something that could be traded, with real opening prices | The data purchase. Plan drafted |
 | 3 | Replay 07: day trading SPY and QQQ on one-minute bars | The only day trading case not yet ruled out. Research expects a fail and will measure it | The same data purchase. Plan drafted |
 | 4 | Credit interest on idle cash in every replay | Trend rules sit in cash a lot. Bills paid 4.11% to 4.59% on 2026-11-24 ([Treasury daily bill rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_bill_rates&field_tdr_date_value_month=202611)). The crypto replays credit nothing, which understates the rules. Small, near-certain | Nothing. A rig change with its own plan |
@@ -75,8 +77,8 @@ Ranked by how much could be learned for how little cost and risk. Each needs a p
 Not on the list, with the reason:
 
 - Limit orders in place of market orders. It could cut costs a lot, and it cannot be tested honestly on daily or hourly bars. It needs trade-by-trade data. Not feasible with what is held.
-- More crypto day trading rules. Every one tested lost to fees.
-- More coins. The wide basket lost to bitcoin.
+- More crypto day trading rules. None of the sixteen tested passes at any venue cost.
+- More coins. No basket rule passes, and the wide basket grew far less than holding bitcoin.
 
 ## What would change this picture
 

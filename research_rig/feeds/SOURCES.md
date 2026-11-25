@@ -2,7 +2,7 @@
 
 Checked November 25, 2026. This collector is for private, non-commercial research, not the product, live trading, model training, redistribution or resale. MEASURED means the linked primary page or response was opened. STATED means an earlier result was reported but not repeated here; UNKNOWN means permission or a limit was not established.
 
-Run `python3 research_rig/feeds/collect_context.py` from the repo root. The script uses Python 3.10 or later, standard library only, and makes only read requests. It writes the dated UTC JSON and current Markdown to `/home/user/workspace/rig/feeds_cache/`, outside the repo. It keeps only selected fields, not downloaded source files. Do not republish the private cache.
+Run `python3 research_rig/feeds/collect_context.py` from the repo root. The script uses Python 3.10 or later, standard library only, and makes only read requests. It writes the dated UTC JSON and current Markdown to `research_rig/data/feeds_cache/`, which git ignores. It keeps only selected fields, not downloaded source files. Do not republish the private cache.
 
 | Feed and endpoint | What it gives | Terms and scope | Rate limits | Run result |
 |---|---|---|---|---|

@@ -9,10 +9,10 @@ def crypto_trend():
     c = J("compare_v1_v2.json"); n = c["counts"]; both = [x for x in c["both_histories"] if x["both"]]; ven = sorted({x["venue"] for x in both})
     coins = sorted({x["asset"][:3] for x in both}); v = J("results_v2.json"); th = v["thresholds"]
     k = [x for x in c["pbo"] if x["run"] == "X2" and x["asset"] == "BTCUSD" and x["venue"] in ven]; d = [x for x in c["pbo"] if x["run"] == "DIAG" and x["asset"] == "BTCUSD" and x["venue"] in ven]
-    edge = f" Knife edge: the overfitting estimate on Kraken prices is {k[0]['rerun']:.4f} against a bar of {th['backtest_max_pbo']} (`backtest_max_pbo`), and {d[0]['rerun']:.4f} on Bitstamp prices from the same start date, which fails." if k and d else ""
+    edge = f" Knife edge: the overfitting estimate on Kraken prices is {k[0]['rerun']:.4f} against a bar of {th['backtest_max_pbo']} when it was run (`backtest_max_pbo`), and {d[0]['rerun']:.4f} on Bitstamp prices from the same start date, which fails." if k and d else ""
     return ("Replay 01 with cross-check X2, rerun after the audits", "Nine slow trend rules on bitcoin and on ether, daily, five venue costs, two price histories",
-            f"{n['R01']['passed_rerun']} of {n['R01']['trials']} rule and venue pairs pass on Bitstamp prices and {n['X2']['passed_rerun']} of {n['X2']['trials']} on Kraken prices. "
-            f"Pass on both histories: {ls([x['rule'] for x in both])} on {ls(coins)}, at {ls(ven)} cost only. First run before the audit fixes: {len([x for x in c['both_histories'] if x['first_both']])} on both." + edge,
+            f"{n['R01']['passed_rerun']} of {n['R01']['trials']} rule, coin and venue combinations pass on Bitstamp prices and {n['X2']['passed_rerun']} of {n['X2']['trials']} on Kraken prices. "
+            f"Pass on both histories: {ls([x['rule'] for x in both])} on {ls(coins)}, at {ls(ven)} cost only. In the first run, before the audit fixes, {len([x for x in c['both_histories'] if x['first_both']]) or 'none'} passed on both histories ({n['R01']['passed_first']} on Bitstamp prices, {n['X2']['passed_first']} on Kraken prices)." + edge,
             "`docs/research/16_rig_audit.md`")
 def crypto_intraday():
     n = J("compare_v1_v2.json")["counts"]["R03"]
@@ -23,7 +23,7 @@ def pilot():
 def basket():
     r = J("results_04.json"); V = r["venues"]; tot = sum(len(v["rules"]) for v in V.values()); p = [(n, vn) for vn, v in V.items() for n, x in v["rules"].items() if x["marks"]["passed"]]
     b = V["Binance.US"]; hold = b["bench"]["HOLD_BTC"]["slices"]["held"]; k1 = b["rules"]["K1"]["slices"]["held"]; best = max(((x["dsr"], n, vn) for vn, v in V.items() for n, x in v["rules"].items()))
-    s = f"{len(p)} of {tot} rule and venue pairs pass. Highest deflated Sharpe {best[0]:.3f} ({best[1]} at {best[2]}) against a bar of {r['thresholds']['replay_min_deflated_sharpe']} (`replay_min_deflated_sharpe`). "
+    s = f"{len(p)} of {tot} rule and venue combinations pass. Highest deflated Sharpe {best[0]:.3f} ({best[1]} at {best[2]}) against a bar of {r['thresholds']['replay_min_deflated_sharpe']} when it was run (`replay_min_deflated_sharpe`). "
     s += f"Held-back years at Binance.US cost: the top 10 coin rule K1 grew {pc(k1['cagr'])} a year, holding bitcoin grew {pc(hold['cagr'])}. "
     s += "An independent audit rebuilt the result and found faults that do not change it."
     return ("Replay 04", "Trend rules on a wide basket of coins, dead coins kept", s, "`docs/research/23_replay_04_coin_basket.md`")
@@ -41,7 +41,20 @@ def books():
             f"{b['rounds']} rounds from {b['first_sample_utc']} to {b['last_sample_utc']} UTC. Bitcoin, middle cost of one order, fees not included: $1,000 cost {k['cost_1k_bps']['median']:.1f} bps on Kraken and {n['cost_1k_bps']['median']:.1f} bps on Binance.US; "
             f"$10,000 cost {k['cost_10k_bps']['median']:.1f} and {n['cost_10k_bps']['median']:.1f} bps. The crypto replays assume {slip} bps for this on bitcoin and ether. One night only.",
             "`docs/research/24_order_book_costs.md`")
-ROWS = [crypto_trend, crypto_intraday, pilot, basket, stocks, books]
+def smaller():
+    s2 = J("compare_v1_v2.json")["counts"]["S2"]
+    return ("Smaller checks: X1, S1, S2, the diagnostic, two mixed portfolios", "The same rules on other prices, start dates and fill times, and bitcoin and ether held together",
+            f"Not separate tests and not in the trial count. S2, ether from an earlier start on Kraken prices: {s2['passed_rerun']} of {s2['trials']} combinations pass. X1 and S1 carry no pass marks. The diagnostic is the Bitstamp figure in the first row. "
+            "The two mixed portfolios are reported with growth and largest drop and are not judged on the five marks. Each name is defined in `docs/GLOSSARY.md`.",
+            "`docs/research/12_replay_01_crypto_trend.md`, `docs/research/12b_replay_01_kraken_crosscheck.md`, `docs/research/16_rig_audit.md`")
+def count_check():
+    c = J("ledger_count_check.json"); low = c["lowest_dsr_among_passes_at_count_all"]; n3 = len(c["mark3_passes_that_become_fails"])
+    return ("Trial count check", "The owner's rule counts a rerun after an engine fault as a trial. The two reruns were not counted when they ran. Does counting them change a result",
+            f"Worked out from the stored outputs with {c['count_all']} trials counted. Of {c['passes_as_run']} passes across all runs and cost levels, {len(c['passes_that_become_fails']) or 'none'} become fails. "
+            f"The closest is {low['rule']} on {low['where']} in {low['test']}, at {low['dsr_at_count_all']:.3f} against a bar of {c['bar']} (`replay_min_deflated_sharpe`). "
+            f"Pass mark 3 alone changes from pass to fail in {n3} rows that had already failed another mark.",
+            "`research_rig/TRIAL_LEDGER.md`, `research_rig/ledger_count_check.json`")
+ROWS = [crypto_trend, crypto_intraday, pilot, basket, stocks, books, smaller, count_check]
 def table():
     t = "| Test | What was asked | Result, MEASURED | Full write-up |\n|---|---|---|---|\n"
     for f in ROWS:

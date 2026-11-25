@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 
 
-CACHE = Path("/home/user/workspace/rig/feeds_cache")
+CACHE = Path(os.environ.get("FEEDS_CACHE_DIR", Path(__file__).resolve().parent.parent / "data" / "feeds_cache"))
 USER_AGENT = "Day-Trader research modernsoftworks@gmail.com"
 TIMEOUT_SECONDS = 15
 MAX_RESPONSE_BYTES = 8_000_000

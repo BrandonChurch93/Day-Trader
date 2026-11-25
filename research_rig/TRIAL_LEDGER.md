@@ -2,6 +2,13 @@
 
 Every rule variant is listed here before it is run. A result with no row here does not count.
 
+Read this before the table:
+
+- The Status column is the record of what was written when each row was run. It is not the current verdict. The first-run verdicts in rows 1 to 20, X1, S1, 27 to 42, X2 and S2 were replaced by the rerun after two code audits. The current verdicts are in `docs/research/16_rig_audit.md` and in the table in `docs/STATUS.md`.
+- Rows are in the order they were logged. Rows 43 to 50 are replay 05 and rows 51 to 55 are replay 04, because replay 05's plan was pushed first.
+- "PREREG_01 Amendment 1" in row X1 is a section at the end of `PREREG_01_daily_crypto_trend.md`, not a file of its own.
+- Rows R1 and R2 are reruns after a fault was found in the code. The owner's rule (`docs/quality/01_the_bar.md`, and row T6 in `docs/decisions/0003-quality-bar-adopted.md`) says such a rerun is written here, counted as a trial and reported as a rerun. Both rows were added late, on 2026-11-25 08:48 UTC, after a cold-read test of the repo found them missing. See "Reruns and how they are counted" below.
+
 | # | Logged (UTC) | Pre-registration | Trials | Status |
 |---|---|---|---|---|
 | 1 to 20 | 2026-11-25 06:35 | PREREG_01_daily_crypto_trend.md | P1, P2, S50, S100, S200, D20, D55, M30, M90 on BTC and on ETH; PORT-P1, PORT-P2 | logged 06:35, first run started 06:37 UTC. Run. Results in docs/research/12 |
@@ -13,10 +20,21 @@ Every rule variant is listed here before it is run. A result with no row here do
 | diagnostic | 2026-11-25 07:17 | none, written after seeing X2 | Mark 4 for bitcoin on Bitstamp prices from 2014-05-01, to tell prices from dates. Not a trial, changes no verdict | Run. Fails on Bitstamp prices too. In docs/research/12b |
 | 43 to 50 | 2026-11-25 08:16, late | PREREG_05_stock_trend_free_data.md | T1, T2, T3, T4, T5, V1, I1, I2 on the US stock market index, daily, from 1927 | The plan naming these 8 trials was pushed in 0708de9 at 07:47 UTC, before any run. This ledger row was added after the run had started. That is a slip against the rule that the ledger row comes first, and it is recorded in docs/decisions/0006. Results in docs/research/22 |
 | 51 to 55 | 2026-11-25 08:16, late | PREREG_04_coin_basket_trend.md | K1, K2, K3 on a wide basket of coins, K4 and K5 on bitcoin and ether | The plan naming these 5 trials was pushed in f69e3b2 at 07:51 UTC, before any run. This ledger row was added after the run. Same slip, same record. Results in docs/research/23 |
+| R1 | 2026-11-25 08:48, late. The rerun was done between 07:44 and 08:02 UTC, by the commit times | AMENDMENT_2026-11-25_audit_fixes.md, pushed in 3996e09 and 93e043d before the rerun | Rerun of rows 1 to 20 (replay 01) and rows 27 to 42 (replay 03) with the audit fixes: 36 rule trials run a second time on the held-back slice. Cross-checks X2 and S2 and the diagnostic were also rerun; they are not trials | Rerun after two code audits found faults in the engine and in two statistics. Reported as a rerun in docs/research/16. This row was added after the rerun. That is a slip against the owner's rule and is recorded in docs/decisions/0006. The hourly part of the rerun stopped once on a process error before any result was written and was started again unchanged |
+| R2 | 2026-11-25 08:48, late. The corrected run was done between 08:22 and 08:35 UTC, by the commit times | AMENDMENT_05_I2_equal_thirds.md, pushed in 500cce7 before the corrected run | Corrected run of rows 43 to 50 (replay 05): one rule, I2, changed to match the plan, and all 8 rules run a second time on the held-back slice | Rerun after an independent audit found the code for I2 did not match the plan. Reported as a rerun in docs/research/22, with both runs side by side. This row was added after the rerun. Same slip, same record. Before the first full run the script was also tried once with 3 shuffles and rough results were seen, and two full starts were lost and restarted unchanged; docs/research/22 says so |
+
+## Reruns and how they are counted
+
+- A rerun after an engine fault is counted as a trial. Rerun R1 adds 36 and rerun R2 adds 8. R2 counts all 8 rules, not only the one that changed, because all 8 were run again on the held-back slice and pass mark 4 is worked out across the set.
+- Neither rerun was counted when it ran. Each run used the count that was in this ledger when its plan was frozen: 20 for the daily rules in replay 01 and in rerun R1, 36 for the hourly rules, 44 for replay 05 in both of its runs, 49 for replay 04. Under the owner's rule those counts are too low for rerun R1 and for everything after it.
+- What that does to the results, MEASURED by `ledger_count_check.py` from the stored outputs, written to `ledger_count_check.json`. The script runs no rule and reads no prices. It works out pass mark 3 again for every stored row with every trial and rerun to date counted (the `count_all` value in that file). A larger count can only lower a deflated Sharpe, so it can turn a pass into a fail and never the other way.
+- The answer is in that file under `passes_that_become_fails` and `mark3_passes_that_become_fails`, and in `docs/STATUS.md` under "Known faults and slips". No number from it is typed here.
+- From now on a rerun gets its row in the same commit as its amendment, before it runs, and the run uses the count that includes it.
+- The check above is a sum on stored outputs. It is not a rerun, changes no stored result and adds no trial.
 
 ## Counts
 
-- Rows in this ledger: 55.
-- Rule trials counted in the deflated Sharpe formula: 49. That is rows 1 to 20, 27 to 42 and 43 to 55. Rows 21 to 26 are AI model runs, which are scored a different way and are not in that count.
+- Trial ids in this ledger: 1 to 55, plus the rows named X1, S1, X2 and S2, diagnostic, R1 and R2.
+- Rule trials counted in the deflated Sharpe formula from now on: 93. That is rows 1 to 20, 27 to 42 and 43 to 55 (49 trials), plus 36 for rerun R1 and 8 for rerun R2. Rows 21 to 26 are AI model runs, which are scored a different way and are not in that count.
+- Cross-checks X1, X2 and S2, sensitivity S1 and the diagnostic ran the same rules on other prices, dates or fill times. They were logged as "not new trials" and are not in the count. Each is a further look at the held-back dates all the same, and `docs/research/16_rig_audit.md` treats the two price histories as one market seen twice, not as two independent tests.
 - Draft plans 06 and 07 are not counted until their plans are final and pushed.
-

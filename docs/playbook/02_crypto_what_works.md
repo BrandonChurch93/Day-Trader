@@ -2,7 +2,7 @@
 Source: docs/research/02_crypto_trading_evidence.md
 Last verified: 2026-11-24
 
-> Note added 2026-11-25. This page is from reading only. Our own crypto tests since then: slow trend rules on bitcoin pass only at the lowest venue cost, after audit corrections, and within a hair of the bar; no ether rule passes; every day trading rule lost to fees; a wide basket of coins did worse than holding bitcoin (`docs/research/16_rig_audit.md`, `docs/research/23_replay_04_coin_basket.md`). Current state: `docs/STATUS.md`.
+> Note added 2026-11-25. This page is from reading only. Our own crypto tests since then: slow trend rules on bitcoin pass only at the lowest venue cost, after audit corrections, and within a hair of the bar; no ether rule passes; no day trading rule passed, and at every venue cost but the lowest all of them lost money in the held-back years (corrected 08:55 UTC, the first wording said every rule lost to fees); a wide basket of coins did worse than holding bitcoin (`docs/research/16_rig_audit.md`, `docs/research/23_replay_04_coin_basket.md`). Current state: `docs/STATUS.md`.
 
 ## Bottom line
 Paper-test low-turnover BTC/ETH spot trend first; observe fully collateralized, regulated fixed-expiry basis. Neither has verified durable small-account profitability.

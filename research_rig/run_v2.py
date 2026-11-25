@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import rig2 as R
 from rules import RULES
 import common_03 as c3
-K = os.environ.get("KRAKEN_DIR", "/home/user/workspace/rig/kraken")
+K = os.environ.get("KRAKEN_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "kraken"))
 BIN = [r for r in RULES if r not in ("P1", "P2")]
 NSHUF = 1000
 

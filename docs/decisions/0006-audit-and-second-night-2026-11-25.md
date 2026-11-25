@@ -72,3 +72,25 @@ None is approved. The full list with what each approves and does not approve is 
 | 3 | In every future plan, take the spread of Sharpe ratios for pass mark 3 across all counted trials, not only the trials in that plan | `docs/research/22_replay_05_stock_trend.md` |
 | 4 | Every replay gets an independent audit before its result is believed | this note |
 | 5 | The ranked test queue | `docs/research/25_what_the_evidence_supports.md` |
+
+## Addendum, 2026-11-25 08:56 UTC: what three cold readers found
+
+Three fresh models were each given only the repo address and a set of questions a new worker would ask. This is what they found that this note had wrong or left out. The text above is left as it was written.
+
+Corrections to "Slips, stated plainly":
+
+- "The count used in the statistics was the right one" was wrong. The owner's rule in `docs/quality/01_the_bar.md` says a rerun after a proved engine fault is written in the trial ledger, counted as a trial and reported as a rerun. The rerun of replays 01 and 03 and the corrected run of replay 05 were reported as reruns. They were not in the ledger and were not counted. Rows R1 and R2 were added late, and the count from now on is 93.
+- Does counting them change a result? `research_rig/ledger_count_check.py` worked pass mark 3 out again from the stored outputs at that count, running no rule and reading no prices. MEASURED: 378 rows checked, 34 passes as run, 0 of them become fails. The closest is rule M90 (Binance.US, BTCUSD, replay 01) at 0.951 against the bar `replay_min_deflated_sharpe`. 66 rows could not be worked out again from what was stored, and none of those had passed mark 3. The output is `research_rig/ledger_count_check.json`.
+- The held-back slice was looked at more than once for the same rules: the first run, the cross-checks, the diagnostic, a try with fewer shuffles, and the rerun. Only the rerun is covered by the owner's exception. The slice is no longer fresh for any rule tested, and a practice account is the only fresh test left for them.
+- The plans for replay 01 and pilot 02 were pushed in the same commit as their results (b393482). They were written before the runs, and the repo cannot prove it.
+- The wider spread for pass mark 3 and the independent audit of every replay were written into `research_rig/README.md` as steps to follow. They are proposals 3 and 4 below and are not approved. The wording there now says so.
+
+Corrections to other pages:
+
+- The notes added to playbook pages 00 and 02 said every day trading rule lost to fees. MEASURED from `research_rig/results_v2.json`: none passed. At every venue cost but the lowest, all 16 rule and coin pairs lost money in the held-back years. At the lowest cost 14 of 16 did. Both notes are corrected and dated.
+- Playbook pages 04, 05 and 06 had no dated note. They have one now.
+- Every script that reads raw data defaulted to a folder on the research machine, so a fresh copy of the repo could not run them and gave no reason. Defaults now sit in `research_rig/data/`, `research_rig/check_data.py` says what is missing and how to fetch it, and `research_rig/README.md` has the table. Only path lines changed in the run scripts.
+- `docs/STATUS.md` and `docs/research/25_what_the_evidence_supports.md` listed two different test queues. The one in force is in `docs/STATUS.md`.
+- Terms and test names were used without being defined. `docs/GLOSSARY.md` defines them.
+
+Still open, and only the owner can close it: `AGENTS.md` names the playbook as the second read and as the default source, and `docs/quality/00_READ_FIRST.md` names it as the winner on evidence. Research may not edit either file. The exact lines and the proposed wording are in `docs/decisions/morning_list_2026-11-25.md`, item 5.

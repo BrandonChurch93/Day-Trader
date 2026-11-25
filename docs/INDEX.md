@@ -7,11 +7,13 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 ## How to use this page
 
 - Find your task in the first table and read only the files it names.
-- The State column says how far to trust a file.
+- The State column says whether a file has been replaced. It does not say whether the owner has approved it or whether a result in it is proven. Many CURRENT files are proposals, first looks or dated audits, and each says so in its own text. What is approved is only what `docs/decisions/` records as an owner decision with a date.
+- Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
+- `tools/check_repo.py` checks that every tracked file is listed here and that paths and config keys named in the map files exist. It does not check that a file's State is right or that a claim is true.
 
 | State | Meaning |
 |---|---|
-| CURRENT | True as far as anyone knows. Use it |
+| CURRENT | Not replaced by a later file. Use it, and read its own labels: CURRENT does not mean approved or proven |
 | RECORD | Kept as history. A later file corrects or replaces part of it. The row says which |
 | DRAFT | Not agreed and not in force |
 | RAW | Working papers behind a CURRENT file. Open only to trace one claim to its source |
@@ -20,7 +22,8 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 
 | If you are about to | Read, in this order |
 |---|---|
-| Do anything at all | `AGENTS.md`, then `docs/STATUS.md` |
+| Do anything at all | `AGENTS.md`, then `docs/STATUS.md`. `AGENTS.md` still names the playbook as the second read; the playbook pages open with a note that sends you to the status page. A change to that line waits on the owner |
+| Understand a term, a test name or a rule name | `docs/GLOSSARY.md` |
 | Talk to the owner or hand work to him | `docs/quality/03_working_with_the_owner.md`, `docs/decisions/morning_list_2026-11-25.md` |
 | Plan, build or review anything | `docs/quality/00_READ_FIRST.md`, then the file it points to for your topic |
 | Use or change a number | `config/thresholds.yaml`. Then add a dated note in `docs/decisions/` |
@@ -60,11 +63,11 @@ Lines marked OWNER in these files are rules. Lines marked TRANSLATED are proposa
 | `docs/quality/02_how_we_build.md` | The build method: plan once, build once, check against the plan | CURRENT |
 | `docs/quality/03_working_with_the_owner.md` | How to write to the owner and how decisions get made | CURRENT |
 | `docs/quality/04_research_to_build.md` | What has to be true before research turns into building | CURRENT |
-| `docs/quality/05_repo_review_2026-11-24.md` | A review of this repo against the bar on that date | RECORD. The repo has changed since. See `docs/STATUS.md` |
+| `docs/quality/05_repo_review_2026-11-24.md` | A review of this repo against the bar on that date | RECORD. The repo has changed since. See `docs/STATUS.md`. `docs/quality/00_READ_FIRST.md` says to delete it when its items are closed. It is the owner's file, so whether it is deleted or kept is his call (morning list, item 5) |
 
-## docs/playbook/ (short pages, decisions only)
+## docs/playbook/ (short pages written before the tests)
 
-Written 2026-11-24 from reading, before the project ran any test of its own. Where a playbook line and `docs/STATUS.md` disagree, the status page stands, because it reports our own tests.
+Written 2026-11-24 from reading, before the project ran any test of its own. Where a playbook line and `docs/STATUS.md` disagree, the status page stands, because it reports our own tests. Every page opens with a dated note that says so. CURRENT here means no later playbook page replaces it. Its statements about what works are reading, not results. Where a page says something "is finished in v1", it describes the planned product. Nothing is built.
 
 | File | What it is | State |
 |---|---|---|
@@ -134,7 +137,7 @@ Working papers.
 
 | Folder | What it is | State |
 |---|---|---|
-| `docs/research/09_raw/` | Agent reports and claim checks behind document 09 | RAW |
+| `docs/research/09_raw/` | Agent reports and claim checks behind document 09. `docs/research/09_raw/orderbook_sampler.py` and `docs/research/09_raw/orderbook_snapshots.jsonl` are an earlier, separate sample. They are not the overnight sample behind `docs/research/24_order_book_costs.md` | RAW |
 | `docs/research/10_raw/` | Behind document 10 | RAW |
 | `docs/research/11_raw/` | Behind document 11 | RAW |
 | `docs/research/13_raw/` | Behind document 13 | RAW |
@@ -158,7 +161,9 @@ Working papers.
 | Files | What they are | State |
 |---|---|---|
 | `research_rig/README.md` | Map of the folder and how to add a test | CURRENT |
-| `research_rig/TRIAL_LEDGER.md` | Count of every rule variant tried | CURRENT |
+| `research_rig/TRIAL_LEDGER.md` | Count of every rule variant tried, and of every rerun. Its Status column is the record of what was written at the time; current verdicts are in `docs/STATUS.md` | CURRENT |
+| `research_rig/ledger_count_check.py`, `research_rig/ledger_count_check.json` | Works out pass mark 3 again from the stored outputs with the two reruns counted as trials. Runs no rule | CURRENT |
+| `docs/GLOSSARY.md` | Plain definitions of the terms, test names and rule names used in the repo | CURRENT |
 | `research_rig/rig2.py`, `research_rig/fixtures2.py`, `research_rig/basket.py`, `research_rig/fixtures_basket.py` | Engine v2 and its checks | CURRENT |
 | `research_rig/rules.py`, `research_rig/common_03.py` | Rule definitions used by both engine versions | CURRENT |
 | `research_rig/engine.py`, `research_rig/fixtures.py`, `research_rig/common_01.py` | Engine v1 | RECORD. Use v2 |
@@ -171,7 +176,7 @@ Working papers.
 | `research_rig/run_01.py`, `research_rig/run_01b.py`, `research_rig/run_01c.py`, `research_rig/run_01x2.py`, `research_rig/run_03.py`, `research_rig/report_01.py`, `research_rig/report_01d.py`, `research_rig/tables_01.py`, `research_rig/tables_01.md`, `research_rig/diag_x2_pbo.py`, `research_rig/build_doc12.py`, `research_rig/build_doc12b.py`, `research_rig/build_doc15.py` | First-run scripts for replays 01 and 03 | RECORD |
 | `research_rig/results_01.json`, `research_rig/results_01c.json`, `research_rig/results_01d.json`, `research_rig/results_01x2.json`, `research_rig/results_03.json`, `research_rig/passmarks_01.json`, `research_rig/diag_x2_pbo.json` | First-run outputs | RECORD |
 | `research_rig/pilot/`, `research_rig/score_02.py`, `research_rig/results_02.json`, `research_rig/build_doc14.py` | Pilot 02: the server that released one day at a time, every answer the models gave, and the scoring | CURRENT |
-| `research_rig/fetch.py`, `research_rig/fetch_kraken_archive.py`, `research_rig/build_kraken_daily.py`, `research_rig/kraken_daily_build.json` | Download and prepare public price history into local folders outside the repo | CURRENT |
+| `research_rig/check_data.py`, `research_rig/fetch.py`, `research_rig/fetch_kraken_archive.py`, `research_rig/fetch_french.py`, `research_rig/build_kraken_daily.py`, `research_rig/kraken_daily_build.json` | Say which raw data is present, and download and prepare public price history into `research_rig/data/`, a local folder that git ignores. The table of data sets is in `research_rig/README.md` | CURRENT |
 | `research_rig/books_summary.py`, `research_rig/books_summary.json`, `research_rig/build_doc24.py` | Order-book cost samples | CURRENT |
 | `research_rig/feeds/` | Collector of public context readings, its source notes and a trimmed sample | CURRENT |
 | `research_rig/export_dashboard.py` | Builds the data file for the owner's screen | CURRENT |
