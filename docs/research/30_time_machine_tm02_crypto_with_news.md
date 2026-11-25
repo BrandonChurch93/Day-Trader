@@ -20,7 +20,7 @@ MEASURED, pretend money, months finished so far. A month is in the sum when the 
 | GPT-6.2 Sol | 5 of 5 | -$28.00 | $67.51 | -$24.70 | 15 of 20 | has shown nothing |
 | Gemini Neon | 5 of 5 | $29.59 | $67.51 | $81.78 | 8 of 20 | has shown nothing |
 | Claude Sonnet 5.5 | 5 of 5 | -$10.18 | $67.51 | -$10.11 | 15 of 20 | has shown nothing |
-| Kimi K3 | 4 of 5 | -$154.30 | -$2.30 | -$101.72 | 4 of 20 | not finished |
+| Kimi K3 | 5 of 5 | -$175.42 | $67.51 | -$140.13 | 10 of 20 | has shown nothing |
 | Grok 4.7 | 5 of 5 | $2.96 | $67.51 | $5.25 | 15 of 20 | has shown nothing |
 
 ## Did the news help
@@ -33,10 +33,10 @@ From the plan: the news helped only if all six models gained more with it than w
 | GPT-6.2 Sol | 5 of 5 | -$28.00 | -$34.23 | yes |
 | Gemini Neon | 5 of 5 | $29.59 | $12.96 | yes |
 | Claude Sonnet 5.5 | 5 of 5 | -$10.18 | -$63.38 | yes |
-| Kimi K3 | 4 of 5 | -$154.30 | -$154.19 | no |
+| Kimi K3 | 5 of 5 | -$175.42 | -$178.31 | yes |
 | Grok 4.7 | 5 of 5 | $2.96 | -$71.28 | yes |
 
-Verdict: not finished.
+Verdict: the news helped: six of six gained more with it.
 
 ## Each session
 
@@ -46,7 +46,7 @@ Verdict: not finished.
 | July | GPT-6.2 Sol | $3.40 | $69.81 | -$0.41 | 18 of 20 | 3 | 1 | 2 | $3.02 | -1.2% | 59 of 62 | 51 | 0 of 62 | 0 |
 | July | Gemini Neon | $23.85 | $69.81 | $20.39 | 17 of 20 | 6 | 4 | 2 | $9.48 | -5.2% | 53 of 62 | 23 | 0 of 62 | 0 |
 | July | Claude Sonnet 5.5 | -$16.55 | $69.81 | -$14.31 | 14 of 20 | 2 | 0 | 2 | $2.97 | -2.8% | 58 of 62 | 30 | 0 of 62 | 0 |
-| July | Kimi K3 | not finished | | | | | | | | | | | | |
+| July | Kimi K3 | -$21.12 | $69.81 | -$31.03 | 18 of 20 | 14 | 3 | 9 | $19.25 | -8.1% | 39 of 62 | 18 | 0 of 62 | 0 |
 | July | Grok 4.7 | $14.77 | $69.81 | $17.00 | 14 of 20 | 1 | 1 | 0 | $1.79 | -0.8% | 60 of 62 | 24 | 0 of 62 | 0 |
 | August | Claude Opus 5.5 | $54.95 | $245.33 | $50.13 | 17 of 20 | 12 | 7 | 5 | $17.93 | -3.9% | 47 of 62 | 35 | 0 of 62 | 0 |
 | August | GPT-6.2 Sol | $22.36 | $245.33 | $6.65 | 20 of 20 | 5 | 4 | 1 | $4.52 | -0.4% | 57 of 62 | 64 | 0 of 62 | 0 |
@@ -113,6 +113,25 @@ One row per buy. "Looked at" is what the trader asked the desk for at that wake,
 |---|---|---|---|---|---|---|
 | 2026-07-03 12:00 | ETH/USD | 1Hour bars x1 | Headlines 'Crypto ETF Inflow Split: Ether and Solana Products Gain While Bitcoin Outflows Exceed $290M' (2026-07-02T18:30Z) and 'US Spot Bitcoin ETF Outflows Clash With Ethereum Fund Demand' (2026-07-03T11:17Z) show relative ETH demand; price broke above 1710 resistance, 1741 now. | Crypto ETF Inflow Split: Ether and Solana Products Gain While Bitcoin Outflows Exceed $290M (2026-07-02T18:30:00Z); US Spot Bitcoin ETF Outflows Clash With Ethereum Fund Demand (2026-07-03T11:17:00Z) | stop reached 2026-07-08 08:20 | loss -$2.16 (-0.7%) |
 | 2026-07-15 00:00 | ETH/USD | 1Hour bars x2, news x1 | Price breakout above the 1805 range top at the 07-14 12:00 hour, held 1870-1890 for 11 hours, BTC also through 64K; no headline used. | none | stop reached 2026-07-17 13:10 | loss -$14.39 (-4.8%) |
+
+### July, Kimi K3
+
+| Wake (UTC) | Coin | Looked at | Its reason | Headlines it named | Ended | Result |
+|---|---|---|---|---|---|---|
+| 2026-07-01 00:00 | SOL/USD | 1Day bars x4 | Recovery structure with higher lows 64.0->65.7->70.4 and higher high 76.2 after the June 25 capitulation; headline 'Solana Meme Coin Fever Returns As Celebrity Tokens Hit Multimillion-Dollar Caps' (2026-06-30T15:45:00Z) shows speculative appetite returning to the SOL ecosystem. Stop 69.4 below the June 28-30 low cluster, target 79.5. | https://www.newsbtc.com/news/solana-meme-coin-fever-returns-as-celebrity-tokens-hit-multimillion-dollar-caps/; https://www.newsbtc.com/news/xrp-holds-1-support-as-wallet-growth-hits-three-month-high/; https://www.newsbtc.com/news/xrp-etf-inflows-extend-to-eight-weeks-as-bitcoin-funds-bleed-2/ | target reached 2026-07-02 09:55 | win $21.64 (+7.2%) |
+| 2026-07-01 00:00 | XRP/USD | 1Day bars x4 | Six-day hold of the 1.008-1.011 support zone plus flow support: 'XRP Holds $1 Support As Wallet Growth Hits Three-Month High' (2026-06-30T18:00:00Z) and 'XRP ETF Inflows Extend To Eight Weeks As Bitcoin Funds Bleed' (2026-06-29T17:05:00Z). Stop 0.997 under the June 25/26 lows, target 1.125. | https://www.newsbtc.com/news/solana-meme-coin-fever-returns-as-celebrity-tokens-hit-multimillion-dollar-caps/; https://www.newsbtc.com/news/xrp-holds-1-support-as-wallet-growth-hits-three-month-high/; https://www.newsbtc.com/news/xrp-etf-inflows-extend-to-eight-weeks-as-bitcoin-funds-bleed-2/ | target reached 2026-07-03 18:40 | win $22.88 (+7.6%) |
+| 2026-07-03 00:00 | ETH/USD | 1Hour bars x1 | Double bottom at 1510-1530 per 'Ethereum Eyes Relief Rally as Double Bottom Forms Near $1.5K' (2026-07-02T13:55:39Z), neckline broken on July 2 with a 10-hour bull flag at 1690-1705; flow support from 'Crypto ETF Inflow Split: Ether and Solana Products Gain While Bitcoin Outflows Exceed $290M' (2026-07-02T18:30:00Z). Stop 1655 under the 1659 breakout base, target 1860 measured move. | https://cryptopotato.com/ethereum-eyes-relief-rally-as-double-bottom-forms-near-1-5k-eth-price-analysis/; https://www.newsbtc.com/news/crypto-etf-inflow-split-ether-and-solana-products-gain-while-bitcoin-outflows-exceed-290m/ | stop reached 2026-07-05 09:45 | win $6.94 (+2.3%) |
+| 2026-07-05 12:00 | DOGE/USD | 1Day bars x1 | Recovery structure: higher lows 0.0695->0.0704->0.0716->0.0739 with four straight up days; catalyst headline 'Something Is Brewing for Dogecoin (DOGE) as Network Activity Explodes' (2026-07-05T06:56:29Z). Stop 0.0729 under the July 3 low, target 0.0819 June consolidation floor. | https://cryptopotato.com/something-is-brewing-for-dogecoin-doge-as-network-activity-explodes/ | stop reached 2026-07-08 02:05 | loss -$11.63 (-4.6%) |
+| 2026-07-06 12:00 | SOL/USD | packet only | Five-day cup base under the 82.4 July 5 high with protocol buyback catalyst ('Solana's $100M Buyback Ignites $1B Revenue Momentum', 2026-07-05T18:15:00Z); stop 80.0 under the round number and July 6 low, target 88.0 measured move. | https://www.newsbtc.com/news/solanas-100m-buyback-ignites-1b-revenue-momentum-market-shift/ | stop reached 2026-07-06 12:05 | loss -$5.41 (-1.8%) |
+| 2026-07-07 00:00 | BTC/USD | packet only | BTC leading the recovery (+9% on the week) with ETF inflows resuming and 'Glassnode Says Bitcoin Accumulation Is Building Under The Surface' (2026-07-05T15:50:00Z); stop 62300 under the July 6 pullback low, target 68500 at the June consolidation shelf. Risk about 0.9% of book. | https://www.newsbtc.com/news/glassnode-says-bitcoin-accumulation-is-building-under-the-surface/ | stop reached 2026-07-08 08:25 | loss -$10.77 (-3.6%) |
+| 2026-07-09 12:00 | DOGE/USD | packet only | Support re-entry: 0.0714-0.0727 cluster held for a week; whale-buying headline (2026-07-08T12:20:00Z) adds flow confirmation; stop 0.0711 under the cluster, target 0.0793. Risk about 0.45% of book. | https://www.newsbtc.com/news/dogecoin-whale-buying-gives-doge-bulls-something-more-concrete-than-meme-heat/ | stop reached 2026-07-12 00:40 | loss -$1.73 (-0.7%) |
+| 2026-07-10 00:00 | BTC/USD | packet only | 63k barrier reclaimed and held after German-selloff-overhang removal (2026-07-09T11:10:00Z) and returning ETF inflows (2026-07-09T11:55:00Z); stop 61100 under the July 6 swing low, target 68000. Risk about 1% of book. | https://www.newsbtc.com/news/german-government-bitcoin-wallet-balance-drops-to-zero-ending-a-major-selloff-overhang-2/; https://www.newsbtc.com/news/bitcoin-etf-inflows-return-as-blackrock-helps-rebuild-institutional-demand/ | stop reached 2026-07-13 12:40 | loss -$12.64 (-2.1%) |
+| 2026-07-13 00:00 | BTC/USD | packet only | Range-floor re-entry: weekend dip held ~62.8k and price reclaimed 63.7k ('Bitcoin's Recovery Gains Momentum', 2026-07-12T22:33:03Z; ETF inflow resumed per 2026-07-12T14:35:44Z recap); stop 62550 under the weekend low, target 68000. Risk about 0.5% of book. | https://cryptopotato.com/bitcoins-recovery-gains-momentum-putting-july-off-to-a-strong-start/; https://www.newsbtc.com/news/bitcoins-64000-rebound-is-outrunning-etf-demand-despite-a-197-million-inflow/ | open at the end | still held at the end or not filled |
+| 2026-07-15 00:00 | BTC/USD | packet only | Post-CPI reclaim of 65k with ETF inflows back ('Bitcoin pushes toward $65,000 on US inflation relief', 2026-07-14T19:30:28Z); stop 63000 under the breakout shelf, target 72000 (June breakdown origin). | https://www.newsbtc.com/news/bitcoin-pushes-toward-65000-on-us-inflation-relief-that-may-already-be-fading/ | stop reached 2026-07-17 05:45 | loss -$11.71 (-3.9%) |
+| 2026-07-15 00:00 | ETH/USD | packet only | Holding above 1860 measured-move level after the double-bottom breakout - strongest large-cap this leg; stop 1810 under the breakout, target 2050 (June 20-22 shelf). | https://www.newsbtc.com/news/bitcoin-pushes-toward-65000-on-us-inflation-relief-that-may-already-be-fading/ | stop reached 2026-07-17 12:00 | loss -$10.72 (-3.6%) |
+| 2026-07-19 00:00 | BTC/USD | packet only | Half-size range-floor long: floor held a fifth test at 62.6k, Fed-hold odds 94% (2026-07-18T11:20:00Z) supportive; stop 62350 under the July 5 low, target 70000 range extension. Risk about 0.6% of book. | https://www.newsbtc.com/news/polymarket-fed-hold-odds-hit-94-as-softer-inflation-boosts-bitcoin-mood/; https://cryptopotato.com/bitcoin-price-analysis-is-btc-headed-below-60k-after-65-5k-rejection-2/ | stop reached 2026-07-22 05:45 | loss -$2.14 (-0.5%) |
+| 2026-07-21 12:00 | BTC/USD | packet only | Range-resolution long: breakout through 65.5k after five holds of the 62.5k floor; 'Bitcoin ETF Inflows Extend For Second Week' (2026-07-20T15:00:00Z); stop 64700 under the breakout shelf, target 70000. Adds to the trailed half-size position. | https://cryptopotato.com/bitcoin-etf-inflows-extend-for-second-week-but-recovery-remains-fragile/ | open at the end | still held at the end or not filled |
+| 2026-07-23 00:00 | ETH/USD | packet only | Flows-led breakout: ~1M ETH accumulated by BitMine in a month (2026-07-22T18:28:57Z) plus third-day ETH ETF inflow streak (2026-07-22T16:30:00Z); stop 1845 under the 1850-1860 breakout shelf, target 2050. Risk about 0.9% of book. | https://cryptopotato.com/1000000-eth-in-a-month-is-ethereum-poised-for-a-major-rally/; https://www.newsbtc.com/news/ethereum-etf-inflows-extend-to-third-day-as-blackrock-offsets-fidelity-outflows/ | stop reached 2026-07-27 23:00 | loss -$5.82 (-2.9%) |
 
 ### July, Grok 4.7
 

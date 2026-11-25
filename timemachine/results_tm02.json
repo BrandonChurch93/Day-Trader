@@ -390,8 +390,326 @@
    "beats_twins": false,
    "months": {
     "07": {
-     "finished": false,
-     "session": "TM02-B02-KIMI-2026-07"
+     "benchmark_shown": "BTC/USD",
+     "buys": 14,
+     "closed": 12,
+     "config_hash": "39c357fa4ad0d90de4bd6271620416a7af8741370f1945ce590c39b569fc8be0",
+     "counts": true,
+     "edited_later_news_seen": 521,
+     "fees_usd": 19.25,
+     "finished": true,
+     "fund_mover_wakes": 0,
+     "gain_usd": -21.12,
+     "git_dirty": true,
+     "hold_gain_usd": 69.81,
+     "lookups": 18,
+     "losses": 9,
+     "max_drop": -0.0805,
+     "model": "kimi_k3",
+     "news_on": true,
+     "refused_attempts": 0,
+     "session": "TM02-B02-KIMI-2026-07",
+     "twin_gains": {
+      "1": -11.38,
+      "10": -41.08,
+      "11": -45.22,
+      "12": -42.93,
+      "13": -55.05,
+      "14": -69.16,
+      "15": -24.48,
+      "16": -15.01,
+      "17": -38.92,
+      "18": -54.43,
+      "19": -49.05,
+      "2": -34.37,
+      "20": -30.28,
+      "3": -31.22,
+      "4": -44.36,
+      "5": -37.5,
+      "6": -45.39,
+      "7": -39.78,
+      "8": -31.92,
+      "9": -48.68
+     },
+     "twin_median_usd": -40.43,
+     "twin_p80_usd": -31.03,
+     "twins_beaten": 18,
+     "twins_done": 20,
+     "wakes": 62,
+     "wakes_no_pick": 39,
+     "wakes_unseen": 0,
+     "why": [
+      {
+       "closed_utc": "2026-07-02T09:55:00Z",
+       "exit_reason": "Exit set in pick 20260702T0000Z: the target price was reached.",
+       "gain_pct": 0.0719,
+       "gain_usd": 21.64,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 4
+       },
+       "news_looked": 0,
+       "reason": "Recovery structure with higher lows 64.0->65.7->70.4 and higher high 76.2 after the June 25 capitulation; headline 'Solana Meme Coin Fever Returns As Celebrity Tokens Hit Multimillion-Dollar Caps' (2026-06-30T15:45:00Z) shows speculative appetite returning to the SOL ecosystem. Stop 69.4 below the June 28-30 low cluster, target 79.5.",
+       "result": "win",
+       "sources": [
+        "https://www.newsbtc.com/news/solana-meme-coin-fever-returns-as-celebrity-tokens-hit-multimillion-dollar-caps/",
+        "https://www.newsbtc.com/news/xrp-holds-1-support-as-wallet-growth-hits-three-month-high/",
+        "https://www.newsbtc.com/news/xrp-etf-inflows-extend-to-eight-weeks-as-bitcoin-funds-bleed-2/"
+       ],
+       "symbol": "SOL/USD",
+       "thesis": "Broad tape is in a downtrend (BTC broke 60k, ETF outflows), but two names show relative strength with fresh, non-edited news support. SOL has made higher lows since the June 25 washout (64.0, 65.7, 70.4) and a higher high at 76.2, and Solana meme-coin risk appetite is returning. XRP has held the 1.01 support for six straight days while XRP ETF inflows extend and wallet growth hits a 3-month high. Buying both as swing longs with stops just under the recent swing lows; each risks about 4-5.5% to make 8%+, well clear of round-trip costs.",
+       "usd": 300,
+       "wake_utc": "2026-07-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-03T18:40:00Z",
+       "exit_reason": "Exit set in pick 20260703T1200Z: the target price was reached.",
+       "gain_pct": 0.0761,
+       "gain_usd": 22.88,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 4
+       },
+       "news_looked": 0,
+       "reason": "Six-day hold of the 1.008-1.011 support zone plus flow support: 'XRP Holds $1 Support As Wallet Growth Hits Three-Month High' (2026-06-30T18:00:00Z) and 'XRP ETF Inflows Extend To Eight Weeks As Bitcoin Funds Bleed' (2026-06-29T17:05:00Z). Stop 0.997 under the June 25/26 lows, target 1.125.",
+       "result": "win",
+       "sources": [
+        "https://www.newsbtc.com/news/solana-meme-coin-fever-returns-as-celebrity-tokens-hit-multimillion-dollar-caps/",
+        "https://www.newsbtc.com/news/xrp-holds-1-support-as-wallet-growth-hits-three-month-high/",
+        "https://www.newsbtc.com/news/xrp-etf-inflows-extend-to-eight-weeks-as-bitcoin-funds-bleed-2/"
+       ],
+       "symbol": "XRP/USD",
+       "thesis": "Broad tape is in a downtrend (BTC broke 60k, ETF outflows), but two names show relative strength with fresh, non-edited news support. SOL has made higher lows since the June 25 washout (64.0, 65.7, 70.4) and a higher high at 76.2, and Solana meme-coin risk appetite is returning. XRP has held the 1.01 support for six straight days while XRP ETF inflows extend and wallet growth hits a 3-month high. Buying both as swing longs with stops just under the recent swing lows; each risks about 4-5.5% to make 8%+, well clear of round-trip costs.",
+       "usd": 300,
+       "wake_utc": "2026-07-01T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-05T09:45:00Z",
+       "exit_reason": "Exit set in pick 20260705T0000Z: the stop price was reached.",
+       "gain_pct": 0.0231,
+       "gain_usd": 6.94,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Hour": 1
+       },
+       "news_looked": 0,
+       "reason": "Double bottom at 1510-1530 per 'Ethereum Eyes Relief Rally as Double Bottom Forms Near $1.5K' (2026-07-02T13:55:39Z), neckline broken on July 2 with a 10-hour bull flag at 1690-1705; flow support from 'Crypto ETF Inflow Split: Ether and Solana Products Gain While Bitcoin Outflows Exceed $290M' (2026-07-02T18:30:00Z). Stop 1655 under the 1659 breakout base, target 1860 measured move.",
+       "result": "win",
+       "sources": [
+        "https://cryptopotato.com/ethereum-eyes-relief-rally-as-double-bottom-forms-near-1-5k-eth-price-analysis/",
+        "https://www.newsbtc.com/news/crypto-etf-inflow-split-ether-and-solana-products-gain-while-bitcoin-outflows-exceed-290m/"
+       ],
+       "symbol": "ETH/USD",
+       "thesis": "ETH completes the picture XRP started: a double bottom at 1510-1530 (June 26/28/30 lows) and yesterday's impulse broke the 1660-1690 neckline, followed by ten hours of tight bull-flag consolidation at 1690-1705. Flow news confirms rotation into ETH: Ether ETF products gaining while Bitcoin funds bleed. Buying the flag with a stop under the 1659 breakout base, targeting the measured move toward 1860. XRP long keeps working toward 1.125 with its locked stop at 1.044.",
+       "usd": 300,
+       "wake_utc": "2026-07-03T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-08T02:05:00Z",
+       "exit_reason": "Exit set in pick 20260707T0000Z: the stop price was reached.",
+       "gain_pct": -0.0464,
+       "gain_usd": -11.63,
+       "headlines_in_packet": null,
+       "looked": {
+        "1Day": 1
+       },
+       "news_looked": 0,
+       "reason": "Recovery structure: higher lows 0.0695->0.0704->0.0716->0.0739 with four straight up days; catalyst headline 'Something Is Brewing for Dogecoin (DOGE) as Network Activity Explodes' (2026-07-05T06:56:29Z). Stop 0.0729 under the July 3 low, target 0.0819 June consolidation floor.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/something-is-brewing-for-dogecoin-doge-as-network-activity-explodes/"
+       ],
+       "symbol": "DOGE/USD",
+       "thesis": "Booked the ETH runner at the 1751 stop (+2.6% net); the broad bounce is stalling (BTC rejected at 63k, ETH at 1805), so no re-entry there. DOGE is the cleanest remaining structure: four straight up days off the June 30 low with higher lows, and today's 'Something Is Brewing for Dogecoin as Network Activity Explodes' headline (2026-07-05T06:56:29Z) gives a flows reason. Half-size swing with stop under the 0.073 shelf, targeting the June 18-22 consolidation floor at 0.0819.",
+       "usd": 250,
+       "wake_utc": "2026-07-05T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-06T12:05:00Z",
+       "exit_reason": "Exit set in pick 20260706T1200Z: the stop price was reached.",
+       "gain_pct": -0.018,
+       "gain_usd": -5.41,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Five-day cup base under the 82.4 July 5 high with protocol buyback catalyst ('Solana's $100M Buyback Ignites $1B Revenue Momentum', 2026-07-05T18:15:00Z); stop 80.0 under the round number and July 6 low, target 88.0 measured move.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/solanas-100m-buyback-ignites-1b-revenue-momentum-market-shift/"
+       ],
+       "symbol": "SOL/USD",
+       "thesis": "DOGE stop did its job (-1.4% on book); still 3-1 on closed trades. New setup: SOL has built a five-day cup base at 78-82.4 and sits just under the July 5 high with a concrete catalyst (Solana's $100M buyback Ignites $1B Revenue Momentum, 2026-07-05T18:15:00Z) while the broad market consolidates. Buying the 82 handle with a stop under 80, targeting 88. Risk about 0.8% of book.",
+       "usd": 300,
+       "wake_utc": "2026-07-06T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-08T08:25:00Z",
+       "exit_reason": "Exit set in pick 20260707T0000Z: the stop price was reached.",
+       "gain_pct": -0.0358,
+       "gain_usd": -10.77,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "BTC leading the recovery (+9% on the week) with ETF inflows resuming and 'Glassnode Says Bitcoin Accumulation Is Building Under The Surface' (2026-07-05T15:50:00Z); stop 62300 under the July 6 pullback low, target 68500 at the June consolidation shelf. Risk about 0.9% of book.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/glassnode-says-bitcoin-accumulation-is-building-under-the-surface/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "Switching to the leader instead of laggards: BTC has ground from 58.5k to 64k with ETF inflows resuming and on-chain accumulation building under the surface per Glassnode (2026-07-05T15:50:00Z). My two chopped trades were both second-tier momentum entries, so I am buying the benchmark itself with a stop under the July 6 pullback zone at 62,300 and a target at the June consolidation shelf of 68,500. DOGE swing stays with its stop.",
+       "usd": 300,
+       "wake_utc": "2026-07-07T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-12T00:40:00Z",
+       "exit_reason": "Exit set in pick 20260711T1200Z: the stop price was reached.",
+       "gain_pct": -0.0069,
+       "gain_usd": -1.73,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Support re-entry: 0.0714-0.0727 cluster held for a week; whale-buying headline (2026-07-08T12:20:00Z) adds flow confirmation; stop 0.0711 under the cluster, target 0.0793. Risk about 0.45% of book.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/dogecoin-whale-buying-gives-doge-bulls-something-more-concrete-than-meme-heat/"
+       ],
+       "symbol": "DOGE/USD",
+       "thesis": "Back to what worked: buying a tested level instead of chasing. DOGE has held the 0.0714-0.0727 cluster for over a week (June 25/30 and July 2 lows all inside it) and today's flow story is concrete ('Dogecoin Whale Buying Gives DOGE Bulls Something More Concrete Than Meme Heat', 2026-07-08T12:20:00Z). Re-entering at 0.0724 with a stop under the whole cluster at 0.0711, target the July 4 high 0.0793. BTC mid-range at 62.7k offers no edge, so I wait for its 63k reclaim or a deeper dip.",
+       "usd": 250,
+       "wake_utc": "2026-07-09T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-13T12:40:00Z",
+       "exit_reason": "Exit set in pick 20260713T0000Z: the stop price was reached.",
+       "gain_pct": -0.021,
+       "gain_usd": -12.64,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "63k barrier reclaimed and held after German-selloff-overhang removal (2026-07-09T11:10:00Z) and returning ETF inflows (2026-07-09T11:55:00Z); stop 61100 under the July 6 swing low, target 68000. Risk about 1% of book.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/german-government-bitcoin-wallet-balance-drops-to-zero-ending-a-major-selloff-overhang-2/",
+        "https://www.newsbtc.com/news/bitcoin-etf-inflows-return-as-blackrock-helps-rebuild-institutional-demand/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "BTC reclaimed the 63k barrier and held it all day (63.1k now) after two clear overhang removals: German government wallet at zero (2026-07-09T11:10:00Z) and ETF inflows returning with BlackRock demand (2026-07-09T11:55:00Z). Re-entering the leader at 63.2k with a wide stop under the 61.2k swing low (this time the stop sits below the level that actually invalidates the structure), targeting 68k at the June consolidation. DOGE support position continues.",
+       "usd": 300,
+       "wake_utc": "2026-07-10T00:00:00Z"
+      },
+      {
+       "closed_utc": null,
+       "exit_reason": null,
+       "gain_pct": null,
+       "gain_usd": null,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Range-floor re-entry: weekend dip held ~62.8k and price reclaimed 63.7k ('Bitcoin's Recovery Gains Momentum', 2026-07-12T22:33:03Z; ETF inflow resumed per 2026-07-12T14:35:44Z recap); stop 62550 under the weekend low, target 68000. Risk about 0.5% of book.",
+       "result": "still held at the end or not filled",
+       "sources": [
+        "https://cryptopotato.com/bitcoins-recovery-gains-momentum-putting-july-off-to-a-strong-start/",
+        "https://www.newsbtc.com/news/bitcoins-64000-rebound-is-outrunning-etf-demand-despite-a-197-million-inflow/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "Third and final try on the same BTC range: the floor has held three tests (62.4k Jul 5, 61.3k Jul 6, ~62.8k this weekend) and price reclaimed 63.7k after my trailed stop got wicked. ETF inflows have returned and 'Bitcoin's Recovery Gains Momentum' (2026-07-12T22:33:03Z). Buying 63.7k with the stop under the weekend low at 62,550; if the floor gives way I stand aside. Target remains 68k.",
+       "usd": 300,
+       "wake_utc": "2026-07-13T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-17T05:45:00Z",
+       "exit_reason": "Exit set in pick 20260715T0000Z: the stop price was reached.",
+       "gain_pct": -0.0389,
+       "gain_usd": -11.71,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Post-CPI reclaim of 65k with ETF inflows back ('Bitcoin pushes toward $65,000 on US inflation relief', 2026-07-14T19:30:28Z); stop 63000 under the breakout shelf, target 72000 (June breakdown origin).",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/bitcoin-pushes-toward-65000-on-us-inflation-relief-that-may-already-be-fading/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "CPI relief popped the tape: BTC 65k, ETH 1891 holding above the 1860 double-bottom measured-move level, ETF inflows returning. Following strength with defined invalidation rather than fading it: BTC with a stop under the 63k breakout shelf, ETH with a stop under the 1860 breakout, targets at the June breakdown origins (72k / 2050). Keeping 40% in cash after a choppy week.",
+       "usd": 300,
+       "wake_utc": "2026-07-15T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-17T12:00:00Z",
+       "exit_reason": "Premise broken: price back under the 1860 breakout shelf the trade was built on; exiting before the 1810 stop to keep risk small.",
+       "gain_pct": -0.0357,
+       "gain_usd": -10.72,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Holding above 1860 measured-move level after the double-bottom breakout - strongest large-cap this leg; stop 1810 under the breakout, target 2050 (June 20-22 shelf).",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/bitcoin-pushes-toward-65000-on-us-inflation-relief-that-may-already-be-fading/"
+       ],
+       "symbol": "ETH/USD",
+       "thesis": "CPI relief popped the tape: BTC 65k, ETH 1891 holding above the 1860 double-bottom measured-move level, ETF inflows returning. Following strength with defined invalidation rather than fading it: BTC with a stop under the 63k breakout shelf, ETH with a stop under the 1860 breakout, targets at the June breakdown origins (72k / 2050). Keeping 40% in cash after a choppy week.",
+       "usd": 300,
+       "wake_utc": "2026-07-15T00:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-22T05:45:00Z",
+       "exit_reason": "Exit set in pick 20260722T0000Z: the stop price was reached.",
+       "gain_pct": -0.0047,
+       "gain_usd": -2.14,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Half-size range-floor long: floor held a fifth test at 62.6k, Fed-hold odds 94% (2026-07-18T11:20:00Z) supportive; stop 62350 under the July 5 low, target 70000 range extension. Risk about 0.6% of book.",
+       "result": "loss",
+       "sources": [
+        "https://www.newsbtc.com/news/polymarket-fed-hold-odds-hit-94-as-softer-inflation-boosts-bitcoin-mood/",
+        "https://cryptopotato.com/bitcoin-price-analysis-is-btc-headed-below-60k-after-65-5k-rejection-2/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "The 62-62.6k range floor survived its fifth test (July 17 low 62.6k) and BTC has ground back to 64.8k on Fed-hold certainty (Polymarket 94%) and resumed ETF inflows. Taking a deliberately half-size long on the floor-hold thesis with the stop under the July 5 low at 62.35k and a target at the range extension of 70k; small size because every upper-range chase this month has been chopped.",
+       "usd": 150,
+       "wake_utc": "2026-07-19T00:00:00Z"
+      },
+      {
+       "closed_utc": null,
+       "exit_reason": null,
+       "gain_pct": null,
+       "gain_usd": null,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Range-resolution long: breakout through 65.5k after five holds of the 62.5k floor; 'Bitcoin ETF Inflows Extend For Second Week' (2026-07-20T15:00:00Z); stop 64700 under the breakout shelf, target 70000. Adds to the trailed half-size position.",
+       "result": "still held at the end or not filled",
+       "sources": [
+        "https://cryptopotato.com/bitcoin-etf-inflows-extend-for-second-week-but-recovery-remains-fragile/"
+       ],
+       "symbol": "BTC/USD",
+       "thesis": "The three-week 62.5-65.5k range is resolving upward: BTC 66.3k through the range top after the fifth floor hold, with ETF inflows extending a second week. Adding a full-size position on the breakout (existing half-size is already locked at scratch-plus via its 64.75k trail), stop under the breakout shelf at 64.7k, target 70k.",
+       "usd": 300,
+       "wake_utc": "2026-07-21T12:00:00Z"
+      },
+      {
+       "closed_utc": "2026-07-27T23:00:00Z",
+       "exit_reason": "Exit set in pick 20260727T0000Z: the stop price was reached.",
+       "gain_pct": -0.029,
+       "gain_usd": -5.82,
+       "headlines_in_packet": null,
+       "looked": {},
+       "news_looked": 0,
+       "reason": "Flows-led breakout: ~1M ETH accumulated by BitMine in a month (2026-07-22T18:28:57Z) plus third-day ETH ETF inflow streak (2026-07-22T16:30:00Z); stop 1845 under the 1850-1860 breakout shelf, target 2050. Risk about 0.9% of book.",
+       "result": "loss",
+       "sources": [
+        "https://cryptopotato.com/1000000-eth-in-a-month-is-ethereum-poised-for-a-major-rally/",
+        "https://www.newsbtc.com/news/ethereum-etf-inflows-extend-to-third-day-as-blackrock-offsets-fidelity-outflows/"
+       ],
+       "symbol": "ETH/USD",
+       "thesis": "ETH is the one large-cap with real flow behind it: BitMine bought ~1M ETH in a month (2026-07-22T18:28:57Z) and ETH ETF inflows extended a third day (2026-07-22T16:30:00Z) while it holds 1928-1933 after reclaiming the 1860 shelf. Half-size swing, stop under the 1850-1860 breakout shelf, target the July 14 high zone at 2050.",
+       "usd": 200,
+       "wake_utc": "2026-07-23T00:00:00Z"
+      }
+     ],
+     "wins": 3
     },
     "08": {
      "benchmark_shown": "BTC/USD",
@@ -1364,17 +1682,18 @@
     }
    },
    "months_counted": [
+    "07",
     "08",
     "09",
     "10",
     "11"
    ],
    "name": "Kimi K3",
-   "sum_gain_usd": -154.3,
-   "sum_hold_usd": -2.3,
-   "sum_twin_p80_usd": -101.72,
-   "sum_twins_beaten": 4,
-   "verdict": "not finished"
+   "sum_gain_usd": -175.42,
+   "sum_hold_usd": 67.51,
+   "sum_twin_p80_usd": -140.13,
+   "sum_twins_beaten": 10,
+   "verdict": "has shown nothing"
   },
   "NEON": {
    "beats_hold": false,
@@ -5034,7 +5353,7 @@
   }
  },
  "news_test": {
-  "complete": false,
+  "complete": true,
   "models": {
    "GROK": {
     "better_with_news": true,
@@ -5050,16 +5369,17 @@
     "with_news_usd": 2.96
    },
    "KIMI": {
-    "better_with_news": false,
-    "complete": false,
+    "better_with_news": true,
+    "complete": true,
     "months_both_finished": [
+     "07",
      "08",
      "09",
      "10",
      "11"
     ],
-    "price_only_usd": -154.19,
-    "with_news_usd": -154.3
+    "price_only_usd": -178.31,
+    "with_news_usd": -175.42
    },
    "NEON": {
     "better_with_news": true,
@@ -5114,7 +5434,7 @@
     "with_news_usd": -10.18
    }
   },
-  "verdict": "not finished"
+  "verdict": "the news helped: six of six gained more with it"
  },
  "plan": "timemachine/PLAN_TM02_crypto_with_news.md",
  "start_usd": null
