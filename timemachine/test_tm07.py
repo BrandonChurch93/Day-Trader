@@ -101,6 +101,18 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(result[0][A],{T+3600:.05})
         self.assertEqual(result[2][A][T+3600],T+1)
 
+    def test_s01_gap_keeps_exposure_and_funding(self):
+        minutes = [x for x in world()["minutes"] if x[0] != T+3600]
+        spec = world(minutes)
+        s = self.create("A", spec=spec)
+        bundles = [{"weights":{A:.2},"exits":None},{"weights":None,"exits":None}]
+        meta = dict(wakes=[P.iso(D.wall(t)) for t in spec["wakes"]],end_utc=P.iso(D.wall(spec["end"])),opening={})
+        table = dict(rows=spec["rows"],end_marks=spec["end_marks"])
+        legacy = P.run_perp(meta,table,[(x["weights"],x["exits"]) for x in bundles],s.pp,s.minutes,spec["cfg"])
+        got = S.replay(s,bundles)
+        self.assertEqual(got["book"],legacy[0])
+        self.assertEqual(got["book"]["held_seconds"],7200)
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):

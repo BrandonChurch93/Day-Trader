@@ -186,10 +186,18 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     weights, exits = bundle.get("weights"), bundle.get("exits")
     changed = first or book.get("pending") or (weights is not None and P.norm(weights) != P.norm(book["target"]))
     if not orders.active:
-        start = P.scan_from(row, P.dt.datetime.fromtimestamp(at, P.UTC))
+        wake = P.dt.datetime.fromtimestamp(at, P.UTC)
+        start = P.scan_from(row, wake)
+        bridge = P.p_scan(book, minutes, wake, start, pp) if start > wake else None
         record = P.p_step(book, weights, exits, row, pp, first)
         record["target"] = dict(record["target"])
         record["scan"] = P.p_scan(book, minutes, start, P.dt.datetime.fromtimestamp(end, P.UTC), pp)
+        if bridge:
+            scan = record["scan"]
+            scan["exits"] = bridge["exits"]+scan["exits"]
+            scan["closeout"] = scan["closeout"] or bridge["closeout"]
+            for field in ("held_seconds", "funding_usd", "fallback_hours"):
+                scan[field] += bridge[field]
     else:
         # Only the simultaneous wake opens enter a rebalance calculation. Refuse
         # asynchronous immediate opens in conditional mode, rather than spending
