@@ -197,9 +197,9 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         if changed and any(not row["fills"].get(s) or int(P.parse(row["fills"][s][0]).timestamp()) != at for s in touched):
             raise ValueError("conditional path needs simultaneous wake opens for the immediate move")
         start_row = dict(row, fills={s: f for s, f in row["fills"].items()
-                                     if f and int(P.parse(f[0]).timestamp()) == at})
+                                     if changed and s in touched and f and int(P.parse(f[0]).timestamp()) == at})
         record = P.p_step(book, weights, exits, start_row, pp, first)
-        active_rows = P.scan_rows(minutes, at, end, set(pp["symbols"]))
+        active_rows = P.scan_rows(minutes, at, end, book["qty"], watched=orders.active)
         record["scan"] = orders.advance(book, pp, active_rows, at, end, gross)
     if last:
         orders.expire(end)
