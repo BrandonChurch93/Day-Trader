@@ -24,6 +24,34 @@ class UnsupportedWeek(ValueError):
     """A frozen draw cannot be represented intact on its destination tape."""
 
 
+def effective_costs(cfg,symbols):
+    pp = P.p_params(sorted(symbols),cfg,funding={})
+    return {k:pp[k] for k in ("fee","hs","maint","hours","fallback_per_day","penalty","min_change")} | {
+        "venue":{s:P.per(cfg["tm_fast_funding_venue"],s) for s in sorted(symbols)}}
+
+
+def canonical_cost_hash():
+    """Pin registration to the independently stored TM06 thresholds."""
+    return desk.digest(effective_costs(tm06.full_config(),WATCH|{"BTC/USD"}))
+
+
+def settlement_map(rows):
+    if not isinstance(rows,dict):
+        raise ValueError("invalid funding settlement mapping")
+    result = {}
+    for key,value in rows.items():
+        if type(key) is int or isinstance(key,str) and key.isascii() and key.isdecimal() and str(int(key)) == key:
+            result[int(key)] = value
+        else:
+            raise ValueError("invalid funding settlement stamp")
+    return result
+
+
+def funding_profile_hash(params):
+    """The operator can rebuild this from exact source rows before sealing."""
+    return desk.digest({k:params[k] for k in ("funding","funding_known_at","source")})
+
+
 class Registration:
     """A separately operator-sealed attempt, not inputs asserted by an arm."""
     def __init__(self,document,key):
@@ -36,6 +64,9 @@ class Registration:
         self.root = Path(self.body.get("study_root",""))
         if not self.root.is_absolute() or self.root != self.root.resolve():
             raise ValueError("register one absolute canonical study root")
+        self.cost_cfg = tm06.full_config()
+        if self.body.get("cost_hash") != desk.digest(effective_costs(self.cost_cfg,WATCH|{"BTC/USD"})):
+            raise ValueError("registration cost profile does not match TM06")
         models = self.body.get("builds",{})
         if set(models) != {*desk.BOSSES,"gemini_neon"} or any(not v.get("id") for v in models.values()):
             raise ValueError("register all exact model builds")
@@ -50,6 +81,10 @@ class Registration:
             if (not desk.SID.fullmatch(neutral_id) or neutral_id in neutral_ids or len(fixture_id) != 64
                     or any(c not in "0123456789abcdef" for c in fixture_id)):
                 raise ValueError("register the unique neutral run and fixture hash for each week")
+            funding_id = item.get("funding_hash","")
+            if (not isinstance(item.get("funding_ref"),str) or not item["funding_ref"].strip()
+                    or len(funding_id) != 64 or any(c not in "0123456789abcdef" for c in funding_id)):
+                raise ValueError("register the source snapshot and funding settlement hash for each week")
             neutral_ids.add(neutral_id)
             if w in FIXED:
                 symbols = sorted(s+"/USD" for s in FIXED[w].split())
@@ -113,6 +148,23 @@ class Registration:
                 or cfg["tm_weights_twin_draws"] != DRAW_COUNT or cfg["tm_weights_pass_percentile"] != PERCENTILE
                 or cfg["tm_weights_twin_seed"] != SEED or any(f != .0012 for f in pp["fee"].values())):
             raise ValueError("registration requires fixed costs, 1,000 twins and 90th percentile")
+        priced = set(item["symbols"])|{"BTC/USD"}
+        expected = effective_costs(self.cost_cfg,priced)
+        if (effective_costs(cfg,priced) != expected or any(pp.get(k) != v for k,v in expected.items() if k != "venue")
+                or pp.get("source") != expected["venue"] or sorted(pp.get("symbols",[])) != sorted(priced)
+                or spec.get("benchmark") != "BTC/USD" or set(spec["end_marks"]) != priced
+                or not all(O.number(v) and v > 0 for v in spec["end_marks"].values())):
+            raise ValueError("fixture cost parameters or priced-symbol coverage differ from registered TM06")
+        rates, clock = pp.get("funding",{}),pp.get("funding_known_at",{})
+        if set(rates) != priced or set(clock) != priced:
+            raise ValueError("funding settlement required symbol coverage")
+        for sym in priced:
+            values, stamps = settlement_map(rates[sym]),settlement_map(clock[sym])
+            if (values.keys() != stamps.keys() or any(type(stamps[t]) is not int or stamps[t] != t
+                or not start <= t <= spec["end"] or not O.number(rate) for t,rate in values.items())):
+                raise ValueError("funding rate must use its exact source settlement stamp")
+        if funding_profile_hash(pp) != item["funding_hash"]:
+            raise ValueError("funding settlement digest differs from independently registered source")
         arm, scout = manifest["arm"], manifest["scout"]
         model = "gemini_neon" if arm == "scout" else manifest["boss"]
         if manifest.get("model_build") != self.body["builds"][model]["id"]:
@@ -126,6 +178,8 @@ class Registration:
                 if set(spec["symbols"]) <= {r[1] for r in rows}}
         if not set(spec["wakes"]) <= good or any(not set(spec["symbols"]) <= r["marks"].keys() for r in spec["rows"]):
             raise ValueError("registered twin coverage lacks marks or a common open")
+        if not any(r[1] == "BTC/USD" and start <= r[0] < start+3600 for r in spec["minutes"]):
+            raise ValueError("registered benchmark has no opening price")
         return w
 
     def verify_gate(self,week,boss,arm,gates,key):

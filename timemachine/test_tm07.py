@@ -67,7 +67,7 @@ def condition(wake, symbol=A, **kw):
 def registered_fixture(root,spec=None):
     weeks = {}
     for w in S.WEEKS:
-        item = dict(fixture=D.digest(w),neutral_id="TM07-scout-"+w)
+        item = dict(fixture=D.digest(w),neutral_id="TM07-scout-"+w,funding_ref="made-up tape",funding_hash=D.digest(w))
         if w in S.FIXED:
             item["symbols"] = sorted(s+"/USD" for s in S.FIXED[w].split())
         else:
@@ -79,10 +79,30 @@ def registered_fixture(root,spec=None):
     if spec is not None:
         w = D.wall(spec["wakes"][0]).date().isoformat()
         weeks[w]["fixture"] = D.digest(D.json.loads(D.encode(spec)))
+        weeks[w]["funding_hash"] = S.funding_profile_hash(spec["params"])
     body = dict(version="TM07-v1",runner_id="toy-runner",ledger_ref="toy-no-run",study_root=str(root.resolve()),
+                cost_hash=S.canonical_cost_hash(),
                 builds={s:{"id":s+"-toy","first_after_cutoff":"2026-07-01"}
                         for s in (*D.BOSSES,"gemini_neon")},weeks=weeks)
     return S.Registration(dict(body=body,seal=D.seal(SEAL_KEY,"registration",body)),SEAL_KEY)
+
+
+def registered_world():
+    spec = world()
+    cfg = spec["cfg"]
+    cfg.update({k:v for k,v in tm06.full_config().items() if k in P.P_KEYS or k == "tm_fast_funding_venue"})
+    cfg["tm_weights_twin_draws"] = 1000
+    symbols = sorted(s+"/USD" for s in S.FIXED[S.SCREEN[0]].split())
+    priced = symbols+[BTC]
+    wakes = list(range(T,T+7*86400,3600))
+    rates = {s:({T+3600:.001} if s == BTC else {}) for s in priced}
+    pp = P.p_params(priced,cfg,funding=rates)
+    pp.update(source={s:P.per(cfg["tm_fast_funding_venue"],s) for s in priced},
+              funding_known_at={s:{t:t for t in rates[s]} for s in priced})
+    return dict(spec,symbols=symbols,watch=sorted(S.WATCH),wakes=wakes,end=T+7*86400,runner_id="toy-runner",
+                evidence=[[] for _ in wakes],vendor_proofs={},params=pp,
+                minutes=[(t,s,100,101,99,100) for t in wakes for s in priced],end_marks={s:100 for s in priced},
+                rows=[dict(marks={s:100 for s in priced}) for _ in wakes])
 
 
 def synthetic_scores(reg,boss,draws=1000):
@@ -139,8 +159,8 @@ class DeskTest(unittest.TestCase):
         cfg = dict(world()["cfg"], tm_fast_funding_venue={"default":"toy"})
         read = getattr(D,"desk_funding",tm06.fast_funding)
         result = read(Tape(),[A],cfg,D.wall(T),D.wall(T+7200))
-        self.assertEqual(result[0][A],{T+3600:.05})
-        self.assertEqual(result[2][A][T+3600],T+1)
+        self.assertEqual(result[0][A],{T+1:.05})
+        self.assertEqual(result[2][A][T+1],T+1)
 
     def test_s01_gap_keeps_exposure_and_funding(self):
         minutes = [x for x in world()["minutes"] if x[0] != T+3600]
@@ -437,16 +457,7 @@ class DeskTest(unittest.TestCase):
             reg.verify_gate(S.EXTENSION[0],boss,"B",[],SEAL_KEY)
 
     def test_registered_create_checks_full_week_and_records_attempt_once(self):
-        spec = world()
-        cfg = spec["cfg"]
-        cfg["tm_weights_twin_draws"] = 1000
-        symbols = sorted(s+"/USD" for s in S.FIXED[S.SCREEN[0]].split())
-        priced = symbols+[BTC]
-        wakes = list(range(T,T+7*86400,3600))
-        spec.update(symbols=symbols,watch=sorted(S.WATCH),wakes=wakes,end=T+7*86400,runner_id="toy-runner",
-                    evidence=[[] for _ in wakes],vendor_proofs={},params=P.p_params(priced,cfg,funding={}),
-                    minutes=[(t,s,100,101,99,100) for t in wakes for s in priced],end_marks={s:100 for s in priced},
-                    rows=[dict(marks={s:100 for s in priced}) for _ in wakes])
+        spec = registered_world()
         reg = registered_fixture(self.root,spec)
         envelope = dict(body=reg.body,seal=D.seal(SEAL_KEY,"registration",reg.body))
         boss = D.BOSSES[0]
@@ -461,6 +472,41 @@ class DeskTest(unittest.TestCase):
         spec["end"] -= 60
         with self.assertRaisesRegex(ValueError,"registered windows"):
             D.create_desk(self.root/"TM07-wrong-window",spec,"A",boss,D.issue_role_tokens("A"),**settings)
+
+    def test_reaudit_sol_r05_cannot_attest_wrong_costs_or_future_funding(self):
+        spec = registered_world()
+        for change,why in ((lambda pp:pp["hs"].update({BTC:.08}),"cost"),
+                           (lambda pp:pp["maint"].update({BTC:.55}),"cost"),
+                           (lambda pp:pp["funding_known_at"][BTC].update({T+3600:T+3601}),"settlement")):
+            faulty = copy.deepcopy(spec)
+            change(faulty["params"])
+            reg = registered_fixture(self.root,faulty)
+            envelope = dict(body=reg.body,seal=D.seal(SEAL_KEY,"registration",reg.body))
+            with self.assertRaisesRegex(ValueError,why):
+                D.create_desk(self.root/"TM07-wrong-cost",faulty,"A",D.BOSSES[0],D.issue_role_tokens("A"),
+                              approval_key=SEAL_KEY,registration=envelope,model_build=D.BOSSES[0]+"-toy")
+        original = registered_fixture(self.root,spec)
+        spec["params"]["funding"][BTC][T+3600] = .05
+        changed = registered_fixture(self.root,spec).body
+        changed["weeks"][S.SCREEN[0]]["funding_hash"] = original.weeks[S.SCREEN[0]]["funding_hash"]
+        envelope = dict(body=changed,seal=D.seal(SEAL_KEY,"registration",changed))
+        with self.assertRaisesRegex(ValueError,"settlement digest"):
+            D.create_desk(self.root/"TM07-wrong-funding",spec,"A",D.BOSSES[0],D.issue_role_tokens("A"),
+                          approval_key=SEAL_KEY,registration=envelope,model_build=D.BOSSES[0]+"-toy")
+
+    def test_reaudit_sol_r05_settlement_uses_quantity_at_exact_stamp(self):
+        spec = world([(T,A,100,100,100,100),(T+60,A,110,110,110,110),
+                      (T+120,A,120,900,120,800),(T+180,A,120,120,120,120)])
+        pp = spec["params"]
+        pp["funding"][A] = {T+1:.01,T+61:.02}
+        book = P.new_book(1000)
+        rec,_,_ = O.step(book,dict(weights={A:.5}),spec["rows"][0],pp,P.Minutes(spec["minutes"]),
+                         T,T+60,False,{},1,first=True)
+        self.assertAlmostEqual(rec["scan"]["funding_usd"],5)
+        rec,_,_ = O.step(book,dict(weights={A:.25}),spec["rows"][0],pp,P.Minutes(spec["minutes"]),
+                         T+60,T+180,True,{},1)
+        self.assertAlmostEqual(rec["scan"]["funding_usd"],book["qty"][A]*110*.02)
+        self.assertEqual([r["utc"] for r in rec["scan"]["settlements"]],[O.stamp(T+61)])
 
     def test_opus_r2_drift_does_not_allow_an_over_cap_saved_target(self):
         spec = world()

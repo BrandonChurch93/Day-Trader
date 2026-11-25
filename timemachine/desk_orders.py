@@ -1,6 +1,7 @@
 """TM07 simulated order rules. No broker, model, tape fetch or clock calls."""
 from copy import deepcopy
 from itertools import groupby
+from bisect import bisect_right
 import math
 
 from timemachine import perp as P
@@ -37,6 +38,21 @@ def reducing(book, symbol, dq):
 
 def stamp(tick):
     return P.iso(P.dt.datetime.fromtimestamp(tick, P.UTC))
+
+
+def funding_schedule(pp,start,end):
+    """An observed rate settles at its own stamp; never credit fallback."""
+    events = []
+    for s in pp["symbols"]:
+        rates = pp["funding"].get(s,{})
+        stamps = sorted(rates)
+        events.extend((t,s,rates[t],0) for t in stamps[bisect_right(stamps,start-1):bisect_right(stamps,end)])
+        hours = pp["hours"][s]
+        interval = hours*3600
+        for t in range(((start+interval-1)//interval)*interval,end+1,interval):
+            if bisect_right(stamps,t) == bisect_right(stamps,t-interval):
+                events.append((t,s,None,hours))
+    return sorted(events)
 
 
 def normalize_conditions(items, marks, symbols, wake, end, max_hours, gross):
@@ -170,20 +186,29 @@ class Orders:
     def advance(self, book, pp, rows, start, end, gross, on_open=None, last=False):
         """Boundary funding, open maintenance, gap exits, new fills, bar-close checks."""
         at = start
-        total = dict(exits=[], closeout=None, funding_usd=0.0, fallback_hours=0, held_seconds=0)
+        total = dict(exits=[], closeout=None, funding_usd=0.0, fallback_hours=0, held_seconds=0,settlements=[])
         book.setdefault("held_seconds",0)
-        events = iter(P.funding_times(pp, start-1, end if last else end-1))
+        events = iter(funding_schedule(pp,start,end if last else end-1))
         upcoming = next(events, None)
         blocked = False
 
         def fund_until(tick, opens):
             nonlocal upcoming
             while upcoming and upcoming[0] <= tick:
-                t, s = upcoming
-                prices = dict(book["last_px"])
-                if t == tick:
-                    prices.update(opens)
-                P.fund(book, t, s, prices, pp, total)
+                t,s,rate,fallback = upcoming
+                q = book["qty"].get(s)
+                if q:
+                    price = opens.get(s,book["last_px"][s]) if t == tick else book["last_px"][s]
+                    if fallback:
+                        cost = abs(q)*price*pp["fallback_per_day"]*fallback/24
+                        book["fallback_hours"] += fallback
+                        total["fallback_hours"] += fallback
+                    else:
+                        cost = q*price*rate
+                    book["cash"] -= cost
+                    book["funding_usd"] += cost
+                    total["funding_usd"] += cost
+                    total["settlements"].append(dict(utc=stamp(t),symbol=s,qty=q,mark=price,rate=rate,cost=cost))
                 upcoming = next(events, None)
 
         def block(tick):
@@ -261,6 +286,9 @@ class Orders:
             if not blocked and not book.get("desk_liquidation"):
                 self.execute_open(book, pp, tick, opens, gross)
             at = tick + MINUTE
+            # Mid-minute settlements see positions held after the open,
+            # with the open still the latest observed mark.
+            fund_until(at-1,{})
             hold(MINUTE)
             # A resting exit can fill at its level intraminute. Record the
             # observation at close, not as a second execution at the open.

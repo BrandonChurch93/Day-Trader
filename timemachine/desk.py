@@ -191,27 +191,24 @@ def desk_marks(tape, symbols, wake):
 
 
 def desk_funding(tape, symbols, cfg, start, end):
-    """Use the first lawful hourly charge. Keep each original timestamp."""
+    """Do not round or distribute an observed settlement."""
     a, b = epoch(start), epoch(end)
     funding, sources, stamps = {}, {}, {}
     for s in symbols:
         venue = P.per(cfg["tm_fast_funding_venue"], s)
         rates = tm06.rows(tape, "SELECT t,rate,interval_hours FROM funding WHERE symbol=? AND venue=? AND t BETWEEN ? AND ? ORDER BY t",
-                          (s, venue, a-86400, b))
+                          (s, venue, a, b))
         by_hour, known = {}, {}
         for t, rate, interval in rates:
             if (type(t) is not int or not orders.number(rate) or not orders.number(interval)
                     or int(interval) != interval or not 1 <= interval <= 24):
                 raise ValueError("unusable funding publication or interval")
-            hours = int(interval)
-            first = ((t+3599)//3600)*3600 if hours == 1 else (t//3600+1)*3600
-            for j in range(hours):
-                due = first+j*3600
-                if a <= due <= b:
-                    by_hour[due] = rate/hours
-                    known[due] = t
+            if t in by_hour:
+                raise ValueError("duplicate funding settlement")
+            by_hour[t] = rate
+            known[t] = t
         funding[s], stamps[s] = by_hour, known
-        sources[s] = f"{venue}: first lawful hourly charge; missing hours use TM06 fallback"
+        sources[s] = venue
     return funding, sources, stamps
 
 
@@ -223,7 +220,7 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
     priced = list(dict.fromkeys(symbols + ["BTC/USD"]))
     funding, source, stamps = desk_funding(tape, priced, cfg, a, b)
     pp = P.p_params(priced, cfg, funding=funding)
-    pp.update(hours={s:1 for s in priced}, source=source, funding_known_at=stamps)
+    pp.update(source=source,funding_known_at=stamps)
     mins = P.perp_minutes(tape, priced, wall(a), wall(b))
     rows = []
     for t in wakes:
