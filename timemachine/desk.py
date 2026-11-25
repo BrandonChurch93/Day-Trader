@@ -464,7 +464,7 @@ class DeskSession:
             if action == "status":
                 return dict(done=done, step=k, total=len(self.spec["wakes"]))
             key = body.get("wake_key")
-            if action in ("notes", "pick", "usage") and isinstance(key, str):
+            if action in ("look", "notes", "pick", "usage") and isinstance(key, str):
                 rid = digest([role, action, key, body])
                 prev = con.execute("SELECT data FROM journal WHERE kind=? LIMIT 1", ("receipt:"+rid,)).fetchone()
                 if prev:
@@ -477,8 +477,15 @@ class DeskSession:
                 raise PermissionError("wrong wake key")
             at = self.spec["wakes"][k]
             if action == "look" and role == "boss":
-                return self.lookup(con, st, body)
-            if action == "notes" and role in SCOUTS:
+                request = body.get("request_id")
+                if not isinstance(request,str) or not OID.fullmatch(request):
+                    raise ValueError("lookup needs a wake-scoped request id")
+                req = "lookup:" + request
+                if con.execute("SELECT 1 FROM journal WHERE wake=? AND role=? AND kind=?", (at,role,req)).fetchone():
+                    raise ValueError("lookup request id cannot be reused with changed fields")
+                result = self.lookup(con, st, body)
+                self.log(con,at,role,req,dict(receipt=rid))
+            elif action == "notes" and role in SCOUTS:
                 result = self.scout_submit(con, st, role, body.get("notes"))
             elif action == "pick" and role == "boss":
                 result = self.decision(con, st, {x: v for x, v in body.items() if x != "wake_key"})

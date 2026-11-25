@@ -187,6 +187,18 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(found["quote"]["price"],100)
         self.assertTrue(d.handle("boss","pick",pick)["accepted"])
 
+    def test_s04_lookup_retry_is_not_a_second_paid_lookup(self):
+        a = self.create("A")
+        _,key = info(a)
+        request = dict(wake_key=key,symbol=A,kind="news",request_id="first")
+        first = a.handle("boss","look",request)
+        again = D.DeskSession(a.path).handle("boss","look",request)
+        self.assertEqual(first,again)
+        with self.assertRaisesRegex(ValueError,"request id"):
+            a.handle("boss","look",dict(request,kind="bars"))
+        more = a.handle("boss","look",dict(request,request_id="second"))
+        self.assertEqual(more["looks_left"],1)
+
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
         for k in range(2):
@@ -258,11 +270,11 @@ class DeskTest(unittest.TestCase):
         a = self.create("A")
         _,key = info(a)
         for i in range(3):
-            rows = a.handle("boss","look",dict(wake_key=key,symbol=A,kind="news"))
+            rows = a.handle("boss","look",dict(wake_key=key,symbol=A,kind="news",request_id=f"look-{i}"))
             self.assertEqual([r["id"] for r in rows["rows"]],["n0"])
             self.assertEqual(rows["looks_left"],2-i)
         with self.assertRaisesRegex(ValueError,"no lookups left"):
-            a.handle("boss","look",dict(wake_key=key,symbol=A,kind="news"))
+            a.handle("boss","look",dict(wake_key=key,symbol=A,kind="news",request_id="overflow"))
         with self.assertRaises(PermissionError):
             a.handle("news_scout","next",{})
 
