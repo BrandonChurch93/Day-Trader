@@ -82,7 +82,7 @@ What is UNKNOWN:
 
 What it changes, as a proposal:
 
-- Replay 07 (day trading SPY and QQQ on one-minute prices) may not need a purchase, if the owner allows this data and it passes the gap check.
+- Replay 07 (day trading SPY and QQQ on one-minute prices) could run its day-only rules without a purchase, if the owner allows this data and it passes the gap check. As drafted it cannot run in full: its night-only rule N5 needs dividend history (`research_rig/PREREG_07_intraday_spy_qqq_DRAFT.md`). On this data alone N5 would have to be dropped, and the plan would have to say so before it is frozen.
 - Replay 06 (slow trend on funds that can be bought) still needs dividend history, which this lookup does not have. The purchase above is still the recommended source for it.
 - The purchase is still worth making for a second reason. A second source changed a result once already: no bitcoin rule that passed on Bitstamp's history in the first run passed on Kraken's (`docs/research/12b_replay_01_kraken_crosscheck.md`). A test on one unchecked source should not be believed.
 - Until the owner answers, research collects and checks this data and runs no rule on it. The files stay out of the repo, like all raw prices.
@@ -179,7 +179,7 @@ One checker checked 14 claims: 11 held, 3 were overstated, none wrong. With one 
 
 ## What research proposes
 
-1. Buy one month of the Kibot $14 end-of-day plan and download the full daily ETF archive once, because it is the cheapest durable archive and may be kept permanently; EODHD at $19.99 is the runner-up if its plain AI permission matters more.
+1. (Superseded on 2026-11-25. The purchase now put to the owner is one month of the EODHD plan with daily and one-minute prices, because two planned tests need one-minute prices and dividends. See the note at the top of this page and item 2 of `docs/decisions/morning_list_2026-11-25.md`. The line as first written follows.) Buy one month of the Kibot $14 end-of-day plan and download the full daily ETF archive once, because it is the cheapest durable archive and may be kept permanently; EODHD at $19.99 is the runner-up if its plain AI permission matters more.
 2. Before relying on Bitstamp bars further, have the owner or a professional read Bitstamp's US terms, because the general terms are mixed and the US page could not be opened.
 3. Keep bitcoin and ether as the only coins in crypto replays, because no free source here was found that avoids the dead-coin problem for others.
 4. Use the Alpaca practice account to debug programs, not to judge results, and add fees, dividends and stop slippage in our own records, because the practice account does not simulate them.

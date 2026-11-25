@@ -39,8 +39,11 @@ m = re.search(r"Last updated: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC", open("docs/S
 if not m: bad.append("docs/STATUS.md has no 'Last updated: YYYY-MM-DD HH:MM UTC' line")
 sys.path.insert(0, "tools"); import status_table
 if not status_table.in_sync(): bad.append("docs/STATUS.md results table is out of date: run python3 tools/status_table.py --write")
-pv = subprocess.run([sys.executable, "provenance.py"], cwd="research_rig", capture_output=True, text=True).stdout
-bad += [l for l in pv.split("\n") if l.startswith(("output differs", "input differs"))]
+pv = subprocess.run([sys.executable, "provenance.py"], cwd="research_rig", capture_output=True, text=True)
+pl = [l for l in pv.stdout.split("\n") if l.startswith(("output differs", "input differs", "provenance.json is not"))]
+bad += pl
+if pv.returncode and not pl:   # provenance.py failed for a reason the lines above did not name
+    bad.append("research_rig/provenance.py exited with an error: " + ((pv.stderr.strip().splitlines() or pv.stdout.strip().splitlines() or ["no message"])[-1]))
 if "--builders" in sys.argv:
     def state(): return subprocess.run("git status --porcelain; git diff | sha256sum", shell=True, capture_output=True, text=True).stdout
     before = state()

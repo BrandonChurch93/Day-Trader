@@ -2,7 +2,7 @@
 
 Status: research result. Proposed by research. No owner decision is recorded here.
 
-Note, 2026-11-25. Which of the two runs below counts is not settled. The corrected run fixed a fault in the code of one rule, not in the engine. The owner's rule allows a second run of the held-back slice only when the engine itself was wrong, so it may not cover this one. That is question 18 in `docs/decisions/morning_list_2026-11-25.md`. Until he answers, the first run is the one that stands, and the corrected run is shown beside it.
+Note, 2026-11-25. Which of the two runs below counts is not settled. The corrected run fixed a fault in the code of one rule, not in the engine. The owner's rule allows a second run of the held-back slice only when the engine itself was wrong, so it may not cover this one. That is questions 18a and 18b in `docs/decisions/morning_list_2026-11-25.md`. The first run has a slip of its own: its ledger row was added after it started, and a short try with 3 shuffles came before it. Research recommends that no pass from either run is credited, that the fails stand, and that every figure below is kept as a measurement. The owner has not answered.
 
 Date: 2026-11-25. Plan written and pushed before the run: `research_rig/PREREG_05_stock_trend_free_data.md`. Correction written and pushed before the corrected run: `research_rig/AMENDMENT_05_I2_equal_thirds.md`. Every number below is MEASURED by `research_rig/run_05.py` and placed here by `research_rig/build_doc22.py`, unless it says it is the auditor's.
 
@@ -85,7 +85,7 @@ The twelve industry sleeves in I1, and in its comparison, start equal in 1927 an
 
 ## Held-back slice, 2006-06-01 to 2026-06-30, at 5 bps a side, corrected run
 
-Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. The first run is the one that stands for now; I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
+Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. Research recommends that no pass from either run is credited (question 18b in the morning list); I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
 
 | Rule | Growth a year | Sharpe above bills | Largest drop | Average share in stocks | Days with a trade, a year |
 |---|---|---|---|---|---|
@@ -104,7 +104,7 @@ Which run this table shows: the seven rules other than I2 made the same trades i
 
 ## Whole sample, 1927-08-01 to 2026-09-30, at 5 bps a side, corrected run
 
-Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. The first run is the one that stands for now; I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
+Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. Research recommends that no pass from either run is credited (question 18b in the morning list); I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
 
 | Rule | Growth a year | Sharpe above bills | Largest drop | Average share in stocks | Days with a trade, a year |
 |---|---|---|---|---|---|
@@ -121,34 +121,36 @@ Which run this table shows: the seven rules other than I2 made the same trades i
 
 ## Pass marks
 
+Marks 1 to 5 and the fixed-mix column are from the corrected run. Where the first run gave a different answer, it follows in brackets. The two "All five" columns give the verdict of each run.
+
 | Rule | Cost per side | 1 held-back | 2 break-even | 3 deflated Sharpe | 4 overfitting | 5 shuffle | All five, corrected run | All five, first run | Beat the fixed mix on the held-back slice |
 |---|---|---|---|---|---|---|---|---|---|
-| T1 | 2 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
-| T1 | 5 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
+| T1 | 2 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
+| T1 | 5 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
 | T1 | 10 bps | PASS | PASS | PASS | PASS | PASS | PASS | PASS | yes |
-| T2 | 2 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
-| T2 | 5 bps | fail | PASS | PASS | PASS | PASS | fail | fail | yes |
+| T2 | 2 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
+| T2 | 5 bps | fail | PASS | PASS | PASS (first run: fail) | PASS | fail | fail | yes |
 | T2 | 10 bps | fail | fail | PASS | PASS | PASS | fail | fail | no |
-| T3 | 2 bps | fail | PASS | PASS | PASS | PASS | fail | fail | no |
-| T3 | 5 bps | fail | PASS | PASS | PASS | PASS | fail | fail | no |
+| T3 | 2 bps | fail | PASS | PASS | PASS (first run: fail) | PASS | fail | fail | no |
+| T3 | 5 bps | fail | PASS | PASS | PASS (first run: fail) | PASS | fail | fail | no |
 | T3 | 10 bps | fail | PASS | PASS | PASS | PASS | fail | fail | no |
-| T4 | 2 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
-| T4 | 5 bps | fail | fail | PASS | PASS | PASS | fail | fail | no |
+| T4 | 2 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
+| T4 | 5 bps | fail | fail | PASS | PASS (first run: fail) | PASS | fail | fail | no |
 | T4 | 10 bps | fail | fail | PASS | PASS | PASS | fail | fail | no |
-| T5 | 2 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
-| T5 | 5 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
+| T5 | 2 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
+| T5 | 5 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
 | T5 | 10 bps | PASS | PASS | PASS | PASS | PASS | PASS | PASS | yes |
-| V1 | 2 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
-| V1 | 5 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
+| V1 | 2 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
+| V1 | 5 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
 | V1 | 10 bps | PASS | PASS | PASS | PASS | PASS | PASS | PASS | yes |
-| I1 | 2 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
-| I1 | 5 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
+| I1 | 2 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
+| I1 | 5 bps | PASS | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
 | I1 | 10 bps | PASS | PASS | PASS | PASS | PASS | PASS | PASS | yes |
-| I2 | 2 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
-| I2 | 5 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
-| I2 | 10 bps | PASS | PASS | PASS | PASS | PASS | PASS | fail | yes |
+| I2 | 2 bps | PASS (first run: fail) | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
+| I2 | 5 bps | PASS (first run: fail) | PASS | PASS | PASS (first run: fail) | PASS | PASS | fail | yes |
+| I2 | 10 bps | PASS (first run: fail) | PASS | PASS | PASS | PASS | PASS | fail | yes |
 
-The numbers behind the marks, at 5 bps a side, corrected run. Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. The first run is the one that stands for now; I2's first-run figures are in the table "Rule I2, first run against corrected run" above. In this table the deflated Sharpe column also differs by run for every rule, and the lowest value in either run is 0.9978.
+The numbers behind the marks, at 5 bps a side, corrected run. Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. Research recommends that no pass from either run is credited (question 18b in the morning list); I2's first-run figures are in the table "Rule I2, first run against corrected run" above. In this table the deflated Sharpe column is from the corrected run for every rule. Across all three cost levels the lowest deflated Sharpe is 0.9978 (T4 at 10 bps) in the corrected run and 0.9982 (T4 at 10 bps) in the first run.
 
 | Rule | Held-back Sharpe, rule | Comparison | Drop as a share of the comparison's | Break-even cost per side | Deflated Sharpe | Share of shuffles beaten | Sharpe gap to the comparison, whole sample: low end, middle, high end of the resampled range | Fixed mix: share in stocks | Fixed mix: held-back Sharpe | Fixed mix: largest drop |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -163,7 +165,7 @@ The numbers behind the marks, at 5 bps a side, corrected run. Which run this tab
 
 ## The three bad years, at 5 bps a side, corrected run
 
-Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. The first run is the one that stands for now; I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
+Which run this table shows: the seven rules other than I2 made the same trades in both runs, and this builder checks that their figures are the same in both, apart from mark 4, the all-five verdict and the deflated Sharpe, which are worked out across the whole set of eight. The comparisons are the same in both runs too. So the only row here that belongs to the corrected run alone is I2. Research recommends that no pass from either run is credited (question 18b in the morning list); I2's first-run figures are in the table "Rule I2, first run against corrected run" above.
 
 | Rule | 2008 | 2020 | 2022 | Largest drop in 2008 | Largest drop in 2020 | Largest drop in 2022 |
 |---|---|---|---|---|---|---|
@@ -198,7 +200,7 @@ Held-back Sharpe ratio at 5 bps a side, corrected run. Only the I2 row differs f
 - These are returns of an index that cannot be bought directly. A total market fund is the nearest thing. Fund fees and tracking gaps are left out for the rules and for holding alike.
 - The held-back slice holds 2008, 2020 and 2022. The table above shows each year one by one.
 - The three months after the designer's knowledge cutoff are far too short to mean anything and are in the output files only.
-- This is the cheap first look. A fair test of funds that can be bought needs paid daily prices with opening prices (`docs/decisions/morning_list_2026-11-25.md`, `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`).
+- This is the cheap first look. A fair test of funds that can be bought needs daily fund prices with opening prices and dividend history. Dividend history is the part that still needs a purchase (`docs/decisions/morning_list_2026-11-25.md`, `research_rig/PREREG_06_fund_trend_paid_data_DRAFT.md`).
 
 ## Files
 

@@ -7,8 +7,10 @@ except labels and plain-words wording. The output holds derived curves and is no
 The five charts need curves and trade lists that the output files do not hold. Making them replays five rules on raw
 prices that include the held-back years, so that step is a held-back run (research_rig/README.md, "Held-back scripts").
 By default this script does NOT do that: it reads the curves from dashboard/curves_cache.json, which is not committed.
-With --resimulate it replays the five rules with rig2, checks every figure against results_v2.json, and rewrites the
-cache. Do not pass --resimulate unless the owner has allowed a repeat (question 16 on the morning list).
+With --resimulate it replays the five rules with rig2 and rewrites the cache. What it checks against results_v2.json
+is exactly this: growth a year, Sharpe ratio, largest drop and total return over the whole sample, for the rule and for
+holding, and for the three daily charts the number of trades. The curves, the year-by-year figures and the trade lists
+are derived in that replay and are compared with nothing; no stored output holds them. Do not pass --resimulate unless the owner has allowed a repeat (questions 16a and 16b on the morning list).
 
 Usage: python3 export_dashboard.py                 (run from research_rig/; reads the cache, touches no raw prices)
        python3 export_dashboard.py --resimulate    (held-back run; see above)
@@ -103,7 +105,7 @@ def check(label, a, b):
 def both_status(venue, asset, rule):
     x = next((z for z in cmp_["both_histories"] if z["venue"] == venue and z["asset"] == asset and z["rule"] == rule), None)
     if x is None: return dict(passed=False, text="Not judged on both price histories.")
-    if x["both"]: return dict(passed=True, text="Passed all five pass marks on both price histories, after the audit fixes. A reason to test in the practice account, not proof that it works.")
+    if x["both"]: return dict(passed=True, tone="mixed", label="Cleared the marks in a rerun. Not credited yet", text="Cleared all five pass marks on both price histories in the rerun after the audit fixes. That rerun also carried a rule fix and a stricter pass mark, so whether it is credited as a pass is waiting on you (question 18b in the morning list). Research recommends it is not, and that the rule is watched in the practice account as not passed.")
     parts = []
     if x["bitstamp_failed"]: parts.append("Marks failed on Bitstamp prices: " + ", ".join(MARK[m] for m in x["bitstamp_failed"]) + ".")
     if x["kraken_failed"]: parts.append("Marks failed on Kraken prices: " + ", ".join(MARK[m] for m in x["kraken_failed"]) + ".")
@@ -147,9 +149,7 @@ def hourly_series(asset, rule, venue):
     check(f"R03 {venue} {asset} hold", R.metrics(R.cut(hp, *R.SL["all"]).values), J["hold"]["all"])
     tl = trade_list(idx, x["o"], eq, wt, tr, c, True)
     eqc, ddc = curves(ep, hp); years = jr["all"]["n"] / 365; lo, hi = R.SL["held"]
-    mk = jr["marks"]
-    st = dict(passed=bool(mk["passed"]), text=("Passed all five pass marks on Bitstamp hourly prices." if mk["passed"] else
-              "Did not pass. Marks failed on Bitstamp hourly prices: " + ", ".join(MARK[k] for k in ("m1", "m2", "m3", "m4", "m5") if not mk[k]) + "."))
+    st = hourly_status(asset, rule, venue)
     return dict(rule=dict(figs(jr["all"]), time_invested=jr["share_of_hours_in_position"], trades=len(tl), trades_per_year=len(tl) / years,
                           cost_paid_share=float(sum(z["cost_share_of_account"] for z in tl))),
                 hold=figs(J["hold"]["all"]),
@@ -157,8 +157,15 @@ def hourly_series(asset, rule, venue):
                 equity=eqc, drawdown=ddc, yearly=yearly(ep, hp), trades=tl, start=str(ep.index[1])[:10], end=str(ep.index[-1])[:10], status=st)
 
 
-def series(sid, label, note, asset, venue, make, max_trades=None):
-    s = cached(sid, make, max_trades); shown = s.pop("trades")
+def hourly_status(asset, rule, venue):
+    mk = v2["R03"]["venues"][venue][asset]["rules"][rule]["marks"]
+    return dict(passed=bool(mk["passed"]), text=("Passed all five pass marks on Bitstamp hourly prices." if mk["passed"] else
+                "Did not pass. Marks failed on Bitstamp hourly prices: " + ", ".join(MARK[k] for k in ("m1", "m2", "m3", "m4", "m5") if not mk[k]) + "."))
+
+
+def series(sid, label, note, asset, venue, make, status, max_trades=None):
+    """The curves come from the cache. The verdict is worked out now from the stored outputs, so it cannot go stale in the cache."""
+    s = cached(sid, make, max_trades); shown = s.pop("trades"); s["status"] = status()
     return dict(id=sid, label=label, note=note, asset=AN[asset], kind="Past-price test", cost_bps_per_side=COST[venue], **s,
                 trades_shown=len(shown), trades_list=shown[::-1])
 
@@ -167,17 +174,17 @@ P1_NOTE = ("Holds {coin} in quarters: one quarter for each of its 20, 50, 100 an
            "Sits in cash otherwise. Kraken's published daily prices. Fee and slippage {c} bps a side.")
 S = [
     series("btc_trend_binance", "Bitcoin: slow trend rule P1, at Binance.US cost", P1_NOTE.format(coin="bitcoin", c=COST["Binance.US"]),
-           "BTCUSD", "Binance.US", lambda: daily_series("BTCUSD", "P1", "Binance.US")),
+           "BTCUSD", "Binance.US", lambda: daily_series("BTCUSD", "P1", "Binance.US"), lambda: both_status("Binance.US", "BTCUSD", "P1")),
     series("btc_trend_alpaca", "Bitcoin: slow trend rule P1, at Alpaca cost", P1_NOTE.format(coin="bitcoin", c=COST["Alpaca"]),
-           "BTCUSD", "Alpaca", lambda: daily_series("BTCUSD", "P1", "Alpaca")),
+           "BTCUSD", "Alpaca", lambda: daily_series("BTCUSD", "P1", "Alpaca"), lambda: both_status("Alpaca", "BTCUSD", "P1")),
     series("eth_trend_alpaca", "Ether: slow trend rule P1, at Alpaca cost", P1_NOTE.format(coin="ether", c=COST["Alpaca"]),
-           "ETHUSD", "Alpaca", lambda: daily_series("ETHUSD", "P1", "Alpaca")),
+           "ETHUSD", "Alpaca", lambda: daily_series("ETHUSD", "P1", "Alpaca"), lambda: both_status("Alpaca", "ETHUSD", "P1")),
     series("btc_day_h1_alpaca", "Bitcoin: day trading rule H1, at Alpaca cost",
            f"Each day at 12:00 UTC, buys if the price is above the day's open, sells at the end of the day. Bitstamp hourly prices. Fee and slippage {COST['Alpaca']} bps a side.",
-           "BTCUSD", "Alpaca", lambda: hourly_series("BTCUSD", "H1", "Alpaca"), max_trades=400),
+           "BTCUSD", "Alpaca", lambda: hourly_series("BTCUSD", "H1", "Alpaca"), lambda: hourly_status("BTCUSD", "H1", "Alpaca"), max_trades=400),
     series("btc_day_h7_binance", "Bitcoin: day trading rule H7, at Binance.US cost",
            f"The same day trading rule, only on days when the slow trend is up. Bitstamp hourly prices. Fee and slippage {COST['Binance.US']} bps a side.",
-           "BTCUSD", "Binance.US", lambda: hourly_series("BTCUSD", "H7", "Binance.US"), max_trades=400),
+           "BTCUSD", "Binance.US", lambda: hourly_series("BTCUSD", "H7", "Binance.US"), lambda: hourly_status("BTCUSD", "H7", "Binance.US"), max_trades=400),
 ]
 if RESIM: json.dump(_cache, open(CACHE, "w"), allow_nan=False)
 
@@ -238,7 +245,7 @@ tests = [
     dict(id="audit", title="Audit of the test rig", date="2026-11-25", verdict="Faults fixed, tests rerun", tone="info",
          basis="STATED by the two audit reports. MEASURED counts from compare_v1_v2.json.",
          summary=("Two AI models read the rig code separately. Neither found any use of future prices. Both found faults in how "
-                  "results were measured. The fixes were written down before the rerun, and no rule, cost or pass mark was changed. "
+                  "results were measured. The fixes were written down before the rerun. Most fixed the shared test code. Three did more: one rule's code was brought into line with its plan, one pass mark was made stricter, and holding was made to pay the same cost as the rule. "
                   "The crypto rule tests below use the rerun."),
          numbers=[["Fixes listed in the written plan", str(n_fixes)],
                   ["Single pass marks that changed in the rerun", str(sum(x["marks_changed"] for x in cn.values()))],
@@ -246,7 +253,7 @@ tests = [
                   ["The same, after the fixes", str(len(BOTH))]],
          links=[["Audit and rerun", GH + "docs/research/16_rig_audit.md"], ["Plan for the fixes", GH + "research_rig/AMENDMENT_2026-11-25_audit_fixes.md"]]),
     dict(id="replay01", title="Slow trend rules on bitcoin and ether", date="2026-11-25",
-         verdict="Passes at the lowest fee only, after audit fixes" if BOTH and len(both_venues) == 1 else ("Passes, after audit fixes" if BOTH else "No pass"),
+         verdict="Clears the marks at the lowest fee only, in a rerun. Not credited yet" if BOTH and len(both_venues) == 1 else ("Clears the marks in a rerun. Not credited yet" if BOTH else "No pass"),
          tone="mixed" if BOTH else "fail", basis="MEASURED by run_v2.py, read from results_v2.json and compare_v1_v2.json.",
          summary=(f"Nine rules that hold a coin while its trend is up, tested on two price histories, Bitstamp and Kraken. "
                   f"A rule counts only if it passes all five pass marks on both. After the audit fixes, {pass_phrase} "
@@ -254,7 +261,7 @@ tests = [
                   f" The pass is on a knife edge: the overfitting estimate is {kb['rerun']:.3f} against a limit of {TH['backtest_max_pbo']}, "
                   f"and {kb['latest_days_dropped']:.3f}, a fail, when the latest days are dropped instead of the earliest. "
                   + (f"On Bitstamp prices from the same start date it is {kd['rerun']:.3f}, a fail. " if kd and kd["rerun"] >= TH["backtest_max_pbo"] else "") +
-                  "It came after fixes, so it is a reason to test in the practice account, not proof that the rules work."),
+                  "It came in a rerun that carried a rule fix and a stricter pass mark as well as engine fixes, so research recommends it is not credited as a pass (question 18b on your list). It is a reason to watch the rule in the practice account, not proof that it works."),
          numbers=[[f"Passes on Bitstamp prices (of {cn['R01']['trials']})", str(cn["R01"]["passed_rerun"])],
                   [f"Passes on Kraken prices (of {cn['X2']['trials']})", str(cn["X2"]["passed_rerun"])],
                   [f"Passes on both (of {n_pairs})", str(len(BOTH))],
@@ -310,7 +317,7 @@ def card_05():
                        + (f"; {plist(ob)} {'passes' if len(ob) == 1 else 'pass'} only in the corrected run." if ob else "."))
         late = (" ".join(per) + " A pass that appears only in the corrected run came after a correction whose effect was already known, "
                 "so it counts for less than a pass in both runs. The correction was to one rule's code, not to the engine, and your rerun rule names the engine only. "
-                "Whether the corrected run counts is question 18 on your list. Until you answer, the first run stands.")
+                "The first run has a slip too: its ledger row was added after it started. Research recommends that no pass from either run is credited (question 18b on your list).")
     else:
         late = "The corrected run is not in yet, so its result is UNKNOWN."
     base = "base" if "base" in a["costs"] else L[0]; cb = a["costs"][base]["cost_bps_per_side"]
@@ -320,7 +327,7 @@ def card_05():
     na = len(P(a, base)); nb = len(P(b, base)) if b is not None else None
     first = f"{na or 'None'} of {len(N)} pass at {cb} bps in the first run"
     return dict(id="replay05", title="Slow trend rules on the US stock market", date=None,
-                verdict=(first + f", which stands for now; {nb or 'none'} of {len(N)} in the corrected run" if b is not None else first),
+                verdict=(first + f"; {nb or 'none'} of {len(N)} in the corrected run. No pass credited yet" if b is not None else first),
                 tone="mixed" if na else "fail",
                 basis="MEASURED by run_05.py, read from results_05.json" + (" and results_05b.json." if b is not None else ". Corrected run UNKNOWN, not in yet."),
                 summary=(f"{len(N)} rules that hold the stock market while its trend is up, tested on free daily data from {str(a.get('start', ''))[:4] or 'the start'} on, "

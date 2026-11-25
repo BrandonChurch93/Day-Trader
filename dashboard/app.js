@@ -178,8 +178,9 @@
     $('series-note').textContent = s.note;
     var stt = s.status;
     $('series-status').innerHTML = stt
-      ? '<span class="badge ' + (stt.passed ? 'badge-pass' : 'badge-fail') + '"><span class="mark" aria-hidden="true">' + (stt.passed ? '\u2713' : '\u00d7') + '</span>' +
-        (stt.passed ? 'Passed' : 'Did not pass') + '</span><p>' + esc(stt.text) + '</p>'
+      ? '<span class="badge badge-' + esc(stt.tone || (stt.passed ? 'pass' : 'fail')) + '"><span class="mark" aria-hidden="true">' +
+        (stt.tone ? (TONE_MARK[stt.tone] || '?') : (stt.passed ? '\u2713' : '\u00d7')) + '</span>' +
+        esc(stt.label || (stt.passed ? 'Passed' : 'Did not pass')) + '</span><p>' + esc(stt.text) + '</p>'
       : '';
     $('series-meta').textContent = (s.kind || 'Past-price test') + '. ' + s.asset + ', ' + s.start + ' to ' + s.end +
       '. Fee and slippage ' + s.cost_bps_per_side + ' bps a side.';

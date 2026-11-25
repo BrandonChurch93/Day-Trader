@@ -1,8 +1,8 @@
 # Pre-registration 07 (draft): day trading SPY and QQQ on one-minute bars
 
-Status: DRAFT, written 2026-11-25. Not frozen and not in the trial ledger. It is frozen and logged on the day the price data is in hand, before any rule is run on it. Proposed by research. No owner decision is recorded here.
+Status: DRAFT, written 2026-11-25. Not frozen and not in the trial ledger. It is frozen and logged only when every gate below is met (the data, the owner's yes to decision 4b, and his decision on pass mark 4), and before any rule is run on it. Proposed by research. No owner decision is recorded here.
 
-Blocked on: one-minute prices for SPY and QQQ. Two possible sources: a purchase, or the workspace's own price history if the owner allows it and it passes a gap check (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace", and items 2 and 6 of `docs/decisions/morning_list_2026-11-25.md`). Also waits on the owner's yes to decision 4 and his decision on pass mark 4. If both sources are in hand, the plan must say before it is frozen which one is the test and which one is the cross-check.
+Blocked on: one-minute prices for SPY and QQQ. Two possible sources: a purchase, or the workspace's own price history if the owner allows it and it passes a gap check (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace", and items 2 and 6 of `docs/decisions/morning_list_2026-11-25.md`). The workspace's own price history has no dividends, and rule N5 below needs them. So on that source alone, N5 must either get dividends from a second source or be dropped, and the plan must say which before it is frozen. Also waits on the owner's yes to decision 4b and his decision on pass mark 4. If both sources are in hand, the plan must say before it is frozen which one is the test and which one is the cross-check.
 
 ## Why
 

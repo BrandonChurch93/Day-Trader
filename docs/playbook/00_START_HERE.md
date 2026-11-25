@@ -73,6 +73,8 @@ Details: `04_brokers_data_rules.md`.
 
 The owner wants a middle risk level: rule-based core strategies plus a small capped sleeve for moonshots that each carry a written thesis. Historical data is used for all rule-based testing, and for model comparisons only on dates after each model's training cutoff. Details: `docs/decisions/0002-historical-testing-and-risk-posture.md`.
 
+> Correction added 2026-11-25 by research. The last part of that sentence was a proposal and conflicts with `AGENTS.md` hard rule 7, which says only forward paper or shadow results count for models. Hard rule 7 is in force. A replay of a model on past dates, whatever the cutoff, is not evidence of skill. Question 19 in `docs/decisions/morning_list_2026-11-25.md`.
+
 ## What the owner still has to decide
 
 Capital and loss limits, brokers, spot-only crypto or not, hosting, Perplexity plan and API budget, and model policy. Listed in `docs/decisions/0001-starting-decisions.md`.

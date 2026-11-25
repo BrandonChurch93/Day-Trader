@@ -4,7 +4,7 @@ Usage, from research_rig/: python3 check_data.py            (exit code 1 if anyt
 Raw price files are never committed. They live in research_rig/data/, which git ignores, unless the variable named below is set."""
 import os, glob, sys
 H = os.path.dirname(os.path.abspath(__file__)); D = os.path.join(H, "data")
-K = os.environ.get("KRAKEN_DIR", os.path.join(D, "kraken")); KD = os.environ.get("KRAKEN_DAILY_DIR", os.path.join(K, "daily"))
+K = os.environ.get("KRAKEN_DIR", os.path.join(D, "kraken")); KD = os.environ.get("KRAKEN_DAILY_DIR", os.path.join(D, "kraken", "daily"))   # as basket.py: not moved by KRAKEN_DIR
 F = os.environ.get("FRENCH_DIR", os.path.join(D, "french"))
 SETS = [
     ("Bitstamp daily bars, bitcoin and ether", [f"{D}/bitstamp_BTCUSD.csv", f"{D}/bitstamp_ETHUSD.csv"], "python3 fetch.py crypto", "replay 01, the rerun, pilot 02"),

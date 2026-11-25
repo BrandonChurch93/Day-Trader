@@ -12,7 +12,7 @@ def crypto_trend():
     edge = f" Knife edge: the overfitting estimate on Kraken prices is {k[0]['rerun']:.4f} against a bar of {th['backtest_max_pbo']} when it was run (`backtest_max_pbo`), and {d[0]['rerun']:.4f} on Bitstamp prices from the same start date, which fails." if k and d else ""
     return ("Replay 01 with cross-check X2, rerun after the audits", "Nine slow trend rules on bitcoin and on ether, daily, five venue costs, two price histories",
             f"{n['R01']['passed_rerun']} of {n['R01']['trials']} rule, coin and venue combinations pass on Bitstamp prices and {n['X2']['passed_rerun']} of {n['X2']['trials']} on Kraken prices. "
-            f"Pass on both histories: {ls([x['rule'] for x in both])} on {ls(coins)}, at {ls(ven)} cost only. In the first run, before the audit fixes, {len([x for x in c['both_histories'] if x['first_both']]) or 'none'} passed on both histories ({n['R01']['passed_first']} on Bitstamp prices, {n['X2']['passed_first']} on Kraken prices)." + edge,
+            f"Pass on both histories: {ls([x['rule'] for x in both])} on {ls(coins)}, at {ls(ven)} cost only. Not credited as passes: the rerun also carried a rule fix, a stricter pass mark and a change to what holding pays (question 18b in the morning list). In the first run, before the audit fixes, {len([x for x in c['both_histories'] if x['first_both']]) or 'none'} passed on both histories ({n['R01']['passed_first']} on Bitstamp prices, {n['X2']['passed_first']} on Kraken prices)." + edge,
             "`docs/research/16_rig_audit.md`")
 def crypto_intraday():
     n = J("compare_v1_v2.json")["counts"]["R03"]
@@ -34,7 +34,7 @@ def stocks():
     assert all(t1[k] == b["costs"]["base"]["rules"]["T1"]["held"][k] and h[k] == b["costs"]["base"]["bench"]["HOLD"]["held"][k] for k in ("cagr", "maxdd")), "T1 or hold differs between the two runs"
     return ("Replay 05, first run and corrected run", "Eight slow trend rules on the US stock market index from 1927, three cost levels",
             "First run: " + "; ".join(f"{ls(P(a, l))} at {cb(l)}" for l in L) + ". Corrected run, after an audit found one rule did not match the plan: " + "; ".join(f"{ls(P(b, l))} at {cb(l)}" for l in L)
-            + f". Pass in both runs at every cost: {ls(both)}. Which run counts is the owner's to say (questions 18a and 18b in the morning list); until then the first run stands, and research recommends it keep standing. Held-back years at 5 bps, the same in both runs: the ten-month rule T1 grew {pc(t1['cagr'])} a year with a largest drop of {pc(t1['maxdd'])}, holding the market grew {pc(h['cagr'])} with {pc(h['maxdd'])}.",
+            + f". Pass in both runs at every cost: {ls(both)}. Not credited as passes in either run: the first run's ledger row was late and the corrected run was made before asking the owner (question 18b in the morning list). Fails stand. Held-back years at 5 bps, the same in both runs: the ten-month rule T1 grew {pc(t1['cagr'])} a year with a largest drop of {pc(t1['maxdd'])}, holding the market grew {pc(h['cagr'])} with {pc(h['maxdd'])}.",
             "`docs/research/22_replay_05_stock_trend.md`")
 def books():
     b = J("books_summary.json"); P = b["pairs"]; k = P["Kraken|XXBTZUSD"]; n = P["Binance.US|BTCUSD"]; slip = J("results_04.json")["slippage_bps"]["XBTUSD_ETHUSD"]

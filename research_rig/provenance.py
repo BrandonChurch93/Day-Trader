@@ -16,7 +16,7 @@ Usage, from research_rig/:
 Running a run_*.py script is a separate matter with its own rule. See README.md, "How each stored output was made"."""
 import os, sys, json, glob, hashlib, subprocess, datetime
 H = os.path.dirname(os.path.abspath(__file__)); D = os.path.join(H, "data")
-K = os.environ.get("KRAKEN_DIR", os.path.join(D, "kraken")); KD = os.environ.get("KRAKEN_DAILY_DIR", os.path.join(K, "daily"))
+K = os.environ.get("KRAKEN_DIR", os.path.join(D, "kraken")); KD = os.environ.get("KRAKEN_DAILY_DIR", os.path.join(D, "kraken", "daily"))   # as basket.py: not moved by KRAKEN_DIR
 F = os.environ.get("FRENCH_DIR", os.path.join(D, "french"))
 
 # name -> (how it is shown, real path). Names are what README.md and check_data.py call the files.
@@ -51,11 +51,11 @@ OUTPUTS = {
     "diag_x2_pbo.json": ("held-back", "python3 diag_x2_pbo.py", ["diag_x2_pbo.py", "engine.py", "rules.py", "common_01.py"], KF + BD, []),
     "results_02.json": ("held-back", "python3 score_02.py", ["score_02.py", "engine.py", "rules.py"], BD, ["pilot/decisions.jsonl"]),
     "results_03.json": ("held-back", "python3 run_03.py", ["run_03.py", "common_03.py", "common_01.py", "rules.py", "engine.py"], BH + BD, []),
-    "results_v2.json": ("held-back", "python3 run_v2.py R01 X2 S2 DIAG R03", ["run_v2.py", "rig2.py", "rules.py", "common_03.py"], BD + KF + BH + K60, []),
-    "results_04.json": ("held-back", "python3 run_04.py", ["run_04.py", "rig2.py", "basket.py", "rules.py"], ["KRAKEN_DAILY_DIR/*USD_1440.csv"], []),
-    "results_05.json": ("held-back", "python3 run_05.py", ["run_05.py", "rig2.py"], FR, []),
-    "results_05b.json": ("held-back", "R05_POOL=1 python3 run_05.py", ["run_05.py", "rig2.py"], FR, []),
-    "i2_2020_note.json": ("held-back", "python3 i2_2020_note.py", ["i2_2020_note.py"], FR[1:], []),
+    "results_v2.json": ("held-back", "python3 run_v2.py R01 X2 S2 DIAG R03", ["run_v2.py", "rig2.py", "rules.py", "common_03.py", "fixtures2.py", "../config/thresholds.yaml"], BD + KF + BH + K60, []),
+    "results_04.json": ("held-back", "python3 run_04.py", ["run_04.py", "rig2.py", "basket.py", "rules.py", "fixtures2.py", "fixtures_basket.py", "../config/thresholds.yaml"], ["KRAKEN_DAILY_DIR/*USD_1440.csv"], []),
+    "results_05.json": ("held-back", "python3 run_05.py", ["run_05.py", "rig2.py", "fixtures2.py", "../config/thresholds.yaml"], FR, []),
+    "results_05b.json": ("held-back", "R05_POOL=1 python3 run_05.py", ["run_05.py", "rig2.py", "fixtures2.py", "../config/thresholds.yaml"], FR, []),
+    "i2_2020_note.json": ("prices-no-rule", "python3 i2_2020_note.py", ["i2_2020_note.py"], FR[1:], []),
     "pilot/decisions.jsonl": ("held-back", "python3 pilot/server.py, with six AI model runs calling it over HTTP", ["pilot/server.py", "engine.py"], BD, []),
     "kraken_daily_build.json": ("prices-no-rule", "python3 build_kraken_daily.py", ["build_kraken_daily.py"], K1440 + KA + BD, []),
     "venue_price_gap.json": ("prices-no-rule", "python3 build_doc16.py", ["build_doc16.py"], BD[:1] + KF[:1], []),
@@ -68,7 +68,7 @@ NOTES = {
     "results_v2.json": "The hourly part (R03) stopped twice on program errors and was started again (docs/research/16_rig_audit.md). Its returns cache data/v2_r01_returns.json is local and not fingerprinted.",
     "results_05.json": "First run. Rule I2 was coded differently from its pushed plan (AMENDMENT_05_I2_equal_thirds.md).",
     "results_05b.json": "Corrected run, ledger row R2. The fault was in the rule code, not in the engine.",
-    "i2_2020_note.json": "A description of one year, not a rule trial. Run once more after the data path change in commit c7956c4; output identical; not counted.",
+    "i2_2020_note.json": "Multiplies up each industry group's daily returns for 2020, a held-back year. No rule, no pass mark, not a trial. Run once more after its data path line changed in commit c7956c4, so the second run was not of unchanged code; output identical; not counted. Research keeps it on the do-not-run list all the same (README.md, \"Held-back scripts\").",
     "venue_price_gap.json": "Written by build_doc16.py only when both price files are present. Otherwise the stored file is read.",
     "books_summary.json": "The sampler was still writing data/books/books.csv when this record was first taken. Its fingerprint is added when sampling ends.",
     "results_01.json": "v1 engine. Kept as the record. Superseded by results_v2.json.",

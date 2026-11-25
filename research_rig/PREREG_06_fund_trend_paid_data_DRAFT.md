@@ -1,8 +1,8 @@
 # Pre-registration 06 (draft): slow trend rules on funds that can be bought
 
-Status: DRAFT, written 2026-11-25. Not frozen and not in the trial ledger. It is frozen and logged on the day the price data is in hand, before any rule is run on it. Proposed by research. No owner decision is recorded here.
+Status: DRAFT, written 2026-11-25. Not frozen and not in the trial ledger. It is frozen and logged only when every gate below is met (the data, the owner's yes to decision 4a, and his decision on pass mark 4), and before any rule is run on it. Proposed by research. No owner decision is recorded here.
 
-Blocked on: one month of daily fund prices with opening prices and dividend history (a purchase, `docs/decisions/morning_list_2026-11-25.md`). The workspace's own price history has daily prices and no dividends (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace"), so it can serve as a cross-check on prices only. Also waits on the owner's yes to decision 4 and his decision on pass mark 4.
+Blocked on: one month of daily fund prices with opening prices and dividend history (a purchase, `docs/decisions/morning_list_2026-11-25.md`). The workspace's own price history has daily prices and no dividends (`docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace"), so it can serve as a cross-check on prices only. Also waits on the owner's yes to decision 4a and his decision on pass mark 4.
 
 Written with this knowledge, stated so nobody has to guess: replay 05 (`docs/research/22_replay_05_stock_trend.md`) had already been run on index data when this draft was written. The rules below are published rules chosen from the reading in `docs/research/21_systematic_funds_and_published_rules.md`. None was tuned on replay 05. If the industry rule I2 is added on sector funds, as `docs/STATUS.md` proposes, that sentence stops being true for it: I2 was picked after seeing the corrected run of replay 05. The frozen plan must say so next to the rule.
 
