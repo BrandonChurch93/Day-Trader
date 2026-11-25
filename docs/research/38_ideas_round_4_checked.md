@@ -62,7 +62,7 @@ Checked November 25, 2026. Counts: **27 confirmed, 11 wrong, 8 not found**. Each
 
 ## What this changes for our queue
 
-Decided by the builder, 2026-11-25 17:30 UTC.
+Decided by the builder, 2026-11-25 17:28 UTC.
 
 - The avoid list test (draft plan TM05) is shelved. Our own check found that the stocks the models dropped did not fall more than random drops in the same weeks (`docs/research/36_time_machine_tm04_stock_basket.md`), and the one paper with a long-only exclusion result found about 0.7 points a year on 2,000 stocks, far too small to see on 38 stocks over a few months.
 - The papers above agree with our own tests on one point: in large stocks, text signals fade or reverse, and what edge is reported sits in small stocks and on the short side, which a long-only cash account cannot use directly. So the earnings release reader (plan 11) keeps its three size groups, and the small group is the one to watch.
