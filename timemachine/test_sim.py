@@ -882,6 +882,150 @@ tt = LR.total([dict(gain_usd=100.0, final_usd=1100.0, largest_drop_pct=-5.0, clo
                dict(gain_usd=-600.0, final_usd=400.0, largest_drop_pct=-70.0, closeouts=1, financing_usd=2.0, penalty_usd=3.0, shortfall_usd=0.0, fixed_rate_hours=0)], 1000.0, 0.5)
 ok(LR.scaled({"BTC/USD": 0.6}, 3) == {"BTC/USD": 0.6 * 3} and LR.scaled(None, 3) is None and tt["gain_usd"] == -500.0 and abs(tt["carried_gain_usd"] - (1000 * 1.1 * 0.4 - 1000)) < 1e-9
    and tt["months_below_low"] == 1 and tt["closeouts"] == 1 and tt["worst_month_drop_pct"] == -70.0, "leverage replay: answers are scaled, no_change stays no_change, and months are summed and carried as one account")
+# perp sessions (timemachine/perp.py): made-up prices
+from timemachine import perp as P, run_code_trader as RC
+PC = dict(tm_perp_fee_bps_per_side={"default": 0}, tm_perp_half_spread_bps={"default": 0}, tm_perp_maintenance={"default": 0.05}, tm_perp_closeout_penalty=0.01,
+          tm_perp_funding_files={}, tm_perp_funding_hours={"default": 1}, tm_perp_fallback_rate_per_day=0.0024, tm_perp_min_change=0.02, tm_perp_packet_bars=12)
+PCF = dict(W.full_config(), **PC)
+def pmins(path, sym="X/USD", start=L0):
+    return [(int((start + dt.timedelta(minutes=i)).timestamp()), sym, o, h, l, c) for i, (o, h, l, c) in enumerate(path)]
+def flat(p, n):
+    return [(p, p, p, p)] * n
+def ptab(p0, p1, n=1, hours=2, sym="X/USD"):
+    return dict(rows=[dict(fills={sym: [S.iso(L0 + dt.timedelta(hours=hours * i)), p0]}, marks={sym: p0}) for i in range(n)], end_marks={sym: p1})
+def prun(answers, path, p1, hours=2, cfg=None, funding=None, syms=("X/USD",), mins=None, table=None):
+    c = dict(PC, **(cfg or {})); pp = P.p_params(list(syms), c, funding=funding or {})
+    return P.run_perp(lmeta(len(answers), hours), table or ptab(100.0, p1, len(answers), hours), answers, pp, mins if mins is not None else pmins(path), dict(PCF, **c))
+ok(all(k in P.full_config() for k in P.P_KEYS), "perp: set-up: every tm_perp_ key is in config/thresholds.yaml")
+lin = lambda a, b: [(a + (b - a) * i / 119,) * 4 for i in range(120)]
+rh = 0.0024 / 24
+bpl, rpl, fpl = prun([({"X/USD": 1.0}, None)], lin(100.0, 110.0), 110.0)
+fin = 10 * lin(100.0, 110.0)[59][3] * rh + 10 * 110.0 * rh
+ok(abs(bpl["funding_usd"] - fin) < 1e-9 and bpl["funding_usd"] > 0 and bpl["fallback_hours"] == 2 and abs(fpl - (1100 - fin)) < 1e-9,
+   "perp: at 1x gross funding is charged on the whole position value at each whole hour (the fallback here, counted in hours), so it is not zero")
+fneg = {int(L0.timestamp()) + 3600: -0.001, int(L0.timestamp()) + 7200: -0.001}
+bs, rs_, fs = prun([({"X/USD": -1.0}, None)], lin(100.0, 90.0), 90.0, funding={"X/USD": fneg})
+fin_s = 10 * lin(100.0, 90.0)[59][3] * 0.001 + 10 * 90.0 * 0.001
+ok(abs(bs["funding_usd"] - fin_s) < 1e-9 and abs(fs - (1100 - fin_s)) < 1e-9 and bs["fallback_hours"] == 0 and bs["qty"]["X/USD"] == -10.0,
+   "perp: a short gains when the price falls, and pays when the stored funding rate is negative")
+bs2, _, _ = prun([({"X/USD": -1.0}, None)], lin(100.0, 90.0), 90.0, funding={"X/USD": {k: -v for k, v in fneg.items()}})
+bl2, _, _ = prun([({"X/USD": 1.0}, None)], lin(100.0, 90.0), 90.0, funding={"X/USD": {k: -v for k, v in fneg.items()}})
+ok(abs(bs2["funding_usd"] + fin_s) < 1e-9 and abs(bl2["funding_usd"] - fin_s) < 1e-9, "perp: with a positive rate the short receives and the long pays the same amount")
+bf8, _, _ = prun([({"X/USD": -1.0}, None)], lin(100.0, 90.0), 90.0, funding={"X/USD": fneg}, cfg=dict(tm_perp_funding_hours={"default": 8}))
+ok(bf8["funding_usd"] == 0.0 and bf8["fallback_hours"] == 0, "perp: with 8 hour funding nothing is charged inside 2 hours from midnight")
+f8 = {int(L0.timestamp()) + 3600 * h: 0.0001 for h in range(1, 17) if h != 12}
+b8, _, _ = prun([({"X/USD": 1.0}, None)], flat(100.0, 16 * 60), 100.0, hours=16, funding={"X/USD": f8}, cfg=dict(tm_perp_funding_hours={"default": 8}),
+                table=ptab(100.0, 100.0, 1, 16))
+ok(abs(b8["funding_usd"] - (1000 * 8 * 0.0001 + 1000 * 0.0024 * 8 / 24)) < 1e-9 and b8["fallback_hours"] == 8,
+   "perp: an 8 hour charge sums its 8 stored hourly rates; a charge with an hour missing from the file pays the fallback, counted as 8 hours")
+spike = flat(100.0, 10) + [(100.0, 114.0, 99.0, 100.0), (100.0, 115.0, 99.0, 100.0)] + flat(80.0, 20)
+bk, rk, fk = prun([({"X/USD": -5.0}, None)], spike, 80.0, cfg=dict(tm_perp_fallback_rate_per_day=0.0))
+ok(len(bk["closeouts"]) == 1 and bk["closeouts"][0]["utc"] == S.iso(L0 + dt.timedelta(minutes=11)) and not bk["qty"] and abs(fk - (6000 - 50 * 115.0 * 1.01)) < 1e-9,
+   "perp: a 5x short survives a high of 114 and is closed out on the minute whose high is 115, at that high plus the penalty, and stays flat")
+bk2, rk2, _ = prun([({"X/USD": -5.0}, None), (None, None)], spike + flat(80.0, 120), 80.0, cfg=dict(tm_perp_fallback_rate_per_day=0.0))
+ok(rk2[1]["retry"] and [t["side"] for t in rk2[1]["trades"]] == ["sell"] and abs(rk2[1]["weights_after"]["X/USD"] + 5.0) < 1e-9,
+   "perp: after a close-out the standing target is traded again at the next wake")
+bz, _, fz = prun([({"X/USD": 5.0}, None)], flat(100.0, 5) + [(100.0, 100.0, 50.0, 60.0)] + flat(100.0, 5), 100.0, cfg=dict(tm_perp_fallback_rate_per_day=0.0))
+ok(fz == 0.0 and bz["cash"] == 0.0 and abs(bz["shortfall_usd"] - (4000 - 50 * 50.0 * 0.99)) < 1e-9 and bz["largest_drop"] == -1.0,
+   "perp: a fall through zero ends the account at zero, never below, with the shortfall recorded")
+ex = {"X/USD": {"stop": 95.0, "target": 120.0}}; z = dict(tm_perp_fallback_rate_per_day=0.0)
+bg1, _, fg1 = prun([({"X/USD": 1.0}, ex)], flat(100.0, 5) + [(90.0, 91.0, 89.0, 90.0)] + flat(120.0, 5), 120.0, cfg=z)
+bg2, _, fg2 = prun([({"X/USD": 1.0}, ex)], flat(100.0, 5) + [(99.0, 99.0, 94.0, 96.0)] + flat(120.0, 5), 120.0, cfg=z)
+bg3, _, fg3 = prun([({"X/USD": 1.0}, ex)], flat(100.0, 5) + [(100.0, 121.0, 94.0, 100.0)] + flat(120.0, 5), 120.0, cfg=z)
+bg4, _, fg4 = prun([({"X/USD": 1.0}, ex)], flat(100.0, 5) + [(100.0, 121.0, 99.0, 100.0)] + flat(90.0, 5), 90.0, cfg=z)
+h1 = bg1["exits_hit"][0]
+ok(abs(fg1 - 900.0) < 1e-9 and h1["gap"] and h1["filled_at"] == 90.0 and h1["kind"] == "stop" and not bg1["qty"] and "X/USD" not in bg1["target"],
+   "perp: a long stop inside a gap fills at the minute's open, not at the stop, and the position stays flat after")
+ok(abs(fg2 - 950.0) < 1e-9 and not bg2["exits_hit"][0]["gap"] and abs(fg3 - 950.0) < 1e-9 and abs(fg4 - 1200.0) < 1e-9 and bg4["exits_hit"][0]["kind"] == "target",
+   "perp: a stop crossed inside a minute fills at the stop; a minute that crosses both is the stop; a target fills at the target")
+bg5, _, fg5 = prun([({"X/USD": -1.0}, {"X/USD": {"stop": 105.0}})], flat(100.0, 5) + [(110.0, 111.0, 109.0, 110.0)] + flat(80.0, 5), 80.0, cfg=z)
+bg6, _, fg6 = prun([({"X/USD": -1.0}, {"X/USD": {"target": 90.0}})], flat(100.0, 5) + [(95.0, 96.0, 89.0, 92.0)] + flat(80.0, 5), 80.0, cfg=z)
+ok(abs(fg5 - 900.0) < 1e-9 and bg5["exits_hit"][0]["gap"] and abs(fg6 - 1100.0) < 1e-9 and bg6["exits_hit"][0]["filled_at"] == 90.0,
+   "perp: a short's stop is checked on the high (a gap above fills at the open) and its target on the low")
+bc, _, fc = prun([({"X/USD": 1.0}, ex)], flat(100.0, 5) + [(99.0, 99.0, 94.0, 96.0)] + flat(120.0, 5), 120.0,
+                 cfg=dict(z, tm_perp_half_spread_bps={"default": 10}, tm_perp_fee_bps_per_side={"default": 5}))
+q0 = 1000.0 / 100.0; buy = q0 * 100.0 * 1.001 * 1.0005; sell = q0 * 95.0 * 0.999 * (1 - 0.0005)
+ok(abs(fc - (1000.0 - buy + sell)) < 1e-9 and bc["spread_usd"] > 0 and bc["fee_usd"] > 0, "perp: fills pay the half spread and the fee per side from the tm_perp_ maps, a stop fill too")
+bns, rns, _ = prun([({"X/USD": 1.0}, ex), (None, None)], flat(100.0, 5) + [(90.0, 91.0, 89.0, 90.0)] + flat(120.0, 240), 120.0, cfg=z)
+ok(rns[1]["trades"] == [] and not bns["qty"], "perp: after a stop, no_change at the next wake does not open the position again")
+two = sorted(pmins(flat(100.0, 5) + [(100.0, 100.0, 99.0, 100.0)] + flat(100.0, 5), "A/USD") + pmins(flat(100.0, 7) + [(100.0, 130.0, 100.0, 100.0)] + flat(100.0, 3), "B/USD"))
+tab2 = dict(rows=[dict(fills={"A/USD": [S.iso(L0), 100.0], "B/USD": [S.iso(L0), 100.0]}, marks={"A/USD": 100.0, "B/USD": 100.0})], end_marks={"A/USD": 100.0, "B/USD": 100.0})
+bt, _, _ = prun([({"A/USD": 2.5, "B/USD": -2.5}, None)], None, 100.0, cfg=z, syms=("A/USD", "B/USD"), mins=two, table=tab2)
+ok(len(bt["closeouts"]) == 1 and bt["closeouts"][0]["symbol"] == "B/USD" and bt["closeouts"][0]["utc"] == S.iso(L0 + dt.timedelta(minutes=7)),
+   "perp: the maintenance rule takes each symbol at its own worst price of its minute: the long on its low, the short on its high")
+ok(not P.check_weights({"X/USD": -1.0}, ["X/USD"], WCFG, 1.0) and P.check_weights({"X/USD": -1.5}, ["X/USD"], WCFG, 1.0)
+   and P.check_weights({"X/USD": 1.0, "Y/USD": -1.0}, ["X/USD", "Y/USD"], WCFG, 1.5) and not P.check_weights({"X/USD": 1.0, "Y/USD": -1.0}, ["X/USD", "Y/USD"], WCFG, 2.0),
+   "perp: weights may be negative; the absolute weights add up to at most max_gross")
+mk1 = {"X/USD": 100.0}
+ok(not P.check_exits({"X/USD": {"stop": 95, "target": 110}}, {"X/USD": 1}, mk1) and not P.check_exits({"X/USD": {"stop": 105, "target": 90}}, {"X/USD": -1}, mk1)
+   and P.check_exits({"X/USD": {"stop": 105}}, {"X/USD": 1}, mk1) and P.check_exits({"X/USD": {"target": 110}}, {"X/USD": -1}, mk1)
+   and P.check_exits({"X/USD": {"stop": 95}}, {}, mk1) and P.check_exits({"X/USD": {"trail": 1}}, {"X/USD": 1}, mk1),
+   "perp: a stop must sit on the losing side of the price and a target on the winning side, only for a position in the answer, and nothing else is taken")
+# wake spacing
+for step, n_ in ((15, 96), (60, 24), (240, 6)):
+    ok(len(W.make_wakes(WT, "crypto", "2026-09-01", "2026-09-01", [dict(every="minutes", step=step)])[0]) == n_, f"wakes: a minutes rule of {step} gives {n_} wakes in a crypto day")
+ok(W.make_wakes(WT, "stocks", "2026-09-01", "2026-09-01", [dict(every="minutes", step=60)])[0] == [U(2026, 9, 1, 13, 30) + dt.timedelta(hours=h) for h in range(7)],
+   "wakes: a minutes rule for stocks wakes only inside regular hours, from the open")
+# a perp session on the made-up tape, every 15 minutes
+P.create("p_15m", "F01", "script", "timemachine/TRADER_BRIEF_WEIGHTS.md", "2026-09-01", "2026-09-01", ["BTC/USD", "ETH/USD"], max_gross=2.0,
+         rules=[dict(every="minutes", step=15)], tape=WT)
+ps = W.open_session("p_15m", tape=WT)
+ok(isinstance(ps, P.PSession) and type(W.open_session("w_basic", tape=WT)) is W.WSession and "instrument" not in json.loads((S.runs_dir() / "w_basic" / "session.json").read_text()),
+   "perp: open_session gives a perp session only for instrument perp; every other weights session opens as before")
+pe = ps.packet()["symbols"]["ETH/USD"]["price"]
+r0 = go(ps, {"weights": {"BTC/USD": 1.0, "ETH/USD": -1.0}, "exits": {"ETH/USD": {"stop": pe * 1.01}}, "why": "x"})
+ok(r0["ok"] and not go(ps, {"weights": {"BTC/USD": 2.5}, "why": "x"})["ok"] and not ps.submit({"weights": {"ETH/USD": -1.0}, "exits": {"ETH/USD": {"stop": ps.packet()["symbols"]["ETH/USD"]["price"] * 0.9}}, "why": "x"})["ok"],
+   "perp: a session takes a long and a short with a stop, and refuses weights over max_gross and a short's stop below the price")
+for _ in range(12):
+    go(ps, {"no_change": True, "why": "x"})
+pk = ps.packet(); bars = pk["symbols"]["BTC/USD"]["bars"]
+ok(len(bars) == 12 and pk["bar_seconds"] == 900 and len(json.dumps(pk)) < 9000 and pk["book"]["positions"]["ETH/USD"]["side"] == "short" and pk["instrument"] == "perp",
+   "perp: a 15 minute session's packet holds the latest tm_perp_packet_bars 15 minute bars per symbol and stays small")
+lk = ps.look("bars", symbol="ETH/USD", timeframe="4Hour", days=1)
+ok(lk["ok"] and all(parse_ok for parse_ok in [len(lk["data"]) >= 0]) and ps.look("bars", symbol="ETH/USD", timeframe="15Min", days=1)["ok"], "perp: lookups give 15 minute and 4 hour bars")
+while not ps.done():
+    go(ps, {"no_change": True, "why": "x"})
+pres = json.loads((S.runs_dir() / "p_15m" / "result.json").read_text())
+ok(pres["final"]["funding_usd"] != 0 and pres["final"]["max_gross"] == 2.0 and pres["funding_source"]["BTC/USD"].startswith("funding file") and len(pres["steps"]) == 96,
+   "perp: the session runs to the end; its result shows funding from the stored file, and the source of each symbol's rate")
+sc1 = P.score("p_15m", tape=WT, draws=30); sc2 = P.score("p_15m", tape=WT, draws=30); lv = P.full_config()["tm_perp_fee_levels_bps"]
+ok(sc1 == sc2 and list(sc1["by_fee"]) == [f"{f:g}" for f in lv] and sc1["main_fee_bps"] == lv[1] and all(len(v["twins"]["random_sign_twin"]["_draw_gains_pct"]) == 30
+   and set(v["yardsticks"]) == {"signs_flipped", "hold_long_BTC/USD", "hold_short_BTC/USD"} for v in sc1["by_fee"].values()),
+   "perp score: the replay matches the session to the cent; the same answers, twins and yardsticks are scored at every fee level, the same way every time")
+g = [sc1["by_fee"][f"{f:g}"]["model_stats"] for f in lv]
+ok(g[0]["final_value_usd"] > g[1]["final_value_usd"] > g[2]["final_value_usd"] and abs(g[0]["spread_usd"] - g[2]["spread_usd"]) < 0.05 * g[0]["spread_usd"] and g[2]["fee_usd"] > g[0]["fee_usd"] > 0,
+   "perp score: a higher fee per side gives a lower result from the same answers, with the same half spread (trade sizes differ a little)")
+ok(P.half_spread_bps(dict(tm_perp_half_spread_bps={"default": 10, "SOL/USD": 30}, tm_crypto_half_spread_bps_by_coin={"SOL": 19, "UNI": 13}), "SOL/USD") == 30
+   and P.half_spread_bps(dict(tm_perp_half_spread_bps={"default": 10}, tm_crypto_half_spread_bps_by_coin={"UNI": 13}), "UNI/USD") == 13
+   and P.half_spread_bps(dict(tm_perp_half_spread_bps={"default": 10}, tm_crypto_half_spread_bps_by_coin={}), "ZZZ/USD") == 10,
+   "perp: a symbol's half spread is its own tm_perp_ value, else its coin's measured value, else the default")
+rows = [dict(marks={"A/USD": 100.0, "B/USD": 50.0, "C/USD": 10.0}) for _ in range(6)]
+ansT = [({"A/USD": 1.5, "B/USD": -0.5}, {"A/USD": {"stop": 90.0}}), (None, None), ({}, None), (None, None), ({"B/USD": -1.0}, None), (None, None)]
+stT = [dict(changed=True), dict(changed=False), dict(changed=True), dict(changed=False), dict(changed=True), dict(changed=False)]
+tw1 = P.twin_answers(ansT, stT, rows, ["A/USD", "B/USD", "C/USD"], random.Random(1)); moves = [a for a in tw1 if a[0] is not None]
+ok(tw1[0][0] is not None and len(moves) == 3 and [round(sum(abs(v) for v in a[0].values()), 9) for a in moves] == [2.0, 0.0, 1.0]
+   and [len(a[0]) for a in moves] == [2, 0, 1] and tw1 == P.twin_answers(ansT, stT, rows, ["A/USD", "B/USD", "C/USD"], random.Random(1)),
+   "perp twin: the same number of moves, the first at the first wake, each with the model's gross and number of symbols, the same for the same seed")
+st_tw = [(s_, v, a[1].get(s_)) for a in moves for s_, v in a[0].items() if a[1].get(s_)]
+ok(all(abs(abs(e["stop"] / rows[0]["marks"][s_] - 1) - 0.1) < 1e-12 and ((e["stop"] < rows[0]["marks"][s_]) == (v > 0)) for s_, v, e in st_tw),
+   "perp twin: a stop keeps the model's percent distance, on the losing side for the twin's own sign")
+fw, fx = P.flip({"A/USD": 1.5, "B/USD": -0.5}, {"A/USD": {"stop": 90.0, "target": 120.0}}, rows[0]["marks"])
+ok(fw == {"A/USD": -1.5, "B/USD": 0.5} and fx == {"A/USD": {"stop": 110.0, "target": 80.0}}, "perp: the flipped yardstick turns every sign and mirrors stops and targets about the price")
+# the code-trader hook: a plain rule through the same book
+P.create("p_rule", "RULE", "none (code trader)", "timemachine/code_traders.py#bar_trend", "2026-09-01", "2026-09-02", ["ETH/USD"], max_gross=1.0,
+         rules=[dict(every="minutes", step=60)], tape=WT)
+rr = RC.run_weights_fast("p_rule", C.bar_trend("ETH/USD", 1.0, 0.01), WT)
+ok(rr["final"]["value_usd"] > 0 and len(rr["steps"]) == 48 and [st["asked"] for st in rr["steps"][:2]] == [None, None] and all(st["asked"] == {"ETH/USD": -1.0} for st in rr["steps"][2:])
+   and json.loads((S.runs_dir() / "p_rule" / "progress.json").read_text())["done"] and len((S.runs_dir() / "p_rule" / "records" / "wakes.jsonl").read_text().splitlines()) == 48,
+   "code-trader hook: a fixed rule sees only the packet, trades a perp session through submit, and the records are written at the end")
+sr_ = P.score("p_rule", tape=WT, draws=5)
+ok(sr_["session_value_usd"] == rr["final"]["value_usd"] and round(sr_["by_fee"][f"{lv[1]:g}"]["model_stats"]["final_value_usd"], 2) == round(rr["final"]["value_usd"], 2),
+   "code-trader hook: the rule's session replays to the cent, and at the main fee level (the session's own fee) it gives the same value")
+wmk("w_rule_a", syms=("BTC/USD",)); wmk("w_rule_b", syms=("BTC/USD",))
+ra = RC.run_weights_fast("w_rule_a", C.perp_hold("BTC/USD", 1.0), WT)
+sb_ = W.run_scripted("w_rule_b", [ans({"BTC/USD": 1.0}, "rule perp_hold: 1 of BTC/USD from the first wake")] + [ans(None, "rule perp_hold: no change")] * 5, tape=WT)
+rb_ = json.loads((S.runs_dir() / "w_rule_b" / "result.json").read_text())
+ok(ra["final"] == rb_["final"] and "instrument" not in ra["session"], "code-trader hook: on a spot weights session the fast path gives the scripted result to the cent")
 # score_tm04: plan TM04's scorer, its adds and drops, and its page
 from timemachine import score_tm04 as T4
 PX = [{"A": 10.0, "B": 20.0, "C": 5.0}, {"A": 11.0, "B": 18.0, "C": 5.0}, {"A": 12.1, "B": 18.0, "C": None}, {"A": 9.9, "B": 27.0, "C": 6.0}]

@@ -121,6 +121,7 @@ def distinct_orders(runs):
 def score(session_id, tape=None, draws=None, seed=None):
     d = S.runs_dir() / session_id
     meta = json.loads((d / "session.json").read_text()); assert meta.get("kind") == "weights", "not a weights session"
+    assert meta.get("instrument") != "perp", "a perp session is scored by timemachine/perp.py score"
     res = json.loads((d / "result.json").read_text()); cfg = res["config"]
     draws = int(draws if draws is not None else cfg["tm_weights_twin_draws"]); seed = int(seed if seed is not None else cfg["tm_weights_twin_seed"])
     tape = tape or Tape(meta.get("tape")); table = W.price_table(tape, meta)

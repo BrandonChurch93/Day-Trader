@@ -3,7 +3,12 @@ counted in timemachine/SESSIONS.jsonl like any other.
 
 python3 timemachine/run_code_trader.py hold --symbol BTC/USD --market crypto --from 2026-10-01 --to 2026-10-31 [--trader HOLD] [--session ID]
 python3 timemachine/run_code_trader.py twin --result $TM_RUNS/<ai session>/result.json --seed 1 [--trader TWIN] [--session ID]
-Prints the end value, the benchmark hold, the order count and the wall time. Prices are not printed."""
+python3 timemachine/run_code_trader.py rule --rule timemachine.code_traders:perp_hold --args '["BTC/USD", -1.0]' --symbols BTC/USD \
+    --from 2026-10-01 --to 2026-10-31 --wakes '[{"every": "minutes", "step": 60}]' [--perp --max-gross 2] [--news] [--trader RULE] [--session ID]
+Prints the end value, the benchmark hold, the order count and the wall time. Prices are not printed.
+
+rule: a fixed rule (a Python function fn(packet, look) -> answer, which sees only the packet and its lookups) run through a
+weights session, or with --perp a perp session, at full speed: the same book, costs and checks an AI trader gets."""
 import argparse, datetime as dt, json, sys, time
 from pathlib import Path
 
@@ -76,14 +81,54 @@ def _run_fast(session_id, fn, tape):
     return json.loads((s.dir / "result.json").read_text())
 
 
+def run_weights_fast(session_id, fn, tape):
+    """A code trader through a weights or perp session: every packet is made and saved as for an AI trader, every answer goes
+    through submit(). Only the rewrite of progress.json and records/wakes.jsonl after each wake is held back to the end."""
+    from timemachine import weights as W
+    s = W.open_session(session_id, tape=tape); assert isinstance(s, W.WSession), "not a weights or perp session"
+    real_save, real_mirror = s.save, s.mirror; s.save = lambda: None; s.mirror = lambda: None
+    try:
+        while not s.done():
+            pk = s.packet(); r = s.submit(fn(pk, s.look))
+            if not r.get("ok"):
+                raise RuntimeError(f"the code trader's answer was refused: {r}")
+    finally:
+        s.save, s.mirror = real_save, real_mirror; s.save(); s.mirror()
+    return json.loads((s.dir / "result.json").read_text())
+
+
+def load_rule(spec, args):
+    import importlib
+    mod, name = spec.split(":"); return getattr(importlib.import_module(mod), name)(*args)
+
+
 def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__.split("\n")[0]); sub = a.add_subparsers(dest="kind", required=True)
     h = sub.add_parser("hold"); h.add_argument("--symbol", required=True); h.add_argument("--market", choices=["crypto", "stocks"], required=True)
     h.add_argument("--from", dest="start", required=True); h.add_argument("--to", dest="end", required=True)
     w = sub.add_parser("twin"); w.add_argument("--result", required=True); w.add_argument("--seed", required=True)
-    for p in (h, w):
+    ru = sub.add_parser("rule"); ru.add_argument("--rule", required=True, help="module:function that returns fn(packet, look)"); ru.add_argument("--args", default="[]")
+    ru.add_argument("--symbols", required=True); ru.add_argument("--from", dest="start", required=True); ru.add_argument("--to", dest="end", required=True)
+    ru.add_argument("--wakes", required=True); ru.add_argument("--perp", action="store_true"); ru.add_argument("--max-gross", type=float, default=1.0)
+    ru.add_argument("--news", action="store_true"); ru.add_argument("--benchmark")
+    for p in (h, w, ru):
         p.add_argument("--trader"); p.add_argument("--session")
     x = a.parse_args(argv); stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S")
+    if x.kind == "rule":
+        from timemachine import weights as W, perp as P
+        tape = Tape(); fn = load_rule(x.rule, json.loads(x.args)); tid = x.trader or "RULE"; syms = [y.strip() for y in x.symbols.split(",") if y.strip()]
+        sid = x.session or f"{tid}-{'P' if x.perp else 'W'}-{x.start}-{stamp}"; kind, rules = W.wake_choice(x.wakes, "crypto")
+        label = f"{x.rule}({','.join(map(str, json.loads(x.args)))})"
+        if x.perp:
+            P.create(sid, tid, "none (code trader)", label, x.start, x.end, syms, max_gross=x.max_gross, rules=rules, wake_kind=kind, news=x.news, tape=tape, benchmark=x.benchmark)
+        else:
+            W.create(sid, tid, "none (code trader)", label, x.start, x.end, syms, market="crypto", rules=rules, wake_kind=kind, news=x.news, tape=tape, benchmark=x.benchmark,
+                     max_gross=x.max_gross if x.max_gross > 1 else None)
+        t = time.time(); r = run_weights_fast(sid, fn, tape); wall = time.time() - t; f = r["final"]
+        print(json.dumps(dict(session=sid, result=str(S.runs_dir() / sid / "result.json"), value_usd=f["value_usd"], gain_pct=f["gain_pct"], costs_paid_usd=f["costs_paid_usd"],
+                              funding_usd=f.get("funding_usd"), closeouts=len(f.get("closeouts") or []), exits_hit=len(f.get("exits_hit") or []), wakes=len(r["steps"]),
+                              wall_seconds=round(wall, 1)), indent=1))
+        return
     if x.kind == "hold":
         tape = Tape()
         tid = x.trader or "HOLD"; sid = x.session or f"{tid}-{x.symbol.replace('/', '')}-{x.start}-{stamp}"; fn = C.hold(x.symbol)

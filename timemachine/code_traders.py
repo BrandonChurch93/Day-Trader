@@ -6,7 +6,12 @@ random_twin(result_json, seed)  replays an AI session's wakes. At each wake wher
                               dollars of a symbol drawn at random (seeded) from that day's stock universe (stock sessions)
                               or from the crypto list (crypto sessions). It sells after the AI's holding time for that
                               buy, and sets its stop and target the same distance in percent from its own price.
-The twin reads prices only from the tape as of the packet's time. Standard library only."""
+The twin reads prices only from the tape as of the packet's time.
+Rules for weights and perp sessions (run with run_code_trader.py rule); each sees only the packet:
+perp_hold(symbol, weight)     sets one signed weight at the first wake and never changes it (hold long at 1.0, short at -1.0).
+bar_trend(symbol, gross, stop_pct)  each wake: long `gross` if the packet's last bar closed above the first, else short;
+                              a stop stop_pct away from the price. An example of a plain rule, not a tested idea.
+Standard library only."""
 import datetime as dt, json, random, sys
 from pathlib import Path
 
@@ -99,4 +104,27 @@ def random_twin(result_json, seed, tape=None):
     fn.label = f"random_twin({result['session']['session']}, {seed})"
     fn.needs_feed = False
     fn.needs_book = False
+    return fn
+
+
+def perp_hold(symbol, weight):
+    def fn(packet, look):
+        if packet["step"] == 1:
+            return {"weights": {symbol: float(weight)}, "why": f"rule perp_hold: {weight:g} of {symbol} from the first wake"}
+        return {"no_change": True, "why": "rule perp_hold: no change"}
+    fn.label = f"perp_hold({symbol}, {weight})"
+    return fn
+
+
+def bar_trend(symbol, gross, stop_pct):
+    gross, stop_pct = float(gross), float(stop_pct)
+
+    def fn(packet, look):
+        row = packet["symbols"][symbol]; bars = row["bars"]; px = row["price"]
+        if len(bars) < 2 or not px:
+            return {"no_change": True, "why": "rule bar_trend: not enough bars"}
+        w = gross if bars[-1][4] > bars[0][4] else -gross
+        stop = px * (1 - stop_pct) if w > 0 else px * (1 + stop_pct)
+        return {"weights": {symbol: w}, "exits": {symbol: {"stop": stop}}, "why": "rule bar_trend: the side of the packet's bars"}
+    fn.label = f"bar_trend({symbol}, {gross}, {stop_pct})"
     return fn

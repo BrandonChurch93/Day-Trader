@@ -236,11 +236,13 @@ Working papers.
 | `timemachine/README.md` | Start here: what it is, how to start a session, how a trader steps through it | CURRENT |
 | `timemachine/TRADER_BRIEF.md` | What an AI trader is told at the start of a replay | CURRENT |
 | `timemachine/tape.py`, `timemachine/record.py` | The store of recorded past prices and news, with reads that never return anything dated after the pretend now, and the recorder that fills it | CURRENT |
+| `timemachine/attention.py`, `timemachine/test_attention.py` | Read-only attention counts filtered by simulated time and evidence of availability; invented data checks | CURRENT |
 | `timemachine/simdata.py`, `timemachine/simbroker.py` | Stand-ins for the price reads and the broker, so the practice desk's own order program runs unchanged on past days | CURRENT |
 | `timemachine/session.py`, `timemachine/server.py`, `timemachine/new_session.py` | One replay session, the local server a trader steps through, and the command that starts a session | CURRENT |
 | `timemachine/weights.py`, `timemachine/score_weights.py` | Weights sessions: the trader sets what share of the book to hold in each symbol at each wake. The session and book, and the scorer with its shuffle, random basket and hold twins | CURRENT |
 | `timemachine/TRADER_BRIEF_WEIGHTS.md` | What an AI trader is told at the start of a weights session | CURRENT |
-| `timemachine/code_traders.py`, `timemachine/run_code_trader.py` | Traders that need no model (hold, random, the fixed rules), and the command that runs one through a session | CURRENT |
+| `timemachine/perp.py` | Perp mode for weights sessions (instrument perp): signed weights up to max_gross, hourly or 8 hour funding from stored files, per-symbol fee and half spread, maintenance and close-out on the minute low or high, stops and targets, wakes from 15 minutes to daily. Its scorer replays the session to the cent, then scores the same answers at each fee in `tm_perp_fee_levels_bps` with the random sign twin, the signs flipped yardstick and long and short holds | CURRENT |
+| `timemachine/code_traders.py`, `timemachine/run_code_trader.py` | Traders that need no model (hold, random, the fixed rules, the perp rules perp_hold and bar_trend), and the command that runs one through a session. Its `rule` subcommand runs any Python function of the packet through a weights or perp session at full speed | CURRENT |
 | `timemachine/PLAN_TM01_crypto_price_only.md` | Plan for the first AI replays: six models, one card, crypto prices only, with the pass mark fixed before any session | CURRENT |
 | `timemachine/PLAN_TM02_crypto_with_news.md` | Plan for the second AI replays: the same six models and months with dated crypto headlines added, and the test for whether the news helped | CURRENT |
 | `timemachine/PLAN_TM03_bitcoin_dial.md` | Plan for the third AI replays: each model sets once a day how much bitcoin to hold, starting fully invested. Marks fixed before any session | CURRENT |

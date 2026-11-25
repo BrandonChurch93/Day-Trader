@@ -16,6 +16,9 @@ tm_lev_fixed_rate_per_day), and on every recorded minute between wakes lev_scan(
 account value at the minute's low falls below the maintenance share of gross position value. Without max_gross (or at
 1.0) none of this runs and every result is as before.
 
+Perpetual futures (optional): a session made by timemachine/perp.py carries instrument "perp" and is opened as a
+perp.PSession, with its own book (signed weights, funding, stops and targets). Every other session never reaches it.
+
 The book arithmetic is one pure function, step_book(), used by the session, the twins and timemachine/score_weights.py
 alike. Prices come only from the tape: fill_row() reads the fill minute after the wake and the as-of price at the wake.
 
@@ -100,7 +103,8 @@ def make_wakes(tape, market, start_date, end_date, rules):
     """Every wake time the rules give inside the window, sorted. Rules:
     {"every": "day", "utc_hours": [..]}         every calendar day (stocks: session days only) at these UTC hours
     {"every": "session_day", "ny_times": [..]}  every stock session day at these New York times (hours, 15.5 is 15:30)
-    {"every": "week", "weekday": 4, "ny_time": 15.5}  once a week; Monday is 0. Stocks: that day, or the last session day before it that week."""
+    {"every": "week", "weekday": 4, "ny_time": 15.5}  once a week; Monday is 0. Stocks: that day, or the last session day before it that week.
+    {"every": "minutes", "step": 15}            every 15 minutes (60 for hourly, 240 for every 4 hours); stocks: inside regular hours only"""
     d0, d1 = dt.date.fromisoformat(start_date), dt.date.fromisoformat(end_date)
     start, end = window_end(tape, market, start_date, end_date)
     days = [d0 + dt.timedelta(days=i) for i in range((d1 - d0).days + 1)]
@@ -129,6 +133,13 @@ def make_wakes(tape, market, start_date, end_date, rules):
                     cand = [d for d in cand if d.weekday() == wd]
                 if cand:
                     out.add(ny_time(max(cand), r["ny_time"]))
+        elif ev == "minutes":  # every `step` minutes: crypto from the window start; stocks inside each regular session, from its open
+            step = dt.timedelta(minutes=int(r["step"])); assert step.total_seconds() >= 60, "a minutes rule needs step of 1 or more"
+            spans = [(start, end)] if market == "crypto" else [(op, cl) for _, op, cl in tape.sessions(start_date, end_date)]
+            for a, b in spans:
+                t = a
+                while t < b:
+                    out.add(t); t += step
         else:
             raise AssertionError(f"unknown wake rule {r}")
     return sorted(t for t in out if start <= t < end), end
@@ -498,7 +509,10 @@ def is_weights(session_id):
 
 
 def open_session(session_id, tape=None):
-    """The right session object for a folder: a weights session or a pick session."""
+    """The right session object for a folder: a perp session, a weights session or a pick session."""
+    if is_weights(session_id) and json.loads((S.runs_dir() / session_id / "session.json").read_text()).get("instrument") == "perp":
+        from timemachine.perp import PSession
+        return PSession(session_id, tape=tape)
     return WSession(session_id, tape=tape) if is_weights(session_id) else S.Session(session_id, tape=tape)
 
 
