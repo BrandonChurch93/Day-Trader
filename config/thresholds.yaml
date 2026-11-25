@@ -809,7 +809,7 @@ replay_13_plan:
   source: research_rig/PREREG_13_year_or_method.md
 
 replay_16_plan:
-  value: {start: "2020-01-01", end: "2026-11-24", held_rank_from: 51, held_rank_to: 100, long_share: 0.5, spot_cost_bps_per_side: 15, other_spot_costs_bps: [5, 30], perp_cost_bps_per_side: 10, perp_cost_bps_per_side_majors: 5, other_perp_costs_bps: [5, 20], min_basket_names: 10, live_funding_lookback_hours: 24, short_stop_pct: 80, random_draws: 1000, seed: 16, random_percentile: 75, min_years_above: 5, min_falling_years: 2, max_year_loss_pct: 25, max_missing_hours: 6}
+  value: {start: "2020-01-01", end: "2026-11-24", held_rank_from: 51, held_rank_to: 100, long_share: 0.5, cost_low: [5, 5, 2], cost_judged: [15, 10, 5], cost_high: [30, 20, 10], min_basket_names: 10, live_funding_lookback_hours: 24, short_stop_pct: 80, random_draws: 1000, seed: 16, random_percentile: 75, min_years_above: 5, min_falling_years: 2, max_year_loss_pct: 25, max_missing_hours: 6, max_flagged_week_share_pct: 5}
   status: builder
   note: Draft plan 16, written 2026-11-25 19.42 UTC, the hot five held long on spot with a same-size short on futures, weekly, judged on a held-back list of the next 50 coins down. Round figures set before any futures price was read. Draft until frozen.
   source: research_rig/PREREG_16_hot_five_hedged_DRAFT.md

@@ -25,15 +25,14 @@ Each Monday 00:00 UTC, with the account's value E:
 - Short side: a short of the same dollar size as what the long side really bought, backed by the other part of E held in dollars. No borrowing beyond that: the whole book is 1x.
 - Short M, the market basket (judged): equal parts of every coin on plan 13's list that has a live Binance USD-M perpetual contract that Monday, leaving out that week's hot five. If fewer than `replay_16_plan.min_basket_names` contracts are live, that week uses short B and is flagged.
 - Short B, bitcoin and ether (shown): half each, the two perpetual contracts.
-- A contract is live on a Monday when it has a bar at the entry hour and at least one funding payment in the `replay_16_plan.live_funding_lookback_hours` hours before. Past facts only. A contract whose funding payments stop during the week is closed at the open of the first hour after its last payment, and its part stays in dollars until Monday.
+- A contract is live on a Monday when it has a bar at the entry hour and at least one funding payment in the `replay_16_plan.live_funding_lookback_hours` hours before. Past facts only. A contract that stops paying funding during the week is closed by the rule under the added definitions, which uses past facts only, and its part stays in dollars until Monday.
 - Forced close: a contract whose hourly high reaches `replay_16_plan.short_stop_pct` percent above its entry is closed there at that loss plus the cost. It is not reopened that week. The mark-price bar is used when on file, the trade bar otherwise. Every such close is counted and reported.
 
 ## Costs
 
-- Spot: `replay_16_plan.spot_cost_bps_per_side` a side, as in plan 13. Shown at each of `replay_16_plan.other_spot_costs_bps`.
-- Futures: `replay_16_plan.perp_cost_bps_per_side` a side for the basket, `replay_16_plan.perp_cost_bps_per_side_majors` for bitcoin and ether. Shown at each of `replay_16_plan.other_perp_costs_bps`.
-- Funding: every recorded funding payment between entry and exit, at its own time and rate, on the contract's dollar size at the last hourly close before the payment. A short receives a positive rate and pays a negative one. Funding is reported apart from the price gain.
-- Costs are charged on every side of every weekly reset, also for a coin that stays in the list, as plan 13 did.
+- Three cost levels, each a set of three figures in basis points a side for spot, basket futures and bitcoin and ether futures: `replay_16_plan.cost_low`, `replay_16_plan.cost_judged`, `replay_16_plan.cost_high`. Only the judged set counts. The other two are shown.
+- Funding: every recorded funding payment after the entry time and up to and including the exit time, at its own rate, on the contract's dollar size at the last completed hourly trade close at or before the payment. A short receives a positive rate and pays a negative one. Funding is reported apart from the price gain.
+- Costs are charged on every side of every weekly reset, also for a coin that stays in the list, as plan 13 did. Costs come out of the dollar part.
 
 ## Yardsticks
 
@@ -61,8 +60,30 @@ A support would mean: worth a second test on the coins a US venue lists, then th
 - Contract identity: a contract maps to a coin only for the dates it traded under that coin. Contracts quoted per 1,000 coins map to the coin. A re-used ticker is never joined across a gap. Every hand-made mapping is listed in the result.
 - The short side's entry and exit are the contract's first open of the Monday hour. If that bar is missing the contract is not live that week.
 - The short's size is set once on Monday and not adjusted inside the week.
-- November 2026 funding, which the bulk archive does not hold yet, is read from the venue's public funding history for every contract used. A contract-week whose funding cannot be read is reported and charged no funding, and the count is shown.
+- November 2026 funding, which the bulk archive does not hold yet, is read from the venue's public funding history for every contract used. A contract whose funding cannot be read for a week is not live that week, and the count is shown.
 - Random draws use the same weeks, the same costs, the same short and the same rule for parts left in dollars.
+
+## Definitions added 2026-11-25 19:46 UTC
+
+Written after the builder read the draft and listed what it left open. No futures price, no funding rate and no price of a held-back coin had been read.
+
+- Long fills: a hot coin with no bar at the Monday 00:00 hour leaves its part in dollars for the week. Plan 13 waited up to six hours; this plan does not, because the short has to be sized at one moment.
+- Short size: the dollar value of the coins really bought on Monday at their fill prices. Set once, never adjusted in the week.
+- Live, in full: a contract is live on a Monday when (i) it has a trade bar at the entry hour, (ii) it had a funding payment in the `replay_16_plan.live_funding_lookback_hours` hours before, and (iii) funding records for the contract cover the week (the month's archive file exists, or the venue's public history returns payments). (iii) is a filter on our files, counted and reported.
+- This is a stand-in read from the files, not the venue's own listing record. The venue stopped new orders about two days before settlement on at least two contracts while bars and payments went on. Stated as a limit.
+- A contract that stops paying: checked each hour with past facts only. When a contract has had no funding payment in the trailing `replay_16_plan.live_funding_lookback_hours` hours, it is closed at the next hour's open. If there is no such bar it is closed at the last trade close on file, flagged. Its part stays in dollars until Monday.
+- Weekly exit with no bar: a contract with no bar at the exit Monday hour is closed at the last trade close on file, flagged. Nothing is carried into the next week.
+- Basket count: the number of live contracts is counted after leaving out the week's five named coins. All five named coins are left out of the short, also when their long side was not filled.
+- Short B: if one of the two contracts is not live the whole short goes to the other. If neither is, the week has no short and is flagged.
+- Order inside an hour: a funding payment stamped on the hour is applied first. Then the forced close is checked on that hour's high, the entry hour included. If the hour opens at or above the forced-close level, the close is at the open. The weekly exit comes last. Payment times are rounded to the minute.
+- Mark or trade bar: chosen hour by hour. A missing mark bar means the trade bar's high is used for that hour.
+- Losses are not capped at a contract's part. A loss beyond it is taken from the rest of the account. If the account reaches zero the year ends there at a total loss.
+- Only dollars back the short. Coins held on the long side are not counted as backing.
+- Random draws: five coins from the rankable list as in plan 13, the same weeks, the same Monday-only fill rule, the short leaving out that draw's five coins. The same `replay_16_plan.random_draws` draws are used at every cost level.
+- A week is flagged when the coin list was carried from an earlier snapshot, when the short fell back to short B or had no short, when any contract in it was closed at a last close, or when a held coin misses more than `replay_16_plan.max_missing_hours` hours. A year with more than `replay_16_plan.max_flagged_week_share_pct` percent of its weeks flagged is reported and cannot count toward marks 1 to 3. Mark 4 applies to all seven years.
+- Scale figures: rule A without the short is the long side at full size with this plan's Monday-only fills. The short alone is the short side at the book's size with the long part left in dollars. The paper lean is each week's gain of the hot five less the gain of all rankable coins of the same sample, before costs, compounded week by week inside the year.
+- Contract maps: spot pairs and futures contracts each have their own dated segments. A bundled or re-used futures ticker gets its own segment and is never joined to another.
+- The held-back list is read again from the saved snapshot pages (the stored plan 13 lists stop too early). The top list must come out identical to plan 13's, and the fingerprints of both lists are stored before any price is collected for the new coins.
 
 ## How this can fool us
 
