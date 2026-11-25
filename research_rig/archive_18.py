@@ -24,10 +24,17 @@ ROSTER_HASHES = dict(zip(VENUES,(
 BULK = re.compile(r"data/futures/um/(daily|monthly)/(klines|markPriceKlines|fundingRate)/([A-Z0-9]+)/(?:1h/)?([A-Za-z0-9-]+)\.zip")
 SHA = re.compile(r"[0-9a-f]{64}")
 NAN = float("nan")
+MEMORY_CAP = 300_000_000
+WORK_RESERVE = 130_000_000
+MAX_ZIP_BYTES = 8_000_000
 
 
 def digest(blob):
     return sha256(blob).hexdigest()
+
+
+def json_digest(value):
+    return digest(json.dumps(value,sort_keys=True,separators=(",",":")).encode())
 
 
 def read_pinned(path,expected):
@@ -41,6 +48,19 @@ def read_pinned(path,expected):
 
 def day_hour(d):
     return int(datetime.fromisoformat(d).replace(tzinfo=timezone.utc).timestamp()//C.H)
+
+
+def expected_rank_dates(p):
+    """First Sundays, independent of what is present in the rank cache."""
+    dt = lambda h: datetime.fromtimestamp(h*C.H,timezone.utc).date()
+    d = dt(p["start"]-p["max_snapshot_age_days"]*24).replace(day=1)
+    end = dt(p["end"])
+    while d<end:
+        sunday = d+timedelta(days=(6-d.weekday())%7)
+        known = day_hour(str(sunday))+24
+        if p["start"]-p["max_snapshot_age_days"]*24<=known<p["end"]:
+            yield str(sunday)
+        d = (d.replace(day=28)+timedelta(days=4)).replace(day=1)
 
 
 def parse_snapshots(rows, contracts, p):
@@ -90,15 +110,16 @@ def catalogue(raw):
     for row in raw["contracts"]:
         cid,pair,beg,end,known,close,close_known=(row[k] for k in (
             "coin_id","symbol","begin","end","listed_known_at","closed_effective","closed_known_at"))
-        key = f"{cid}/{pair}/{beg}"
-        if (any(type(v) is not int for v in (cid,beg,end,known)) or cid<=0 or beg>=end or key in keys
+        key = f"{cid}/{pair}/{beg}/{end}"
+        if (any(type(v) is not int for v in (cid,beg,end,known)) or min(cid,beg,known)<=0 or beg>=end or key in keys
             or not re.fullmatch("[A-Z0-9]+USDT",pair) or not SHA.fullmatch(row["listing_evidence_sha256"])
-            or (close is None)!=(close_known is None)
+            or type(row.get("delisting_notice")) is not bool or (close is None)!=(close_known is None)
             or (close is not None and (type(close_known) is not int or type(close) is not int or close<=beg
-                or not SHA.fullmatch(row["closure_evidence_sha256"])))):
+                or not SHA.fullmatch(row["closure_evidence_sha256"])))
+            or (close is None and row.get("closure_evidence_sha256") is not None)):
             raise C.Incomplete("invalid dated listing evidence row")
         if row.get("delisting_notice") is True:
-            if close is None:
+            if close is None or close>end:
                 raise C.Incomplete("terminal claim has no dated delisting evidence")
             notices.add(key)
         keys.add(key)
@@ -137,6 +158,9 @@ def roster_map(raw, sources):
             raise C.Incomplete("ambiguous duplicate US exposure")
         mapped[venue] = set(ids)
         counts[venue] = dict(original=len(expected),mapped=len(ids),
+                              original_products=sorted(expected),
+                              mapped_products={k:v["coin_id"] for k,v in raw[venue].items()
+                                               if v["coin_id"] is not None},
                               unmatched={k:v["reason"] for k,v in raw[venue].items() if v["coin_id"] is None})
     return mapped,counts
 
@@ -154,13 +178,22 @@ def archive_span(match):
     return day_hour(d.isoformat()),day_hour(e.isoformat())
 
 
-def clock(raw):
+def clock_us(raw):
     v = int(raw)
     if v>=10**14:
-        return v/10**6
+        return v
     if v>=10**11:
-        return v/1000
-    return float(v)
+        return v*1000
+    return v*10**6
+
+
+def check_memory_budget(groups,count):
+    # Four double arrays, one signed int32 (microseconds), and one coverage byte.
+    # Reserve separately for Python, manifests, one compressed ZIP and results.
+    size = len(groups)*(count*37+4096)+WORK_RESERVE
+    if size>MEMORY_CAP:
+        raise C.Incomplete("Plan 18 archive allocation exceeds the preflight budget")
+    return size
 
 
 def zip_rows(raw):
@@ -179,6 +212,12 @@ class Tape:
         self.lo = p["start"]-p["lookback_hours"]-p["funding_interval_hours"]*p["funding_lag_intervals"]
         self.hi = p["end"]
         self.symbols,self.notices,self.p = symbols,notices,p
+        self.segments = {c.key:c for c in contracts}
+        by_pair = defaultdict(list)
+        for c in contracts:
+            by_pair[symbols[c.key]].append(c)
+        for pair in set(symbols.values()):
+            by_pair[pair].sort(key=lambda c:c.begin)
         self.by_coin = defaultdict(list)
         for c in contracts:
             self.by_coin[c.coin_id].append(c)
@@ -197,11 +236,12 @@ class Tape:
                 if name in groups[match[3]] and groups[match[3]][name][1]!=m:
                     raise C.Incomplete("conflicting archive manifests")
                 groups[match[3]][name] = match,m
+        count = self.hi-self.lo+1
+        self.budget_bytes = check_memory_budget(groups,count)
         for pair,items in groups.items():
             check()
-            count = self.hi-self.lo+1
             opens,closes,marks,rates = (array("d",[NAN])*count for _ in range(4))
-            times = array("f",[NAN])*count  # exact subsecond offset from the grid where available
+            times = array("i",[0])*count
             coverage = bytearray(count)
             for name,(match,m) in sorted(items.items()):
                 lo,hi = archive_span(match)
@@ -210,18 +250,19 @@ class Tape:
                 if m["where"]!="replay_16":
                     raise C.Incomplete("venue input is not in the pinned Plan 16 bulk store")
                 kind = match[2]
-                if kind=="fundingRate":
-                    a,b = max(lo,self.lo)-self.lo,min(hi,self.hi+1)-self.lo
-                    if any(coverage[a:b]):
-                        raise C.Incomplete("overlapping funding coverage")
-                    coverage[a:b] = b"\x01"*(b-a)
                 n = 0
+                if (archive_dir/name).stat().st_size>MAX_ZIP_BYTES:
+                    raise C.Incomplete("archive ZIP exceeds the preflight per-file limit")
                 for row in zip_rows(read_pinned(archive_dir/name,m["sha256"])):
                     n += 1
-                    stamp = clock(row[0])
-                    h = round(stamp/C.H)
-                    err = stamp-h*C.H
-                    if abs(err)>(p["funding_jitter_seconds"] if kind=="fundingRate" else 0) or not lo<=h<hi:
+                    stamp = clock_us(row[0])
+                    hour_us = C.H*10**6
+                    h = (stamp+hour_us//2)//hour_us
+                    err = stamp-h*hour_us
+                    in_period = lo<=h<hi
+                    if kind=="fundingRate":
+                        in_period = in_period or lo*hour_us<=stamp<hi*hour_us
+                    if abs(err)>(p["funding_jitter_seconds"]*10**6 if kind=="fundingRate" else 0) or not in_period:
                         raise C.Incomplete("archive event timestamp out of its permitted hour or file")
                     if not self.lo<=h<=self.hi:
                         continue
@@ -244,10 +285,32 @@ class Tape:
                             opens[i] = op
                 if n!=m["n"]:
                     raise C.Incomplete("unexpected archive row count")
+            previous = None
+            last_owner = None
+            for i,v in enumerate(rates):
+                if math.isnan(v):
+                    continue
+                stamps = (self.lo+i)*C.H*10**6+times[i]
+                owner = next((c for c in by_pair[pair]
+                              if c.begin*C.H*10**6<=stamps<c.end*C.H*10**6),None)
+                if owner is None and by_pair[pair]:
+                    previous = last_owner = None
+                    continue
+                coverage[i] = 1
+                if previous is not None and owner==last_owner and i-previous<=p["funding_interval_hours"]:
+                    for j in range(previous+1,i):
+                        coverage[j] = 1 if (self.lo+j)%p["funding_interval_hours"] else 2
+                previous,last_owner = i,owner
             last = next((self.lo+i for i in range(len(closes)-1,-1,-1) if closes[i]>0),None)
             self.store[pair] = opens,closes,marks,rates,times,coverage,last
 
     def get(self,key,h,index):
+        c = self.segments.get(key)
+        if c is not None and not c.begin<=h<c.end:
+            return None
+        return self.raw_at(key,h,index)
+
+    def raw_at(self,key,h,index):
         row = self.store.get(self.symbols[key])
         if row is None or not self.lo<=h<=self.hi:
             return None
@@ -266,32 +329,226 @@ class Tape:
         return C.valid(self.trade_close(key,h))
 
     def funding(self,key,h):
-        v = self.get(key,h,3)
-        if v is None or not self.get(key,h,5):
-            return False,None
-        return True,None if math.isnan(v) else v
+        return self.funding_event(key,h)[:2]
+
+    def funding_event(self,key,h):
+        value = self.raw_at(key,h,3)
+        if value is None or self.raw_at(key,h,5)!=1:
+            return False,None,0.
+        rate = None if math.isnan(value) else value
+        offset_us = self.raw_at(key,h,4) if rate is not None else 0
+        c = self.segments.get(key)
+        if c is not None and not c.begin*C.H*10**6<=h*C.H*10**6+offset_us<c.end*C.H*10**6:
+            return False,None,0.
+        return True,rate,offset_us
+
+    def funding_gap_reason(self,key,h):
+        return ("expected_settlement_missing" if self.get(key,h,5)==2 else
+                "funding_uncovered_or_unavailable")
 
     def rank_funding(self,key,h,decision_seconds):
-        covered,v = self.funding(key,h)
+        covered,v,offset = self.funding_event(key,h)
         lag = self.p["funding_interval_hours"]*self.p["funding_lag_intervals"]*C.H
-        if v is not None and h*C.H+self.get(key,h,4)+lag>=decision_seconds:
+        if v is not None and (h*C.H+lag)*10**6+offset>=decision_seconds*10**6:
             return False,None
         return covered,v
 
     def terminal(self,c,h,last_h):
         row = self.store.get(self.symbols[c.key])
-        if (c.key not in self.notices or c.closed_effective>self.hi
-            or c.closed_known_at>self.hi*C.H or row is None):
+        if (c.key not in self.notices or c.closed_effective!=h
+            or c.closed_known_at>h*C.H or row is None):
+            return False
+        # Require observed post-trade clocks, not an array tail of NaNs, before
+        # calling an earlier gap terminal. Absence of a proof keeps the last close.
+        a,b = max(last_h+1,self.lo),min(h,self.hi)
+        if a>b or not all(math.isfinite(x) and x<=0 for x in row[1][a-self.lo:b-self.lo+1]):
+            return False
+        # Positive rows with no verified later owner are conflicting evidence,
+        # not permission to presume all post-announcement data are synthetic.
+        pair = self.symbols[c.key]
+        other_segments = [s for s in self.segments.values() if s.key!=c.key
+                          and self.symbols[s.key]==pair and s.begin>=c.end]
+        if any(v>0 and not any(s.begin<=i<s.end for s in other_segments)
+               for i,v in enumerate(row[1][b-self.lo+1:],b+1)):
             return False
         for segment in self.by_coin[c.coin_id]:
             store = self.store.get(self.symbols[segment.key])
             lo,hi = max(last_h+1,self.lo,segment.begin),min(self.hi+1,segment.end)
-            if lo<hi and (store is None or any(x>0 for x in store[1][lo-self.lo:hi-self.lo])):
-                return False
+            if lo<hi:
+                if store is None:
+                    return False
+                seen = store[1][lo-self.lo:hi-self.lo]
+                if any(not math.isfinite(x) or x>0 for x in seen):
+                    return False
         return True
 
+    def observed_coverage(self):
+        """Count only loaded rows inside each identity and clipped calendar window."""
+        result = {}
+        for c in self.segments.values():
+            pair = self.symbols[c.key]
+            arrays = self.store.get(pair)
+            lo,hi = max(self.lo,c.begin),min(self.hi+1,c.end)
+            months = {}
+            if lo>=hi:
+                result[c.key] = months
+                continue
+            d = datetime.fromtimestamp(lo*C.H,timezone.utc).date().replace(day=1)
+            while day_hour(str(d))<hi:
+                nxt = (d.replace(day=28)+timedelta(days=4)).replace(day=1)
+                first,last = max(lo,day_hour(str(d))),min(hi,day_hour(str(nxt)))
+                row = dict(clock_hours=last-first,trade_rows=0,positive_trade_rows=0,
+                           mark_rows=0,observed_settlements=0,bracketed_non_events=0,
+                           unknown_funding_hours=0)
+                if arrays is None:
+                    row["unknown_funding_hours"] = last-first
+                else:
+                    for h in range(first,last):
+                        i = h-self.lo
+                        row["trade_rows"] += math.isfinite(arrays[1][i])
+                        row["positive_trade_rows"] += arrays[1][i]>0
+                        row["mark_rows"] += math.isfinite(arrays[2][i])
+                        known,rate,_ = self.funding_event(c.key,h)
+                        row["observed_settlements"] += known and rate is not None
+                        row["bracketed_non_events"] += known and rate is None
+                        row["unknown_funding_hours"] += not known
+                months[str(d)[:7]] = row
+                d = nxt
+            result[c.key] = months
+        return result
 
-def load(paths,pins,archive_dir,p,*,evidence_dir,check=lambda:None):
+
+def require_exclusion(row, context):
+    if (not isinstance(row,dict) or row.get("classification") not in
+        {"identity_unresolved","product_scale_unresolved","non_perpetual_asset",
+         "no_dated_listing_evidence","outside_registered_scope"}
+        or not isinstance(row.get("reason"),str) or len(row["reason"].strip())<24
+        or not isinstance(row.get("searched"),list) or not row["searched"]
+        or not all(isinstance(s,str) and s.startswith("https://") for s in row["searched"])):
+        raise C.Incomplete(f"missing specific exclusion evidence: {context}")
+
+
+def bind_evidence(directory,pin,claim,inventory):
+    if not isinstance(pin,str) or not SHA.fullmatch(pin):
+        raise C.Incomplete("malformed catalogue evidence digest")
+    try:
+        record = json.loads(read_pinned(directory/pin,pin))
+    except (ValueError,UnicodeError) as exc:
+        raise C.Incomplete("catalogue evidence is not a structured source record") from exc
+    if (not isinstance(record,dict) or record.get("claim")!=claim
+        or not isinstance(record.get("uri"),str) or not record["uri"].startswith("https://")
+        or not isinstance(record.get("support"),str) or len(record["support"].strip())<20
+        or type(record.get("retrieved_at")) is not int or record["retrieved_at"]<=0):
+        raise C.Incomplete(f"source record is not bound to the exact {claim['kind']} claim")
+    inventory.add(pin)
+
+
+def verify_evidence(u, sources, directory):
+    inventory = set()
+    for row in u["contracts"]:
+        identity = {k:row[k] for k in ("coin_id","symbol","begin","end")}
+        bind_evidence(directory,row["listing_evidence_sha256"],identity|dict(
+            kind="listing",listed_known_at=row["listed_known_at"]),inventory)
+        if row["closed_effective"] is not None:
+            bind_evidence(directory,row["closure_evidence_sha256"],identity|dict(
+                kind="closure",**{k:row[k] for k in ("closed_effective","closed_known_at","delisting_notice")}),
+                inventory)
+    for venue,field in zip(VENUES,ROSTER_KEYS):
+        for product in sources[venue]["contracts"]:
+            code = product[field]
+            row = u["us_rosters"][venue][code]
+            if row["coin_id"] is None:
+                require_exclusion(row,code)
+                continue
+            bind_evidence(directory,row["evidence_sha256"],dict(
+                kind="us_roster",venue=venue,product_id=code,coin_id=row["coin_id"],
+                product_record_sha256=json_digest(product)),inventory)
+    for cid,row in u["unmatched_judged_ids"].items():
+        require_exclusion(row,cid)
+    return json_digest(sorted(inventory))
+
+
+def verify_rank_schedule(u,rank_rows,p):
+    expected = set(expected_rank_dates(p))
+    by_date = {row["date"]:row for row in rank_rows}
+    evidence = u.get("rank_periods",{})
+    if not expected or set(evidence)!=expected or not set(by_date)<=expected:
+        raise C.Incomplete("rank evidence must address the independent first-Sunday schedule")
+    holes = []
+    for day in sorted(expected):
+        raw = by_date.get(day)
+        row = evidence[day]
+        uri = "https://coinmarketcap.com/historical/"+day.replace("-","")+"/"
+        if (not isinstance(row,dict) or row.get("uri")!=uri or "captured_at" not in row
+            or (row["captured_at"] is not None and (type(row["captured_at"]) is not int
+                or row["captured_at"]<day_hour(day)*C.H))
+            or row.get("revision_history")!="unknown"
+            or row.get("availability")!="next_utc_day_proxy"):
+            raise C.Incomplete(f"missing rank capture provenance: {day}")
+        if not raw or raw.get("hole"):
+            if row.get("status")!="missing":
+                raise C.Incomplete(f"rank hole was not declared: {day}")
+            holes.append(day)
+        elif row.get("status")!="observed" or row.get("sha256")!=raw["sha256"]:
+            raise C.Incomplete(f"rank period is not bound to raw bytes: {day}")
+    if len(holes)>p["max_missing_rank_pages"]:
+        raise C.Incomplete("missing rank periods exceed the configured limit")
+    return holes
+
+
+def archive_inventory(manifests, wanted, p):
+    observed = defaultdict(dict)
+    for manifest in manifests:
+        for name,m in manifest["archives"].items():
+            match = BULK.fullmatch(name)
+            if match is None or match[3] not in wanted or m.get("n",0)<=0:
+                continue
+            lo,hi = archive_span(match)
+            if hi<=p["start"]-p["lookback_hours"]-p["funding_interval_hours"]*p["funding_lag_intervals"] or lo>=p["end"]:
+                continue
+            if (type(m.get("first")) is not int or type(m.get("last")) is not int
+                or not (lo*C.H-p["funding_jitter_seconds"]<=m["first"]<=m["last"]<hi*C.H)):
+                raise C.Incomplete(f"invalid archive observation clock: {name}")
+            clock = m["first"],m["last"],m["n"]
+            group = observed[match[3],match[2]]
+            if name in group and group[name]!=clock:
+                raise C.Incomplete("conflicting archive observation metadata")
+            group[name] = clock
+    return observed
+
+
+def period_inventory(contracts,symbols,observed,p):
+    """Metadata only: distinguish a calendar label from proof of rows at runtime."""
+    indexed = defaultdict(list)
+    for (pair,kind), clocks in observed.items():
+        for name,clock in clocks.items():
+            lo,_ = archive_span(BULK.fullmatch(name))
+            month = datetime.fromtimestamp(lo*C.H,timezone.utc).strftime("%Y-%m")
+            indexed[pair,kind,month].append(clock)
+    result = {}
+    for c in contracts:
+        months = {}
+        start = max(c.begin,p["start"]-p["lookback_hours"]-
+                    p["funding_interval_hours"]*p["funding_lag_intervals"])
+        end = min(c.end,p["end"])
+        d = datetime.fromtimestamp(start*C.H,timezone.utc).date().replace(day=1)
+        while day_hour(str(d))<end and start<end:
+            key = str(d)[:7]
+            nxt = (d.replace(day=28)+timedelta(days=4)).replace(day=1)
+            left,right = max(start,day_hour(str(d)))*C.H,min(end,day_hour(str(nxt)))*C.H
+            months[key] = {
+                kind:("manifest_rows_listed" if any(
+                    left<=first<right or left<=last<right
+                    for first,last,_ in indexed[symbols[c.key],kind,key])
+                    else "unknown_missing_manifest_rows")
+                for kind in ("klines","markPriceKlines","fundingRate")}
+            d = nxt
+        result[c.key] = months
+    return result
+
+
+def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
+    """Validate rank/listing/product provenance and inventory metadata only."""
     rows = {k:json.loads(read_pinned(paths[k],pins[k])) for k in pins}
     u = rows["universe"]
     if u["rank_source_sha256"]!=pins["ranks"] or u["archive_manifests"]!={
@@ -300,7 +557,8 @@ def load(paths,pins,archive_dir,p,*,evidence_dir,check=lambda:None):
     contracts,symbols,notices = catalogue(u)
     rank_rows = [r for r in rows["ranks"]
                  if (p["start"]-p["max_snapshot_age_days"]*24)*C.H<=r["known_at"]<p["end"]*C.H]
-    snaps,holes = parse_snapshots(rank_rows,contracts,p)
+    holes = verify_rank_schedule(u,rank_rows,p)
+    snaps,_ = parse_snapshots(rank_rows,contracts,p)
     verify_rank_pages(rank_rows,paths["ranks"].parent/"cmc",p)
     mapped,counts = roster_map(u["us_rosters"],{v:rows[v] for v in VENUES})
     wanted = {i for s in snaps for r,i in s.ranks if r<=p["top_rank"]}.union(*mapped.values())
@@ -310,17 +568,35 @@ def load(paths,pins,archive_dir,p,*,evidence_dir,check=lambda:None):
     represented = {c.coin_id for c in contracts}
     top = {i for s in snaps for r,i in s.ranks if r<=p["top_rank"]}
     gaps = u["unmatched_judged_ids"]
-    if set(gaps)!={str(i) for i in top-represented} or not all(gaps.values()):
+    if set(gaps)!={str(i) for i in top-represented}:
         raise C.Incomplete("every unmapped historical top-rank ID must have an exclusion reason")
+    if any(c.coin_id not in wanted for c in catalogue(u)[0]):
+        raise C.Incomplete("unreferenced contract in the universe")
+    if verify_evidence(u,{v:rows[v] for v in VENUES},evidence_dir)!=inventory_pin:
+        raise C.Incomplete("catalogue evidence inventory differs from approved inventory")
+    manifests = [rows[k] for k in ("viewed_manifest","held_manifest")]
+    observed = archive_inventory(manifests,set(symbols.values()),p)
+    periods = period_inventory(contracts,symbols,observed,p)
+    if u.get("archive_period_inventory_sha256")!=json_digest(periods):
+        raise C.Incomplete("archive period coverage inventory is not pinned")
+    def metadata_backed(c, month):
+        return all(v=="manifest_rows_listed" for v in periods[c.key].get(month,{}).values()) and month in periods[c.key]
+    complete_keys = {c.key for c in contracts if any(metadata_backed(c,m) for m in periods[c.key])}
+    for snap in snaps:
+        page = {i for r,i in snap.ranks if r<=p["top_rank"]}
+        page_hour = snap.known_at//C.H
+        # The preliminary page standing in for the start uses observations in
+        # the start month; the warmup itself is still independently checked.
+        month = datetime.fromtimestamp(max(page_hour,p["start"])*C.H,timezone.utc).strftime("%Y-%m")
+        mapped_for_page = {c.coin_id for c in contracts if c.coin_id in page
+                           and c.begin<=page_hour<c.end and metadata_backed(c,month)}
+        if (len(mapped_for_page)/len(page)<p["min_judged_mapped_share"]
+            or len(mapped_for_page)<2*p["legs"]):
+            raise C.Incomplete("rank period lacks the configured breadth of dated archive mappings")
+    if any(not ids or not any(c.coin_id in ids and c.key in complete_keys for c in contracts)
+           for ids in mapped.values()):
+        raise C.Incomplete("US roster illustration lacks any dated archive mapping")
     terminal_ids = {c.coin_id for c in contracts if c.key in notices}
-    evidence = {r[k] for r in u["contracts"] for k in ("listing_evidence_sha256","closure_evidence_sha256")
-                if r.get(k)}
-    evidence.update(x["evidence_sha256"] for roster in u["us_rosters"].values()
-                    for x in roster.values() if x["coin_id"] is not None)
-    for sha in sorted(evidence):
-        if not SHA.fullmatch(sha):
-            raise C.Incomplete("malformed catalogue evidence digest")
-        read_pinned(evidence_dir/sha,sha)
     coverage = dict(scope=u["scope"],historical_top_ids=len(top),
                     top_ids_with_dated_mapping=len(top&represented),unmatched_judged_ids=gaps,
                     top_ids_with_evidenced_delisting=len(top&terminal_ids),
@@ -328,10 +604,19 @@ def load(paths,pins,archive_dir,p,*,evidence_dir,check=lambda:None):
                     rank_availability="saved historical page, conservatively next UTC day; revision history unknown",
                     funding_availability="finalized archive rate, full-interval lag; publication and revisions unknown",
                     us_roster_membership_looks_ahead=True)
-    tape = Tape(archive_dir,[rows[k] for k in ("viewed_manifest","held_manifest")],symbols,notices,p,
+    coverage["archive_month_labels"] = periods
+    return contracts,symbols,notices,snaps,mapped,coverage,manifests,top
+
+
+def load(paths,pins,archive_dir,p,*,evidence_dir,inventory_pin,check=lambda:None):
+    contracts,symbols,notices,snaps,mapped,coverage,manifests,top = inspect_universe(
+        paths,pins,p,evidence_dir=evidence_dir,inventory_pin=inventory_pin)
+    tape = Tape(archive_dir,manifests,symbols,notices,p,
                 contracts=contracts,check=check)
+    coverage["archive_memory_budget_bytes"] = tape.budget_bytes
+    coverage["observed_archive_coverage_by_month"] = tape.observed_coverage()
     archive_ids = {c.coin_id for c in contracts if symbols[c.key] in tape.store}
     coverage["top_ids_with_any_archive"] = len(top&archive_ids)
     for v,ids in mapped.items():
-        counts[v]["with_any_archive"] = len(ids&archive_ids)
+        coverage["us_rosters"][v]["with_any_archive"] = len(ids&archive_ids)
     return tape,snaps,mapped,coverage

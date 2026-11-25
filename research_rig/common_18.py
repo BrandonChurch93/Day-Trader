@@ -19,7 +19,7 @@ def policy(raw):
                    "max_snapshot_age_days top_rank legs min_positive_years min_traded_slots "
                    "annualization_days random_draws seed power_seed power_pairs".split())
     others = set("start end judged_cost_bps shown_cost_bps min_sharpe max_drawdown random_quantiles "
-                 "power_sharpes power_sigma_daily".split())
+                 "power_sharpes power_sigma_daily max_missing_rank_pages min_judged_mapped_share".split())
     if set(p) != integers|others or any(type(p[k]) is not int or p[k]<=0 for k in integers):
         raise ValueError("invalid Plan 18 policy fields")
     for k in ("start","end"):
@@ -40,6 +40,8 @@ def policy(raw):
         or not 0<p["funding_jitter_seconds"]<H/2
         or sorted(set(p["power_sharpes"]))!=p["power_sharpes"] or not p["power_sharpes"]
         or not 0<p["power_sigma_daily"]<1
+        or type(p["max_missing_rank_pages"]) is not int or p["max_missing_rank_pages"]<0
+        or not 0<p["min_judged_mapped_share"]<=1
         or p["min_positive_years"]>utc_year(p["end"]-1)-utc_year(p["start"])+1):
         raise ValueError("inconsistent Plan 18 policy")
     return p
@@ -93,6 +95,9 @@ class Result:
     fees: float
     funnel: dict
     forced: tuple
+    forced_count: int
+    qualified_slots: int
+    coverage_exclusions: dict
 
 
 @dataclass(frozen=True)
@@ -112,7 +117,7 @@ def latest(snapshots, t, p=P):
     return snap
 
 
-def eligible(tape, snap, t, roster=None, p=P, funnel=None):
+def eligible(tape, snap, t, roster=None, p=P, funnel=None, exclusions=None):
     """Adapter must supply exact completed-bar and settlement coverage, not guessed zeros."""
     lo = t-p["lookback_hours"]-p["funding_interval_hours"]*p["funding_lag_intervals"]
     hi = lo+p["lookback_hours"]
@@ -120,33 +125,43 @@ def eligible(tape, snap, t, roster=None, p=P, funnel=None):
         c.coin_id for c in snap.contracts if 1<=c.rank<=p["top_rank"]}
     if roster is not None:
         scope = set(roster)
-    chosen = [c for c in snap.contracts if c.coin_id in scope and c.begin<=lo
+    chosen = [c for c in snap.contracts if c.coin_id in scope and c.begin<=lo and c.end>t
               and c.listed_known_at<t*H and not (
                   c.closed_known_at is not None and c.closed_known_at<t*H and c.closed_effective<=t)]
     if len({c.coin_id for c in chosen}) != len(chosen) or len({c.key for c in chosen}) != len(chosen):
         raise Incomplete(f"ambiguous dated mapping at {t}")
     pool = []
     funnel = Counter() if funnel is None else funnel
+    def blocked(reason,c):
+        funnel[reason] += 1
+        if exclusions is not None:
+            exclusions.setdefault(reason,[]).append(c.coin_id)
     funnel.update({"scope":len(scope),"dated_listed":len(chosen)})
+    no_dated = sorted(scope-{c.coin_id for c in chosen})
+    funnel["no_eligible_dated_mapping"] += len(no_dated)
+    if no_dated and exclusions is not None:
+        exclusions["no_eligible_dated_mapping"] = no_dated
     if roster is None and snap.ranks:
         funnel["raw_rank_page_rows"] += len(snap.ranks)
         funnel["outside_rank_cutoff"] += len(snap.ranks)-len(scope)
     for c in chosen:
         if not tape.traded(c.key, t-2) or not c.begin<=t-2:
-            funnel["missing_prior_traded_bar"] += 1
+            blocked("missing_prior_traded_bar",c)
             continue
         funnel["prior_bar"] += 1
         rates = []
         for h in range(lo, hi):
             covered, rate = tape.rank_funding(c.key, h, t*H)
             if not covered:
-                funnel["funding_uncovered_or_unavailable"] += 1
+                reason = (tape.funding_gap_reason(c.key,h) if hasattr(tape,"funding_gap_reason")
+                          else "funding_uncovered_or_unavailable")
+                blocked(reason,c)
                 break
             if rate is None and h % p["funding_interval_hours"] == 0:
-                funnel["expected_settlement_missing"] += 1
+                blocked("expected_settlement_missing",c)
                 break
             if rate is not None and (h % p["funding_interval_hours"] or not isfinite(rate)):
-                funnel["off_grid_or_invalid_settlement"] += 1
+                blocked("off_grid_or_invalid_settlement",c)
                 break
             if rate is not None:
                 rates.append(rate)
@@ -187,10 +202,11 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
     cash = peak = 1.
     dd = 0.
     daily = {start: cash}
-    traded = too_few = no_open = 0
+    traded = too_few = no_open = qualified = forced_count = 0
     price_pnl = funding_pnl = fees = 0.
     funnel = Counter()
     forced = []
+    coverage_exclusions = {}
     positions = {}  # key -> (contract, quantity, basis, last traded hour, last trade close)
     roll,lag = p["roll_hours"],p["fill_lag_hours"]
 
@@ -204,7 +220,7 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
             daily[h] = equity
 
     def force(key,h,reason):
-        nonlocal cash,price_pnl,fees
+        nonlocal cash,price_pnl,fees,forced_count
         c,q,basis,last_h,last_px = positions.pop(key)
         zero = q>0 and tape.terminal(c,h,last_h)
         px = 0. if zero else last_px
@@ -213,9 +229,11 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
         cash += pnl-charge
         price_pnl += pnl
         fees += charge
-        forced.append(dict(hour=h,last_trade_hour=last_h,coin_id=c.coin_id,key=key,
-                           side="long" if q>0 else "short",reason=reason,price=px,
-                           last_close=last_px,fee=charge,zeroed=zero))
+        forced_count += 1
+        if rng is None:
+            forced.append(dict(hour=h,last_trade_hour=last_h,coin_id=c.coin_id,key=key,
+                               side="long" if q>0 else "short",reason=reason,price=px,
+                               last_close=last_px,fee=charge,zeroed=zero))
 
     def retarget(h,picks,opens):
         nonlocal cash,price_pnl,fees
@@ -246,6 +264,25 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
         cash -= charge
         value(h,cash,save_day=False)
 
+    def post_fill(h):
+        nonlocal cash,funding_pnl
+        for key,(c,q,_,_,_) in tuple(positions.items()):
+            covered,rate,offset = tape.funding_event(key,h)
+            if not covered:
+                force(key,h,"occupied_funding_coverage_gap")
+                continue
+            if covered and rate is not None and offset>0:
+                mark = tape.mark_close(key,h-1)
+                if not valid(mark):
+                    mark = tape.trade_close(key,h-1)
+                if not valid(mark):
+                    force(key,h,"settlement_mark_gap")
+                    continue
+                flow = -q*mark*rate
+                cash += flow
+                funding_pnl += flow
+        value(h,cash,save_day=False)
+
     first = start+lag
     stop = first+max(0,(end-first)//roll)*roll
     for h in range(start+24,min(first,end)+1,24):
@@ -253,14 +290,17 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
     for t in range(first,stop,roll):
         decision,e = t-lag,t+roll
         if pools is None or decision not in pools:
-            f = Counter()
-            pool = eligible(tape, latest(snapshots, decision,p), decision,roster,p,f)
+            f,exclusions = Counter(),{}
+            pool = eligible(tape, latest(snapshots, decision,p), decision,roster,p,f,exclusions)
             if pools is not None:
-                pools[decision] = pool,f
+                pools[decision] = pool,f,exclusions
         else:
-            pool,f = pools[decision]
+            pool,f,exclusions = pools[decision]
+        if exclusions and rng is None:
+            coverage_exclusions[datetime.fromtimestamp(decision*H,timezone.utc).date().isoformat()] = exclusions
         funnel.update(f)
         picks = selection(pool,rng,p)
+        qualified += bool(picks)
         too_few += not picks
         contracts = {c.key:c for c,_ in picks} | {k:v[0] for k,v in positions.items()}
         opens = {k:tape.open_price(k,t) if c.begin<=t<c.end else None for k,c in contracts.items()}
@@ -269,9 +309,25 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
             picks = ()
         traded += bool(picks)
         retarget(t,picks,opens)
+        post_fill(t)
         for h in range(t+1, e+1):
             unrealized = 0.
             closes = {}
+            events = {key:tape.funding_event(key,h) for key in positions}
+            for key,(c,q,_,_,_) in tuple(positions.items()):
+                covered,rate,offset = events[key]
+                if not covered or rate is None or offset>=0:
+                    continue
+                mark = tape.mark_close(key,h-2)
+                if not valid(mark):
+                    mark = tape.trade_close(key,h-2)
+                if not valid(mark):
+                    force(key,h,"settlement_mark_gap")
+                    continue
+                flow = -q*mark*rate
+                cash += flow
+                funding_pnl += flow
+                funnel["negative_offset_settlements"] += 1
             for key,(c,q,basis,_,_) in tuple(positions.items()):
                 tr = tape.trade_close(key,h-1) if h-1<c.end else None
                 if not valid(tr):
@@ -287,21 +343,21 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
             value(h, cash+unrealized, save_day=False)
             for key,(c,q,basis,_,_) in tuple(positions.items()):
                 mark = closes[key]
-                if h >= c.end:
-                    unrealized -= q*(mark-basis)
-                    force(key,h,"dated_accounting_fence")
-                    continue
-                covered, rate = tape.funding(key, h)
-                if not covered:
+                covered,rate,offset = events[key]
+                at_fence = h>=c.end
+                if not covered and not at_fence:
                     unrealized -= q*(mark-basis)
                     force(key,h,"occupied_funding_coverage_gap")
                     continue
                 if rate is not None and not isfinite(rate):
                     raise Incomplete(f"invalid stored funding for {c.key} at {h}")
-                if rate is not None:
+                if rate is not None and (offset==0 or (offset>0 and h!=e)):
                     flow = -q*mark*rate
                     cash += flow
                     funding_pnl += flow
+                if at_fence:
+                    unrealized -= q*(mark-basis)
+                    force(key,h,"dated_accounting_fence")
             value(h, cash+unrealized)
     retarget(stop,(),{k:tape.open_price(k,stop) for k in positions})
     value(stop,cash)
@@ -322,7 +378,7 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
               and roster is None and rng is None and not gross_reopen)
     hit = marks(p,sharpe,dd,years,traded) if judged else (False,)*3
     return Result(sharpe,dd,years,cash,traded,too_few,no_open,hit,price_pnl,funding_pnl,fees,
-                  dict(funnel),tuple(forced))
+                  dict(funnel),tuple(forced),forced_count,qualified,coverage_exclusions)
 
 
 def random_books(tape,snapshots,start,end,*,p=P,pools=None,check=lambda:None):
@@ -365,5 +421,4 @@ def random_summary(draws,ranked,p=P):
                 quantiles={"sharpe":quantiles(sharpe,probs),**{k:quantiles(
                     (getattr(r,k)-(k=="final") for r in books),probs) for k in
                     ("final","max_drawdown","traded","no_open","too_few","fees")}},
-                forced_counts={str(d.seed):len(d.result.forced) for d in draws if d.result is not None},
-                forced_cases={str(d.seed):d.result.forced for d in draws if d.result and d.result.forced})
+                forced_counts={str(d.seed):d.result.forced_count for d in draws if d.result is not None})

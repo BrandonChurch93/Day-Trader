@@ -27,6 +27,7 @@ class Fake:
     def __init__(self):
         self.open_overrides,self.mark_overrides,self.trade_overrides = {},{},{}
         self.funding_overrides,self.rank_overrides = {},{}
+        self.offsets = {}
         self.terminal_keys = set()
 
     def trade_close(self,key,h):
@@ -47,6 +48,10 @@ class Fake:
     def funding(self,key,h):
         return self.funding_overrides.get((key,h),(True,None if h%C.FUND else 0.))
 
+    def funding_event(self,key,h):
+        covered,rate = self.funding(key,h)
+        return covered,rate,self.offsets.get((key,h),0)
+
     def rank_funding(self,key,h,decision_seconds):
         for published,v in sorted(self.rank_overrides.get((key,h),()),reverse=True):
             if published<decision_seconds:
@@ -64,6 +69,18 @@ def blob(rows):
         csv.writer(stream).writerows(rows)
         z.writestr("fixture.csv",stream.getvalue())
     return buf.getvalue()
+
+
+def archive_fixture(root,pair,kind,rows):
+    stem = f"{pair}-fundingRate" if kind=="fundingRate" else "1h/"+pair+"-1h"
+    name = f"data/futures/um/monthly/{kind}/{pair}/{stem}-2022-01.zip"
+    path = root/name
+    path.parent.mkdir(parents=True,exist_ok=True)
+    data = blob(rows)
+    path.write_bytes(data)
+    clocks = [A.clock_us(r[0])//10**6 for r in rows]
+    return name,dict(where="replay_16",n=len(rows),sha256=A.digest(data),
+                     first=min(clocks,default=None),last=max(clocks,default=None))
 
 
 class FundingCarryTests(unittest.TestCase):
@@ -102,7 +119,7 @@ class FundingCarryTests(unittest.TestCase):
         f.rank_overrides["1",lo] = [(t*C.H,100.),(t*C.H+1,101.)]
         f.trade_overrides["1",t-1] = None
         f.open_overrides["1",t] = None
-        c = replace(self.snap.contracts[0],end=t,closed_effective=t,closed_known_at=t*C.H+1)
+        c = replace(self.snap.contracts[0],end=t+1,closed_effective=t,closed_known_at=t*C.H+1)
         s = replace(self.snap,contracts=(c,*self.snap.contracts[1:]))
         self.assertEqual([(c.key,k) for c,k in C.selection(C.eligible(f,s,t))],
                          [(c.key,k) for c,k in baseline])
@@ -152,11 +169,23 @@ class FundingCarryTests(unittest.TestCase):
         self.assertGreater(net.final,gross.final)
         self.assertAlmostEqual(net.final,1+net.price_pnl+net.funding_pnl-net.fees)
 
-    def test_outgoing_only_at_roll_with_intrahour_event(self):
+    def test_exact_handoff_before_at_and_after_fill(self):
         f = Fake()
-        f.funding_overrides["8",self.exit] = True,.006
-        r = C.run_book(f,self.snaps,self.t,self.end+C.ROLL)
-        self.assertAlmostEqual(r.funding_pnl,.001)
+        h = self.exit
+        second = replace(self.snap,known_at=(h-2)*C.H,
+                         contracts=tuple(c for c in self.snap.contracts if c.key!="6"))
+        snaps = self.snap,second
+        fee = C.P["judged_cost_bps"]/10000
+        for key,offset,expected in (("5",-10_000_000,0.),("5",0,0.),("5",10_000_000,.001*(1-fee)),
+                ("6",-10_000_000,.0012),("6",0,.001),("6",10_000_000,0.),
+                ("8",-10_000_000,.0012),("8",0,.001),("8",10_000_000,.001*(1-fee))):
+            with self.subTest(key=key,offset=offset):
+                f = Fake()
+                f.mark_overrides[key,h-2] = 120.
+                f.funding_overrides[key,h] = True,.006
+                f.offsets[key,h] = offset
+                r = C.run_book(f,snaps,self.t,self.end+C.ROLL)
+                self.assertAlmostEqual(r.funding_pnl,expected)
 
     def test_gap_zeroes_only_evidenced_terminal_long_and_continues(self):
         f = Fake()
@@ -231,11 +260,55 @@ class FundingCarryTests(unittest.TestCase):
             tape = A.Tape(root,[meta],{"fake":pair},set(),p)
             self.assertEqual(tape.open_price("fake",h),100.)
             self.assertEqual(tape.mark_close("fake",h),101.)
+            self.assertEqual(tape.funding_event("fake",h),(True,.001,10_000))
             self.assertEqual(tape.rank_funding("fake",h,(h+C.FUND)*C.H),(False,None))
             self.assertEqual(tape.rank_funding("fake",h,(h+C.FUND)*C.H+1),(True,.001))
             (root/f).write_bytes(blob(([(h*C.H)*1000+10,8,.002],)))
             with self.assertRaisesRegex(C.Incomplete,"hash mismatch"):
                 A.Tape(root,[meta],{"fake":pair},set(),p)
+
+    def test_adapter_symbol_reuse_never_leaks_successor_observations(self):
+        with TemporaryDirectory() as tmp:
+            t,pair = self.t+240,"FAKEUSDT"
+            lo = t-80
+            old = C.Contract(1,1,"old",self.t-240,lo)
+            new = C.Contract(2,2,"new",lo,t+24)
+            paths = dict([archive_fixture(Path(tmp),pair,"fundingRate",
+                          [[h*C.H,8,.001] for h in range(lo,t,8)]),
+                          archive_fixture(Path(tmp),pair,"klines",
+                          [[(t-2)*C.H,100,100,100,100,42]])])
+            tape = A.Tape(Path(tmp),[dict(archives=paths,errors={})],{"old":pair,"new":pair},set(),
+                          C.P|{"end":t+24},contracts=(old,new))
+            self.assertIsNone(tape.trade_close("old",t-2))
+            self.assertEqual(tape.funding("old",lo),(False,None))
+            self.assertEqual(tape.funding("new",lo),(True,.001))
+            self.assertEqual(C.eligible(tape,C.Snapshot(t*C.H-1,(old,new)),t),[(.009000000000000001,new)])
+
+    def test_adapter_empty_truncated_and_missing_grid_are_unknown(self):
+        with TemporaryDirectory() as tmp:
+            h,pair = self.t,"FAKEUSDT"
+            p = C.P|{"end":h+48}
+            for stamps in ([],[0],[0,8],[0,4,12,16]):
+                args = [[(h+k)*C.H,8,.001] for k in stamps]
+                name,m = archive_fixture(Path(tmp),pair,"fundingRate",args)
+                tape = A.Tape(Path(tmp),[dict(archives={name:m},errors={})],{"a":pair},set(),p)
+                self.assertEqual(tape.funding("a",h+24),(False,None))
+                self.assertEqual(tape.funding("a",h+16),(True,.001) if 16 in stamps else (False,None))
+                self.assertEqual(tape.funding("a",h+1),(len(stamps)>1,None))
+                self.assertEqual(tape.funding("a",h+8),(8 in stamps,.001 if 8 in stamps else None))
+
+    def test_archive_metadata_only_counts_observed_clocks_in_the_identity(self):
+        with TemporaryDirectory() as tmp:
+            h,pair = self.t,"FAKEUSDT"
+            old = C.Contract(1,1,"old",h-100,h+2)
+            new = C.Contract(2,2,"new",h+2,h+240)
+            meta = dict([archive_fixture(Path(tmp),pair,"fundingRate",[[(h+8)*C.H,8,.001]])])
+            symbols = dict(old=pair,new=pair)
+            p = C.P|{"end":h+240}
+            o = A.archive_inventory([dict(archives=meta)],{pair},p)
+            inventory = A.period_inventory((old,new),symbols,o,p)
+            self.assertEqual(inventory["old"]["2022-01"]["fundingRate"],"unknown_missing_manifest_rows")
+            self.assertEqual(inventory["new"]["2022-01"]["fundingRate"],"manifest_rows_listed")
 
     def test_adapter_raw_ranks_fail_closed(self):
         row = dict(date="2021-12-30",known_at=(self.t-24)*C.H,sha256="0"*64,
@@ -271,42 +344,90 @@ class FundingCarryTests(unittest.TestCase):
             root = Path(tmp)
             (root/"cmc").mkdir()
             (root/"evidence").mkdir()
+            p = C.P|{"end":self.t+240}
             top = [dict(cmcRank=i,id=i) for i in range(1,C.P["top_rank"]+1)]
             page = gzip.compress(('"listingHistorical":{"data":'+json.dumps(top)+'}').encode())
-            (root/"cmc/20211230.html.gz").write_bytes(page)
-            raw = dict(ranks=[dict(date="2021-12-30",known_at=(self.t-24)*C.H,
-                                   sha256=A.digest(page),top_raw=top)],
-                       viewed_manifest={"errors":{},"archives":{}},
-                       held_manifest={"errors":{},"archives":{}})
+            raw,periods,evidence = [],{},set()
+            for d in A.expected_rank_dates(p):
+                path_date = d.replace("-","")
+                uri = "https://coinmarketcap.com/historical/"+path_date+"/"
+                (root/f"cmc/{path_date}.html.gz").write_bytes(page)
+                raw.append(dict(date=d,known_at=(A.day_hour(d)+24)*C.H,sha256=A.digest(page),top_raw=top))
+                periods[d] = dict(uri=uri,captured_at=None,status="observed",revision_history="unknown",
+                                  availability="next_utc_day_proxy",sha256=A.digest(page))
             pins,paths = {},{}
             def put(k,v):
                 paths[k] = root/f"{k}.json"
                 b = json.dumps(v).encode()
                 paths[k].write_bytes(b)
                 pins[k] = A.digest(b)
-            for k,v in raw.items():
-                put(k,v)
-            included = {}
+            put("ranks",raw)
+            put("viewed_manifest",dict(errors={},archives={}))
+            put("held_manifest",dict(errors={},archives={}))
+            included,sources = {},{}
             for venue,key in zip(A.VENUES,A.ROSTER_KEYS):
-                put(venue,dict(count=1,contracts=[{key:venue}]))
+                sources[venue] = dict(count=1,contracts=[{key:venue}])
+                put(venue,sources[venue])
                 included[venue] = {venue:dict(coin_id=None,reason="not mapped in fixture")}
             b = b"made-up listing record"
             pin = A.digest(b)
             (root/"evidence"/pin).write_bytes(b)
-            put("universe",dict(version=1,scope="reconstructed_verified_subset",
+            u = dict(version=1,scope="reconstructed_verified_subset",
                 rank_source_sha256=pins["ranks"],archive_manifests={k:pins[k] for k in
                     ("viewed_manifest","held_manifest")},contracts=[dict(
-                    coin_id=1,symbol="FAKEUSDT",begin=self.t-300,end=self.end,
+                    coin_id=1,symbol="FAKEUSDT",begin=self.t-1000,end=p["end"],
                     listed_known_at=(self.t-500)*C.H,closed_effective=None,closed_known_at=None,
-                    listing_evidence_sha256=pin)],us_rosters=included,
-                unmatched_judged_ids={str(i):"not in catalogue" for i in range(2,C.P["top_rank"]+1)}))
-            _,snaps,_,coverage = A.load(paths,pins,root,C.P,evidence_dir=root/"evidence")
+                    listing_evidence_sha256=pin,delisting_notice=False)],us_rosters=included,
+                rank_periods=periods,
+                unmatched_judged_ids={str(i):"not in catalogue" for i in range(2,p["top_rank"]+1)})
+            put("universe",u)
+            def load(inv="0"*64):
+                return A.load(paths,pins,root,p,evidence_dir=root/"evidence",inventory_pin=inv)
+            with self.assertRaisesRegex(C.Incomplete,"structured source record"):
+                load()
+            def record(claim):
+                b = json.dumps(dict(claim=claim,uri="https://example.org/invented-record",
+                    support="Fabricated notice for this exact test contract",retrieved_at=self.t*C.H)).encode()
+                sha = A.digest(b)
+                (root/"evidence"/sha).write_bytes(b)
+                evidence.add(sha)
+                return sha
+            template = u["contracts"][0]
+            archives,contracts = {},[]
+            for i in range(1,13):
+                row = template|dict(coin_id=i,symbol=f"FAKE{i}USDT")
+                identity = {k:row[k] for k in ("coin_id","symbol","begin","end","listed_known_at")}
+                row["listing_evidence_sha256"] = record(identity|dict(kind="listing"))
+                contracts.append(row)
+                for kind,data in (("fundingRate",[[self.t*C.H,8,.001]]),
+                                  ("klines",[[self.t*C.H,100,100,100,100,42]]),
+                                  ("markPriceKlines",[[self.t*C.H,100,100,100,100]])):
+                    k,v = archive_fixture(root,row["symbol"],kind,data)
+                    archives[k] = v
+            for venue in A.VENUES:
+                claim = dict(kind="us_roster",venue=venue,product_id=venue,coin_id=1,
+                             product_record_sha256=A.json_digest(sources[venue]["contracts"][0]))
+                included[venue][venue] = dict(coin_id=1,evidence_sha256=record(claim))
+            u["contracts"] = contracts
+            u["unmatched_judged_ids"] = {str(i):dict(classification="identity_unresolved",
+                 reason=f"Invented asset {i} has no documented test listing instrument.",
+                 searched=["https://example.org/invented-product-list"]) for i in range(13,p["top_rank"]+1)}
+            manifest = dict(errors={},archives=archives)
+            put("viewed_manifest",manifest)
+            u["archive_manifests"]["viewed_manifest"] = pins["viewed_manifest"]
+            cs,syms,_ = A.catalogue(u)
+            inv = A.json_digest(sorted(evidence))
+            u["archive_period_inventory_sha256"] = A.json_digest(A.period_inventory(
+                cs,syms,A.archive_inventory([manifest],set(syms.values()),p),p))
+            put("universe",u)
+            _,snaps,_,coverage = load(inv)
             self.assertEqual(len(snaps[0].ranks),C.P["top_rank"])
-            self.assertEqual(coverage["top_ids_with_dated_mapping"],1)
+            self.assertEqual(coverage["top_ids_with_dated_mapping"],12)
             self.assertIsNone(coverage["full_market_dead_coin_retention"])
-            (root/"evidence"/pin).write_bytes(b"changed notice")
-            with self.assertRaisesRegex(C.Incomplete,"input hash mismatch"):
-                A.load(paths,pins,root,C.P,evidence_dir=root/"evidence")
+            u["contracts"][0]["listing_evidence_sha256"] = u["contracts"][1]["listing_evidence_sha256"]
+            put("universe",u)
+            with self.assertRaisesRegex(C.Incomplete,"not bound to the exact listing"):
+                load(inv)
 
     def test_terminal_checks_same_coin_successor_evidence(self):
         t = self.t
@@ -314,11 +435,95 @@ class FundingCarryTests(unittest.TestCase):
         tape.lo,tape.hi,tape.symbols,tape.notices = t,t+2,{"old":"FAKEUSDT","new":"FAKE2USDT"},{"old"}
         c = C.Contract(1,1,"old",t-24,t+1,closed_effective=t+1,closed_known_at=t*C.H)
         new = C.Contract(1,1,"new",t+1,t+3)
+        tape.segments = {"old":c,"new":new}
         tape.store = {"FAKEUSDT":(None,[100.,0.,0.]),"FAKE2USDT":(None,[0.,0.,100.])}
         tape.by_coin = {1:[c,new]}
         self.assertFalse(tape.terminal(c,t+1,t))
         tape.by_coin = {1:[c]}
         self.assertTrue(tape.terminal(c,t+1,t))
+        self.assertFalse(tape.terminal(c,t,t))
+        tape.store["FAKEUSDT"] = (None,[100.,float("nan"),float("nan")])
+        self.assertFalse(tape.terminal(c,t+1,t))
+        tape.store["FAKEUSDT"] = (None,[100.,100.,0.])
+        self.assertFalse(tape.terminal(c,t+1,t))
+
+    def test_verify_refuses_draft_missing_bad_seal_and_remote_mismatch(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root/"research_rig").mkdir()
+            (root/"run").mkdir()
+            with (patch.object(S,"ROOT",root),patch.object(S,"RUN",root/"run"),
+                  patch.object(S,"git") as git,patch.object(S.os,"getenv",return_value=None)):
+                (root/S.PLAN).write_text("Status FROZEN.\n")
+                (root/S.DRAFT).write_text("draft")
+                with self.assertRaisesRegex(C.Incomplete,"still a draft"):
+                    S.verify("0"*64)
+                (root/S.DRAFT).unlink()
+                with self.assertRaisesRegex(C.Incomplete,"missing owner freeze seal"):
+                    S.verify("0"*64)
+                seal = json.dumps(dict(version=1,commit="1"*40)).encode()
+                (root/"run/freeze_18.json").write_bytes(seal)
+                with self.assertRaisesRegex(C.Incomplete,"input hash mismatch"):
+                    S.verify("0"*64)
+                git.assert_not_called()
+                git.side_effect = [MagicMock(stdout=b"2"*40+b" refs/heads/main\n"),
+                                   MagicMock(stdout=b"3"*40+b"\n")]
+                with self.assertRaisesRegex(C.Incomplete,"current origin/main"):
+                    S.verify(A.digest(seal))
+
+    def test_attestation_requires_two_reviewers_bound_to_code_and_inputs(self):
+        seal = dict(repo={k:"1"*64 for k in (*S.CODE,S.CONFIG)},inputs={"universe":"2"*64},
+                    evidence_inventory_sha256="3"*64,frozen_at=200)
+        rec = dict(version=1,approval="approved_for_freeze",universe_sha256="2"*64,
+                   evidence_inventory_sha256="3"*64,reviewer="Fixture One",reviewed_at=100,
+                   code={k:"1"*64 for k in S.CODE},config_sha256="1"*64,
+                   remaining_limitations=["Archive revision history is unknown"])
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp)
+            def put(r):
+                b = json.dumps(r).encode()
+                sha = A.digest(b)
+                (path/sha).write_bytes(b)
+                return sha
+            first = put(rec)
+            second = put(rec|{"reviewer":"Fixture Two"})
+            S.verify_review(seal|{"review_attestations":[first,second]},path)
+            with self.assertRaisesRegex(C.Incomplete,"distinct reviewers"):
+                S.verify_review(seal|{"review_attestations":[first,put(rec|{"reviewed_at":101})]},path)
+            with self.assertRaisesRegex(C.Incomplete,"not bound"):
+                S.verify_review(seal|{"review_attestations":[first,second],
+                                     "evidence_inventory_sha256":"4"*64},path)
+
+    def test_budget_refuses_before_allocation_and_random_keeps_only_gap_counts(self):
+        count = C.END-C.START+81
+        max_pairs = (A.MEMORY_CAP-A.WORK_RESERVE)//(count*37+4096)
+        self.assertLessEqual(A.check_memory_budget(range(max_pairs),count),A.MEMORY_CAP)
+        with self.assertRaisesRegex(C.Incomplete,"preflight budget"):
+            A.check_memory_budget(range(max_pairs+1),count)
+        f = Fake()
+        for c in self.snap.contracts:
+            f.trade_overrides[c.key,self.fill] = None
+        ranked = C.run_book(f,self.snaps,self.t,self.end)
+        self.assertEqual(ranked.qualified_slots,1)
+        self.assertEqual(len(ranked.forced),6)
+        p = C.P|{"random_draws":3}
+        draws = C.random_books(f,self.snaps,self.t,self.end,p=p)
+        self.assertTrue(all(not d.result.forced for d in draws))
+        self.assertEqual(list(C.random_summary(draws,ranked,p)["forced_counts"].values()),[6]*3)
+
+    def test_fifty_symbol_full_clock_tape_stays_within_virtual_budget(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pairs = {f"key-{i}":f"FAKE{i}USDT" for i in range(50)}
+            cs = tuple(C.Contract(i,i,key,self.t-400,C.END+1) for i,key in enumerate(pairs,1))
+            rows = [[self.t*C.H,8,.001],[(self.t+8)*C.H,8,.002]]
+            archives = dict(archive_fixture(root,pair,"fundingRate",rows) for pair in pairs.values())
+            t = A.Tape(root,[dict(archives=archives,errors={})],pairs,set(),C.P,contracts=cs)
+            self.assertEqual(len(t.store),50)
+            self.assertEqual(t.funding("key-49",self.t+2),(True,None))
+            with open("/proc/self/status",encoding="ascii") as f:
+                vm = next(int(line.split()[1])*1024 for line in f if line.startswith("VmSize:"))
+            self.assertLess(vm,t.budget_bytes)
 
     def test_lock_rejects_second_attempt_even_on_failure(self):
         with TemporaryDirectory() as tmp:
@@ -393,6 +598,10 @@ class Noise:
 
     def funding(self,key,h):
         return True,(None if h%self.cadence else -self.rate if key in "123" else self.rate if key in "678" else 0.)
+
+    def funding_event(self,key,h):
+        covered,rate = self.funding(key,h)
+        return covered,rate,0.
 
     def rank_funding(self,key,h,decision_seconds):
         return self.funding(key,h)

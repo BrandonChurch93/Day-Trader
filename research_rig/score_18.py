@@ -33,6 +33,32 @@ def git(*args, check=True):
     return subprocess.run(["git",*args],cwd=ROOT,check=check,capture_output=True)
 
 
+def verify_review(seal,directory):
+    inventory = seal.get("evidence_inventory_sha256")
+    reviews = seal.get("review_attestations")
+    if (not isinstance(inventory,str) or not A.SHA.fullmatch(inventory)
+        or not isinstance(reviews,list) or len(reviews)!=2 or len(set(reviews))!=2
+        or not all(isinstance(sha,str) and A.SHA.fullmatch(sha) for sha in reviews)):
+        raise C.Incomplete("two distinct pinned pre-freeze reviews are required")
+    reviewers = set()
+    for sha in reviews:
+        r = json.loads(A.read_pinned(directory/sha,sha))
+        if (r.get("version")!=1 or r.get("approval")!="approved_for_freeze"
+            or r.get("universe_sha256")!=seal["inputs"]["universe"]
+            or r.get("evidence_inventory_sha256")!=inventory
+            or r.get("code")!={k:seal["repo"][k] for k in CODE}
+            or r.get("config_sha256")!=seal["repo"][CONFIG]
+            or not isinstance(r.get("reviewer"),str) or not r["reviewer"].strip()
+            or not isinstance(r.get("remaining_limitations"),list) or not r["remaining_limitations"]
+            or not all(isinstance(x,str) and x.strip() for x in r["remaining_limitations"])
+            or type(r.get("reviewed_at")) is not int or type(seal.get("frozen_at")) is not int
+            or not 0<r["reviewed_at"]<seal["frozen_at"]):
+            raise C.Incomplete("review is not bound to the exact pre-freeze inputs and code")
+        reviewers.add(r["reviewer"].strip().casefold())
+    if len(reviewers)!=2:
+        raise C.Incomplete("two distinct reviewers are required")
+
+
 def verify(expected):
     if any(os.getenv(k) is not None for k in ENV_OVERRIDES):
         raise C.Incomplete("refused while an input or git override is set")
@@ -42,7 +68,10 @@ def verify(expected):
         raise C.Incomplete("a local Plan 18 lock already exists")
     if RUN.is_symlink() or RUN.stat().st_uid!=os.geteuid() or RUN.stat().st_mode&0o022:
         raise C.Incomplete("the owner-controlled run folder must not be group/world writable")
-    seal = json.loads(A.read_pinned(RUN/"freeze_18.json",expected))
+    try:
+        seal = json.loads(A.read_pinned(RUN/"freeze_18.json",expected))
+    except OSError as exc:
+        raise C.Incomplete("missing owner freeze seal") from exc
     upstream = git("ls-remote","--exit-code","origin","refs/heads/main").stdout.split()[0].decode()
     commit = seal["commit"]
     if (seal["version"]!=1 or not re.fullmatch(r"[0-9a-f]{40}",commit)
@@ -68,6 +97,7 @@ def verify(expected):
         raise C.Incomplete("invalid input pins")
     if any(seal["inputs"][v]!=d for v,d in A.ROSTER_HASHES.items()):
         raise C.Incomplete("frozen US rosters must match the documented fingerprints")
+    verify_review(seal,RUN/"reviews")
     return seal,C.policy(actual[CONFIG])
 
 
@@ -123,7 +153,7 @@ def memory_check():
 def real_resources():
     memory_check()
     soft,hard = resource.getrlimit(resource.RLIMIT_AS)
-    cap = min(v for v in (300_000_000,soft,hard) if v!=resource.RLIM_INFINITY)
+    cap = min(v for v in (A.MEMORY_CAP,soft,hard) if v!=resource.RLIM_INFINITY)
     resource.setrlimit(resource.RLIMIT_AS,(cap,hard))
     current = os.nice(0)
     if current<10:
@@ -133,7 +163,8 @@ def real_resources():
 def score(binding):
     seal,p = binding
     tape,snaps,rosters,coverage = A.load(PATHS,seal["inputs"],DATA/"replay_16/archives",p,
-                                        evidence_dir=RUN/"evidence",check=memory_check)
+                                        evidence_dir=RUN/"evidence",
+                                        inventory_pin=seal["evidence_inventory_sha256"],check=memory_check)
     pool = {}
 
     def measure(bps=None,roster=None,gross=False):
