@@ -79,10 +79,11 @@ Only what someone using the tools needs to know. The longer account of each slip
 
 ## Waiting on the owner
 
-Two things only he can do. Nothing else waits on him.
+One thing only he can do. Nothing else waits on him.
 
-1. Practice account key. Add `ALPACA_PAPER_KEY_ID` and `ALPACA_PAPER_SECRET_KEY` to this repo's secrets. That starts the pretend trading in `practice/`. The builder says when the code is ready for it.
-2. Data key. The same practice account's key, entered once in the secure form (opened for him 2026-11-25 16:03 UTC), lets the time machine record stock prices back to 2016 from a source that may be published about, and shows whether dated news history is included. Without it the time machine uses the built-in price history, which stays on the research machine.
+1. Practice account key in the repo. Add `ALPACA_PAPER_KEY_ID` and `ALPACA_PAPER_SECRET_KEY` to this repo's secrets. That starts the pretend trading in `practice/`.
+
+Done by him on 2026-11-25: the data key, saved in the secure form. MEASURED at 16:23 UTC: it returns minute and daily prices for the whole US stock market back to 2016, the bid and ask at any past moment, and dated stock news from 2026-04-29 on and nothing older.
 
 Real money, and the limits for it, are his when that day comes (`docs/DECISIONS.md`, "Not decided yet").
 
