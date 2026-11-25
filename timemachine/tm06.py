@@ -23,8 +23,9 @@ before it). The desk holds the named coins in equal parts adding up to 1x, long 
 coins again trades nothing; a changed list moves every coin to its equal part, trading only the difference (perp.p_step,
 with tm_perp_min_change). No coins means cash.
 
-Part S, swing sessions: a perp session waking every tm06_plan.swing_wake_minutes on a fixed set of coins, long or flat
-(long_only), gross at most tm06_plan.swing_max_gross, stops and targets as the book has them.
+Part S, swing sessions: a perp session waking every tm06_plan.swing_wake_minutes on a fixed set of coins, long, short or
+nothing (signed weights; create_swing(long_only=True) gives the older long-or-flat form), gross (sum of absolute weights) at
+most tm06_plan.swing_max_gross, stops and targets as the book has them for either side.
 
 Negative control: code_traders.reversal on tm06_reversal's symbol, every tm06_reversal minutes, after a move of more than
 tm06_plan.control_move_bps, through a perp session.
@@ -237,10 +238,10 @@ def create_picker(session_id, trader_id, model, method_path, start_date, end_dat
                     extra=dict(tm06=dict(part="P", max_names=pl["max_names"], attention_db=db, config={k: cfg[k] for k in T_KEYS})))
 
 
-def create_swing(session_id, trader_id, model, method_path, start_date, end_date, symbols, tape=None, note=None, news=False):
+def create_swing(session_id, trader_id, model, method_path, start_date, end_date, symbols, tape=None, note=None, news=False, long_only=False):
     tape = tape or W.fast_tape(); cfg = full_config(); pl = plan(cfg); measured_spread(list(symbols) + ["BTC/USD"], cfg)
     return P.create(session_id, trader_id, model, method_path, start_date, end_date, symbols, max_gross=pl["swing_max_gross"],
-                    rules=[dict(every="minutes", step=pl["swing_minutes"])], tape=tape, note=note, news=news, benchmark="BTC/USD", long_only=True,
+                    rules=[dict(every="minutes", step=pl["swing_minutes"])], tape=tape, note=note, news=news, benchmark="BTC/USD", long_only=long_only,
                     extra=dict(tm06=dict(part="S", config={k: cfg[k] for k in T_KEYS})))
 
 
@@ -414,8 +415,16 @@ class SwingSession(P.PSession):
         if p.exists() and not fresh:
             return json.loads(p.read_text())
         out = super().packet(fresh=True); mg = self.pmg; s0 = self.allowed[0]; c = dict(self.cfg, **self.meta["tm06"]["config"])
-        out["answer_forms"][0] = {"weights": {s0: min(0.5, mg)}, "exits": {s0: {"stop": "price", "target": "price"}}, "why": "..."}
-        out["rules"][0] = f"Perpetual futures, long or flat. Each weight is from 0 to {mg:g}. The weights add up to at most {mg:g}. The rest is margin."
+        if self.long_only:  # sessions made before part S took shorts (and any made with long_only)
+            out["answer_forms"][0] = {"weights": {s0: min(0.5, mg)}, "exits": {s0: {"stop": "price", "target": "price"}}, "why": "..."}
+            out["rules"][0] = f"Perpetual futures, long or flat. Each weight is from 0 to {mg:g}. The weights add up to at most {mg:g}. The rest is margin."
+        else:
+            s1 = self.allowed[1] if len(self.allowed) > 1 else s0
+            out["answer_forms"][0] = {"weights": {s0: -min(0.5, mg / 2), s1: min(0.25, mg / 4)} if s1 != s0 else {s0: -min(0.5, mg)},
+                                      "exits": {s0: {"stop": "price above now", "target": "price below now"}}, "why": "..."}
+            out["rules"][0] = (f"Perpetual futures, long, short or nothing. Each weight is from -{mg:g} to {mg:g}; negative is short. The absolute "
+                               f"weights add up to at most {mg:g}. The rest is margin. A short gains when the price falls; its stop is above the price "
+                               "and its target below.")
         out["rules"].insert(1, f"bars: the last {int(c['tm06_swing_packet_hour_bars'])} finished hourly bars. bars_1min: the last {int(c['tm06_swing_packet_minute_bars'])} "
                                "finished one-minute bars. volume.ratio is the last 24 hours' dollar volume against the coin's own mean day of the 30 days before.")
         if fresh:
@@ -453,9 +462,13 @@ def stats(cx, book, recs, final):
     return st
 
 
-def run(cx, answers, pp, opening_cash=False):
+FAST_TWINS = os.environ.get("TM06_FAST_TWINS") == "1"  # off until the full-draws equality proof on a stored session; then the default
+
+
+def run(cx, answers, pp, opening_cash=False, twin=False):
     meta = dict(cx["meta"], opening={}) if opening_cash else cx["meta"]
-    b, r, f = P.run_perp(meta, cx["table"], answers, pp, cx["mins"], cx["cfg"]); return stats(cx, b, r, f), b, f
+    from timemachine import perp_fast as PF
+    b, r, f = (PF.run_perp if twin and FAST_TWINS else P.run_perp)(meta, cx["table"], answers, pp, cx["mins"], cx["cfg"]); return stats(cx, b, r, f), b, f
 
 
 def times(answers, m):
@@ -518,7 +531,7 @@ def score_picker(session_id, tape=None, draws=None, seed=None):
             y, _, yf = run(cx, a, pp, opening_cash=True); blk["yardsticks"][name] = dict(stats=y, model_above=mf > yf)
         tw = []
         for a in twins:
-            _, b, tf = run(cx, a, pp, opening_cash=True); tw.append((b, tf))
+            _, b, tf = run(cx, a, pp, opening_cash=True, twin=True); tw.append((b, tf))
         blk["random_swap_twins"] = twin_block("random_swap_twins", tw, mf, cfg)
         out["by_fee"][f"{f:g}"] = blk
     return out
@@ -543,9 +556,11 @@ def swing_runs(cx, answers, pp, mult, twins):
     blk = dict(model=m, yardsticks={})
     for name, a in ((f"equal_hold_{len(syms)}", hold(n, {s: g / len(syms) for s in syms})), (f"hold_long_{meta['benchmark']}", hold(n, {meta["benchmark"]: 1.0}))):
         y, _, yf = run(cx, times(a, mult), pp, opening_cash=True); blk["yardsticks"][name] = dict(stats=y, model_above=mf > yf)
+    # shown for scale only, not a yardstick and not judged (plan change of 2026-11-25): a short of the benchmark held throughout
+    y, _, _ = run(cx, times(hold(n, {meta["benchmark"]: -1.0}), mult), pp, opening_cash=True); blk["shown_only"] = {f"hold_short_{meta['benchmark']}": dict(stats=y)}
     tw = []
     for a in twins:
-        _, b, tf = run(cx, times(a, mult), pp); tw.append((b, tf))
+        _, b, tf = run(cx, times(a, mult), pp, twin=True); tw.append((b, tf))
     blk["shuffled_order_twins"] = twin_block("shuffled_order_twins", tw, mf, cx["cfg"])
     return blk
 

@@ -176,60 +176,62 @@ def random_baskets(periods, px, n, draws, rng):
 def simulate(px, fills, baskets, cost_bps, daily=False):
     """One account through the periods. fills[k] is the purchase day index of period k, baskets[k] the series indexes
     bought in equal parts at that open. Period k runs to the next fill's open; the last runs to the close of the last
-    day and is then sold. Inside a period parts drift with prices. A held stock with no bar on or after the next
-    re-form day (or after the last day, for the last period) is sold at its last close, flagged, and the money sits in
-    cash. A held stock with no open at the re-form is valued at its last close (a gap with prices later).
-    Cost: cost_bps per side on the sum of |new part - drifted part| at each re-form; the first purchase counts as all
-    traded; a stop sale and the final sale are charged on what is sold.
+    day and is then sold. Inside a period parts drift with prices.
+    A held stock with no bar on or after the next re-form day (or after the last day, for the last period) is sold at
+    its last close that day, flagged, and the money sits in cash until the next re-form.
+    A held stock with no open at a re-form but prices later (a gap) cannot be traded that day: it is valued at its last
+    close, kept as it is (not sold, not topped up) and carried through the next period on its own prices; only the rest
+    of the account is re-formed.
+    Cost: cost_bps per side on what is traded at each re-form (the sum of |new part - drifted part| over the stocks that
+    can be traded; the first purchase is all traded); a stop sale and the final sale are charged on what is sold.
 
-    Returns dict: value (final, start 1), at_fill (value at each fill open before that re-form's cost), turnover (per
-    re-form), flags (list of (period, series index, last close day)), daily (close values) if daily."""
+    Returns dict: value (final, start 1), at_fill (value at each fill open before that re-form's cost), turnover (traded
+    share of the account at each re-form), flags (list of (period, series index, last close day)), carried (list of
+    (period, series index) held through a gap), daily (close values) if daily."""
     c = cost_bps / 1e4; n = px.n; K = len(fills)
-    V = 1.0; held = {}                     # series -> value now
-    at_fill, turn, flags = [], [], []
+    cash = 1.0; held = {}                  # series -> value at this re-form (open, or last close for a gap)
+    at_fill, turn, flags, carried = [], [], [], []
     dv = np.full(n, np.nan) if daily else None
-    cash = 1.0                             # the account starts as cash worth 1
     for k in range(K):
         f = fills[k]; end = fills[k + 1] if k + 1 < K else n      # period days f .. end-1
         V_open = cash + sum(held.values())
         at_fill.append(V_open)
-        drift = {s: v / V_open for s, v in held.items()} if V_open > 0 else {}
-        b = list(dict.fromkeys(baskets[k])); w = 1.0 / len(b) if b else 0.0
-        target = {s: w for s in b}
-        T = sum(abs(target.get(s, 0.0) - drift.get(s, 0.0)) for s in set(target) | set(drift))
-        if k == 0: T = 1.0 if b else 0.0
+        frozen = {s: v for s, v in held.items() if np.isnan(px.O[s, f])}
+        trade = {s: v for s, v in held.items() if s not in frozen}
+        Vt = cash + sum(trade.values())
+        b = [s for s in dict.fromkeys(baskets[k]) if s not in frozen]
+        w = 1.0 / len(b) if b else 0.0
+        tv = {s: Vt * w for s in b}
+        T = sum(abs(tv.get(s, 0.0) - trade.get(s, 0.0)) for s in set(tv) | set(trade)) / V_open if V_open > 0 else 0.0
         turn.append(T)
-        V = V_open * (1 - c * T)
-        cash = 0.0 if b else V
-        # buy at the open; positions in "units of value at the open"
-        pos = {s: V * w for s in b}
-        base = {s: px.O[s, f] for s in b}
+        V_tr = Vt - c * T * V_open
+        cash = 0.0 if b else V_tr
+        # positions: (series, value at start, price at start); bought at the open, or carried from the last close
+        P_ = [(s, V_tr * w, px.O[s, f]) for s in b] + [(s, v, px.CF[s, f - 1]) for s, v in frozen.items()]
+        carried += [(k, s) for s in frozen]
         need = end if k + 1 < K else n - 1      # a bar on or after this day means the prices go on
-        stopped = {s: int(px.last[s]) for s in b if px.last[s] < need}
+        stp = {s: int(px.last[s]) for s, _, _ in P_ if px.last[s] < need}
         if daily:
             for t in range(f, end):
-                tot = 0.0
-                for s in b:
-                    if s in stopped and t > stopped[s]: tot += pos[s] * px.C[s, stopped[s]] / base[s] * (1 - c)
-                    else: tot += pos[s] * px.CF[s, t] / base[s]
-                dv[t] = tot + cash
-        # carry to the next open (or the last close)
+                tot = cash
+                for s, v, p0 in P_:
+                    if s in stp and t >= stp[s]: tot += v * px.C[s, stp[s]] / p0 * (1 - c)
+                    else: tot += v * px.CF[s, t] / p0
+                dv[t] = tot
         newheld = {}; add_cash = 0.0
-        for s in b:
-            if s in stopped:
-                v = pos[s] * px.C[s, stopped[s]] / base[s]
-                add_cash += v * (1 - c); flags.append((k, s, stopped[s]))
+        for s, v, p0 in P_:
+            if s in stp:
+                add_cash += v * px.C[s, stp[s]] / p0 * (1 - c); flags.append((k, s, stp[s]))
             elif k + 1 < K:
                 nf = fills[k + 1]; p = px.O[s, nf]
                 if np.isnan(p): p = px.CF[s, nf - 1]
-                newheld[s] = pos[s] * p / base[s]
+                newheld[s] = v * p / p0
             else:
-                newheld[s] = pos[s] * px.CF[s, n - 1] / base[s]
+                newheld[s] = v * px.CF[s, n - 1] / p0
         cash += add_cash; held = newheld
-    final_sale = sum(held.values())
-    V_end = cash + final_sale * (1 - c)
+    V_end = cash + sum(held.values()) * (1 - c)
     if daily: dv[n - 1] = V_end
-    return dict(value=V_end, at_fill=at_fill, turnover=turn, flags=flags, daily=dv)
+    return dict(value=V_end, at_fill=at_fill, turnover=turn, flags=flags, carried=carried, daily=dv)
 
 def hold_one(px, s, f0, cost_bps):
     """One fund (SPY, SPMO, MTUM) bought at the open of day f0 and sold at the last close, one buy and one sell charged.
@@ -246,45 +248,53 @@ def max_drop(x):
     peak = np.maximum.accumulate(x); return float((x / peak - 1).min())
 
 def period_moves(px, fills):
-    """For each period k and series s: mult[k, s] = exit value / purchase open, and stopped[k, s]. Exit is the next
-    re-form open (the last close carried over if there is no open then), or the last close of the last day; for a
-    series with no bar on or after that day it is the series' last close (a stop)."""
-    K = len(fills); n = px.n
-    mult = np.full((K, len(px.keys)), np.nan); stopped = np.zeros((K, len(px.keys)), bool)
+    """For each period k and series s: mult[k, s] = exit value / purchase open; multg[k, s] = exit value / last close
+    before the fill (for a stock carried through a gap); stopped[k, s]; noopen[k, s] (no open on the fill day). Exit is
+    the next re-form open (the last close carried over if there is no open then), or the last close of the last day;
+    for a series with no bar on or after that day it is the series' last close (a stop)."""
+    K = len(fills); n = px.n; S = len(px.keys)
+    mult = np.full((K, S), np.nan); multg = np.full((K, S), np.nan)
+    stopped = np.zeros((K, S), bool); noopen = np.zeros((K, S), bool)
+    lastc = px.C[np.arange(S), np.maximum(px.last, 0)]
     for k in range(K):
         f = fills[k]; end = fills[k + 1] if k + 1 < K else n
         need = end if k + 1 < K else n - 1
         st = px.last < need
         if k + 1 < K: ex = np.where(np.isnan(px.O[:, end]), px.CF[:, end - 1], px.O[:, end])
         else: ex = px.CF[:, n - 1]
-        lastc = px.C[np.arange(len(px.keys)), np.maximum(px.last, 0)]
         ex = np.where(st, lastc, ex)
-        with np.errstate(invalid="ignore", divide="ignore"): mult[k] = ex / px.O[:, f]
-        stopped[k] = st
-    return mult, stopped
+        with np.errstate(invalid="ignore", divide="ignore"):
+            mult[k] = ex / px.O[:, f]
+            if f > 0: multg[k] = ex / px.CF[:, f - 1]
+        stopped[k] = st; noopen[k] = np.isnan(px.O[:, f])
+    return mult, multg, stopped, noopen
 
-def fast_values(mult, stopped, baskets, cost_bps):
-    """Final values (start 1) of many accounts at once, the same rules as simulate(). baskets: (paths, periods, n)
-    series indexes, -1 for an empty slot."""
+def fast_values(moves, baskets, cost_bps):
+    """Final values (start 1) of many accounts at once, the same rules as simulate() (checked in test_14.py).
+    moves: period_moves(). baskets: (paths, periods, n) series indexes, -1 for an empty slot."""
+    mult, multg, stopped, noopen = moves
     c = cost_bps / 1e4; Pn, K, N = baskets.shape
-    prev_val = np.zeros((Pn, N)); prevB = np.full((Pn, N), -1); cash = np.zeros(Pn); V = np.ones(Pn)
+    pv = np.zeros((Pn, 0)); pid = np.full((Pn, 0), -1); cash = np.ones(Pn)
     for k in range(K):
         B = baskets[:, k, :]; valid = B >= 0; cnt = valid.sum(1); w = np.where(cnt > 0, 1.0 / np.maximum(cnt, 1), 0.0)
-        if k == 0:
-            V_open = np.ones(Pn); T = np.where(cnt > 0, 1.0, 0.0)
-        else:
-            V_open = cash + prev_val.sum(1)
-            d = prev_val / V_open[:, None]
-            held = prev_val > 0
-            match = (B[:, :, None] == prevB[:, None, :]) & valid[:, :, None] & held[:, None, :]
-            dnew = (match * d[:, None, :]).sum(2)
-            gone = ~match.any(1)
-            T = (valid * np.abs(w[:, None] - dnew)).sum(1) + (d * gone).sum(1)
-        V = V_open * (1 - c * T)
-        pos = V[:, None] * w[:, None] * valid
+        has = pid >= 0; pc = np.maximum(pid, 0)
+        Fz = has & noopen[k][pc]
+        trv = np.where(Fz, 0.0, pv)
+        V_open = cash + pv.sum(1); Vt = cash + trv.sum(1)
+        live = has & ~Fz
+        match = (B[:, :, None] == pid[:, None, :]) & valid[:, :, None] & live[:, None, :]
+        dnew = (match * trv[:, None, :]).sum(2)
+        gone = live & ~match.any(1)
+        tv = Vt * w
+        T = ((valid * np.abs(tv[:, None] - dnew)).sum(1) + (trv * gone).sum(1)) / np.where(V_open > 0, V_open, 1.0)
+        V_tr = Vt - c * T * V_open
         Bc = np.maximum(B, 0)
-        m = np.where(valid, mult[k][Bc], 0.0); st = np.where(valid, stopped[k][Bc], False)
-        val = pos * m
-        cash = (val * st).sum(1) * (1 - c) + np.where(cnt > 0, 0.0, V)
-        prev_val = np.where(st | ~valid, 0.0, val); prevB = np.where(st | ~valid, -1, B)
-    return cash + prev_val.sum(1) * (1 - c)
+        vals = np.concatenate([V_tr[:, None] * w[:, None] * valid * np.where(valid, mult[k][Bc], 0.0),
+                               np.where(Fz, pv * np.where(Fz, multg[k][pc], 0.0), 0.0)], axis=1)
+        ids = np.concatenate([np.where(valid, B, -1), np.where(Fz, pid, -1)], axis=1)
+        st = np.concatenate([valid & stopped[k][Bc], Fz & stopped[k][pc]], axis=1)
+        cash = (vals * st).sum(1) * (1 - c) + np.where(cnt > 0, 0.0, V_tr)
+        keep = ~st & (ids >= 0)
+        pv = np.where(keep, vals, 0.0); pid = np.where(keep, ids, -1)
+        cols = keep.any(0); pv, pid = pv[:, cols], pid[:, cols]
+    return cash + pv.sum(1) * (1 - c)

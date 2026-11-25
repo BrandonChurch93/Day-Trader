@@ -103,7 +103,7 @@ def score(members, px, days, with_random=True):
         if with_random:
             rng = np.random.default_rng([P["seed"], n])
             bk = C.random_baskets(periods, px, n, P["random_draws"], rng)
-            rnd = list(C.fast_values(moves[0], moves[1], bk, cost) - 1.0)
+            rnd = list(C.fast_values(moves, bk, cost) - 1.0)
         pct = float(np.percentile(rnd, P["random_percentile"])) if rnd else float("nan")
         marks = {"1_above_spy": bool(tot > res["spy"]["total"]),
                  "2_above_everyone": bool(tot > res["everyone"]["total"]),
@@ -125,7 +125,7 @@ def score(members, px, days, with_random=True):
             marks=marks, passes=all(marks.values()),
             reported=dict(by_year=by_year(S["daily"]), max_drop=C.max_drop(S["daily"]),
                           mean_turnover=float(np.mean(S["turnover"][1:])) if len(S["turnover"]) > 1 else 0.0,
-                          flagged_holdings=len(S["flags"]),
+                          flagged_holdings=len(S["flags"]), carried_through_gap=len(S["carried"]),
                           flagged=[dict(ticker=tick.get(s, px.keys[s]), period_ranking_day=days[periods[k]["i"]], last_close_day=days[d])
                                    for k, s, d in S["flags"]],
                           total_without_flagged_hindsight=without,

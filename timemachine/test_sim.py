@@ -1219,7 +1219,7 @@ ok(T6.swap_twin(sws, ls6, random.Random(3)) == T6.swap_twin(sws, ls6, random.Ran
 # 5. swing sessions
 T6.full_config = lambda: spread6(real_fc())
 try:
-    T6.create_swing("f6_swing", "FS", "script", "x.md", "2026-06-09", "2026-06-09", ["A/USD", "C/USD"])
+    T6.create_swing("f6_swing", "FS", "script", "x.md", "2026-06-09", "2026-06-09", ["A/USD", "C/USD"], long_only=True)
 finally:
     T6.full_config = real_fc
 sg = WW.open_session("f6_swing", tape=WT); pg = sg.packet()
@@ -1239,6 +1239,44 @@ ok(sg.meta["long_only"] and len(sg.meta["wakes"]) == 24 and sg.max_gross == T6.p
 bad = K6(sg, {"weights": {"A/USD": 0.5, "C/USD": -0.5}, "why": "x"})
 ok(not bad["ok"] and sg.prog["k"] == 0 and any("negative" in e or "long" in e for e in bad.get("errors", [json.dumps(bad)])), "tm06 swing: --long-only refuses a negative weight")
 ok(PP.check_answer({"weights": {"A/USD": -0.5}, "why": "x"}, ["A/USD"], C6, 1.0, {"A/USD": 10.0}, long_only=False) == [], "tm06 swing: without long_only the book takes a short")
+
+# part S takes shorts (plan change of 2026-11-25): signed weights, on made-up minute bars
+def short_world(path, sym="Z/USD", t0=int(U(2026, 6, 9).timestamp())):
+    """minutes (t, s, o, h, l, c) from a list of (o, h, l, c); one wake at t0 filling at the first minute's open, one at the end."""
+    rows = [(t0 + 60 * i, sym, *b) for i, b in enumerate(path)]; t1 = t0 + 60 * len(path)
+    table = dict(rows=[dict(marks={sym: path[0][0]}, fills={sym: (S6iso(t0), path[0][0])})], end_marks={sym: path[-1][3]})
+    return rows, table, dict(wakes=[S6iso(t0)], end_utc=S6iso(t1), opening={})
+S6iso = lambda t: dt.datetime.fromtimestamp(t, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+c6s = dict(tm_perp_funding_files={}, tm_perp_fee_bps_per_side={"default": 0}, tm_perp_half_spread_bps={"default": 0}, tm_perp_maintenance={"default": 0.05},
+           tm_perp_funding_hours={"default": 1}, tm_perp_fallback_rate_per_day=0.0, tm_perp_closeout_penalty=0.0, tm_perp_min_change=0.0, tm_account_start_usd=1000.0)
+fall = [(100 - i * 0.1, 100 - i * 0.1 + 0.05, 100 - i * 0.1 - 0.15, 100 - (i + 1) * 0.1) for i in range(100)]  # 100 to 90
+rw, tb, mt = short_world(fall); pps = PP.p_params(["Z/USD"], c6s, funding={})
+b, _, f = PP.run_perp(mt, tb, [({"Z/USD": -1.0}, None)], pps, PP.Minutes(rw), c6s)
+ok(abs(f - 1100.0) < 1e-6 and b["qty"]["Z/USD"] < 0, "tm06 swing short: a 1x short gains 10% when the price falls 10% (no costs)")
+hrs = {h: 0.001 for h in range(rw[0][0] // 3600 * 3600 - 7200, rw[-1][0] + 7200, 3600)}; ppf = PP.p_params(["Z/USD"], c6s, funding={"Z/USD": hrs})
+flat = [(100.0, 100.0, 100.0, 100.0)] * 180
+rw2, tb2, mt2 = short_world(flat); bs, _, fs = PP.run_perp(mt2, tb2, [({"Z/USD": -1.0}, None)], ppf, PP.Minutes(rw2), c6s)
+bl, _, fl = PP.run_perp(mt2, tb2, [({"Z/USD": 1.0}, None)], ppf, PP.Minutes(rw2), c6s)
+ok(bs["funding_usd"] < 0 < bl["funding_usd"] and fs > 1000.0 > fl and abs((fs - 1000) + (fl - 1000)) < 1e-9, "tm06 swing short: a positive funding rate is received by a short and paid by a long, the same amount")
+rise = [(100 + i * 2, 100 + i * 2 + 2, 100 + i * 2 - 0.5, 100 + (i + 1) * 2) for i in range(60)]  # up to 220
+rw3, tb3, mt3 = short_world(rise); bc, _, fc = PP.run_perp(mt3, tb3, [({"Z/USD": -2.0}, None)], pps, PP.Minutes(rw3), c6s)
+ok(len(bc["closeouts"]) == 1 and not bc["qty"] and fc < 1000.0, "tm06 swing short: a short is closed out by force when the price rises far enough")
+_, _, fst = PP.run_perp(mt3, tb3, [({"Z/USD": -1.0}, {"Z/USD": {"stop": 110.0}})], pps, PP.Minutes(rw3), c6s)
+bst, _, _ = PP.run_perp(mt3, tb3, [({"Z/USD": -1.0}, {"Z/USD": {"stop": 110.0}})], pps, PP.Minutes(rw3), c6s)
+btg, _, ftg = PP.run_perp(mt, tb, [({"Z/USD": -1.0}, {"Z/USD": {"target": 95.0}})], pps, PP.Minutes(rw), c6s)
+ok(bst["exits_hit"][0]["kind"] == "stop" and abs(fst - 900.0) < 1e-6 and btg["exits_hit"][0]["kind"] == "target" and abs(ftg - 1050.0) < 1e-6,
+   "tm06 swing short: a short's stop above the price fills on a rise, its target below fills on a fall")
+ok(PP.check_answer({"weights": {"A/USD": -0.6, "C/USD": 0.5}, "why": "x"}, ["A/USD", "C/USD"], C6, 1.0, {"A/USD": 10.0, "C/USD": 5.0})
+   and PP.check_answer({"weights": {"A/USD": -0.5, "C/USD": 0.5}, "why": "x"}, ["A/USD", "C/USD"], C6, 1.0, {"A/USD": 10.0, "C/USD": 5.0}) == [],
+   "tm06 swing short: the gross cap counts a short and a long together (absolute weights)")
+T6.full_config = lambda: spread6(real_fc())
+try:
+    T6.create_swing("f6_short", "FS", "script", "x.md", "2026-06-09", "2026-06-09", ["A/USD", "C/USD"])
+finally:
+    T6.full_config = real_fc
+ssh = WW.open_session("f6_short", tape=WT); psh = ssh.packet()
+ok(not ssh.meta.get("long_only") and "long, short or nothing" in psh["rules"][0] and any(v < 0 for v in psh["answer_forms"][0]["weights"].values())
+   and K6(ssh, {"weights": {"A/USD": -0.5, "C/USD": 0.25}, "why": "x"})["ok"], "tm06 swing: a part S session takes a short and a long together, and its packet says so")
 pg6 = sg.packet(); xs = sg.submit({"weights": {"A/USD": 0.5}, "why": "x", "session": "f6_pick", "answer_key": json.loads((pk6.dir / "packets" / "0.json").read_text())["answer_key"]})
 ok(not xs["ok"] and sg.prog["k"] == 0 and "another session" in xs["errors"][0] and pg6["answer_key"] != json.loads((pk6.dir / "packets" / "0.json").read_text())["answer_key"],
    "tm06 answer key: an answer built from another session's packet is refused by the swing session")
@@ -1379,7 +1417,7 @@ except AssertionError:
     caught = True
 bt = T6.brief_text(T6.next_wake("f6_hand"), 8799, "/tmp/agent2_notes.md")
 ok(caught and str(fz) in bt and "8799" in bt and f"steps {nh + 1} to {2 * nh} of 48" in bt and "x.md" in bt
-   and not __import__("re").search(r"\{[A-Z_]+\}", bt) and "long or flat" in bt, "tm06 brief: the swing brief with every placeholder filled; a second hand-off at the same step is refused")
+   and not __import__("re").search(r"\{[A-Z_]+\}", bt) and "long, short or nothing" in bt, "tm06 brief: the swing brief with every placeholder filled; a second hand-off at the same step is refused")
 ok(T6.handoff_points(json.loads((Path(os.environ["TM_RUNS"]) / "f6_pick" / "session.json").read_text()), C6) == []
    and T6.handoff_points(dict(json.loads((Path(os.environ["TM_RUNS"]) / "f6_pick" / "session.json").read_text()), tm06=dict(part="P", config=dict(tm06_handoff_picker_split_day=10))), C6) == [1]
    and T6.handoff_points(dict(json.loads((Path(os.environ["TM_RUNS"]) / "f6_pick" / "session.json").read_text()), tm06=dict(part="P", config=dict(tm06_handoff_picker_split_day=None))), C6) == []

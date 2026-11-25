@@ -89,25 +89,65 @@ class Small(unittest.TestCase):
         self.assertEqual(r["flags"], [(0, 0, 19)])
         self.assertAlmostEqual(r["value"], 0.5 * 1.5 + 0.5, places=12)
 
-    def test_gap_is_carried(self):
+    def test_gap_is_carried_not_traded(self):
+        # A has no bar from day 25 to 34, so no open at the re-form on day 30, and prices again from day 35.
+        # The rule wants B at day 30, but A cannot be sold then: it is carried through the gap on its own prices.
         T = len(self.days); f1, f2 = 3, 30
         oa = np.full(T, 10.0); ca = np.full(T, 10.0); oa[25:35] = np.nan; ca[25:35] = np.nan; ca[24] = 11.0
-        px = self.px({"A||": (oa, ca)})
-        r = C.simulate(px, [f1, f2], [[0], [0]], 0)
-        self.assertEqual(r["flags"], [])
-        self.assertAlmostEqual(r["at_fill"][1], 1.1, places=12)    # no open at the re-form: last close carried
+        oa[35:] = 12.0; ca[35:] = 12.0
+        ob = np.full(T, 10.0); cb = np.full(T, 10.0); cb[40:] = 20.0
+        px = self.px({"A||": (oa, ca), "B||": (ob, cb)})
+        r = C.simulate(px, [f1, f2], [[0], [1]], 10, daily=True)
+        c = 1e-3
+        self.assertEqual(r["flags"], []); self.assertEqual(r["carried"], [(1, 0)])
+        self.assertAlmostEqual(r["at_fill"][1], (1 - c) * 1.1, places=12)          # valued at its last close
+        self.assertAlmostEqual(r["turnover"][1], 0.0, places=12)                    # nothing could be traded
+        self.assertAlmostEqual(r["value"], (1 - c) * 1.2 * (1 - c), places=12)      # A's own prices, B never bought
+        self.assertAlmostEqual(r["daily"][30], (1 - c) * 1.1, places=12)
+
+    def test_gap_part_carried_rest_reformed(self):
+        # A and B held; A gaps over the re-form; B is sold and C bought with B's money only.
+        T = len(self.days); f1, f2 = 3, 30
+        oa = np.full(T, 10.0); ca = np.full(T, 10.0); oa[28:32] = np.nan; ca[28:32] = np.nan
+        ob = np.full(T, 10.0); cb = np.full(T, 10.0)
+        oc = np.full(T, 10.0); cc = np.full(T, 10.0); cc[50:] = 15.0
+        px = self.px({"A||": (oa, ca), "B||": (ob, cb), "C||": (oc, cc)})
+        r = C.simulate(px, [f1, f2], [[0, 1], [2]], 10)
+        c = 1e-3; V0 = 1 - c
+        self.assertAlmostEqual(r["turnover"][1], 1.0, places=12)                    # sell B's half, buy C's half
+        Vb = V0 * 0.5 - c * 1.0 * V0
+        self.assertAlmostEqual(r["value"], (V0 * 0.5 + Vb * 1.5) * (1 - c), places=12)
+
+    def test_stop_sale_cost_on_the_stop_day(self):
+        T = len(self.days); f1, f2 = 3, 30
+        oa = np.full(T, 10.0); ca = np.full(T, 10.0); oa[20:] = np.nan; ca[20:] = np.nan
+        ob = np.full(T, 10.0); cb = np.full(T, 10.0)
+        px = self.px({"A||": (oa, ca), "B||": (ob, cb)})
+        r = C.simulate(px, [f1, f2], [[0, 1], [1]], 10, daily=True)
+        c = 1e-3; V0 = 1 - c
+        self.assertAlmostEqual(r["daily"][18], V0, places=12)
+        self.assertAlmostEqual(r["daily"][19], V0 * 0.5 * (1 - c) + V0 * 0.5, places=12)   # sold at that close
 
     def test_fast_equals_simulate(self):
         days, members, px = world(5, n=40, days=bdays("2016-01-04", "2019-12-31"))
         periods, me = S.plan_periods(members, px, days)
         fills = [p["fill"] for p in periods]
+        # put gaps across some re-form days so carried stocks are tested too
+        O, Cc = px.O.copy(), px.C.copy()
+        rg = np.random.default_rng(9)
+        for s in rg.choice(len(px.keys) - 1, 15, replace=False):
+            for f in rg.choice(fills[1:], 3, replace=False):
+                O[s, f - 2:f + 3] = np.nan; Cc[s, f - 2:f + 3] = np.nan
+        px = C.Prices.from_arrays(days, {k: (O[i], Cc[i]) for i, k in enumerate(px.keys)})
         rng = np.random.default_rng(1)
-        bk = C.random_baskets(periods, px, 10, 20, rng)
-        mv = C.period_moves(px, fills)
-        fast = C.fast_values(mv[0], mv[1], bk, 5)
-        for j in range(20):
-            slow = C.simulate(px, fills, [[s for s in bk[j, k] if s >= 0] for k in range(len(fills))], 5)["value"]
-            self.assertAlmostEqual(fast[j], slow, places=10)
+        bk = C.random_baskets(periods, px, 10, 40, rng)
+        fast = C.fast_values(C.period_moves(px, fills), bk, 5)
+        ncar = 0
+        for j in range(40):
+            sim = C.simulate(px, fills, [[s for s in bk[j, k] if s >= 0] for k in range(len(fills))], 5)
+            ncar += len(sim["carried"])
+            self.assertAlmostEqual(fast[j], sim["value"], places=10)
+        self.assertGreater(ncar, 0)
 
 class Rules(unittest.TestCase):
     def test_gain_uses_exact_month_ends(self):

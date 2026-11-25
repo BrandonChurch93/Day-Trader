@@ -67,6 +67,7 @@ def build(src):
         w(f"| {MARKS['4_above_spy_each_half']} | first {pc(S['first_half'])}, second {pc(S['second_half'])} | SPY first {pc(spy['first_half'])}, second {pc(spy['second_half'])} | {yn(m['4_above_spy_each_half'])} |")
         w("")
         w(f"Gaps next to this result: {rp['flagged_holdings']} holdings were sold at a last close because their prices stopped (flagged); "
+          f"{rp.get('carried_through_gap', 0)} times a held stock had no open at a re-form and was carried at its last close; "
           f"{rp['short_baskets']} months had fewer than {S['n']} stocks with an open to buy; it beat {pc(rd['share_of_draws_beaten'], 0).lstrip('+')} of random baskets. "
           f"Without every flagged stock, removed from the start (uses hindsight, reported only): {pc(rp['total_without_flagged_hindsight'])}. MEASURED.")
         w("")
