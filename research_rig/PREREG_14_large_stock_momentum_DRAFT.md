@@ -49,6 +49,23 @@ Each set-up is judged on its own. It passes when all four hold, after costs:
 
 No set-up is chosen after the fact; both are counted as trials. A pass means: worth running on the practice desk with pretend money as a slow sleeve, and the rule becomes the yardstick for AI stock pickers. It does not mean it makes money. Reported and not judged: each calendar year, the largest drop against SPY's, turnover, the result without flagged stocks, and how the top N overlap with what SPMO held where that is public.
 
+## Definitions fixed before the run
+
+Written 2026-11-25 19:00 UTC after the code builder read the draft and listed what it left open. No price had been collected.
+
+- Month-end: the last trading day of SPY in a calendar month. The gain used for ranking on a month-end is the close one month-end before, divided by the close twelve month-ends before, minus one. Both closes must exist on those exact days; a stock without them cannot be ranked that month and is counted.
+- First ranking day 2017-01-31, first purchase at the open of 2017-02-01. Last ranking day 2026-10-30, held to the close of 2026-11-24. The final sale is charged like any other, for the rule and for every yardstick, SPY included.
+- Member days: from the day added up to, not including, the day removed. A stock removed in the middle of a month stays held until the next re-form.
+- Two share classes of one company (for example GOOG and GOOGL): only the first by ticker in alphabetical order can be ranked or drawn, in the rule and in every yardstick, so a basket does not hold one company twice.
+- Yardstick (b) holds every member that has a close on the ranking day and an open on the purchase day. Yardstick (c) draws from the same stocks the rule could rank that month, a fresh draw each month inside each of the paths, tickers sorted before drawing. "Above" means strictly above.
+- Inside a month the parts drift with prices. At each re-form they are reset to equal. The cost is charged on the sum of the differences between the new parts and the drifted parts; the first purchase counts as all of it traded.
+- A stock in the top N with no open on the purchase day is skipped for the next one down.
+- A held stock whose prices stop is sold at its last close, flagged, and that money sits in cash until the next re-form. A gap with prices later is carried at the last close.
+- Halves: the first half is every holding formed on ranking days up to `replay_14_plan.first_half_end`; the second is the rest. SPY is measured over the same open-to-open spans.
+- Renamed companies keep one history. A takeover or merger into a new company ends the old history; the new company joins as new and cannot be ranked until it has twelve month-ends. Each such case is listed.
+- "Without flagged stocks" removes every stock that was ever flagged from the start. That uses hindsight and is labelled so. Overlap with SPMO's holdings is printed only if a dated public record of them is found; otherwise UNKNOWN. Whether the price feed adjusts for spin-offs is UNKNOWN and is said in the result.
+- The run refuses to start while this file is a draft, takes a lock before reading any real price for a return, and refuses a second run.
+
 ## How this can fool us
 
 - Ten years, one long rising market with two sharp falls. Momentum rules are known to fall hard when a market turns.

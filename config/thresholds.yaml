@@ -740,9 +740,9 @@ tm06_pick_max_names:
   note: Plan TM06 part P. Most coins a picker may name at one wake. The desk holds the named coins in equal parts adding up to 1x, long only.
   source: timemachine/tm06.py
 tm06_pick_wake_hour_utc:
-  value: 0
+  value: 14
   status: builder
-  note: Plan TM06 part P. The one daily wake, at this whole UTC hour, when the daily bars close. Builder choice.
+  note: Plan TM06 part P. The one daily wake, at this whole UTC hour. Set to the hour fixed in tm06_plan before any session; the plan governs.
   source: timemachine/tm06.py
 tm06_pick_change_hours:
   value: [1, 24, 168, 720]
@@ -780,7 +780,7 @@ tm06_carry_multiples:
   note: Plan TM06 item 6. A finished swing session's weights, and its yardsticks', are replayed multiplied by each of these, with funding and forced close-out, at each fee in tm_perp_fee_levels_bps.
   source: timemachine/tm06.py
 tm06_reversal:
-  value: {symbol: BTC/USD, minutes: 15, move_pct: 0.5, multiples: [1, 3]}
+  value: {symbol: BTC/USD, minutes: 15, move_pct: 0.3, multiples: [1, 3]}
   status: builder
   note: Plan TM06 negative control, a code trader with no model. Every minutes minutes on symbol, if the last finished bar of that length moved more than move_pct percent from open to close, hold the other side (weight minus or plus 1) until the next wake, else flat. Replayed at each multiple and at each fee in tm_perp_fee_levels_bps. move_pct is a builder choice, set before any run.
   source: timemachine/tm06.py
