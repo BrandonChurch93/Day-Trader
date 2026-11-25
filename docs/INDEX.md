@@ -198,6 +198,8 @@ Working papers.
 | `research_rig/split_check_11.json` | Plan 11 split check result, written by split_check_11.py | RECORD |
 | `research_rig/answers_11_design_hashes.json` | Plan 11: the hash of each reader's collected answers on the design sample, pushed before the scorer may run | RECORD |
 | `research_rig/results_11_design.json` | Plan 11: the six set-ups scored on the 450-release design sample, the agreement between readers, and the set-up chosen to read the held-back half. Written once by score_11.py --design | RECORD |
+| `research_rig/answers_11_heldback_hashes.json` | Plan 11: hashes of the chosen reader's 2,146 held-back answers, pushed before any held-back price is read | RECORD |
+| `research_rig/reader_notes_11.md` | Plan 11: what went differently from the reader brief (files sent back once, readers that said they ran a command) | RECORD |
 | `research_rig/PREREG_09_crypto_methods.md` | Frozen plan for new long-only crypto rules at Alpaca cost | CURRENT |
 | `research_rig/run_09.py`, `research_rig/fixtures_09.py` | Replay engine and synthetic timing, fees, gaps and matching checks for replay 09 | CURRENT |
 | `research_rig/fetch_09_alpaca.py` | Public Alpaca USD bar downloader; raw bars live on the research machine | CURRENT |

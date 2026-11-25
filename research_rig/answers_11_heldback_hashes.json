@@ -1,0 +1,15 @@
+{
+ "phase": "heldback",
+ "made_utc": "2026-11-25 18:20",
+ "instruction_sha256": "9f67db815f2c01d519b88510cad82b1ec129942919456cb7df6b41b1f4201407",
+ "usable_file_sha256": "8cb81857456659e90eee43ffdb7814415eb7eff4c753e7f37947912c0c36be05",
+ "files": {
+  "answers_11_heldback_claude_sonnet_5_5.jsonl": {
+   "sha256": "afdba9549d1c2447ab53c399b7077dcb197362dd5d20c8d2b875587a164a76e6",
+   "answers": 2146,
+   "set_to_zero": 0,
+   "remembered_set_to_zero": 5,
+   "short_reason": 0
+  }
+ }
+}
