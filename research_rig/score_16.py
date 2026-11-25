@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date,timedelta
 import json
 import math
+import re
 import sys
 
 import numpy as np
@@ -13,11 +14,13 @@ import numpy as np
 try:
     from . import common_13 as C, score_13 as S
     from . import common_16 as M, fetch_16 as F
+    from . import identity_asof_16_17 as I, us_roster_17 as U
 except ImportError:
     import common_13 as C
     import score_13 as S
     import common_16 as M
     import fetch_16 as F
+    import identity_asof_16_17 as I, us_roster_17 as U
 
 HERE = S.HERE
 DRAFT = HERE/"PREREG_16_hot_five_hedged_DRAFT.md"
@@ -29,8 +32,14 @@ LOCAL_LOCK = HERE/"score_16.lock"
 DURABLE_LOCK = F.DATA/"score_16.lock"
 META = ("snapshots_16.json","snapshot_fingerprints.json","manifest_spot.json","manifest_futures.json")
 IDENTITY = "identity_policy_16_17.json"
+FREEZE = "freeze_16_17.json"
+FREEZE_META = (*META,"manifest_futures_held.json",IDENTITY)
 CODE = ("common_13.py","fetch_13.py","score_13.py","common_16.py","fetch_16.py",
         "score_16.py","test_16.py","report_16.py")
+SHARED_CODE = CODE+("common_17.py","score_17.py","report_17.py","test_17.py",
+                    "check_identity_levels_16_17.py","diagnose_identity_daily_16_17.py",
+                    "identity_asof_16_17.py","build_identity_asof_16_17.py","us_roster_17.py",
+                    "identity_chronology_16_17.py","identity_review.py")
 
 
 def plan_bytes():
@@ -133,7 +142,7 @@ def series(rows,ctor):
     ts = np.fromiter((r[0] for r in rows),dtype=np.int64,count=len(rows))
     if len(ts)>1 and np.any(ts[1:]<=ts[:-1]):
         raise S.Refused("overlapping hourly archive files")
-    vals = np.array([r[1:] for r in rows],dtype=np.float64).reshape(-1,3)
+    vals = np.array([r[1:] for r in rows],dtype=np.float64).reshape(-1,3 if ctor is C.Bar else 5)
     out = C.Series.__new__(C.Series)
     out.bars = Packed(ts,vals,ctor)
     out.times = ts
@@ -149,6 +158,7 @@ def load_groups(manifest,spot,cutoff):
     def group(job):
         symbol,files = job
         trade,mark,funding = [],[],{}
+        next_spot = None
         for key,meta in files:
             if meta["where"] not in (("replay_13","replay_16") if spot else ("replay_16",)):
                 raise S.Refused(f"unknown archive source: {key}")
@@ -159,11 +169,12 @@ def load_groups(manifest,spot,cutoff):
             for row in F.F.zip_rows(blob):
                 count += 1
                 t = F.F.open_epoch(row[0])
-                if t>cutoff:
+                if "/fundingRate/" in key:
+                    t = (t+30)//60*60
+                if t>cutoff and (not spot or (next_spot is not None and t>=next_spot[0])):
                     continue
                 if "/fundingRate/" in key:
                     rate = float(row[2])
-                    t = (t+30)//60*60
                     if t%M.H or t in funding or not math.isfinite(rate):
                         raise S.Refused(f"ambiguous funding clock: {key}")
                     funding[t] = rate
@@ -172,14 +183,32 @@ def load_groups(manifest,spot,cutoff):
                     if (t%M.H or not all(math.isfinite(v) and v>0 for v in (o,x,c)) or
                         (x>min(o,c) if spot else x<max(o,c))):
                         raise S.Refused(f"malformed hourly bar: {key}")
-                    (mark if "/markPriceKlines/" in key else trade).append((t,o,x,c))
+                    if spot and t>cutoff:
+                        # Only the next archived open is needed to settle a
+                        # final-week pending lot in its original year.
+                        next_spot = (t,o,x,c)
+                    elif spot:
+                        trade.append((t,o,x,c))
+                    else:
+                        is_mark = "/markPriceKlines/" in key
+                        low,v = float(row[3]),1.0 if is_mark else float(row[5])
+                        if (not math.isfinite(low) or not 0<low<=min(o,c)
+                            or not math.isfinite(v) or v<0):
+                            raise S.Refused(f"malformed hourly low or volume: {key}")
+                        (mark if is_mark else trade).append((t,o,x,c,low,v))
             if count!=meta["n"]:
                 raise S.Refused(f"archive row count changed: {key}")
         if spot:
+            if next_spot is not None:
+                trade.append(next_spot)
             return symbol,series(trade,C.Bar)
         return symbol,M.Tape(series(trade,M.FBar),series(mark,M.FBar),funding,())
-    with ThreadPoolExecutor(8) as pool:
+    with ThreadPoolExecutor(2) as pool:
         return dict(pool.map(group,jobs.items()))
+
+
+def mark_fallback_hours(tapes):
+    return sum(np.setdiff1d(t.trade.times,t.mark.times,assume_unique=True).size for t in tapes.values())
 
 
 def metadata(expected,plan):
@@ -206,10 +235,63 @@ def metadata(expected,plan):
 
 def identity_bytes(plan,peer):
     raw = (F.DATA/IDENTITY).read_bytes()
-    key = F.digest(raw)[:12].encode()
-    if key not in plan or key not in peer:
-        raise S.Refused("the frozen plans must both identify the same identity audit fingerprint")
+    key = F.digest(raw)
+    for doc in (plan,peer):
+        declarations = re.findall(r"^Shared identity policy SHA-256 ([0-9a-f]{64})\.$",doc.decode(),re.M)
+        if declarations != [key]:
+            raise S.Refused("each frozen plan must have one matching full identity policy declaration")
     return raw
+
+
+def collect_freeze():
+    raw,peer = plan_bytes(),peer_plan_bytes()
+    audit = identity_bytes(raw,peer)
+    config = (F.F.ROOT/"config/thresholds.yaml").read_bytes()
+    meta = {name:F.digest((F.DATA/name).read_bytes()) for name in FREEZE_META}
+    if meta[IDENTITY]!=F.digest(audit):
+        raise S.Refused("identity changed while collecting freeze fingerprints")
+    rec = {"version":1,"plans":{"16":F.digest(raw),"17":F.digest(peer)},
+           "config_sha256":F.digest(config),"inputs":meta,
+           "source_snapshots_sha256":F.digest((F.F.DATA/"snapshots.json").read_bytes()),
+           "us_roster_sha256":F.digest(us_roster_bytes()),
+           "code_sha256":{name:F.digest((HERE/name).read_bytes()) for name in SHARED_CODE}}
+    return rec,raw,peer,config,audit
+
+
+def us_roster_bytes():
+    path = F.DATA.parents[1]/"ideas"/U.NAME
+    if path.is_symlink() or not path.is_file():
+        raise S.Refused("pinned US shortable roster is missing")
+    raw = path.read_bytes()
+    try:
+        U.rows(raw)
+    except (ValueError,KeyError,TypeError) as exc:
+        raise S.Refused("pinned US shortable roster does not verify") from exc
+    return raw
+
+
+def verified_freeze(expected):
+    path = F.DATA/FREEZE
+    if not expected or not re.fullmatch(r"[0-9a-f]{64}",expected) or path.is_symlink():
+        raise S.Refused("a trusted full freeze SHA-256 and a regular freeze file are required")
+    if not path.is_file():
+        raise S.Refused("shared freeze record is missing")
+    raw = path.read_bytes()
+    if F.digest(raw)!=expected:
+        raise S.Refused("shared freeze record changed")
+    now = collect_freeze()
+    if json.loads(raw)!=now[0]:
+        raise S.Refused("code, config, plans, or metadata differ from the shared freeze")
+    return now
+
+
+def seal_freeze():
+    path = F.DATA/FREEZE
+    rec,*_ = collect_freeze()
+    raw = (json.dumps(rec,sort_keys=True,indent=2)+"\n").encode()
+    with path.open("xb") as stream:
+        stream.write(raw)
+    print(F.digest(raw))
 
 
 def identity_policy(raw,snapshot_sha,manifests=None):
@@ -236,37 +318,36 @@ def admitted_archives(manifest,pairs,spot):
                         if key.split("/")[i] in symbols}}
 
 
-def run():
-    raw = plan_bytes()
-    peer = peer_plan_bytes()
+def run(trusted_freeze=None):
+    frozen,raw,peer,config,audit = verified_freeze(trusted_freeze)
     S.unused_paths(RESULT,LOCAL_LOCK,DURABLE_LOCK)
-    config = (F.F.ROOT/"config/thresholds.yaml").read_bytes()
     cfg = F.F.yaml.safe_load(config)
     p13,p = (cfg[f"replay_{n}_plan"]["value"] for n in (13,16))
     validate(p,p13)
-    expected = {name:F.digest((F.DATA/name).read_bytes()) for name in META}
-    audit = identity_bytes(raw,peer)
-    identity = identity_policy(audit,expected["snapshots_16.json"],expected)
+    expected = {name:frozen["inputs"][name] for name in META}
+    identity_policy(audit,expected["snapshots_16.json"],expected)
+    snapshots,sp,fut = metadata(expected,raw)
+    ranges = source_ranges(fut)
+    cutoff = funding_cutoff(p,p13,ranges)
+    runtime = p|{"end":F.F.utc(cutoff).date().isoformat()}
+    identity = I.Timeline(json.loads(audit),cutoff)
+    allowed = identity.admitted(runtime)
     job = {"command":[sys.executable,*sys.argv],"git_head":S.git_head(),"start_utc":S.now(),
            "plan_sha256":F.digest(raw),"peer_plan_sha256":F.digest(peer),
            "config_sha256":F.digest(config),"inputs":expected|{IDENTITY:F.digest(audit)},
-           "code_sha256":{name:F.digest((HERE/name).read_bytes()) for name in CODE}}
-    if plan_bytes()!=raw or peer_plan_bytes()!=peer:
-        raise S.Refused("plan changed before lock")
+           "freeze_sha256":trusted_freeze,"code_sha256":frozen["code_sha256"]}
+    verified_freeze(trusted_freeze)
     S.guard(raw.decode(),RESULT,LOCAL_LOCK,DURABLE_LOCK,job)
     try:
-        if identity_bytes(raw,peer)!=audit:
-            raise S.Refused("identity audit changed after lock")
-        snapshots,sp,fut = metadata(expected,raw)
-        ranges = source_ranges(fut)
-        cutoff = funding_cutoff(p,p13,ranges)
-        spot = load_groups(admitted_archives(sp,identity["spot"],True),True,cutoff)
-        tapes = load_groups(admitted_archives(fut,identity["futures"],False),False,cutoff)
+        verified_freeze(trusted_freeze)
+        spot = load_groups(admitted_archives(sp,allowed["spot"],True),True,cutoff)
+        tapes = load_groups(admitted_archives(fut,allowed["futures"],False),False,cutoff)
         for s,tape in tapes.items():
             tape.covered = ranges.get(s,())
-        runtime = p|{"end":F.F.utc(cutoff).date().isoformat()}
         result = M.replay(snapshots,spot,tapes,runtime,p13,identity)
         result.update(job=job,finished_utc=S.now(),cutoff_utc=F.F.utc(cutoff).isoformat(),
+                      trade_hours_without_mark=mark_fallback_hours(tapes),
+                      identity_changes=I.compare_counts(identity,snapshots,runtime),
                       last_complete_funding_week_monday_utc=F.F.utc(cutoff-C.WEEK).date().isoformat(),
                       parameters=p,spot_identity_mappings=F.F.MANUAL,perp_identity_mappings=F.PERP_MANUAL,
                       perp_identity_evidence=F.PERP_EVIDENCE,perp_identity_uncertainties=F.PERP_UNCERTAIN,
@@ -285,6 +366,8 @@ if __name__ == "__main__":
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--selftest",action="store_true")
     mode.add_argument("--run",action="store_true")
+    mode.add_argument("--seal-freeze",action="store_true")
+    parser.add_argument("--freeze-sha256")
     args = parser.parse_args()
     if args.selftest:
         import unittest
@@ -292,6 +375,9 @@ if __name__ == "__main__":
         suite = unittest.defaultTestLoader.loadTestsFromModule(test_16)
         raise SystemExit(not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful())
     try:
-        run()
+        if args.seal_freeze:
+            seal_freeze()
+        else:
+            run(args.freeze_sha256)
     except S.Refused as exc:
         raise SystemExit(str(exc))

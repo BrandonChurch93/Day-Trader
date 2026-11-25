@@ -202,21 +202,27 @@ def aliases(pair):
 # Separate USD-M contract identity, not spot price-series joins.
 # The old LUNA contract terminated at an explicit intrahour settlement.
 PERP_MANUAL = {
+    1042: [(None,"2022-06-17T09","SCUSDT")],
     1765: [(None,"2025-05-21T09","EOSUSDT")],
     1982: [(None,"2021-05-21T08","KNCUSDT")],
     2239: [(None,"2020-10-10T00","LENDUSDT")],
+    2424: [(None,"2024-06-25T09","AGIXUSDT")],
     3513: [(None,"2025-01-06T09","FTMUSDT")],
     3890: [(None,"2024-09-04T09","MATICUSDT")],
+    3911: [(None,"2024-06-25T09","OCEANUSDT")],
     4086: [(None,"2020-08-31T03","ERDUSDT")],
     4113: [],  # Unicoin, not Uniswap, despite the UNI symbol in this snapshot.
     4172: [(None,"2022-05-12T15:30","LUNAUSDT"),
            ("2022-09-09T13",None,"1000LUNCUSDT")],
     4256: [(None,"2024-10-22T09","KLAYUSDT")],
+    5665: [(None,"2023-03-20T09","HNTUSDT")],
+    6187: [(None,"2022-11-15T04:30","SRMUSDT")],
     4644: [],  # Poseidon Network, not the Invesco QQQ equity-index contract.
     5690: [(None,"2024-07-16T09","RNDRUSDT"),("2024-07-16T09",None,"RENDERUSDT")],
     6536: [(None,"2026-02-23T09","OMUSDT"),("2026-02-23T09",None,"MANTRAUSDT")],
     6953: [(None,"2026-01-06T09","FXSUSDT"),("2026-01-06T09",None,"FRAXUSDT")],
     7278: [("2020-10-16T07",None,"AAVEUSDT")],
+    8526: [(None,"2022-11-15T04","RAYUSDT")],
     9444: [("2021-05-21T08",None,"KNCUSDT")],
     9891: [(None,"2023-02-11T04","BNXUSDT")],
     11156: [(None,"2024-05-07T00","DYDXUSDT")],
@@ -227,6 +233,25 @@ PERP_MANUAL = {
             ("2025-03-17T09",None,"FORMUSDT")],
     28324: [("2024-05-07T00",None,"DYDXUSDT")],
 }
+NOTICE_DELIST = {
+    (1042,"SCUSDT"):("2022-06-17T09","https://www.binance.com/en-NZ/support/announcement/detail/6ce355dedc5d438abde7b5dc99b3a56d"),
+    (2424,"AGIXUSDT"):("2024-06-25T09","https://www.binance.com/en/support/announcement/detail/e485541c370240adba3929fded74f269"),
+    (3911,"OCEANUSDT"):("2024-06-25T09","https://www.binance.com/en/support/announcement/detail/e485541c370240adba3929fded74f269"),
+    (5665,"HNTUSDT"):("2023-03-20T09","https://www.binance.com/en/support/announcement/detail/f1a8aa29692b4442a8f18be2076e14a0"),
+    (6187,"SRMUSDT"):("2022-11-15T04:30","https://www.binance.com/en/support/announcement/detail/9a6676662bd5417c92267953f3819dd0"),
+    (8526,"RAYUSDT"):("2022-11-15T04","https://www.binance.com/en/support/announcement/detail/9a6676662bd5417c92267953f3819dd0"),
+}
+NOTICE_SPOT_DELIST = {(cid,pair):("2024-07-01T03",NOTICE_DELIST[cid,pair][1])
+                      for cid,pair in ((2424,"AGIXUSDT"),(3911,"OCEANUSDT"))}
+SPOT_SWAP_IDS = {1982,9444,9891,23635,11156,28324}
+
+
+def spot_segments(row):
+    if row["id"] in SPOT_SWAP_IDS:
+        return tuple((F.boundary(a,-10**12),F.boundary(b,10**12),pair)
+                     for a,b,pair in PERP_MANUAL[row["id"]])
+    return tuple((lo,min(hi,F.boundary(NOTICE_SPOT_DELIST.get((row["id"],pair),(None,None))[0],10**12)),pair)
+                 for lo,hi,pair in F.segments(row))
 PERP_EVIDENCE = {
     1518: ["https://www.binance.com/en/support/announcement/detail/bf29506a33a94c17a5d5a01e74e646d2"],
     1765: ["https://www.binance.com/en/support/announcement/detail/1e89a9ca957c4b0ca7502e60b993e201"],

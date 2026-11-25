@@ -6,8 +6,10 @@ from statistics import median
 
 try:
     from . import score_17 as S
+    from .report_16 import identity_counts_text
 except ImportError:
     import score_17 as S
+    from report_16 import identity_counts_text
 
 OUT = S.F.F.ROOT/"docs/research/57_replay_17_short_the_peak.md"
 LABELS = {"judged":"Judged costs","low":"Lower costs","no_cost_no_funding":"No costs or funding"}
@@ -21,7 +23,8 @@ def render(result):
     rule = result["judgment"]["judged"]
     lines = ["# Replay 17: short the peak","",
              f"MEASURED. The held-back 1x short rule was **{rule['finding']}** at judged costs.",
-             f"The 2026 UTC cutoff was {result['cutoff_utc']}. Viewed-list results and the 3x and "
+             f"The last complete funding week began Monday {result['last_complete_funding_week_monday_utc']} UTC. "
+             f"The exclusive cutoff was {result['cutoff_utc']}. Viewed-list results and the 3x and "
              "bounce variants are descriptive.","",
              "## Preregistered marks","",
              "| Assumptions | Positive years | Also beat the hot hold | Also rising years |",
@@ -35,11 +38,17 @@ def render(result):
               ("The marks hold without cost or funding but not at judged costs."
                if result["failed_on_costs"] else
                "The contrast between no costs or funding and judged costs does not meet the preregistered definition of failure on costs."),
+              ("The judged rule failed on timing. It was positive in enough eligible years, but did not beat the hot hold in enough of those same years."
+               if result.get("failed_on_timing") else
+               "The judged rule did not meet the definition of a timing-only failure."),
+              ("The judged rule failed on rising years. It cleared the timing mark, but too few of those same years were rising."
+               if result.get("failed_on_rising") else
+               "The judged rule did not meet the definition of a rising-years-only failure."),
               ""]
     for sample in ("held","viewed"):
         lines += [f"## {sample.capitalize()} list","",
-                  "| Year | Rule S (low) | Rule S (judged) | Rule S (high) | Rule S (no cost or funding) | Hot hold (judged) | All live short | All rankable spot | Random median | 3x | Bounce | Trades | Flagged parts | Idle parts |",
-                  "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+                  "| Year | Rule S (low) | Rule S (judged) | Rule S (high) | Rule S (no cost or funding) | Hot hold (judged) | All live short | All rankable spot | Random median | 3x | Bounce | Trades | Flagged live parts | Flagged share of live parts | Live parts | Idle parts | Monday-observed name-weeks | Of those, not allowed under old file gate | All missing-file candidates |",
+                  "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
         for y,row in result["years"].items():
             data = row[sample]
             s = data["swing"]
@@ -48,8 +57,11 @@ def render(result):
             cells += [pct(data[k]) for k in ("all_short","spot_all")]
             cells.insert(4,pct(data["hot_hold"]["judged"]))
             cells += [pct(median(r["random_ends"])),pct(data["shown"]["levered"]["end"]),
-                      pct(data["shown"]["bounce"]["end"]),str(r["trades"]),
-                      f"{r['flag_share_pct']:.1f}%",str(r["idle_parts"])]
+                      pct(data["shown"]["bounce"]["end"]),str(r["trades"]),str(r["flagged_parts"]),
+                      f"{r['flag_share_pct']:.1f}%",str(r["live_parts"]),str(r["idle_parts"])]
+            w = data["weeks"]
+            cells += [str(sum(x.get(k,0) for x in w))
+                      for k in ("monday_live","file_gate_excluded","missing_funding_files")]
             lines.append(f"| {y} | "+" | ".join(cells)+" |")
         lines += ["",f"### {sample.capitalize()} list components at judged costs","",
                   "| Year | Rule S price contribution | Funding contribution | Fees | 3x forced closes |",
@@ -59,13 +71,33 @@ def render(result):
             lines.append(f"| {y} | {r['price']:+.4f} | {r['funding']:+.4f} | {r['fees']:.4f} | "
                          f"{row[sample]['shown']['levered']['forced']} |")
         lines.append("")
-    lines += ["## Interpretation","",
+    if "shown_us_shortable" in result:
+        lines += ["","## US-shortable roster, shown only","",
+                  "| Year | 1x Rule S at judged costs | Closed trades | Hot slots | Live hot slots |",
+                  "|---|---:|---:|---:|---:|"]
+        for y,r in result["shown_us_shortable"].items():
+            lines.append(f"| {y} | {pct(r['end'])} | {r['trades']} | {r['hot_slots']} | {r['live_hot_slots']} |")
+        lines += ["","STATED. The November 25, 2026 roster looks ahead to which assets survived "
+                  "and received US listings. Some were already in Replay 13's viewed list. "
+                  "Binance perpetual prices stand in for the US contracts; fees and funding differ. "
+                  "This is not a result for US execution or a preregistered mark."]
+    lines += identity_counts_text(result)
+    lines += ["","## Interpretation","",
               "STATED. The rank slice is held back, not an independent market. Contract liveness "
-              "is an archive proxy, and the hourly fill cannot establish what an order would have "
+              "is an archive proxy. The later funding-file requirement no longer gates entry. "
+              "Its counts are retrospective diagnostics only. A flagged part's denominator is the "
+              "part-weeks assigned a live contract on Monday, even if the rule never opens a trade. "
+              "Dated identity uses only Monday-available evidence or permanent "
+              "notice exclusion; the all-month rule is a descriptive status comparison only. "
+              "The hourly fill cannot establish what an order would have "
               "received in a squeeze. The source venue is not available to a US account as written.",
               "", "Every random endpoint, weekly coverage count and input fingerprint is saved in the "
               "result JSON. It also records the identity boundaries that are not independently verified.",
               ""]
+    if "trade_hours_without_mark" in result:
+        lines += [f"MEASURED. {result['trade_hours_without_mark']:,} retained futures trade hours "
+                  "had no mark bar. The stress check falls back to the trade high for a short "
+                  "and the trade low for a long.",""]
     return "\n".join(lines)
 
 
@@ -75,8 +107,9 @@ def main():
     args = p.parse_args()
     plan = S.A.peer_plan_bytes()
     result = json.loads(S.RESULT.read_bytes())
-    if result["job"]["plan_sha256"]!=S.F.digest(plan):
-        raise SystemExit("refused: result does not match the frozen plan")
+    if (result["job"]["plan_sha256"]!=S.F.digest(plan) or
+        result["job"]["peer_plan_sha256"]!=S.F.digest(S.A.plan_bytes())):
+        raise SystemExit("refused: result does not match both frozen plans")
     if args.output.exists() or args.output.is_symlink():
         raise SystemExit(f"refused: report already exists: {args.output}")
     S.F.F.write(args.output,render(result).encode())

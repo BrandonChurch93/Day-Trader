@@ -23,6 +23,7 @@ class Grid:
     preceding_payment: int
     preceding_close: float | None
     gap: bool
+    dry: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -35,17 +36,26 @@ class Part:
 
 def prepare(tape,asset,t,end,p):
     hours = range(t,end+H,H)
-    trade = tuple(tape.trade.bars.get(x) if x<asset.end else None for x in hours)
-    risk = tuple((tape.mark.bars.get(x) or b) if x<asset.end else None
-                 for x,b in zip(hours,trade))
-    signals = tuple(x<min(end,asset.end) and C.dip_signal(tape.trade,asset,x,p) for x in hours)
-    payments = tuple(tape.funding.get(x) if x<asset.end else None for x in hours)
+    trade = tuple(tape.executable(x) if asset.begin<=x<asset.end else None for x in hours)
+    risk = tuple((tape.mark.bars.get(x) or tape.trade.bars.get(x))
+                 if asset.begin<=x<asset.end and not tape.no_volume(x) else None for x in hours)
+    signals = tuple(x<min(end,asset.end) and not tape.impassable(x-(24*p["rise_days"]+1)*H,x)
+                    and C.dip_signal(tape.trade,asset,x,p) for x in hours)
+    dry = tuple(asset.begin<=x<asset.end and tape.no_volume(x) for x in hours)
+    payments = tuple(tape.funding.get(x) if asset.begin<=x<asset.end and not dead else None
+                     for x,dead in zip(hours,dry))
     i = bisect_left(tape.payments,t)-1
     j = bisect_left(tape.trade.times,t)-1
-    before = tape.trade.times[j] if j>=0 else None
-    prev = tape.trade.bars[before].c if before is not None and before>=asset.begin else None
-    return Grid(trade,risk,signals,payments,tape.payments[i] if i>=0 else -10**12,prev,
-                tape.trade.missing_hours(t,end-H,before=asset.end)>p["max_missing_hours"])
+    prev = None
+    while j>=0 and tape.trade.times[j]>=asset.begin:
+        b = tape.executable(tape.trade.times[j])
+        if b is not None:
+            prev = b.c
+            break
+        j-=1
+    return Grid(trade,risk,signals,payments,
+                tape.payments[i] if i>=0 and tape.payments[i]>=asset.begin else -10**12,prev,
+                tape.trade.missing_hours(t,end-H,before=asset.end)>p["max_missing_hours"],dry)
 
 
 def swing(grid,asset,t,end,p,fee,*,lev=1,bounce=False,charge_funding=True,trace=None):
@@ -86,8 +96,30 @@ def swing(grid,asset,t,end,p,fee,*,lev=1,bounce=False,charge_funding=True,trace=
         note(hour,reason,px)
         side,pending = 0,None
 
+    def forced_price(risk,only_open):
+        if not side or lev<=1 or risk is None:
+            return None
+        if side<0:
+            bound = entry*forced_multiple
+            if risk.o>=bound or (not only_open and risk.h>=bound):
+                return max(risk.o,bound)
+        else:
+            bound = entry*(2-forced_multiple)
+            low = risk.l if risk.l is not None else min(risk.o,risk.c)
+            if risk.o<=bound or (not only_open and low<=bound):
+                return min(risk.o,bound)
+        return None
+
     for i,hour in enumerate(range(t,end+H,H)):
         bar,risk,rate = grid.trades[i],grid.risk[i],grid.payments[i]
+        if grid.dry and grid.dry[i]:
+            if side:
+                close_at(hour,last,"volume_stop")
+            # The existing stale-contract convention retires this weekly
+            # part. It can be considered again on a later Monday.
+            flagged = True
+            path[2*i:] = total
+            break
         if rate is not None:
             last_pay = hour
             if side and charge_funding:
@@ -96,9 +128,9 @@ def swing(grid,asset,t,end,p,fee,*,lev=1,bounce=False,charge_funding=True,trace=
                 accrued -= side*notional*rate*last/entry
                 note(hour,"funding",last)
         terminal = hour>=end or hour>=asset.end or hour==retire_at
-        force = entry*forced_multiple
-        if side<0 and lev>1 and risk and risk.o>=force:
-            close_at(hour,risk.o,"forced")
+        force_px = forced_price(risk,True)
+        if force_px is not None:
+            close_at(hour,force_px,"forced")
         elif terminal and side:
             if bar is None:
                 close_at(hour,last,"last_close")
@@ -123,8 +155,9 @@ def swing(grid,asset,t,end,p,fee,*,lev=1,bounce=False,charge_funding=True,trace=
         if terminal:
             path[2*i+1:] = total
             break
-        if side<0 and lev>1 and risk and risk.h>=entry*forced_multiple:
-            close_at(hour,max(risk.o,entry*forced_multiple),"forced")
+        force_px = forced_price(risk,False)
+        if force_px is not None:
+            close_at(hour,force_px,"forced")
         if bar is not None:
             last = bar.c
         if side and pending is None:
@@ -173,6 +206,7 @@ class Accounts:
         self.stats = np.zeros((n,6))
         self.flagged_parts = np.zeros(n,dtype=int)
         self.idle_parts = np.zeros(n,dtype=int)
+        self.live_parts = np.zeros(n,dtype=int)
         self.scheduled_parts = 0
 
     def add(self,parts,indices,n,carried):
@@ -184,6 +218,7 @@ class Accounts:
         self.scheduled_parts += n
         missing = indices==len(parts)
         self.idle_parts += missing.sum(axis=1)
+        self.live_parts += (~missing).sum(axis=1)
         if carried:
             # Weeks with no live contract are not flagged, even when carried.
             self.flagged_parts += (~missing).sum(axis=1)
@@ -197,7 +232,8 @@ class Accounts:
                 "fees":float(fees),"forced_adjustment":float(forced_adjust),
                 "trades":int(trades),"forced":int(forced),"idle_parts":int(self.idle_parts[0]),
                 "flagged_parts":int(self.flagged_parts[0]),
-                "flag_share_pct":float(self.flagged_parts[0]*100/self.scheduled_parts),
+                "live_parts":int(self.live_parts[0]),
+                "flag_share_pct":float(self.flagged_parts[0]*100/max(1,self.live_parts[0])),
                 "ruined":bool(self.value[0]==0),"random_ends":self.value[1:].tolist()}
 
 
@@ -221,13 +257,42 @@ def judge(years,p,level):
             "marks":marks,"finding":"supported" if all(marks) else "not supported"}
 
 
-def replay(snapshots,spot,tapes,p,p16,p13,identity=None):
+def shown_us_short(roster,spot,tapes,p,identity):
+    """One descriptive 1x Rule S series at judged costs, identical rank clock."""
+    n = p["hot_n"]
+    fee = p["cost_bps_per_side"]/10000
+    snap = {"kept":roster,"known_at":-10**12}
+    years = {}
+    for year,start,last in C.year_windows(p):
+        account = Accounts(1)
+        rankable = hot_slots = live_slots = 0
+        for t in range(start,last,C.WEEK):
+            end = min(t+C.WEEK,last)
+            spot_ids,futures_ids = M.week_allowlist(identity,t)
+            _,ranked,_ = M.spot_universe([snap],spot,t,p,spot_ids)
+            hot = ranked[:n]
+            rankable += len(ranked)
+            hot_slots += len(hot)
+            hot_ids = {a.coin for a in hot}
+            pool,_ = M.market_pool({"kept":[r for r in roster if r["id"] in hot_ids]},
+                                   tapes,t,end,p,futures_ids)
+            idx = {a.coin:i for i,a in enumerate(pool)}
+            slots = [idx.get(a.coin,len(pool)) for a in hot]
+            slots += [len(pool)]*(n-len(slots))
+            live_slots += len(pool)
+            parts = [swing(prepare(tapes[a.pair],a,t,end,p),a,t,end,p,fee) for a in pool]
+            account.add(parts,np.array([slots],dtype=int),n,False)
+        years[str(year)] = account.row() | {"rankable_coin_weeks":rankable,
+                                           "hot_slots":hot_slots,"live_hot_slots":live_slots}
+    return years
+
+
+def replay(snapshots,spot,tapes,p,p16,p13,identity=None,us_roster=None):
     n = p["hot_n"]
     params = p13|p16|p
     levels = dict(zip(("low","judged","high"),sorted([p["cost_bps_per_side"],*p["other_costs_bps"]])))
     levels["no_cost_no_funding"] = 0
     rng = {s:random.Random(p["seed"]) for s in snapshots}
-    spot_ids,futures_ids = (None,None) if identity is None else (identity["spot"],identity["futures"])
     years = {}
     for year,start,last in C.year_windows(params):
         year_result = {}
@@ -239,12 +304,14 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None):
             spot_book = C.Account()
             diagnostics = []
             for t in range(start,last,C.WEEK):
+                spot_ids,futures_ids = M.week_allowlist(identity,t)
                 end = min(t+C.WEEK,last)
                 _,ranked,carried = M.spot_universe(snaps,spot,t,params,spot_ids)
                 hot = ranked[:n]
                 selected = [hot]+[rng[sample].sample(sorted(ranked),min(n,len(ranked)))
                                   for _ in range(p["random_draws"])]
-                pool,missing = M.market_pool(M.snapshot_at(snaps,t),tapes,t,end,params,futures_ids)
+                screens = {"monday_live":set(),"file_gate_excluded":set()}
+                pool,missing = M.market_pool(M.snapshot_at(snaps,t),tapes,t,end,params,futures_ids,screens)
                 indices = {a.coin:i for i,a in enumerate(pool)}
                 groups = np.full((len(selected),n),len(pool),dtype=int)
                 for j,s in enumerate(selected):
@@ -253,7 +320,8 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None):
                 grids = [prepare(tapes[a.pair],a,t,end,params) for a in pool]
                 diagnostics.append({"t":t,"rankable":len(ranked),"live":len(pool),
                                     "hot_live":int(np.sum(groups[0]!=len(pool))),
-                                    "missing_funding_files":len(missing),"carried":carried})
+                                    "missing_funding_files":len(missing),"carried":carried,
+                                    **{k:len(v) for k,v in screens.items()}})
                 longs = [C.hold_week(spot[a.pair],a,t,end,p13["cost_bps_per_side"]/10000,1,params)
                          for a in ranked]
                 spot_book.advance(t,max(1,len(longs)),longs,carried)
@@ -277,6 +345,12 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None):
                                    "spot_all":1+spot_book.finish()["gain"],"weeks":diagnostics}
         years[str(year)] = year_result
     judgments = {k:judge(years,p,k) for k in ("judged","low","no_cost_no_funding")}
-    return {"years":years,"judgment":judgments,
+    judged = judgments["judged"]["marks"]
+    result = {"years":years,"judgment":judgments,
+            "failed_on_timing":judged[0] and not judged[1],
+            "failed_on_rising":judged[1] and not judged[2],
             "failed_on_costs":all(judgments["no_cost_no_funding"]["marks"]) and
             not all(judgments["judged"]["marks"])}
+    if us_roster is not None:
+        result["shown_us_shortable"] = shown_us_short(us_roster,spot,tapes,params,identity)
+    return result

@@ -134,7 +134,34 @@ class Replay17Test(unittest.TestCase):
         ac.add([R.Part(path,False)],np.array([[0,1,1,1,1]]),5,True)
         r = ac.row()
         self.assertAlmostEqual(r["end"],1.02)
-        self.assertEqual((r["idle_parts"],r["flagged_parts"],r["flag_share_pct"]),(4,1,20))
+        self.assertEqual((r["idle_parts"],r["live_parts"],r["flagged_parts"],r["flag_share_pct"]),(4,1,1,100))
+
+    def test_live_part_flags_include_no_trigger(self):
+        path = np.zeros((4,7))
+        ac = R.Accounts(1)
+        ac.add([R.Part(path,True),R.Part(path,False)],np.array([[0,1,2,2,2]]),5,False)
+        r = ac.row()
+        self.assertEqual((r["trades"],r["live_parts"],r["flagged_parts"],r["flag_share_pct"]),(0,2,1,50))
+
+    def test_stale_run_closes_before_funding_and_skips_no_trade_hours(self):
+        tape = fut({-25:(90,90,90),-3:(120,120,120),0:(100,100,98)}
+                   |{i:(98,150,98,1,0) for i in range(1,25)},
+                   payments={-8:0,1:.8,8:.9})
+        tr = []
+        gp = R.prepare(tape,X,T,ts(8),settings())
+        part = R.swing(gp,X,T,ts(8),settings(),.01,trace=tr)
+        self.assertEqual(tr[-1][:3],(ts(1),"volume_stop",98))
+        self.assertEqual(part.path[-1,2],0)
+        self.assertAlmostEqual(part.path[-1,3],.0198)
+        self.assertTrue(part.flagged)
+
+    def test_trade_low_is_forced_proxy_for_levered_bounce(self):
+        tape = fut({-25:(80,80,80),-3:(120,120,120),0:(100,100,94),
+                    1:(94,96,94,60,1)})
+        tr = []
+        R.swing(R.prepare(tape,X,T,ts(4),settings()),X,T,ts(4),settings(),
+                0,lev=3,bounce=True,trace=tr)
+        self.assertIn((ts(1),"forced",94*.7),[x[:3] for x in tr])
 
     def test_judgment_counts_same_years_ignores_quality_failures(self):
         def row(end,hold,spot,n=12,flags=0):
@@ -178,4 +205,50 @@ class Replay17Test(unittest.TestCase):
         self.assertEqual(y["swing"]["judged"]["idle_parts"],1)
         self.assertEqual(len(y["swing"]["judged"]["random_ends"]),3)
         self.assertGreater(y["swing"]["judged"]["end"],1)
-        self.assertIn("No costs or funding",P.render(got|{"cutoff_utc":"invented"}))
+        report = P.render(got|{"cutoff_utc":"2019-01-14T00:00:00+00:00",
+                               "last_complete_funding_week_monday_utc":"2019-01-07"})
+        self.assertIn("No costs or funding",report)
+        self.assertIn("began Monday 2019-01-07 UTC",report)
+        with_roster = R.replay({"held":[snap],"viewed":[snap]},dict(TESTUSDT=s,ALTUSDT=s),
+                               {X.pair:tape},cfg,p,p|cfg,us_roster=snap["kept"])
+        report = P.render(with_roster|{"cutoff_utc":"2019-01-14T00:00:00+00:00",
+                                      "last_complete_funding_week_monday_utc":"2019-01-07"})
+        self.assertIn("US-shortable roster, shown only",report)
+        self.assertGreater(with_roster.pop("shown_us_shortable")["2020"]["end"],1)
+        self.assertEqual(with_roster,got)
+
+    def test_shown_roster_uses_spot_tie_id_and_never_replaces_ineligible_pick(self):
+        cfg = settings(hot_n=2,cost_bps_per_side=10)
+        roster = [{"id":30,"symbol":"THIRD","cmcRank":12},
+                  {"id":20,"symbol":"ALT","cmcRank":6},
+                  {"id":10,"symbol":"TEST","cmcRank":500}]
+        series = C.Series({ts(i):C.Bar(100,100,100) for i in range(-30,169)})
+        spot = {r["symbol"]+"USDT":series for r in roster}
+        tape = fut({-25:(90,90,90),-3:(120,120,120),0:(100,100,94),1:(90,100,100)},
+                   payments={-8:0,0:0,1:.01})
+        tapes = {s:tape for s in spot}
+        identity = {"spot":{(r["id"],r["symbol"]+"USDT") for r in roster},
+                    "futures":{(10,"TESTUSDT"),(30,"THIRDUSDT")}}
+        with patch.object(C,"year_windows",return_value=[(2020,T,ts(8))]):
+            got = R.shown_us_short(roster,spot,tapes,cfg,identity)["2020"]
+            self.assertEqual(got["rankable_coin_weeks"],3)
+            self.assertEqual(got["hot_slots"],2)
+            self.assertEqual(got["live_hot_slots"],1)
+            self.assertEqual(got["idle_parts"],1)
+            self.assertEqual(got["trades"],1)
+            self.assertAlmostEqual(got["end"],1+(0.1+0.0094-0.0019)/2)
+            tape.covered = ()
+            observed = R.shown_us_short(roster,spot,tapes,cfg,identity)["2020"]
+            self.assertEqual(observed,got)
+
+    def test_roster_pin_uses_measured_only_and_drops_four(self):
+        import json
+        from hashlib import sha256
+        u = S.A.U
+        roster = {"measured_count":5,"measured_coins":[{"coin":x} for x in ("TEST","USDC","PAXG","BTC","ETH")],
+                  "stated_only":[{"coin":"NOTMEASURED"}]}
+        raw = json.dumps(roster).encode()
+        with patch.multiple(u,SHA256=sha256(raw).hexdigest(),IDS={"TEST":10}):
+            self.assertEqual(u.rows(raw),[{"id":10,"symbol":"TEST"}])
+            with self.assertRaises(ValueError):
+                u.rows(raw+b" ")

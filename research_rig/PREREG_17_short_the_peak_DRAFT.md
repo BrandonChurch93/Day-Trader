@@ -72,29 +72,63 @@ Written after the builder read the draft and listed what it left open. No future
 - The year's end follows plan 16.
 - Reported beside the judged figures: each mark at the lower cost level and with no cost and no funding at all. "Failed on costs" means the marks hold with no cost and not at the judged cost.
 
-## Definitions added 2026-11-25 20:34 UTC: which coin is which
+## Which coin is which (first written 2026-11-25 20:34 UTC, rewritten before the freeze)
 
-Added before the freeze and before any return was computed. Reason: two Binance tickers on the list turned out to be other assets (QQQUSDT and EWTUSDT are stock fund products there, not the coins with those tickers on CoinMarketCap). A ticker alone is not proof of identity.
+Written before the freeze and before any return was computed. Reason: two Binance tickers on the list turned out to be other assets (QQQUSDT and EWTUSDT are stock fund products there, not the coins with those tickers on CoinMarketCap). A ticker alone is not proof of identity. The first version of this section judged each mapping once, using every saved month up to 2026. Two code audits found that this let later months decide earlier weeks. This version decides each Monday with what was known by that Monday.
 
-- Only mappings with status CONFIRMED are used, in every sample and every yardstick. The policy file's fingerprint is 4965f08c2692. Both scorers refuse a different fingerprint.
-- Route 1, notices: Binance's own listing and contract notices tie the pair to the project. A notice can confirm or remove.
-- Route 2, price level: for each saved monthly CoinMarketCap page where the coin appears, the saved USD price is compared with Binance's hourly bars for the UTC day of the page's own quote time, in the same token unit. A month matches if the saved price lies between the day's low less 5% and the day's high plus 5%. A month counts only if Binance has a full day of bars. With at least three such months: CONFIRMED at 80% or more matching, REMOVED under 50%, UNKNOWN between. With fewer than three there is no verdict from this route.
-- Final status: REMOVED if either route removes. CONFIRMED if the price-level route confirms, or if it gives no verdict and a notice confirms. Everything else is UNKNOWN and left out.
-- This check reads price levels and prints only counts of matching months. It computes no return of any rule.
-- A first version compared the saved price with one hourly close within 5%. It was tried and replaced before the freeze, because it measured clock mismatch and not identity. MEASURED, mappings with three or more comparable months, by share of months matching in tenths from 0-10% to 90-100%: hourly close 4, 2, 3, 13, 10, 30, 90, 166, 113, 62; UTC day range 0, 0, 1, 1, 0, 1, 0, 1, 1, 488.
-- MEASURED result: 556 mappings checked, 514 CONFIRMED (248 spot, 266 futures), 22 REMOVED, 20 UNKNOWN. Another 340 listed pairs have no stored bars and were never eligible.
-- MEASURED held-back list, live coin-weeks with a confirmed contract by year 2020 to 2026: 279, 1343, 1582, 1902, 2069, 2175, 1711 (before the identity check: 283, 1427, 1612, 1927, 2108, 2223, 1774). Viewed list: 1375, 2185, 2273, 2408, 2552, 2393, 1952.
-- Limits. A confirmed mapping can still have single months outside the range, for example around a token swap; those months are not removed. KNC and DYDX each have two CoinMarketCap ids that both confirm against one ticker, and the spot pairs of those and of BNX run across a swap without a break, so the hour of the swap is not resolved. The 42 left out were dropped for an identity reason, not a price reason, but a sample without them is not the full list.
+- Only a mapping that is CONFIRMED as of a Monday is used that week, in every sample and every yardstick. An UNKNOWN mapping is left out of that week.
+- Price level, as of a Monday: for each saved monthly CoinMarketCap page dated on or before that Monday in which the coin appears, the saved USD price is compared with Binance's hourly bars for the UTC day of the page's own quote time, in the same token unit. The day must be over by that Monday. A month matches if the saved price lies between the day's low less 5% and the day's high plus 5%. A month counts only if Binance has a full day of bars. CONFIRMED when there is at least one such month and 80% or more of them match so far. REMOVED when there are at least three and fewer than half match. Otherwise no verdict from prices.
+- Notices: with no verdict from prices, one of Binance's own listing or contract notices can confirm, but only if its date is known and is on or before that Monday. A notice with no checked date cannot confirm.
+- Two kinds of removal. A ticker shown to be another asset, or two assets mixed in one file, is removed for every week (QQQ, EWT, UNI COIN, the old PUMP and LIT files, Terra 2.0 on the old LUNA file). A delisting, a swap or a re-denomination is a date fence: the mapping is good up to that hour and not after (SC to 2022-06-17 09:00 UTC, RAY to 2022-11-15 04:00, SRM to 2022-11-15 04:30, HNT to 2023-03-20 09:00, AGIX and OCEAN futures to 2024-06-25 09:00 and spot to 2024-07-01 03:00). Before its fence a mapping still needs the price-level check; the delisting notice is not evidence for it.
+- Swaps inside one ticker: KNC (2021-05-21 08:00 UTC, approximate), DYDX (2024-05-07 00:00, approximate) and BNX (old ends 2023-02-11 04:00, new starts 2023-02-22 14:45, FORM from 2025-03-17 09:00) are cut at the same hours on spot and on futures, so a ranking look-back never runs across a swap. The KNC and DYDX hours are not checked against the venue's index record.
+- Bars older than the coin: a Binance file can start before CoinMarketCap's date-added for the coin (pre-market and launch-pad trading). A lead of 60 days or less is allowed, and then no bar before the date-added is used for that coin, in ranking, entries, exits or marks. A lead of more than 60 days, or one that cannot be bounded, removes the mapping (SUN spot, 264 to 293 days; SENT futures, 69 days).
+- These checks read price levels, clocks and volumes and print counts. They compute no return of any rule.
+- MEASURED 2026-11-25, using every month (shown for reference, not used to decide a week): 556 mappings checked, 520 CONFIRMED (251 spot, 269 futures), 16 REMOVED, 20 UNKNOWN. Another 340 listed pairs have no stored bars and were never eligible. As of the last scored Monday, 2026-10-19: 522 CONFIRMED, 24 REMOVED, 10 UNKNOWN; a mapping past its date fence counts as removed on that day.
+- MEASURED, live coin-weeks on a Monday with a confirmed contract, by year 2020 to 2026. Held-back list: 281, 1413, 1614, 1907, 2060, 2198, 1723. Viewed list: 1322, 2178, 2327, 2406, 2552, 2397, 1952.
+- Limits. A confirmed mapping can still have single months outside the range; those months are not removed. The mappings left out were dropped for an identity reason, not a price reason, but a sample without them is not the full list. Early in a coin's life one matching month is enough to confirm it.
 
-UNKNOWN, left out (CoinMarketCap id, then pair):
+UNKNOWN on the every-month reference (CoinMarketCap id, then pair):
 
 - spot (10); 1414 XZCUSDT, 1521 KMDUSDT, 1785 GASUSDT, 2062 AIONUSDT, 2691 PNTUSDT, 13631 MANTAUSDT, 29676 AEVOUSDT, 35429 LAYERUSDT, 36119 WALUSDT, 38337 0GUSDT.
-- futures (10); 693 XVGUSDT, 1230 STEEMUSDT, 1727 BNTUSDT, 1757 FUNUSDT, 2090 LAUSDT, 5026 OXTUSDT, 5665 HNTUSDT, 7288 XVSUSDT, 8857 ANCUSDT, 18679 XCNUSDT.
+- futures (10); 693 XVGUSDT, 1230 STEEMUSDT, 1727 BNTUSDT, 1757 FUNUSDT, 2090 LAUSDT, 5026 OXTUSDT, 7288 XVSUSDT, 8857 ANCUSDT, 9903 CVXUSDT, 18679 XCNUSDT.
 
-REMOVED (CoinMarketCap id, then pair):
+REMOVED on the every-month reference (CoinMarketCap id, then pair):
 
-- spot (12); 1518 SKYUSDT, 1765 AUSDT, 2239 AAVEUSDT, 3513 SUSDT, 3773 FETUSDT, 3890 POLUSDT, 4086 EGLDUSDT, 4113 UNIUSDT, 4256 KAIAUSDT, 6636 DOTUSDT, 6892 EGLDUSDT, 10529 SUNUSDT.
-- futures (10); 1042 SCUSDT, 4113 UNIUSDT, 4644 QQQUSDT, 5268 EWTUSDT, 8526 RAYUSDT, 20314 LUNAUSDT, 36507 PUMPUSDT, 36645 XPLUSDT, 38868 SENTUSDT, 39125 LITUSDT.
+- spot (9); 1518 SKYUSDT, 1765 AUSDT, 2239 AAVEUSDT, 3513 SUSDT, 3890 POLUSDT, 4086 EGLDUSDT, 4113 UNIUSDT, 4256 KAIAUSDT, 10529 SUNUSDT. Seven of these are an old coin's id pointed at its successor's pair; the old coin's own pair is not removed.
+- futures (7); 4113 UNIUSDT, 4644 QQQUSDT, 5268 EWTUSDT, 20314 LUNAUSDT, 36507 PUMPUSDT, 38868 SENTUSDT, 39125 LITUSDT.
+
+The full dated policy is one file on the research machine. Both scorers refuse any other file.
+
+Shared identity policy SHA-256 5b6aca5959b5c2a4a30033278794937f447f2c899cb6bd828eff81d3df3a248c.
+
+## Changed before the freeze
+
+Every change below was made on 2026-11-25 between 20:40 and 22:10 UTC, after two code audits by other models (16 findings and 12 findings) and before any return of a rule or a yardstick was worked out on real prices. Where a line below differs from a line above, the line below holds.
+
+- Which coin is which: rewritten as above, decided week by week with past facts.
+- Live contract: part (iii), which asked for a funding file covering the week ahead, is removed, because it looked at a file that did not yet exist on that Monday. A contract is live on a Monday when it has a trade bar with volume at the entry hour and a recorded funding payment before the entry and inside the look-back. Funding paid at the entry hour is not earned. The result shows how many coin-weeks the old part (iii) would have left out (MEASURED before the run: none in any year).
+- The last scored week starts Monday 2026-10-19 UTC. The funding archive ends before 2026-10-26 00:00 UTC.
+- Cut-off files: a scan of all 44,713 stored monthly files found files that stopped short or started late (futures trades in February and April 2022, mark prices in July 2021 and July 2022, and four single files). Their good rows were kept and the missing whole days were filled from the venue's daily files, 349 of them, each checked against the venue's published checksum. Nothing was made up and no other route to the venue was used. Five days of one contract remain missing (ICP futures, 2022-09-22 to 2022-09-26); the contract counts as not trading on those days.
+- Dead spells: a bar with no volume cannot fill an order. From the first hour of a run of 24 or more hours with no volume, a contract is not available until volume returns. An open position is closed at the last close that had volume, pays the normal cost, earns no funding in the dead spell, is flagged, and is not reopened that week. The same holds for the yardsticks. Whether a quiet hour is the start of a 24-hour run is known only afterwards; this is a rule about what could have been traded, applied alike to the rule and the yardsticks.
+- Forced close with no mark bar: when an hour has a trade bar and no mark-price bar, the trade bar's high is used for a short and its low for a long. The result shows how many stored hours have no mark bar (MEASURED: 20,341 in plan 16's files, 26,110 in plan 17's).
+- A spot sale that cannot fill before the year ends is filled at the first open of the same coin, also in the next year. It belongs to the year the position was opened in and pays for nothing in the next year's account. With no later open it is marked at its last close and flagged.
+- Freeze record: after both plans are final, one record is written with the fingerprints of both plan files, all scoring and reporting code, the settings, the coin lists, the US roster file, the three file lists of the archive and the identity policy. The lead keeps the record's own fingerprint apart and gives it to each run. A run refuses before taking its lock if anything differs, and checks again after the lock and before opening a bar.
+- Result pages are written from the stored results only. They refuse if either plan's fingerprint differs, and they do not open a bar.
+- The loader reads with two workers. Measured on a load with no scoring: 0.98 GB at peak for plan 16 and 1.31 GB for plan 17. The lead runs each scorer once, with nothing else heavy on the machine.
+
+Plan 17 only:
+
+- Flag share for a year: flagged part-weeks divided by all part-weeks that were given a coin with a live contract that Monday, whether or not the rule traded. Parts with no live contract are counted apart and are in neither figure.
+- The dated identity rule applies to rule S and to every yardstick.
+- The write-up says "failed on timing" when enough years ended above 1.00 and too few of them beat yardstick (b), and "failed on rising years" when marks 1 and 2 hold and too few of those years had a rising all-coins figure.
+- One more cell, shown and not judged (ledger 151): rule S at 1x, judged cost and funding, on the coins a US account can short today. The roster is the 29 coins MEASURED on 2026-11-25 as shortable on Kraken or Coinbase, without bitcoin, ether and two coins that are not hot-coin candidates (USDC, PAXG). The roster file's SHA-256 is 50be7cc83aaa8fe22b401ba0531d987a63c3b37a220c9373fd8c5bd200342faf and the freeze record pins it. Each Monday the hot five are the five roster coins with the largest 7-day gain on spot, same tie rule, with no market-cap rank asked for. A picked coin trades only if it has a confirmed, live contract that Monday; it is not replaced. A roster coin with no spot history that week cannot be ranked (one coin, VVV, never can).
+- Limits of that cell, stated now: the roster is today's list, so it knows which coins lasted and got a US listing. Several of its coins were in plan 13's viewed list. Binance futures prices stand in for US venue prices, and US fees and funding differ. It does not show that a US account could have traded these on those dates.
+
+## How often this passes with no edge
+
+MEASURED by the second auditor on made-up worlds through this plan's own engine (12 coins, hourly prices with no drift, 60 one-year worlds per setting, three settings): at the judged cost all three marks together passed in none; mark 1 alone in about 1 in 1,000 or fewer. With no cost and no funding all three passed in 0.5% to 1.6%, so "failed on costs" can be said by luck about 1 time in 100. Limit: in those worlds the all-coins figure rises in only 25% to 30% of years, so mark 3 is harder there than in real years. A planted-edge check on made-up worlds is run before the freeze and its result is written under this line.
+
+PLANTED_EDGE_17
 
 ## How this can fool us
 
@@ -103,6 +137,7 @@ REMOVED (CoinMarketCap id, then pair):
 - One venue, and only coins it listed a contract for. Coins that were hot and had no contract are not in the test, and those may be the ones he traded.
 - A fixed 5% is not his eye for where a fall stalls.
 - The idea was chosen after seeing the buying side fail on a list that moves with this one.
+- The price files were repaired and the coin map was built with later files in view. The rules for both use past facts only, but which contracts are in the archive at all is today's knowledge.
 
 ## Order of work
 

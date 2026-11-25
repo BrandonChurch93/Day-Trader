@@ -69,7 +69,7 @@ Written after the builder read the draft and listed what it left open. No future
 
 - Long fills: a hot coin with no bar at the Monday 00:00 hour leaves its part in dollars for the week. Plan 13 waited up to six hours; this plan does not, because the short has to be sized at one moment.
 - Short size: the dollar value of the coins really bought on Monday at their fill prices. Set once, never adjusted in the week.
-- Live, in full: a contract is live on a Monday when (i) it has a trade bar at the entry hour, (ii) it had a funding payment in the `replay_16_plan.live_funding_lookback_hours` hours before, and (iii) funding records for the contract cover the week (the month's archive file exists, or the venue's public history returns payments). (iii) is a filter on our files, counted and reported.
+- Live, in full: a contract is live on a Monday when (i) it has a trade bar at the entry hour, (ii) it had a funding payment in the `replay_16_plan.live_funding_lookback_hours` hours before, and (iii) removed before the freeze, see "Changed before the freeze".
 - This is a stand-in read from the files, not the venue's own listing record. The venue stopped new orders about two days before settlement on at least two contracts while bars and payments went on. Stated as a limit.
 - A contract that stops paying: checked each hour with past facts only. When a contract has had no funding payment in the trailing `replay_16_plan.live_funding_lookback_hours` hours, it is closed at the next hour's open. If there is no such bar it is closed at the last trade close on file, flagged. Its part stays in dollars until Monday.
 - Weekly exit with no bar: a contract with no bar at the exit Monday hour is closed at the last trade close on file, flagged. Nothing is carried into the next week.
@@ -90,33 +90,65 @@ Written after the builder read the draft and listed what it left open. No future
 Still before any futures price or funding rate was read.
 
 - The venue's live data service refuses requests from this machine's location. It is not read by another route. Funding comes from the public bulk archive alone, which does not yet hold November 2026. So for this plan 2026 ends at the last Monday whose whole week of funding is in the archive, and the date is printed in the result. This shortens 2026 against plan 13.
-- Condition (iii) of "live" is a statement about which files we hold, fixed before collection. It is never read from a later payment.
+- Condition (iii) of "live" was removed before the freeze.
 - At the exit hour only the open counts: the position is sold there, and that hour's high is not used. The entry hour's high does count.
 - The two coin lists were read from the saved pages and fingerprinted before any new price was collected: viewed list `ccb0fe0d5485`, held-back list `f5bea224faad`, both together `3cc9dcf9bed1` (first twelve characters).
 
-## Definitions added 2026-11-25 20:34 UTC: which coin is which
+## Which coin is which (first written 2026-11-25 20:34 UTC, rewritten before the freeze)
 
-Added before the freeze and before any return was computed. Reason: two Binance tickers on the list turned out to be other assets (QQQUSDT and EWTUSDT are stock fund products there, not the coins with those tickers on CoinMarketCap). A ticker alone is not proof of identity.
+Written before the freeze and before any return was computed. Reason: two Binance tickers on the list turned out to be other assets (QQQUSDT and EWTUSDT are stock fund products there, not the coins with those tickers on CoinMarketCap). A ticker alone is not proof of identity. The first version of this section judged each mapping once, using every saved month up to 2026. Two code audits found that this let later months decide earlier weeks. This version decides each Monday with what was known by that Monday.
 
-- Only mappings with status CONFIRMED are used, in every sample and every yardstick. The policy file's fingerprint is 4965f08c2692. Both scorers refuse a different fingerprint.
-- Route 1, notices: Binance's own listing and contract notices tie the pair to the project. A notice can confirm or remove.
-- Route 2, price level: for each saved monthly CoinMarketCap page where the coin appears, the saved USD price is compared with Binance's hourly bars for the UTC day of the page's own quote time, in the same token unit. A month matches if the saved price lies between the day's low less 5% and the day's high plus 5%. A month counts only if Binance has a full day of bars. With at least three such months: CONFIRMED at 80% or more matching, REMOVED under 50%, UNKNOWN between. With fewer than three there is no verdict from this route.
-- Final status: REMOVED if either route removes. CONFIRMED if the price-level route confirms, or if it gives no verdict and a notice confirms. Everything else is UNKNOWN and left out.
-- This check reads price levels and prints only counts of matching months. It computes no return of any rule.
-- A first version compared the saved price with one hourly close within 5%. It was tried and replaced before the freeze, because it measured clock mismatch and not identity. MEASURED, mappings with three or more comparable months, by share of months matching in tenths from 0-10% to 90-100%: hourly close 4, 2, 3, 13, 10, 30, 90, 166, 113, 62; UTC day range 0, 0, 1, 1, 0, 1, 0, 1, 1, 488.
-- MEASURED result: 556 mappings checked, 514 CONFIRMED (248 spot, 266 futures), 22 REMOVED, 20 UNKNOWN. Another 340 listed pairs have no stored bars and were never eligible.
-- MEASURED held-back list, live coin-weeks with a confirmed contract by year 2020 to 2026: 279, 1343, 1582, 1902, 2069, 2175, 1711 (before the identity check: 283, 1427, 1612, 1927, 2108, 2223, 1774). Viewed list: 1375, 2185, 2273, 2408, 2552, 2393, 1952.
-- Limits. A confirmed mapping can still have single months outside the range, for example around a token swap; those months are not removed. KNC and DYDX each have two CoinMarketCap ids that both confirm against one ticker, and the spot pairs of those and of BNX run across a swap without a break, so the hour of the swap is not resolved. The 42 left out were dropped for an identity reason, not a price reason, but a sample without them is not the full list.
+- Only a mapping that is CONFIRMED as of a Monday is used that week, in every sample and every yardstick. An UNKNOWN mapping is left out of that week.
+- Price level, as of a Monday: for each saved monthly CoinMarketCap page dated on or before that Monday in which the coin appears, the saved USD price is compared with Binance's hourly bars for the UTC day of the page's own quote time, in the same token unit. The day must be over by that Monday. A month matches if the saved price lies between the day's low less 5% and the day's high plus 5%. A month counts only if Binance has a full day of bars. CONFIRMED when there is at least one such month and 80% or more of them match so far. REMOVED when there are at least three and fewer than half match. Otherwise no verdict from prices.
+- Notices: with no verdict from prices, one of Binance's own listing or contract notices can confirm, but only if its date is known and is on or before that Monday. A notice with no checked date cannot confirm.
+- Two kinds of removal. A ticker shown to be another asset, or two assets mixed in one file, is removed for every week (QQQ, EWT, UNI COIN, the old PUMP and LIT files, Terra 2.0 on the old LUNA file). A delisting, a swap or a re-denomination is a date fence: the mapping is good up to that hour and not after (SC to 2022-06-17 09:00 UTC, RAY to 2022-11-15 04:00, SRM to 2022-11-15 04:30, HNT to 2023-03-20 09:00, AGIX and OCEAN futures to 2024-06-25 09:00 and spot to 2024-07-01 03:00). Before its fence a mapping still needs the price-level check; the delisting notice is not evidence for it.
+- Swaps inside one ticker: KNC (2021-05-21 08:00 UTC, approximate), DYDX (2024-05-07 00:00, approximate) and BNX (old ends 2023-02-11 04:00, new starts 2023-02-22 14:45, FORM from 2025-03-17 09:00) are cut at the same hours on spot and on futures, so a ranking look-back never runs across a swap. The KNC and DYDX hours are not checked against the venue's index record.
+- Bars older than the coin: a Binance file can start before CoinMarketCap's date-added for the coin (pre-market and launch-pad trading). A lead of 60 days or less is allowed, and then no bar before the date-added is used for that coin, in ranking, entries, exits or marks. A lead of more than 60 days, or one that cannot be bounded, removes the mapping (SUN spot, 264 to 293 days; SENT futures, 69 days).
+- These checks read price levels, clocks and volumes and print counts. They compute no return of any rule.
+- MEASURED 2026-11-25, using every month (shown for reference, not used to decide a week): 556 mappings checked, 520 CONFIRMED (251 spot, 269 futures), 16 REMOVED, 20 UNKNOWN. Another 340 listed pairs have no stored bars and were never eligible. As of the last scored Monday, 2026-10-19: 522 CONFIRMED, 24 REMOVED, 10 UNKNOWN; a mapping past its date fence counts as removed on that day.
+- MEASURED, live coin-weeks on a Monday with a confirmed contract, by year 2020 to 2026. Held-back list: 281, 1413, 1614, 1907, 2060, 2198, 1723. Viewed list: 1322, 2178, 2327, 2406, 2552, 2397, 1952.
+- Limits. A confirmed mapping can still have single months outside the range; those months are not removed. The mappings left out were dropped for an identity reason, not a price reason, but a sample without them is not the full list. Early in a coin's life one matching month is enough to confirm it.
 
-UNKNOWN, left out (CoinMarketCap id, then pair):
+UNKNOWN on the every-month reference (CoinMarketCap id, then pair):
 
 - spot (10); 1414 XZCUSDT, 1521 KMDUSDT, 1785 GASUSDT, 2062 AIONUSDT, 2691 PNTUSDT, 13631 MANTAUSDT, 29676 AEVOUSDT, 35429 LAYERUSDT, 36119 WALUSDT, 38337 0GUSDT.
-- futures (10); 693 XVGUSDT, 1230 STEEMUSDT, 1727 BNTUSDT, 1757 FUNUSDT, 2090 LAUSDT, 5026 OXTUSDT, 5665 HNTUSDT, 7288 XVSUSDT, 8857 ANCUSDT, 18679 XCNUSDT.
+- futures (10); 693 XVGUSDT, 1230 STEEMUSDT, 1727 BNTUSDT, 1757 FUNUSDT, 2090 LAUSDT, 5026 OXTUSDT, 7288 XVSUSDT, 8857 ANCUSDT, 9903 CVXUSDT, 18679 XCNUSDT.
 
-REMOVED (CoinMarketCap id, then pair):
+REMOVED on the every-month reference (CoinMarketCap id, then pair):
 
-- spot (12); 1518 SKYUSDT, 1765 AUSDT, 2239 AAVEUSDT, 3513 SUSDT, 3773 FETUSDT, 3890 POLUSDT, 4086 EGLDUSDT, 4113 UNIUSDT, 4256 KAIAUSDT, 6636 DOTUSDT, 6892 EGLDUSDT, 10529 SUNUSDT.
-- futures (10); 1042 SCUSDT, 4113 UNIUSDT, 4644 QQQUSDT, 5268 EWTUSDT, 8526 RAYUSDT, 20314 LUNAUSDT, 36507 PUMPUSDT, 36645 XPLUSDT, 38868 SENTUSDT, 39125 LITUSDT.
+- spot (9); 1518 SKYUSDT, 1765 AUSDT, 2239 AAVEUSDT, 3513 SUSDT, 3890 POLUSDT, 4086 EGLDUSDT, 4113 UNIUSDT, 4256 KAIAUSDT, 10529 SUNUSDT. Seven of these are an old coin's id pointed at its successor's pair; the old coin's own pair is not removed.
+- futures (7); 4113 UNIUSDT, 4644 QQQUSDT, 5268 EWTUSDT, 20314 LUNAUSDT, 36507 PUMPUSDT, 38868 SENTUSDT, 39125 LITUSDT.
+
+The full dated policy is one file on the research machine. Both scorers refuse any other file.
+
+Shared identity policy SHA-256 5b6aca5959b5c2a4a30033278794937f447f2c899cb6bd828eff81d3df3a248c.
+
+## Changed before the freeze
+
+Every change below was made on 2026-11-25 between 20:40 and 22:10 UTC, after two code audits by other models (16 findings and 12 findings) and before any return of a rule or a yardstick was worked out on real prices. Where a line below differs from a line above, the line below holds.
+
+- Which coin is which: rewritten as above, decided week by week with past facts.
+- Live contract: part (iii), which asked for a funding file covering the week ahead, is removed, because it looked at a file that did not yet exist on that Monday. A contract is live on a Monday when it has a trade bar with volume at the entry hour and a recorded funding payment before the entry and inside the look-back. Funding paid at the entry hour is not earned. The result shows how many coin-weeks the old part (iii) would have left out (MEASURED before the run: none in any year).
+- The last scored week starts Monday 2026-10-19 UTC. The funding archive ends before 2026-10-26 00:00 UTC.
+- Cut-off files: a scan of all 44,713 stored monthly files found files that stopped short or started late (futures trades in February and April 2022, mark prices in July 2021 and July 2022, and four single files). Their good rows were kept and the missing whole days were filled from the venue's daily files, 349 of them, each checked against the venue's published checksum. Nothing was made up and no other route to the venue was used. Five days of one contract remain missing (ICP futures, 2022-09-22 to 2022-09-26); the contract counts as not trading on those days.
+- Dead spells: a bar with no volume cannot fill an order. From the first hour of a run of 24 or more hours with no volume, a contract is not available until volume returns. An open position is closed at the last close that had volume, pays the normal cost, earns no funding in the dead spell, is flagged, and is not reopened that week. The same holds for the yardsticks. Whether a quiet hour is the start of a 24-hour run is known only afterwards; this is a rule about what could have been traded, applied alike to the rule and the yardsticks.
+- Forced close with no mark bar: when an hour has a trade bar and no mark-price bar, the trade bar's high is used for a short and its low for a long. The result shows how many stored hours have no mark bar (MEASURED: 20,341 in plan 16's files, 26,110 in plan 17's).
+- A spot sale that cannot fill before the year ends is filled at the first open of the same coin, also in the next year. It belongs to the year the position was opened in and pays for nothing in the next year's account. With no later open it is marked at its last close and flagged.
+- Freeze record: after both plans are final, one record is written with the fingerprints of both plan files, all scoring and reporting code, the settings, the coin lists, the US roster file, the three file lists of the archive and the identity policy. The lead keeps the record's own fingerprint apart and gives it to each run. A run refuses before taking its lock if anything differs, and checks again after the lock and before opening a bar.
+- Result pages are written from the stored results only. They refuse if either plan's fingerprint differs, and they do not open a bar.
+- The loader reads with two workers. Measured on a load with no scoring: 0.98 GB at peak for plan 16 and 1.31 GB for plan 17. The lead runs each scorer once, with nothing else heavy on the machine.
+
+Plan 16 only:
+
+- New purchases on a Monday are sized from cash plus spot lots still waiting to be sold, marked at their last close. With no cash, nothing is bought, also when that marked value is positive. A purchase with its fee cannot exceed free cash. The short is sized on the dollars really spent on spot after the buy fee. Cash freed in the week buys nothing before Monday. The check for a ruined account counts waiting lots.
+- The market short leaves out the week's five named coins by coin id, through the dated contract map, also a named coin that did not fill and a contract quoted per 1,000 coins. Another coin that only shares a ticker is not left out.
+- The result shows flagged weeks and their share, the number of live basket contracts and of bitcoin and ether contracts by week, the weeks that fell back to short B, and the old part (iii) count.
+
+## How often this passes with no edge
+
+Not measured for this plan on its own code before the freeze. STATED from the audit's made-up worlds for plan 17, which shares the engine: with prices that have no drift, a rule that trades this often passes all marks at the judged cost in none of the worlds. For plan 16, mark 2 alone (above the 75th percentile of random fives) passes by luck in about one year in four, and marks 1 to 3 need five such years of seven. A planted-edge check on made-up worlds is run before the freeze and its result is written under this line.
+
+PLANTED_EDGE_16
 
 ## How this can fool us
 
@@ -125,6 +157,7 @@ REMOVED (CoinMarketCap id, then pair):
 - Hourly bars cannot show a squeeze inside the hour. A real short can be closed out at a worse price than the forced-close rule charges.
 - One venue. Coins that never had a pair there are missing, and so are contracts that venue never listed.
 - A bar on file is not proof that an order could be filled, least of all in a contract's last days.
+- The price files were repaired and the coin map was built with later files in view. The rules for both use past facts only, but which contracts are in the archive at all is today's knowledge.
 - Two samples and two shorts are four results. Only one is judged, named above.
 
 ## Order of work

@@ -230,6 +230,16 @@ Working papers.
 | `research_rig/common_17.py`, `research_rig/score_17.py`, `research_rig/test_17.py`, `research_rig/report_17.py` | Plan 17 rules, scorer (refuses until plans 16 and 17 are both frozen), self-tests on made-up prices, and the result page writer; not audited yet | DRAFT |
 | `research_rig/check_identity_levels_16_17.py`, `research_rig/diagnose_identity_daily_16_17.py` | Plans 16 and 17 identity check: does a Binance pair carry the coin on the saved list, by matching saved price levels; prints counts only, computes no return | DRAFT |
 | `research_rig/PREREG_16_hot_five_hedged_DRAFT.md` | Draft plan 16: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Not frozen, nothing run | DRAFT |
+| `research_rig/build_identity_asof_16_17.py` | Builds the shared dated identity policy for plans 16 and 17 and counts changes against the every-month check | CURRENT |
+| `research_rig/held_live_coverage_16_17.py` | Counts held-back list contracts live on each Monday, no returns | CURRENT |
+| `research_rig/identity_asof_16_17.py` | Applies saved identity evidence as of each replay Monday | CURRENT |
+| `research_rig/identity_chronology_16_17.py` | Measures the gap between a Binance file's first bar and the coin's saved listing date | CURRENT |
+| `research_rig/identity_review.py` | Rebuilds the shared identity evidence from saved pages and pinned archives | CURRENT |
+| `research_rig/measure_replay_load_16_17.py` | Measures the loaders' peak memory without running either replay | CURRENT |
+| `research_rig/repair_month_edges_16_17.py` | Scans monthly archive files for cut-off edges and adds checksum-verified daily files | CURRENT |
+| `research_rig/replay_clock_audit_16_17.py` | Counts Monday liveness, zero-volume spells and hours with no mark bar, no returns | CURRENT |
+| `research_rig/us_roster_17.py` | Verifies the pinned US-shortable roster and maps its coins to CoinMarketCap ids | CURRENT |
+| `research_rig/us_roster_coverage_17.py` | Reports stored spot and futures coverage for the shown-only US roster of plan 17 | CURRENT |
 | `research_rig/PREREG_17_short_the_peak_DRAFT.md` | Draft plan 17: the short side of the owner's method as a fixed rule on futures, judged on the held-back coin list. Not frozen, nothing run | DRAFT |
 | `research_rig/fetch_11_edgar.py` | Collects the item 2.02 8-K filings and press release texts for plan 11 from SEC EDGAR. Reads no price | CURRENT |
 | `research_rig/build_prereg_11.py` | Writes the plan 11 file from its summary files and config. Reads no price | CURRENT |

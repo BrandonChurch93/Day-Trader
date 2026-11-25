@@ -1,5 +1,7 @@
 """Compare saved CMC quote levels with archived Binance hourly trade closes.
 
+Historical hourly comparator only. The current policy is built by
+identity_review.py using complete widened UTC-day ranges and dated evidence.
 This pre-freeze identity audit writes only counts/status. It reads neither
 returns nor funding/mark fields and never requests a network resource.
 """

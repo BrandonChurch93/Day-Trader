@@ -66,7 +66,7 @@ class Replay16Test(unittest.TestCase):
             tape = fut(payments=pays,coverage=covered)
             self.assertEqual(M.live(X,tape,T,ts(8),p),(True,False))
         self.assertEqual(M.live(X,fut(payments={-25:0,0:0}),T,ts(8),p),(False,False))
-        self.assertEqual(M.live(X,fut(payments={-1:0},coverage=()),T,ts(8),p),(False,True))
+        self.assertEqual(M.live(X,fut(payments={-1:0},coverage=()),T,ts(8),p),(True,True))
         self.assertEqual(M.live(X,fut(omit=(0,)),T,ts(8),p),(False,False))
 
     def test_funding_uses_last_completed_trade_close_not_mark_open_or_entry_rate(self):
@@ -185,6 +185,48 @@ class Replay16Test(unittest.TestCase):
         self.assertEqual(ending(2,ts(3))[0],.5)
         self.assertNotEqual(ending(2,ts(3))[1],ending(3,None)[1])
 
+    def test_negative_cash_opens_no_risk_in_second_week_with_pending_lot(self):
+        w = np.ones((1,1))
+        no = np.zeros((1,0))
+        f = np.zeros(1,dtype=bool)
+        gain = M.Long(True,C.Outcome(2,ts(4),()),np.array([1,1,2.]))
+        gap = M.Sleeve(-1.2,0,3.2,False,"forced",np.array([[0,0,1],[-1.2,0,3.2],[-1.2,0,3.2]]))
+        for release,goal in ((ts(5),.4),(ts(3),.3)):
+            book = M.Book(1)
+            factor = 1 if release==ts(5) else .8
+            old = M.Long(True,C.Outcome(factor,release,()),np.ones(3))
+            M.portfolio_step(book,T,ts(2),[old],w,1,w,[gap],f,0,0,0,.5,f)
+            self.assertAlmostEqual(book.cash[0],-.1)
+            self.assertAlmostEqual(book.equity(ts(2))[0],.4)
+            M.portfolio_step(book,ts(2),ts(4),[gain],w,1,no,[],f,0,0,0,.5,f)
+            self.assertFalse(book.failed[0])
+            self.assertAlmostEqual(book.finish()[0],goal)
+            if release==ts(3):
+                self.assertEqual(book.pending,[])
+                self.assertAlmostEqual(book.cash[0],.3)
+
+    def test_marked_equity_sizing_capped_by_free_cash(self):
+        w = np.ones((1,1))
+        f = np.zeros(1,dtype=bool)
+        b = M.Book(1)
+        b.cash[0] = .1
+        old = M.Long(True,C.Outcome(1,ts(5),()),np.ones(3))
+        b.add_pending(old,np.array([.5]))
+        new = M.Long(True,C.Outcome(2,ts(4),()),np.array([1,1,2.]))
+        M.portfolio_step(b,ts(2),ts(4),[new],w,1,np.zeros((1,0)),[],f,0,0,0,.5,f)
+        self.assertAlmostEqual(b.cash[0],.2)
+        self.assertAlmostEqual(b.finish()[0],.7)
+
+    def test_year_end_pending_open_settles_to_opening_year(self):
+        series = C.Series({ts(0):C.Bar(100,100,100),ts(3):C.Bar(150,150,150)})
+        lot = M.long_week(series,X,T,ts(2),0,params())
+        b = M.Book(1)
+        f = np.zeros(1,dtype=bool)
+        M.portfolio_step(b,T,ts(2),[lot],np.ones((1,1)),1,np.zeros((1,0)),[],f,0,0,0,1,f)
+        self.assertEqual(lot.outcome.release,ts(3))
+        self.assertEqual(b.cash[0],0)
+        self.assertAlmostEqual(b.finish()[0],1.5)
+
     def test_reissued_contract_ids_are_disjoint(self):
         old = F.perp_segments({"id":4172,"symbol":"LUNA"})
         new, = F.perp_segments({"id":20314,"symbol":"LUNA"})
@@ -217,11 +259,186 @@ class Replay16Test(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             d = Path(t)
             (d/S.IDENTITY).write_bytes(good)
-            plan = S.F.digest(good)[:12].encode()
+            plan = f"Shared identity policy SHA-256 {S.F.digest(good)}.".encode()
             with patch.object(S.F,"DATA",d):
                 with self.assertRaises(S.S.Refused):
                     S.identity_bytes(plan,b"missing")
+                bogus = f"Shared identity policy SHA-256 {'f'*64}.\nUnrelated note {S.F.digest(good)}.".encode()
+                with self.assertRaises(S.S.Refused):
+                    S.identity_bytes(bogus,bogus)
                 self.assertEqual(S.identity_bytes(plan,plan),good)
+
+    def test_trusted_freeze_refuses_mutated_manifest_code_config_or_record(self):
+        import json
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            rec = {"version":1,"inputs":{"archive":"a"},"config_sha256":"b","code_sha256":{"c":"d"}}
+            raw = json.dumps(rec).encode()
+            record = d/S.FREEZE
+            record.write_bytes(raw)
+            trusted = S.F.digest(raw)
+            with patch.object(S.F,"DATA",d), patch.object(S,"collect_freeze",return_value=(rec,)):
+                self.assertEqual(S.verified_freeze(trusted),(rec,))
+                for change in ({"config_sha256":"new"},{"code_sha256":{"c":"new"}},
+                               {"inputs":{"archive":"new"}}):
+                    with patch.object(S,"collect_freeze",return_value=(rec|change,)):
+                        with self.assertRaises(S.S.Refused):
+                            S.verified_freeze(trusted)
+                record.write_bytes(raw+b" ")
+                with self.assertRaises(S.S.Refused):
+                    S.verified_freeze(trusted)
+
+    def test_both_run_entries_refuse_changed_source_before_any_lock(self):
+        try:
+            from . import score_17 as peer
+        except ImportError:
+            import score_17 as peer
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            (d/"config").mkdir()
+            (d/"config/thresholds.yaml").write_text("dummy")
+            (d/"snapshots.json").write_text("source")
+            for name in S.FREEZE_META:
+                (d/name).write_text("metadata")
+            code = d/"code.py"
+            code.write_text("before")
+            declared = f"Shared identity policy SHA-256 {F.digest(b'metadata')}.".encode()
+            with patch.object(S,"HERE",d), patch.object(S,"SHARED_CODE",("code.py",)), \
+                 patch.object(F,"DATA",d), patch.object(F.F,"ROOT",d), patch.object(F.F,"DATA",d), \
+                 patch.object(S,"plan_bytes",return_value=declared), \
+                 patch.object(S,"peer_plan_bytes",return_value=declared), \
+                 patch.object(S,"us_roster_bytes",return_value=b"roster"), \
+                 patch.object(S.S,"guard") as lock, patch.object(S,"load_groups") as bars:
+                rec,*_ = S.collect_freeze()
+                raw = json.dumps(rec).encode()
+                (d/S.FREEZE).write_bytes(raw)
+                code.write_text("after")
+                for runner in (S.run,peer.run):
+                    with self.assertRaises(S.S.Refused):
+                        runner(F.digest(raw))
+                lock.assert_not_called()
+                bars.assert_not_called()
+
+    def test_asof_timeline_does_not_read_future_months_and_notices(self):
+        d = lambda s:F.F.boundary(s,0)
+        rows = [dict(id=10,market="spot",pair="TESTUSDT",notice_status="CONFIRMED",
+                     notice_at="2020-03-02",months=[
+                         ("2020-01-05",d("2020-01-06"),True),
+                         ("2020-02-02",d("2020-02-03"),False),
+                         ("2020-03-01",d("2020-03-02"),False)])]
+        timeline = S.I.Timeline({"as_of_rows":rows},d("2020-03-02"))
+        k = ("spot",10,"TESTUSDT")
+        self.assertEqual(timeline.states(d("2020-01-05"))[k],"UNKNOWN")
+        self.assertEqual(timeline.states(d("2020-01-06"))[k],"CONFIRMED")
+        self.assertEqual(timeline.states(d("2020-02-03"))[k],"UNKNOWN")
+        self.assertEqual(timeline.states(d("2020-03-02"))[k],"REMOVED")
+        with self.assertRaises(ValueError):
+            S.I.Timeline({"as_of_rows":rows},d("2020-02-03"))
+        wrong = rows[0]|{"notice_status":"REMOVED"}
+        self.assertEqual(S.I.status_at(wrong,d("2020-01-06")),"REMOVED")
+
+    def test_chronology_lifts_only_proven_date_only_gaps_through_60_days(self):
+        try:
+            from . import identity_chronology_16_17 as q
+        except ImportError:
+            import identity_chronology_16_17 as q
+        self.assertEqual(q.gap_bounds(["2020-03-02"],"2021-04-01","2020-02"),(2,30))
+        self.assertEqual(q.bucket((2,30)),"unresolved_bucket")
+        chron = {"notice_status":"REMOVED","reason":"excluded under the chronology rule"}
+        self.assertTrue(q.soft_removal(chron,(60,60)))
+        self.assertTrue(q.soft_removal(chron,(-5,60)))
+        self.assertFalse(q.soft_removal(chron,(61,61)))
+        self.assertFalse(q.soft_removal(chron,(1,61)))
+        self.assertFalse(q.soft_removal(chron|{"reason":"different underlying asset"},(1,1)))
+
+    def test_chronology_never_reads_pre_date_bars_for_the_coin(self):
+        try:
+            from . import common_17 as inverse
+        except ImportError:
+            import common_17 as inverse
+        d = lambda s:F.F.boundary(s,0)
+        r = dict(id=999,market="spot",pair="TESTUSDT",notice_status="CONFIRMED",
+                 notice_at="2020-01-02",months=[],start_from_utc="2020-01-03")
+        floor = d("2020-01-03")
+        timeline = S.I.Timeline({"as_of_rows":[r,r|{"market":"futures"}]},d("2020-02-01"))
+        early,late = d("2020-01-06"),d("2020-01-13")
+        self.assertNotIn((999,"TESTUSDT"),timeline.at(d("2020-01-02"))["spot"])
+        class RejectEarly(dict):
+            def __getitem__(self,t):
+                if t<floor:
+                    raise AssertionError("attempt to read pre-date price")
+                return super().__getitem__(t)
+            def get(self,t,default=None):
+                return self[t] if t in self else default
+        prices = C.Series({t:C.Bar(100,100,100) for t in range(floor-12*H,late+48*H,H)})
+        prices.bars = RejectEarly(prices.bars)
+        snap = {"known_at":early,"kept":[{"id":999,"symbol":"TEST"}]}
+        cfg = params(rise_days=7)
+        self.assertFalse(M.spot_universe([snap],{"TESTUSDT":prices},early,cfg,timeline.at(early)["spot"])[1])
+        asset = M.spot_universe([snap],{"TESTUSDT":prices},late,cfg,timeline.at(late)["spot"])[1][0]
+        self.assertEqual(asset.begin,floor)
+        self.assertTrue(M.long_week(prices,asset,late,late+H,0,cfg).filled)
+        futures_prices = C.Series({t:M.FBar(100,100,100) for t in prices.times})
+        future = M.Tape(futures_prices,futures_prices,{floor-H:0,floor+H:0},((floor-12*H,late+48*H),))
+        futures_prices.bars = RejectEarly(futures_prices.bars)
+        ap = S.I.bound_asset(C.Asset(999,"TESTUSDT"),timeline.at(early)["futures"])
+        self.assertEqual(ap.begin,floor)
+        self.assertFalse(M.live(ap,future,floor,floor+2*H,cfg)[0])
+        inv = inverse.prepare(future,ap,floor,floor+2*H,cfg|{"dip_lookback_hours":4})
+        self.assertIsNone(inv.preceding_close)
+        self.assertEqual(inv.preceding_payment,-10**12)
+        M.short_week(future,ap,floor,floor+2*H,cfg)
+
+    def test_zero_volume_run_retires_at_last_executable_close_without_funding(self):
+        flat = {i:(98,400,98,1,0) for i in range(1,25)}
+        tape = fut({0:(100,100,97,96,3)}|flat,payments={-8:0,1:.7,8:.9,24:1,25:0})
+        self.assertEqual(tape.dead,[(ts(1),ts(25))])
+        self.assertEqual(tape.payments,[ts(-8),ts(25)])
+        self.assertTrue(M.live(X,tape,T,ts(30),params())[0])
+        self.assertFalse(M.live(X,tape,ts(1),ts(30),params())[0])
+        self.assertTrue(M.live(X,tape,ts(26),ts(30),params())[0])
+        out = M.short_week(tape,X,T,ts(8),params())
+        self.assertEqual((out.reason,out.funding,out.flagged),("volume_stop",0,True))
+        self.assertAlmostEqual(out.price,.03)
+        self.assertAlmostEqual(out.turnover,1.97)
+        self.assertFalse(fut(dict(list(flat.items())[:-1])).dead)
+
+    def test_spot_and_futures_use_same_swap_bounds_and_date_fence(self):
+        for cid in F.SPOT_SWAP_IDS:
+            by_spot = F.spot_segments({"id":cid})
+            self.assertEqual(by_spot,tuple((a.begin,a.end,a.pair) for a in F.perp_segments({"id":cid})))
+        r = dict(id=1042,market="futures",pair="SCUSDT",notice_status="UNKNOWN",
+                 notice_at=None,months=[("2022-06-05",F.F.boundary("2022-06-06",0),True)],
+                 notice_end_utc="2022-06-17T09")
+        self.assertEqual(S.I.status_at(r,F.F.boundary("2022-06-13",0)),"CONFIRMED")
+        self.assertEqual(S.I.status_at(r,F.F.boundary("2022-06-20",0)),"REMOVED")
+
+    def test_same_ticker_different_resolved_coin_does_not_omit_short(self):
+        other = C.Asset(55,X.pair,begin=T,end=ts(8))
+        holdings = [[X]]
+        w,fall,_,n = M.short_weights(holdings,[other],[],"M",1)
+        self.assertEqual(w[0,0],1)
+        self.assertFalse(fall[0])
+        self.assertEqual(n[0],1)
+
+    def test_funding_timestamp_rounded_before_cutoff_filter(self):
+        key = "data/futures/um/monthly/fundingRate/TESTUSDT/dummy.zip"
+        with tempfile.TemporaryDirectory() as temp:
+            archive=Path(temp)/"tiny"
+            archive.write_bytes(b"dummy")
+            m=dict(where="replay_16",sha256=F.digest(b"dummy"),n=2)
+            rows=[(str((T+1)*1000),"8","0.01"),(str((ts(1)+1)*1000),"8","0.02")]
+            with patch.object(F,"archive_root",return_value=archive), patch.object(F.F,"zip_rows",return_value=rows):
+                actual=S.load_groups({"archives":{key:m}},False,T)
+            self.assertEqual(actual["TESTUSDT"].funding,{T:.01})
+
+    def test_file_gate_reports_observed_liveness_separately(self):
+        p=params()
+        tape=fut(payments={-1:0},coverage=())
+        self.assertEqual(M.live_screens(X,tape,T,ts(4),p),(True,False))
+        stale=fut(payments={-25:0},coverage=())
+        self.assertEqual(M.live_screens(X,stale,T,ts(4),p),(False,False))
 
     def test_marks_1_to_3_ignore_quality_but_loss_mark_does_not(self):
         def year(end,reference,random,flags):
@@ -247,7 +464,10 @@ class Replay16Test(unittest.TestCase):
         self.assertEqual(set(r["M"]),{"low","judged","high"})
         self.assertTrue(r["M"]["low"]["end"]>r["M"]["judged"]["end"]>r["M"]["high"]["end"])
         self.assertEqual(len(r["M"]["judged"]["random_ends"]),3)
-        self.assertIn("Short forced closes",R.render(got|{"cutoff_utc":"invented"}))
+        report = R.render(got|{"cutoff_utc":"2019-01-14T00:00:00+00:00",
+                               "last_complete_funding_week_monday_utc":"2019-01-07"})
+        self.assertIn("Short forced closes",report)
+        self.assertIn("began Monday 2019-01-07 UTC",report)
 
     def test_guard_before_metadata_or_result_access(self):
         with tempfile.TemporaryDirectory() as tmp:
