@@ -128,7 +128,7 @@ Plan 17 only:
 
 MEASURED by the second auditor on made-up worlds through this plan's own engine (12 coins, hourly prices with no drift, 60 one-year worlds per setting, three settings): at the judged cost all three marks together passed in none; mark 1 alone in about 1 in 1,000 or fewer. With no cost and no funding all three passed in 0.5% to 1.6%, so "failed on costs" can be said by luck about 1 time in 100. Limit: in those worlds the all-coins figure rises in only 25% to 30% of years, so mark 3 is harder there than in real years. A check on the code as frozen, with no edge and with a planted edge, is run before the freeze and its result is written under this line.
 
-PLANTED_EDGE_17
+MEASURED before the freeze on made-up worlds through this plan's own engine (20 worlds of seven full years, 140 years per arm, judged cost). With no edge built in, all three marks passed in 0 of 20 worlds, and each mark alone in 0 of 20. With an edge planted, a coin given an extra expected 6% fall over 24 hours after its first signal of the week and then three days of recovery, all three passed in 15 of 20; one at a time 20, 20 and 15. The mark that needs a win in rising years is the one that misses. So the test can see an edge of that size about three times in four. These are invented price paths, not a pass rate for real markets and not evidence that the rule has an edge. The check ran on the code before the change that only counts dead-spell closes; two full made-up worlds were run on both versions and matched on every yearly figure, every mark and every recorded trade list.
 
 ## How this can fool us
 
