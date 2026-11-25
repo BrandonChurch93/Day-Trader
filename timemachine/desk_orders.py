@@ -12,6 +12,33 @@ def number(value):
     return type(value) in (int, float) and abs(value) <= 1e100 and math.isfinite(value)
 
 
+def guarded_trade(book, symbol, dq, opens, pp, gross):
+    """Only accept a costed fill within the cap, or a provable risk reduction."""
+    price = opens[symbol]
+    v, g = P.value_at(book, opens), P.gross_at(book, opens)
+    q = book["qty"].get(symbol, 0)
+    estimate = deepcopy(book)
+    P.trade(estimate, symbol, dq, price, pp)
+    v2, g2 = P.value_at(estimate, opens), P.gross_at(estimate, opens)
+    if v <= 0 or v2 <= 0:
+        return None, "zero_equity"
+    if g2 > gross*v2 + 1e-8 and not (abs(q+dq) < abs(q) and g2*v < g*v2):
+        return None, "gross_limit"
+    need = sum(pp["maint"][s]*abs(qty)*opens[s] for s, qty in estimate["qty"].items())
+    if v2 < need:
+        return None, "maintenance"
+    return P.trade(book, symbol, dq, price, pp), None
+
+
+def reducing(book, symbol, dq):
+    q = book["qty"].get(symbol, 0)
+    return q*(q+dq) >= 0 and abs(q+dq) < abs(q)
+
+
+def stamp(tick):
+    return P.iso(P.dt.datetime.fromtimestamp(tick, P.UTC))
+
+
 def normalize_conditions(items, marks, symbols, wake, end, max_hours, gross):
     if not isinstance(items, list):
         raise ValueError("conditions must be a list")
@@ -83,6 +110,8 @@ class Orders:
 
     def execute_open(self, book, pp, at, opens, gross):
         self.expire(at)
+        if not book["qty"].keys() <= opens.keys():
+            return
         ready = []
         for sym, order in sorted(self.active.items()):
             if sym in opens and "observed" in order and order["observed"] + self.delay <= at:
@@ -91,33 +120,26 @@ class Orders:
                 if gap_exit:
                     self.remove(sym, "cancelled", at, reason="protective_exit")
                     continue
-                marks = {sym: px}
-                held = P.weights_at(book, marks).get(sym, 0.0)
+                held = P.weights_at(book, opens).get(sym, 0.0)
                 ready.append((not (held * order["weight"] >= 0 and abs(order["weight"]) < abs(held)), sym))
         for _, sym in sorted(ready):
             order = self.active[sym]
             mark = opens[sym]
-            weights = P.weights_at(book, {sym: mark})
+            weights = P.weights_at(book, opens)
             current = weights.get(sym, 0)
             other = sum(abs(v) for s, v in weights.items() if s != sym)
-            value = P.value_at(book, {sym: mark})
+            value = P.value_at(book, opens)
             w = order["weight"]
             quantity = book["qty"].get(sym, 0)
             dq = w * value / mark - quantity
             target_gross = other + abs(w)
-            exec_price = mark * (1 + pp["hs"][sym] if dq > 0 else 1 - pp["hs"][sym])
-            costs = abs(dq) * (abs(mark - exec_price) + exec_price * pp["fee"][sym])
-            reason = None
-            if value <= 0 or value - costs <= 0:
-                reason = "zero_equity"
-            elif target_gross * value > gross * (value - costs) + 1e-8 and target_gross >= other + abs(current):
-                reason = "gross_limit"
-            elif abs(dq) * mark < 1e-9 or (abs(w - current) < pp["min_change"] and w != 0 and quantity*w >= 0):
-                reason = "small_change"
+            if abs(dq)*mark < 1e-9 or (abs(w-current) < pp["min_change"] and w != 0 and quantity*w >= 0):
+                trade, reason = None, "small_change"
+            else:
+                trade, reason = guarded_trade(book, sym, dq, opens, pp, gross)
             if reason:
                 self.remove(sym, "refused", at, reason=reason, open=mark, gross_wanted=target_gross)
                 continue
-            trade = P.trade(book, sym, dq, mark, pp)
             book["last_px"][sym] = mark
             if w:
                 book["target"][sym] = w
@@ -141,13 +163,34 @@ class Orders:
                 order["observed"] = t
                 self.event("triggered", order, t, bar_start=start, high=high, low=low)
 
-    def advance(self, book, pp, rows, start, end, gross, on_open=None):
-        """At each minute: use opens, then reuse TM06 exits/maintenance, then read highs/lows."""
+    def advance(self, book, pp, rows, start, end, gross, on_open=None, last=False):
+        """Boundary funding, open maintenance, gap exits, new fills, bar-close checks."""
         at = start
         total = dict(exits=[], closeout=None, funding_usd=0.0, fallback_hours=0, held_seconds=0)
+        events = iter(P.funding_times(pp, start-1, end if last else end-1))
+        upcoming = next(events, None)
+        no_funding = dict(pp, symbols=[])
+        blocked = False
+
+        def fund_until(tick, opens):
+            nonlocal upcoming
+            while upcoming and upcoming[0] <= tick:
+                t, s = upcoming
+                prices = dict(book["last_px"])
+                if t == tick:
+                    prices.update(opens)
+                P.fund(book, t, s, prices, pp, total)
+                upcoming = next(events, None)
+
+        def block(tick):
+            nonlocal blocked
+            for s in sorted(self.active):
+                self.remove(s, "cancelled", tick, reason="maintenance")
+            book.update(target={}, exits={}, pending=False)
+            blocked = True
 
         def scan(bars, begin, stop):
-            got = P.p_scan(book, bars, P.dt.datetime.fromtimestamp(begin, P.UTC), P.dt.datetime.fromtimestamp(stop, P.UTC), pp)
+            got = P.p_scan(book, bars, P.dt.datetime.fromtimestamp(begin, P.UTC), P.dt.datetime.fromtimestamp(stop, P.UTC), no_funding)
             total["exits"].extend(got["exits"])
             total["closeout"] = got["closeout"] or total["closeout"]
             for field in ("funding_usd", "fallback_hours", "held_seconds"):
@@ -161,23 +204,58 @@ class Orders:
                 scan([], at, tick)
             bars = list(bars)
             opens = {r[1]: r[2] for r in bars}
-            if on_open:
-                for s in sorted(on_open(tick, opens) or ()):
+            fund_until(tick, opens)
+            book["last_px"].update(opens)
+            protected = set()
+            if book["qty"] and book["qty"].keys() <= opens.keys():
+                eq = P.value_at(book, opens)
+                need = sum(pp["maint"][s]*abs(q)*opens[s] for s,q in book["qty"].items())
+                if eq < need:
+                    symbol = min(book["qty"])
+                    for s, q in sorted(book["qty"].items()):
+                        P.trade(book, s, -q, opens[s], pp, penalty=pp["penalty"])
+                    short = max(0.0, -book["cash"])
+                    book["shortfall_usd"] += short
+                    book["cash"] = max(0.0, book["cash"])
+                    event = dict(utc=stamp(tick),symbol=symbol,value_before=eq,value_after=book["cash"],shortfall_usd=short,at_open=True)
+                    book["closeouts"].append(event)
+                    total["closeout"] = event
+                    book["largest_drop"] = min(book["largest_drop"], book["cash"]/book["peak"]-1 if book["peak"] else 0)
+                    block(tick)
+            for s, q in sorted(book["qty"].items()):
+                if s not in opens or s not in book["exits"]:
+                    continue
+                p = opens[s]
+                hit = P.exit_hit(q, book["exits"][s], p, p, p)
+                if hit:
+                    _, kind, _ = hit
+                    tr = P.trade(book,s,-q,p,pp)
+                    event = dict(utc=stamp(tick),symbol=s,kind=kind,level=book["exits"].pop(s)[kind],
+                                 filled_at=p,gap=True,price=tr["price"],side=tr["side"],qty=tr["qty"])
+                    book["target"].pop(s,None)
+                    book["exits_hit"].append(event)
+                    total["exits"].append(event)
+                    protected.add(s)
+                    if s in self.active:
+                        self.remove(s,"cancelled",tick,reason="protective_exit")
+            if on_open and not blocked:
+                for s in sorted(on_open(tick, opens, protected) or ()):
                     live = self.active.get(s)
                     if live and "observed" in live:
                         self.remove(s, "cancelled", tick, reason="immediate_fill")
-            self.execute_open(book, pp, tick, opens, gross)
+            if not blocked:
+                self.execute_open(book, pp, tick, opens, gross)
             at = tick + MINUTE
             exits = scan(bars, tick, at)
-            protected = {x["symbol"] for x in exits["exits"]}
+            protected.update(x["symbol"] for x in exits["exits"])
             if exits["closeout"]:
-                for s in sorted(self.active):
-                    self.remove(s, "cancelled", at, reason="maintenance")
+                block(at)
             for bar in bars:
                 self.observe_close(bar, protected)
             self.expire(at)
         if at < end:
             scan([], at, end)
+        fund_until(end, {})
         self.expire(end)
         return total
 
@@ -191,41 +269,44 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     book["last_px"].update(row["marks"])
     record = None
 
-    def immediate(tick, opens):
+    def immediate(tick, opens, protected):
         nonlocal record
         if record is not None:
             return
-        touched = set(book["qty"]) | set(weights if weights is not None else book["target"])
+        touched = set(book["qty"]) | set(P.norm(weights if weights is not None else book["target"]))
         if changed and not touched <= opens.keys():
             return
-        stamp = P.iso(P.dt.datetime.fromtimestamp(tick, P.UTC))
-        record = P.p_step(book, weights, exits, dict(marks=dict(book["last_px"]),
-                          fills={s:[stamp, opens[s]] for s in touched if changed}), pp, first)
-        record["target"] = dict(record["target"])
+        planned = deepcopy(book)
+        record = P.p_step(planned, weights, exits, dict(marks=dict(book["last_px"]),
+                          fills={s:[stamp(tick), opens[s]] for s in touched if changed}), pp, first)
+        target, old_exits = dict(planned["target"]), book["exits"]
+        slots = [(tr["symbol"], tr["qty"]*(1 if tr["side"] == "buy" else -1)) for tr in record["trades"]]
+        record["trades"] = []
+        book["pending"] = planned["pending"]
+        for s, dq in sorted(slots, key=lambda item:(not reducing(book,*item), item[0])):
+            tr, reason = (None, "protective_exit") if s in protected else guarded_trade(book,s,dq,opens,pp,gross)
+            if reason:
+                record["skipped"].append(dict(symbol=s,why=reason))
+                if s in book["target"]:
+                    target[s] = book["target"][s]
+                else:
+                    target.pop(s,None)
+                if s in old_exits:
+                    planned["exits"][s] = old_exits[s]
+                else:
+                    planned["exits"].pop(s,None)
+            else:
+                record["trades"].append(dict(tr,fill_utc=stamp(tick)))
+        book.update(target=target, exits={s:e for s,e in planned["exits"].items() if s in target})
+        record.update(target=dict(target), exits=dict(book["exits"]), value_after=P.value_at(book,opens),
+                      weights_after=P.weights_at(book,opens), fill_utc=stamp(tick) if record["trades"] else None)
         return {tr["symbol"] for tr in record["trades"]}
 
     if not changed:
-        immediate(at, {})
+        immediate(at, {}, set())
     symbols = set(pp["symbols"]) if changed else set(book["qty"])
     active_rows = P.scan_rows(minutes, at, end, symbols, watched=orders.active)
-    if not orders.active:
-        def dt(t):
-            return P.dt.datetime.fromtimestamp(t, P.UTC)
-        touched = set(book["qty"]) | set(weights if weights is not None else book["target"])
-        match = next(((tick, opens) for tick, bars in groupby(active_rows, key=lambda r:r[0])
-                      if touched <= (opens := {r[1]:r[2] for r in bars}).keys()), None) if changed and touched else (at, {})
-        start, opens = match if match is not None else (end, {})
-        bridge = P.p_scan(book, minutes, dt(at), dt(start), pp) if start > at else None
-        if match is not None:
-            immediate(start, opens)
-        scan = P.p_scan(book, minutes, dt(start), dt(end), pp) if start < end else bridge
-        if bridge and bridge is not scan:
-            scan["exits"] = bridge["exits"]+scan["exits"]
-            scan["closeout"] = scan["closeout"] or bridge["closeout"]
-            for field in ("held_seconds", "funding_usd", "fallback_hours"):
-                scan[field] += bridge[field]
-    else:
-        scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate)
+    scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate, last=last)
     if record is None:
         record = dict(target=dict(book["target"]), trades=[], skipped=[{"why":"no_common_open"}], changed=False)
     record["scan"] = scan

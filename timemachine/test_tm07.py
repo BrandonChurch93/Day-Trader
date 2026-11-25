@@ -121,12 +121,13 @@ class DeskTest(unittest.TestCase):
             fills = {A:[P.iso(D.wall(T)),100],B:[P.iso(D.wall(T+60)),later]}
             bars = P.Minutes([(T,A,100,100,100,100),(T+60,A,105,105,105,105),
                                (T+60,B,later,later,later,later)])
-            rec,_,_ = O.step(book,dict(weights={A:.5,B:.5}),dict(marks={A:100,B:100},fills=fills),
+            rec,_,_ = O.step(book,dict(weights={A:.4,B:.4}),dict(marks={A:100,B:100},fills=fills),
                             spec["params"],bars,T,T+120,True,{},1)
             return rec
         for px in (100,200):
             with self.subTest(later_open=px):
                 rec = execute(px)
+                self.assertTrue(rec["trades"])
                 self.assertFalse(any(t["fill_utc"] == P.iso(D.wall(T)) for t in rec["trades"]))
                 self.assertTrue(all(t["fill_utc"] == P.iso(D.wall(T+60)) for t in rec["trades"]))
 
@@ -140,6 +141,24 @@ class DeskTest(unittest.TestCase):
         rec,_,ev = O.step(book,bundle,spec["rows"][0],spec["params"],P.Minutes(spec["minutes"]),T,T+3600,False,active,1)
         self.assertIn(A,[x["symbol"] for x in rec["trades"]])
         self.assertEqual([(x["kind"],x.get("reason")) for x in ev],[("cancelled","immediate_fill")])
+
+    def test_b07_risk_uses_all_simultaneous_opens_before_filling(self):
+        spec = world()
+        for opening, expected in ((160,"gross_limit"),(300,"maintenance")):
+            book = P.new_book(1000)
+            book.update(cash=1600,qty={B:-6},target={B:-.6},last_px={A:100,B:100})
+            active = condition(T-3600,weight=.35)
+            active[A]["observed"] = T
+            engine = O.Orders(active)
+            engine.advance(book,spec["params"],[(T,A,100,100,100,100),(T,B,opening,opening,opening,opening)],T,T+60,1)
+            self.assertEqual(engine.events[-1].get("reason"),expected)
+            self.assertNotIn(A,book["qty"])
+            self.assertEqual(bool(book["closeouts"]),opening == 300)
+        book = P.new_book(1000)
+        rec,_,_ = O.step(book,{"weights":{A:1}},spec["rows"][0],spec["params"],
+                        P.Minutes(spec["minutes"]),T,T+60,True,{},1,first=True)
+        self.assertEqual(rec["skipped"][0]["why"],"gross_limit")
+        self.assertLessEqual(P.gross_at(book,{A:100}),P.value_at(book,{A:100}))
 
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
@@ -175,7 +194,10 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(slow,fast)
         self.assertEqual(slow[0],dsk["book"])
         self.assertEqual(slow[2],dsk["value"])
-        self.assertEqual([r["scan"] for r in slow[1]],dsk["scans"])
+        # The desk records boundary funding at the opening wake, not in the
+        # last wake's receipt. The complete book and exit history still match.
+        self.assertEqual([e for r in slow[1] for e in r["scan"]["exits"]],[e for r in dsk["scans"] for e in r["exits"]])
+        self.assertAlmostEqual(sum(r["scan"]["funding_usd"] for r in slow[1]),sum(r["funding_usd"] for r in dsk["scans"]))
         for seed in range(4):
             twin = tm06.shuffle_answers(ans, spec["rows"], random.Random(seed))
             got = S.shuffle_bundles(bundles, spec["rows"],spec["wakes"],spec["end"],random.Random(seed))
