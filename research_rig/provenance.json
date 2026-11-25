@@ -546,9 +546,9 @@
     "data/platform_bars/1day/*.csv"
    ],
    "reads_stored_outputs": [],
-   "sha256": "2c2476a46b0de977254860a05dcd0ce4f57217cd081213af4b7d031790c37188",
+   "sha256": "e02512460cdb1de7cdef4b6e8c62cb8bf733c03b65575821505375a42f648a11",
    "first_stored_in_commit": "3774837 2026-11-25T12:41:51Z",
-   "last_changed_in_commit": "90e1242 2026-11-25T12:56:08Z",
+   "last_changed_in_commit": "1d748ba 2026-11-25T13:04:52Z",
    "inputs_modified_after_output_first_stored": [],
    "note": "The check's full output (integrity.json) and the original pulls are on the research machine and are not fingerprinted here; only the joined price files are. Dates, counts and file fingerprints of the stock prices collected through the workspace's own price lookup on 2026-11-25. No price is in it, no rule was run and no return was worked out. The price files are on the research machine only and cannot be fetched by a script; whether they may be kept is item 6 of the morning list."
   }
