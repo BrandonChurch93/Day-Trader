@@ -169,7 +169,7 @@ p, li, dd { text-wrap: pretty; }
 
 .badge {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; white-space: normal; max-width: 100%; min-width: 0;
   background: var(--unknown-bg); color: var(--unknown-fg);
 }
 .badge-fail { background: var(--fail-bg); color: var(--fail-fg); }
@@ -180,7 +180,7 @@ p, li, dd { text-wrap: pretty; }
 
 /* Tests */
 .tests { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.test { display: grid; gap: 10px; align-content: start; }
+.test { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-content: start; }
 .test-wide { grid-column: 1 / -1; }
 .test-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
 .test-title { font-size: 16px; font-weight: 600; }

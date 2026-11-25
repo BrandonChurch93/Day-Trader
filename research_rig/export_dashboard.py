@@ -294,8 +294,8 @@ def card_05():
              [f"Example, T1, held-back largest drop ({which}, {cb} bps)", pct(x["maxdd"])], ["Holding the market, same years", pct(h["maxdd"])]]
     nb = len(P(r, base))
     return dict(id="replay05", title="Slow trend rules on the US stock market", date=None,
-                verdict=((f"{nb} of {len(N)} pass at {cb} bps, " + ("corrected run only" if b is not None and not [z for z in P(b, base) if z in P(a, base)] else which))
-                         if nb else f"None pass at {cb} bps, {which}"), tone="mixed" if nb else "fail",
+                verdict=((f"{len(P(a, base)) or 'None'} of {len(N)} pass at {cb} bps in the first run, which stands for now; {nb} of {len(N)} in the corrected run" if b is not None
+                          else f"{nb} of {len(N)} pass at {cb} bps, first run") if nb else f"None pass at {cb} bps, {which}"), tone="mixed" if nb else "fail",
                 basis="MEASURED by run_05.py, read from results_05.json" + (" and results_05b.json." if b is not None else ". Corrected run UNKNOWN, not in yet."),
                 summary=(f"{len(N)} rules that hold the stock market while its trend is up, tested on free daily data from {str(a.get('start', ''))[:4] or 'the start'} on, "
                          "at three cost levels. An audit found that rule I2 did not match its plan, so the test was run again with only that fixed. " + late +
