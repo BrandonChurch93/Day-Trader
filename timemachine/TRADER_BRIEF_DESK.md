@@ -14,6 +14,8 @@ Arm A sees the scouts' raw packet but not their notes. B and C get only the note
 
 Send a full vector of signed weights. Unlisted names go to zero. Total absolute weight cannot exceed 1x. Use `no_change` to keep the last target and its protective exits. Your reasons and citations must cover each change.
 
+A new or updated stop or target is not live on the bar where it is installed. After a fill it first applies on the next minute bar for that coin. If that bar opens past the level, the exit uses that bar's open.
+
 ```json
 {"wake_key":"...","weights":{"SOL/USD":0.25},"why":"The note describes the fact I used.","citations":{"SOL/USD":{"note_ids":["note-id"],"evidence_ids":[]}}}
 ```

@@ -242,15 +242,23 @@ class Orders:
                     protected.add(s)
                     if s in self.active:
                         self.remove(s,"cancelled",tick,reason="protective_exit")
+            prior_exits = dict(book["exits"])
+            immediate_symbols = set()
             if on_open and not blocked:
-                for s in sorted(on_open(tick, opens, protected) or ()):
+                immediate_symbols = on_open(tick, opens, protected) or set()
+                for s in sorted(immediate_symbols):
                     live = self.active.get(s)
                     if live and "observed" in live:
                         self.remove(s, "cancelled", tick, reason="immediate_fill")
             if not blocked:
                 self.execute_open(book, pp, tick, opens, gross)
             at = tick + MINUTE
+            # A new or replaced exit cannot use the bar in which it was installed.
+            deferred = {s:book["exits"].pop(s) for s in list(book["exits"])
+                        if s in immediate_symbols or book["exits"][s] != prior_exits.get(s)}
             exits = scan(bars, tick, at)
+            if not exits["closeout"]:
+                book["exits"].update({s:e for s,e in deferred.items() if s in book["qty"]})
             protected.update(x["symbol"] for x in exits["exits"])
             if exits["closeout"]:
                 block(at)
@@ -272,6 +280,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     effective = P.norm(book["target"] if weights is None else weights)
     needs_open = bool(book["qty"] or effective)
     changed = needs_open and (first or book.get("pending") or effective != P.norm(book["target"]))
+    update_exits = bool(book["qty"] and weights is not None and (exits or {}) != book["exits"])
     book["last_px"].update(row["marks"])
     record = None
 
@@ -280,7 +289,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         if record is not None:
             return
         touched = set(book["qty"]) | set(P.norm(weights if weights is not None else book["target"]))
-        if changed and not touched <= opens.keys():
+        if (changed or update_exits) and not touched <= opens.keys():
             return
         planned = deepcopy(book)
         record = P.p_step(planned, weights, exits, dict(marks=dict(book["last_px"]),
@@ -308,7 +317,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
                       weights_after=P.weights_at(book,opens), fill_utc=stamp(tick) if record["trades"] else None)
         return {tr["symbol"] for tr in record["trades"]}
 
-    if not changed:
+    if not (changed or update_exits):
         immediate(at, {}, set())
     symbols = set(pp["symbols"]) if changed else set(book["qty"])
     active_rows = P.scan_rows(minutes, at, end, symbols, watched=orders.active)

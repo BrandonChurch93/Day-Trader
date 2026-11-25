@@ -168,6 +168,30 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(trial["triggered"],1)
         self.assertEqual(trial["standing"],0)
 
+    def test_reaudit_r2_new_stop_activates_after_its_fill_open(self):
+        for held,first in ((False,T),(True,T+60)):
+            with self.subTest(held=held):
+                spec = world([(T,A,100,101,99,100)]*held +
+                             [(first,s,90,92,85,89) for s in ([A,B] if held else [A])] +
+                             [(first+60,A,88,90,84,89)])
+                book = P.new_book(1000)
+                if held:
+                    book.update(qty={A:2,B:1},target={A:.2,B:.1},cash=700,last_px={A:100,B:100})
+                weight = {A:.5,**({B:.1} if held else {})}
+                rec,_,_ = O.step(book,dict(weights=weight,exits={A:{"stop":95}}),
+                                  spec["rows"][0],spec["params"],P.Minutes(spec["minutes"]),T,T+180,True,{},1,first=not held)
+                self.assertEqual(next(x for x in rec["trades"] if x["symbol"] == A)["fill_utc"],O.stamp(first))
+                exit, = rec["scan"]["exits"]
+                self.assertEqual((exit["utc"],exit["filled_at"],exit["gap"]),(O.stamp(first+60),88,True))
+        spec = world([(T,A,100,101,99,100),(T+60,A,90,92,85,89),
+                      (T+60,B,100,100,100,100),(T+120,A,88,90,84,89)])
+        book = P.new_book(1000)
+        book.update(qty={A:2,B:1},target={A:.2,B:.1},cash=700,last_px={A:100,B:100},exits={A:{"stop":80}})
+        rec,_,_ = O.step(book,dict(weights=book["target"],exits={A:{"stop":95}}),spec["rows"][0],
+                         spec["params"],P.Minutes(spec["minutes"]),T,T+180,True,{},1)
+        self.assertFalse(rec["trades"])
+        self.assertEqual([x["utc"] for x in rec["scan"]["exits"]],[O.stamp(T+120)])
+
     def test_b02_immediate_cannot_size_from_a_later_open(self):
         def execute(later):
             spec = world()
