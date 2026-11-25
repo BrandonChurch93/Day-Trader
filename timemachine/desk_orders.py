@@ -171,9 +171,9 @@ class Orders:
         """Boundary funding, open maintenance, gap exits, new fills, bar-close checks."""
         at = start
         total = dict(exits=[], closeout=None, funding_usd=0.0, fallback_hours=0, held_seconds=0)
+        book.setdefault("held_seconds",0)
         events = iter(P.funding_times(pp, start-1, end if last else end-1))
         upcoming = next(events, None)
-        no_funding = dict(pp, symbols=[])
         blocked = False
 
         def fund_until(tick, opens):
@@ -193,80 +193,106 @@ class Orders:
             book.update(target={}, exits={}, pending=False)
             blocked = True
 
-        def scan(bars, begin, stop):
-            got = P.p_scan(book, bars, P.dt.datetime.fromtimestamp(begin, P.UTC), P.dt.datetime.fromtimestamp(stop, P.UTC), no_funding)
-            total["exits"].extend(got["exits"])
-            total["closeout"] = got["closeout"] or total["closeout"]
-            for field in ("funding_usd", "fallback_hours", "held_seconds"):
-                total[field] += got[field]
-            return got
+        def hold(seconds):
+            if book["qty"]:
+                total["held_seconds"] += seconds
+                book["held_seconds"] += seconds
+
+        def margin(prices):
+            return (P.value_at(book, prices),
+                    sum(pp["maint"][s]*abs(q)*prices[s] for s,q in book["qty"].items()))
+
+        def note_drawdown(eq):
+            peak = book["peak"]
+            book["largest_drop"] = min(book["largest_drop"],max(0,eq)/peak-1 if peak else 0)
+
+        def protective(s, tick, hit, phase):
+            price, kind, gap = hit
+            trade = P.trade(book,s,-book["qty"][s],price,pp)
+            event = dict(utc=stamp(tick),symbol=s,kind=kind,level=book["exits"].pop(s)[kind],
+                         filled_at=price,gap=gap,price=trade["price"],side=trade["side"],qty=trade["qty"],phase=phase)
+            book["target"].pop(s,None)
+            book["exits_hit"].append(event)
+            total["exits"].append(event)
+            if s in self.active:
+                self.remove(s,"cancelled",tick,reason="protective_exit")
 
         for tick, bars in groupby(rows, key=lambda row: row[0]):
             if tick < start or tick + MINUTE > end:
                 continue
-            if tick > at:
-                scan([], at, tick)
+            hold(tick-at)
             bars = list(bars)
             opens = {r[1]: r[2] for r in bars}
             fund_until(tick, opens)
             book["last_px"].update(opens)
             protected = set()
             if book["qty"] and book["qty"].keys() <= opens.keys():
-                eq = P.value_at(book, opens)
-                need = sum(pp["maint"][s]*abs(q)*opens[s] for s,q in book["qty"].items())
-                if eq < need:
-                    symbol = min(book["qty"])
-                    for s, q in sorted(book["qty"].items()):
-                        P.trade(book, s, -q, opens[s], pp, penalty=pp["penalty"])
+                eq, need = margin(opens)
+                pending = book.pop("desk_liquidation",None)
+                if pending or eq < need:
+                    symbol = pending["symbol"] if pending else min(book["qty"])
+                    trades = [P.trade(book,s,-q,opens[s],pp,penalty=pp["penalty"])
+                              for s,q in sorted(book["qty"].items())]
                     short = max(0.0, -book["cash"])
                     book["shortfall_usd"] += short
                     book["cash"] = max(0.0, book["cash"])
-                    event = dict(utc=stamp(tick),symbol=symbol,value_before=eq,value_after=book["cash"],shortfall_usd=short,at_open=True)
+                    event = dict(utc=stamp(tick),symbol=symbol,value_before=eq,value_after=book["cash"],
+                                 shortfall_usd=short,at_open=True,trigger=pending,trades=trades)
                     book["closeouts"].append(event)
                     total["closeout"] = event
-                    book["largest_drop"] = min(book["largest_drop"], book["cash"]/book["peak"]-1 if book["peak"] else 0)
+                    note_drawdown(book["cash"])
                     block(tick)
             for s, q in sorted(book["qty"].items()):
-                if s not in opens or s not in book["exits"]:
+                if s not in opens or s not in book["exits"] or book.get("desk_liquidation"):
                     continue
                 p = opens[s]
                 hit = P.exit_hit(q, book["exits"][s], p, p, p)
                 if hit:
-                    _, kind, _ = hit
-                    tr = P.trade(book,s,-q,p,pp)
-                    event = dict(utc=stamp(tick),symbol=s,kind=kind,level=book["exits"].pop(s)[kind],
-                                 filled_at=p,gap=True,price=tr["price"],side=tr["side"],qty=tr["qty"])
-                    book["target"].pop(s,None)
-                    book["exits_hit"].append(event)
-                    total["exits"].append(event)
+                    protective(s,tick,hit,"open")
                     protected.add(s)
-                    if s in self.active:
-                        self.remove(s,"cancelled",tick,reason="protective_exit")
             prior_exits = dict(book["exits"])
             immediate_symbols = set()
-            if on_open and not blocked:
+            if on_open and not blocked and not book.get("desk_liquidation"):
                 immediate_symbols = on_open(tick, opens, protected) or set()
                 for s in sorted(immediate_symbols):
                     live = self.active.get(s)
                     if live and "observed" in live:
                         self.remove(s, "cancelled", tick, reason="immediate_fill")
-            if not blocked:
+            if not blocked and not book.get("desk_liquidation"):
                 self.execute_open(book, pp, tick, opens, gross)
             at = tick + MINUTE
-            # A new or replaced exit cannot use the bar in which it was installed.
-            deferred = {s:book["exits"].pop(s) for s in list(book["exits"])
-                        if s in immediate_symbols or book["exits"][s] != prior_exits.get(s)}
-            exits = scan(bars, tick, at)
-            if not exits["closeout"]:
-                book["exits"].update({s:e for s,e in deferred.items() if s in book["qty"]})
-            protected.update(x["symbol"] for x in exits["exits"])
-            if exits["closeout"]:
-                block(at)
+            hold(MINUTE)
+            # A resting exit can fill at its level intraminute. Record the
+            # observation at close, not as a second execution at the open.
+            for _,s,o,h,l,_ in bars:
+                ex = book["exits"].get(s)
+                if (book.get("desk_liquidation") or not book["qty"].get(s) or not ex
+                        or s in immediate_symbols or ex != prior_exits.get(s)):
+                    continue
+                hit = P.exit_hit(book["qty"][s],ex,o,h,l)
+                if hit and not hit[2]:
+                    protective(s,at,hit,"intrabar")
+                    protected.add(s)
+            if book["qty"] and book["qty"].keys() <= opens.keys():
+                for _,s,_,h,l,_ in bars:
+                    q = book["qty"].get(s)
+                    if not q:
+                        continue
+                    adverse = dict(opens)
+                    adverse[s] = l if q > 0 else h
+                    eq,need = margin(adverse)
+                    note_drawdown(eq)
+                    if eq < need and not book.get("desk_liquidation"):
+                        # The extreme is known only when the bar completes.
+                        # It can never be a liquidation price for another coin.
+                        book["desk_liquidation"] = dict(symbol=s,observed=stamp(at),bar_start=stamp(tick))
+            book["last_px"].update({s:c for _,s,_,_,_,c in bars})
+            if book["qty"]:
+                book["peak"] = max(book["peak"],P.value_at(book,book["last_px"]))
             for bar in bars:
                 self.observe_close(bar, protected)
             self.expire(at)
-        if at < end:
-            scan([], at, end)
+        hold(end-at)
         fund_until(end, {})
         self.expire(end)
         return total

@@ -192,6 +192,22 @@ class DeskTest(unittest.TestCase):
         self.assertFalse(rec["trades"])
         self.assertEqual([x["utc"] for x in rec["scan"]["exits"]],[O.stamp(T+120)])
 
+    def test_reaudit_sol_r02_later_high_cannot_liquidate_at_earlier_open(self):
+        def trial(high):
+            spec = world([(T,A,100,high,99,100),(T,B,100,100,99,100),
+                          (T+60,A,170,171,169,170),(T+60,B,120,121,119,120)])
+            book = P.new_book(1000)
+            book.update(cash=1900,qty={A:-6,B:-3},target={A:-.6,B:-.3},last_px={A:100,B:100})
+            return O.step(book,dict(weights={A:-.6,B:-.35}),spec["rows"][0],spec["params"],
+                          P.Minutes(spec["minutes"]),T,T+120,True,{},1)[0]
+        calm, jump = trial(101),trial(350)
+        self.assertEqual(calm["trades"],jump["trades"])
+        self.assertEqual(jump["trades"][0]["fill_utc"],O.stamp(T))
+        self.assertIsNone(calm["scan"]["closeout"])
+        closeout = jump["scan"]["closeout"]
+        self.assertEqual(closeout["utc"],O.stamp(T+60))
+        self.assertEqual({r["symbol"]:r["open"] for r in closeout["trades"]},{A:170,B:120})
+
     def test_b02_immediate_cannot_size_from_a_later_open(self):
         def execute(later):
             spec = world()
@@ -431,11 +447,14 @@ class DeskTest(unittest.TestCase):
             F.run_perp(dict(args, tm07_arm="C"), table, ans, p.pp, p.minutes, spec["cfg"])
         dsk = S.replay(p,bundles,journal=True)
         self.assertEqual(slow,fast)
-        self.assertEqual(slow[0],dsk["book"])
+        self.assertEqual({k:v for k,v in slow[0].items() if k != "exits_hit"},
+                         {k:v for k,v in dsk["book"].items() if k != "exits_hit"})
         self.assertEqual(slow[2],dsk["value"])
         # The desk records boundary funding at the opening wake, not in the
         # last wake's receipt. The complete book and exit history still match.
-        self.assertEqual([e for r in slow[1] for e in r["scan"]["exits"]],[e for r in dsk["scans"] for e in r["exits"]])
+        before, = [e for r in slow[1] for e in r["scan"]["exits"]]
+        after, = [e for r in dsk["scans"] for e in r["exits"]]
+        self.assertEqual(after,dict(before,utc=O.stamp(D.epoch(before["utc"])+60),phase="intrabar"))
         self.assertAlmostEqual(sum(r["scan"]["funding_usd"] for r in slow[1]),sum(r["funding_usd"] for r in dsk["scans"]))
         for seed in range(4):
             twin = tm06.shuffle_answers(ans, spec["rows"], random.Random(seed))
