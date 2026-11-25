@@ -21,7 +21,7 @@ What research did with that, and what it kept to: research only. No account was 
 | Summary: historical data and practice accounts | `docs/research/10_historical_data_and_practice.md` |
 | Summary: how to test an AI trader | `docs/research/11_ai_trader_experiment_design.md` |
 | Summary: penny stocks, small stocks and high-risk crypto | `docs/research/13_high_risk_sleeve_evidence.md` |
-| Raw reports and the second fact check behind 10, 11 and 13 | `docs/research/10_raw/`, `11_raw/`, `13_raw/` |
+| Raw reports and the second fact check behind 10, 11 and 13 | `docs/research/10_raw/`, `docs/research/11_raw/`, `docs/research/13_raw/` |
 
 ## Numbers added to the config
 

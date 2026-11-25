@@ -9,7 +9,7 @@ Every number below is MEASURED by `research_rig/run_v2.py` and read from its out
 ## Bottom line
 
 - Two different AI models audited the rig code line by line, separately. Neither found a rule that used future prices. Both found faults in how results were measured.
-- I wrote down every fix and pushed it before rerunning anything (`research_rig/AMENDMENT_2026-11-25_audit_fixes.md`). No slice was changed. Correction added later on 2026-11-25: an earlier version of this line also said no rule, cost or pass mark was changed. That was wrong. Three rows of that list are not engine fixes. A12 changed the code of rule P2 to match its plan. A13 made pass mark 1 stricter, so that it must also hold with the fill one hour late. A08 changed what buy and hold pays from a flat 5 bps to the same cost as the rule. So a pass in this rerun did not come from engine fixes alone, and research recommends that none is credited (question 18b in `docs/decisions/morning_list_2026-11-25.md`).
+- I wrote down every fix and pushed it before rerunning anything (`research_rig/AMENDMENT_2026-11-25_audit_fixes.md`). No slice was changed. Correction added later on 2026-11-25: an earlier version of this line also said no rule, cost or pass mark was changed. That was wrong. Two rows of that list are not engine fixes. A13 made pass mark 1 stricter than the plan wrote it, so that it must also hold with the fill one hour late. A08 changed what buy and hold pays when the break-even cost is worked out, from a flat 5 bps to the same cost as the rule. A third row, A12, is an engine fix to the 0.10 band check that changes the trades of one rule, P2. So a pass in this rerun did not come from engine fixes alone, and research recommends that none is credited (question 18b in `docs/decisions/morning_list_2026-11-25.md`).
 - After the fixes, rules that pass on both price histories: Binance.US cost: P1, P2, S50, D20. In the first run that list was: none.
 - So the fixes turned four failures into passes at the cheapest venue only. That is a result found after the fact. It is a reason to test in the practice account, not a result to rely on.
 - The pass sits on a knife edge. The overfitting estimate for bitcoin on Kraken prices at Binance.US cost is 0.2409 against a bar of 0.25 (`backtest_max_pbo`). With the latest days dropped instead of the earliest it is 0.2645, which fails. On Bitstamp prices started on the same day as the Kraken history it is 0.4205, which fails.
@@ -27,7 +27,7 @@ Every number below is MEASURED by `research_rig/run_v2.py` and read from its out
 What they agreed on:
 
 - No rule uses a price it could not have known. Signals use the close of bar t and fill at the open of bar t+1. MEASURED by both.
-- The rules match their written plans. MEASURED by both.
+- The rule definitions match their written plans. MEASURED by both. The engine's 0.10 band check did not follow the plan's words for moves to or from zero, which changed the trades of one rule, P2 (fix A12).
 - Auditor A's separate replay matched the rig's daily account value and Sharpe ratio to rounding. MEASURED by A.
 
 ## What was wrong, in plain words
@@ -243,7 +243,7 @@ Passes at any venue cost: 0 of 80 after the fixes, 0 of 80 in the first run. Doc
 
 ## What is still open
 
-- The fixes were written after the first results were seen. Each one is tied to an audit finding and none changes a rule or a bar, but a result that only appears after fixes deserves less trust than one that was there from the start.
+- The fixes were written after the first results were seen. Each one is tied to an audit finding and none changes a number in `config/thresholds.yaml`. Two of them do change what a pass mark asks (A13 and A08, see the correction near the top of this page), and a result that only appears after fixes deserves less trust than one that was there from the start.
 - Both price histories cover the same market and the same years. Passing on both shows the result is not a quirk of one venue's prices. It does not show the rule will keep working.
 - Binance.US cost is 7 bps per side, the lowest fee schedule checked. The owner has no account there, and whether a Binance.US account suits this project is an open decision (document 09). At Alpaca cost (30 bps per side) nothing passes on both histories.
 - The held-back slice has now been looked at by replay 01, the cross-check, replay 03 and this rerun. It is no longer fresh. The only fresh test left is the practice account.

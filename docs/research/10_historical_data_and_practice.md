@@ -4,13 +4,13 @@ Last verified: 2026-11-25.
 
 Scope: past-price data for replaying stock, ETF and crypto rules, and practice accounts, for a US retail individual in Idaho trading his own money. No account was opened, no key requested and no order placed.
 
-How it was made: three researchers wrote reports from primary pages and public price endpoints. One fresh checker re-opened the sources for 14 load-bearing claims and tried to prove them wrong. The raw reports are `docs/research/10_raw/stock_history_data.md`, `crypto_history_data.md` and `practice_environments.md`. The check table is `docs/research/10_raw/check/result_data.md`. Where the checker changed a figure, this file carries the checker's figure.
+How it was made: three researchers wrote reports from primary pages and public price endpoints. One fresh checker re-opened the sources for 14 load-bearing claims and tried to prove them wrong. The raw reports are `docs/research/10_raw/stock_history_data.md`, `docs/research/10_raw/crypto_history_data.md` and `docs/research/10_raw/practice_environments.md`. The check table is `docs/research/10_raw/check/result_data.md`. Where the checker changed a figure, this file carries the checker's figure.
 
 Tags: MEASURED means read on a primary page or measured from a public endpoint. STATED means someone's claim, not confirmed. UNKNOWN means not found, which is not the same as absent.
 
 Status of everything recommended here: proposed by the research team. Nothing in this file is an owner decision.
 
-> Note added 2026-11-25. The first data purchase recommended below is the Kibot end-of-day plan. Later the same night two stock tests were planned that need one-minute prices as well as daily ones, so the purchase now put to the owner is one month of the EODHD plan with both (`docs/decisions/morning_list_2026-11-25.md`). The rest of this page stands.
+> Note added 2026-11-25. The first data purchase recommended below is the Kibot end-of-day plan. Later the same night two stock tests were planned that need one-minute prices as well as daily ones, so the purchase now put to the owner is one month of the EODHD plan with both (`docs/decisions/morning_list_2026-11-25.md`). Row 3 of the table below is also superseded: research now proposes Kraken's published files as the main crypto history, with Bitstamp as the cross-check, because Bitstamp's terms are unclear about collecting its prices (item 3 of "Things only you can do" in the same list). The rest of this page stands.
 
 ## Words used here
 
@@ -58,7 +58,7 @@ What matters for the choice:
 - Alpaca's free plan gives full-market (SIP) history as long as the request ends at least 15 minutes ago ([Alpaca market data FAQ](https://docs.alpaca.markets/us/docs/market-data-faq.md)). But Alpaca's paper page says "As an Alpaca Paper Only Account holder, you are only entitled to receive and make use of IEX market data" ([Alpaca paper trading](https://docs.alpaca.markets/us/docs/paper-trading.md)). Free full-market history may therefore depend on account type. MEASURED.
 - Sharadar's $39 product already includes the S&P 500 membership table, with history to 1998 ([Sharadar bundle](https://sharadar.com/bundle)). The $69 bundle is not needed for that. MEASURED.
 - If single stocks are ever tested, Norgate is the clearest option, though its delisted coverage is "for select delisted security types" ([Norgate packages](https://norgatedata.com/stockmarketpackages.php)). MEASURED.
-- Every planned ETF traded before 2008, HYG only from April 2007. Start dates are in `10_raw/stock_history_data.md`.
+- Every planned ETF traded before 2008, HYG only from April 2007. Start dates are in `docs/research/10_raw/stock_history_data.md`.
 
 ## Price history inside the workspace
 
@@ -78,7 +78,7 @@ What is UNKNOWN:
 - Who the data comes from, and how it is adjusted.
 - What its terms say about keeping copies and using them for tests. Research found no terms for it. The owner works at Perplexity and can ask. This is item 6 of "Things only you can do" in `docs/decisions/morning_list_2026-11-25.md`.
 - The first day of one-minute data for QQQ. A request for March 2004 to March 2005 returned nothing in range.
-- Whether it has gaps, repeated bars or wrong prices. A collection with a gap check is running. Its coverage table will be added below this line by a script from the check's own output file, with nothing typed.
+- Whether it has gaps, repeated bars or wrong prices. As of 2026-11-25 09:55 UTC a collection with a gap check was running on the research machine. Nothing from it is in the repo. When it finishes, its coverage table is added below this line by a script from the check's own output file, with nothing typed. Until that table is here, treat coverage as UNKNOWN.
 
 What it changes, as a proposal:
 
@@ -111,7 +111,7 @@ Data faults to handle in the replay:
 - A Bitstamp request that starts far before the first bar returns an empty list, which a careless loop can read as no data. Early bars are thin. MEASURED.
 - Coinbase's older daily endpoint gave a bitcoin close for 2026-11-13 about 6% off. Cross-check daily bars against a second venue. MEASURED.
 
-The dead-coin problem. Bitstamp's public bars drop delisted pairs, so a Bitstamp basket beyond bitcoin and ether would hold only survivors. Coinbase still serves several delisted pairs. Kraken and Binance.US keep some. MEASURED, in `10_raw/crypto_history_data.md`. A fair test needs the coin list as it stood on each past date, which no free source here supplies. Bitcoin and ether alone avoid the problem.
+The dead-coin problem. Bitstamp's public bars drop delisted pairs, so a Bitstamp basket beyond bitcoin and ether would hold only survivors. Coinbase still serves several delisted pairs. Kraken and Binance.US keep some. MEASURED, in `docs/research/10_raw/crypto_history_data.md`. A fair test needs the coin list as it stood on each past date, which no free source here supplies. Bitcoin and ether alone avoid the problem.
 
 ## Practice accounts
 
@@ -127,7 +127,7 @@ The dead-coin problem. Bitstamp's public bars drop delisted pairs, so a Bitstamp
 
 Alpaca's paper page lists as not simulated: market impact, slippage from delay, queue position, price improvement, regulatory fees and dividends ([Alpaca paper trading](https://docs.alpaca.markets/us/docs/paper-trading.md)). MEASURED. It says "Paper trading simulates crypto trading as well", but says nothing on whether the crypto fee is charged on practice fills. UNKNOWN. Alpaca's live crypto taker fee at the lowest tier is 0.25% and the maker fee 0.15% ([Alpaca crypto trading](https://docs.alpaca.markets/us/docs/crypto-trading.md)). That is 0.50% for a round trip as a taker. MEASURED.
 
-Alpaca staff posts add, as STATED, that paper does not process splits and treats auction orders as plain market orders. Detail is in `10_raw/practice_environments.md`.
+Alpaca staff posts add, as STATED, that paper does not process splits and treats auction orders as plain market orders. Detail is in `docs/research/10_raw/practice_environments.md`.
 
 What we must add ourselves in replay and practice:
 

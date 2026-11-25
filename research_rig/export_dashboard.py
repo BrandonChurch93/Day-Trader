@@ -105,7 +105,7 @@ def check(label, a, b):
 def both_status(venue, asset, rule):
     x = next((z for z in cmp_["both_histories"] if z["venue"] == venue and z["asset"] == asset and z["rule"] == rule), None)
     if x is None: return dict(passed=False, text="Not judged on both price histories.")
-    if x["both"]: return dict(passed=True, tone="mixed", label="Cleared the marks in a rerun. Not credited yet", text="Cleared all five pass marks on both price histories in the rerun after the audit fixes. That rerun also carried a rule fix and a stricter pass mark, so whether it is credited as a pass is waiting on you (question 18b in the morning list). Research recommends it is not, and that the rule is watched in the practice account as not passed.")
+    if x["both"]: return dict(passed=True, tone="mixed", label="Cleared the marks in a rerun. Not credited yet", text="Cleared all five pass marks on both price histories in the rerun after the audit fixes. That rerun also carried a stricter pass mark and a changed cost for holding, so whether it is credited as a pass is waiting on you (question 18b in the morning list). Research recommends it is not, and that the rule is watched in the practice account as not passed.")
     parts = []
     if x["bitstamp_failed"]: parts.append("Marks failed on Bitstamp prices: " + ", ".join(MARK[m] for m in x["bitstamp_failed"]) + ".")
     if x["kraken_failed"]: parts.append("Marks failed on Kraken prices: " + ", ".join(MARK[m] for m in x["kraken_failed"]) + ".")
@@ -245,7 +245,7 @@ tests = [
     dict(id="audit", title="Audit of the test rig", date="2026-11-25", verdict="Faults fixed, tests rerun", tone="info",
          basis="STATED by the two audit reports. MEASURED counts from compare_v1_v2.json.",
          summary=("Two AI models read the rig code separately. Neither found any use of future prices. Both found faults in how "
-                  "results were measured. The fixes were written down before the rerun. Most fixed the shared test code. Three did more: one rule's code was brought into line with its plan, one pass mark was made stricter, and holding was made to pay the same cost as the rule. "
+                  "results were measured. The fixes were written down before the rerun. Most fixed the shared test code. Two did more: one pass mark was made stricter, and holding was made to pay the same cost as the rule in another. "
                   "The crypto rule tests below use the rerun."),
          numbers=[["Fixes listed in the written plan", str(n_fixes)],
                   ["Single pass marks that changed in the rerun", str(sum(x["marks_changed"] for x in cn.values()))],
@@ -261,7 +261,7 @@ tests = [
                   f" The pass is on a knife edge: the overfitting estimate is {kb['rerun']:.3f} against a limit of {TH['backtest_max_pbo']}, "
                   f"and {kb['latest_days_dropped']:.3f}, a fail, when the latest days are dropped instead of the earliest. "
                   + (f"On Bitstamp prices from the same start date it is {kd['rerun']:.3f}, a fail. " if kd and kd["rerun"] >= TH["backtest_max_pbo"] else "") +
-                  "It came in a rerun that carried a rule fix and a stricter pass mark as well as engine fixes, so research recommends it is not credited as a pass (question 18b on your list). It is a reason to watch the rule in the practice account, not proof that it works."),
+                  "It came in a rerun that carried a stricter pass mark and a changed cost for holding as well as engine fixes, so research recommends it is not credited as a pass (question 18b on your list). It is a reason to watch the rule in the practice account, not proof that it works."),
          numbers=[[f"Passes on Bitstamp prices (of {cn['R01']['trials']})", str(cn["R01"]["passed_rerun"])],
                   [f"Passes on Kraken prices (of {cn['X2']['trials']})", str(cn["X2"]["passed_rerun"])],
                   [f"Passes on both (of {n_pairs})", str(len(BOTH))],

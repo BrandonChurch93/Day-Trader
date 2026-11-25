@@ -35,7 +35,7 @@ Plain definitions of the terms, test names and rule names used in this repo. Thi
 | Held-back slice | The later part of the history, kept unseen until the rules are fixed. Each frozen rule is meant to be run on it once. Also called out of sample |
 | Trial | One rule variant that was run. Every trial is counted, because the more rules are tried, the more likely one looks good by luck |
 | Trial ledger | The list of every trial and rerun. `research_rig/TRIAL_LEDGER.md`. A result with no row there does not count |
-| Rerun | A second run of the held-back slice. The owner allows one case, in his words: "when a machine check proves the engine itself was wrong, the slice is rerun once the fix is in. That rerun is written in the trial ledger, counted as a trial and reported as a rerun" (`docs/quality/01_the_bar.md`). Research read R1 as that case: two code audits by other models found faults in how trades were simulated and how the pass marks were worked out. R1 also carried three changes that were not engine faults (one rule's code, a stricter pass mark 1, and what holding pays), listed in `docs/STATUS.md` under "Known faults and slips". Whether a code audit is a "machine check", and whether the pass-mark code is "the engine itself", is research's reading and has not been put to the owner before (question 18c). R2 was not that case: the engine was right and one rule was coded differently from its plan (questions 18a and 18b in `docs/decisions/morning_list_2026-11-25.md`). He wrote the rule for the Builder; research applies it to its own tests |
+| Rerun | A second run of the held-back slice. The owner allows one case, in his words: "when a machine check proves the engine itself was wrong, the slice is rerun once the fix is in. That rerun is written in the trial ledger, counted as a trial and reported as a rerun" (`docs/quality/01_the_bar.md`). Research read R1 as that case: two code audits by other models found faults in how trades were simulated and how the pass marks were worked out. R1 also carried two changes that were not engine faults (a stricter pass mark 1, and what holding pays when the break-even cost is worked out), listed in `docs/STATUS.md` under "Known faults and slips". Whether a code audit is a "machine check", and whether the pass-mark code is "the engine itself", is research's reading and has not been put to the owner before (question 18c). R2 was not that case: the engine was right and one rule was coded differently from its plan (questions 18a and 18b in `docs/decisions/morning_list_2026-11-25.md`). He wrote the rule for the Builder; research applies it to its own tests |
 | Machine check | The owner's words in his rerun rule. He does not define them. Research's reading: a check a machine can repeat with the same answer each time, such as a fixture with a known answer (`research_rig/fixtures2.py`) or a second model rebuilding a result from the raw data in its own code. A model reading code and giving an opinion is weaker than that. Not settled (question 18c) |
 | Pass marks | The five tests a replay must pass, listed in `research_rig/README.md`. The numbers are keys in `config/thresholds.yaml` |
 | Replay pass | All five marks met in a replay. When credited, it earns a place in a practice account test and nothing more. A pass is credited only when the run that made it followed the rules: plan and ledger row before the run, no change to a rule, cost or pass mark after a result was seen. Research recommends that no pass from 2026-11-25 is credited (question 18b in `docs/decisions/morning_list_2026-11-25.md`). The owner has not answered |
@@ -72,7 +72,7 @@ Plain definitions of the terms, test names and rule names used in this repo. Thi
 | Replays 06 and 07 | Draft plans. Not run | `PREREG_06_*`, `PREREG_07_*` |
 | R1 | The rerun of replays 01 and 03 with the cross-checks, after two code audits | `AMENDMENT_2026-11-25_audit_fixes.md` |
 | R2 | The corrected run of replay 05 | `AMENDMENT_05_I2_equal_thirds.md` |
-| v1, v2 | The first engine and the engine after the audit fixes. v2 results are the ones judged | `research_rig/README.md` |
+| v1, v2 | The first engine and the engine after the audit fixes. v2 results are the ones research reports. Whether their passes are credited is the owner's to say, and research recommends not (question 18b) | `research_rig/README.md` |
 
 ## Rules tested
 
@@ -128,7 +128,7 @@ These come from the owner's files in `docs/quality/`. Read them there. Nothing i
 | Builder | The mode that builds unattended from the kit |
 | Partner | The interactive mode that reviews a build with the owner and writes fix prompts. It writes no product code |
 | Gate | A checkable line at the end of a build phase |
-| Engine | Two meanings. In the owner's rerun rule and in `research_rig/`: the test code that simulates trades on past prices and works out the pass marks (`engine.py` with `passmarks.py`, then `rig2.py`). It is not the code of any one rule, and it is not the definition of a pass mark. That meaning is research's reading and the owner has not confirmed it (question 18c). In the planned product: see the next row |
+| Engine | Two meanings. In the owner's rerun rule and in `research_rig/`: the test code that simulates trades on past prices and works out the pass marks (`engine.py`, then `rig2.py`). It is not the code of any one rule, and it is not the definition of a pass mark. That meaning is research's reading and the owner has not confirmed it (question 18c). In the planned product: see the next row |
 | Engine, service | In the planned product: the always-on program that reads prices, applies rules and risk limits, and places orders. It works with every model switched off |
 | Escalation gate | In the planned product: plain code that decides when a finding is worth sending to the top model. `AGENTS.md`, "Model tiers" |
 | Research rig | `research_rig/`. The code that ran the replays. Not product code |
@@ -146,4 +146,17 @@ These come from the owner's files in `docs/quality/`. Read them there. Nothing i
 | CPCV | A related way to split history for testing, which leaves gaps between the parts so they do not leak into each other. Named in the playbook. Not used in any test here |
 | DSR, PBO | Deflated Sharpe ratio, and the overfitting estimate. Both defined under "Measures" |
 | Durbl, BusEq and the other industry names | The French library's short names for its twelve industry groups: NoDur consumer nondurables, Durbl consumer durables (cars, TVs, furniture, appliances), Manuf manufacturing, Enrgy oil, gas and coal, Chems chemicals, BusEq business equipment (computers, software, electronics), Telcm telephone and television, Utils utilities, Shops wholesale and retail, Hlth healthcare and drugs, Money finance, Other everything else. MEASURED from the library's [definitions file](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Siccodes12.zip) |
+| Shadow, shadow mode | A model or rule runs and its output is logged, and nothing acts on it. `AGENTS.md` uses the word for the AI tiers |
+| Order path | The code between a decision to trade and the order reaching the broker. `AGENTS.md` hard rule 1 keeps AI models out of it |
+| Fill | The price and size at which an order was actually done. A replay has to assume one |
+| Fixture | A tiny hand-worked case with a known right answer, used to check the engine before a test runs (`fixtures.py`, `fixtures2.py`) |
+| Fingerprint | A SHA-256 hash of a file. Two files with the same fingerprint are the same, byte for byte. Stored in `research_rig/provenance.json` |
+| Scope call | A choice about what the product is or is not. Two were made by research on 2026-11-24 and never put to the owner (questions 14 and 15) |
+| Training cutoff | The last date of the text a model was trained on. A test of a model on earlier dates proves nothing, because it may have read the outcome (`AGENTS.md` hard rule 7) |
+| Effective spread | What a trade really cost against the middle price at that moment, as reported by venues. Often smaller than the quoted gap between bid and ask |
+| SIP, IEX | Two kinds of US stock price feed. The SIP is the combined feed from every exchange. IEX is one exchange, a small share of trading, and is the feed on Alpaca's free plan |
+| Rule 605 | An SEC rule that makes trading venues publish monthly figures on how well they filled orders. A source for real costs |
+| Dead-coin problem | A price source that drops coins which stopped trading shows only the survivors, so a basket built from it looks better than it was |
+| Resampled range (bootstrap) | A range for a figure, made by redrawing the history at random many times and measuring again each time |
+| Derby | The owner's word: three directions for a screen over the same content, published so he can pick one or mix. From `docs/quality/01_the_bar.md` |
 | G1 to G6, N1 to N7 | Rule names in the two draft plans, replays 06 and 07. Defined in those drafts. Not run |

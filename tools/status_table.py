@@ -12,7 +12,7 @@ def crypto_trend():
     edge = f" Knife edge: the overfitting estimate on Kraken prices is {k[0]['rerun']:.4f} against a bar of {th['backtest_max_pbo']} when it was run (`backtest_max_pbo`), and {d[0]['rerun']:.4f} on Bitstamp prices from the same start date, which fails." if k and d else ""
     return ("Replay 01 with cross-check X2, rerun after the audits", "Nine slow trend rules on bitcoin and on ether, daily, five venue costs, two price histories",
             f"{n['R01']['passed_rerun']} of {n['R01']['trials']} rule, coin and venue combinations pass on Bitstamp prices and {n['X2']['passed_rerun']} of {n['X2']['trials']} on Kraken prices. "
-            f"Pass on both histories: {ls([x['rule'] for x in both])} on {ls(coins)}, at {ls(ven)} cost only. Not credited as passes: the rerun also carried a rule fix, a stricter pass mark and a change to what holding pays (question 18b in the morning list). In the first run, before the audit fixes, {len([x for x in c['both_histories'] if x['first_both']]) or 'none'} passed on both histories ({n['R01']['passed_first']} on Bitstamp prices, {n['X2']['passed_first']} on Kraken prices)." + edge,
+            f"Pass on both histories: {ls([x['rule'] for x in both])} on {ls(coins)}, at {ls(ven)} cost only. Not credited as passes: the rerun also carried a stricter pass mark and a change to what holding pays (question 18b in the morning list). In the first run, before the audit fixes, {len([x for x in c['both_histories'] if x['first_both']]) or 'none'} passed on both histories ({n['R01']['passed_first']} on Bitstamp prices, {n['X2']['passed_first']} on Kraken prices)." + edge,
             "`docs/research/16_rig_audit.md`")
 def crypto_intraday():
     n = J("compare_v1_v2.json")["counts"]["R03"]
@@ -43,7 +43,7 @@ def books():
     span = f"{mins} minutes" if mins < 120 else f"{mins / 60:.1f} hours"
     return ("Order-book samples", "What it cost to trade a small size at once, sampled on two venues on one day",
             f"{b['rounds']} rounds from {b['first_sample_utc']} to {b['last_sample_utc']} UTC. Bitcoin, middle cost of one order, fees not included: $1,000 cost {k['cost_1k_bps']['median']:.1f} bps on Kraken and {n['cost_1k_bps']['median']:.1f} bps on Binance.US; "
-            f"$10,000 cost {k['cost_10k_bps']['median']:.1f} and {n['cost_10k_bps']['median']:.1f} bps. The crypto replays assume {slip} bps for this on bitcoin and ether. One sample of {span} only.",
+            f"$10,000 cost {k['cost_10k_bps']['median']:.1f} and {n['cost_10k_bps']['median']:.1f} bps. Replay 04 assumed {slip} bps for this on bitcoin and ether (read from its output). The rerun of replays 01 and 03 used the same figure, set in `research_rig/rig2.py` and not stored in its output. One sample of {span} only.",
             "`docs/research/24_order_book_costs.md`")
 def smaller():
     s2 = J("compare_v1_v2.json")["counts"]["S2"]

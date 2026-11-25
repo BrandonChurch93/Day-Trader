@@ -9,7 +9,7 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 - Find your task in the first table and read only the files it names.
 - The State column says whether a file has been replaced. It does not say whether the owner has approved it or whether a result in it is proven. Many CURRENT files are proposals, first looks or dated audits, and each says so in its own text. What is approved is only what `docs/decisions/` records as an owner decision with a date.
 - Terms, test names and rule names are defined in `docs/GLOSSARY.md`.
-- `tools/check_repo.py` checks that every tracked file is listed here and that paths and config keys named in the map files exist. It does not check that a file's State is right or that a claim is true.
+- `tools/check_repo.py` checks that every tracked file is listed here and that the paths and config keys named in the map files, decisions, playbook and research pages exist. It does not check paths in `docs/quality/`, `audit/`, the raw reports or the plans in `research_rig/`. It does not check that a file's State is right or that a claim is true.
 
 | State | Meaning |
 |---|---|
@@ -43,8 +43,9 @@ What this page is not: the current state of the project. That is `docs/STATUS.md
 | `README.md` | Front page. Points here and to the status page | CURRENT |
 | `.gitignore` | Keeps price files, logs and private data out of the repo | CURRENT |
 | `config/thresholds.yaml` | Every threshold and every owner number, once. Documents name the key and never repeat the value | CURRENT |
-| `tools/check_repo.py` | Checks this index, the paths named in the main pages, the config keys named in documents, the results table in the status page, and the stored outputs against `research_rig/provenance.json`. Run before every commit. With `--builders` it also runs every document builder and fails if a built page changes | CURRENT |
+| `tools/check_repo.py` | Checks this index, the paths named in the map files and in every page under `docs/decisions/`, `docs/playbook/` and `docs/research/`, the config keys named in documents, the results table in the status page, the number tables in the morning list, and the stored outputs against `research_rig/provenance.json`. Run before every commit. With `--builders` it also runs every document builder and fails if a built page changes | CURRENT |
 | `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from the output files | CURRENT |
+| `tools/owner_numbers.py` | Writes the two number tables in the morning list from `config/thresholds.yaml`, so no value on the owner's list is typed | CURRENT |
 
 ## docs/
 
@@ -151,7 +152,7 @@ Working papers.
 |---|---|---|
 | `audit/README.md` | What the folder is, and why its scripts do not run on another machine as they stand | CURRENT |
 | `audit/2026-11-25_auditor_a.md` | First audit of the first rig's code, 18 findings | CURRENT |
-| `audit/2026-11-25_auditor_b.md` | Second audit, of the statistics, 11 findings | CURRENT |
+| `audit/2026-11-25_auditor_b.md` | Second audit, of the statistics, 11 findings. The paths in it are on the research machine. The auditor's own check scripts were kept there and not committed, so they cannot be rerun from the repo | CURRENT |
 | `audit/replay_independent.py`, `audit/diagnostics.py` | Auditor A's own separate replay and checks | CURRENT |
 | `audit/pbo_stability.json` | Auditor B's measurement of how much pass mark 4 moves | CURRENT |
 | `audit/2026-11-25_replay_04_audit.md`, `audit/replay_04_independent.py`, `audit/replay_04_probes.py` | Independent audit of replay 04, with its own rebuild from the raw files, 15 findings | CURRENT |

@@ -16,7 +16,7 @@ One-minute open, high, low, close, volume for SPY and QQQ, regular hours 09:30 t
 
 - A signal worked out from bars up to and including minute m is filled at the open of minute m+1. Sensitivity, reported: filled at the open of minute m+2.
 - A stop is filled at the stop price if the bar opens on the good side of it, else at the bar's open. Sensitivity: every stop pays one more cost.
-- Cost per side at three levels: 0.5 bps, the lower end of `cost_model_bps_per_side_liquid_etf`, and the upper end. The lowest level is reported so the result can be read against `intraday_trend_max_round_trip_bps`. Marks are judged at the two config levels only.
+- Cost per side at three levels: 0.5 bps, the lower end of `cost_model_bps_per_side_liquid_etf`, and the upper end. The lowest level is reported so the result can be read against `intraday_trend_max_round_trip_bps`. Marks are judged at the two config levels only. To settle before this plan is frozen: the 0.5 bps is typed here and is not a key in `config/thresholds.yaml`. It needs a key, with a dated note in `docs/decisions/`, or a line saying why it is not a threshold.
 - Long only. No leverage, no shorting, no 3x funds. The papers' headline numbers use leverage or shorting, so ours will be smaller by design.
 - Every day trading rule is flat at 15:59. Cash earns nothing inside the day.
 - 252 days a year.
@@ -45,7 +45,7 @@ Each rule is compared with holding the fund.
 
 ## Pass marks
 
-The five marks used in the other replays, numbers read from `config/thresholds.yaml`, with the methods of `AMENDMENT_2026-11-25_audit_fixes.md`. Shuffle for these rules: the rule's daily profit or loss is kept and the days it traded are redrawn at random with the same count, 1,000 times, seed 7. Trials counted in the deflated Sharpe ratio: every trial in the ledger on the day this is frozen, plus these 14. This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/STATUS.md`, "Next in the queue").
+The five marks used in the other replays, numbers read from `config/thresholds.yaml`, with the methods of `AMENDMENT_2026-11-25_audit_fixes.md`. Shuffle for these rules: the rule's daily profit or loss is kept and the days it traded are redrawn at random with the same count, 1,000 times, seed 7. Trials counted in the deflated Sharpe ratio: every rule trial in the ledger on the day this is frozen, reruns included, plus these 14. Today that count is the one `TRIAL_LEDGER.md` gives under "Reruns and how they are counted"; the six AI model runs in rows 21 to 26 are scored a different way and are not in it. This draft is not frozen until the owner has settled how mark 4 is to be measured (`docs/STATUS.md`, "Next in the queue").
 
 Reported next to the marks: break-even cost for a round trip in bps, set beside `intraday_trend_max_round_trip_bps`; results year by year; the share of the profit that came from the best 10 days.
 
@@ -53,4 +53,4 @@ A pass means "worth running in the practice account". It does not mean "makes mo
 
 ## Checks that must pass first
 
-`fixtures2.py`; half days end at the right minute; no bar outside regular hours is used; a hand-worked day for N1 including the stop; N6 plus N5 compounds to holding the fund within rounding before costs.
+`fixtures2.py`; a bar check that knows the stock calendar, with its own fixtures, because `rig2.check_bars` rejects bars with no weekends (`research_rig/README.md`); half days end at the right minute; no bar outside regular hours is used; a hand-worked day for N1 including the stop; N6 plus N5 compounds to holding the fund within rounding before costs.

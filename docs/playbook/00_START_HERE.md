@@ -78,3 +78,5 @@ The owner wants a middle risk level: rule-based core strategies plus a small cap
 ## What the owner still has to decide
 
 Capital and loss limits, brokers, spot-only crypto or not, hosting, Perplexity plan and API budget, and model policy. Listed in `docs/decisions/0001-starting-decisions.md`.
+
+> Note added 2026-11-25. The current list of what waits on the owner, with research's recommendation for each, is `docs/decisions/morning_list_2026-11-25.md`. The file above is the first list, from before any test.

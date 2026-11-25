@@ -47,7 +47,7 @@ Side tools:
 | `TRIAL_LEDGER.md` | The count of every rule variant tried and every rerun. A result with no row here does not count |
 | `ledger_count_check.py`, `ledger_count_check.json` | Works out pass mark 3 again from the stored outputs with both reruns counted as trials. Runs no rule and reads no prices |
 | `check_data.py` | Says in a second which raw data sets are present, whether they match the files the stored outputs were made from, and how to get the missing ones |
-| `provenance.py`, `provenance.json` | For each stored output: the command, the code files, the commits that first stored it and last changed it, its fingerprint, and the fingerprint of each raw input file. Built after the fact from git history and the files on the research machine, because the runs did not record it themselves |
+| `provenance.py`, `provenance.json` | For each stored output: the command, the code files, the commits that first stored it and last changed it, its fingerprint, and the fingerprint of each raw input file. The check compares outputs and inputs with their fingerprints. It lists the code files and does not fingerprint them, so it cannot show that the code now in the repo is the code that made an output. Built after the fact from git history and the files on the research machine, because the runs did not record it themselves |
 | `requirements.txt` | The Python package versions the stored outputs were made with |
 | `fetch.py`, `fetch_kraken_archive.py`, `fetch_french.py`, `build_kraken_daily.py`, `kraken_daily_build.json` | Download and prepare public price history into `research_rig/data/` |
 | `data_notes_french.md` | Where the stock index data for replay 05 came from and how each file is laid out |

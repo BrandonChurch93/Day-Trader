@@ -1,46 +1,29 @@
 # Morning list, 2026-11-25
 
-Written by research at the end of the overnight run. Rewritten at 08:36 UTC after the audits and the second set of tests, corrected at 08:51 UTC after three fresh models read the repo cold, rewritten again at 09:29 UTC after three more did, and corrected at 09:44 UTC after a seventh. Status: proposed. Nothing here is an owner decision. The record of the night is `docs/decisions/0005-overnight-research-2026-11-25.md` and `docs/decisions/0006-audit-and-second-night-2026-11-25.md`. The current state, with every result, is `docs/STATUS.md`. How your answers get recorded is in `docs/decisions/README.md`.
+Written by research at the end of the overnight run. Rewritten at 08:36 UTC after the audits and the second set of tests, corrected at 08:51 UTC after three fresh models read the repo cold, rewritten again at 09:29 UTC after three more did, corrected at 09:44 UTC after a seventh, and put in a new order at 09:55 UTC after an eighth. Status: proposed. Nothing here is an owner decision. The record of the night is `docs/decisions/0005-overnight-research-2026-11-25.md` and `docs/decisions/0006-audit-and-second-night-2026-11-25.md`. The current state, with every result, is `docs/STATUS.md`. How your answers get recorded is in `docs/decisions/README.md`.
 
 ## The short version
 
-- No rule has a clean pass, and nothing tested or read supports fast money. The detail is under "Where things stand".
-- Three answers from you unblock the most: the practice account keys (item 1 below), decision 1 (how pass mark 4 is measured), and question 18b (whether any of last night's passes is credited).
+- No rule has a credited pass, and nothing tested or read supports fast money. The detail is under "Where things stand".
+- Four things from you unblock the most. They are under "Start here", next.
 - Research slipped against your rules several times overnight. Each slip is written down under "What research got wrong". Every pass in the table came from a run with one of those slips in it, so research recommends that none is credited (question 18b).
-- The repo now has a map, a status page, a glossary and a checker, and has been read cold by seven fresh models. Every round found real faults. The ones found are fixed and recorded. Expect more.
+- The repo now has a map, a status page, a glossary and a checker, and has been read cold by eight fresh models. Every round found real faults. The ones found are fixed and recorded. Expect more.
+- Plain meanings of the words on this page are at the very end, under "Words used in this list".
 
-## Words used in this list
+## Start here
 
-The full list is `docs/GLOSSARY.md`. The ones this page leans on:
+Four things, one at a time, in this order. The first three unblock the two stock tests and the practice record, which are the things that could change this picture. The fourth settles what last night's numbers are called.
 
-- Replay: a test of a fixed rule on old prices, with pretend trades.
-- Held-back years: the last stretch of the price history, which a rule may be run on once, so the result is not something the rule was fitted to.
-- The five pass marks: the five bars a rule has to clear in a replay. Mark 3 asks whether the result survives counting every rule that was tried. Mark 4 is an estimate of how likely the result is luck from trying many rules.
-- First run and corrected run: the stock test was run twice. The second time was after an audit found that one rule's code did not match its written plan.
-- Basis point: one hundredth of one percent. A cost of 5 basis points a side means $0.50 on a $1,000 order.
-- Trial ledger: the list of every rule tried, written before each run (`research_rig/TRIAL_LEDGER.md`).
-- Fingerprint: a short code worked out from a file. If the file changes at all, the code changes.
-- Fill: what an order really got, in price and size.
-- Order path: the code that sends an order to a broker.
-- Scope call: a choice about what the project is and is not.
-- Liquid funds: funds that trade in large amounts every day, so a small order does not move the price. SPY and QQQ are the two largest, tracking the S&P 500 and the Nasdaq 100.
-- Training cutoff: the last date of the text an AI model learned from.
-- Shadow: a rule running beside the market and writing down what it would have done, with no orders sent.
+1. Practice account keys. Item 1 under "Things only you can do". A yes approves practice trading with pretend money and nothing else.
+2. The data purchase. Item 2 in the same list. $29.99 for one month.
+3. Decision 1: how pass mark 4 is measured. Research recommends the steadier way. A yes changes how new tests are judged and does not move the bar.
+4. Question 18b: which of last night's results are credited. Research recommends no pass is. A yes means no rule is called passed and every figure stays as a measurement.
 
-## Things only you can do
-
-In this order. None uses real money for trading.
-
-1. Open an Alpaca account for practice trading and create practice keys. This approves practice trading only. It does not approve funding the account. Detail is in `docs/research/09_brokers_and_venues.md`.
-2. Buy one month of stock price data. Research recommends the EODHD plan with daily and one-minute prices, $29.99 for the month ([EODHD pricing](https://eodhd.com/pricing/)). It is no longer the only way to get one-minute stock prices (item 6), but it is the only source found for dividend history, which the fund test needs, and it gives a second source to check the first against. A second source changed a result once already. Terms for keeping the files are in `docs/research/10_historical_data_and_practice.md`.
-3. Say whether Kraken's published price files may be the main crypto history. Research recommends yes. Bitstamp's terms are unclear about collecting its prices.
-4. Say whether the order-book sampler may run again on Kraken's public price feed. Kraken's general terms bar automation on its content ([Kraken Global Terms](https://www.kraken.com/legal/global-terms)). Research reads the documented public feed as offered for this use. That is research's reading, not Kraken's word. The sampler stops by itself this morning and will not be restarted without your yes.
-5. Say whether `AGENTS.md` and `docs/quality/00_READ_FIRST.md` may be changed so that they point to `docs/STATUS.md` and `docs/INDEX.md`. `AGENTS.md` says any change to it needs you, and the quality files are yours, so neither was touched. The exact lines are in the next section. Three fresh models read the repo cold on 2026-11-25 and all three named this as the thing most likely to send a new model the wrong way.
-6. Say whether stock prices from this workspace's own built-in price history may be used and kept for tests. Found on 2026-11-25: it returns one-minute prices for SPY back to September 2003 and daily prices for funds back to their first day. It has no dividend history, so on its own it cannot run either stock test exactly as drafted: the fund test needs dividends throughout, and the day trading test needs them for its one night-only rule. Research is collecting it and checking it for gaps, and has run no rule on it. What its terms say about keeping the files is UNKNOWN to research. You work at Perplexity and can ask. Detail is in `docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace".
+Everything else on this page can wait for those four.
 
 ## Where things stand
 
-No rule has a clean pass. Results are in the table in `docs/STATUS.md`, which is written from the output files. In words:
+No rule has a credited pass. Results are in the table in `docs/STATUS.md`, which is written from the output files. In words:
 
 | Test | What happened | Full write-up |
 |---|---|---|
@@ -55,7 +38,18 @@ What the tests agree on, and what real funds built on the same rules also show: 
 
 The one lead worth following on stocks: in the corrected run, which research recommends should not be credited (question 18b below), the rule that holds the three strongest industry groups when the market is above its ten-month average grew nearly as much as holding, with a much smaller largest drop. It carries three cautions, listed in `docs/research/22_replay_05_stock_trend.md`. It has not been tested on anything that can be bought.
 
-What has not been tested at all: funds that can be bought, and day trading SPY and QQQ. The first waits on a data purchase. The second waits on your answer to item 6 above or on the same purchase. Both also wait on decisions 1 and 4.
+What has not been tested at all: funds that can be bought, and day trading SPY and QQQ. The first waits on a data purchase. The second waits on your answer to item 6 below or on the same purchase. Both also wait on decisions 1, 4a and 4b.
+
+## Things only you can do
+
+In this order. None uses real money for trading.
+
+1. Open an Alpaca account for practice trading and create practice keys. This approves practice trading only. It does not approve funding the account. Detail is in `docs/research/09_brokers_and_venues.md`.
+2. Buy one month of stock price data. Research recommends the EODHD plan with daily and one-minute prices, $29.99 for the month ([EODHD pricing](https://eodhd.com/pricing/)). It is no longer the only way to get one-minute stock prices (item 6), but it is the only source found for dividend history, which the fund test needs, and it gives a second source to check the first against. A second source changed a result once already. Terms for keeping the files are in `docs/research/10_historical_data_and_practice.md`.
+3. Say whether Kraken's published price files may be the main crypto history. Research recommends yes. Bitstamp's terms are unclear about collecting its prices.
+4. Say whether the order-book sampler may run again on Kraken's public price feed. Kraken's general terms bar automation on its content ([Kraken Global Terms](https://www.kraken.com/legal/global-terms)). Research reads the documented public feed as offered for this use. That is research's reading, not Kraken's word. As of 09:55 UTC on 2026-11-25 the sampler was still running. It stops by itself at about 16:30 UTC and will not be restarted without your yes. The figures in the repo so far cover its first 34 minutes.
+5. Say whether `AGENTS.md` and `docs/quality/00_READ_FIRST.md` may be changed so that they point to `docs/STATUS.md` and `docs/INDEX.md`. `AGENTS.md` says any change to it needs you, and the quality files are yours, so neither was touched. The exact lines are under "Item 5 in detail" near the end of this page. A yes approves those five wording changes and nothing else. Three fresh models read the repo cold on 2026-11-25 and all three named this as the thing most likely to send a new model the wrong way.
+6. Say whether stock prices from this workspace's own built-in price history may be used and kept for tests. Found on 2026-11-25: it returns one-minute prices for SPY back to September 2003 and daily prices for funds back to their first day. It has no dividend history, so on its own it cannot run either stock test exactly as drafted: the fund test needs dividends throughout, and the day trading test needs them for its one night-only rule. As of 09:55 UTC on 2026-11-25 research was collecting it on the research machine and checking it for gaps. No rule has been run on it, and none of it is in the repo. What its terms say about keeping the files is UNKNOWN to research. You work at Perplexity and can ask. Detail is in `docs/research/10_historical_data_and_practice.md`, "Price history inside the workspace".
 
 ## What research got wrong
 
@@ -63,7 +57,7 @@ For you to know. Each is also in `docs/STATUS.md` under "Known faults and slips"
 
 - Two second runs of tests were reported as reruns but were not written in the trial ledger or counted as trials, which your rule requires. The rows are there now, marked late. Counting them was checked on the stored results and turns no pass into a fail. The closest call is in the "Trial count check" row of the table in `docs/STATUS.md`.
 - The second run of the stock test fixed one rule's code, not the engine. Your rule names the engine only. Research reran before asking you, and for a while its pages gave your rule more widely than you wrote it. They now quote you. Questions 18a and 18b.
-- The rerun of the bitcoin and ether tests carried three changes that were not engine faults: one rule's code, a stricter pass mark, and what holding the coin pays. It also rests on research's reading of "machine check" and "engine", which you were never asked about. Questions 18b and 18c.
+- The rerun of the bitcoin and ether tests was reported as engine fixes only. It carried two changes that were not engine faults: a stricter pass mark, and what holding the coin pays in one of the marks. It also rests on research's reading of "machine check" and "engine", which you were never asked about. Questions 18b and 18c.
 - Stored tests were repeated without your yes: one small script once, and the script behind your screen several times. The first gave the same file. The second made the curves and trade lists on your screen, which nothing checks. Questions 16a and 16b.
 - Results were not saved with their command, code version and input fingerprints when they ran, which your bar asks for. That record was rebuilt afterwards and says what it cannot prove (`research_rig/provenance.json`).
 - Ledger rows for the coin basket test and the first run of the stock test were added after those runs had started. `AGENTS.md` hard rule 8 says the row comes first. Their plans were pushed before. Question 18b.
@@ -71,28 +65,116 @@ For you to know. Each is also in `docs/STATUS.md` under "Known faults and slips"
 
 ## Decisions waiting, one at a time
 
-Research's recommendation is given for each. The order is the order research would take them in. Questions 14 to 20, about scope and about your own rules, follow the table, one block each.
+Research's recommendation is given for each. The numbers are fixed so that other pages can point to them. Decision 1 is one of the four to start with.
 
-| # | Decision | Research recommends | You would be approving | You would not be approving |
-|---|---|---|---|---|
-| 1 | How pass mark 4 is measured | Count ties as half, and measure it over a fixed set of start dates and block counts, so one number does not decide. Detail in `docs/research/16_rig_audit.md` | A steadier way to measure. It would most likely turn the bitcoin passes back to fails. Its effect on the stock rules is UNKNOWN until rerun | Any change to the bar in `backtest_max_pbo` |
-| 2 | How pass mark 3 is measured | Take the spread across every trial counted in the ledger, not only the trials in one plan. In replay 05 the mark screened nothing | A stricter mark 3 in every future plan | Any change to `replay_min_deflated_sharpe` |
-| 3 | Audits | Every replay gets an independent audit by a different model before its result is believed. Tonight's audits changed results twice. Research works this way already | Making that a standing rule for research | |
-| 4a | Test next: replay 06 | Slow trend on funds that can be bought, with the industry rule added on sector funds. Its plan and ledger rows are pushed first. It needs dividend history, which is the data purchase | One research replay, once the data is in hand and decision 1 is made | Any building or any trade. Replay 07 |
-| 4b | Test after that: replay 07 | Day trading SPY and QQQ on one-minute prices. Its plan and ledger rows are pushed first. As drafted, its night-only rule needs dividend history too. On the workspace's own prices alone it would run without that rule, and the plan has to say so before it is frozen | One research replay, once one-minute prices are in hand and decision 1 is made | Any building or any trade |
-| 5 | Watching rules in the practice account | Run two slow rules with pretend money as observation, labelled as not passed: the bitcoin trend rule P1, and the ten-month rule on a total market fund | A forward record that starts the count toward `paper_min_trading_days` and `paper_min_closed_trades` | Calling either a strategy. Real money |
-| 6 | Crypto day trading and wide coin baskets | Drop both. No rule passed in either, at any venue cost | Closing those two lines of work | Dropping crypto altogether |
-| 7 | Interest on idle cash | Credit Treasury bill interest on cash in every replay. Trend rules sit in cash a lot and the crypto replays credit nothing | One rig change with its own plan | |
-| 8 | The three pass marks proposed last night | Keep them | `replay_max_drop_ratio_vs_hold`, `replay_min_deflated_sharpe`, `replay_min_shuffle_percentile` | |
-| 9 | Broker plan | Alpaca individual account for stocks and all practice. Live crypto venue left open | The plan in `docs/research/09_brokers_and_venues.md` | Funding anything |
-| 10 | AI forward test | Run it in the practice account only if you want that question answered, with the rules in `docs/research/11_ai_trader_experiment_design.md` fixed first | A practice-only test | Real money on AI calls |
-| 11 | High-risk share | Fund it only with ideas that pass a replay. First in line: insider buying that is not routine, in listed stocks | The order in `docs/research/25_what_the_evidence_supports.md` | Any penny stock or memecoin purchase |
-| 12 | Open numbers | Yours alone: `live_starting_capital_usd`, `live_max_position_usd`, `live_max_daily_loss_usd`, `live_max_total_loss_usd`, `moonshot_sleeve_share`, `moonshot_max_position_share`, `api_model_spend_cap_usd_month` | Nothing until you set them | |
-| 13 | Who the Builder is and where it runs | Decide after a rule passes in practice, not before | | |
+### 1. How is pass mark 4 measured from now on?
+
+- The issue: pass mark 4, the overfitting estimate, moved from fail to pass with small changes in start date and in the set of rules. One number should not decide.
+- Research recommends: count ties as half, and measure it over a fixed set of start dates and block counts. Detail in `docs/research/16_rig_audit.md`, "Questions for the owner".
+- Why: it is the steadier way, and every later test depends on it.
+- You would be approving: a steadier way to measure, used in every new plan. It would most likely turn the bitcoin results back to fails. Its effect on the stock rules is UNKNOWN until a new test.
+- You would not be approving: any change to the bar itself (`backtest_max_pbo`).
+
+### 2. How is pass mark 3 measured from now on?
+
+- The issue: in the stock test, mark 3 screened nothing, because of how its plan worked out the spread between rules.
+- Research recommends: take the spread across every trial counted in the ledger, not only the trials in one plan.
+- Why: that is what the mark is for.
+- You would be approving: a stricter mark 3 in every future plan.
+- You would not be approving: any change to the bar itself (`replay_min_deflated_sharpe`).
+
+### 3. Does every replay get an independent audit?
+
+- Research recommends: yes. A different model audits the code against the plan before the result is believed.
+- Why: last night's audits changed results twice. Research works this way already.
+- You would be approving: making that a standing rule for research.
+- You would not be approving: any change to a pass mark, or any spending.
+
+### 4a. Test next: replay 06?
+
+- What it is: slow trend rules on funds that can be bought, with the industry rule added on sector funds.
+- Research recommends: yes. Its plan and ledger rows are pushed before it runs.
+- Why: it turns the stock index result into something that could be traded.
+- You would be approving: one research replay, once the data purchase (item 2) is in hand and decision 1 is made.
+- You would not be approving: any building, any trade, or replay 07.
+
+### 4b. Test after that: replay 07?
+
+- What it is: day trading SPY and QQQ on one-minute prices.
+- Research recommends: yes. Its plan and ledger rows are pushed before it runs. Research expects a fail and would measure it.
+- Why: it is the one day trading case not yet tested.
+- One thing to know: as drafted, its night-only rule needs dividend history. On the workspace's own prices alone it would run without that rule, and the plan has to say so before it is frozen.
+- You would be approving: one research replay, once one-minute prices are in hand and decision 1 is made.
+- You would not be approving: any building or any trade.
+
+### 5. Watch two rules in the practice account?
+
+- Research recommends: yes. Run two slow rules with pretend money as observation, labelled as not passed: the bitcoin trend rule P1, and the ten-month rule on a total market fund.
+- Why: the practice account is the one clean test left for rules already run on past prices.
+- You would be approving: a forward record that starts the count toward `paper_min_trading_days` and `paper_min_closed_trades`.
+- You would not be approving: calling either a strategy, or any real money. Neither can pass the practice gate until question 17 is answered.
+
+### 6. Drop crypto day trading and wide coin baskets?
+
+- Research recommends: yes, drop both.
+- Why: no rule passed in either, at any venue cost.
+- You would be approving: closing those two lines of work.
+- You would not be approving: dropping crypto altogether.
+
+### 7. Credit interest on idle cash in every replay?
+
+- Research recommends: yes. Credit Treasury bill interest on cash.
+- Why: trend rules sit in cash a lot, and the crypto replays credit nothing for it.
+- You would be approving: one change to the test rig, with its own written plan, used in new tests.
+- You would not be approving: any change to a pass mark, or running any stored test again.
+
+### 8. Are pass marks 1, 3 and 5 your bars for research replays?
+
+- The issue: research proposed these three bars on the first night and has judged every replay on them. They are marked "proposed" in the config file. The first table under "The numbers" below shows what each asks and its value.
+- Research recommends: keep them as they are.
+- Why: they did their job. Nothing weak got through on them alone.
+- You would be approving: the values shown for marks 1, 3 and 5, as bars for research replays.
+- You would not be approving: marks 2 and 4, which are question 20 and decision 1. Any bar for the practice account or for real money.
+
+### 9. Broker plan
+
+- Research recommends: an Alpaca individual account for stocks and for all practice trading. The live crypto venue is left open.
+- Why: `docs/research/09_brokers_and_venues.md`.
+- You would be approving: the plan in that document.
+- You would not be approving: funding anything.
+
+### 10. Test AI models making the call, going forward?
+
+- Research recommends: not now.
+- Why: no AI system with a live record was found that beat holding, the test costs model usage, and the two rule observations in decision 5 come first. If you want the question answered anyway, it runs in the practice account only, with the rules in `docs/research/11_ai_trader_experiment_design.md` fixed first and your number for `api_model_spend_cap_usd_month` set.
+- You would be approving: leaving the AI test parked.
+- You would not be approving: dropping it for good.
+
+### 11. High-risk share
+
+- Research recommends: fund it only with ideas that pass a replay. First in line: insider buying that is not routine, in listed stocks.
+- Why: `docs/research/25_what_the_evidence_supports.md`.
+- You would be approving: that order of ideas to test.
+- You would not be approving: any penny stock or memecoin purchase.
+
+### 12. Your open numbers
+
+- The issue: seven numbers are yours alone and have no value. The second table under "The numbers" below lists them with research's suggestions.
+- Research recommends: leave them open today.
+- Why: none is needed until a rule has passed in the practice account. The model spending cap is needed sooner only if you say yes to an AI test.
+- You would be approving: nothing.
+- You would not be approving: any value. Nothing may assume one until you set it.
+
+### 13. Who the Builder is and where it runs
+
+- Research recommends: decide after a rule passes in practice, not before.
+- Why: there is nothing to build until then.
+- You would be approving: that this question waits.
+- You would not be approving: any choice of builder, host or software.
 
 ## Questions about scope and about your own rules
 
-These came out of the cold-read tests. Each stands alone. Answer any one without the others.
+These came out of the cold-read tests. Each stands alone. Answer any one without the others. Question 18b is one of the four to start with.
 
 ### 14. Is the product a fixed-rule trading service, with AI beside it for research and review?
 
@@ -146,18 +228,17 @@ These came out of the cold-read tests. Each stands alone. Answer any one without
 
 ### 18b. Which of last night's results are credited?
 
-Four runs are in question. What is wrong with each:
-
-- The rerun of the bitcoin and ether tests after the two code audits (ledger row R1). Most of its changes fixed faults in the shared test code. Three did something else. One changed the code of a single rule, P2, to match its plan (row A12 of `research_rig/AMENDMENT_2026-11-25_audit_fixes.md`). That is the case in 18a. One made pass mark 1 stricter: a rule must also hold up when its orders fill one hour late (row A13). That is tighter, but it is a change to a pass mark after results had been seen. One changed what holding the coin pays, from a flat 5 basis points to the venue's own cost, which is how research reads the plan (row A08). The list of changes was pushed before the rerun. The ledger row was added after it. The hourly part stopped twice on program errors and was started again. Its result: four bitcoin rules clear all five marks on both price histories, at the lowest venue fee only. In the first run none did.
-- The first run of the stock test (ledger rows 43 to 50). Its plan was pushed before the run. Its ledger row was added after the run had started. A short try with 3 shuffles was run before the full run, and rough results were seen. Its result: no rule clears the marks at 2 or 5 basis points a side. Four do at 10.
-- The corrected run of the stock test (ledger row R2). The correction to rule I2 was pushed before the run. The ledger row was added after it. The auditor had already measured what the correction would do, so its effect was known. Its result: five rules clear the marks at every cost level.
-- The coin basket test (ledger rows 51 to 55). Its plan was pushed before the run and its ledger row after. Nothing clears the marks.
-
-- Research recommends: credit no pass from last night. Keep every number as a measurement. Fails stand as fails. Every trial is counted.
-- Why: every pass came from a run that broke a rule. `AGENTS.md` hard rule 8 says the ledger row comes before the run, and that a result without one does not count. Your Never list says no pass mark changes after a result is seen. Research should not be the one to wave those through.
+- The issue: every run that produced a pass last night broke a rule, yours or research's. One line each:
+- Rerun of the bitcoin and ether tests (ledger row R1). Result: four bitcoin rules clear all five marks, at the lowest venue fee only. Problem: besides engine fixes it made pass mark 1 stricter and changed what holding pays in mark 2, after results had been seen. Its ledger row was late.
+- First run of the stock test (ledger rows 43 to 50). Result: no rule clears the marks at the two lower cost levels, four do at the highest. Problem: its ledger row was added after the run started, and a short preview had been looked at.
+- Corrected run of the stock test (ledger row R2). Result: five rules clear the marks at every cost level. Problem: research reran before asking you, the effect of the correction was already known, and the ledger row was late.
+- Coin basket test (ledger rows 51 to 55). Result: nothing clears the marks. Problem: its ledger row was late.
+- Research recommends: credit no pass from last night. Fails stand. Every number stays in the repo as a measurement, and every trial is counted.
+- Why: `AGENTS.md` hard rule 8 says the ledger row comes before the run and that a result without one does not count. Your Never list says no pass mark or cost changes after a result is seen. Research should not be the one to wave those through.
 - What is lost: very little. A pass in a replay only means "worth watching in the practice account". Decision 5 already proposes watching one bitcoin rule and one stock rule there, labelled as not passed. The held-back years are spent for these rules, so the practice account is the one clean test left for them.
 - You would be approving: that no rule is called passed, and that all the figures stay in the repo, labelled by run.
 - You would not be approving: throwing any result away, or dropping these rules as leads.
+- The full account of each run is in `docs/STATUS.md` under "Known faults and slips".
 
 ### 18c. What do "machine check" and "the engine itself" mean in your rerun rule?
 
@@ -183,24 +264,53 @@ Four runs are in question. What is wrong with each:
 - You would be approving: the number you already have in `AGENTS.md`, and nothing else.
 - You would not be approving: any change to its value.
 
+### 21. When the repo review's items are closed, delete the file or keep it?
+
+- The issue: `docs/quality/00_READ_FIRST.md` line 51 says of `docs/quality/05_repo_review_2026-11-24.md`: "Delete it when its items are closed." The repo's map keeps old files and marks them as records, so the two pull in different directions.
+- Research recommends: keep it, marked as a record in `docs/INDEX.md`.
+- Why: a later reader can then see what the review found and that it was dealt with. Nothing reads it by default.
+- You would be approving: a change to that one line of your file, from "Delete it" to "Mark it as a record".
+- You would not be approving: any other change to your quality files. If you say delete, nothing changes and research deletes it when its items are closed.
+
 ## Item 5 in detail
 
-Today `AGENTS.md` wins every conflict and sends the reader to the playbook, which was written before any test. Until you decide, each playbook page opens with a dated note that sends the reader to `docs/STATUS.md`. That works, and it is a patch.
+Today `AGENTS.md` wins every conflict and sends the reader to the playbook, which was written before any test. Until you decide, each playbook page opens with a dated note that sends the reader to `docs/STATUS.md`. The five lines, quoted in full, with the proposed wording. Nothing is removed from any of them.
 
-| File and line | Says now | Research proposes |
-|---|---|---|
-| `AGENTS.md` line 3 | Read this first, then `docs/playbook/00_START_HERE.md` | Read this first, then `docs/STATUS.md`, then `docs/INDEX.md` |
-| `AGENTS.md` line 27 | Load `docs/playbook/` by default | Load `docs/STATUS.md` by default. `docs/playbook/` is background reading from before the tests |
-| `AGENTS.md` line 29 | Open `docs/research/` only when a playbook line points you there | Open `docs/research/` when `docs/STATUS.md` or `docs/INDEX.md` points you there |
-| `AGENTS.md` line 31 | When you learn something, update the playbook line | Update `docs/STATUS.md` in the same commit, and the playbook line if there is one |
-| `docs/quality/00_READ_FIRST.md` line 12 | What the evidence says: `docs/playbook/` wins | Our own test results: `docs/STATUS.md` wins. Reading done before the tests: `docs/playbook/` |
-| `docs/quality/00_READ_FIRST.md` line 51 | Delete `05_repo_review_2026-11-24.md` when its items are closed | Your call. `docs/INDEX.md` keeps old files and marks them RECORD. Say delete or keep |
+- `AGENTS.md` line 3. Now: "Read this first, then `docs/playbook/00_START_HERE.md`." Proposed: "Read this first, then `docs/STATUS.md`, then `docs/INDEX.md`."
+- `AGENTS.md` line 27. Now: "Load `docs/playbook/` by default. It is short on purpose." Proposed: "Load `docs/STATUS.md` by default. `docs/playbook/` is background reading from before the tests. It is short on purpose."
+- `AGENTS.md` line 29. Now: "Open `docs/research/` only to check a source or when a playbook line points you there. Do not paste research files into prompts wholesale." Proposed: "Open `docs/research/` only to check a source or when `docs/STATUS.md`, `docs/INDEX.md` or a playbook line points you there. Do not paste research files into prompts wholesale."
+- `AGENTS.md` line 31. Now: "When you learn something that changes a rule or number, update the playbook line, keep its evidence label honest, and add a dated note in `docs/decisions/`." Proposed: "When you learn something that changes a rule or number, update `docs/STATUS.md` and the playbook line if there is one, keep its evidence label honest, and add a dated note in `docs/decisions/`."
+- `docs/quality/00_READ_FIRST.md` line 12, a table row. Now: "What the evidence says, topic by topic" with `docs/playbook/` as the file that wins. Proposed: two rows. "What our own tests found, and where the project stands" with `docs/STATUS.md`. "What the reading said before the tests, topic by topic" with `docs/playbook/`.
 
-- You would be approving: these six wording changes and nothing else.
+- You would be approving: these five wording changes and nothing else.
 - You would not be approving: any change to a hard rule, a number or a limit.
-- The config key that repeats hard rule 9 is a separate question, number 20 above.
+- Two related questions are separate: the config key that repeats hard rule 9 is question 20, and the repo review file is question 21.
 
 Not needed yet: written permission from five data sources (Cboe, FINRA, Kraken Futures, Kalshi, Polymarket) before their feeds may be collected. The collector has them switched off. Research recommends leaving them off until a test needs one (`docs/research/19_information_feeds.md`).
+
+## The numbers
+
+Both tables are written by `tools/owner_numbers.py` from `config/thresholds.yaml`. Nothing in them is typed. The first belongs to decision 8, decision 1 and question 20. The second belongs to decision 12.
+
+<!-- numbers:start (written by tools/owner_numbers.py from config/thresholds.yaml, do not edit by hand) -->
+| Pass mark | What it asks | Value now | Key | Status in the config file |
+|---|---|---|---|---|
+| 1 | In the held-back years the rule must have a better Sharpe ratio than holding, and its largest drop may be at most this share of holding's largest drop | 0.6 | `replay_max_drop_ratio_vs_hold` | proposed |
+| 2 | The rule must stay ahead of holding up to a cost that is this many times the modeled cost | 2 | `backtest_min_breakeven_cost_multiple` | proposed |
+| 3 | The deflated Sharpe ratio, which marks a result down for every rule that was tried, must be at least this | 0.95 | `replay_min_deflated_sharpe` | proposed |
+| 4 | The overfitting estimate must be below this | 0.25 | `backtest_max_pbo` | proposed |
+| 5 | The rule must beat this share of copies of itself with its in and out spells put in random order | 0.95 | `replay_min_shuffle_percentile` | proposed |
+
+| What the number is | Research's suggestion, not a value in use | Key |
+|---|---|---|
+| Money in the live account at the start, in dollars | 1000 | `live_starting_capital_usd` |
+| The most held in one position, in dollars | 100 | `live_max_position_usd` |
+| The most the account may lose in one day before it stops for the day, in dollars | 25 | `live_max_daily_loss_usd` |
+| The most the account may lose in total before it stops and waits for you, in dollars | 200 | `live_max_total_loss_usd` |
+| Share of the account set aside for high-risk ideas | 0.10 | `moonshot_sleeve_share` |
+| The most of the account in any one high-risk idea | 0.02 | `moonshot_max_position_share` |
+| The most the running service may spend on AI model calls in a month, in dollars | 25 | `api_model_spend_cap_usd_month` |
+<!-- numbers:end -->
 
 ## What research would say to a partner
 
@@ -208,13 +318,20 @@ Not needed yet: written permission from five data sources (Cboe, FINRA, Kraken F
 - What the evidence supports is slower: rules that cut the worst drop, interest on idle cash, and a short list of narrow ideas that have a reason and have not been tested yet.
 - The honest next month is cheap: one data purchase, a practice account, two stock tests, and two rules watched with pretend money. If those say no, the answer is no, and research will say so.
 
-## Where research would start
+## Words used in this list
 
-One at a time, in this order:
+The full list is `docs/GLOSSARY.md`. The ones this page leans on:
 
-1. Item 1 of "Things only you can do": the practice account keys.
-2. Item 2: the data purchase.
-3. Decision 1: how pass mark 4 is measured.
-4. Question 18b: whether any of last night's passes is credited.
-
-The first three unblock the two stock tests and the practice record, which are the things that could change this picture. The fourth settles what last night's numbers are called.
+- Replay: a test of a fixed rule on old prices, with pretend trades.
+- Held-back years: the last stretch of the price history, which a rule may be run on once, so the result is not something the rule was fitted to.
+- The five pass marks: the five bars a rule has to clear in a replay. Mark 3 asks whether the result survives counting every rule that was tried. Mark 4 is an estimate of how likely the result is luck from trying many rules.
+- First run and corrected run: the stock test was run twice. The second time was after an audit found that one rule's code did not match its written plan.
+- Basis point: one hundredth of one percent. A cost of 5 basis points a side means $0.50 on a $1,000 order.
+- Trial ledger: the list of every rule tried, written before each run (`research_rig/TRIAL_LEDGER.md`).
+- Fingerprint: a short code worked out from a file. If the file changes at all, the code changes.
+- Fill: what an order really got, in price and size.
+- Order path: the code that sends an order to a broker.
+- Scope call: a choice about what the project is and is not.
+- Liquid funds: funds that trade in large amounts every day, so a small order does not move the price. SPY and QQQ are the two largest, tracking the S&P 500 and the Nasdaq 100.
+- Training cutoff: the last date of the text an AI model learned from.
+- Shadow: a rule running beside the market and writing down what it would have done, with no orders sent.

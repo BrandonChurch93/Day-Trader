@@ -70,7 +70,7 @@ NOTES = {
     "results_05b.json": "Corrected run, ledger row R2. The fault was in the rule code, not in the engine.",
     "i2_2020_note.json": "Multiplies up each industry group's daily returns for 2020, a held-back year. No rule, no pass mark, not a trial. Run once more after its data path line changed in commit c7956c4, so the second run was not of unchanged code; output identical; not counted. Research keeps it on the do-not-run list all the same (README.md, \"Held-back scripts\").",
     "venue_price_gap.json": "Written by build_doc16.py only when both price files are present. Otherwise the stored file is read.",
-    "books_summary.json": "The sampler was still writing data/books/books.csv when this record was first taken. Its fingerprint is added when sampling ends.",
+    "books_summary.json": "As of 2026-11-25 09:55 UTC the sampler was still writing data/books/books.csv, and stops by itself at about 16:30 UTC. The summary stored here covers its first 34 minutes. The input fingerprint is added with --with-books once sampling ends, or as an interim one that says so.",
     "results_01.json": "v1 engine. Kept as the record. Superseded by results_v2.json.",
     "pilot/decisions.jsonl": "Pilot 02. The server gave each model one day of prices at a time, 2026-06-30 to 2026-11-23, and logged its call. Run once. The models' replies cannot be made again from this record.",
     "kraken_daily_build.json": "Compares Kraken and Bitstamp daily closes while building the Kraken daily files. No rule.",
