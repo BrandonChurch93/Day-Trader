@@ -815,7 +815,7 @@ replay_16_plan:
   source: research_rig/PREREG_16_hot_five_hedged_DRAFT.md
 
 replay_17_plan:
-  value: {hot_n: 5, rise_days: 7, dip_pct: 5, dip_lookback_hours: 24, take_pct: 5, stop_pct: 5, max_hold_hours: 24, cost_bps_per_side: 10, other_costs_bps: [5, 20], shown_leverage: 3, forced_close_rise_pct: 30, random_draws: 200, seed: 17, min_years_above: 5, min_rising_years: 2, min_trades_per_year: 10, max_flagged_share_pct: 5}
+  value: {hot_n: 5, rise_days: 7, dip_pct: 5, dip_lookback_hours: 24, take_pct: 5, stop_pct: 5, max_hold_hours: 24, cost_bps_per_side: 10, other_costs_bps: [5, 20], us_costs_bps: [38, 80], shown_leverage: 3, forced_close_rise_pct: 30, random_draws: 200, seed: 17, min_years_above: 5, min_rising_years: 2, min_trades_per_year: 10, max_flagged_share_pct: 5}
   status: builder
   note: Draft plan 17, written 2026-11-25 19.52 UTC, the trigger of plan 13's rule B taken short on perpetual futures, on the held-back coin list of plan 16. Same round figures as plan 13, not tuned. Dates, lists and funding rules come from replay_16_plan. Draft until frozen.
   source: research_rig/PREREG_17_short_the_peak_DRAFT.md

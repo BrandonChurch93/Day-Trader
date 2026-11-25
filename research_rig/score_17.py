@@ -1,6 +1,7 @@
 """One-shot Replay 17. The selftest only uses invented bars."""
 import argparse
 import json
+import math
 import sys
 
 try:
@@ -20,7 +21,7 @@ CODE = A.CODE+("common_17.py","score_17.py","report_17.py","test_17.py")
 
 def validate(p,p13,p16):
     expected = {"hot_n","rise_days","dip_pct","dip_lookback_hours","take_pct","stop_pct",
-                "max_hold_hours","cost_bps_per_side","other_costs_bps","shown_leverage",
+                "max_hold_hours","cost_bps_per_side","other_costs_bps","us_costs_bps","shown_leverage",
                 "forced_close_rise_pct","random_draws","seed","min_years_above","min_rising_years",
                 "min_trades_per_year","max_flagged_share_pct"}
     if p.keys()!=expected:
@@ -33,6 +34,10 @@ def validate(p,p13,p16):
         not (len(p["other_costs_bps"])==2 and
              0<=min(p["other_costs_bps"])<p["cost_bps_per_side"]<max(p["other_costs_bps"])<10000)):
         raise S.Refused("invalid Replay 17 parameters or changed Rule B trigger")
+    fees = p["us_costs_bps"]
+    if (not isinstance(fees,list) or len(fees)!=2 or
+        not all(type(x) in (int,float) and p["cost_bps_per_side"]<x<math.inf for x in fees)):
+        raise S.Refused("Replay 17 US fees must be a list of two numbers above the judged cost")
     A.validate(p16,p13)
 
 

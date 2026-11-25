@@ -92,6 +92,18 @@ def render(result):
                   "and received US listings. Some were already in Replay 13's viewed list. "
                   "Binance perpetual prices stand in for the US contracts; fees and funding differ. "
                   "This is not a result for US execution or a preregistered mark."]
+    if fees := result.get("shown_us_entry_tier_fees"):
+        lines += ["","## Rule S 1x, shown only, US entry-tier fees","",
+                  "| Year | List | Tier 3 taker fee per side | Tier 3 net return | Tier 1 taker fee per side | Tier 1 net return |",
+                  "|---|---|---:|---:|---:|---:|"]
+        for sample,label in (("held","Held-back"),("viewed","Viewed"),("us_roster","US-shortable roster")):
+            for year,row in fees.get(sample,{}).items():
+                t3,t1 = (row[k] for k in ("tier_3_taker","tier_1_taker"))
+                lines.append(f"| {year} | {label} | {t3['bps_per_side']:g} bps | {pct(t3['end'])} | "
+                             f"{t1['bps_per_side']:g} bps | {pct(t1['end'])} |")
+        lines += ["","STATED. These taker-fee sensitivities change only the fee assumption. "
+                  "Prices and funding are still Binance perpetual proxies. The table does not "
+                  "measure US execution or affect a preregistered mark."]
     lines += identity_counts_text(result)
     lines += ["","## Interpretation","",
               "STATED. The rank slice is held back, not an independent market. Contract liveness "

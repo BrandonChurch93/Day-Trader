@@ -154,6 +154,7 @@ MEASURED before the freeze on made-up worlds through this plan's own engine (20 
 
 - The short basket is made of larger coins than the held-back long side, so the book also carries "small coins against large coins". The paper lean figure shows how much of the result that is.
 - Small coins cost more to trade than the judged spot cost. The dearer cost level is shown.
+- The cost levels here are those of a large exchange. A new US account pays far more where it can trade these coins (0.80% for an order that takes the price on Kraken spot and margin, read from the venue's fee page on 2026-11-25), which is above the dearer level here. A pass here is a pass at exchange costs, not at those.
 - Hourly bars cannot show a squeeze inside the hour. A real short can be closed out at a worse price than the forced-close rule charges.
 - One venue. Coins that never had a pair there are missing, and so are contracts that venue never listed.
 - A bar on file is not proof that an order could be filled, least of all in a contract's last days.

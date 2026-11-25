@@ -43,6 +43,10 @@ class Replay17Test(unittest.TestCase):
         p = S.F.F.yaml.safe_load((S.F.F.ROOT/"config/thresholds.yaml").read_bytes())["replay_17_plan"]["value"]
         S.validate(p,p13,p16)
         self.assertEqual(p["cost_bps_per_side"],10)
+        self.assertEqual(p["us_costs_bps"],[38,80])
+        for bad in (None,(38,80),[38],["38",80],[True,80],[10,80],[38,float("inf")]):
+            with self.subTest(fees=bad),self.assertRaisesRegex(S.S.Refused,"US fees"):
+                S.validate(p|{"us_costs_bps":bad},p13,p16)
 
     def test_contract_signal_does_not_cross_identity_or_use_mark(self):
         t = fut({-25:(90,90,90),-3:(120,120,120),0:(80,80,80)})
@@ -276,6 +280,41 @@ class Replay17Test(unittest.TestCase):
             tape.covered = ()
             observed = R.shown_us_short(roster,spot,tapes,cfg,identity)["2020"]
             self.assertEqual(observed,got)
+
+    def test_shown_us_fees_lower_each_net_on_same_single_trade_gross(self):
+        cfg = settings(hot_n=1,cost_bps_per_side=10,other_costs_bps=[5,20],us_costs_bps=[38,80],
+                       shown_leverage=3,random_draws=3,seed=17,min_rising_years=1,
+                       min_trades_per_year=1,max_flagged_share_pct=100,min_years_above=1)
+        roster = [{"id":X.coin,"symbol":"TEST"}]
+        snapshots = {label:[{"known_at":T,"kept":roster}] for label in ("held","viewed")}
+        spot = {X.pair:C.Series({ts(i):C.Bar(100,100,100) for i in range(-30,169)})}
+        tapes = {X.pair:fut({-25:(90,90,90),-3:(120,120,120),0:(100,100,94),1:(90,100,100)},
+                           payments={-8:0,0:0,1:.01})}
+        with patch.object(C,"year_windows",return_value=[(2020,T,ts(8))]):
+            result = R.replay(snapshots,spot,tapes,cfg,cfg,cfg,us_roster=roster)
+            old = R.replay(snapshots,spot,tapes,{k:v for k,v in cfg.items() if k!="us_costs_bps"},
+                           cfg,cfg,us_roster=roster)
+        fees = result["shown_us_entry_tier_fees"]
+        self.assertEqual({k:v for k,v in result.items() if k!="shown_us_entry_tier_fees"},old)
+        self.assertEqual(set(fees),{"held","viewed","us_roster"})
+        for label,years in fees.items():
+            t3,t1 = (years["2020"][k] for k in ("tier_3_taker","tier_1_taker"))
+            judged = (old["shown_us_shortable"]["2020"] if label=="us_roster"
+                      else old["years"]["2020"][label]["swing"]["judged"])
+            self.assertEqual([judged["trades"],t3["trades"],t1["trades"]],[1,1,1])
+            self.assertLess(t1["end"],t3["end"])
+            self.assertLess(t3["end"],judged["end"])
+            self.assertGreater(t1["fees"],t3["fees"])
+            for key in ("price","funding","forced_adjustment"):
+                self.assertEqual(t1[key],t3[key])
+                self.assertEqual(t3[key],judged[key])
+            self.assertNotEqual(t1["price"],0)
+            self.assertNotEqual(t1["funding"],0)
+        report = P.render(result|{"cutoff_utc":"2019-01-14T00:00:00+00:00",
+                                  "last_complete_funding_week_monday_utc":"2019-01-07"})
+        self.assertIn("shown only, US entry-tier fees",report)
+        for name in ("Held-back","Viewed","US-shortable roster"):
+            self.assertIn(f"| 2020 | {name} | 38 bps |",report)
 
     def test_roster_pin_uses_measured_only_and_drops_four(self):
         import json

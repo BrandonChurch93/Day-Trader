@@ -28,6 +28,7 @@ Hot five: each Monday 00:00 UTC, the `replay_17_plan.hot_n` listed coins with th
 ## Costs
 
 - `replay_17_plan.cost_bps_per_side` a side on the futures, judged. Shown at each of `replay_17_plan.other_costs_bps`.
+- Shown only, not a mark: the 1x rule at each of `replay_17_plan.us_costs_bps` a side, for every list. These are the fees for an order that takes the price on Kraken spot and US margin, at the $10,000 tier and at the entry tier, read from the venue's fee page on 2026-11-25. Added before the freeze because the judged cost is that of a large futures exchange, far below what a new US account pays where it can short these coins today. They leave out that venue's wider spread and its margin fees, so the real figure is worse still.
 - Funding: every recorded payment while a short is open, by plan 16's funding rules. A short receives a positive rate and pays a negative one. Reported apart from the price gain.
 
 ## Yardsticks
@@ -134,6 +135,7 @@ MEASURED before the freeze on made-up worlds through this plan's own engine (20 
 
 - Hourly bars. A stop at 5% is checked on the close and filled at the next open; a real stop on a fast coin can fill far worse in a squeeze, and a short's loss has no ceiling.
 - A bar on file is not proof an order could be filled, and small contracts are thin. The dearer cost level is shown.
+- A pass here is a pass at the costs of a large futures exchange. Whether it holds at the fees of a US account is read from the two shown-only fee levels and the US roster figure, not from the marks.
 - One venue, and only coins it listed a contract for. Coins that were hot and had no contract are not in the test, and those may be the ones he traded.
 - A fixed 5% is not his eye for where a fall stalls.
 - The idea was chosen after seeing the buying side fail on a list that moves with this one.

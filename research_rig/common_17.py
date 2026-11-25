@@ -278,7 +278,22 @@ def judge(years,p,level):
             "marks":marks,"finding":"supported" if all(marks) else "not supported"}
 
 
-def shown_us_short(roster,spot,tapes,p,identity):
+def us_fee_accounts(p):
+    return {label:(bps,Accounts(1)) for label,bps in
+            zip(("tier_3_taker","tier_1_taker"),sorted(p.get("us_costs_bps",())))}
+
+
+def add_us_fee_parts(accounts,grids,pool,t,end,p,groups,n,carried):
+    for bps,account in accounts.values():
+        parts = [swing(g,a,t,end,p,bps/10000) for g,a in zip(grids,pool)]
+        account.add(parts,groups,n,carried)
+
+
+def us_fee_rows(accounts):
+    return {label:account.row()|{"bps_per_side":bps} for label,(bps,account) in accounts.items()}
+
+
+def shown_us_short(roster,spot,tapes,p,identity,fee_rows=None):
     """One descriptive 1x Rule S series at judged costs, identical rank clock."""
     n = p["hot_n"]
     fee = p["cost_bps_per_side"]/10000
@@ -286,6 +301,7 @@ def shown_us_short(roster,spot,tapes,p,identity):
     years = {}
     for year,start,last in C.year_windows(p):
         account = Accounts(1)
+        fee_accounts = us_fee_accounts(p) if fee_rows is not None else {}
         rankable = hot_slots = live_slots = 0
         for t in range(start,last,C.WEEK):
             end = min(t+C.WEEK,last)
@@ -301,10 +317,15 @@ def shown_us_short(roster,spot,tapes,p,identity):
             slots = [idx.get(a.coin,len(pool)) for a in hot]
             slots += [len(pool)]*(n-len(slots))
             live_slots += len(pool)
-            parts = [swing(prepare(tapes[a.pair],a,t,end,p),a,t,end,p,fee) for a in pool]
-            account.add(parts,np.array([slots],dtype=int),n,False)
+            grids = [prepare(tapes[a.pair],a,t,end,p) for a in pool]
+            parts = [swing(g,a,t,end,p,fee) for g,a in zip(grids,pool)]
+            groups = np.array([slots],dtype=int)
+            account.add(parts,groups,n,False)
+            add_us_fee_parts(fee_accounts,grids,pool,t,end,p,groups,n,False)
         years[str(year)] = account.row() | {"rankable_coin_weeks":rankable,
                                            "hot_slots":hot_slots,"live_hot_slots":live_slots}
+        if fee_rows is not None:
+            fee_rows[str(year)] = us_fee_rows(fee_accounts)
     return years
 
 
@@ -315,11 +336,13 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None,us_roster=None):
     levels["no_cost_no_funding"] = 0
     rng = {s:random.Random(p["seed"]) for s in snapshots}
     years = {}
+    us_fees = {sample:{} for sample in snapshots} if p.get("us_costs_bps") else {}
     for year,start,last in C.year_windows(params):
         year_result = {}
         for sample,snaps in snapshots.items():
             normal = {k:Accounts(1+p["random_draws"] if k=="judged" else 1) for k in levels}
             extras = {k:Accounts(1) for k in ("levered","bounce")}
+            fee_accounts = us_fee_accounts(p)
             holds = {k:1. for k in levels}
             all_short = 1.
             dead_holds = {k:[] for k in levels}
@@ -364,6 +387,9 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None,us_roster=None):
                 for key,kw in (("levered",{"lev":p["shown_leverage"]}),("bounce",{"bounce":True})):
                     parts = [swing(g,a,t,end,params,fee,**kw) for g,a in zip(grids,pool)]
                     extras[key].add(parts,groups[:1],n,carried)
+                add_us_fee_parts(fee_accounts,grids,pool,t,end,params,groups[:1],n,carried)
+            if us_fees:
+                us_fees[sample][str(year)] = us_fee_rows(fee_accounts)
             year_result[sample] = {"swing":{k:a.row() for k,a in normal.items()},
                                    "shown":{k:a.row() for k,a in extras.items()},
                                    "hot_hold":holds,"all_short":all_short,
@@ -380,5 +406,8 @@ def replay(snapshots,spot,tapes,p,p16,p13,identity=None,us_roster=None):
             "failed_on_costs":all(judgments["no_cost_no_funding"]["marks"]) and
             not all(judgments["judged"]["marks"])}
     if us_roster is not None:
-        result["shown_us_shortable"] = shown_us_short(us_roster,spot,tapes,params,identity)
+        us_rows = us_fees.setdefault("us_roster",{}) if us_fees else None
+        result["shown_us_shortable"] = shown_us_short(us_roster,spot,tapes,params,identity,us_rows)
+    if us_fees:
+        result["shown_us_entry_tier_fees"] = us_fees
     return result
