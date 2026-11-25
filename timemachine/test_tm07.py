@@ -249,6 +249,25 @@ class DeskTest(unittest.TestCase):
         self.assertTrue(D.available(clean,T))
         self.assertFalse(D.available(dict(clean,future_hint=109),T))
 
+    def test_reaudit_sol_r04_signed_attention_must_match_its_own_clock(self):
+        spec = world()
+        for name,end in (("late",T+3600),("ok",T)):
+            e = dict(id=name,symbol=A,kind="attention",published=T,known_at=T,period_end=T,licensed=True,
+                     vintage="original",value={"count":7,"period_end":end})
+            spec["evidence"][0].append(e)
+            spec["vendor_proofs"][name] = dict(row_hash=D.digest(e),version_hash=D.digest(e["value"]),
+                                               version_record="toy snapshot",licensed=True,published=T,known_at=T)
+        session = self.create("scout",spec=spec)
+        for role in D.SCOUTS:
+            packet,key = info(session,role)
+            self.assertNotIn("late",{e["id"] for e in packet["evidence"]})
+            self.assertIn("ok",{e["id"] for e in packet["evidence"]})
+            with self.assertRaises(ValueError):
+                session.handle(role,"notes",dict(wake_key=key,notes=[dict(symbol=A,text="Future.",evidence_ids=["late"])]))
+        with session.tx() as (con,_):
+            drops, = con.execute("SELECT data FROM journal WHERE kind='evidence_drops'").fetchall()
+        self.assertEqual(D.json.loads(drops[0])["attention"],2)
+
     def test_b02_immediate_cannot_size_from_a_later_open(self):
         def execute(later):
             spec = world()

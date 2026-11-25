@@ -1,4 +1,5 @@
 """TM07 protocol. An operator supplies frozen local inputs; nothing fetches or calls a model."""
+from collections import Counter
 from contextlib import closing, contextmanager
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
@@ -135,17 +136,36 @@ def available(e, wake, proofs=None):
         return not (e.keys()-TYPED_ROW_FIELDS) and typed_price(value,published)
     if kind not in ("news","attention") or not isinstance(value,dict):
         return False
+    if e.keys()-(TYPED_ROW_FIELDS|({"period_end"} if kind == "attention" else {"primary","origins"})):
+        return False
+    if kind == "attention":
+        if (value.keys()-{"count","period_start","period_end","published_at","observed_at"}
+                or not orders.number(value.get("count")) or value["count"] < 0
+                or type(value.get("period_end")) is not int or value["period_end"] != e.get("period_end")
+                or value["period_end"] > published
+                or "period_start" in value and (type(value["period_start"]) is not int
+                                               or value["period_start"] > value["period_end"])):
+            return False
+    elif (value.keys()-{"headline","published_at","observed_at"} or not isinstance(value.get("headline"),str)
+          or not value["headline"].strip()):
+        return False
+    if ("published_at" in value and (type(value["published_at"]) is not int or value["published_at"] != published)
+            or "observed_at" in value and (type(value["observed_at"]) is not int or not published <= value["observed_at"] <= known)):
+        return False
     proof = (proofs or {}).get(e.get("id"),{})
     if (proof.get("row_hash") != digest(e) or proof.get("version_hash") != digest(value)
             or proof.get("licensed") is not True or not proof.get("version_record")
             or proof.get("published") != published or proof.get("known_at") != known):
         return False
-    if kind == "attention":
-        return type(e.get("period_end")) is int and e["period_end"] <= published
     confirmations = proof.get("confirmations") or []
     if any(not isinstance(x,dict) or not x.get("group") or not x.get("version_record") or not x.get("version_hash")
-           or type(x.get("known_at")) is not int or x["known_at"] > known for x in confirmations):
+           or x.keys()-{"group","primary","known_at","published_at","version_record","version_hash"}
+           or type(x.get("known_at")) is not int or x["known_at"] > known
+           or "published_at" in x and (type(x["published_at"]) is not int or x["published_at"] > x["known_at"])
+           for x in confirmations):
         return False
+    if kind == "attention":
+        return True
     return any(x.get("primary") is True for x in confirmations) or len({x["group"] for x in confirmations}) >= 2
 
 
@@ -212,7 +232,7 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
             bar = tape.fill_bar(s, wall(t), wall(t + 3600))
             fills[s] = [P.iso(bar["t"]), bar["o"]] if bar else None
         rows.append(dict(marks=desk_marks(tape, priced, t), fills=fills))
-    evidence = []
+    evidence, dropped = [], []
     for t in wakes:
         w = wall(t)
         packet = []
@@ -233,12 +253,18 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
                     packet.append(dict(id=f"bar:{size}:{stamp}:{s}", symbol=s, kind="bars", published=stamp+size,
                                        known_at=stamp+size, period_end=stamp+size, vintage="original", licensed=True,
                                        packet=True, value=dict(t=stamp, timeframe=tf, **{k: bar.get(k) for k in "ohlcv"})))
-        packet += [e for e in evidence_by_wake.get(str(t), []) if e.get("kind") in ("news", "attention")
-                   and available(e,t,vendor_proofs)]
+        rejected = Counter()
+        for e in evidence_by_wake.get(str(t),[]):
+            kind = e.get("kind")
+            if kind in ("news","attention") and available(e,t,vendor_proofs):
+                packet.append(e)
+            else:
+                rejected[kind if kind in ("news","attention") else "other"] += 1
+        dropped.append(dict(rejected))
         evidence.append(packet)
     return dict(wakes=wakes, end=b, symbols=symbols, watch=watch, benchmark="BTC/USD", opening={},
                 rows=rows, minutes=list(mins), end_marks=desk_marks(tape, priced, b),
-                evidence=evidence, cfg=cfg, params=pp, vendor_proofs=vendor_proofs or {},
+                evidence=evidence, evidence_drops=dropped, cfg=cfg, params=pp, vendor_proofs=vendor_proofs or {},
                 gross=float(cfg["tm06_plan"]["swing_max_gross"]),runner_id=runner_id)
 
 
@@ -402,10 +428,19 @@ class DeskSession:
         issued = st["issued"]
         if role not in issued:
             issued[role] = secrets.token_hex(24)
+        pool = self.evidence(k)
+        if not con.execute("SELECT 1 FROM journal WHERE wake=? AND kind='evidence_drops'",(at,)).fetchone():
+            prior = self.spec.get("evidence_drops")
+            dropped = Counter(prior[k] if prior else {})
+            for e in self.spec["evidence"][k]:
+                if pool.get(e.get("id")) != e:
+                    kind = e.get("kind")
+                    dropped[kind if kind in ("price","bars","news","attention") else "other"] += 1
+            self.log(con,at,"operator","evidence_drops",dict(dropped))
         result = dict(session=self.sid, role=role, utc=at, step=k+1, total=len(self.spec["wakes"]), wake_key=issued[role],
                       tradable=self.spec["symbols"])
         if role in SCOUTS or self.arm == "A":
-            result["evidence"] = self.raw(self.evidence(k), at)
+            result["evidence"] = self.raw(pool, at)
             result["watch"] = self.spec["watch"]
         if role == "boss":
             marks = self.spec["rows"][k]["marks"]
