@@ -1,6 +1,6 @@
 # Pre-registration 14 (draft): plain momentum on large stocks, held a month at a time
 
-Status: DRAFT written 2026-11-25 18:55 UTC by the builder, before any price was collected for it. It becomes final when the code has been checked by a second model and this line is changed to "frozen" with the time. Ledger rows 146 and 147 in `research_rig/TRIAL_LEDGER.md`. Pretend trades on past prices. No AI model takes part.
+Status: frozen 2026-11-25 22:23 UTC. Written 2026-11-25 18:55 UTC by the builder, before any price was collected for it. Two other models checked the code and re-checked the fixes before this line was set; nothing in this file changes after it. Ledger rows 146 and 147 in `research_rig/TRIAL_LEDGER.md`. Pretend trades on past prices. No AI model takes part.
 
 ## The claim
 
@@ -101,7 +101,10 @@ Each flag is a row whose file differs from what the feed returns for that ticker
 
 Filled in at the freeze from `python3 research_rig/score_14.py --pins`. The run refuses unless each matches.
 
-PINS_GO_HERE
+- members_sha256: b41774f515c940798412cdb77350d41d026d6e61dd91817e819f618a77c6c599
+- bars_manifest_sha256: 132acf1bb314d31c2f5b612b248f77e437f23108a7d53ea9b093ce500b1b91ec
+- code_commit: 1c8df7df7fa55f08d4c00300da409667e33ede3e
+- config_sha256: a69c3d5a738ca00bf2d5e392c9628e6542c5187bc94086d95de169851517c49a
 
 ## How this can fool us
 
