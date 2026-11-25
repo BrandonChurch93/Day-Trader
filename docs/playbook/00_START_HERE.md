@@ -65,6 +65,10 @@ The three reports suggested different paper-trading lengths (4 to 8 weeks, 60 to
 
 Details: `04_brokers_data_rules.md`.
 
+## Risk posture and historical testing
+
+The owner wants a middle risk level: rule-based core strategies plus a small capped sleeve for moonshots that each carry a written thesis. Historical data is used for all rule-based testing, and for model comparisons only on dates after each model's training cutoff. Details: `docs/decisions/0002-historical-testing-and-risk-posture.md`.
+
 ## What the owner still has to decide
 
 Capital and loss limits, brokers, spot-only crypto or not, hosting, Perplexity plan and API budget, and model policy. Listed in `docs/decisions/0001-starting-decisions.md`.
