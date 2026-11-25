@@ -47,6 +47,22 @@ def available(e, wake):
                  or (isinstance(e.get("origins"), list) and len(set(e["origins"])) >= 2)))
 
 
+def mark_as_of(tape, symbol, wake):
+    """Latest completed crypto close, with the finer bar winning a tie."""
+    candidates = []
+    for tf, seconds in (("1Min", 60), ("30Min", 1800), ("1Hour", 3600), ("1Day", 86400)):
+        row = tape._conn().execute(
+            "SELECT t,c FROM bars WHERE symbol=? AND tf=? AND t<=? ORDER BY t DESC LIMIT 1",
+            (symbol, tf, wake-seconds)).fetchone()
+        if row and orders.number(row[1]) and row[1] > 0:
+            candidates.append((row[0]+seconds, -seconds, row[1]))
+    return max(candidates)[-1] if candidates else None
+
+
+def desk_marks(tape, symbols, wake):
+    return {s:m for s in symbols if (m := mark_as_of(tape, s, wake)) is not None}
+
+
 def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake):
     """Builder helper only. Reads a caller-supplied tape and separately vetted existing rows."""
     a, b = epoch(start), epoch(end)
@@ -55,17 +71,24 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake):
     priced = list(dict.fromkeys(symbols + ["BTC/USD"]))
     pp = tm06.fast_params(priced, cfg, tape, wall(a), wall(b))
     mins = P.perp_minutes(tape, priced, wall(a), wall(b))
-    rows = [W.fill_row(tape, "crypto", priced, wall(t), wall(t + 3600)) for t in wakes]
+    rows = []
+    for t in wakes:
+        fills = {}
+        for s in priced:
+            bar = tape.fill_bar(s, wall(t), wall(t + 3600))
+            fills[s] = [P.iso(bar["t"]), bar["o"]] if bar else None
+        rows.append(dict(marks=desk_marks(tape, priced, t), fills=fills))
     evidence = []
     for t in wakes:
         w = wall(t)
         packet = []
         for s in watch:
-            mark = tm06.price_at(tape, s, w)
+            mark = mark_as_of(tape, s, t)
             if mark is not None:
+                h1, h24 = (mark_as_of(tape, s, t-3600*n) for n in (1, 24))
                 packet.append(dict(id=f"price:{t}:{s}", symbol=s, kind="price", published=t, known_at=t,
                                    vintage="original", licensed=True, value=dict(price=mark,
-                                       change_1h=tm06.change_pct(tape, s, w, 1), change_24h=tm06.change_pct(tape, s, w, 24),
+                                       change_1h=(mark/h1-1)*100 if h1 else None, change_24h=(mark/h24-1)*100 if h24 else None,
                                        volume=tm06.volume_row(tape, s, w, cfg), funding=tm06.last_funding(tape, s, w, cfg))))
             for size, count, tf in ((3600, 24, "1Hour"), (60, 30, "1Min")):
                 bs = (P.S.built_bars(tape, s, size, w-timedelta(seconds=size*(count+1)), w, count)
@@ -78,7 +101,7 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake):
         packet += [e for e in evidence_by_wake.get(str(t), []) if e.get("kind") in ("news", "attention") and available(e, t)]
         evidence.append(packet)
     return dict(wakes=wakes, end=b, symbols=symbols, watch=watch, benchmark="BTC/USD", opening={},
-                rows=rows, minutes=list(mins), end_marks=W.end_marks(tape, "crypto", priced, wall(b)),
+                rows=rows, minutes=list(mins), end_marks=desk_marks(tape, priced, b),
                 evidence=evidence, cfg=cfg, params=pp, gross=float(cfg["tm06_plan"]["swing_max_gross"]))
 
 

@@ -2,6 +2,7 @@
 import copy
 from pathlib import Path
 import random
+import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -67,6 +68,24 @@ class DeskTest(unittest.TestCase):
         tokens = {r: "fake-" + r*7 for r in D.SCOUTS} if arm == "scout" else {"boss":TOKEN}
         D.create_desk(path, spec, arm, D.BOSSES[0], tokens, scout)
         return D.DeskSession(path)
+
+    def test_b01_later_bar_cannot_change_quote_or_condition(self):
+        class Tape:
+            def _conn(self):
+                return conn
+        conn = sqlite3.connect(":memory:")
+        self.addCleanup(conn.close)
+        conn.execute("CREATE TABLE bars(symbol,tf,t,c)")
+        conn.executemany("INSERT INTO bars VALUES(?,?,?,?)", [(A,"1Min",T-86400,50),(A,"30Min",T-1800,100)])
+        def quote():
+            mark = D.mark_as_of(Tape(), A, T)
+            return mark, condition_at(mark)
+        def condition_at(mark):
+            return O.normalize_conditions([dict(symbol=A,direction="above",pct=2,hours=1,weight=.2)],
+                                          {A:mark},[A],T,T+3600,6,1)[A]["level"]
+        self.assertEqual(quote(),(100,102))
+        conn.execute("INSERT INTO bars VALUES(?,?,?,?)",(A,"1Min",T+60,200))
+        self.assertEqual(quote(),(100,102))
 
     def scout_export(self, spec=None):
         s = self.create("scout", spec=spec)
