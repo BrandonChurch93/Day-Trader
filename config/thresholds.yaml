@@ -1190,6 +1190,46 @@ replay_22_plan:
   note: Plan 22 for queue 40, ledger 159. Rule A of the Fable 5.2 autopsy, one fixed version, judged 2020-01 to 2026-03 at 12 bps a side against the equal-weight hold and 500 random twins on end value. Rule C and the April to October 2026 source months are shown only. No scoring authorized by this entry; that needs the lead's approval commit.
   source: research_rig/PREREG_22_fable_rule_a.md
 
+replay_75_plan:
+  value:
+    repeat: ["2020-01-01", "2024-01-01"]
+    repeat_cut: "2022-01-01"
+    vault: ["2024-01-01", "2026-11-01"]
+    after_paper_first: "2025-03-20"
+    lookbacks: [10, 20, 30]
+    printed_lookbacks: [5, 10, 20, 30, 60, 90, 150, 250, 360]
+    target_vol: 0.25
+    vol_days: 90
+    cap: 1.00
+    printed_cap: 2.00
+    resize_weight_delta: 0.20
+    repeat_years_positive: 3
+    inherited_marks_key: replay_22_plan
+    vault_power_floor: 0.33
+    repeat_basis: held_binance_global_usdt_utc_daily_coinbase_usd_eligibility
+    costs:
+      main: [replay_47_plan, coinbase_fee_bps, halfspread_bps]
+      harsh: [replay_46_plan, a_sensitivity_fee_bps, a_half_spread_bps]
+    synthetic:
+      paper_dates: ["2015-01-01", "2025-03-20"]
+      paper_counts: [156, 78, 49]
+      paper_sized_gross_means: [0.020, 0.043, 0.074]
+      edge_multipliers: [0.0, 0.5, 1.0]
+      central_names: {repeat: 12, vault: 16}
+      inventory_ceiling_names: 20
+      sleeve_duty: 0.40
+      invested_weight: 0.425
+      seed: 750129
+      worlds: 4000
+      batch: 40
+      factor_block_days: 7
+      cases:
+        central: {market_drift: 0.15, market_vol: 0.60, idio_vol: 0.65, btc_vol: 0.70, btc_corr: 0.85, block_share: 0.15, extra_turnover: 0.25}
+        stress: {market_drift: 0.30, market_vol: 0.75, idio_vol: 0.80, btc_vol: 0.85, btc_corr: 0.85, block_share: 0.25, extra_turnover: 0.50}
+  status: builder
+  note: Queue 129. Price-blind draft, synthetic inputs only; calendar ends are exclusive. This is no authority to collect, score, or open the vault.
+  source: research_rig/PREREG_75_coin_trend_ratchet.md
+
 replay_65_plan:
   value: {"target":0.6,"delta_min":0.0,"delta_max":0.025,"delta_step":0.001,"threshold_scale":0.015,"week4_sessions":5,"reversal_lag":4,"burn_in_sessions":126,"first_session":"2016-01-04","last_session":"2026-11-25","cost_bps":2,"cost_cent":0.01,"borrow_annual":{"SPY":0.005,"IEF":0.006,"TLT":0.006},"signal_bar_start_before_close_min":30,"marks":{"min_sessions":2400,"t_min":2.0,"trim_share":0.01,"years":[2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026],"years_positive_min":7},"sh_leg_usd":500,"stress_exclude_months":["2020-03"],"post_paper_from":"2023-04-01"}
   status: builder
