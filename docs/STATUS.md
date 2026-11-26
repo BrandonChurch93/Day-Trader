@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 05:15 UTC
+Last updated: 2026-11-26 05:25 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- [Replay 33](research/89_replay_33_treasury_auction_days.md), run once 2026-11-26 05:23:51 UTC. MEASURED. Did not pass, 3 of 11 marks, placement only. IEF and TLT averaged −1.457 bp net on 260 auction trades at the fixed 13:10–15:59 ET clocks (t −0.597); matched controls averaged +0.791 bp on 257 trades and the paired gap was −2.462 bp (t −0.868). Rule not advanced.
 
 - Plan 42 (queue 59) closed 2026-11-26, dropped at feasibility without a trial; ledger 177 stays unused. MEASURED: On 40 sampled EDGAR 424B filings (14 underwritten SEOs), final pricing supplements were accepted 1 to 2 business days after pricing in 12 of 14 and pricing times were readable in 0 of 14; later post-offer evidence is negative ([Huang and Qian 2024](https://campus.kennesaw.edu/colleges-departments/coles/research/docs/fall-2024/fall-24-04.pdf)).
 
