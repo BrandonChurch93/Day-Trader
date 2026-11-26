@@ -56,6 +56,30 @@ def first_entry(closes, accepted):
     return bisect_left(closes, accepted + timedelta(minutes=60))
 
 
+def placebo_span(all_days, active_days, active_closes, accepted, n):
+    p_end = bisect_left(active_closes, accepted) - 5
+    if p_end < 0:
+        return None
+    last = bisect_left(all_days, active_days[p_end])
+    if last < n or all_days[last - n] < SIP_START:
+        return None
+    return all_days[last - n], all_days[last]
+
+
+def target_intervals(rows, active_days):
+    """Use every raw candidate, even if later deduped, skipped or not mature."""
+    by_fund = defaultdict(list)
+    for r in rows:
+        i = r["entry"]
+        by_fund[r["fund"]].append((active_days[i], active_days[i + max(HOLDS)]))
+    return by_fund
+
+
+def intersects_target(intervals, fund, span):
+    start, end = span
+    return any(a <= end and start <= b for a, b in intervals[fund])
+
+
 def candidates(raw, sessions):
     active = [(d, t) for d, t in sessions.items() if t is not None]
     days, close = zip(*active)
@@ -126,6 +150,7 @@ def self_check(sessions):
 
 def measure(raw, sessions):
     rows, deduped, days, close = candidates(raw, sessions)
+    blocked = target_intervals(rows, days)
     base = counts(rows)
     base["filing_rows"] = base.pop("fund_days")
     for subgroup in ("saba", "non_saba"):
@@ -148,34 +173,43 @@ def measure(raw, sessions):
             "last_scheduled_exit": str(max(days[r["exit"]] for r in all_calc)),
         }
     all_days = list(sessions)
-    first_sip = bisect_left(all_days, SIP_START)
     result["union_request_shape"] = {}
     for label, pool in [("mature", mature), ("all_scheduled", scheduled)]:
         intervals = defaultdict(list)
         quotes = set()
         losses = {}
         for n, events in pool.items():
-            usable, missing = [], []
+            usable, missing, overlap, archive_eligible = [], [], [], []
             for r in events:
                 i, j = r["entry"], r["exit"]
                 quotes.update(((r["fund"], days[i]), (r["fund"], days[j])))
                 # One proposed placebo: latest close that is the fifth fully
                 # completed session before acceptance. This requires the
                 # exact historical clock only near the 2016+ filing itself.
-                p_end = bisect_left(close, r["at"]) - 5
-                placebo_end = bisect_left(all_days, days[p_end])
+                span = placebo_span(all_days, days, close, r["at"], n)
                 target_start = bisect_left(all_days, days[i])
-                assert target_start >= first_sip
-                if placebo_end - n < first_sip:
+                assert days[i] >= SIP_START
+                if span is None:
                     missing.append(r)
                     left = target_start
+                elif intersects_target(blocked, r["fund"], span):
+                    archive_eligible.append(r)
+                    overlap.append(r)
+                    left = target_start
                 else:
+                    archive_eligible.append(r)
                     usable.append(r)
-                    left = min(placebo_end - n, target_start)
+                    left = min(bisect_left(all_days, span[0]), target_start)
                 right = bisect_left(all_days, days[j])
                 intervals[r["fund"]].append((left, right))
+            usable_groups = counts(usable)
             losses[str(n)] = {"fund_windows": len(missing),
-                              "entire_filer_day_windows": counts(events)["filer_days"] - counts(usable)["filer_days"]}
+                              "entire_filer_day_windows": counts(events)["filer_days"] - counts(archive_eligible)["filer_days"],
+                              "target_overlap_fund_windows": len(overlap),
+                              "target_overlap_entire_filer_days": counts(archive_eligible)["filer_days"] - usable_groups["filer_days"],
+                              "remaining_fund_windows": len(usable),
+                              "remaining_filer_days": usable_groups["filer_days"],
+                              "remaining_non_saba_filer_days": usable_groups["non_saba_filer_days"]}
         lo = min(i for spans in intervals.values() for i, _ in spans)
         hi = max(j for spans in intervals.values() for _, j in spans)
         intervals["PCEF"] = [(lo, hi)]
@@ -185,7 +219,7 @@ def measure(raw, sessions):
             "merged_fund_and_control_segments_before_alias_splits": segments,
             "fund_close_quote_symbol_sessions_before_alias_splits": len(quotes),
             "earliest_bar": str(all_days[lo]), "latest_bar": str(all_days[hi]),
-            "placebo_windows_lost_at_sip_start": losses,
+            "placebo_scope_by_hold": losses,
         }
     return result
 
