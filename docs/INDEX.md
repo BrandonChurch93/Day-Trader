@@ -451,6 +451,9 @@ Working papers.
 | `research_rig/score_65.py`, `research_rig/test_65.py` | Plan 65 scorer with synthetic mode, counts-only input validation and approval-gated one-shot run; tests on synthetic and hand-built inputs. The scored run is spent; see doc 139 | CURRENT |
 | `research_rig/power_65.py`, `research_rig/POWER_65.json`, `research_rig/build_doc65_power.py` | Plan 65 synthetic power at set net Sharpe levels with skew stress mixes, and the builder that writes its table into the plan | CURRENT |
 | `research_rig/PREREG_69_stock_sweep.md` | Plan 69, queue 111 and ledger 217: dated no-price roster, cash assumptions and fixed marks for the stock/ETF discovery search; the vault stays sealed | DRAFT |
+| `research_rig/PREREG_74_swing_cards.md` | Plan 74, queue 126 and 127: swing cards A and B judged per signal against IWM, fixed costs and marks, no-price data feasibility (gate a) and the gate order; no data pulled | DRAFT |
+| `research_rig/power_74.py` | Plan 74 synthetic power on made-up fat-tailed returns with overlapping holds, month-clustered t and every design-year mark, plus a common-share sensitivity table; reads only its config block | DRAFT |
+| `research_rig/calib_74.py`, `research_rig/CALIB_74.json` | Plan 74 power-model calibration of the common month share from held Kenneth French files, rows before 2017 only, and its saved summary numbers (no rows) | DRAFT |
 | `research_rig/GRID_69.json` | Plan 69 rule grid frozen before prices: 11 sourced families, exact signals, clocks and pools; shared settings in the config | DRAFT |
 | `research_rig/sweep_69.py` | Plan 69 search-only SIP collector, counts-only validator and scorer with a date fence, hash-bound file custody, separate independent approvals and made-up-data checks | DRAFT |
 | `research_rig/test_69_transport.py` | Plan 69 collection transport tests with fake curl responses and no network access | DRAFT |

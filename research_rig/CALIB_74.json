@@ -1,0 +1,46 @@
+{
+ "files": [
+  "10_Portfolios_Prior_12_2_Daily_CSV.zip",
+  "F-F_Research_Data_Factors_daily_CSV.zip"
+ ],
+ "series": {
+  "equal_196307_201612": {
+   "months": 642,
+   "first": 196307,
+   "last": 201612,
+   "monthly_sd": 0.038795
+  },
+  "equal_199001_201612": {
+   "months": 324,
+   "first": 199001,
+   "last": 201612,
+   "monthly_sd": 0.041102
+  },
+  "value_196307_201612": {
+   "months": 642,
+   "first": 196307,
+   "last": 201612,
+   "monthly_sd": 0.034057
+  },
+  "value_199001_201612": {
+   "months": 324,
+   "first": 199001,
+   "last": 201612,
+   "monthly_sd": 0.036472
+  }
+ },
+ "rows": [],
+ "main": "equal_196307_201612",
+ "shares": {
+  "A": {
+   "0.12": 0.102,
+   "0.15": 0.0653,
+   "0.18": 0.0453
+  },
+  "B": {
+   "0.20": 0.0099,
+   "0.25": 0.0063,
+   "0.30": 0.0044
+  }
+ }
+}
