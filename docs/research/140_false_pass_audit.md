@@ -1,6 +1,6 @@
 # 140. False-pass audit: how many of our 3 passes could be luck
 
-Written 2026-11-26 11:48 UTC by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.
+Written 2026-11-26 11:58 UTC by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.
 
 Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's own pre-run file. MEASURED, one mark means only one of the marks was counted that way, so the all-mark rate is lower. NOMINAL means no rate was measured; the figure is the textbook tail of the plan's mark (a one-sided normal tail for a t of 2, or a percentile tail), worked out here, not measured. STATED means taken from a plan or results page as written. UNKNOWN means not on the repo.
 
@@ -11,7 +11,7 @@ Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's
 - Expected luck passes in the 34 trading tests that could give a counted pass: low 0.36, high 2.09. Against 3 seen, that is 1.4 to 8.2 times what luck alone gives.
 - Chance of 3 or more passes by luck alone in those 34: 0.49% on the low figures, 34.92% on the high figures (independent tests assumed; the month-end tests share windows, which widens this).
 - Rates: 13 tests have a measured all-mark no-edge rate, 8 have one measured mark only, 20 have no measured rate (UNKNOWN) and are bracketed by the nominal tail of their own t or percentile mark as the high and a stated low of 0.005 per test, and 3 could not pass at all (design only, inconclusive by design, a cost gate).
-- Ideas closed before any return on count, power, cost, coverage, validation or feasibility: 22 (7 on count, 9 on power). They had no chance to pass by luck, so they add nothing to the luck figure.
+- Ideas closed before any return on count, power, cost, coverage, validation or feasibility: 30 (7 on count, 12 on power). They had no chance to pass by luck, so they add nothing to the luck figure.
 
 ## Assumptions, stated
 
@@ -22,7 +22,7 @@ Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's
 
 ## The 44 tests
 
-| # | Test | Family | Result (doc 95 or STATUS) | Label | Low | High | Where the figure comes from | Note |
+| # | Test | Family | Result (doc 95) | Label | Low | High | Where the figure comes from | Note |
 |---:|---|---|---|---|---:|---:|---|---|
 | 1 | Replay 01 (R1) | momentum | Failed / not credited (4/90 both feeds) | MEASURED, one mark | 0.50% | 4.50% | `docs/research/16_rig_audit.md`: deflated Sharpe mark (0.95) passed 4.5% of no-edge samples; overfitting mark let 8% through; plan `research_rig/PREREG_01_daily_crypto_trend.md` | measured for one mark of five; all marks together is lower and was not measured |
 | 2 | Pilot 02 | AI discretionary | Inconclusive by design (6 runs) | STATED | 0.00% | 0.00% | `docs/research/14_ai_calls_pilot_02.md`: inconclusive by design | no pass mark, so no pass by luck was possible |
@@ -67,11 +67,11 @@ Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's
 | 41 | Replay 60 | event | Did not pass (6 of 7 marks) | MEASURED | 0.00% | 1.44% | `research_rig/CALIBRATION_60.json`: cases.0.65 and cases.0.75 all_mark_passes at edge 0 = 0 and 8 of 1000 | two placement assumptions; high is the upper limit of the 0.75 case |
 | 42 | Replay 62 | event | Did not pass (1 of 5 marks) | MEASURED for plan 61, STATED for 62 | 1.37% | 1.64% | `research_rig/POWER_61.json`: full.by_placement.0.8.counts.1.5.winsor_t at 0 bp (82 of 6000) | plan 62 reuses plan 61's power run (`research_rig/PREREG_62_special_dividend_ex_day_v2.md`); high is the one-sided 95% upper limit for that count |
 | 43 | Replay 22 | momentum | Did not pass (1 of 5 marks) | MEASURED | 5.00% | 21.61% | `research_rig/calibration_22.json`: edges_pct.0.pass_share = 0.05 (1 of 20) | high is the one-sided 95% upper limit for that count |
-| 44 | Replay 65 | calendar (stock-bond rebalancing) | Did not pass, 3 of 5 marks | NOMINAL | 0.50% | 2.28% | `research_rig/PREREG_65_stock_bond_rebalance_spread.md`: clustered t mark at 2 | `research_rig/POWER_65.json` has no zero-edge row (lowest Sharpe 0.3), so no measured rate; one-sided normal tail of the t mark alone; not measured; the other marks can only lower it, fat tails or overlap can raise it |
+| 44 | Replay 65 | forced flow | Did not pass (3 of 5 marks) | NOMINAL | 0.50% | 2.28% | `research_rig/PREREG_65_stock_bond_rebalance_spread.md`: clustered t mark at 2 | `research_rig/POWER_65.json` has no zero-edge row (lowest Sharpe 0.3), so no measured rate; one-sided normal tail of the t mark alone; not measured; the other marks can only lower it, fat tails or overlap can raise it |
 | | Total, all 44 | | | | 0.68 | 4.13 | | |
 | | Total, 34 trading tests that could give a counted pass | | | | 0.36 | 2.09 | | |
 
-Results are copied from `docs/research/95_where_we_stand_after_32_tests.md` (tests 1 to 43) and `docs/QUEUE.md` row 106 (test 44). Results pages are those cited there.
+Results are copied from `docs/research/95_where_we_stand_after_32_tests.md`. Results pages are those cited there.
 
 ## How that compares with 3
 
@@ -96,7 +96,7 @@ Results are copied from `docs/research/95_where_we_stand_after_32_tests.md` (tes
 - Net mean above zero omitting any single year | 11 of 11; lowest +0.2203% omitting 2019 | met
 - At least 60% of years have a positive gross daily difference | 10 of 11 (90.9%) | met
 
-- Relatives that did not pass (MEASURED): Replay 31: Failed (2/10 marks); Replay 33: Failed (3/11 marks, placement only); Replay 41: Failed (4/8 marks); Replay 52: Did not pass (0 of 6 marks); Replay 65: Did not pass, 3 of 5 marks. Measurement 34 (TMF, UBT) used the same windows and is not new evidence; Replay 26 (2002 to 2015) was blocked at input validation and never scored. So 1 of 6 scored month-end and bond-flow tests passed.
+- Relatives that did not pass (MEASURED): Replay 31: Failed (2/10 marks); Replay 33: Failed (3/11 marks, placement only); Replay 41: Failed (4/8 marks); Replay 52: Did not pass (0 of 6 marks); Replay 65: Did not pass (3 of 5 marks). Measurement 34 (TMF, UBT) used the same windows and is not new evidence; Replay 26 (2002 to 2015) was blocked at input validation and never scored. So 1 of 6 scored month-end and bond-flow tests passed.
 - Overlap with the source sample (STATED, `docs/research/74_round_10_forced_flow_ideas.md`): Hartley and Schwarz cover 1990 to 2018 Treasuries, so 2016 to 2018 of the 2016 to 2026 window overlap; the rest does not.
 - Forward log (STATED, `practice/traders/E01_tlt_month_end_close.md`): E01 records the same window each month from December 2026. MEASURED: no E01 record yet (forward logs on the repo: E07_log.json).
 - Trust today: a modest pass with no measured null, sitting among 5 failed relatives, so treat it as a lead that E01 must confirm, not as a found edge.
@@ -138,14 +138,15 @@ Results are copied from `docs/research/95_where_we_stand_after_32_tests.md` (tes
 
 ## Ideas closed before a return
 
-MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE.md`, one count per idea (queue rows already in the ledger are not counted twice): 22 ideas closed before any return was computed.
+MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE.md`, one count per idea (queue rows already in the ledger are not counted twice): 30 ideas closed before any return was computed.
 
 - cost: 1
 - count: 7
 - coverage: 1
-- feasibility: 2
-- power: 9
-- validation: 2
+- feasibility: 4
+- other, before prices: 2
+- power: 12
+- validation: 3
 
 - ledger 163: research_rig/PREREG_26_treasury_month_end_early.md, closed on validation
 - ledger 171: research_rig/PREREG_36_form4_cluster_buys.md, closed on coverage
@@ -164,6 +165,14 @@ MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE
 - ledger 209: research_rig/COUNT_107_dividend_month_coverage.md, closed on count
 - ledger 210: research_rig/PREREG_66_third_friday_settlement.md, closed on power
 - ledger 211: research_rig/PREREG_67_rsi2_pullback.md, closed on power
+- queue 48: Plan 28, US-reachable Upbit listing short version: data scouting compl, closed on other, before prices
+- queue 59: Plan 42, marketed non-overnight seasoned equity offerings, closed on feasibility
+- queue 61: Blocked. Plan 37, US DoD daily contract awards: long-only, 3 to 5 trad, closed on other, before prices
+- queue 62: Plan 38, going-private Schedule 13E-3 first filings, long-only post-an, closed on feasibility
+- queue 74: Plan 43, declaration drift: `research_rig/PREREG_43_special_dividends., closed on validation
+- queue 67: Overnight versus intraday return gap in SPY and QQQ, as a low-frequenc, closed on power
+- queue 68: Option expiry week in SPY, closed on power
+- queue 69: Municipal bond month-end index extension and June, July, December rein, closed on power
 - queue 97: US corporate forward stock split announcements via SEC Form 8-K, closed on power
 - queue 89: Count-first audit of going-private or going-dark reverse-split cash-ou, closed on count
 - queue 79: Plan 45: retrospective test of Binance Monitoring Tags and Upbit/Bithu, closed on feasibility
@@ -182,4 +191,3 @@ What that does to the reading:
 - The all-mark no-edge rate for every NOMINAL row; only the t or percentile mark was used.
 - How correlated the month-end tests are with each other.
 - Any forward month for E01 or E04; none has happened yet.
-

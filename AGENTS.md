@@ -2,6 +2,8 @@
 
 The one page every agent reads first. If anything else in the repo disagrees with it, this page wins. Old rule files are in `archive/` and are not in force.
 
+After this page, read the top of [Status](docs/STATUS.md) for what passed, what is in work and what waits on the owner. Then read [Queue](docs/QUEUE.md) for work in progress and the next open item. Use the [Index](docs/INDEX.md) to look up files rather than reading it cover to cover.
+
 Brandon and the builder are partners and the architects of this project. Nothing on this page limits the builder. The only rules here are for the trader agents that run inside what the two of them build, and the two of them change those rules whenever a change makes the traders more profitable.
 
 ## The goal, in the owner's words
@@ -82,7 +84,7 @@ These are his because they are his accounts and his money, not because the build
 ## Keeping the repo readable
 
 - No secrets. No vendor price data or news in the repo, because it is public. Recorded data stays on the research machine.
-- Every number lives once, in `config/thresholds.yaml`. Documents name the key.
+- Settings live in `config/thresholds.yaml`. Documents name the key. Test numbers come from stored output, not from settings or memory.
 - Every file is listed in `docs/INDEX.md`. Run `python3 tools/check_repo.py` before a commit.
 - Commit to `main` and push. Never force push.
 

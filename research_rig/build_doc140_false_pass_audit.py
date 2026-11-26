@@ -18,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RR = ROOT / "research_rig"
 OUT = ROOT / "docs" / "research" / "140_false_pass_audit.md"
+SCORECARD = "docs/research/95_where_we_stand_after_32_tests.md"
 
 # Stated assumptions, used only where the repo has no measured figure.
 LOW_ASSUME = 0.005   # low bracket: other marks cut a nominal tail well below itself
@@ -106,20 +107,22 @@ def tm_method(n, p_top, need_top, need_median):
 
 # ---------------------------------------------------------------- the 44 tests
 def doc95_rows():
+    scorecard = text(SCORECARD)
+    totals = re.findall(r"^\| Total \| (\d+) \|", scorecard, re.M)
+    if len(totals) != 1:
+        sys.exit(f"{SCORECARD}: expected one scored-test Total row, found {len(totals)}")
+    expected = int(totals[0])
     rows = []
-    for line in text("docs/research/95_where_we_stand_after_32_tests.md").splitlines():
+    for line in scorecard.splitlines():
         m = re.match(r"\| (\d+) \| ([^|]+) \| [^|]+ \| ([^|]+) \| [^|]+ \| ([^|]+) \| (.+) \|$", line)
         if m:
             paths = re.findall(r"`(docs/[^`]+)`", m.group(5))
             rows.append({"n": int(m.group(1)), "test": m.group(2).strip(), "family": m.group(3).strip(),
                          "result": m.group(4).strip(), "page": paths[0] if paths else ""})
+    numbers = [row["n"] for row in rows]
+    if numbers != list(range(1, expected + 1)):
+        sys.exit(f"{SCORECARD}: Total says {expected} scored tests, but parsed {len(rows)} rows with IDs {numbers}")
     return rows
-
-
-def replay65_row():
-    q = find("docs/QUEUE.md", r"^\| 106 \| Plan 65[^|]*\| Done [^|]*?(did not pass, \d of \d marks)", 1, re.M)
-    return {"n": 44, "test": "Replay 65", "family": "calendar (stock-bond rebalancing)",
-            "result": q[0].upper() + q[1:], "page": "docs/STATUS.md"}
 
 
 def spec(n):
@@ -376,8 +379,6 @@ def pass_marks(rel):
 
 def main():
     rows = doc95_rows()
-    assert len(rows) == 43, len(rows)
-    rows.append(replay65_row())
     for r in rows:
         r.update(spec(r["n"]))
     ai = [r for r in rows if r["family"].startswith("AI")]
@@ -448,7 +449,7 @@ def main():
     w("")
     w("## Headline")
     w("")
-    w(f"- Expected passes by luck across all 44 scored tests: low {lo_all:.2f}, high {hi_all:.2f}. Counted passes: 3.")
+    w(f"- Expected passes by luck across all {len(rows)} scored tests: low {lo_all:.2f}, high {hi_all:.2f}. Counted passes: 3.")
     w(f"- About half of the high figure comes from the {len(ai)} AI time-machine tests ({lo_ai:.2f} to {hi_ai:.2f}). Their marks were loose (a model above the 80th or 90th percentile of its own twins), but a clearing there is reported as shown, never as a counted pass, so they cannot explain the 3.")
     w(f"- Expected luck passes in the {len(counted_pool)} trading tests that could give a counted pass: low {lo_c:.2f}, high {hi_c:.2f}. Against 3 seen, that is {3 / hi_c:.1f} to {3 / lo_c:.1f} times what luck alone gives.")
     w(f"- Chance of 3 or more passes by luck alone in those {len(counted_pool)}: {pct(p3_lo)} on the low figures, {pct(p3_hi)} on the high figures (independent tests assumed; the month-end tests share windows, which widens this).")
@@ -464,16 +465,16 @@ def main():
       f"{pct(cp_upper(0, 20))} by this rule, which is why those tests have wide highs.")
     w("- Tests are summed as if independent. Several are not (Replays 25, 31, 41 and 65 share month-end windows; Replays 48 and 53 share dates). Dependence does not change the expected count; it makes clusters of luck passes or misses more likely.")
     w("")
-    w("## The 44 tests")
+    w(f"## The {len(rows)} tests")
     w("")
-    w("| # | Test | Family | Result (doc 95 or STATUS) | Label | Low | High | Where the figure comes from | Note |")
+    w("| # | Test | Family | Result (doc 95) | Label | Low | High | Where the figure comes from | Note |")
     w("|---:|---|---|---|---|---:|---:|---|---|")
     for r in rows:
         w(f"| {r['n']} | {r['test']} | {r['family']} | {r['result']} | {r['label']} | {pct(r['low'])} | {pct(r['high'])} | {r['src']} | {r['note']} |")
-    w(f"| | Total, all 44 | | | | {lo_all:.2f} | {hi_all:.2f} | | |")
+    w(f"| | Total, all {len(rows)} | | | | {lo_all:.2f} | {hi_all:.2f} | | |")
     w(f"| | Total, {len(counted_pool)} trading tests that could give a counted pass | | | | {lo_c:.2f} | {hi_c:.2f} | | |")
     w("")
-    w("Results are copied from `docs/research/95_where_we_stand_after_32_tests.md` (tests 1 to 43) and `docs/QUEUE.md` row 106 (test 44). Results pages are those cited there.")
+    w(f"Results are copied from `{SCORECARD}`. Results pages are those cited there.")
     w("")
     w("## How that compares with 3")
     w("")
@@ -548,8 +549,8 @@ def main():
     w("- How correlated the month-end tests are with each other.")
     w("- Any forward month for E01 or E04; none has happened yet.")
     w("")
-    OUT.write_text("\n".join(L) + "\n", encoding="utf-8")
-    print(f"wrote {OUT.relative_to(ROOT)}: all44 {lo_all:.3f}-{hi_all:.3f}, pool{len(counted_pool)} {lo_c:.3f}-{hi_c:.3f}, "
+    OUT.write_text("\n".join(L).rstrip() + "\n", encoding="utf-8")
+    print(f"wrote {OUT.relative_to(ROOT)}: all{len(rows)} {lo_all:.3f}-{hi_all:.3f}, pool{len(counted_pool)} {lo_c:.3f}-{hi_c:.3f}, "
           f"p3 {p3_lo:.4f}-{p3_hi:.4f}, measured {n_meas}, one-mark {n_one}, nominal {n_nom}, nopass {n_stated0}, closed {len(closed)} {kinds}")
 
 
