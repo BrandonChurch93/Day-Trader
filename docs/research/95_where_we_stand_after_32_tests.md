@@ -1,10 +1,10 @@
-# Where We Stand After 42 Scored Tests
+# Where We Stand After 43 Scored Tests
 
-Last changed: 2026-11-26 UTC (Replay 62 result added after Replay 60). Plain synthesis for the owner. Figures come from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the named repo files, including drafts where noted; no return was recomputed. Claims are labeled MEASURED (from our own runs), STATED (from plans, schedules, or external sources cited in repo docs), or UNKNOWN (not yet measured).
+Last changed: 2026-11-26 UTC (Replay 22 result added after Replay 62). Plain synthesis for the owner. Figures come from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the named repo files, including drafts where noted; no return was recomputed. Claims are labeled MEASURED (from our own runs), STATED (from plans, schedules, or external sources cited in repo docs), or UNKNOWN (not yet measured).
 
 ## 1. Every Scored Test So Far
 
-MEASURED: Forty-two scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample, as counted below. Three counted trading replays passed their frozen marks: Replays 25 and 48 (US $500 reachable) and Replay 20 (not US-reachable). Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
+MEASURED: Forty-three scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample, as counted below. Three counted trading replays passed their frozen marks: Replays 25 and 48 (US $500 reachable) and Replay 20 (not US-reachable). Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
 
 | # | Test | What it tested (6 words) | Family | US $500? | Result (MEASURED) | Headline net number and source |
 |---|---|---|---|---|---|---|
@@ -50,14 +50,15 @@ MEASURED: Forty-two scored tests (trading replays, AI time-machine evaluations, 
 | 40 | Replay 53 | Buy taxable closed-end fund losers into January | forced flow | Yes | Did not pass (5 of 7 marks) | +2.74% mean net, versus +2.00% for PCEF and +1.83% for the roster; positive in 6 of 10 turns and ahead of PCEF in 6 of 10, both below the frozen marks (`docs/research/122_replay_53_taxable_fund_january_rebound.md`) |
 | 41 | Replay 60 | Buy special-dividend declarations two sessions after the filing, hold 20 sessions | event | Yes | Did not pass (6 of 7 marks) | 339 placed pairs, +1.96% mean net (clustered t 2.38); +0.96% against IWM with clustered t 1.23 against a mark of 2, the one missed mark (`docs/research/126_replay_60_special_dividends.md`) |
 | 42 | Replay 62 | Buy the close before a special-dividend ex-date, sell the ex-date close, hedged against IWM | event | Yes | Did not pass (1 of 5 marks) | 316 placed pairs, -0.06% mean net against IWM, clipped clustered t -0.63 against a mark of 2, 4 of 11 years positive against a mark of 7 (`docs/research/130_replay_62_special_dividend_ex_day.md`) |
+| 43 | Replay 22 | Range-break rule from Fable 5.2 picker's notes, no AI | momentum | Yes | Did not pass (1 of 5 marks) | +275.40% against +274.25% for holding the same coins, 2020 to March 2026 at 12 bp; daily Sharpe 0.67 against a mark of 1.0, largest fall 79.40% against 40%, 57% of 500 random-entry twins at or above it, 3 of 7 years positive; -11.14% without its best 3 trades (`docs/research/137_replay_22_fable_rule_a.md`) |
 
 ## 2. Count by Family
 
-MEASURED from the 42 scored tests in Section 1:
+MEASURED from the 43 scored tests in Section 1:
 
 | Family | Tested | Counted passes | Notes |
 |---|---:|---:|---|
-| momentum | 8 | 0 | Replay 13 Rule A met relative marks vs all coins but lost ~70% in 3 years and is not a counted pass |
+| momentum | 9 | 0 | Replay 13 Rule A met relative marks vs all coins but lost ~70% in 3 years and is not a counted pass; Replay 22 (the Fable 5.2 picker's range-break rule with no AI) ended level with holding the same coins and could not be told apart from random entries |
 | AI discretionary | 9 | 0 | TM06 picker met its marks on months that may lie inside the models' memory and is not a counted pass; Replay 11 held-back (2,146 releases) is still open; TM02 met its headlines-help sub-mark only |
 | forced flow | 9 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable. Replays 52 and 53 did not pass. |
 | chart pattern | 5 | 0 | All five failed, including Measurement 15 fill gate |
@@ -65,7 +66,7 @@ MEASURED from the 42 scored tests in Section 1:
 | calendar | 2 | 0 | Replay 39 (IWM pre-holiday) missed both t marks at 1.91 and 1.82 |
 | event | 6 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable); Replay 21, both legs of Replay 46, Replay 60 and Replay 62 did not pass |
 | copy-trading | 1 | 0 | Replay 12 (Congress disclosures) lagged SPY by 1.0%/yr on held-back data |
-| Total | 42 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
+| Total | 43 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
 
 ## 3. What the First Two Passes Have in Common and Their Dollar Size
 
