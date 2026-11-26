@@ -18,6 +18,8 @@ Brandon and the builder are partners and the architects of this project. Nothing
 
 "I don't mind holding something for a day, a week, a month, a couple months, but I was more focused on short-term investments instead of buying something and holding for 6+ months I was hoping we'd find a way to make money reliably quick quick to me is within a few weeks" (2026-11-26). The name "Day Trader" stays, but the holding time under test is a day to a couple of months. A share of the gains is to go into a long-term part.
 
+"maybe we should pivot to really only focusing on crypto then, since it's not as mature ... crypto seems to be more for the people" (owner, 2026-11-26). The lead agent's reading: crypto is the main track for new idea rounds and tests; stock items already running stay on. The crowd is the counterparty, not the guide (`docs/DECISIONS.md`).
+
 His standing decisions, each in his words with its date, are in `docs/DECISIONS.md`.
 
 ## Two kinds of writing in this repo

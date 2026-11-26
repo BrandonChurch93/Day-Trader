@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 23:11 UTC
+Last changed: 2026-11-26 23:31 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -138,6 +138,8 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 
 | Idea | From |
 |---|---|
+| Count first, no prices (round 65, second-checked): Lido withdrawal queue. Count how often and for how long the queue wait and the stETH discount data are both available with honest time stamps; a data-coverage count only, not a trade and not a claim of par in dollars. Crypto, so in line with the owner's 2026-11-26 direction. | `docs/research/191_round_65_small_and_tedious.md` |
+| Watch only (round 65, second-checked): bank and broker sign-up offers are personal, need the owner's own identity checks and are not a desk trade; mutual-bank conversions, contingent value rights, appraisal, liquidating trusts, airdrop farming, Sky and WBTC redemption and bankruptcy claims are dropped. Future rounds skip them unless access or data changes. | `docs/research/191_round_65_small_and_tedious.md` |
 | From survey 187, count first, no prices: first-time Schedule 13D filings on operating companies by activist funds since 2024-02-05 (the 5-business-day deadline), entered no earlier than the session after the SEC acceptance time. The published gain sits mostly before and on the filing day, so the count and the after-filing evidence are checked before any price is opened. Not the closed-end fund census of queue 102 | `docs/research/187_data_sources_for_an_ai_desk.md`, `docs/research/187c_event_text.md` |
 | From survey 187, a veto, not a buy rule: skip or exit a stock after an original 8-K with a delisting notice, a restatement, an impairment, a bankruptcy or a chief executive leaving, using the SEC acceptance time. Tested only as an overlay on a rule that already holds stocks (Plan 74's cards if they reach a design stage), by the change in the worst 20-day loss after the extra trading cost | `docs/research/187_data_sources_for_an_ai_desk.md` |
 | From survey 187, forward log only: the Fed, BLS and BEA release calendars as a risk window for the forward cards (smaller size or no new entry around rate decisions and the inflation and jobs reports), with the calendar saved as first seen; and the Federal Register public inspection list counted by day for crypto and listed-company notices before any price is opened | `docs/research/187a_forced_trades.md`, `docs/research/187c_event_text.md` |
