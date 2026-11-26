@@ -154,3 +154,132 @@ Two routes the lead could rule on, not used here:
 - Any year-end extras of funds outside PCEF are not counted.
 - The equity rule counts N-PORT lines, not values, from a single filing per fund. It is fixed, but a value-based rule could move the borderline funds.
 - Nothing in this doc used prices, so it says nothing about the edge.
+
+## Addendum: second count, year-end and special distributions in all US-listed equity closed-end funds
+
+Clock read 2026-11-26 10:54 UTC (03:54 MT) before this section was written.
+Same ledger row 204. This is a separate count with its own fixed line. It does not change the first count above.
+No price, NAV, quote, bar or reinvestment-price field was requested, read or stored. Raw records stay off the repo in the count 104 folder named above, in a subfolder for this branch (folder 0700, files 0600). No whole SEC submission was saved.
+
+### A1. Line and rules (fixed by the lead before the count)
+
+- Pass: at least 100 fund-days on at least 50 distinct ex-dates.
+- Close: under 60 fund-days.
+- Between: the lead rules.
+- Event: any cash distribution that is not part of the fund's regular monthly or quarterly schedule, or a regular payment at least 2 times the median of the fund's previous four regular payments. Window 2016-01-01 to 2026-10-31.
+- The event rules were written to a rules file off the repo at 10:26 UTC on 2026-11-26, before the vendor pull (sha256 6311288c4107a1b487fb7f2ff1e3e2e6cf0b7192077639c20310a84bcccb13b8). They were not changed after the count. The five rule tags are:
+  - a: the vendor flags the record as special.
+  - b: the fund has more than one cash record on the same ex-date.
+  - c: the ex-date is off the fund's own monthly or quarterly schedule for that year.
+  - d: the amount is at least 2 times the median of the previous four regular payments.
+  - e: the fund-year has no monthly or quarterly schedule at all (semiannual, annual or irregular payers), so every payment counts.
+
+### A2. Universe, from SEC data alone
+
+- Source: the SEC Form N-CEN data sets, 2018 Q3 to 2026 Q3 (33 quarterly files from the SEC markets data page).
+- Filter: the registrant type is N-2, and the fund lists a common share with a US exchange code (NYSE, Nasdaq, NYSE American or NYSE Arca) and a 1 to 5 letter ticker. This gives 613 listed closed-end fund CIKs.
+- Equity rule, the same as section 2: in the fund's earliest NPORT-P, equity lines (asset category EC) are at least half of the non-derivative lines. This gives 166 equity CIKs. 52 listed CIKs have no NPORT-P and stay unclassified, which leaves them out. They include Thai Fund, several Aberdeen single-country funds, Morgan Stanley Emerging Markets, Latin American Discovery and many municipal funds.
+- Cleaning, disclosed and not a rule change:
+  - 5-letter tickers ending in X (NAV symbols) were dropped, leaving 160 CIKs and 165 ticker spans.
+  - One N-CEN data error that put BSTZ on another CIK in 2020 was dropped.
+- Ticker spans come from the N-CEN years. The first span is extended back to 2015-01-01, but not before the fund's first EDGAR filing. The last span is extended to 2026-10-31, but not past 400 days after the last filing.
+- MEASURED, funds with a live span per year: 2016 144, 2017 145, 2018 145, 2019 149, 2020 152, 2021 158, 2022 155, 2023 150, 2024 148, 2025 148, 2026 143.
+- STATED, ICI's equity closed-end fund counts for comparison, 2016 to 2025: 200, 197, 177, 177, 173, 166, 160, 152, 141, 137 ([ICI 2018 Factbook](https://www.ici.org/system/files/attachments/2018_factbook.pdf), [ICI 2025 Factbook ch. 5](https://www.icifactbook.org/pdf/2025-factbook-ch5.pdf), [ICI Q2 2026](https://www.iciglobal.org/research/stats/closedend/cef_q2_26)).
+- MEASURED gap: the early years run 50 or more funds short of ICI, because N-CEN starts in mid-2018. Funds that closed or merged before then are missing. From 2023 on, the universe is at or above ICI's count, likely because the line rule admits some mixed funds.
+
+### A3. Events
+
+- Vendor: Alpaca corporate actions, cash dividends only, 2015-01-01 to 2026-10-31, for the 165 tickers. Every call returned status 200 with no paging. The pull gave 10,911 records. 2015 records are used only as history for rules c and d.
+- Cleaning: 6 exact duplicate records (same day, rate and flag, at CEN and TEAF) were dropped as vendor duplicates.
+- MEASURED: 461 fund-days on 261 distinct ex-dates, across 89 funds. This PASSES the line (at least 100 on at least 50).
+- MEASURED, reading without rule e: if every payment of a no-schedule fund-year is set aside, 281 fund-days on 173 ex-dates remain, across 85 funds. This also passes.
+- MEASURED, rule tags (one event can carry several): e 262, d 155, b 113, c 70, a 23.
+- MEASURED, by year, all events then events without rule e (fund-days / ex-dates):
+
+| Year | All | Without rule e |
+|---|---|---|
+| 2016 | 46 / 27 | 16 / 11 |
+| 2017 | 50 / 24 | 19 / 8 |
+| 2018 | 46 / 27 | 17 / 12 |
+| 2019 | 37 / 21 | 16 / 12 |
+| 2020 | 39 / 19 | 33 / 17 |
+| 2021 | 58 / 29 | 48 / 23 |
+| 2022 | 46 / 26 | 32 / 21 |
+| 2023 | 36 / 22 | 22 / 18 |
+| 2024 | 46 / 28 | 34 / 22 |
+| 2025 | 42 / 26 | 30 / 18 |
+| 2026 (Jan to Oct) | 15 / 12 | 14 / 11 |
+
+- MEASURED, the funds with the most events: ASA 21, CET 21, EEA 21, GF 20, GAM 16, ADX 14, PEO 14, IIF 13, CAF 12, TY 11. EMF, UTG, CEE, GRF, TDF and RGT have 10 each.
+- The make-up differs from the first count. It is mostly year-end capital-gain and income payouts at traditional and single-country equity funds, not level covered-call payouts.
+
+Known false positives, kept because the rules were fixed:
+
+- Rule d fires when a fund switches from monthly to quarterly, because the first quarterly payment is about three monthly ones (for example TEAF and CEN).
+- Rule c fires when a fund moves its schedule, for example UTG's late-December ex-dates and the Eaton Vance cluster on 2017-03-22.
+- Rule e counts every payment of semiannual payers such as ASA, including small level payments ($0.01 to $0.03).
+- Some funds pass the equity line because they hold other funds' shares, for example RFM (RiverNorth Flexible Municipal Income) and PCF (High Income Securities). They are not traditional equity funds.
+
+### A4. Stock instead of cash
+
+Fund-level labels come from the stock and reinvestment wording in each fund's latest N-CSR. A keyword rule did the first pass. Release text read by hand overrode it for 7 funds: CET, GAM, TY, STK, TWN, CEN and JOF. Apart from those overrides, the labels were not hand-checked.
+
+- MEASURED, by fund (89):
+  - 7 pay stock by default, with cash only if elected: ADX, PEO, CET, GAM, TY, STK and Eagle Capital Growth.
+    - STATED: the CET 2024-11-05 release says the distribution is payable in shares unless the holder elects cash.
+    - STATED: the GAM 2017 and 2018 notices say the same.
+    - STATED: for TY (2020 and 2021 releases) and STK (2017 release), this applies to the capital-gain part, which is paid in stock unless cash is elected.
+  - 46 reinvest by default under an opt-out plan, so registered holders get shares unless they elect cash. Street-name holders depend on their broker.
+  - 9 pay cash by default, with reinvestment only on election. These are the Eaton Vance funds, TWN and CEN.
+  - 27 are unknown.
+- MEASURED, by event (461): 94 in stock-by-default funds, 197 in opt-out reinvestment funds, 22 in cash-by-default funds and 148 unknown.
+- MEASURED, in the 60-event sample: 10 stock by default, 29 opt-out reinvestment, 5 cash by default and 16 unknown.
+- STATED, one event-level exception: IFN's $0.80 elective payout (declared 2021-12-09) was paid in shares unless the holder asked for cash. It is not the sampled IFN event.
+- The 94 stock-by-default events change the accounting. A holder who takes the default gets new shares at an issue price set after the ex-date, not cash on the pay date.
+
+### A5. Declaration lead, sample of 60
+
+- Draw: the sample was drawn before any date was read. The seed was 20261126. The 255 strata are fund family × year. Family comes from the N-CEN family name, and a fund with no family is its own stratum. The strata were shuffled and then drawn round-robin. Off-repo sample file sha256: f33b71f0c28916bb27740757398787ca2c4fb3857628f7f7fc5c30e9cac16391.
+- Allowed sources: issuer and fund-family pages, GlobeNewswire (and its einpresswire copies), ACCESSWIRE issuer copies, SEC filings (8-K and 497AD exhibits, N-CSR text) and issuer press lists.
+- Off limits: Business Wire and PR Newswire, including any republication of them. Nuveen, Eaton Vance, Nasdaq and Blackstone pages were not touched. Aggregator summaries were not used.
+- One SEC page refused the automated fetch, and two N-CSR fetches failed. None of them was retried another way.
+- Session rule: NYSE sessions from the rig calendar. A release marked after the close counts from the next session. The lead is the number of sessions from the announcement session to the ex-date session.
+- Off-repo results file sha256: a1d2cb00ec0d2649c86b1f008ec594b17cf359f210f31c9bc0104d4b7af33da9.
+
+Results:
+
+- MEASURED: 36 of 60 were public at least 3 sessions before the ex-date.
+  - The shortest lead was 4 sessions, if every untimed release is moved to the next session.
+  - The median lead was 7 sessions.
+- MEASURED: 1 of 60 was not public 3 sessions before. RENN Fund (RCG), ex 2022-12-22, was announced 2022-12-20: 2 sessions, or 1 if after the close.
+- MEASURED: 23 of 60 could not be dated from allowed sources.
+- The 36 dated events by fund:
+  - Fund releases or notices: ASA ×3, GAM ×3, UTG ×4, KF, CET, SWZ ×2, SPE, ADX ×2, RFM, TWN ×2, BST and RCG.
+  - GlobeNewswire: JOF ×5, KYN, TDF ×2 and CUBA ×2.
+  - SEC exhibits: TY ×2, STK, NTG and NXG.
+  - NXG note: an SEC 424B2 dated 2025-07-21 says the August distribution was already declared, with record date 4 August. The vendor ex-date is 2025-08-15. Either way, it was public more than 3 sessions before.
+
+The 23 undatable events, by reason:
+
+- 7 were released only through Business Wire or PR Newswire, which are off limits: SRV ×2, CAF ×2, MXF, EEA and CEE. CEE's N-CSR page also refused the automated fetch.
+- 2 are BlackRock funds (BDJ and BME). No BlackRock release was found, and the N-CSR fetch failed.
+- 2 are Eaton Vance funds (EVT and ETB). Eaton Vance is off limits, and the SEC Section 19 notices give only the month.
+- 4 have only an aggregator summary or no allowed copy: CEN, MGU, DXR and CHN 2019.
+- 7 fall outside the issuer press lists' date range: ASA 2016 and 2017, CET 2021, KF 2016 and 2020, RFM 2020 and CHN 2017.
+- 1 is IFN. Its N-CSR dates a different payout.
+
+Lead time by year:
+
+- Undatable events cluster in 2016 to 2020: 16 of 23.
+- The dated events cover every year from 2016 to 2026.
+
+Taken at face value, 36 of the 37 datable events cleared 3 sessions. The undatable 23 are UNKNOWN. They are not counted as either clearing or failing.
+
+### A6. Gaps and cautions for the second count
+
+- The universe misses funds that ended before mid-2018 and the 52 listed funds with no NPORT-P.
+- The equity line rule admits a few fund-of-funds and mixed funds.
+- Rule e is broad. It counts level semiannual payments, so the reading without rule e (281 / 173) is the safer number.
+- The stock labels for 82 of 89 funds rest on a keyword rule over one N-CSR per fund. 27 funds stay unknown.
+- Each event's date and amount rest on the vendor. They were checked against issuer or SEC text only for the 37 dated sample events. Where that text gave an amount or ex-date, it matched the vendor, apart from the NXG date question. For 9 of the 37, the date comes from a dated headline in an issuer news list with no amount (GAM 2017 and 2021, UTG 2020 and 2021, ASA 2021 and 2024, SWZ 2016, RFM 2021 and TDF 2018 through a GlobeNewswire copy), so those 9 are matched on fund and month only.
+- Nothing here used prices, so it says nothing about the edge.
