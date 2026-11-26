@@ -38,6 +38,9 @@ setup() {
   ENGINE_FLAGS+=(--root "$BASE" --key-file "$BASE/operator.key" --approval "$APPROVAL" --week "$WEEK")
   no_tm07
 }
+bearer_file() {  # absolute, existing, private: the glue runs the probe from the release directory
+  [[ $1 = /* ]] && [ -f "$1" ] && [ -r "$1" ] || { echo "BEARER_FILE must be an absolute path to a readable file" >&2; exit 2; }
+}
 stop_listener() {  # only this launch's generation: the pattern names its nonce-bound boundary file
   local pat="tm09_operator launch $ROLE_FLAGS .*--port $PORT --boundary $OPS/$SESSION-$NONCE-launch.json( |$)" pid
   pid=$($PGREP -f "$pat") || { echo "no listener" >&2; return 1; }

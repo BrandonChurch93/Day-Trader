@@ -10,6 +10,7 @@ set -euo pipefail
 setup "$@"
 [ $# = 6 ] || usage
 SIB=$5; BEARER=$6
+bearer_file "$BEARER"
 ops preflight "$MODE" ${RUN_CAPSULE:+"$RUN_CAPSULE" "$TM09_EXPORT_DIR"}
 out=$(ops checkpoint "$SESSION" "$PORT")
 PROOF=$(echo "$out" | sed -n 1p); CAP=$OPS/$(echo "$out" | sed -n 2p | cut -d' ' -f1)
