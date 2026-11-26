@@ -16,7 +16,7 @@ H = 3600
 def policy(raw):
     p = dict(yaml.safe_load(raw)["replay_18_plan"]["value"])
     integers = set("roll_hours lookback_hours funding_interval_hours funding_lag_intervals funding_jitter_seconds fill_lag_hours "
-                   "max_snapshot_age_days top_rank legs min_positive_years min_traded_slots "
+                   "max_snapshot_age_days archive_listing_lag_days top_rank legs min_positive_years min_traded_slots "
                    "annualization_days random_draws seed power_seed power_pairs".split())
     others = set("start end judged_cost_bps shown_cost_bps min_sharpe max_drawdown random_quantiles "
                  "power_sharpes power_sigma_daily max_missing_rank_pages min_judged_mapped_share".split())
@@ -78,6 +78,7 @@ class Snapshot:
     known_at: int              # exact UTC seconds
     contracts: tuple[Contract, ...]
     ranks: tuple[tuple[int,int], ...] = ()  # rank and ID from the raw page
+    migrations: tuple[tuple[int,int,int], ...] = ()  # alias, lineage, effective hour
 
 
 @dataclass(frozen=True)
@@ -121,15 +122,16 @@ def eligible(tape, snap, t, roster=None, p=P, funnel=None, exclusions=None):
     """Adapter must supply exact completed-bar and settlement coverage, not guessed zeros."""
     lo = t-p["lookback_hours"]-p["funding_interval_hours"]*p["funding_lag_intervals"]
     hi = lo+p["lookback_hours"]
-    scope = {i for r,i in snap.ranks if 1<=r<=p["top_rank"]} if snap.ranks else {
+    aliases = {alias:lineage for alias,lineage,effective in snap.migrations if t>=effective}
+    scope = {aliases.get(i,i) for r,i in snap.ranks if 1<=r<=p["top_rank"]} if snap.ranks else {
         c.coin_id for c in snap.contracts if 1<=c.rank<=p["top_rank"]}
     if roster is not None:
         scope = set(roster)
-    chosen = [c for c in snap.contracts if c.coin_id in scope and c.begin<=lo and c.end>t
+    # A retrospective accounting fence is not an as-of closure notice. It
+    # still constrains every historical input and the selected next open.
+    chosen = [c for c in snap.contracts if c.coin_id in scope and c.begin<=lo
               and c.listed_known_at<t*H and not (
                   c.closed_known_at is not None and c.closed_known_at<t*H and c.closed_effective<=t)]
-    if len({c.coin_id for c in chosen}) != len(chosen) or len({c.key for c in chosen}) != len(chosen):
-        raise Incomplete(f"ambiguous dated mapping at {t}")
     pool = []
     funnel = Counter() if funnel is None else funnel
     def blocked(reason,c):
@@ -143,9 +145,9 @@ def eligible(tape, snap, t, roster=None, p=P, funnel=None, exclusions=None):
         exclusions["no_eligible_dated_mapping"] = no_dated
     if roster is None and snap.ranks:
         funnel["raw_rank_page_rows"] += len(snap.ranks)
-        funnel["outside_rank_cutoff"] += len(snap.ranks)-len(scope)
+        funnel["outside_rank_cutoff"] += sum(not 1<=r<=p["top_rank"] for r,_ in snap.ranks)
     for c in chosen:
-        if not tape.traded(c.key, t-2) or not c.begin<=t-2:
+        if not c.begin<=t-2<c.end or not tape.traded(c.key, t-2):
             blocked("missing_prior_traded_bar",c)
             continue
         funnel["prior_bar"] += 1
@@ -167,6 +169,8 @@ def eligible(tape, snap, t, roster=None, p=P, funnel=None, exclusions=None):
                 rates.append(rate)
         else:
             pool.append((fsum(rates), c))
+    if len({c.coin_id for _,c in pool})!=len(pool) or len({c.key for _,c in pool})!=len(pool):
+        raise Incomplete(f"ambiguous dated mapping at {t}")
     funnel["rankable"] += len(pool)
     return sorted(pool, key=lambda q: (q[0], q[1].coin_id, q[1].key))
 
@@ -264,23 +268,49 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
         cash -= charge
         value(h,cash,save_day=False)
 
-    def post_fill(h):
+    def pay(h,events,phase,prices,risk_prices=None):
         nonlocal cash,funding_pnl
-        for key,(c,q,_,_,_) in tuple(positions.items()):
-            covered,rate,offset = tape.funding_event(key,h)
-            if not covered:
-                force(key,h,"occupied_funding_coverage_gap")
+        groups = {}
+        for key,(covered,rate,offset) in events.items():
+            if key not in positions or not covered or rate is None or (offset>0)-(offset<0)!=phase:
                 continue
-            if covered and rate is not None and offset>0:
-                mark = tape.mark_close(key,h-1)
-                if not valid(mark):
-                    mark = tape.trade_close(key,h-1)
+            groups.setdefault(offset,[]).append((key,rate))
+        if not groups:
+            return
+        nav_prices = prices if risk_prices is None else risk_prices
+        for offset,group in sorted(groups.items()):
+            flows = []
+            for key,rate in sorted(group):
+                if not isfinite(rate):
+                    raise Incomplete(f"invalid stored funding for {key} at {h}")
+                mark = prices.get(key)
                 if not valid(mark):
                     force(key,h,"settlement_mark_gap")
                     continue
-                flow = -q*mark*rate
-                cash += flow
-                funding_pnl += flow
+                flows.append(-positions[key][1]*mark*rate)
+                if phase<0:
+                    funnel["negative_offset_settlements"] += 1
+            flow = fsum(flows)
+            cash += flow
+            funding_pnl += flow
+            unrealized = fsum(q*((nav_prices.get(key) if valid(nav_prices.get(key)) else last)-basis)
+                              for key,(_,q,basis,_,last) in positions.items())
+            value(h,cash+unrealized,save_day=False)
+
+    def completed_marks(h,keys):
+        marks = {}
+        for key in keys:
+            px = tape.mark_close(key,h)
+            marks[key] = px if valid(px) else tape.trade_close(key,h)
+        return marks
+
+    def post_fill(h):
+        events = {key:tape.funding_event(key,h) for key in positions}
+        for key,(covered,_,_) in events.items():
+            if not covered:
+                force(key,h,"occupied_funding_coverage_gap")
+        if any(covered and rate is not None and offset>0 for covered,rate,offset in events.values()):
+            pay(h,events,1,completed_marks(h-1,positions),{key:v[2] for key,v in positions.items()})
         value(h,cash,save_day=False)
 
     first = start+lag
@@ -314,20 +344,8 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
             unrealized = 0.
             closes = {}
             events = {key:tape.funding_event(key,h) for key in positions}
-            for key,(c,q,_,_,_) in tuple(positions.items()):
-                covered,rate,offset = events[key]
-                if not covered or rate is None or offset>=0:
-                    continue
-                mark = tape.mark_close(key,h-2)
-                if not valid(mark):
-                    mark = tape.trade_close(key,h-2)
-                if not valid(mark):
-                    force(key,h,"settlement_mark_gap")
-                    continue
-                flow = -q*mark*rate
-                cash += flow
-                funding_pnl += flow
-                funnel["negative_offset_settlements"] += 1
+            if any(covered and rate is not None and offset<0 for covered,rate,offset in events.values()):
+                pay(h,events,-1,completed_marks(h-2,positions))
             for key,(c,q,basis,_,_) in tuple(positions.items()):
                 tr = tape.trade_close(key,h-1) if h-1<c.end else None
                 if not valid(tr):
@@ -342,23 +360,23 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
                 closes[key] = mark
             value(h, cash+unrealized, save_day=False)
             for key,(c,q,basis,_,_) in tuple(positions.items()):
-                mark = closes[key]
-                covered,rate,offset = events[key]
+                covered,_,_ = events[key]
                 at_fence = h>=c.end
                 if not covered and not at_fence:
-                    unrealized -= q*(mark-basis)
+                    unrealized -= q*(closes[key]-basis)
                     force(key,h,"occupied_funding_coverage_gap")
                     continue
-                if rate is not None and not isfinite(rate):
-                    raise Incomplete(f"invalid stored funding for {c.key} at {h}")
-                if rate is not None and (offset==0 or (offset>0 and h!=e)):
-                    flow = -q*mark*rate
-                    cash += flow
-                    funding_pnl += flow
+            pay(h,events,0,closes)
+            for key,(c,q,basis,_,_) in tuple(positions.items()):
+                at_fence = h>=c.end
                 if at_fence:
-                    unrealized -= q*(mark-basis)
+                    unrealized -= q*(closes[key]-basis)
                     force(key,h,"dated_accounting_fence")
             value(h, cash+unrealized)
+            # Positive offsets are after the UTC close; at a rebalance they
+            # are processed by post_fill against the incoming quantities.
+            if h!=e:
+                pay(h,events,1,closes)
     retarget(stop,(),{k:tape.open_price(k,stop) for k in positions})
     value(stop,cash)
     for h in range((stop//24+1)*24,end+1,24):

@@ -109,6 +109,27 @@ class FundingCarryTests(unittest.TestCase):
         with self.assertRaises(C.Incomplete):
             C.eligible(Fake(),s,self.t)
 
+    def test_migration_alias_links_one_lineage_only_at_its_effective_hour(self):
+        t = self.t
+        original = dict(coin_id=42,symbol="OLDUSDT",begin=t-1000,end=t-200,listed_known_at=(t-1000)*C.H,
+                        closed_effective=t-200,closed_known_at=(t-300)*C.H,delisting_notice=False,
+                        listing_evidence_sha256="a"*64,closure_evidence_sha256="b"*64)
+        successor = original|dict(coin_id=43,symbol="NEWUSDT",begin=t-96,end=t+1000,
+                                  listed_known_at=(t-96)*C.H,closed_effective=None,closed_known_at=None,
+                                  closure_evidence_sha256=None)
+        u = dict(version=1,scope="reconstructed_verified_subset",contracts=[original,successor],
+                 migration_links={"43":dict(lineage_id=42,effective_hour=t-96)})
+        contracts,_,_ = A.catalogue(u)
+        self.assertEqual([c.coin_id for c in contracts],[42,42])
+        aliases = tuple((i,*x) for i,x in A.migration_links(u).items())
+        page = C.Snapshot((t-1000)*C.H,contracts,((1,43),),aliases)
+        self.assertEqual(C.eligible(Fake(),page,t-500),[])
+        self.assertEqual([c for _,c in C.eligible(Fake(),replace(page,ranks=((1,42),)),t-500)],[contracts[0]])
+        self.assertEqual([c for _,c in C.eligible(Fake(),page,t)],[contracts[1]])
+        u["migration_links"]["43"]["effective_hour"] += 1
+        with self.assertRaisesRegex(C.Incomplete,"predates"):
+            A.catalogue(u)
+
     def test_future_publication_recent_settlement_and_fence_do_not_change_picks(self):
         f = Fake()
         p = C.P
@@ -119,10 +140,11 @@ class FundingCarryTests(unittest.TestCase):
         f.rank_overrides["1",lo] = [(t*C.H,100.),(t*C.H+1,101.)]
         f.trade_overrides["1",t-1] = None
         f.open_overrides["1",t] = None
-        c = replace(self.snap.contracts[0],end=t+1,closed_effective=t,closed_known_at=t*C.H+1)
+        c = replace(self.snap.contracts[0],end=t,closed_effective=t,closed_known_at=t*C.H+1)
         s = replace(self.snap,contracts=(c,*self.snap.contracts[1:]))
         self.assertEqual([(c.key,k) for c,k in C.selection(C.eligible(f,s,t))],
                          [(c.key,k) for c,k in baseline])
+        self.assertEqual(C.run_book(f,(s,),self.t,self.end).no_open,1)
         f.rank_overrides["1",lo].append((t*C.H-1,102.))
         self.assertNotEqual(C.selection(C.eligible(f,self.snap,t)),baseline)
         c = replace(c,closed_known_at=t*C.H-1)
@@ -186,6 +208,35 @@ class FundingCarryTests(unittest.TestCase):
                 f.offsets[key,h] = offset
                 r = C.run_book(f,snaps,self.t,self.end+C.ROLL)
                 self.assertAlmostEqual(r.funding_pnl,expected)
+
+    def test_subhour_utc_year_and_exact_midnight_boundary(self):
+        h = A.day_hour("2023-01-01")
+        start,end = h-48,h+48
+        snaps = snapshots(start,end)
+        fee = C.P["judged_cost_bps"]/10000
+        for offset in (-10_000_000,0,10_000_000):
+            with self.subTest(offset=offset):
+                f = Fake()
+                f.funding_overrides["8",h] = True,.06
+                f.offsets["8",h] = offset
+                r = C.run_book(f,snaps,start,end)
+                self.assertAlmostEqual(r.funding_pnl,.01)
+                self.assertAlmostEqual(r.years[2022],(.01 if offset<=0 else 0.)-fee)
+                self.assertAlmostEqual(r.years[2023],r.final/(1+r.years[2022])-1)
+                self.assertEqual(r.years[2023]>0,offset>0)
+
+    def test_distinct_settlement_timestamps_expose_intervening_drawdown(self):
+        f = Fake()
+        h = self.t+24
+        for key,offset in (("1",1_000_000),("8",20_000_000)):
+            f.funding_overrides[key,h] = True,2.
+            f.offsets[key,h] = offset
+        split = C.run_book(f,self.snaps,self.t,self.end)
+        self.assertAlmostEqual(split.funding_pnl,0.)
+        self.assertAlmostEqual(split.max_drawdown,1/3+C.P["judged_cost_bps"]/10000)
+        f.offsets["8",h] = f.offsets["1",h]
+        simultaneous = C.run_book(f,self.snaps,self.t,self.end)
+        self.assertAlmostEqual(simultaneous.max_drawdown,simultaneous.fees)
 
     def test_gap_zeroes_only_evidenced_terminal_long_and_continues(self):
         f = Fake()
@@ -395,8 +446,8 @@ class FundingCarryTests(unittest.TestCase):
             template = u["contracts"][0]
             archives,contracts = {},[]
             for i in range(1,13):
-                row = template|dict(coin_id=i,symbol=f"FAKE{i}USDT")
-                identity = {k:row[k] for k in ("coin_id","symbol","begin","end","listed_known_at")}
+                row = template|dict(coin_id=i,symbol=f"FAKE{i}USDT",listing_basis="dated_notice")
+                identity = {k:row[k] for k in ("coin_id","symbol","begin","end","listed_known_at","listing_basis")}
                 row["listing_evidence_sha256"] = record(identity|dict(kind="listing"))
                 contracts.append(row)
                 for kind,data in (("fundingRate",[[self.t*C.H,8,.001]]),
@@ -409,9 +460,13 @@ class FundingCarryTests(unittest.TestCase):
                              product_record_sha256=A.json_digest(sources[venue]["contracts"][0]))
                 included[venue][venue] = dict(coin_id=1,evidence_sha256=record(claim))
             u["contracts"] = contracts
-            u["unmatched_judged_ids"] = {str(i):dict(classification="identity_unresolved",
+            u["unmatched_judged_ids"] = {str(i):dict(classification="outside_registered_scope",
                  reason=f"Invented asset {i} has no documented test listing instrument.",
                  searched=["https://example.org/invented-product-list"]) for i in range(13,p["top_rank"]+1)}
+            for cid,row in u["unmatched_judged_ids"].items():
+                row["evidence_sha256"] = record(dict(kind="scope_exclusion",coin_id=int(cid),
+                    classification=row["classification"],reason=row["reason"]))
+            u["rank_page_exclusions"] = {r["date"]:u["unmatched_judged_ids"] for r in raw}
             manifest = dict(errors={},archives=archives)
             put("viewed_manifest",manifest)
             u["archive_manifests"]["viewed_manifest"] = pins["viewed_manifest"]
@@ -428,6 +483,23 @@ class FundingCarryTests(unittest.TestCase):
             put("universe",u)
             with self.assertRaisesRegex(C.Incomplete,"not bound to the exact listing"):
                 load(inv)
+
+    def test_listing_proxy_uses_earliest_pinned_positive_clock_plus_30_utc_days(self):
+        from datetime import datetime, timezone
+        utc = lambda y,m,d,h: int(datetime(y,m,d,h,tzinfo=timezone.utc).timestamp())
+        name = "data/futures/um/monthly/klines/FAKEUSDT/1h/FAKEUSDT-1h-2022-01.zip"
+        later = name.replace("2022-01","2022-02")
+        invalid = name.replace("2022-01","2021-12")
+        clock,proxy = utc(2022,1,7,22),utc(2022,2,6,0)
+        manifests = [dict(archives={later:dict(first=utc(2022,2,1,0),n=1)}),
+                     dict(archives={invalid:dict(first=utc(2021,12,3,0),n=0),name:dict(first=clock,n=1)})]
+        row = dict(symbol="FAKEUSDT",listing_basis="archive_first_plus_30_days",listed_known_at=proxy,
+                   begin=proxy//C.H,archive_first_path=name,archive_first_seconds=clock)
+        A.verify_listing_bases(dict(contracts=[row]),manifests,C.P)
+        for bad in (dict(archive_first_path=later),dict(archive_first_seconds=clock+1),
+                    dict(listed_known_at=proxy-1),dict(begin=proxy//C.H-1)):
+            with self.assertRaisesRegex(C.Incomplete,"earliest pinned clock"):
+                A.verify_listing_bases(dict(contracts=[row|bad]),manifests,C.P)
 
     def test_terminal_checks_same_coin_successor_evidence(self):
         t = self.t

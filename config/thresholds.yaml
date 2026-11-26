@@ -821,7 +821,7 @@ replay_17_plan:
   source: research_rig/PREREG_17_short_the_peak.md
 
 replay_18_plan:
-  value: {start: "2022-01-01", end: "2026-10-26", roll_hours: 72, lookback_hours: 72, funding_interval_hours: 8, funding_lag_intervals: 1, funding_jitter_seconds: 30, fill_lag_hours: 1, max_snapshot_age_days: 45, max_missing_rank_pages: 1, top_rank: 30, legs: 3, min_judged_mapped_share: 0.35, judged_cost_bps: 12, shown_cost_bps: [1, 24], min_sharpe: 1.0, max_drawdown: 0.25, min_positive_years: 3, min_traded_slots: 1, annualization_days: 365, random_draws: 200, seed: 18027, random_quantiles: [0.05, 0.5, 0.95], power_seed: 18100, power_pairs: 20, power_sharpes: [0.0, 0.5, 1.0, 1.5], power_sigma_daily: 0.007}
+  value: {start: "2022-01-01", end: "2026-10-26", roll_hours: 72, lookback_hours: 72, funding_interval_hours: 8, funding_lag_intervals: 1, funding_jitter_seconds: 30, fill_lag_hours: 1, max_snapshot_age_days: 45, max_missing_rank_pages: 1, archive_listing_lag_days: 30, top_rank: 30, legs: 3, min_judged_mapped_share: 0.35, judged_cost_bps: 12, shown_cost_bps: [1, 24], min_sharpe: 1.0, max_drawdown: 0.25, min_positive_years: 3, min_traded_slots: 1, annualization_days: 365, random_draws: 200, seed: 18027, random_quantiles: [0.05, 0.5, 0.95], power_seed: 18100, power_pairs: 20, power_sharpes: [0.0, 0.5, 1.0, 1.5], power_sigma_daily: 0.007}
   status: builder
   note: Plan 18 draft for queue 27. The conservative archive clock and review gates are not frozen.
   source: research_rig/PREREG_18_funding_carry_DRAFT.md

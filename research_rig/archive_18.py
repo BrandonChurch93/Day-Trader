@@ -103,10 +103,25 @@ def verify_rank_pages(rows,directory,p):
             raise C.Incomplete("saved top ranks differ from their pinned raw page")
 
 
+def migration_links(raw):
+    result = {}
+    for id_string,row in raw.get("migration_links",{}).items():
+        if not re.fullmatch(r"[1-9][0-9]*",id_string):
+            raise C.Incomplete("invalid migration alias")
+        cid = int(id_string)
+        lineage,effective = row.get("lineage_id"),row.get("effective_hour")
+        if (type(lineage) is not int or type(effective) is not int or min(lineage,effective)<=0
+            or lineage==cid or str(lineage) in raw["migration_links"]):
+            raise C.Incomplete("invalid or chained migration")
+        result[cid] = lineage,effective
+    return result
+
+
 def catalogue(raw):
     if raw.get("version")!=1 or raw.get("scope")!="reconstructed_verified_subset":
         raise C.Incomplete("unexpected universe provenance scope")
     contracts, symbols, keys, notices = [],{},set(),set()
+    links = migration_links(raw)
     for row in raw["contracts"]:
         cid,pair,beg,end,known,close,close_known=(row[k] for k in (
             "coin_id","symbol","begin","end","listed_known_at","closed_effective","closed_known_at"))
@@ -123,7 +138,10 @@ def catalogue(raw):
                 raise C.Incomplete("terminal claim has no dated delisting evidence")
             notices.add(key)
         keys.add(key)
-        contracts.append(C.Contract(cid,0,key,beg,end,known,close,close_known))
+        lineage,effective = links.get(cid,(cid,beg))
+        if beg<effective:
+            raise C.Incomplete("successor segment predates its documented migration")
+        contracts.append(C.Contract(lineage,0,key,beg,end,known,close,close_known))
         symbols[key] = pair
     spans = defaultdict(list)
     for c in contracts:
@@ -421,7 +439,8 @@ class Tape:
 def require_exclusion(row, context):
     if (not isinstance(row,dict) or row.get("classification") not in
         {"identity_unresolved","product_scale_unresolved","non_perpetual_asset",
-         "no_dated_listing_evidence","outside_registered_scope"}
+         "no_dated_listing_evidence","outside_registered_scope","before_dated_listing",
+         "archive_proxy_not_mature","between_migration_segments","archive_coverage_unavailable"}
         or not isinstance(row.get("reason"),str) or len(row["reason"].strip())<24
         or not isinstance(row.get("searched"),list) or not row["searched"]
         or not all(isinstance(s,str) and s.startswith("https://") for s in row["searched"])):
@@ -445,12 +464,18 @@ def bind_evidence(directory,pin,claim,inventory):
 
 def verify_evidence(u, sources, directory):
     inventory = set()
+    for cid,(lineage,effective) in migration_links(u).items():
+        row = u["migration_links"][str(cid)]
+        bind_evidence(directory,row.get("evidence_sha256"),dict(
+            kind="migration",coin_id=cid,lineage_id=lineage,effective_hour=effective),inventory)
     for row in u["contracts"]:
         identity = {k:row[k] for k in ("coin_id","symbol","begin","end")}
+        if "listing_basis" in row:
+            identity["listing_basis"] = row["listing_basis"]
         bind_evidence(directory,row["listing_evidence_sha256"],identity|dict(
             kind="listing",listed_known_at=row["listed_known_at"]),inventory)
         if row["closed_effective"] is not None:
-            bind_evidence(directory,row["closure_evidence_sha256"],identity|dict(
+            bind_evidence(directory,row["closure_evidence_sha256"],{k:v for k,v in identity.items() if k!="listing_basis"}|dict(
                 kind="closure",**{k:row[k] for k in ("closed_effective","closed_known_at","delisting_notice")}),
                 inventory)
     for venue,field in zip(VENUES,ROSTER_KEYS):
@@ -465,7 +490,43 @@ def verify_evidence(u, sources, directory):
                 product_record_sha256=json_digest(product)),inventory)
     for cid,row in u["unmatched_judged_ids"].items():
         require_exclusion(row,cid)
+        if "rank_page_exclusions" in u:
+            bind_evidence(directory,row.get("evidence_sha256"),dict(
+                kind="scope_exclusion",coin_id=int(cid),classification=row["classification"],
+                reason=row["reason"]),inventory)
     return json_digest(sorted(inventory))
+
+
+def first_archive_clocks(manifests, wanted):
+    first = {}
+    for manifest in manifests:
+        for name,meta in manifest["archives"].items():
+            match = BULK.fullmatch(name)
+            if match is None or match[3] not in wanted:
+                continue
+            seconds = meta.get("first")
+            if type(seconds) is not int or seconds<=0 or meta.get("n",0)<=0:
+                continue
+            value = seconds,name
+            if match[3] not in first or value<first[match[3]]:
+                first[match[3]] = value
+    return first
+
+
+def verify_listing_bases(u,manifests,p):
+    proxy = [r for r in u["contracts"] if r.get("listing_basis")=="archive_first_plus_30_days"]
+    first = first_archive_clocks(manifests,{r["symbol"] for r in proxy})
+    for row in u["contracts"]:
+        basis = row.get("listing_basis")
+        if "rank_page_exclusions" in u and basis not in {"dated_notice","archive_first_plus_30_days"}:
+            raise C.Incomplete("listing requires a dated notice or the registered archive proxy")
+        if basis!="archive_first_plus_30_days":
+            continue
+        clock,path = first.get(row["symbol"],(0,""))
+        assumed = (clock//86400+p["archive_listing_lag_days"])*86400
+        if (not path or row.get("archive_first_seconds")!=clock or row.get("archive_first_path")!=path
+            or row["listed_known_at"]!=assumed or row["begin"]*C.H!=assumed):
+            raise C.Incomplete("archive listing proxy disagrees with the earliest pinned clock and delay")
 
 
 def verify_rank_schedule(u,rank_rows,p):
@@ -561,20 +622,26 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
     snaps,_ = parse_snapshots(rank_rows,contracts,p)
     verify_rank_pages(rank_rows,paths["ranks"].parent/"cmc",p)
     mapped,counts = roster_map(u["us_rosters"],{v:rows[v] for v in VENUES})
-    wanted = {i for s in snaps for r,i in s.ranks if r<=p["top_rank"]}.union(*mapped.values())
+    links = migration_links(u)
+    lineage = lambda i: links.get(i,(i,0))[0]
+    mapped = {v:{lineage(i) for i in ids} for v,ids in mapped.items()}
+    wanted = {lineage(i) for s in snaps for r,i in s.ranks if r<=p["top_rank"]}.union(*mapped.values())
     contracts = tuple(c for c in contracts if c.coin_id in wanted)
     symbols = {c.key:symbols[c.key] for c in contracts}
-    snaps = tuple(replace(s,contracts=contracts) for s in snaps)
+    snaps = tuple(replace(s,contracts=contracts,migrations=tuple((i,*x) for i,x in links.items())) for s in snaps)
     represented = {c.coin_id for c in contracts}
     top = {i for s in snaps for r,i in s.ranks if r<=p["top_rank"]}
     gaps = u["unmatched_judged_ids"]
-    if set(gaps)!={str(i) for i in top-represented}:
+    if set(gaps)!={str(i) for i in top if lineage(i) not in represented}:
         raise C.Incomplete("every unmapped historical top-rank ID must have an exclusion reason")
     if any(c.coin_id not in wanted for c in catalogue(u)[0]):
         raise C.Incomplete("unreferenced contract in the universe")
     if verify_evidence(u,{v:rows[v] for v in VENUES},evidence_dir)!=inventory_pin:
         raise C.Incomplete("catalogue evidence inventory differs from approved inventory")
     manifests = [rows[k] for k in ("viewed_manifest","held_manifest")]
+    if "rank_page_exclusions" not in u:
+        raise C.Incomplete("missing dated decisions for unrepresented rank positions")
+    verify_listing_bases(u,manifests,p)
     observed = archive_inventory(manifests,set(symbols.values()),p)
     periods = period_inventory(contracts,symbols,observed,p)
     if u.get("archive_period_inventory_sha256")!=json_digest(periods):
@@ -582,14 +649,46 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
     def metadata_backed(c, month):
         return all(v=="manifest_rows_listed" for v in periods[c.key].get(month,{}).values()) and month in periods[c.key]
     complete_keys = {c.key for c in contracts if any(metadata_backed(c,m) for m in periods[c.key])}
+    page_funnel = {}
+    if set(u["rank_page_exclusions"])!={r["date"] for r in rank_rows if not r.get("hole")}:
+        raise C.Incomplete("dated decisions must cover exactly the observed rank pages")
+    listing_bases = {f"{r['coin_id']}/{r['symbol']}/{r['begin']}/{r['end']}":r["listing_basis"]
+                     for r in u["contracts"]}
     for snap in snaps:
         page = {i for r,i in snap.ranks if r<=p["top_rank"]}
         page_hour = snap.known_at//C.H
         # The preliminary page standing in for the start uses observations in
         # the start month; the warmup itself is still independently checked.
         month = datetime.fromtimestamp(max(page_hour,p["start"])*C.H,timezone.utc).strftime("%Y-%m")
-        mapped_for_page = {c.coin_id for c in contracts if c.coin_id in page
-                           and c.begin<=page_hour<c.end and metadata_backed(c,month)}
+        active = {c.coin_id for c in contracts if c.begin<=page_hour<c.end and metadata_backed(c,month)}
+        mapped_for_page = {i for i in page if (lineage(i) if page_hour>=links.get(i,(i,0))[1] else i) in active}
+        day = datetime.fromtimestamp(snap.known_at-C.H*24,timezone.utc).date().isoformat()
+        page_funnel[day] = dict(mapped=len(mapped_for_page),total=len(page),unmapped=sorted(page-mapped_for_page))
+        exclusions = u["rank_page_exclusions"][day]
+        if set(exclusions)!={str(i) for i in page-mapped_for_page}:
+            raise C.Incomplete(f"each unmapped rank appearance needs a dated decision: {day}")
+        for cid,row in exclusions.items():
+            require_exclusion(row,f"{day}/{cid}")
+            if cid in gaps:
+                if row!=gaps[cid] or row["classification"] not in {
+                        "non_perpetual_asset","outside_registered_scope","archive_coverage_unavailable"}:
+                    raise C.Incomplete(f"unresolved or unpinned ranked contract exclusion: {day}/{cid}")
+                continue
+            alias = int(cid)
+            family = [c for c in contracts if c.coin_id==lineage(alias)]
+            live = any(c.begin<=page_hour<c.end for c in family)
+            earliest = min(family,key=lambda c:c.begin)
+            if live and page_hour>=links.get(alias,(alias,0))[1]:
+                expected = "archive_coverage_unavailable"
+            elif page_hour<earliest.begin:
+                expected = ("archive_proxy_not_mature" if listing_bases[earliest.key]=="archive_first_plus_30_days"
+                            else "before_dated_listing")
+            elif page_hour>=max(c.end for c in family):
+                expected = "after_dated_closure"
+            else:
+                expected = "between_migration_segments"
+            if row["classification"]!=expected:
+                raise C.Incomplete(f"rank exclusion contradicts segment clocks or inventory: {day}/{cid}")
         if (len(mapped_for_page)/len(page)<p["min_judged_mapped_share"]
             or len(mapped_for_page)<2*p["legs"]):
             raise C.Incomplete("rank period lacks the configured breadth of dated archive mappings")
@@ -598,13 +697,23 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
         raise C.Incomplete("US roster illustration lacks any dated archive mapping")
     terminal_ids = {c.coin_id for c in contracts if c.key in notices}
     coverage = dict(scope=u["scope"],historical_top_ids=len(top),
-                    top_ids_with_dated_mapping=len(top&represented),unmatched_judged_ids=gaps,
+                    top_ids_with_dated_mapping=sum(lineage(i) in represented for i in top),unmatched_judged_ids=gaps,
                     top_ids_with_evidenced_delisting=len(top&terminal_ids),
                     full_market_dead_coin_retention=None,missing_saved_rank_pages=holes,us_rosters=counts,
                     rank_availability="saved historical page, conservatively next UTC day; revision history unknown",
                     funding_availability="finalized archive rate, full-interval lag; publication and revisions unknown",
                     us_roster_membership_looks_ahead=True)
     coverage["archive_month_labels"] = periods
+    coverage["rank_page_mapping"] = page_funnel
+    for venue in VENUES:
+        products = u["us_rosters"][venue]
+        coverage["us_rosters"][venue]["with_dated_segment"] = sum(
+            lineage(row["coin_id"]) in represented for row in products.values())
+        coverage["us_rosters"][venue]["mapped_but_no_dated_segment"] = sorted(
+            code for code,row in products.items() if row["coin_id"] is not None
+            and lineage(row["coin_id"]) not in represented)
+    coverage["archive_first_plus_30_days_ids"] = sorted({r["coin_id"] for r in u["contracts"]
+        if r.get("listing_basis")=="archive_first_plus_30_days"})
     return contracts,symbols,notices,snaps,mapped,coverage,manifests,top
 
 
@@ -616,7 +725,8 @@ def load(paths,pins,archive_dir,p,*,evidence_dir,inventory_pin,check=lambda:None
     coverage["archive_memory_budget_bytes"] = tape.budget_bytes
     coverage["observed_archive_coverage_by_month"] = tape.observed_coverage()
     archive_ids = {c.coin_id for c in contracts if symbols[c.key] in tape.store}
-    coverage["top_ids_with_any_archive"] = len(top&archive_ids)
+    links = {i:lineage for s in snaps for i,lineage,_ in s.migrations}
+    coverage["top_ids_with_any_archive"] = sum(links.get(i,i) in archive_ids for i in top)
     for v,ids in mapped.items():
         coverage["us_rosters"][v]["with_any_archive"] = len(ids&archive_ids)
     return tape,snaps,mapped,coverage
