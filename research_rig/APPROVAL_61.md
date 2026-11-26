@@ -1,0 +1,1 @@
+Approved by the lead: plan 61 ledger 203, validation only, adoption commit 46c4fb69ecf8460063a9f61eb5c9d011ac6c07ca, adoption approval SHA-256 d6dc65f242e94eb4010a0bc0c13b4e4e4a37f3d7cc97511e2aee8e6bac9d0d16.
