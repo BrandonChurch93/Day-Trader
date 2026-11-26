@@ -988,6 +988,33 @@ replay_35_plan:
   note: Points to the exact pinned machine-readable settings for queue 57 and ledger 170. No duplicated parameter values or runtime override.
   source: research_rig/PREREG_35_ibit_cme_expiry.md
 
+replay_39_plan:
+  value:
+    ledger_row: 174
+    queue_row: 65
+    judged_symbol: IWM
+    shown_symbol: SPY
+    first_bar_date: "2016-01-04"
+    last_bar_date: "2026-10-30"
+    sessions_per_symbol: 2723
+    held_sessions: 1
+    expected_events: 102
+    expected_post_2019_events: 65
+    expected_early_close_exits: 11
+    expected_other_sessions: 2620
+    costs_bps_per_side: {judged: 2, shown: [5, 10]}
+    marks:
+      events: {minimum_count: 80}
+      net_mean: {strictly_above: 0}
+      net_t: {minimum: 2.0}
+      trimmed_net_mean: {drop_best: 3, strictly_above: 0}
+      post_2019_net_mean: {from: "2020-01-01", strictly_above: 0}
+      gross_daily_comparison: {strictly_above: 0, minimum_welch_t: 2.0}
+      positive_year_breadth: {minimum_share: 0.60, minimum_years: 7, total_years: 11}
+  status: builder
+  note: Mirrors the byte-pinned Plan 39 scorer and calendar; not a runtime override. Separate lead approval and no-return input validation precede scoring.
+  source: research_rig/PREREG_39_iwm_preholiday.md
+
 tm_server_day_bars_cache_max:
   value: 400
   status: builder
