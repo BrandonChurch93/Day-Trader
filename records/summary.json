@@ -6,8 +6,8 @@
   "value_usd": 2024.69
  },
  "closed": [],
- "last_check_utc": "2026-11-26T13:55:55Z",
- "made_utc": "2026-11-26T13:55:55Z",
+ "last_check_utc": "2026-11-26T14:05:57Z",
+ "made_utc": "2026-11-26T14:05:57Z",
  "notes": {
   "fee": "The fee on crypto fills is added by this program from config/thresholds.yaml (practice_crypto_fee_bps_added).",
   "gap": "Gap is how far the fill was from the newest price the program had read when it sent the order, in basis points. Plus means the fill was worse for the account.",
@@ -234,6 +234,15 @@
    },
    "utc": "2026-11-26T13:05:47Z",
    "value_usd": 2024.69
+  },
+  {
+   "hold_value_usd": 2060.93,
+   "traders": {
+    "P1-BTC": 1000.0,
+    "T1-VTI": 1024.69
+   },
+   "utc": "2026-11-26T14:05:57Z",
+   "value_usd": 2024.69
   }
  ],
  "problems": [],
@@ -300,8 +309,8 @@
    "gain_usd": 0.0,
    "halt_reason": null,
    "halted": false,
-   "hold_gain_pct": 0.035432474251414714,
-   "hold_value_usd": 1035.43,
+   "hold_gain_pct": 0.036104144119990744,
+   "hold_value_usd": 1036.1,
    "id": "P1-BTC",
    "kind": "rule",
    "label": "not passed",
