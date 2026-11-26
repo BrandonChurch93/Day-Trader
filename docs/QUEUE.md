@@ -2,7 +2,7 @@
 
 The work list for the builder and its helpers. Take the top item that is not blocked, write its ledger row (`research_rig/TRIAL_LEDGER.md`), run it, put the result in `docs/STATUS.md`, then move the item to "Done" with one line saying what happened. Add new ideas at the bottom of "Ideas" with where the idea came from. Anyone may add an idea. Nothing here needs the owner's yes.
 
-Last changed: 2026-11-25 23:31 UTC
+Last changed: 2026-11-26 02:53 UTC
 
 ## Running now
 
@@ -13,7 +13,6 @@ As of 2026-11-25 21:12 UTC. Plans TM01 to TM04 are finished and are in Done or i
 | 9b | The earnings release reader. Design sample scored 2026-11-25 18:11 UTC and Claude Sonnet 5.5 alone chosen (`docs/research/44_replay_11_earnings_reader.md`). The held-back half is read: 2,146 answers, hashes pushed 2026-11-25 18:20 UTC. Waiting: the last five-day exits fall after the prices on file end (2026-11-24). When those days have traded, collect daily prices again for every symbol at once, rerun the split check, then score the held-back half once | `research_rig/PREREG_11_earnings_release_reader.md`, ledger rows 121 to 134 | 2026-11-25 |
 | 9g | Fast lane, the owner's own method (`practice/traders/F01_hot_coin_swing.md`). The control run of the futures book is done (lost at every fee, as expected). The daily picker: all 48 monthly sessions finished trading 2026-11-25 20:50 UTC and are being scored; no result is read until all 48 are scored. The hourly swing trader, with shorts allowed: 24 one-week sessions under way. The first start of the picker was void (shared working files) and is listed in `docs/STATUS.md`. Added 2026-11-25 23:19 UTC at the owner's request: Claude Fable 5.2 as a seventh trader on the same months and weeks, scored apart | `timemachine/PLAN_TM06_hot_coin_swing.md`, ledger rows TM06-0, TM06-P, TM06-S, TM06-P-g, TM06-S-g | 2026-11-25 |
 | - | The two fixed rules on the practice desk, pretend money | `practice/README.md` | 2026-11-25 16:31 UTC |
-| 23 | Day trading stocks that are in play: each morning the stocks with unusual volume in the first minutes, traded on a break of the opening range and closed by the end of the day. This is the stock version of the owner's hot coins. The reading is in (`docs/research/55_stocks_in_play_evidence_checked.md`): the published result charges no slippage, and one rebuild with measured fills loses. Now: measure from past bids and asks what a breakout order on such stocks would really have paid, on a sample of mornings, before anything else is built Frozen 2026-11-26 01:43 UTC as `research_rig/MEASURE_15_breakout_fills.md`, ledger row 156: build a full plan only if mean entry plus mean stop-exit slippage is at or below 5% of the stop distance; running now | a measurement, not a trial; a plan and ledger rows only if the cost is small | 2026-11-25 |
 
 ## Next, in order
 
@@ -81,6 +80,7 @@ The results of everything run before 2026-11-25 15:00 UTC are in the table in `d
 
 | # | What | What happened |
 |---|---|---|
+| 23 | Day trading stocks in play, a measurement first: what a breakout order really paid on 60 fixed mornings, 1,200 stock-days (ledger 156) | Done 2026-11-26 02:50 UTC. MEASURED. Mean entry plus stop-exit slippage was 0.2089 of the stop distance against a limit of 0.05, so the idea is dropped by the frozen rule; with odd lots counted 0.2719 ([doc 66](research/66_measure_15_breakout_fills.md)) |
 | 27 | Three-day low-minus-high funding carry on dated Binance USD-M contracts in the reconstructed top-30 subset (ledger 153 and 154) | Done 2026-11-26 02:30 UTC. MEASURED. Did not pass, 1 of 3 marks at 12 bps per side on net changes; -44.61% net, Sharpe -0.339, largest fall 57.33% ([Replay 18](research/65_replay_18_funding_carry.md)) |
 | 35 | Monday Asia trend proxy on bitcoin and ether perpetuals, viewed dates only (ledger 155) | Done 2026-11-26 01:24 UTC. MEASURED. Did not pass, 1 of 5 marks at 5 bps per side, -53.88% net, 95th of 168 start hours ([Replay 19](research/64_replay_19_monday_asia.md)) |
 | 34 | A look, not a test (ledger 152): what prices did after the short-the-peak signal on the already viewed coin list | Done 2026-11-25 23:27 UTC: a 5% fall came first in 49.0% of 47,099 signal hours against 50.2% for random hours; the signal carries no direction at any horizon from 1 to 72 hours (`docs/research/61_look_after_the_peak_signal.md`) |

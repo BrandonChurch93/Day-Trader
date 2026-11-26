@@ -148,6 +148,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/63_round_8_outside_evidence.md` | Checked outside evidence on eight dated-event ideas. Keeps the fast-track IPO test and small-lot tender audit; reading only, no test | CURRENT |
 | `docs/research/64_replay_19_monday_asia.md` | Monday Asia stand-in on viewed dates. Run once, did not pass, one of five marks | CURRENT |
 | `docs/research/65_replay_18_funding_carry.md` | Funding carry on the reconstructed ranked subset. Did not pass, one of three marks; four US rosters shown only | CURRENT |
+| `docs/research/66_measure_15_breakout_fills.md` | Measurement 15: what a breakout order on stocks in play really paid. Entry plus stop-exit slippage 0.2089 of the stop distance against a limit of 0.05; idea dropped | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -245,6 +246,8 @@ Working papers.
 | `research_rig/report_18.py` | Prints the Replay 18 result page from saved JSON only. No scoring or market-data reads | CURRENT |
 | `research_rig/PREREG_19_monday_asia.md`, `research_rig/common_19.py`, `research_rig/score_19.py`, `research_rig/test_19.py` | Frozen Queue 35 Monday Asia trend proxy for BTC and ETH, shifted-hour placebos and synthetic-only tests. Local one-shot complete | CURRENT |
 | `research_rig/MEASURE_15_breakout_fills.md` | Frozen measurement for queue 23: what a breakout order on stocks in play really paid on 60 fixed mornings, with the decision rule fixed before any trade or quote was collected. Not a trial | CURRENT |
+| `research_rig/measure_15_summary.json` | Measurement 15 aggregates only (counts, medians, means, 90th percentiles, outlier check). No trade, quote, price, time or symbol; the per-stock-day output stays off repo | CURRENT |
+| `research_rig/report_15.py` | Writes the Measurement 15 summary from the off-repo output, and prints doc 66 from the summary only. No rule run and no market-data reads | CURRENT |
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
 | `research_rig/report_19.py` | Prints the Replay 19 result page from the saved JSON. Does not score or read market data | CURRENT |
 | `research_rig/PREREG_20_upbit_listing_short_DRAFT.md`, `research_rig/common_20.py`, `research_rig/score_20.py`, `research_rig/test_20.py`, `research_rig/stage_20.py` | Queue 29 source red-day Upbit short, ordinary-jump comparison, checksum-only staging, offline clock scan and made-up tests. Draft, no real result | DRAFT |
