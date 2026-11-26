@@ -1,0 +1,467 @@
+"""Synthetic-only test suite: no private packet or filesystem price access."""
+from base64 import b64encode
+from copy import deepcopy
+from dataclasses import replace
+from datetime import date, datetime, time, timedelta
+from fractions import Fraction as F
+from hashlib import sha256
+from gzip import compress
+from io import StringIO
+import json
+import os
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+from unittest.mock import patch
+
+from count_63 import CUTOFF, HOLDS, NY, SABA, candidates, measure as counts, schedule, select, self_check
+from placebo_63 import Leg, admissible, leg_return, measure
+from placebo_native_63 import approved_bar_leaves
+from placebo_project_63 import project
+from placebo_run_63 import (
+    APPROVAL, OUTPUT_PINS, REMEDIATION, Proofs, approved, approved_scope, check_projection_receipt,
+    check_remediated_capture, check_transport_embargo, decode, exclusive, read_projection,
+)
+from preflight_63 import PLACEBO_EXCLUSIONS_NAME, parse_placebo_exclusions, request_calendar
+from power_63 import power
+from score_63 import (
+    BLIND_FLAGS, BlindFacts, Facts, PairOutcome, Stop, filer_days, fund_rates, judged_and_shown_only, load_blind_facts,
+    marks, measure_half, print_price_free_validation, validate_inputs,
+)
+
+
+class Plan63(unittest.TestCase):
+    def test_calendar_and_overlap(self):
+        self_check(schedule())
+
+    def test_duration_median_and_floor(self):
+        m = 60_000_000_000
+        quotes = [(-6*m, F(99), F(101)), (-5*m, F(99), F(101)),
+                  (-4*m, F(999), F(1001)), (-3*m, F(999), F(1001)),
+                  (-2*m, F(999), F(1001))]
+        self.assertEqual(measure_half(quotes), F(1, 1000))
+        self.assertIsNone(measure_half(quotes[:2]))
+        self.assertEqual(fund_rates(F(1, 10000), None), (F(15, 10000), F(55, 10000)))
+        self.assertEqual(fund_rates(None, F(1, 10000)), (F(55, 10000), F(55, 10000)))
+        with self.assertRaises(Stop):
+            measure_half(quotes + [quotes[-1]])
+
+    def test_validation_without_exit_price(self):
+        ok = Facts(date(2024, 5, 1), SABA, True, True, True, True,
+                   "printed_positive_volume", True, True, True, F(100), F(20), None)
+        no_lot = replace(ok, fund_entry_close=F(499))
+        self.assertEqual(validate_inputs([ok, ok, no_lot]), {
+            "placed_filer_days": 1, "meets_floor": False,
+            "gate_counts_fund_days": {"fund_no_whole_share": 1, "placed": 2}})
+        for bad in (replace(ok, action_sources_agree=False), replace(ok, exit_state="successor")):
+            with self.assertRaises(Stop):
+                validate_inputs([bad])
+        blind = BlindFacts(ok.day, ok.filer, *([True] * 9))
+        aggregate = StringIO()
+        print_price_free_validation([blind, blind], aggregate)
+        self.assertEqual(json.loads(aggregate.getvalue())["placed_filer_days_upper_bound"], 1)
+        with self.assertRaises(Stop):
+            print_price_free_validation([ok], StringIO())
+        planned = {"fictitious accession": (ok.day, ok.filer)}
+        clean = {"accession": "fictitious accession", **dict.fromkeys(BLIND_FLAGS, True)}
+        manifest = {"schema": "plan63-price-free-target-gates-v1", "gates": [clean]}
+        self.assertEqual(load_blind_facts(manifest, planned), [blind])
+        with self.assertRaises(Stop):
+            load_blind_facts({**manifest, "gates": [{**clean, "fund_entry_close": 20}]}, planned)
+
+    def test_leg_cash_and_split(self):
+        a, b = date(2024, 1, 5), date(2024, 1, 12)
+        leg = Leg("fund", a, b, F(100), F(49), True, True, ((b, "split", F(2)), (b, "cash_usd", F(2))))
+        self.assertEqual(leg_return(leg, "fund", a, b), F(2, 100))
+        with self.assertRaises(Stop):
+            leg_return(leg, "fund", a, b + timedelta(days=1))
+        with self.assertRaises(Stop):
+            leg_return(leg, "different fund", a, b)
+        for actions in (leg.actions + (leg.actions[-1],), tuple(reversed(leg.actions))):
+            with self.assertRaises(Stop):
+                leg_return(replace(leg, actions=actions), "fund", a, b)
+
+    def test_cluster_marks(self):
+        rows = filer_days([(date(2020, 1, 1), SABA, F(200)), (date(2020, 1, 1), SABA, F(100)),
+                          (date(2020, 1, 1), "non-Saba", F(-50)), (date(2020, 1, 2), "non-Saba", F(40))])
+        m = marks(rows, SABA, 600)
+        self.assertEqual(m["placed_filer_days"], 3)
+        self.assertEqual(m["raw_mean_bps"], F(140, 3))
+        self.assertFalse(m["marks"]["filer_breadth"])
+        self.assertFalse(m["marks"]["placement"])
+        day = date(2020, 1, 1)
+        o = [PairOutcome(day, SABA, F(100), True), PairOutcome(day, SABA, F(20), False)]
+        j = judged_and_shown_only(o, SABA, 600)
+        self.assertEqual(j["judged"]["raw_mean_bps"], 60)
+        self.assertEqual(j["shown_only_without_cusip_unverified_segments"]["raw_mean_bps"], 20)
+        self.assertNotIn("marks", j["shown_only_without_cusip_unverified_segments"])
+
+    def test_placebo_and_power_synthetic_only(self):
+        sessions = schedule()
+        ss = [d for d, c in sessions.items() if c is not None and 2017 <= d.year <= 2025]
+        raw, by_fund = [], {}
+        # Two independently listed funds on spread-out filing dates, clearing the
+        # placement floor so the power simulation exercises all dependence cases.
+        for i, day in enumerate([x for x in ss if x.day in (5, 10, 15)]):
+            for j in range(2):
+                key = f"artificial {i}-{j}"
+                at = sessions[day].astimezone(NY) - timedelta(hours=2)
+                raw.append({"acceptanceDateTime": at.isoformat(), "et_date": str(day),
+                            "is_cef_subject": True, "is_preferred": False, "cef_cik": key,
+                            "filer_group": SABA if j else "fictitious other", "accession": key})
+                by_fund[key] = (i, at)
+
+        def read_leg(key, a, b):
+            if key != "PCEF":
+                i, at = by_fund[key]
+                # No observer is ever given a quote or target-close row.
+                self.assertLess(sessions[b], at)
+                delta = (i % 13) - 5 if i % 19 else 43
+            else:
+                delta = 0
+            return Leg(key, a, b, F(100), F(100) + F(delta, 10), True, True, ())
+
+        aggregate = measure(raw, sessions, read_leg)
+        counted = counts(raw, sessions)
+        for n in HOLDS:
+            row = aggregate[str(n)]
+            self.assertEqual(row["placebo_filer_days"], counted["holds"][str(n)]["mature_as_of"]["filer_days"])
+            self.assertNotIn("mean", row)
+            self.assertNotIn("median", row)
+        out = power(raw, sessions, aggregate, trials=3)
+        self.assertEqual(out["hold_sessions"], HOLDS)
+        self.assertEqual(out["year_span"][-1], CUTOFF.year)
+        self.assertEqual(out["minimum_net_edge_by_scenario"]["20"]["high"]["gaussian_sd"]["1.0"]
+                         ["placement_probability"], 1.)
+
+        first, later = ss[10], ss[75]
+        prior_target_exit = ss[70]
+        for d in (first, later):
+            at = sessions[d].astimezone(NY) - timedelta(hours=2)
+            raw.append({"acceptanceDateTime": at.isoformat(), "et_date": str(d),
+                        "is_cef_subject": True, "is_preferred": False, "cef_cik": "repeat",
+                        "filer_group": SABA, "accession": str(d)})
+        for d in (later,):
+            at = sessions[d].astimezone(NY) - timedelta(hours=2)
+            raw.append({"acceptanceDateTime": at.isoformat(), "et_date": str(d),
+                        "is_cef_subject": True, "is_preferred": False, "cef_cik": "another",
+                        "filer_group": SABA, "accession": f"{d}-another"})
+        permitted_benchmark = []
+
+        def overlapping_case(key, a, b):
+            if key == "repeat":
+                self.assertLess(b, first)
+                return Leg(key, a, b, F(5), F(4), True, True, ())
+            if key == "another":
+                self.assertEqual(b, prior_target_exit)
+                return None   # missing is counted, never replaced
+            if key == "PCEF" and b == prior_target_exit:
+                permitted_benchmark.append((a, b))
+            return read_leg(key, a, b)
+
+        blocked = measure(raw, sessions, overlapping_case)
+        for n in HOLDS:
+            self.assertEqual(blocked[str(n)]["target_overlap"], 1)
+            self.assertEqual(blocked[str(n)]["missing_endpoint_or_identity"], 1)
+        self.assertEqual(len(permitted_benchmark), 3)
+
+    def test_projection_canonical_aliases_authentic_bytes_and_exact_fields(self):
+        sessions = schedule()
+        raw = []
+        subject_keys = ("0000000001", "0000000002")
+        for i, day in enumerate((date(2022, 7, 15), date(2022, 7, 18))):
+            at = sessions[day].astimezone(NY) - timedelta(hours=2)
+            raw.append({"acceptanceDateTime": at.isoformat(), "et_date": str(day),
+                        "is_cef_subject": True, "is_preferred": False, "cef_cik": subject_keys[i],
+                        "filer_group": SABA if i else "fictitious other", "accession": str(i)})
+        evidence = []
+
+        def seal(role, *binding):
+            b = tuple(map(str, binding))
+            details = {"action_sha256s": []} if role == "action_coverage" else {}
+            support = []
+            for source in ("issuer_primary", "vendor_native", "independent_reconciliation"):
+                excerpt = json.dumps([source, role, list(b)]).encode("ascii")
+                fragment = json.dumps({"schema": "plan63-bound-source-excerpt-v1", "source_kind": source,
+                    "role": role, "binding": list(b), "excerpt_sha256": sha256(excerpt).hexdigest(),
+                    "excerpt_b64": b64encode(excerpt).decode("ascii"), "claim": details}).encode("ascii")
+                support.append({"source_kind": source, "sha256": sha256(fragment).hexdigest(),
+                                "bytes_b64": b64encode(fragment).decode("ascii")})
+            src = json.dumps({"schema": "plan63-reviewed-proof-v1", "role": role, "binding": list(b),
+                              "support": support, "details": details}).encode("ascii")
+            pin = sha256(src).hexdigest()
+            evidence.append({"sha256": pin, "role": role, "binding": list(b),
+                             "bytes_b64": b64encode(src).decode("ascii")})
+            return pin
+
+        identity = {}
+        exceptions = []
+        for i, key in enumerate((*subject_keys, "PCEF")):
+            issue, alias = "issue-" + key, "PCEF" if key == "PCEF" else "alias-" + key
+            cusips = [] if i == 0 else [f"QA{i:07d}"]
+            identity[key] = {"subject_key": key, "stable_security_id": issue,
+                             "identity_sha256": seal("identity", key, issue),
+                             "dated_aliases": [{"alias": alias, "from_session": "2016-01-01",
+                                                "through_session": "2026-11-25", "cusips": cusips, "evidence_sha256":
+                                                seal("alias", key, issue, alias, "2016-01-01", "2026-11-25", *cusips)}]}
+            if not cusips:
+                exceptions.append({"subject_key": key, "alias": alias, "from_session": "2016-01-01",
+                                   "through_session": "2026-11-25",
+                                   "evidence_sha256": seal("cusip_unverified", key, alias, "2016-01-01", "2026-11-25")})
+        scope = sorted({(key, *span) for rows in admissible(raw, sessions).values()
+                        for r, g, span in rows if g == "eligible" for key in (r["fund"], "PCEF")})
+        manifest = {"schema": "plan63-placebo-projection-v1",
+                    "identity_map": list(identity.values()), "scopes": [], "successor_marks": []}
+        preflight = {"schema": "plan63-approved-scope-preflight-v1", "excluded": [], "deny": [],
+                     "successor_marks": [], "cusip_unverified": exceptions}
+        indices = {"schema": "plan63-placebo-leaf-index-v1", "legs": []}
+        native = {"schema": "plan63-placebo-bar-transport-v1", "streams": []}
+        tokens, archives, denied_offsets = {}, {}, {}
+        capture_rows = {"placebo": [], "benchmark": []}
+        for key, a, b in scope:
+            issue, alias = identity[key]["stable_security_id"], identity[key]["dated_aliases"][0]["alias"]
+            attrs = {"subject_key": key, "start": str(a), "end": str(b), "stable_security_id": issue}
+            manifest["scopes"].append({**attrs, "status": "present", "entry_alias": alias, "exit_alias": alias,
+                                       "identity_sha256": identity[key]["identity_sha256"],
+                                       "split_basis_sha256": seal("basis", issue, a, b),
+                                       "action_coverage_sha256": seal("action_coverage", issue, a, b),
+                                       "missing_endpoint_sha256": None})
+            ix = {**attrs, "actions": []}
+            for side, d in (("entry", a), ("exit", b)):
+                field = (key, d)
+                if field not in tokens:
+                    t = datetime.combine(d, time(), NY).isoformat()
+                    body = json.dumps({"bars": {alias: [{"t": t, "o": 10, "h": 999999, "l": 10,
+                                                         "c": 10, "v": 1}]}, "next_page_token": None}).encode("ascii")
+                    tokens[field] = approved_bar_leaves(body, {(alias, d)})[alias, d]
+                    packed = compress(body, mtime=0)
+                    digest = sha256(body).hexdigest()
+                    denied_offsets[digest] = body.index(b"999999")
+                    partition = "benchmark" if key == "PCEF" else "placebo"
+                    path = f"{partition}/native/bars_raw/{digest}.json.gz"
+                    archives[path] = packed
+                    native["streams"].append({"partition": partition, "subject_key": key,
+                        "stable_security_id": issue, "alias": alias, "first": str(d), "last": str(d),
+                        "feed": "sip", "view": "raw", "pages": [{"file": path,
+                        "file_sha256": sha256(packed).hexdigest(), "body_sha256": digest,
+                        "page_token": None, "next_page_token": None}]})
+                    capture_rows[partition].append({
+                        "file": f"{digest}.json.gz", "cik": "0001378872" if key == "PCEF" else key,
+                        "ticker": alias, "scope": f"{partition}_raw", "span_start": str(d), "span_end": str(d),
+                        "fetched_utc": "2026-11-26T00:00:00Z", "bytes": len(packed), "sha256":
+                        sha256(packed).hexdigest(), "body_bytes": len(body), "body_sha256": digest,
+                        "page": 0, "attempt": 1, "status": 200, "page_token": None, "next_page_token": None,
+                        "params": {"symbols": alias, "timeframe": "1Day", "start": str(d), "end": str(d),
+                                   "adjustment": "raw", "feed": "sip", "asof": "-", "sort": "asc", "limit": "10000"}})
+                ix[side] = tokens[field]
+            indices["legs"].append(ix)
+
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            preflight_pin, exclusion_pin = "a" * 64, "b" * 64
+            exclusion_name = f"placebo/{PLACEBO_EXCLUSIONS_NAME}"
+            sealed = {exclusion_name: {"bytes": 119, "sha256": exclusion_pin}}
+
+            def write_metadata(p, obj):
+                b = json.dumps(obj).encode("ascii")
+                p.write_bytes(b)
+                p.chmod(0o600)
+                return {"bytes": len(b), "sha256": sha256(b).hexdigest()}
+
+            for partition, entries in capture_rows.items():
+                part = root / partition
+                part.mkdir(mode=0o700)
+                index = {"ledger": 206, "stage": "plan63_stage_a", "approved_preflight_sha256": preflight_pin,
+                         "entries": entries, "total_pages": len(entries)}
+                if partition == "placebo":
+                    index.update(excluded_ciks_file=exclusion_name, excluded_ciks_sha256=exclusion_pin)
+                sealed[f"{partition}/transport_index.json"] = write_metadata(part / "transport_index.json", index)
+            pin = write_metadata(root / REMEDIATION, {"decoded_values_present": False,
+                "target_directory_present": False, "approved_stage_a_preflight_sha256": preflight_pin,
+                "sealed_files": sealed})
+            auth = {"custodian_uid": os.geteuid(), "remediated_capture_sha256": pin["sha256"],
+                    "placebo_exclusions_sha256": exclusion_pin}
+            with patch("placebo_run_63.PACKET", root / "placebo"):
+                active = check_remediated_capture(auth)
+                (root / "placebo" / "transport_index.json").write_bytes(b"{}")
+                with self.assertRaisesRegex(Stop, "PIN"):
+                    check_remediated_capture(auth)
+
+        def build(ix, v, loader=archives.__getitem__):
+            return project(manifest, raw, sessions, Proofs(evidence), ix, v, preflight,
+                           placebo_exclusions=(), active_capture=active, load_archive=loader)
+
+        blob = build(indices, native)
+        with patch("placebo_project_63.read_captured", side_effect=AssertionError("premature archive open")) as spy:
+            # Valid streams precede both false relabels. Neither may open any archive.
+            unsurfaced = deepcopy(native)
+            stream = [s for s in unsurfaced["streams"] if s["partition"] == "placebo"][-1]
+            path = f"{stream['partition']}/native/bars_raw/unsurfaced.json.gz"
+            archives[path] = archives[stream["pages"][0]["file"]]
+            stream["pages"][0]["file"] = path
+            with self.assertRaisesRegex(Stop, "NATIVE_ACTIVE_CAPTURE"):
+                build(indices, unsurfaced)
+            relabeled = deepcopy(native)
+            a, b = [s for s in relabeled["streams"] if s["partition"] == "placebo"][-2:]
+            a["pages"], b["pages"] = b["pages"], a["pages"]
+            with self.assertRaisesRegex(Stop, "NATIVE_ACTIVE_CAPTURE"):
+                build(indices, relabeled)
+            spy.assert_not_called()
+        with patch("placebo_project_63.single_token", side_effect=AssertionError("premature price read")) as spy:
+            spy.reset_mock()
+            extra_scope = deepcopy(indices)
+            extra_scope["legs"].append({**extra_scope["legs"][0], "subject_key": "forbidden"})
+            late_bad = deepcopy(indices)
+            late_bad["legs"][-1]["entry"]["volume"] = 9
+            redirected = deepcopy(indices)
+            ref = redirected["legs"][0]["entry"]["close_ref"]
+            ref.update(offset=denied_offsets[ref["body_sha256"]], length=6)
+            for ix in (extra_scope, late_bad, redirected):
+                with self.assertRaises(Stop):
+                    build(ix, native)
+            bad_native = deepcopy(native)
+            bad_native["streams"][0]["pages"][0]["body_sha256"] = "a" * 64
+            with self.assertRaises(Stop):
+                build(indices, bad_native)
+            chain = deepcopy(native)
+            chain["streams"][0]["pages"][0]["next_page_token"] = "missing-tail"
+            with self.assertRaises(Stop):
+                build(indices, chain)
+            false_missing = deepcopy(manifest)
+            entry = false_missing["scopes"][0]
+            entry["status"] = "missing_endpoint"
+            entry["split_basis_sha256"] = entry["action_coverage_sha256"] = None
+            entry["missing_endpoint_sha256"] = seal("missing_endpoint", entry["stable_security_id"],
+                                                    entry["start"], entry["end"])
+            with self.assertRaisesRegex(Stop, "NATIVE_MISSING_STATUS"):
+                project(false_missing, raw, sessions, Proofs(evidence), indices, native, preflight,
+                        placebo_exclusions=(), active_capture=active, load_archive=archives.__getitem__)
+            evidence.pop()  # remove the manufactured false status attestation
+            spy.assert_not_called()
+        malformed = deepcopy(blob)
+        malformed["legs"][0]["entry"]["volume"] = 0
+        p = Proofs(evidence)
+        allowed, _, _, _ = approved_scope(manifest, raw, sessions, p, preflight)
+        with self.assertRaises(Stop):
+            read_projection(malformed, allowed, p)
+        alias_collision = deepcopy(manifest)
+        alias_collision["identity_map"][1]["stable_security_id"] = identity[subject_keys[0]]["stable_security_id"]
+        with self.assertRaises(Stop):
+            approved_scope(alias_collision, raw, sessions, Proofs(evidence), preflight)
+        successor_missing = {**preflight, "successor_marks": [{}]}
+        with self.assertRaises(Stop):
+            approved_scope(manifest, raw, sessions, Proofs(evidence), successor_missing)
+        with self.assertRaises(Stop):
+            approved_scope(manifest, raw, sessions, Proofs(evidence), {**preflight, "cusip_unverified": []})
+        with self.assertRaises(Stop):
+            Proofs([{**evidence[0], "bytes_b64": b64encode(b"unapproved").decode("ascii")}])
+
+    def test_once_lock_and_duplicate_json(self):
+        with self.assertRaises(Stop):
+            decode(b'{"a":1,"a":2}')
+        with TemporaryDirectory() as p:
+            folder = os.open(p, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                exclusive(folder, "attempt.once", b"pinned approval")
+                with self.assertRaises(FileExistsError):
+                    exclusive(folder, "attempt.once", b"second attempt")
+                self.assertEqual((Path(p) / "attempt.once").read_bytes(), b"pinned approval")
+            finally:
+                os.close(folder)
+
+    def test_extra_change_in_lead_approval_commit_is_refused(self):
+        approved_sha, freeze = "a" * 40, "b" * 40
+        fixture = [approved_sha.encode("ascii"), f"{approved_sha} {freeze}\n".encode("ascii"),
+                   f"A\t{APPROVAL}\nM\tother-path\n".encode("ascii")]
+        with patch("placebo_run_63.git", side_effect=fixture):
+            with self.assertRaisesRegex(Stop, "APPROVAL_SOLE_ADD"):
+                approved(approved_sha)
+
+    def test_eighteen_legacy_page_overlaps_are_refused_whole(self):
+        sessions = schedule()
+        trading = [d for d, t in sessions.items() if d.year == 2022 and t is not None]
+        raw = []
+        subjects = [f"{i:010d}" for i in range(1, 10)]
+        for key in subjects:
+            for offset in (30, 34, 97):
+                d = trading[offset]
+                at = sessions[d] - timedelta(hours=2)
+                raw.append({"acceptanceDateTime": at.isoformat(), "et_date": str(d),
+                            "is_cef_subject": True, "is_preferred": False, "cef_cik": key,
+                            "filer_group": SABA, "accession": f"{key}-{offset}"})
+        _, deduped, days, closes = candidates(raw, sessions)
+        # The row at 34 is skipped by every target schedule, so the old
+        # selected-only subtraction leaves days 91/92 from the late placebo.
+        legacy = {key: set() for key in subjects}
+        for n in HOLDS:
+            for r in select(deduped, closes, n):
+                self.assertNotEqual(days[r["entry"]], trading[34])
+                legacy[r["fund"]].update(days[r["entry"]:r["exit"] + 1])
+        trimmed = {key: set(trading[87:93]) - old for key, old in legacy.items()}
+        self.assertEqual(set(map(frozenset, trimmed.values())), {frozenset(trading[91:93])})
+        self.assertEqual(sum(bool(set(trading[34:95]) & leaked) * 2 for leaked in trimmed.values()), 18)
+        for n, rows in admissible(raw, sessions).items():
+            rejected = [(row, span) for row, gate, span in rows if gate == "target_overlap"]
+            self.assertEqual(len(rejected), 9)
+            self.assertTrue(all(row["day"] == trading[97] and span is None for row, span in rejected))
+        repaired = request_calendar(raw, sessions)
+        all_days = sorted(sessions)
+        self.assertTrue(all(all_days[b] < trading[30] for xs in repaired["placebo"].values() for _, b in xs))
+        listed = (json.dumps(subjects, separators=(",", ":")) + "\n").encode("ascii")
+        purged = parse_placebo_exclusions(listed, sha256(listed).hexdigest())
+        with self.assertRaises(ValueError):
+            parse_placebo_exclusions(listed + b" ", sha256(listed).hexdigest())
+        self.assertEqual(len(listed), 119)
+        post = request_calendar(raw, sessions, placebo_exclusions=purged)
+        self.assertFalse(post["placebo"])
+        self.assertEqual((post["target"], post["quote_dates"]), (repaired["target"], repaired["quote_dates"]))
+        short = request_calendar(raw, sessions, placebo_exclusions=purged, target_hold=5)
+        self.assertEqual(short["placebo_gate_counts"], post["placebo_gate_counts"])
+        s = {"partition": "placebo", "subject_key": subjects[0], "stable_security_id": "synthetic",
+             "alias": "DUMMY", "first": str(trading[91]), "last": str(trading[92]), "feed": "sip",
+             "view": "raw", "pages": []}
+        transport = {"schema": "plan63-placebo-bar-transport-v1", "streams": [s]}
+        with self.assertRaisesRegex(Stop, "NATIVE_EMBARGO"):
+            check_transport_embargo(transport, raw, sessions, (), {}, ())
+        s["first"] = s["last"] = str(trading[20])  # otherwise clean, but fund is purged
+        with self.assertRaisesRegex(Stop, "NATIVE_PLACEBO_EXCLUDED"):
+            check_transport_embargo(transport, raw, sessions, (), {}, purged)
+
+    def test_measurement_receipt_binds_projection_outputs(self):
+        auth = {**dict.fromkeys(OUTPUT_PINS, "a" * 64), "project_commit": "b" * 40,
+                "remediated_capture_sha256": "c" * 64, "placebo_exclusions_sha256": "d" * 64}
+        good = {"schema": "plan63-audited-projection-receipt-v1", **auth}
+        def check(obj):
+            b = json.dumps(obj).encode("ascii")
+            return check_projection_receipt(b, {**auth, "projection_receipt_sha256": sha256(b).hexdigest()})
+        check(good)
+        with self.assertRaisesRegex(Stop, "PROJECTION_RECEIPT"):
+            check({**good, "legs_sha256": "e" * 64})
+
+    def test_native_bar_offset_scan_never_decodes_price(self):
+        t = b'"2022-07-18T04:00:00Z"'
+        native = (
+            b'{"bars":{"DO-NOT-READ":[{"t":' + t + b',"c":123456789,"h":4,"o":4,"l":4,"v":1}],'
+            b'"ALLOW":[{"o":2,"h":3,"l":1,"c":2.5,"t":' + t + b',"v":7}]},"next_page_token":null}'
+        )
+        d = date(2022, 7, 18)
+        seen = []
+        original = json.loads
+
+        def only_metadata(b, *args, **kwargs):
+            seen.append(b)
+            self.assertNotIn(b"123456789", b)
+            self.assertNotIn(b"2.5", b)
+            return original(b, *args, **kwargs)
+
+        with patch("placebo_native_63.json.loads", side_effect=only_metadata):
+            got = approved_bar_leaves(native, {("ALLOW", d)})
+        self.assertEqual(set(got), {("ALLOW", d)})
+        off = got["ALLOW", d]["close_ref"]
+        self.assertEqual(native[off["offset"]:off["offset"] + off["length"]], b"2.5")
+        self.assertEqual(got["ALLOW", d]["volume"], 7)
+        self.assertTrue(seen)
+
+
+if __name__ == "__main__":
+    unittest.main()

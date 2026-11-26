@@ -1,0 +1,20 @@
+{
+  "status": "placebo_source_frozen_before_hold_ruling",
+  "custodian_uid": 2000,
+  "source_pins": {
+    "calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
+    "calendar_26.json": "1c9dc4516c0f0635225ca29be66713bda08f840634ab127948da3cb9cca77a55",
+    "calendar_50.json": "9012929cf3e207d99b7b1400856c74c69a360243d14adaa32bd274e6b6cd9300",
+    "count_63.py": "0346d3e6d05bfadd33202ea47d23c9c20f08401b1157ddd80b87253d9286e417",
+    "placebo_63.py": "953b8f43795ede475ca584b2eaf04cc07897ffbb3bf8caaafc8510c51071b227",
+    "placebo_native_63.py": "48ba20c57f169c89de07cd15f6a7c8f493ba0469f69fe8b074b05cfe4adbc557",
+    "placebo_project_63.py": "943af18d44bb5e606257dbb9c9adc49eda9fcff12e3ab9ea4efafe4f69156932",
+    "placebo_run_63.py": "3bb3a90351098a222de52a759c3ce821f0f6082fb51c3d2f36d80e5e5c19cfcd",
+    "preflight_63.py": "1f72635754abfd5cb0bf38342f1332098c4db1ba1e6d3804d801300172458329",
+    "score_63.py": "6b0c854bb5ba16ad07b6bdce862033ff0397c758155e9ce23414e9ed3987a8e5"
+  },
+  "auditor_review_sha256": "13db08e9a0c868454026e518ab0085327bec60c3f554781cea32719805d10411",
+  "acquisition_approval_sha256": "394cc93b0d51c5a590b6cb8359e2398539158089f810ab1548c9fd48836703da",
+  "remediated_capture_sha256": "8a22771fdd44a79b964f09a6a78bee626a6b5696d1cc097b0d3a436fba0bdebc",
+  "placebo_exclusions_sha256": "7eceed81899f00a7002ded8fbf2577da73d46af02f5a8ea4ecce90448b81f405"
+}
