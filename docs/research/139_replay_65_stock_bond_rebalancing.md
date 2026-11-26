@@ -74,7 +74,11 @@ MEASURED. Each line below was named in the plan as shown only. None of them can 
 
 ## Independent recompute
 
-Pending.
+- MEASURED. A second helper rebuilt the judged numbers with its own code, written from the plan text without reading the scorer. Its first numbers were fixed on disk at 2026-11-26 11:40:29 UTC, before it opened the scored result (SHA-256 `39aa8b0fccf19cece3c35d8199912510947313b757c147c103d3caacde431c08`).
+- MEASURED. That first recompute did not agree in full. It gave a mean of +1.10 bp a session, t 1.20, a trimmed mean of -1.51 bp and 6 of 11 positive years, so it met 2 of 5 marks where the scored run met 3 of 5. Four marks and the verdict (did not pass) were the same; the year breadth mark differed.
+- STATED by the helper, checked by the lead agent against the two scripts. The gap came from one line of the recompute's own code: it treated the last 4 sessions of each month as the Calendar window where the frozen plan says 5. The Threshold half matched in the first recompute; only the Calendar side differed.
+- MEASURED. With that one line corrected, the second recompute (fixed at 2026-11-26 11:40:52 UTC, SHA-256 `455198866cfb0586438629c6039f6613a58300b4fdd27a186db1974c9dd18ac4`) agrees on all five marks, and its mean, t, trimmed mean and all 11 yearly means agree to within 1e-15.
+- STATED. The correction was made after the helper had opened the scored result, so the second agreement is weaker evidence than a blind match would be. Both files are kept. The recompute did not cover the TLT, lag-one, full round trip, SH cash-account or other-reading shown lines; those rest on the scorer alone.
 
 ## Run record
 

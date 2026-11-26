@@ -1,4 +1,4 @@
-# Where We Stand After 43 Scored Tests
+# Where We Stand After 44 Scored Tests
 
 Last changed: 2026-11-26 UTC (Replay 22 result added after Replay 62). Plain synthesis for the owner. Figures come from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the named repo files, including drafts where noted; no return was recomputed. Claims are labeled MEASURED (from our own runs), STATED (from plans, schedules, or external sources cited in repo docs), or UNKNOWN (not yet measured).
 
@@ -51,22 +51,23 @@ MEASURED: Forty-three scored tests (trading replays, AI time-machine evaluations
 | 41 | Replay 60 | Buy special-dividend declarations two sessions after the filing, hold 20 sessions | event | Yes | Did not pass (6 of 7 marks) | 339 placed pairs, +1.96% mean net (clustered t 2.38); +0.96% against IWM with clustered t 1.23 against a mark of 2, the one missed mark (`docs/research/126_replay_60_special_dividends.md`) |
 | 42 | Replay 62 | Buy the close before a special-dividend ex-date, sell the ex-date close, hedged against IWM | event | Yes | Did not pass (1 of 5 marks) | 316 placed pairs, -0.06% mean net against IWM, clipped clustered t -0.63 against a mark of 2, 4 of 11 years positive against a mark of 7 (`docs/research/130_replay_62_special_dividend_ex_day.md`) |
 | 43 | Replay 22 | Range-break rule from Fable 5.2 picker's notes, no AI | momentum | Yes | Did not pass (1 of 5 marks) | +275.40% against +274.25% for holding the same coins, 2020 to March 2026 at 12 bp; daily Sharpe 0.67 against a mark of 1.0, largest fall 79.40% against 40%, 57% of 500 random-entry twins at or above it, 3 of 7 years positive; -11.14% without its best 3 trades (`docs/research/137_replay_22_fable_rule_a.md`) |
+| 44 | Replay 65 | Trade against stock-bond rebalancing flow, SPY against IEF, weight set daily at the close (NBER w33554) | forced flow | Yes | Did not pass (3 of 5 marks) | 2,614 sessions, +1.01 bp mean net a session, weekly clustered t 1.04 against a mark of 2, -1.76 bp without its best 27 sessions, 7 of 11 years positive; net yearly Sharpe 0.35 against about 1 stated in the paper; -0.07 bp without March 2020 (`docs/research/139_replay_65_stock_bond_rebalancing.md`) |
 
 ## 2. Count by Family
 
-MEASURED from the 43 scored tests in Section 1:
+MEASURED from the 44 scored tests in Section 1:
 
 | Family | Tested | Counted passes | Notes |
 |---|---:|---:|---|
 | momentum | 9 | 0 | Replay 13 Rule A met relative marks vs all coins but lost ~70% in 3 years and is not a counted pass; Replay 22 (the Fable 5.2 picker's range-break rule with no AI) ended level with holding the same coins and could not be told apart from random entries |
 | AI discretionary | 9 | 0 | TM06 picker met its marks on months that may lie inside the models' memory and is not a counted pass; Replay 11 held-back (2,146 releases) is still open; TM02 met its headlines-help sub-mark only |
-| forced flow | 9 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable. Replays 52 and 53 did not pass. |
+| forced flow | 10 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable. Replays 52, 53 and 65 did not pass; Replay 65 (daily stock-bond rebalancing) had a positive mean that sat in March 2020 |
 | chart pattern | 5 | 0 | All five failed, including Measurement 15 fill gate |
 | carry | 2 | 0 | Both cross-coin and same-coin funding carry failed after costs |
 | calendar | 2 | 0 | Replay 39 (IWM pre-holiday) missed both t marks at 1.91 and 1.82 |
 | event | 6 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable); Replay 21, both legs of Replay 46, Replay 60 and Replay 62 did not pass |
 | copy-trading | 1 | 0 | Replay 12 (Congress disclosures) lagged SPY by 1.0%/yr on held-back data |
-| Total | 43 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
+| Total | 44 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
 
 ## 3. What the First Two Passes Have in Common and Their Dollar Size
 

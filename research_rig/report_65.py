@@ -24,10 +24,15 @@ POWER_SHA = "5ad7b0c52fec7504d2acacdcb458adeef1fb9f68a220afbdaf35bc3f6294cbba"
 APPROVAL = ROOT / "research_rig/APPROVAL_65.md"
 FREEZE = "a6688cb7da016a182d38ceaedd773598047a4133"
 # Independent recompute: a second helper's own numbers, saved off the repo. None means pending.
-# When it arrives, set RECOMPUTE_SHA (and RECOMPUTE_FIXED) and adapt recompute_lines to its keys.
-RECOMPUTE = Path("/home/user/workspace/rig/data/replay_65_notes/recompute_65.json")
-RECOMPUTE_SHA = None
-RECOMPUTE_FIXED = None
+NOTES = Path("/home/user/workspace/rig/data/replay_65_notes")
+# First json: fixed on disk before the helper opened the scored result.
+RECOMPUTE_FIRST = NOTES / "recompute_65.json"
+RECOMPUTE_FIRST_SHA = "39aa8b0fccf19cece3c35d8199912510947313b757c147c103d3caacde431c08"
+RECOMPUTE_FIRST_FIXED = "2026-11-26 11:40:29 UTC"
+# Second json: written after the helper opened the result and corrected one line of its own code.
+RECOMPUTE = NOTES / "recompute_65_b.json"
+RECOMPUTE_SHA = "455198866cfb0586438629c6039f6613a58300b4fdd27a186db1974c9dd18ac4"
+RECOMPUTE_FIXED = "2026-11-26 11:40:52 UTC"
 # STATED by the lead agent: the saved aggregate holds no run clock.
 RUN_WINDOW = ("2026-11-26 11:36:49 UTC", "2026-11-26 11:36:52 UTC")
 PLAN_PATH = "../../research_rig/PREREG_65_stock_bond_rebalance_spread.md"
@@ -53,22 +58,42 @@ def read_pinned(path, pin, name):
 
 
 def read_recompute():
-    return None if RECOMPUTE_SHA is None else read_pinned(RECOMPUTE, RECOMPUTE_SHA, "recompute")
+    if RECOMPUTE_SHA is None:
+        return None
+    return (read_pinned(RECOMPUTE_FIRST, RECOMPUTE_FIRST_SHA, "first recompute"),
+            read_pinned(RECOMPUTE, RECOMPUTE_SHA, "second recompute"))
+
+
+def bp(x):
+    return f"{x * 1e4:+.2f} bp"
 
 
 def recompute_lines(j, rc):
     if rc is None:
         return "Pending."
-    # Expected layout: rc["judged"] with the same keys as the scored result's "judged" block.
-    r = rc["judged"]
-    gap = max([abs(r[k] - j[k]) for k in ("mean", "t_week", "trim_mean")]
-              + [abs(r["by_year"][y] - v) for y, v in j["by_year"].items()])
-    if gap > 1e-9 or r["n"] != j["n"] or r["marks"] != j["marks"] or r["pass"] != j["pass"]:
-        raise ValueError("recompute no longer agrees with the scored result; rewrite this section by hand")
+    first, second = rc
+    f, r = first["judged"], second["judged"]
+    gap = max([abs(r["mean_net"] - j["mean"]), abs(r["t_cluster"] - j["t_week"]), abs(r["trim_mean"] - j["trim_mean"])]
+              + [abs(r["by_year_mean"][y] - v) for y, v in j["by_year"].items()])
+    if (gap > 1e-9 or r["n"] != j["n"] or second["marks"] != j["marks"] or r["positive_years"] != j["years_positive"]
+            or r["trim_drop"] != j["trim_dropped"]):
+        raise ValueError("second recompute no longer agrees with the scored result; rewrite this section by hand")
+    differ = sorted(k for k in j["marks"] if first["marks"][k] != j["marks"][k])
+    if differ != ["years"] or f["n"] != j["n"] or sum(first["marks"].values()) != 2:
+        raise ValueError("first recompute no longer differs on the year mark alone; rewrite this section by hand")
     return "\n".join([
-        f"- MEASURED. A second helper rebuilt the judged numbers with its own code, written from the plan text without reading the scorer. "
-        f"Its numbers were fixed on disk at {RECOMPUTE_FIXED}, before it opened the scored result (SHA-256 `{RECOMPUTE_SHA}`).",
-        f"- MEASURED. All five marks agree, and the verdict agrees: did not pass. Mean, t, trimmed mean and all {len(j['by_year'])} yearly means agree to within {gap:.0e}.",
+        "- MEASURED. A second helper rebuilt the judged numbers with its own code, written from the plan text without reading the scorer. "
+        f"Its first numbers were fixed on disk at {RECOMPUTE_FIRST_FIXED}, before it opened the scored result (SHA-256 `{RECOMPUTE_FIRST_SHA}`).",
+        f"- MEASURED. That first recompute did not agree in full. It gave a mean of {bp(f['mean_net'])} a session, t {f['t_cluster']:.2f}, "
+        f"a trimmed mean of {bp(f['trim_mean'])} and {f['positive_years']} of {len(j['by_year'])} positive years, so it met 2 of 5 marks "
+        f"where the scored run met {j['marks_met']} of 5. Four marks and the verdict (did not pass) were the same; the year breadth mark differed.",
+        "- STATED by the helper, checked by the lead agent against the two scripts. The gap came from one line of the recompute's own code: "
+        f"it treated the last 4 sessions of each month as the Calendar window where the frozen plan says {plan()['week4_sessions']}. "
+        "The Threshold half matched in the first recompute; only the Calendar side differed.",
+        f"- MEASURED. With that one line corrected, the second recompute (fixed at {RECOMPUTE_FIXED}, SHA-256 `{RECOMPUTE_SHA}`) agrees on all five marks, "
+        f"and its mean, t, trimmed mean and all {len(j['by_year'])} yearly means agree to within {gap:.0e}.",
+        "- STATED. The correction was made after the helper had opened the scored result, so the second agreement is weaker evidence than a blind match would be. "
+        "Both files are kept. The recompute did not cover the TLT, lag-one, full round trip, SH cash-account or other-reading shown lines; those rest on the scorer alone.",
     ])
 
 
