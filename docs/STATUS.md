@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 20:30 UTC
+Last updated: 2026-11-26 20:42 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- Idea round 52, swing events ([doc 175](research/175_idea_round_52_swing_events.md), second-checked, ten groups of items fixed), 2026-11-26 1:42 PM MT: nothing registered. Most leads were already tested, dropped or blocked on data in earlier rounds. The one new family with enough events, buying an earnings gap up on high volume in a stock that had been flat, is watch only: STATED by the sources, the +4.8% figure uses information from after the trade, the beat rates come from a different mostly large-company sample, and the one after-cost test lost 0.26% over 20 days on 815 gaps. STATED: weekly coin momentum is not significant after modeled costs in the newest papers.
 - Plan 74 code audit and coverage probes ([plan](../research_rig/PREREG_74_swing_cards.md); ledger 226), 2026-11-26 1:30 PM MT: MEASURED by an independent auditor on made-up bars, no blocker in the count stage or the design run; with no edge the design stage says "advance" in 5.10% of 2,000 made-up worlds and with a planted +2% a signal in 83.30%. MEASURED by the custodian, counts only, no price: of 600 sampled companies delisted in 2016 to 2021, 379 got a ticker and 304 had at least one daily bar in their last listed month. UNKNOWN until probe P1b is back: how many of the other 296 were dead common shares and how many were notes, preferred shares or exchange moves. The thresholds that decide whether each card runs were fixed first (ruling 35).
 - Plan 75, the 2020 to 2023 run ([result](research/173_plan_75_repeat_result.md), [plan](../research_rig/PREREG_75_coin_trend_ratchet.md); ledger 225, queue 129), 2026-11-26 1:18 PM MT: MEASURED, run once and recomputed blind from the plan text, figures agree within 0.05 percentage points. At 75 bp a side the coin trend rule returned +68.9% over four years with a largest fall of 13.2%; the same coins held returned +743.9% and the rule is also below the 95th-percentile mark of random copies (+143.1%). The going-on line fixed before the run is met. This stage is not the judged test and shows no edge; the judged test is the sealed 2024 to 2026 stretch.
 - Idea round 51, larger swing edges ([doc 174](research/174_idea_round_51_larger_swing_edges.md), second-checked, six items fixed): two insider-purchase ideas ranked, neither registered. STATED by the sources: +2.11% a trade against SPY after 20 bp for purchases in stocks already up 10% in 20 sessions, from an anonymous blog with 38.2% of its stocks missing prices and a negative median; the second source is an unreviewed paper with no code. The second checker's verdict: not worth a registered count stage on these sources alone.

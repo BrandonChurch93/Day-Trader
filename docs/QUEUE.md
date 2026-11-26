@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 20:30 UTC
+Last changed: 2026-11-26 20:42 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -144,6 +144,8 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 | Method card from the owner's own past crypto trading, once he describes it | the owner, 2026-11-25 |
 | A trader that only sizes and exits, on top of a fixed entry rule that already has evidence | builder, 2026-11-25 |
 | Many versions of one trader with different exit rules, to learn which exits matter | builder, 2026-11-25 |
+| Watch only (round 52, second-checked): buy an earnings gap up on high volume in a stock that had been flat, hold 20 to 60 sessions. The one after-cost test found by the scout lost; no count stage until a source shows a matching after-cost edge. It would share Plan 74's filing and bar set | [doc 175](research/175_idea_round_52_swing_events.md) |
+| Watch only (round 51, second-checked): company insiders' open-market purchases in stocks already rising, and clusters of insider buying with an upbeat outlook. Both rest on unreviewed sources; no count stage on those sources | [doc 174](research/174_idea_round_51_larger_swing_edges.md) |
 
 ## Looked at and dropped before testing
 
