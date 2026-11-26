@@ -499,3 +499,4 @@ select {
   .hbar-label { grid-column: 1 / -1; }
 }
 #newest-list .numlist dd { white-space: nowrap; text-align: right; }
+.nowrap { white-space: nowrap; }

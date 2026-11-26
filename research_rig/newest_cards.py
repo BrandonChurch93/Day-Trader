@@ -9,6 +9,7 @@ The E09 card reads practice/forward/E09_log.json and the E09 card page. The stri
 plain wording are written here. Reads no prices and runs nothing.
 """
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -20,12 +21,14 @@ import yaml
 import build_doc152_plan70_search as B152
 import build_doc154_plan71_search as B154
 import build_doc157_plan73_diagnosis as B157
+import build_doc181_plan75_vault as B181
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 MT = ZoneInfo("America/Boise")
 D152 = "docs/research/152_plan_70_coin_sweep_search.md"
 D154 = "docs/research/154_plan_71_second_coin_grid.md"
 D157 = "docs/research/157_plan_73_first_minute_diagnosis.md"
+D181 = "docs/research/181_plan_75_heldback_result.md"
 E09_LOG = "practice/forward/E09_log.json"
 E09_CARD = "practice/traders/E09_overextension_dip_buy.md"
 QUEUE = "docs/QUEUE.md"
@@ -153,6 +156,84 @@ def plan73_card(gh, custody=B152.CUSTODY):
                 links=links)
 
 
+# ------------------------------------------------------------------ Plan 75, the sealed years
+P75_RUN, P75_RECOMPUTE = list(B181.PINS)[:2]      # the official run's output and the blind recompute's result, with doc 181's pins
+
+
+def p75_pinned(path, pin):
+    blob = open(path, "rb").read()
+    if hashlib.sha256(blob).hexdigest() != pin:
+        raise ValueError(f"plan 75 card: pinned file differs: {os.path.basename(path)}")
+    return blob.decode("utf-8")
+
+
+def plan75_figures(run_path=P75_RUN, recompute_path=P75_RECOMPUTE):
+    lines = p75_pinned(run_path, B181.PINS[P75_RUN]).splitlines()
+    rec = json.loads(p75_pinned(recompute_path, B181.PINS[P75_RECOMPUTE]))
+    tag = lambda t: [json.loads(l[len(t) + 1:]) for l in lines if l.startswith(t + " ")]
+    main, harsh, marks, adm = tag("VAULT_MAIN"), tag("VAULT_HARSH_SHOWN_ONLY"), tag("VAULT_MARKS"), tag("ADMISSION_COIN_DAYS")
+    result = [l.split(" ", 1)[1] for l in lines if l.startswith("VAULT_RESULT ")]
+    if not (len(main) == len(harsh) == len(marks) == len(adm) == 1 and result == ["PASS"]):
+        raise ValueError("plan 75 card: the run output no longer has one main line, one harsh line, one marks line and a PASS")
+    main, harsh, marks, adm = main[0], harsh[0], marks[0], adm[0]
+    p, h, r75 = main["primary"], harsh["primary"], rec["75_bp_per_side"]
+    doc = read(D181)
+    first, last = re.search(r"The sealed stretch (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})", doc).groups()
+    after_day = re.search(r"From the (\d{4}-\d{2}-\d{2}) close, after the paper's sample", doc)[1]
+    days = (datetime.date.fromisoformat(last) - datetime.date.fromisoformat(first)).days + 1
+    coins, rest = divmod(sum(adm.values()), days)
+    y, legs = p["years"], sorted({b["book"] for b in tag("VAULT_SHOWN_ONLY") if b["book"].isdigit()}, key=int)
+    # The plain words on the card must stay true; stop if the figures stop fitting them.
+    if not (len(marks) == 4 and all(marks.values()) and rest == 0 and set(y) == {"2024", "2025", "2026"}
+            and y["2024"] > 0 > y["2025"] and y["2026"] < 0 and h["net"] < 0 < p["net"] and p["net"] > main["btc"]["matched_net"]
+            and rec["75_bp_per_side"]["result"] == "PASS" and all(rec["75_bp_per_side"]["marks"].values())
+            and isclose(main["cost_per_side"], 0.0075) and harsh["cost_per_side"] > main["cost_per_side"]):
+        raise ValueError("plan 75 card: the figures no longer fit the card's plain words")
+    return dict(first=first, last=last, after_day=after_day, coins=coins, legs=legs, n_marks=len(marks),
+                cost=main["cost_per_side"], harsh_cost=harsh["cost_per_side"], net=p["net"], btc=main["btc"]["matched_net"],
+                drawdown=p["drawdown"], after=main["after_paper_net"], hold=p["hold_days"]["median"], fills=p["fill_count"],
+                blind=r75["primary_net"], harsh_net=h["net"], years=y)
+
+
+WORDS = {3: "three", 4: "four", 5: "five"}
+
+
+def signed(x, d=2):
+    return f"{100 * x:+.{d}f}%".replace("-", MINUS)
+
+
+def plan75_card(gh, run_path=P75_RUN, recompute_path=P75_RECOMPUTE):
+    title = "Plan 75: coin trend rule, the sealed years"
+    links = [["Plan 75 result", gh + D181]]
+    try:
+        f = plan75_figures(run_path, recompute_path)
+    except (FileNotFoundError, NotADirectoryError) as e:
+        return missing("plan75", title, "A coin trend rule run once on years it had never seen.", links, e)
+    hc = lambda c: f"{c * 10000:g} hundredths of a percent a side"
+    legs = ", ".join(f["legs"][:-1]) + " or " + f["legs"][-1]
+    yr = f["years"]
+    return dict(id="plan75", title=title, date=None, verdict="Passed, thinly", tone="mixed",
+                basis=(f"MEASURED in the one run on the sealed years. Figures read from the pinned files that build {os.path.basename(D181)}: "
+                       f"{os.path.basename(run_path)} and {os.path.basename(recompute_path)}. They are kept off the repo."),
+                summary=(f"Buys one of {f['coins']} large coins when its daily close reaches a {legs} day high, and holds until the close drops under "
+                         f"a stop that only moves up. The typical hold was {f['hold']:g} days. "
+                         f"It was run once on {f['first']} to {f['last']}, years it had never seen, and met all {WORDS[f['n_marks']]} marks set beforehand. "
+                         f"All the gain came in 2024, and at a harsher cost of {hc(f['harsh_cost'])} it loses money. "
+                         f"It earns a pretend-money forward card (E10), not real money."),
+                numbers=[[f"Net after costs ({hc(f['cost'])})", signed(f["net"])],
+                         ["Bitcoin held at the same risk, after costs", signed(f["btc"])],
+                         ["Largest fall from a high", f"{100 * f['drawdown']:.2f}%"],
+                         [f"Since the paper's sample ended ({f['after_day']})", signed(f["after"])],
+                         ["Median hold", f"{f['hold']:g} days"],
+                         ["Fills (buys and sells)", f"{f['fills']:,}"],
+                         ["Second version, built blind from the plan: net", signed(f["blind"])]],
+                bars=dict(unit="%", label=f"Net after costs by year, in percent. The last bar is the whole stretch at {hc(f['harsh_cost'])}.",
+                          rows=[["2024", round(100 * yr["2024"], 1)], ["2025", round(100 * yr["2025"], 1)],
+                                ["2026, to October", round(100 * yr["2026"], 1)],
+                                ["Whole stretch, harsher cost", round(100 * f["harsh_net"], 1)]]),
+                links=links)
+
+
 # ------------------------------------------------------------------ E09 forward log
 def e09_card(gh):
     card = read(E09_CARD)
@@ -209,4 +290,4 @@ def running_now():
 
 
 def cards(gh):
-    return [sweep_card(gh), plan73_card(gh), e09_card(gh)]
+    return [plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh)]
