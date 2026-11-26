@@ -467,6 +467,7 @@ Working papers.
 | `practice/traders/E07_etf_closure_payout_watch.md` | E07, forward measurement watch for queue row 95 US ETF cash liquidations: last-trading-day closing SIP ask/bid versus published dated primary cash payout, stop at 40 completed funds or 2027-05-31, pretend money only | CURRENT |
 | `practice/forward_e06.py`, `practice/test_forward_e06.py` | The E06 logger (`plan`, `start`, `record`, `loop`, `alive`, `score`) reusing the TM06 rule code, with an off-repo hash-chained log, and its checks with a pretend candle source and no network | CURRENT |
 | `practice/forward_e03.py`, `practice/test_forward_e03.py` | E03 SEC filing inbox, Plan 21 entry clock and pretend-trade recorder, price-free hash-chain summaries and synthetic checks | CURRENT |
+| `practice/forward_e07.py`, `practice/test_forward_e07.py` | The E07 logger (`plan`, `add-fund`, `amend-dates`, `withdraw`, `record-quote`, `record-payout`, `alive`, `score`) for ETF closures: the last-trading-day SIP quote window through the saved data credential and dated primary payout links, with an off-repo hash-chained log, and its checks with a pretend quote source and no network | CURRENT |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 
