@@ -5,15 +5,13 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import re
 import stat
 from zoneinfo import ZoneInfo
-
-import yaml
 
 from timemachine.tm09_orders import number
 
 FILES = ('stock_sessions.jsonl', 'stock_bars.jsonl', 'stock_news.jsonl')
-EXPORT = Path('/home/user/workspace/rig/data/tm09_stock_export')
 
 
 def encode(obj):
@@ -55,16 +53,93 @@ def rows(raw):
         yield row
 
 
+TOKEN = re.compile(r'\s*("(?:[^"\\]|\\.)*"|[{}\[\]:,]|[A-Za-z0-9_./+\-]+)')
+
+
+def flow(text):
+    """Parse only the pinned config's single-line flow values; refuse other YAML syntax."""
+    tokens, pos = [], 0
+    while pos < len(text):
+        match = TOKEN.match(text, pos)
+        if not match:
+            raise ValueError('unsupported TM09 config value')
+        tokens.append(match[1]); pos = match.end()
+    tokens.reverse()
+
+    def parse():
+        token = tokens.pop()
+        if token in ('[', '{'):
+            mapping = token == '{'
+            end = '}' if mapping else ']'
+            out = {} if mapping else []
+            while tokens[-1] != end:
+                if mapping:
+                    key = tokens.pop()
+                    if not re.fullmatch(r'[a-z][a-z0-9_]*', key) or key in out or tokens.pop() != ':':
+                        raise ValueError('invalid TM09 config key')
+                    out[key] = parse()
+                else:
+                    out.append(parse())
+                if tokens[-1] == end:
+                    break
+                if tokens.pop() != ',' or tokens[-1] == end:
+                    raise ValueError('invalid TM09 config separator')
+            tokens.pop()
+            return out
+        if token in ('}', ']', ':', ','):
+            raise ValueError('invalid TM09 config token')
+        try:
+            return json.loads(token)
+        except ValueError:
+            if token[0].isalpha():
+                return token
+            raise ValueError('invalid TM09 config scalar') from None
+
+    try:
+        result = parse()
+    except (IndexError, RecursionError):
+        raise ValueError('invalid TM09 config structure') from None
+    if tokens:
+        raise ValueError('extra TM09 config tokens')
+    return result
+
+
 def settings(config_raw):
-    cfg = yaml.safe_load(config_raw)
-    study = cfg['tm09']['value']
+    text = config_raw.decode()
+
+    def value(key, submap=False):
+        if not isinstance(key, str) or not re.fullmatch(r'[a-z][a-z0-9_]*', key):
+            raise ValueError('unsupported TM09 config reference')
+        section, = re.findall(r'^' + key + r':\n((?:[ \t][^\n]*\n)+)', text, re.M)
+        if submap:
+            lines = re.findall(r'^    ([a-z][a-z0-9_]*): +([^\n]+)$', section, re.M)
+            result = {item: flow(raw.strip()) for item, raw in lines}
+            if len(result) != len(lines) or not re.search(r'^  value:$', section, re.M):
+                raise ValueError('unsupported TM09 config block')
+            return result
+        raw, = re.findall(r'^  value: +([^\n]+)$', section, re.M)
+        return flow(raw.strip())
+
+    study = value('tm09', submap=True)
     execution = study['execution']
+    arm_layout(study)
     parent, child = study['roster_key'].split('.')
-    return dict(study=study, symbols=cfg[parent]['value'][child],
-                hours=cfg[study['clock']['wake_hours_key']]['value'],
-                cash=cfg[execution['starting_cash_key']]['value'],
-                spread=str(number(cfg[execution['half_spread_bps_key']]['value']) / 10000),
-                cap=str(number(cfg[execution['minute_volume_cap_key']]['value'])))
+    return dict(study=study, symbols=value(parent)[child], hours=value(study['clock']['wake_hours_key']),
+                cash=value(execution['starting_cash_key']),
+                spread=str(number(value(execution['half_spread_bps_key'])) / 10000),
+                cap=str(number(value(execution['minute_volume_cap_key']))),
+                commission=str(number(execution['stock_commission_bps']) / 10000))
+
+
+def arm_layout(study):
+    controls = tuple(study['arms']['price_only'])
+    news = study['arms']['price_plus_news']
+    arms = (*controls, news)
+    if (len(controls) != 2 or len(set(arms)) != 3 or study['scoring']['unit'] != 'week'
+            or study['session_counts_per_arm'] != {arm.lower(): 1 for arm in arms}
+            or len(study['scoring']['price_only_weights']) != len(controls)):
+        raise ValueError('unimplemented TM09 registration layout')
+    return controls, news
 
 
 def mondays(study):
@@ -99,7 +174,7 @@ def schedule(session_rows, config):
     return sessions, wakes
 
 
-def assign_news(source_rows, wakes, config):
+def assign_news(source_rows, wakes, config, counts=None):
     """Project metadata only; first eligibility is computed across all recorded wakes."""
     roster = set(config['symbols'])
     clock = config['study']['clock']
@@ -107,6 +182,8 @@ def assign_news(source_rows, wakes, config):
     result, seen = {}, set()
     for row in source_rows:
         src, original, update, edited = (row.get(k) for k in ('source', 'stated_time', 'updated_time', 'edited_later'))
+        if counts is not None and src in config['study']['news_sources'] and (edited is True or update != original):
+            counts['skipped_edited_or_changed_clock'] += 1
         if src not in config['study']['news_sources'] or type(original) is not int or original <= 0 or (
                 type(update) is not int or update != original or edited is not False):
             continue
@@ -130,9 +207,9 @@ def assign_news(source_rows, wakes, config):
     return result
 
 
-def compile_weeks(config, session_rows, bar_rows, news_rows):
+def compile_weeks(config, session_rows, bar_rows, news_rows, counts=None):
     sessions, waking = schedule(session_rows, config)
-    news = assign_news(news_rows, waking, config)
+    news = assign_news(news_rows, waking, config, counts)
     weeks = {m.isoformat(): {'week': m.isoformat(), 'wakes': [], 'closes': [], 'news_index': {},
                              'bars': {s: [] for s in config['symbols']}} for m in mondays(config['study'])}
     for tick, week, close in waking:
@@ -170,7 +247,7 @@ def compile_weeks(config, session_rows, bar_rows, news_rows):
     return weeks
 
 
-def compile_export(config_raw, directory, pins):
+def compile_export(config, directory, pins, counts=None):
     """Operator input only; caller must authorize first. No raw data is emitted."""
     if set(pins) != set(FILES):
         raise ValueError('exact export pins required')
@@ -179,8 +256,7 @@ def compile_export(config_raw, directory, pins):
         if sha256(blob).hexdigest() != pins[name]:
             raise ValueError('frozen export hash mismatch')
         return rows(blob)
-    config = settings(config_raw)
-    return compile_weeks(config, verified(FILES[0]), verified(FILES[1]), verified(FILES[2]))
+    return compile_weeks(config, verified(FILES[0]), verified(FILES[1]), verified(FILES[2]), counts)
 
 
 def project_headlines(raw, index):

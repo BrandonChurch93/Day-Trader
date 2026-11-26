@@ -1,6 +1,12 @@
 """TM09 cash-only target orders and the registered fractional benchmark."""
 from bisect import bisect_right
 from decimal import Decimal, InvalidOperation, ROUND_FLOOR
+from fractions import Fraction
+from itertools import groupby
+
+NO_ELIGIBLE_MINUTE = 'no eligible minute'
+NO_SIZING_PRINT = 'no completed sizing print'
+SPARSE_REASONS = frozenset((NO_ELIGIBLE_MINUTE, NO_SIZING_PRINT))
 
 
 def number(value):
@@ -53,7 +59,7 @@ def weights(raw, roster):
     return parsed
 
 
-def fill(book, targets, minutes, wake, stop, half_spread, volume_cap):
+def fill(book, targets, minutes, wake, stop, half_spread, volume_cap, commission=Decimal(0)):
     """Size from the visible book; execute each symbol once at its next minute."""
     if targets is None:
         return []
@@ -65,35 +71,48 @@ def fill(book, targets, minutes, wake, stop, half_spread, volume_cap):
         raise ValueError('held stock missing a completed valuation print')
     marks = {s: number(rows[-1][4]) for s, rows in last.items() if rows}
     nav = value(book, marks)
-    requests = []
+    requests, results = [], []
     for symbol in active:
         qty = holdings.get(symbol, 0)
         if symbol not in marks:
             if targets.get(symbol, 0):
-                raise ValueError('no completed sizing print; ruling needed')
+                results.append({'symbol': symbol, 'requested': None, 'filled': 0,
+                                'canceled': None, 'reason': NO_SIZING_PRINT})
             continue
         delta = floor(nav * targets.get(symbol, 0) / marks[symbol]) - qty
         if delta:
             row = minutes.next(symbol, wake, stop)
             if row is None:
-                raise ValueError('no next recorded minute before the next wake/session close; ruling needed')
+                results.append({'symbol': symbol, 'requested': delta, 'filled': 0,
+                                'canceled': abs(delta), 'reason': NO_ELIGIBLE_MINUTE})
+                continue
             requests.append((row[0], symbol, delta, row))
-    results = []
-    # At the same timestamp sell before buying; never use a later sale to fund an earlier buy.
-    for at, symbol, delta, row in sorted(requests, key=lambda r: (r[0], r[2] > 0, r[1])):
-        side = 1 if delta > 0 else -1
-        price = number(row[1]) * (1 + side * half_spread)
-        qty = min(abs(delta), floor(number(row[5]) * volume_cap))
-        if side > 0:
-            qty = min(qty, floor(cash / price))
-        cash -= side * qty * price
-        remain = holdings.get(symbol, 0) + side * qty
-        if remain:
-            holdings[symbol] = remain
-        else:
-            holdings.pop(symbol, None)
-        results.append({'symbol': symbol, 'minute': at, 'requested': delta, 'filled': side * qty,
-                        'canceled': abs(delta) - qty, 'price': str(price)})
+    # At each timestamp sell first, then allocate cash pro rata among volume-capped buys.
+    for at, group in groupby(sorted(requests, key=lambda r: (r[0], r[2] > 0, r[1])), key=lambda r: r[0]):
+        buys = []
+
+        def execute(symbol, delta, price, signed_qty):
+            nonlocal cash
+            cash -= signed_qty * price + abs(signed_qty) * price * commission
+            remain = holdings.get(symbol, 0) + signed_qty
+            if remain:
+                holdings[symbol] = remain
+            else:
+                holdings.pop(symbol, None)
+            results.append({'symbol': symbol, 'minute': at, 'requested': delta, 'filled': signed_qty,
+                            'canceled': abs(delta) - abs(signed_qty), 'price': str(price)})
+
+        for _, symbol, delta, row in group:
+            qty = min(abs(delta), floor(number(row[5]) * volume_cap))
+            if delta < 0:
+                execute(symbol, delta, number(row[1]) * (1 - half_spread), -qty)
+            else:
+                buys.append((symbol, delta, number(row[1]) * (1 + half_spread), qty))
+        required = sum(Fraction(price) * qty * (1 + Fraction(commission)) for _, _, price, qty in buys)
+        # Use exact rational division so a rounded factor can never overspend cash.
+        scale = min(1, Fraction(cash) / required) if required else 1
+        for symbol, delta, price, qty in buys:
+            execute(symbol, delta, price, int(qty * scale))
     book['cash'] = str(cash)
     return results
 

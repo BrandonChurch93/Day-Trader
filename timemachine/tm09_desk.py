@@ -1,5 +1,6 @@
 """TM09 single-role desk, adapted from the frozen TM07 wake/receipt protocol."""
 from contextlib import closing, contextmanager
+from datetime import datetime
 import hmac
 import json
 import os
@@ -7,13 +8,15 @@ from pathlib import Path
 import re
 import secrets
 import sqlite3
+from zoneinfo import ZoneInfo
 
-from timemachine.tm09_fixture import encode, fingerprint as digest, project_headlines, read_private
-from timemachine.tm09_orders import Minutes, benchmark, fill, number, terminal, weights
+from timemachine.tm09_fixture import arm_layout, encode, fingerprint as digest, project_headlines, read_private
+from timemachine.tm09_orders import SPARSE_REASONS, Minutes, benchmark, fill, number, terminal, weights
 
 SID = re.compile(r'TM09-[A-Za-z0-9_-]{1,72}\Z')
+PUBLIC_SID = re.compile(r'TM09-[a-f0-9]{32}\Z')
+PORTS = frozenset(range(8801, 8807))
 ROLES = ('price_scout', 'news_scout', 'boss')
-ARMS = ('P1', 'P2', 'N')
 TOKEN = re.compile(r'[A-Za-z0-9_-]{40,100}\Z')
 
 
@@ -38,6 +41,11 @@ def store_new(path, value):
         f.write(encode(value) + '\n')
         f.flush()
         os.fsync(f.fileno())
+    directory = os.open(Path(path).parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
 
 
 def note_stream(key, stream, fixture, role, wakes):
@@ -51,7 +59,7 @@ def note_stream(key, stream, fixture, role, wakes):
 
 def slot(week, role, boss=None, arm=None):
     prefix = 'TM09-' + week
-    if role == 'boss' and arm in ARMS and boss:
+    if role == 'boss' and arm and boss:
         return f'{prefix}-{boss}-{arm}'
     if role in ROLES[:2] and boss is None and arm is None:
         return f'{prefix}-{role}'
@@ -67,32 +75,35 @@ def initialize(root, fixture, options, role, key, *, price=None, news=None, boss
             'headline_rows': 10000, 'headline_chars': 10000}
     if any(type(options.get(k)) is not int or not 1 <= options[k] <= v for k, v in caps.items()):
         raise ValueError('missing or invalid approved note and look bounds')
-    if number(options['cash']) <= 0 or not 0 <= number(options['spread']) < 1 or not 0 < number(options['cap']) <= 1:
+    if (number(options['cash']) <= 0 or not 0 <= number(options['spread']) < 1 or not 0 < number(options['cap']) <= 1
+            or not 0 <= number(options['commission']) < 1):
         raise ValueError('invalid approved sizing parameters')
-    if role == 'boss' and boss not in options['study']['boss_models']:
+    controls, news_arm = arm_layout(options['study'])
+    if role == 'boss' and (boss not in options['study']['boss_models'] or arm not in (*controls, news_arm)):
         raise ValueError('unregistered boss')
     fpin = digest(fixture)
     waking = [t for t, _ in fixture['wakes']]
     price_notes, news_notes = {}, {}
     if role == 'boss':
-        if price is None or (arm == 'N') != (news is not None):
+        if price is None or (arm == news_arm) != (news is not None):
             raise ValueError('wrong scout streams for boss arm')
         price_notes = note_stream(key, price, fpin, 'price_scout', waking)
         if news is not None:
             news_notes = note_stream(key, news, fpin, 'news_scout', waking)
     elif price is not None or news is not None:
         raise ValueError('a scout cannot receive another worker stream')
-    bound = dict(role=role, fixture=fpin, arm=arm, boss=boss, options=options,
+    bound = dict(public_id='TM09-' + secrets.token_hex(16), role=role, fixture=fpin, arm=arm, boss=boss, options=options,
                  price=price_notes, news=news_notes)
     path = Path(root) / sid
     path.mkdir(mode=0o700)
     token = secrets.token_urlsafe(36)
     book = {'cash': str(options['cash']), 'shares': {}} if role == 'boss' else None
-    state = dict(cursor=0, wake_key=None, looks=0, successors=0, token=digest(token), book=book)
+    state = dict(cursor=0, wake_key=None, looks=0, successors=0, token=digest(token), book=book, pending=None)
     with closing(sqlite3.connect(path / 'desk.sqlite')) as con, con:
         os.chmod(path / 'desk.sqlite', 0o600)
         con.executescript('CREATE TABLE state(data TEXT NOT NULL);'
                           'CREATE TABLE journal(wake INTEGER, kind TEXT, data TEXT);'
+                          'CREATE TABLE settlement(status TEXT NOT NULL, net TEXT);'
                           'CREATE TABLE receipts(id TEXT PRIMARY KEY, data TEXT NOT NULL);')
         con.execute('INSERT INTO state VALUES(?)', (encode(state),))
     store_new(path / 'manifest.json', {'body': bound, 'seal': seal(key, 'tm09-session', bound)})
@@ -107,9 +118,10 @@ class Desk:
         self.spec = manifest['body']
         verify_seal(key, 'tm09-session', self.spec, manifest['seal'])
         self.role, self.arm = self.spec['role'], self.spec['arm']
+        self.public_id = self.spec['public_id']
         self.options = self.spec['options']
         if (self.path.name != slot(fixture['week'], self.role, self.spec['boss'], self.arm)
-                or digest(fixture) != self.spec['fixture']
+                or not PUBLIC_SID.fullmatch(self.public_id) or digest(fixture) != self.spec['fixture']
                 or approved_options is not None and self.options != approved_options):
             raise ValueError('session fixture changed')
         self.wakes = fixture['wakes']
@@ -143,6 +155,7 @@ class Desk:
         return items
 
     def _packet(self, con, st, at):
+        self._settle_pending(con, st)
         if st['wake_key'] is None:
             st['wake_key'] = secrets.token_urlsafe(36)
             self.log(con, at, 'packet', {'step': st['cursor']})
@@ -157,8 +170,9 @@ class Desk:
                 out['fills'] = [json.loads(raw) for (raw,) in con.execute(
                     "SELECT data FROM journal WHERE wake=? AND kind='immediate' ORDER BY rowid", (prior,))]
                 out['price_notes'] = self.spec['price'][str(at)]
-                if self.arm == 'N':
-                    out['news_notes'] = self.spec['news'][str(at)]
+                notes = self.spec['news'].get(str(at), [])
+                if notes:
+                    out['news_notes'] = notes
         return out
 
     def _note(self, at, body):
@@ -189,6 +203,11 @@ class Desk:
         with self.tx() as (con, st):
             if not hmac.compare_digest(st['token'], digest(token)):
                 raise PermissionError('bad role token')
+            if (action not in ('next', 'status', 'notes', 'pick', 'look')
+                    or action == 'notes' and self.role == 'boss'
+                    or action == 'pick' and self.role != 'boss'
+                    or action == 'look' and self.role == 'news_scout'):
+                raise PermissionError('route unavailable for this role')
             done = st['cursor'] == len(self.wakes)
             if action == 'status':
                 return dict(done=done, step=st['cursor'], total=len(self.wakes))
@@ -225,17 +244,11 @@ class Desk:
                 self.log(con, at, 'notes', notes)
                 answer = self._advance(st)
             elif action == 'pick' and self.role == 'boss' and set(body) == {'wake_key', 'weights'}:
-                asked = None if body['weights'] is None else weights(body['weights'], self.options['symbols'])
-                next_at = self.wakes[k + 1][0] if k + 1 < len(self.wakes) else session_close
-                spread, cap = (number(self.options[p]) for p in ('spread', 'cap'))
+                if body['weights'] is not None:
+                    weights(body['weights'], self.options['symbols'])
                 self.log(con, at, 'decision', {'weights': body['weights']})
-                for report in fill(st['book'], asked, self.minutes, at, min(next_at, session_close), spread, cap):
-                    self.log(con, at, 'immediate', report)
+                st['pending'] = {'step': k, 'weights': body['weights']}
                 answer = self._advance(st)
-                if answer['done']:
-                    last_close = self.fixture['closes'][-1]
-                    end = terminal(st['book'], self.minutes, last_close, spread)
-                    self.log(con, at, 'finish', {'net': str(end / number(self.options['cash']) - 1)})
             else:
                 raise PermissionError('route or action unavailable for this role')
             con.execute('INSERT INTO receipts VALUES(?,?)', (rid, encode(answer)))
@@ -244,6 +257,34 @@ class Desk:
     def _advance(self, st):
         st.update(cursor=st['cursor'] + 1, wake_key=None, looks=0)
         return {'accepted': True, 'done': st['cursor'] == len(self.wakes)}
+
+    def _settle_pending(self, con, st):
+        pending = st['pending']
+        if pending is None:
+            return
+        k, raw = pending['step'], pending['weights']
+        at, close = self.wakes[k]
+        stop = min(close, self.wakes[k + 1][0]) if k + 1 < len(self.wakes) else close
+        asked = None if raw is None else weights(raw, self.options['symbols'])
+        spread, cap, commission = (number(self.options[p]) for p in ('spread', 'cap', 'commission'))
+        for report in fill(st['book'], asked, self.minutes, at, stop, spread, cap, commission):
+            self.log(con, at, 'immediate', report)
+        st['pending'] = None
+
+    def access(self, method, path, session, status):
+        with self.tx() as (con, st):
+            wake = self.wakes[st['cursor']][0] if st['cursor'] < len(self.wakes) else None
+            self.log(con, wake, 'access_attempt' if status is None else 'access',
+                     {'method': method, 'path': path, 'session': session, 'status': status})
+
+    def access_checkpoint(self):
+        with self.tx() as (con, _):
+            return con.execute('SELECT coalesce(max(rowid),0) FROM journal').fetchone()[0]
+
+    def access_records(self, start, end):
+        with self.tx() as (con, _):
+            return [json.loads(raw) for (raw,) in con.execute(
+                "SELECT data FROM journal WHERE kind='access' AND rowid>? AND rowid<=? ORDER BY rowid", (start, end))]
 
     def successor(self):
         with self.tx() as (con, st):
@@ -271,7 +312,20 @@ class Desk:
         with self.tx() as (con, st):
             if self.role != 'boss' or st['cursor'] != len(self.wakes):
                 raise ValueError('boss outcome incomplete')
-            return json.loads(con.execute("SELECT data FROM journal WHERE kind='finish'").fetchone()[0])['net']
+            cached = con.execute('SELECT status,net FROM settlement').fetchone()
+            if cached:
+                return cached[1]
+            self._settle_pending(con, st)
+            spread = number(self.options['spread'])
+            try:
+                end = terminal(st['book'], self.minutes, self.fixture['closes'][-1], spread)
+            except ValueError:
+                status, net = 'missing terminal mark', None
+            else:
+                status, net = 'sealed', str(end / number(self.options['cash']) - 1)
+            con.execute('INSERT INTO settlement VALUES(?,?)', (status, net))
+            self.log(con, self.wakes[-1][0], 'finish', {'status': status})
+            return net
 
     def complete(self):
         with self.tx() as (_, st):
@@ -282,6 +336,25 @@ class Desk:
             raise ValueError('not a news scout')
         with self.tx() as (con, _):
             return sum(bool(json.loads(n)) for (n,) in con.execute("SELECT data FROM journal WHERE kind='notes'"))
+
+    def sparse_counts(self):
+        """Operator-only order counts (not share counts), from committed fill receipts."""
+        if self.role != 'boss':
+            raise ValueError('not a boss desk')
+        zone = ZoneInfo(self.options['study']['clock']['zone'])
+        by_symbol, by_session = {}, {}
+        with self.tx() as (con, st):
+            if st['cursor'] == len(self.wakes):
+                self._settle_pending(con, st)
+            for wake, raw in con.execute("SELECT wake,data FROM journal WHERE kind='immediate'"):
+                fill_report = json.loads(raw)
+                if fill_report.get('reason') in SPARSE_REASONS:
+                    symbol = fill_report['symbol']
+                    day = datetime.fromtimestamp(wake, zone).date().isoformat()
+                    symbols = by_session.setdefault(day, {})
+                    by_symbol[symbol] = by_symbol.get(symbol, 0) + 1
+                    symbols[symbol] = symbols.get(symbol, 0) + 1
+        return {'session': self.public_id, 'by_symbol': by_symbol, 'by_market_session': by_session}
 
 
 def weekly_benchmark(fixture, options):

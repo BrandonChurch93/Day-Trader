@@ -811,6 +811,8 @@ tm09:
     boss_models: [claude_fable_5_2, claude_opus_5_5]
     scouts: {price: gemini_neon, news: gemini_neon}
     arms: {price_only: [P1, P2], price_plus_news: N}
+    session_counts_per_arm: {p1: 1, p2: 1, n: 1}
+    scoring: {unit: week, treatment_weight: 1, price_only_weights: [-0.5, -0.5]}
     marks: {primary_t_min: 2.43, positive_weeks_min: 12, mean_without_best_strictly_positive: true, mean_weekly_bps_min: 20, placebo_abs_t_strict_max: 2, forward_requires_n_above_equal_weight_hold: true}
     delivery: {min_fraction_eligible_wakes_with_note: 0.5}
     failures: {max_successors_per_lost_worker: 1, max_lost_weeks_per_boss: 3, min_weeks_with_primary: 17, rerun_finished_sessions: false}

@@ -7,7 +7,8 @@ import stat
 from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
 
-from timemachine.tm09_desk import SID, TOKEN
+from timemachine.tm09_desk import PORTS, PUBLIC_SID, TOKEN
+from timemachine.tm09_fixture import read_private
 
 
 def request(opener, port, sid, route, token, data=None):
@@ -30,8 +31,8 @@ def cannot_open(path):
 
 
 def probe(port, sid, sibling, token, canaries, stopped=False):
-    if (port in (8766, *range(8781, 8788)) or not 1024 <= port <= 65535 or not SID.fullmatch(sid)
-            or not SID.fullmatch(sibling) or not TOKEN.fullmatch(token) or sid == sibling or not os.geteuid()):
+    if (port not in PORTS or not PUBLIC_SID.fullmatch(sid) or not PUBLIC_SID.fullmatch(sibling)
+            or not TOKEN.fullmatch(token) or sid == sibling or not os.geteuid()):
         raise ValueError('invalid rehearsal boundary parameters')
     if not canaries or not all(cannot_open(p) for p in canaries):
         raise ValueError('raw-copy boundary not proven')
@@ -68,10 +69,11 @@ if __name__ == '__main__':
     a = p.parse_args()
     try:
         if (a.bearer_file.stat().st_mode & (stat.S_IRWXG | stat.S_IRWXO)
-                or any(not f.is_absolute() or '..' in f.parts or 'tm07' in str(f).lower() for f in a.canary)):
+                or any(not f.is_relative_to('/var/lib/tm09') or '..' in f.parts or 'tm07' in str(f).lower() for f in a.canary)):
             raise ValueError('use private bearer and direct TM09-only canaries')
-        token = json.loads(a.bearer_file.read_bytes())['token']
+        token = json.loads(read_private(a.bearer_file))['token']
         probe(a.port, a.session, a.sibling, token, a.canary, stopped=a.stopped)
     except (ValueError, KeyError, OSError):
         p.exit(1, 'TM09 isolation check failed; no input or token logged.\n')
-    print('TM09 isolation check passed; no input or token logged.')
+    print(json.dumps({'session': a.session, 'port': a.port, 'denied_count': len(a.canary),
+                      'phase': 'stopped' if a.stopped else 'live'}, sort_keys=True))

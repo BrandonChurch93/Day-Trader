@@ -11,10 +11,10 @@ import unittest
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
-from timemachine.score_tm09 import run_approved, score
-from timemachine.tm09_desk import Desk, initialize, slot
+from timemachine.score_tm09 import DEPS, run_approved, score
+from timemachine.tm09_desk import Desk, PUBLIC_SID, initialize, seal, slot, store_new
 from timemachine.tm09_fixture import FILES, compile_export, compile_weeks, encode, mondays, read_private, settings
-from timemachine.tm09_operator import worker_handler
+from timemachine.tm09_operator import launch, review, worker_handler
 from timemachine.tm09_orders import Minutes, benchmark, fill, terminal, weights
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -96,7 +96,7 @@ class DeskTest(unittest.TestCase):
             packets = [d.handle(t, 'next') for d, t in desks]
             self.assertTrue(all(x['price_notes'] == packets[0]['price_notes'] for x in packets))
             self.assertNotIn('news_notes', packets[0]); self.assertNotIn('news_notes', packets[1])
-            self.assertEqual(packets[2]['news_notes'], [NOTE] if i == 1 else [])
+            self.assertEqual(packets[2].get('news_notes'), [NOTE] if i == 1 else None)
             for (d, t), packet in zip(desks, packets):
                 row = d.handle(t, 'look', {'wake_key': packet['wake_key'], 'symbol': 'SYN', 'rows': 20})
                 self.assertTrue(all(b[0] + 60 <= wake for b in row['bars']))
@@ -159,40 +159,98 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(terminal(book, m, self.f['closes'][-1], Decimal('.0005')), Decimal('1004.9425'))
         self.assertEqual(benchmark(['SYN'], m, wake, close, self.f['closes'][-1], Decimal(0)), Decimal(12) / 11 - 1)
 
-    def test_sparse_fill_ambiguity_fails_without_mutating_book(self):
+    def test_minute_at_cutoff_is_canceled_unfilled(self):
         m = Minutes(self.f['bars']); wake, _ = self.f['wakes'][0]
         book = {'cash':'1000', 'shares':{}}
-        with self.assertRaisesRegex(ValueError, 'ruling needed'):
-            fill(book, weights({'SYN': 1}, ['SYN']), m, wake, wake + 60, Decimal('.0005'), Decimal('.1'))
+        report, = fill(book, weights({'SYN': 1}, ['SYN']), m, wake, wake + 60, Decimal('.0005'), Decimal('.1'))
+        self.assertEqual(report, {'symbol': 'SYN', 'requested': 100, 'filled': 0,
+                                  'canceled': 100, 'reason': 'no eligible minute'})
         self.assertEqual(book, {'cash':'1000', 'shares':{}})
 
+    def test_sparse_orders_counted_once_without_later_or_overnight_fill(self):
+        first, second, third, fourth = (w for w, _ in self.f['wakes'])
+        first_close = self.f['closes'][0]
+        self.f['bars']['SYN'] = [row for row in self.f['bars']['SYN']
+                                 if not (first < row[0] < second or third < row[0] < first_close)]
+        price, _ = self.scouts()
+        boss, token = self.init('boss', boss=self.boss, arm='P1', price=price)
+        for wake in (first, second, third, fourth):
+            packet = boss.handle(token, 'next')
+            self.assertEqual(packet['wake'], wake)
+            self.assertEqual(packet['book']['shares'], {})
+            self.assertEqual(Decimal(packet['book']['cash']), Decimal(1000))
+            self.assertEqual([r['reason'] for r in packet['fills']],
+                             ['no eligible minute'] if wake in (second, fourth) else [])
+            req = {'wake_key': packet['wake_key'], 'weights': {'SYN': 1} if wake in (first, third) else None}
+            ack = boss.handle(token, 'pick', req)
+            self.assertEqual(ack, {'accepted': True, 'done': wake == fourth})
+            self.assertEqual(boss.handle(token, 'pick', req), ack)
+        self.assertEqual(boss.sparse_counts(), {'session': boss.public_id, 'by_symbol': {'SYN': 2},
+                                               'by_market_session': {'2026-09-08': {'SYN': 2}}})
+
     def test_export_compiler_uses_pins_and_excludes_raw_headlines(self):
-        cfg = read_private(CONFIG).decode()
-        import yaml
-        cfg = yaml.safe_load(cfg)
-        cfg['tm04_plan']['value']['symbols'] = ['SYN']
-        cfg['tm09']['value']['window'] = self.opts['study']['window']
+        counts = {'skipped_edited_or_changed_clock': 0}
+        changed = {**self.news[0], 'id': 'changed', 'updated_time': self.news[0]['updated_time'] + 1, 'edited_later': True}
         pins = {}
-        for name, records in zip(FILES, (self.sessions, self.bars, self.news)):
+        for name, records in zip(FILES, (self.sessions, self.bars, [*self.news, changed])):
             blob = '\n'.join(map(encode, records)).encode()
             (self.path / name).write_bytes(blob)
             pins[name] = sha256(blob).hexdigest()
-        cfg = yaml.safe_dump(cfg).encode()
-        self.assertEqual(compile_export(cfg, self.path, pins)[self.f['week']], self.f)
+        self.assertEqual(compile_export(self.opts, self.path, pins, counts)[self.f['week']], self.f)
+        self.assertEqual(counts, {'skipped_edited_or_changed_clock': 1})
         pins[FILES[2]] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'hash mismatch'):
-            compile_export(cfg, self.path, pins)
+            compile_export(self.opts, self.path, pins)
+
+    def test_missing_sizing_print_is_countable_cancel(self):
+        wake = self.f['wakes'][0][0]
+        m = Minutes({'SYN': [b for b in self.f['bars']['SYN'] if b[0] >= wake]})
+        book = {'cash': '1000', 'shares': {}}
+        report, = fill(book, weights({'SYN': 1}, ['SYN']), m, wake, wake + 120, Decimal(0), Decimal(1))
+        self.assertEqual((report['reason'], report['filled'], report['requested']), ('no completed sizing print', 0, None))
+        self.assertEqual(book, {'cash': '1000', 'shares': {}})
+
+    def test_same_minute_buys_are_pro_rata_and_commission_applies(self):
+        wake = self.f['wakes'][0][0]
+        m = Minutes({s: [[wake-60, '10', '10', '10', '10', '1000'], [wake+60, '20', '20', '20', '20', '1000']]
+                     for s in ('SYN', 'XYZ')})
+        book = {'cash': '1000', 'shares': {}}
+        report = fill(book, weights({'XYZ': '.5', 'SYN': '.5'}, ['SYN', 'XYZ']), m, wake, wake+120,
+                      Decimal(0), Decimal(1), Decimal('.01'))
+        self.assertEqual({r['symbol']: r['filled'] for r in report}, {'SYN': 24, 'XYZ': 24})
+        self.assertEqual(Decimal(book['cash']), Decimal('30.40'))
+
+    def test_terminal_availability_does_not_change_worker_ack(self):
+        for surviving in (True, False):
+            with self.subTest(surviving=surviving), TemporaryDirectory() as private:
+                fixture = deepcopy(self.f)
+                if not surviving:
+                    fixture['bars']['SYN'] = [row for row in fixture['bars']['SYN'] if row[0] != fixture['closes'][-1] - 60]
+                p, pt = initialize(Path(private), fixture, self.opts, 'price_scout', KEY)
+                for _ in fixture['wakes']:
+                    p.handle(pt, 'notes', {'wake_key': p.handle(pt, 'next')['wake_key'], 'notes': []})
+                b, bt = initialize(Path(private), fixture, self.opts, 'boss', KEY, boss=self.boss, arm='P1', price=p.export_notes())
+                for i, _ in enumerate(fixture['wakes']):
+                    pkt = b.handle(bt, 'next')
+                    ack = b.handle(bt, 'pick', {'wake_key': pkt['wake_key'], 'weights': {'SYN': 1} if i == 0 else None})
+                    self.assertEqual(ack, {'accepted': True, 'done': i + 1 == len(fixture['wakes'])})
+                self.assertEqual(b.handle(bt, 'next'), {'done': True})
+                self.assertEqual(b.export_boss() is not None, surviving)
+                self.assertEqual(b.access_records(0, b.access_checkpoint()), [])
 
     def test_worker_http_scope_and_no_store_without_binding_port(self):
         d, tok = self.init('price_scout')
         route = worker_handler(d)
 
-        def send(path, token):
+        def send(path, token, method='GET'):
             wire = BytesIO()
 
             class Request:
+                def settimeout(self, timeout):
+                    pass
+
                 def makefile(self, mode, *args):
-                    message = f'GET {path} HTTP/1.0\r\nAuthorization: Bearer {token}\r\n\r\n'
+                    message = f'{method} {path} HTTP/1.0\r\nAuthorization: Bearer {token}\r\n\r\n'
                     return BytesIO(message.encode())
 
                 def sendall(self, blob):
@@ -201,13 +259,59 @@ class DeskTest(unittest.TestCase):
             route(Request(), ('127.0.0.1', 1), None)
             return wire.getvalue()
 
-        answer = send(f'/desk/next?session={d.path.name}', tok)
+        self.assertRegex(d.public_id, PUBLIC_SID)
+        self.assertNotIn(d.path.name, d.public_id)
+        answer = send(f'/desk/next?session={d.public_id}', tok)
         self.assertIn(b' 200 ', answer)
         self.assertIn(b'Cache-Control: no-store', answer)
         self.assertNotIn(tok.encode(), answer)
         self.assertIn(b' 403 ', send('/desk/next?session=TM09-SIBLING', tok))
-        self.assertIn(b' 403 ', send(f'/desk/export?session={d.path.name}', tok))
-        self.assertIn(b' 403 ', send(f'/desk/next?session={d.path.name}', 'x' * 48))
+        self.assertIn(b' 403 ', send(f'/desk/export?session={d.public_id}', tok))
+        self.assertIn(b' 403 ', send(f'/desk/next?session={d.public_id}', 'x' * 48))
+        self.assertIn(b' 200 ', send(f'/desk/status?session={d.public_id}', tok))
+        self.assertEqual(answer, send(f'/desk/next?session={d.public_id}', tok))
+        refused = send(f'/desk/status?session={d.public_id}', tok, method='TRACE')
+        self.assertIn(b' 501 ', refused)
+        self.assertNotIn(b'Date:', refused)
+        journal = d.access_records(0, d.access_checkpoint())
+        self.assertEqual([x['status'] for x in journal], [200, 403, 403, 403, 200, 200, 501])
+        with d.tx() as (con, _):
+            self.assertEqual(con.execute("SELECT count(*) FROM journal WHERE kind='access_attempt'").fetchone()[0], 7)
+        self.assertNotIn(tok, encode(journal))
+        self.assertNotIn('export', encode(journal))
+
+    def test_launch_control_and_review_use_only_signed_allowlisted_evidence(self):
+        d, _ = self.init('price_scout')
+        body = dict(session=d.public_id, nonce='a' * 32, port=8844, canary_observed=True,
+                    sudo_size_before=1, sudo_size_after=2, sudo_checkpoint_sha256='b' * 64)
+        denied, allowed, proof, receipt, canary = [self.path / item for item in ('denied', 'allowed', 'proof', 'receipt', 'canary')]
+        store_new(denied, {'body': body, 'seal': seal(KEY, 'ledger-222-tm09-launch', body)})
+        with patch('timemachine.tm09_operator.DeskHTTPServer') as server:
+            with self.assertRaises(ValueError):
+                launch(d, 8844, KEY, denied, canary)
+            server.assert_not_called()
+            body['port'] = 8801
+            store_new(canary, dict(session=d.public_id, port=8801, nonce=body['nonce'], matched_canary=True,
+                                   prefix_unchanged=True, size_before=1, size_after=2))
+            body['sudo_checkpoint_sha256'] = sha256(read_private(canary)).hexdigest()
+            store_new(allowed, {'body': body, 'seal': seal(KEY, 'ledger-222-tm09-launch', body)})
+            listener = server.return_value.__enter__.return_value
+            listener.serve_forever.side_effect = lambda: d.access('GET', '/desk/status', d.public_id, 200)
+            with patch('builtins.print'):
+                launch(d, 8801, KEY, allowed, canary)
+            server.assert_called_once()
+            self.assertEqual(server.call_args.args[0], ('127.0.0.1', 8801))
+        from timemachine.tm09_fixture import fingerprint
+        control = json.loads(read_private(d.path / (body['nonce'] + '-control.json')))
+        store_new(proof, {'phase': 'stopped', 'session': d.public_id, 'port': 8801, 'denied_count': 4})
+        end = dict(session=d.public_id, nonce=body['nonce'], port=8801, control_sha256=fingerprint(control),
+                   sudo_allowlist_reviewed=True, raw_copies_denied=True, listener_stopped=True,
+                   post_stop_probe_sha256=sha256(read_private(proof)).hexdigest(), sudo_review_sha256='c' * 64)
+        store_new(receipt, {'body': end, 'seal': seal(KEY, 'ledger-222-tm09-review', end)})
+        with patch('builtins.print'):
+            review(d, KEY, receipt, proof)
+        reviewed = json.loads(read_private(d.path / (body['nonce'] + '-review.json')))['body']
+        self.assertEqual(reviewed['routes'], [{'method': 'GET', 'path': '/desk/status', 'session': d.public_id, 'status': 200}])
 
 
 class ScoreTest(unittest.TestCase):
@@ -249,6 +353,28 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(set(r['labels']), {'treatment not delivered', 'inconclusive', 'harness noise'})
         self.assertIsNone(r['primary_t']); self.assertIsNone(r['placebo_t'])
 
+    def test_high_precision_constant_primary_is_inconclusive(self):
+        for row in self.data.values():
+            for arms in row['models'].values():
+                arms['N'] = '0.002345678901234567890123456789'
+        r = score(self.study, self.data)
+        self.assertIsNone(r['primary_t'])
+        self.assertEqual(r['labels'], ['inconclusive'])
+
+    def test_exact_primary_and_placebo_boundaries(self):
+        for i, row in enumerate(self.data.values()):
+            for arms in row['models'].values():
+                arms['N'] = '.00343' if i < 19 else '-.01657'
+        r = score(self.study, self.data)
+        self.assertEqual(r['primary_t'], Decimal('2.43'))
+        self.assertTrue(r['marks']['primary_t'])
+        for i, row in enumerate(self.data.values()):
+            for arms in row['models'].values():
+                arms['P1'] = '.003' if i < 19 else '-.017'
+        r = score(self.study, self.data)
+        self.assertEqual(r['placebo_t'], Decimal(2))
+        self.assertFalse(r['marks']['placebo'])
+
     def test_approval_refuses_before_reading_result(self):
         with patch('timemachine.score_tm09.read_private', side_effect=FileNotFoundError) as read:
             with self.assertRaises(FileNotFoundError):
@@ -261,7 +387,10 @@ class ScoreTest(unittest.TestCase):
             root = Path(tmp)
             approval, key, reg, sealed = [root / k for k in ('approval', 'key', 'reg', 'sealed')]
             key.write_text(KEY); reg.write_text('synthetic'); sealed.write_text(json.dumps(self.data))
+            scorer = ROOT / 'timemachine/score_tm09.py'
             pins = dict(scope='ledger-222-score-once', root=tmp, approved_by='synthetic', results_path=str(sealed),
+                        release=str(ROOT), scorer_sha256=sha256(scorer.read_bytes()).hexdigest(),
+                        dependency_sha256={name: sha256((scorer.parent / name).read_bytes()).hexdigest() for name in DEPS},
                         config_sha256=sha256(CONFIG.read_bytes()).hexdigest(), registration_sha256=sha256(reg.read_bytes()).hexdigest(),
                         results_sha256=sha256(sealed.read_bytes()).hexdigest())
             store_new(approval, {'body': pins, 'seal': seal(KEY, 'tm09-score-approval', pins)})
