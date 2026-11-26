@@ -30,10 +30,11 @@ QUEUE=99
 PRICE_BASE="f7f2fbf52f9993bbc8dbb9d8d45c0e09e12d8584"
 PRICE_PRIOR=p.PREVIOUS_VALIDATION
 VENDOR_ENDPOINT="https://data.alpaca.markets/v1/corporate-actions"
-VENDOR_NAME="vendor_actions.json"
+VENDOR_NAME="vendor_actions_windows.json"
 VENDOR_INDEX="vendor_action_index.json"
+ADAPTER="research_rig/vendor_60.py"
 b=SimpleNamespace(**runpy.run_path(str(ROOT/"research_rig/basis_43.py")))
-SOURCES={PLAN,PROOF,p.CONFIG,p.ENGINE,p.PROVENANCE,p.BASIS,*p.CALENDARS,
+SOURCES={PLAN,PROOF,ADAPTER,p.CONFIG,p.ENGINE,p.PROVENANCE,p.BASIS,*p.CALENDARS,
          "research_rig/score_43.py","research_rig/score_60.py","research_rig/test_60.py"}
 ADOPT_RE=(rb"Approved by the lead: plan 60 ledger 199, adopt sealed Plan 43 prices from validation commit "
           +p.UUID+rb", prior approval SHA-256 "+p.SHA+rb", freeze commit "+p.UUID+rb", freeze SHA-256 "+p.SHA+
@@ -101,25 +102,6 @@ def authorize(commit,mode):
     return job,blobs
 
 
-def vendor_native(index_blob,meta,c):
-    z=p.parse(index_blob)
-    need(set(z)=={"version","custodian","endpoint","adoption","status","files"} and z["version"]==1 and
-         z["custodian"]==c["custodian"] and z["endpoint"]==VENDOR_ENDPOINT and z["adoption"]==meta and
-         z["status"]=="complete" and type(z["files"]) is list and bool(z["files"]),"P60_VENDOR_NATIVE")
-    root=VENDOR/"native"
-    p.private_dir(root)
-    names=set()
-    for row in z["files"]:
-        name=row["file"]
-        need(set(row)=={"file","status","sha256","bytes"} and re.fullmatch("[A-Za-z0-9][A-Za-z0-9_.-]{0,150}",name)
-             and name not in names and type(row["status"]) is int and 100<=row["status"]<=599,
-             "P60_VENDOR_NATIVE")
-        names.add(name)
-        blob=p.file_bytes(root/name,row["sha256"],8*2**20,private=True)
-        need(type(row["bytes"]) is int and len(blob)==row["bytes"],"P60_VENDOR_NATIVE")
-    need({n.name for n in root.iterdir()}==names,"P60_VENDOR_NATIVE")
-
-
 def approved(commit,mode):
     job,blobs=authorize(commit,mode)
     c=config(blobs[p.CONFIG])
@@ -154,10 +136,14 @@ def approved(commit,mode):
     meta=dict(docket_sha256=price["docket_sha256"],identities_sha256=price["identities.json"],
               bars_sha256=price["bars.json"])
     index=p.file_bytes(VENDOR/VENDOR_INDEX,job["vendor_index_sha256"],32*2**20,private=True)
-    vendor_native(index,meta,c)
+    adapter={}
+    exec(compile(blobs[ADAPTER],ADAPTER,"exec"),adapter)
+    expected=adapter["project_packet"](p,VENDOR/"native",index,meta,c,q,verified[0],VENDOR_ENDPOINT,
+                                       p.NONCASH_ACCESSION)
     actions_blob=p.file_bytes(VENDOR/VENDOR_NAME,job["vendor_actions_sha256"],64*2**20,private=True)
     external=p.parse(actions_blob)
     need(external["native_index_sha256"]==job["vendor_index_sha256"],"P60_VENDOR_BINDING")
+    need(external==expected,"P60_VENDOR_PROJECTION")
     vendor=schema_vendor(external,meta,q,verified[0],c)
     C=p.engine(blobs[p.ENGINE])
     tapes=market_tapes(q,days,C,c,ids,bars,verified)
@@ -191,7 +177,7 @@ def yes(view,day):
 
 def schema_vendor(packet,meta,q,keyed,c):
     need(type(packet) is dict and set(packet)=={"version","custodian","endpoint","adoption","native_index_sha256","records"}
-         and packet["version"]==1 and packet["custodian"]==c["custodian"] and packet["endpoint"]==VENDOR_ENDPOINT
+         and packet["version"]==2 and packet["custodian"]==c["custodian"] and packet["endpoint"]==VENDOR_ENDPOINT
          and packet["adoption"]==meta,"P60_VENDOR_SHAPE")
     expected={e.a for e in q}-{p.NONCASH_ACCESSION}
     need(set(packet["records"])==expected,"P60_VENDOR_SHAPE")
@@ -218,11 +204,11 @@ def schema_vendor(packet,meta,q,keyed,c):
                 kind=a["type"]
                 identifier=a["id"]
                 ex=p.d(a["ex"])
-                fields={"id","type","ex"}|(
+                fields={"id","type","ex","source_sha256"}|(
                     {"cash_usd","factor"} if kind=="cash" else {"new","old"} if kind=="split" else {"vendor_type"})
                 need(kind in {"cash","split","nonprice","unsupported"} and
                      set(a)==fields and type(identifier) is str and 0<len(identifier)<=120 and
-                     identifier not in items and e.start<=ex<=through,"P60_VENDOR_ACTION")
+                     identifier not in items and e.start<=ex<=through and p.is_pin(a["source_sha256"]),"P60_VENDOR_ACTION")
                 factor=None
                 if kind=="cash":
                     need(type(a["cash_usd"]) is str and
@@ -411,15 +397,17 @@ def prepare(q,available,vendor,c):
         base=c["cost"]["bps"]
         cap=c["capital"]
         supports_iwm=yes(records[iwm][0],e.entry) and yes(records[iwm][0],exit_day)
-        for arm,start,cost,legs in (("base",e.entry,base,records),("stress",e.entry,c["cost"]["stress_bps"],{"stock":stock}),
-                                       ("early",e.early,base,{"stock":stock})):
-            for rec in legs.values():
+        main_records={leg:rec for leg,rec in records.items() if leg!=spy or spy not in failures}
+        for start,cost,bundles in ((e.entry,base,main_records),(e.entry,c["cost"]["stress_bps"],{"stock":stock}),
+                                   (e.early,base,{"stock":stock})):
+            for rec in bundles.values():
                 lot_ok(rec,start,exit_day,cost,cap,c)
         for n in range(1,p.quantity(stock[0][e.entry].o,c["sleeve_usd"],base,c)+1):
             p.split_basis(n,stock[1],e.entry,exit_day)
         stock_lot=lot_ok(stock,e.entry,exit_day,base,cap,c)
         control_lot=supports_iwm and lot_ok(records[iwm],e.entry,exit_day,base,cap,c)
-        if failures:
+        critical_basis="stock" in failures or iwm in failures
+        if critical_basis:
             info["reason"]="refused_vendor_basis"
         elif not stock_lot:
             info["reason"]="unfilled_capital"
@@ -429,8 +417,12 @@ def prepare(q,available,vendor,c):
             info["reason"]="unfilled_iwm_capital"
         else:
             info["reason"]="eligible_pair"
-        info.update(delayed=exit_day!=e.exit,inside_no_bar=sum(not yes(stock[0],day)
-                    for day in scope if e.entry<day<exit_day),show_basis_excluded=bool(failures and stock_lot))
+        spy_raw=records[spy][0]
+        spy_only_omission=(spy in failures and not critical_basis and stock_lot and yes(spy_raw,e.entry) and
+                           yes(spy_raw,exit_day) and p.quantity(spy_raw[e.entry].o,cap,base,c)>0)
+        info.update(shown_spy_basis_omission=spy_only_omission,
+                    delayed=exit_day!=e.exit,inside_no_bar=sum(not yes(stock[0],day)
+                    for day in scope if e.entry<day<exit_day))
         staged[e.a]=(records,exit_day,stock_lot,control_lot)
     return decisions,staged
 
@@ -449,7 +441,10 @@ def rollup(decisions,c):
                     post_window_action_explains_legs=sum(x["post_action_explains"] for x in tails),
                     vendor_only_in_window_actions=sum(x[0] for x in diffs),
                     filing_only_in_window_actions=sum(x[1] for x in diffs),
-                    vendor_basis_refusal_reasons=dict(Counter(why for r in rows for why in r.get("vendor_basis",{}).values())),
+                    vendor_basis_refusal_reasons=dict(Counter(why for r in rows
+                        for leg,why in r.get("vendor_basis",{}).items() if leg!=c["controls"][1])),
+                    shown_spy_basis_failures=sum(c["controls"][1] in r.get("vendor_basis",{}) for r in rows),
+                    shown_spy_basis_omissions=sum(bool(r.get("shown_spy_basis_omission")) for r in rows),
                     delayed_exits=sum(bool(r.get("delayed")) for r in rows),
                     inside_unavailable_sessions=sum(r.get("inside_no_bar",0) for r in rows))
     rows=list(decisions.values())
@@ -493,7 +488,7 @@ def sleeves(q,decisions,staged,days,c):
     placed=0
     grouped=defaultdict(list)
     for e in q:
-        if e.a in staged and not decisions[e.a]["vendor_basis"]:
+        if e.a in staged and not ({"stock",c["controls"][0]} & decisions[e.a]["vendor_basis"].keys()):
             grouped[e.entry].append(e)
     for day in sorted(grouped):
         active={slot:(end,cik) for slot,(end,cik) in active.items() if end>=day}
@@ -552,7 +547,8 @@ def score(q,decisions,staged,days,c):
             need(t is not None and control is not None,"P60_PAIR")
             rows.append(SimpleNamespace(a=e.a,month=e.entry.strftime("%Y-%m"),year=e.year,
                                         stock=t.economic,control=control.economic))
-        if decisions[e.a]["vendor_basis"]:
+        failures=decisions[e.a]["vendor_basis"]
+        if "stock" in failures or iwm in failures:
             continue
         for key,start,cost in (("entry_plus_one",e.early,base),("stress_cost",e.entry,c["cost"]["stress_bps"])):
             out=fill(e,rec["stock"],start,end,cap,cost,c)
@@ -560,7 +556,7 @@ def score(q,decisions,staged,days,c):
                 shown[key].append(out.economic)
         if not t:
             continue
-        cmp=fill(e,rec[spy],e.entry,end,cap,base,c)
+        cmp=fill(e,rec[spy],e.entry,end,cap,base,c) if spy not in failures else None
         if cmp:
             shown["paired_spy"].append(t.economic-cmp.economic)
         shown["deployed"].append(t.deployed)
@@ -581,10 +577,10 @@ def config(blob):
     need(len(matches)==1,"P60_CONFIG")
     extra=p.parse(matches[0])
     need(set(extra)=={"inherit","pre_padding_sessions","min_median_dollar_volume","exit_wait_sessions",
-                      "vendor_tail_days","placement_cases","ohlc_tick","ohlc_slack"} and
+                      "vendor_tail_days","vendor_process_lookback_days","placement_cases","ohlc_tick","ohlc_slack"} and
          extra["inherit"]=="replay_43_plan" and extra["pre_padding_sessions"]==base["stale_run"]==5 and
          extra["exit_wait_sessions"]==base["stale_run"] and extra["min_median_dollar_volume"]==100000 and
-         extra["vendor_tail_days"]==90,
+         extra["vendor_tail_days"]==extra["vendor_process_lookback_days"]==90,
          "P60_CONFIG")
     need(extra["placement_cases"]==[p.money(".75"),p.money(".65")] and
          p.money(extra["ohlc_tick"])==p.money(".01") and p.money(extra["ohlc_slack"])==p.money(".00000001"),

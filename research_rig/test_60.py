@@ -1,6 +1,7 @@
 """Artificial CLI and exact arithmetic witnesses for Plan 60."""
 from decimal import Decimal
 from fractions import Fraction
+import gzip
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -36,7 +37,7 @@ raise SystemExit(g["main"]())
 
 
 class Fixture:
-    def __init__(self,base,scenarios=False,frozen=True):
+    def __init__(self,base,scenarios=False,frozen=True,spy_bad=False,wire_fault=None,alias_gap=False):
         self.f=f=SyntheticRepo(base,with_blocked=True,modeled_count=10 if scenarios else 1)
         rec=f.packets[1]["records"]
         acc=[a for a in rec if a!=f.blocked]
@@ -79,15 +80,12 @@ class Fixture:
         native.mkdir(mode=0o700)
         meta=dict(docket_sha256=f.dp,identities_sha256=sha256((f.inp/"identities.json").read_bytes()).hexdigest(),
                   bars_sha256=sha256((f.inp/"bars.json").read_bytes()).hexdigest())
-        base_fields=dict(version=1,custodian=s.p.config((f.root/s.p.CONFIG).read_bytes())["custodian"],
+        base_fields=dict(version=2,custodian=s.p.config((f.root/s.p.CONFIG).read_bytes())["custodian"],
                          endpoint=s.VENDOR_ENDPOINT,adoption=meta)
-        body=b'{"actions":[],"next_page_token":null}\n'
-        s.p.write_exclusive(native/"actions.json",body)
-        index=s.p.render(base_fields|dict(status="complete",
-                         files=[dict(file="actions.json",status=200,sha256=sha256(body).hexdigest(),bytes=len(body))]))
-        s.p.write_exclusive(self.vendor/s.VENDOR_INDEX,index)
-        self.index_pin=sha256(index).hexdigest()
         rows={}
+        streams={}
+        retries=[]
+        stamp="2026-11-26T00:00:00Z"
         for i,a in enumerate(acc):
             base=rec[a]["stock"]
             through=s.p.d(base["end"])+s.timedelta(days=90)
@@ -101,10 +99,75 @@ class Fixture:
                     if scenarios and i==8:
                         items.append(dict(id="tail",type="split",ex=str(through-s.timedelta(days=80)),new="1.5",old="0.75"))
                     if scenarios and i==9:
-                        items.append(dict(id="unsupported",type="unsupported",ex=ex,vendor_type="synthetic"))
+                        items.append(dict(id="unsupported",type="unsupported",ex=ex,vendor_type="spin_offs"))
+                    if alias_gap:
+                        items.append(dict(id="rename",type="nonprice",ex=ex,vendor_type="name_changes"))
+                if leg=="SPY" and spy_bad:
+                    items.append(dict(id="spy_bad",type="cash",ex=ex,cash_usd="1",factor=None))
                 key=ident["identity"]
-                rows[a][leg]=dict(identity=key,ticker=ident["ticker"],views=dict(all=key,filing_all=key),
-                                  start=base["start"],through=str(through),complete=True,items=items)
+                ticker=ident["ticker"]
+                if ticker not in streams:
+                    wire={}
+                    for item in items:
+                        fields=dict(id=item["id"],symbol=ticker,cusip=key,process_date=item["ex"],ex_date=item["ex"])
+                        if item["type"]=="cash":
+                            kind="cash_dividends"
+                            fields.update(rate=int(item["cash_usd"]),currency="USD",foreign=False,special=True)
+                            # Action discovered by process-date lookback, then projected by ex-date.
+                            fields["process_date"]=str(s.p.d(item["ex"])-s.timedelta(days=45))
+                        elif item["type"]=="split":
+                            kind="forward_splits"
+                            fields.update(new_rate=Decimal(item["new"]),old_rate=Decimal(item["old"]))
+                        elif item["type"]=="nonprice":
+                            kind=item["vendor_type"]
+                            fields.pop("ex_date")
+                            fields.update(old_symbol=ticker,old_cusip=key,new_symbol="AFTER",new_cusip=key)
+                        else:
+                            kind=item["vendor_type"]
+                            fields.update(source_symbol=ticker,source_cusip=key,new_symbol="OTHER")
+                        wire.setdefault(kind,[]).append(fields)
+                    terminal="broken" if wire_fault=="pagination" and leg=="stock" else None
+                    rawbody=s.p.render(dict(corporate_actions={} if wire_fault=="empty" else wire,next_page_token=terminal))
+                    body=gzip.compress(rawbody,mtime=0)
+                    name=f"{ticker}.json.gz"
+                    s.p.write_exclusive(native/name,body)
+                    digest=sha256(rawbody).hexdigest()
+                    first=s.p.d(base["start"])-s.timedelta(days=90)
+                    pages=[dict(file=name,status=200,sha256=sha256(body).hexdigest(),bytes=len(body),page_token=None,
+                                body_sha256=digest,body_bytes=len(rawbody),next_page_token=terminal)]
+                    if ticker=="IWM":
+                        # Exercise a real two-page chain even when its action lists are empty.
+                        name2=f"{ticker}_first.json"
+                        firstbody=s.p.render(dict(corporate_actions={},next_page_token="fixture-next"))
+                        s.p.write_exclusive(native/name2,firstbody)
+                        pages[0]["page_token"]="wrong-next" if wire_fault=="wrong_token" else "fixture-next"
+                        firsthash=sha256(firstbody).hexdigest()
+                        pages.insert(0,dict(file=name2,status=200,sha256=firsthash,bytes=len(firstbody),
+                                            body_sha256=firsthash,body_bytes=len(firstbody),page_token=None,
+                                            next_page_token="fixture-next"))
+                    params=dict(symbols=ticker,start=str(first),end=str(through),limit="1000",sort="asc",
+                                data_quality="complete",region="us")
+                    for j,paged in enumerate(pages):
+                        token=paged["page_token"]
+                        outgoing=params if token is None else params|dict(page_token=token)
+                        stamp_fields=dict(identity=key,ticker=ticker,page=j,params=outgoing,fetched_utc=stamp)
+                        paged.update(stamp_fields,attempt=1)
+                        if ticker=="IWM" and j==0:
+                            retries.append(stamp_fields|dict(attempt=1,page_token=None,status=429,curl_rc=0,
+                                           body_sha256=sha256(b"").hexdigest(),body_bytes=0))
+                            paged["attempt"]=2
+                    streams[ticker]=(digest,pages)
+                digest,_=streams[ticker]
+                rows[a][leg]=dict(identity=key,ticker=ticker,views=dict(all=key,filing_all=key),
+                                  start=base["start"],through=str(through),complete=not (alias_gap and leg=="stock"),
+                                  items=sorted((item|dict(source_sha256=digest) for item in items),
+                                               key=lambda x:(x["ex"],x["id"])))
+        entries=[page for _,pages in streams.values() for page in pages]
+        index=s.p.render(dict(version="plan60_vendor_action_index_v2",ledger=199,endpoint=s.VENDOR_ENDPOINT,
+                              capture_utc=stamp,total_pages=len(entries),total_retries_and_errors=len(retries),
+                              total_http_requests=len(entries)+len(retries),entries=entries,retries_and_errors=retries))
+        s.p.write_exclusive(self.vendor/s.VENDOR_INDEX,index)
+        self.index_pin=sha256(index).hexdigest()
         vendor=s.p.render(base_fields|dict(native_index_sha256=self.index_pin,records=rows))
         s.p.write_exclusive(self.vendor/s.VENDOR_NAME,vendor)
         self.vendor_pin=sha256(vendor).hexdigest()
@@ -115,7 +178,7 @@ class Fixture:
                    edges=cfg["calibration"]["edges"],shares=[0]*4)
         f.put(s.PROOF,s.p.render(dict(plan=60,ledger=199,queue=99,placed_floor=cfg["marks"]["placed"],
                                      cases={str(x):proof for x in cfg["placement_cases"]})))
-        for n in (s.PLAN,"research_rig/score_60.py","research_rig/test_60.py"):
+        for n in (s.PLAN,s.ADAPTER,"research_rig/score_60.py","research_rig/test_60.py"):
             blob=(s.ROOT/n).read_bytes()
             f.put(n,blob.replace(b"Status DRAFT.",b"Status FROZEN.") if n==s.PLAN and frozen else blob)
         for n,num in (("research_rig/TRIAL_LEDGER.md",199),("docs/QUEUE.md",99)):
@@ -182,10 +245,42 @@ class Plan60(unittest.TestCase):
             with TemporaryDirectory() as d:
                 f=Fixture(Path(d),frozen=frozen)
                 if frozen:
-                    (f.vendor/"native/actions.json").write_bytes(b"tampered")
+                    (f.vendor/"native/TEST.json.gz").write_bytes(b"tampered")
                 check=f.cli("validate-inputs",f.val)
                 self.assertEqual((check.returncode,check.stderr),(2,reason+"\n"))
                 self.assertFalse((f.run/f"validation.{f.val}.json").exists())
+
+    def test_cli_native_projection_and_pagination_fail_closed(self):
+        for fault,reason in (("empty","P60_VENDOR_PROJECTION"),("pagination","P60_VENDOR_PAGINATION"),
+                             ("wrong_token","P60_VENDOR_PAGE")):
+            with TemporaryDirectory() as d:
+                f=Fixture(Path(d),wire_fault=fault)
+                got=f.cli("validate-inputs",f.val)
+                self.assertEqual((got.returncode,got.stderr),(2,"P43_"+reason+"\n"))
+                self.assertFalse((f.run/f"validation.{f.val}.json").exists())
+
+    def test_cli_incomplete_alias_coverage_refuses_only_affected_event(self):
+        with TemporaryDirectory() as d:
+            f=Fixture(Path(d),alias_gap=True)
+            got=f.cli("validate-inputs",f.val)
+            self.assertEqual((got.returncode,got.stderr),(0,""))
+            summary=json.loads(got.stdout.rsplit("\n",2)[0])
+            self.assertEqual(summary["reason_counts"]["refused_vendor_basis"],1)
+            self.assertEqual(summary["vendor_basis_refusal_reasons"],{"vendor_mapping_or_coverage":1})
+
+    def test_cli_spy_only_basis_failure_keeps_judged_pair(self):
+        with TemporaryDirectory() as d:
+            f=Fixture(Path(d),spy_bad=True)
+            got=f.cli("validate-inputs",f.val)
+            self.assertEqual((got.returncode,got.stderr),(0,""))
+            summary=json.loads(got.stdout.rsplit("\n",2)[0])
+            self.assertEqual(summary["reason_counts"]["eligible_pair"],1)
+            self.assertEqual(summary["reason_counts"]["refused_vendor_basis"],0)
+            self.assertEqual(summary["shown_spy_basis_omissions"],1)
+            out=f.cli("go",f.go())
+            self.assertEqual((out.returncode,out.stdout,out.stderr),(0,"P60_SCORED_ONCE\n",""))
+            outcome=json.loads((f.run/"result.json").read_bytes())["outcome"]
+            self.assertNotIn("paired_spy",outcome["shown"])
 
     def test_missing_vendor_cash_factor_cannot_reset_fit(self):
         days=[s.p.d("2024-06-01")+s.timedelta(days=i) for i in range(5)]

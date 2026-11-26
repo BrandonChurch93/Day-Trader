@@ -335,6 +335,7 @@ Working papers.
 | `research_rig/AMENDMENT_43_BASIS.md`, `research_rig/basis_43.py` | Queue 74 third attempt, ledger 195: quantization, no-return gate diagnostics, sealed adoption; no vendor data | CURRENT. Frozen, not authorized |
 | `research_rig/PREREG_60_special_dividends.md`, `research_rig/CALIBRATION_60.json`, `research_rig/PINNED_60.json` | Queue 99 / ledger 199: execution-first special dividend design, filing-only calibration and draft source pins | DRAFT |
 | `research_rig/score_60.py`, `research_rig/test_60.py` | Plan 60 offline validation, one-shot scorer and artificial Git/custody fixtures | DRAFT |
+| `research_rig/vendor_60.py` | Plan 60 offline action transport verifier and deterministic native-to-window projection | DRAFT |
 | `research_rig/score_43.py`, `research_rig/test_43.py`, `research_rig/CALIBRATION_43.json` | Replay 43 raw SIP and cash-action approval gate, one-shot scorer, synthetic tests and null calibration. No replay result | CURRENT |
 | `research_rig/PREREG_33_treasury_auctions.md`, `research_rig/PINNED_33.json` | Queue 52 and ledger 168. Frozen intraday Treasury auction-day test: long IEF or TLT from 13:10 to 15:59 ET on 10-year and 30-year auction days, judged on executable quotes. No vendor data | CURRENT |
 | `research_rig/score_33.py`, `research_rig/test_33.py` | Replay 33 scorer with offline no-return validation, one-shot approval gate, and synthetic tests | CURRENT |
