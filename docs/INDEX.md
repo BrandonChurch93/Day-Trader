@@ -47,6 +47,7 @@ Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEU
 | `config/thresholds.yaml` | Every threshold and every owner number, once. Documents name the key and never repeat the value | CURRENT |
 | `tools/check_repo.py` | Checks this index, paths named in the map, playbook and research pages, config keys named in documents, the results table in the status page, the coverage tables in `docs/research/10_historical_data_and_practice.md`, and stored outputs against `research_rig/provenance.json`. With `--builders` it also runs the document builders and fails if a built page changes | CURRENT |
 | `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from output files and the generated Replay 24 result page | CURRENT |
+| `tools/report_stock_trading_costs.py` | Writes or checks doc 136 from the pinned saved stock spread aggregate. No downloads, market inputs or scoring | CURRENT |
 | `tools/report_saved_25.py` | Renders the Replay 25 result page from the pinned saved aggregate JSON. Does not open market inputs or score | CURRENT |
 | `tools/report_saved_31.py` | Renders the Replay 31 result page from one pinned saved aggregate JSON. Does not open market inputs or score | CURRENT |
 | `tools/report_saved_41.py` | Renders the Replay 41 result page from one pinned saved JSON. Does not open market inputs or score | CURRENT |
@@ -242,6 +243,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/122_replay_53_taxable_fund_january_rebound.md` | Replay 53 saved result: taxable closed-end fund tax-loss losers did not pass; judged marks, yearly turns, costs, diagnostics and gaps | CURRENT |
 | `docs/research/126_replay_60_special_dividends.md` | Replay 60 saved result: the special-dividend rule did not pass; judged marks, yearly means, refusal counts, shown checks and gaps | CURRENT |
 | `docs/research/130_replay_62_special_dividend_ex_day.md` | Replay 62 saved result: the special-dividend ex-day rule did not pass; judged marks, yearly means, shown checks, history and gaps | CURRENT |
+| `docs/research/136_measured_stock_trading_costs.md` | Queue row 9f: saved half-spreads for 56 stocks and funds by time and symbol group, $500 order arithmetic, and comparison with frozen replay costs | CURRENT |
 | `docs/research/137_replay_22_fable_rule_a.md` | Replay 22 result: Fable rule A run as a fixed rule with no AI on the monthly top 30 coins did not pass, 1 of 5 marks; the row closes | CURRENT |
 | `docs/research/132_count_107_dividend_month_coverage.md` | Count 107 closure before prices: dated roster and regular dividend-month counts below the fixed line; source check | RECORD |
 | `docs/research/128_row104_equity_cef_distribution_count.md` | Row 104 count, price-blind: equity closed-end fund non-monthly and special distributions 2016 to 2026 (472 fund-days on 241 ex-dates, pass line met; declaration lead time unknown). Addendum: second count over all SEC-classified equity closed-end funds, year-end and special distributions (461 fund-days on 261 ex-dates, passes; 36 of 60 sampled public at least 3 sessions before ex, 1 not, 23 undatable) | CURRENT |
