@@ -281,8 +281,6 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
         if journal:
             events.extend(changes)
             scans.append(rec["scan"])
-    if book.get("desk_liquidation") and spec["end"] not in unsupported:
-        unsupported.append(spec["end"])
     book["last_px"].update(spec["end_marks"])
     final = max(0.0, P.value_at(book, spec["end_marks"]))
     return dict(value=final, book=book, events=events, scans=scans, immediate=count, standing=hits,

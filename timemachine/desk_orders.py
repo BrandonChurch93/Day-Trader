@@ -221,8 +221,7 @@ class Orders:
                 self.event("triggered", order, t, bar_start=start, high=high, low=low)
 
     def advance(self, book, pp, rows, start, end, gross, on_open=None, last=False):
-        """Boundary funding, open maintenance, gap exits, new fills, bar-close checks."""
-        at = start
+        """Apply the same pessimistic one-bar maintenance proxy to every arm."""
         total = dict(exits=[], closeout=None, funding_usd=0.0, fallback_hours=0, held_seconds=0,settlements=[])
         book.setdefault("held_seconds",0)
         events = iter(funding_schedule(pp,start,end if last else end-1))
@@ -279,33 +278,44 @@ class Orders:
             if s in self.active:
                 self.remove(s,"cancelled",tick,reason="protective_exit")
 
-        for tick, bars in groupby(rows, key=lambda row: row[0]):
-            if tick < start or tick + MINUTE > end:
-                continue
-            hold(tick-at)
-            bars = list(bars)
+        groups = iter((t,list(bars)) for t,bars in groupby(rows,key=lambda r:r[0]))
+        group = next(groups,None)
+        for tick in range(start,end,MINUTE):
+            while group and group[0] < tick:
+                group = next(groups,None)
+            bars = group[1] if group and group[0] == tick else []
             opens = {r[1]: r[2] for r in bars}
+            prior_close = dict(book["last_px"])
             fund_until(tick, opens)
             book["last_px"].update(opens)
+            at = min(tick+MINUTE,end)
+            breach = False
             protected = set()
-            if book["qty"] and book["qty"].keys() <= opens.keys():
-                eq, need = margin(opens)
-                pending = book.pop("desk_liquidation",None)
-                if pending or eq < need:
-                    symbol = pending["symbol"] if pending else min(book["qty"])
-                    trades = [P.trade(book,s,-q,opens[s],pp,penalty=pp["penalty"])
+            if book["qty"]:
+                extremes = {s:(l,h) for _,s,_,h,l,_ in bars}
+                stressed = {s:(extremes[s][q < 0] if s in extremes else prior_close[s]) for s,q in book["qty"].items()}
+                eq,need = margin(stressed)
+                note_drawdown(eq)
+                if eq < need:
+                    # The closed-bar proxy blocks all new fills in this minute.
+                    # Charge settlements before the proxy's bar-close exit.
+                    fund_until(at-1,{})
+                    hold(at-tick)
+                    eq,_ = margin(stressed)
+                    trades = [P.trade(book,s,-q,stressed[s],pp,penalty=pp["penalty"])
                               for s,q in sorted(book["qty"].items())]
                     short = max(0.0, -book["cash"])
                     book["shortfall_usd"] += short
                     book["cash"] = max(0.0, book["cash"])
-                    event = dict(utc=stamp(tick),symbol=symbol,value_before=eq,value_after=book["cash"],
-                                 shortfall_usd=short,at_open=True,trigger=pending,trades=trades)
+                    event = dict(utc=stamp(at),bar_start=stamp(tick),phase="adverse_bar",symbol=min(stressed),value_before=eq,
+                                 value_after=book["cash"],shortfall_usd=short,trades=trades)
                     book["closeouts"].append(event)
                     total["closeout"] = event
                     note_drawdown(book["cash"])
-                    block(tick)
+                    block(at)
+                    breach = True
             for s, q in sorted(book["qty"].items()):
-                if s not in opens or s not in book["exits"] or book.get("desk_liquidation"):
+                if s not in opens or s not in book["exits"]:
                     continue
                 p = opens[s]
                 hit = P.exit_hit(q, book["exits"][s], p, p, p)
@@ -314,50 +324,34 @@ class Orders:
                     protected.add(s)
             prior_exits = dict(book["exits"])
             immediate_symbols = set()
-            if on_open and not blocked and not book.get("desk_liquidation"):
+            if on_open and not blocked and bars:
                 immediate_symbols = on_open(tick, opens, protected) or set()
                 for s in sorted(immediate_symbols):
                     live = self.active.get(s)
                     if live and "observed" in live:
                         self.remove(s, "cancelled", tick, reason="immediate_fill")
-            if not blocked and not book.get("desk_liquidation"):
+            if not blocked and bars:
                 self.execute_open(book, pp, tick, opens, gross)
-            at = tick + MINUTE
-            # Mid-minute settlements see positions held after the open,
-            # with the open still the latest observed mark.
-            fund_until(at-1,{})
-            hold(MINUTE)
+            if not breach:
+                fund_until(at-1,{})
+                hold(at-tick)
             # A resting exit can fill at its level intraminute. Record the
             # observation at close, not as a second execution at the open.
             for _,s,o,h,l,_ in bars:
                 ex = book["exits"].get(s)
-                if (book.get("desk_liquidation") or not book["qty"].get(s) or not ex
+                if (not book["qty"].get(s) or not ex
                         or s in immediate_symbols or ex != prior_exits.get(s)):
                     continue
                 hit = P.exit_hit(book["qty"][s],ex,o,h,l)
                 if hit and not hit[2]:
                     protective(s,at,hit,"intrabar")
                     protected.add(s)
-            if book["qty"] and book["qty"].keys() <= opens.keys():
-                for _,s,_,h,l,_ in bars:
-                    q = book["qty"].get(s)
-                    if not q:
-                        continue
-                    adverse = dict(opens)
-                    adverse[s] = l if q > 0 else h
-                    eq,need = margin(adverse)
-                    note_drawdown(eq)
-                    if eq < need and not book.get("desk_liquidation"):
-                        # The extreme is known only when the bar completes.
-                        # It can never be a liquidation price for another coin.
-                        book["desk_liquidation"] = dict(symbol=s,observed=stamp(at),bar_start=stamp(tick))
             book["last_px"].update({s:c for _,s,_,_,_,c in bars})
             if book["qty"]:
                 book["peak"] = max(book["peak"],P.value_at(book,book["last_px"]))
             for bar in bars:
                 self.observe_close(bar, protected)
             self.expire(at)
-        hold(end-at)
         fund_until(end, {})
         self.expire(end)
         return total

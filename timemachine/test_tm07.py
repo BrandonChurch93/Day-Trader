@@ -217,21 +217,43 @@ class DeskTest(unittest.TestCase):
         self.assertFalse(rec["trades"])
         self.assertEqual([x["utc"] for x in rec["scan"]["exits"]],[O.stamp(T+120)])
 
-    def test_reaudit_sol_r02_later_high_cannot_liquidate_at_earlier_open(self):
+    def test_pass3_m3_adverse_book_closes_before_new_fills_or_recovery(self):
         def trial(high):
-            spec = world([(T,A,100,high,99,100),(T,B,100,100,99,100),
+            spec = world([(T,A,100,high,99,100),(T,B,100,103,99,100),
                           (T+60,A,170,171,169,170),(T+60,B,120,121,119,120)])
             book = P.new_book(1000)
             book.update(cash=1900,qty={A:-6,B:-3},target={A:-.6,B:-.3},last_px={A:100,B:100})
             return O.step(book,dict(weights={A:-.6,B:-.35}),spec["rows"][0],spec["params"],
                           P.Minutes(spec["minutes"]),T,T+120,True,{},1)[0]
         calm, jump = trial(101),trial(350)
-        self.assertEqual(calm["trades"],jump["trades"])
-        self.assertEqual(jump["trades"][0]["fill_utc"],O.stamp(T))
+        self.assertEqual(calm["trades"][0]["fill_utc"],O.stamp(T))
+        self.assertFalse(jump["trades"])
         self.assertIsNone(calm["scan"]["closeout"])
         closeout = jump["scan"]["closeout"]
         self.assertEqual(closeout["utc"],O.stamp(T+60))
-        self.assertEqual({r["symbol"]:r["open"] for r in closeout["trades"]},{A:170,B:120})
+        self.assertEqual({r["symbol"]:r["open"] for r in closeout["trades"]},{A:350,B:103})
+        self.assertEqual(closeout["value_after"],0)
+
+        spec = world()
+        spec["params"]["funding"][A][T] = 0
+        book = P.new_book(1000)
+        book.update(cash=1300,qty={A:-4,B:-4},target={A:-.4,B:-.4},last_px={A:100,B:100})
+        engine = O.Orders()
+        rows = [(T,s,100,155,99,155) for s in (A,B)]+[(T+60,s,100,100,100,100) for s in (A,B)]
+        closeout = engine.advance(book,spec["params"],rows,T,T+120,1)["closeout"]
+        self.assertEqual(closeout["value_before"],60)
+        self.assertEqual({r["symbol"]:r["open"] for r in closeout["trades"]},{A:155,B:155})
+
+    def test_pass3_opr_b4_partial_bar_still_checks_all_holdings_before_stop(self):
+        spec = world()
+        for include_b in (True,False):
+            book = P.new_book(1000)
+            book.update(cash=-1390,qty={A:10,B:10},target={A:.5,B:.5},exits={A:{"stop":80}},last_px={A:100,B:100})
+            bars = [(T,A,40,42,38,40)]+([(T,B,100,101,100,100)] if include_b else [])+[(T+60,B,100,100,100,100)]
+            out = O.Orders().advance(book,spec["params"],bars,T,T+120,1)
+            self.assertFalse(out["exits"])
+            self.assertEqual({r["symbol"]:r["open"] for r in out["closeout"]["trades"]},{A:38,B:100})
+            self.assertTrue(all(r["penalty_usd"] > 0 for r in out["closeout"]["trades"]))
 
     def test_reaudit_r02_exit_observation_does_not_take_next_open_citation(self):
         second = T+3600
@@ -683,8 +705,10 @@ class DeskTest(unittest.TestCase):
             F.run_perp(dict(args, tm07_arm="C"), table, ans, p.pp, p.minutes, spec["cfg"])
         dsk = S.replay(p,bundles,journal=True)
         self.assertEqual(slow,fast)
-        self.assertEqual({k:v for k,v in slow[0].items() if k != "exits_hit"},
-                         {k:v for k,v in dsk["book"].items() if k != "exits_hit"})
+        differing = {"exits_hit","largest_drop"}
+        self.assertEqual({k:v for k,v in slow[0].items() if k not in differing},
+                         {k:v for k,v in dsk["book"].items() if k not in differing})
+        self.assertLess(dsk["book"]["largest_drop"],slow[0]["largest_drop"])
         self.assertEqual(slow[2],dsk["value"])
         # The desk records boundary funding at the opening wake, not in the
         # last wake's receipt. The complete book and exit history still match.
