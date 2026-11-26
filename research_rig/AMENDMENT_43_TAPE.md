@@ -1,6 +1,6 @@
 # Plan 43 successor amendment: per-event tape coverage
 
-Status DRAFT.
+Status FROZEN.
 
 Queue 74, successor ledger 188. Ledger 178 remains on HOLD without a scored run. This amendment supersedes only the tape and custody portions of the original Plan 43.
 
