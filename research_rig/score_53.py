@@ -25,19 +25,26 @@ DATA = Path("/home/user/workspace/rig/data")
 INPUTS, RUN = DATA / "plan53_inputs", DATA / "replay_53"
 PLAN = "research_rig/PREREG_53_taxable_cef_tax_loss.md"
 AMENDMENT = "research_rig/AMENDMENT_53_CASH.md"
+JUMP_AMENDMENT = "research_rig/AMENDMENT_53_JUMPS.md"
 PINS = "research_rig/PINNED_53.json"
 APPROVAL = "research_rig/APPROVAL_53.md"
 CALENDAR = "research_rig/calendar_25.json"
 ENGINE = "research_rig/common_48.py"
 CALIBRATION = "research_rig/CALIBRATION_53.json"
 CONFIG = "config/thresholds.yaml"
-PIN_NAMES = {PLAN, AMENDMENT, CALENDAR, ENGINE, CALIBRATION, CONFIG, "research_rig/score_53.py", "research_rig/test_53.py"}
+PIN_NAMES = {PLAN, AMENDMENT, JUMP_AMENDMENT, CALENDAR, ENGINE, CALIBRATION, CONFIG,
+             "research_rig/score_53.py", "research_rig/test_53.py"}
 ROSTER_PIN = "packet:roster.csv"  # off-repo point-in-time roster, pinned at freeze
 EXCLUSIONS = "roster_exclusions.csv"
 EXCLUSIONS_PIN = "packet:" + EXCLUSIONS
 CASH_COVERAGE = "cash_coverage.csv"
 VENDOR_CASH = "vendor_cash.json"
-INPUT_MODE = "plan53_raw_sip_v2"
+JUMP_CLEARANCES = "jump_clearances.csv"
+JUMP_FIELDS = ("turn_year", "ticker", "earlier_date", "later_date", "classification", "evidence_ref", "evidence_sha256")
+IDENTITY_SEGMENTS = "identity_segments.csv"
+IDENTITY_FIELDS = ("turn_year", "roster_ticker", "fund_identifier", "segment_ticker", "first_session", "last_session",
+                   "evidence_ref", "evidence_sha256")
+INPUT_MODE = "plan53_raw_sip_v4"
 COMPARISON = "replay48_portfolio_turns.json"
 LEDGER_ROW, QUEUE_ROW = 187, 90
 CAP = 64 * 1024 * 1024
@@ -45,11 +52,18 @@ CONFIG_KEYS = {"first_turn", "last_turn", "turns", "capital", "sleeve_usd", "pic
                "entry_from_end", "shown_exit_session", "benchmark", "split_check_ratio", "cost", "marks", "calibration", "resources"}
 APPROVAL_RE = (rb"Approved by the lead: plan 53, validation and one scored run, freeze commit ([0-9a-f]{40}), "
                rb"freeze SHA-256 ([0-9a-f]{64}), input SHA-256 ([0-9a-f]{64}), "
-               rb"roster SHA-256 ([0-9a-f]{64}), distributions SHA-256 ([0-9a-f]{64})\.\n")
+               rb"roster SHA-256 ([0-9a-f]{64}), distributions SHA-256 ([0-9a-f]{64}), "
+               rb"jump clearances SHA-256 ([0-9a-f]{64}), identity segments SHA-256 ([0-9a-f]{64})\.\n")
 
 
 class Refused(Exception):
     pass
+
+
+class JumpRefused(Refused):
+    def __init__(self, report, code="P53_JUMP_CLEARANCES"):
+        super().__init__(code)
+        self.report = report
 
 
 def need(ok, code):
@@ -121,9 +135,9 @@ def git(*args, allow=False):
     return proc
 
 
-def authorize(approval, freeze_pin, input_pin, roster_pin, dist_pin):
+def authorize(approval, freeze_pin, input_pin, roster_pin, dist_pin, jump_pin, identity_pin):
     need(type(approval) is str and re.fullmatch(r"[0-9a-f]{40}", approval) is not None, "APPROVAL")
-    need(all(map(is_pin, (freeze_pin, input_pin, roster_pin, dist_pin))), "PIN")
+    need(all(map(is_pin, (freeze_pin, input_pin, roster_pin, dist_pin, jump_pin, identity_pin))), "PIN")
     need(git("rev-parse", "HEAD").stdout.strip() == approval.encode()
          and not git("status", "--porcelain", "--untracked-files=all").stdout, "APPROVAL")
 
@@ -134,7 +148,8 @@ def authorize(approval, freeze_pin, input_pin, roster_pin, dist_pin):
     need(body is not None, "APPROVAL")
     freeze, *named = (x.decode("ascii") for x in body.groups())
     parent = git("rev-list", "--parents", "-n", "1", approval).stdout.split()[1:]
-    need(tuple(named) == (freeze_pin, input_pin, roster_pin, dist_pin) and len(parent) == 1, "APPROVAL")
+    need(tuple(named) == (freeze_pin, input_pin, roster_pin, dist_pin, jump_pin, identity_pin)
+         and len(parent) == 1, "APPROVAL")
     # The approval sits directly on the freeze, so every pinned file (including the whole config) is the frozen one.
     need(parent[0].decode() == freeze, "APPROVAL")
     need(git("diff-tree", "--no-commit-id", "--no-renames", "--name-status", "-r", approval).stdout
@@ -151,7 +166,7 @@ def authorize(approval, freeze_pin, input_pin, roster_pin, dist_pin):
     need((pins[ROSTER_PIN], pins[EXCLUSIONS_PIN]) == (attested["roster_sha256"], attested["exclusions_sha256"]),
          "FREEZE_ROSTER")
     need(all([line for line in blobs[name].splitlines() if line.startswith(b"Status ")] == [b"Status FROZEN."]
-             for name in (PLAN, AMENDMENT)), "FREEZE")
+             for name in (PLAN, AMENDMENT, JUMP_AMENDMENT)), "FREEZE")
     link = b"`" + PLAN.encode() + b"`"
     for name, row, code in (("research_rig/TRIAL_LEDGER.md", LEDGER_ROW, "LEDGER"),
                             ("docs/QUEUE.md", QUEUE_ROW, "QUEUE")):
@@ -219,7 +234,8 @@ def check_calibration(C, cfg, blob):
 
 def input_names(cfg):
     years = range(cfg["first_turn"], cfg["last_turn"] + 1)
-    return ({"roster.csv", EXCLUSIONS, "distributions.json", CASH_COVERAGE, VENDOR_CASH, COMPARISON, "split_evidence.json",
+    return ({"roster.csv", EXCLUSIONS, "distributions.json", CASH_COVERAGE, VENDOR_CASH, JUMP_CLEARANCES,
+             IDENTITY_SEGMENTS, COMPARISON, "split_evidence.json",
              "split_control.json"} | {f"bars_{y}.json" for y in years}
             | {f"quotes_{y}.json" for y in years})
 
@@ -242,7 +258,7 @@ def municipal_name(value, cfg):
     return any(f" {term} " in normalized for term in cfg["municipal_name_terms"])
 
 
-def roster_metadata(roster_blob, exclusions_blob, windows, C, cfg):
+def roster_metadata(roster_blob, exclusions_blob, windows, C, cfg, *, with_identity=False):
     base = C.roster(roster_blob, cfg)
     by_year = {str(w["turn"]): w for w in windows}
     snapshot_keys = ("series", "report_period", "public_date", "form", "filing_url")
@@ -281,7 +297,8 @@ def roster_metadata(roster_blob, exclusions_blob, windows, C, cfg):
                      and (not r["identity_url"] or https(r["identity_url"])), "ROSTER_EXCLUSIONS")
     need(all(positions == {str(i) for i in range(1, len(positions) + 1)} for positions in ids.values()),
          "ROSTER_HOLDINGS_IDS")
-    return base, len(excluded)
+    result = base, len(excluded)
+    return (*result, {(int(r["turn_year"]), r["ticker"]): r["cik"] for r in rows}) if with_identity else result
 
 
 def actions_and_coverage(raw, coverage_blob, windows, roster, C, cfg):
@@ -430,8 +447,8 @@ def vendor_cash(raw, primary, statuses, windows, roster, C, cfg):
                        "by_turn_and_primary_status": {str(y): by for y, by in detail.items()}}
 
 
-def split_evidence(raw, windows, names, cash, C, cfg):
-    # Preserve native pages. Only the projected query end is adapted to the shared engine's window check.
+def split_evidence(raw, windows, names, cash, schedules, C, cfg):
+    # Preserve native responses and use the shared schema/page checks; bind split events to the active identity.
     need(type(raw) is dict and type(raw.get("queries")) is list, "SPLIT_EVIDENCE")
     exits = {w["turn"]: w["exit"] for w in windows}
     projected = []
@@ -441,10 +458,151 @@ def split_evidence(raw, windows, names, cash, C, cfg):
         padded = exit_date + timedelta(days=cfg["split_query_tail_days"])
         need(q.get("end") == padded.isoformat(), "SPLIT_EVIDENCE_TAIL")
         projected.append(q | {"end": exit_date.isoformat()})
-    C.split_evidence(raw | {"queries": projected}, windows, names, cash)
+    C.split_evidence(raw | {"queries": projected}, windows, {y: () for y in names}, cash)
+    coverage, active, literal, windows_by_turn = {}, {}, {}, {w["turn"]: w for w in windows}
+    for y, symbols in names.items():
+        literal[y] = {s for s in symbols if (y, s) not in schedules}
+        coverage[y] = set(literal[y])
+        for roster_ticker in symbols:
+            if (y, roster_ticker) not in schedules:
+                continue
+            schedule, _ = schedules[y, roster_ticker]
+            for day, actual in schedule.items():
+                need(actual not in literal[y] and active.setdefault((y, actual, day), roster_ticker) == roster_ticker,
+                     "IDENTITY_COLLISION")
+                coverage[y].add(actual)
+    queried = {y: set() for y in names}
+    for q in projected:
+        y = q["turn"]
+        queried[y].update(q["symbols"])
+        for page in q["pages"]:
+            for kind in ("forward_splits", "reverse_splits"):
+                for record in page.get("corporate_actions", {}).get(kind, []):
+                    symbol = record["symbol"]
+                    if symbol not in coverage[y]:
+                        continue
+                    d = C.day(record.get("ex_date"))
+                    roster_ticker = symbol if symbol in literal[y] else active.get((y, symbol, d.isoformat()))
+                    if windows_by_turn[y]["anchor"] < d <= exits[y] and roster_ticker is not None:
+                        need(d in {day for day, _ in cash[y][0][roster_ticker]["splits"]}, "VENDOR_SPLIT_NOT_RECORDED")
+    need(all(coverage[y] <= queried[y] for y in names), "SPLIT_EVIDENCE_COVERAGE")
 
 
-def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, calendar_blob, cfg):
+def attestation_lines(blob, fields, code):
+    header = ",".join(fields).encode("ascii") + b"\n"
+    need(blob.startswith(header) and blob.endswith(b"\n")
+         and all(c == 10 or 32 <= c <= 126 for c in blob), code)
+    for line in blob[len(header):].decode("ascii").splitlines():
+        row = line.split(",")
+        need(len(row) == len(fields), code)
+        yield row
+
+
+def evidence_pin(ref, digest):
+    return (vendor_reference(ref) or re.fullmatch(r"evidence:[A-Za-z0-9._-]+", ref)) and is_pin(digest)
+
+
+def identity_segments(blob, windows, identities, C):
+    all_sessions = {str(w["turn"]): tuple(d.isoformat() for d in w["sessions"]) for w in windows}
+    order = {y: {d: i for i, d in enumerate(days)} for y, days in all_sessions.items()}
+    segments, previous = {}, None
+    for y, roster_ticker, identifier, symbol, first, last, ref, digest in attestation_lines(
+            blob, IDENTITY_FIELDS, "IDENTITY_SCHEMA"):
+        need(y in all_sessions and identities.get((int(y), roster_ticker)) == identifier
+             and C.TICKER.fullmatch(symbol) and first in order[y] and last in order[y]
+             and first <= last and evidence_pin(ref, digest), "IDENTITY_SCHEMA")
+        key = (int(y), roster_ticker, first)
+        need(previous is None or previous < key, "IDENTITY_ORDER")
+        previous = key
+        rows = segments.setdefault(key[:2], [])
+        lo, hi = order[y][first], order[y][last]
+        need((not rows and lo == 0) or (rows and lo == rows[-1][1] + 1 and symbol != rows[-1][2]),
+             "IDENTITY_COVERAGE")
+        rows.append((lo, hi, symbol))
+    schedules = {}
+    for (y, ticker), rows in segments.items():
+        days = all_sessions[str(y)]
+        terminal = rows[-1][1] != len(days) - 1
+        need(len(rows) >= 2 or terminal or rows[0][2] != ticker, "IDENTITY_COVERAGE")
+        schedules[y, ticker] = ({d: s for a, b, s in rows for d in days[a:b+1]}, days[rows[-1][1]] if terminal else None)
+    return schedules
+
+
+def identity_bars(raw, window, names, schedules, C, cfg):
+    need(type(raw) is dict and type(raw.get("symbols")) is dict and set(raw["symbols"]) == set(names), "BARS_FILE")
+    stripped = {}
+    for ticker, rows in raw["symbols"].items():
+        need(type(rows) is list, "BARS")
+        need(all(type(r) is dict and "symbol" in r and type(r["symbol"]) is str for r in rows), "IDENTITY_BAR")
+        stripped[ticker] = [{k: v for k, v in r.items() if k != "symbol"} for r in rows]
+    funds, bench = C.bars_file(raw | {"symbols": stripped}, window, names, cfg)
+    for ticker, rows in raw["symbols"].items():
+        schedule, _ = schedules.get((window["turn"], ticker), (None, None))
+        for row in rows:
+            d = datetime.fromisoformat(row["t"].replace("Z", "+00:00")).astimezone(C.NY).date().isoformat()
+            need(row["symbol"] == (ticker if schedule is None else schedule.get(d)), "IDENTITY_BAR")
+    return funds, bench
+
+
+def jump_clearances(blob, windows, roster, cfg):
+    by_year = {str(w["turn"]): w for w in windows}
+    session_dates = {y: {s.isoformat() for s in w["sessions"]} for y, w in by_year.items()}
+    records, previous = {}, None
+    for year, ticker, earlier, later, classification, ref, digest in attestation_lines(blob, JUMP_FIELDS, "JUMP_SCHEMA"):
+        w = by_year.get(year)
+        need(w is not None and (ticker in roster[w["turn"]] or ticker == cfg["benchmark"])
+             and earlier < later and all(d in session_dates[year] for d in (earlier, later))
+             and evidence_pin(ref, digest), "JUMP_SCHEMA")
+        key = (w["turn"], ticker, earlier, later)
+        need(previous is None or previous < key, "JUMP_ORDER")
+        records[key], previous = classification, key
+    return records
+
+
+def jump_flags(closes, splits, limit):
+    """Plan 53 only: collect the same flags as the shared engine's stop-at-first check."""
+    split_days = {d for d, _ in splits}
+    days = sorted(closes)
+    for a, b in zip(days, days[1:]):
+        if b not in split_days and not closes[a] / limit <= closes[b] <= closes[a] * limit:
+            yield a.isoformat(), b.isoformat()
+
+
+def reconcile_jumps(flags, records, windows, benchmark):
+    entry = {w["turn"]: w["entry"].isoformat() for w in windows}
+    excluded = {y: set() for y in entry}
+    report = []
+    for key in sorted(flags | records.keys()):
+        y, ticker, earlier, later = key
+        classification = records.get(key)
+        flagged = key in flags
+        if ticker == benchmark:
+            outcome = "BENCHMARK_FLAG" if flagged else "BENCHMARK_CLEARANCE"
+        elif not flagged:
+            outcome = "STALE_CLEARANCE"
+        elif classification is None:
+            outcome = "UNCLEARED"
+        elif classification == "GENUINE_MOVE":
+            outcome = "CLEARED_GENUINE_MOVE"
+        elif classification == "IDENTITY_BREAK":
+            outcome = "IDENTITY_BREAK_AFTER_ENTRY"
+            if later <= entry[y]:
+                outcome = "EXCLUDED_IDENTITY_BREAK"
+                excluded[y].add(ticker)
+        else:
+            outcome = "BAD_CLASS"
+        report.append({"turn_year": y, "ticker": ticker, "earlier_date": earlier, "later_date": later,
+                       "flagged": flagged, "outcome": outcome})
+    if any(r["outcome"] not in {"CLEARED_GENUINE_MOVE", "EXCLUDED_IDENTITY_BREAK"} for r in report):
+        raise JumpRefused(report)
+    return excluded, report
+
+
+def print_jump_report(report):
+    print("P53_JUMP_REPORT", json.dumps(report, sort_keys=True, separators=(",", ":")))
+
+
+def load_inputs(input_dir, input_pin, roster_pin, dist_pin, jump_pin, identity_pin, exclusions_pin, C, calendar_blob, cfg):
     private_dir(input_dir)
     windows = C.turns(parse(calendar_blob), cfg)
     m = parse(pinned(input_dir / "manifest.json", input_pin, private=True))
@@ -460,13 +618,17 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
     need(type(m["files"]) is dict and set(m["files"]) == names and all(map(is_pin, m["files"].values()))
          and {p.name for p in input_dir.iterdir()} == names | {"manifest.json"}
          and m["files"]["roster.csv"] == roster_pin and m["files"]["distributions.json"] == dist_pin
+         and m["files"][JUMP_CLEARANCES] == jump_pin
+         and m["files"][IDENTITY_SEGMENTS] == identity_pin
          and m["files"][EXCLUSIONS] == exclusions_pin,
          "MANIFEST_FILES")
-    roster, exclusions_count = roster_metadata(pinned(input_dir / "roster.csv", roster_pin, private=True),
-                                                pinned(input_dir / EXCLUSIONS, exclusions_pin, private=True),
-                                                windows, C, cfg)
+    roster, exclusions_count, identities = roster_metadata(pinned(input_dir / "roster.csv", roster_pin, private=True),
+                                                            pinned(input_dir / EXCLUSIONS, exclusions_pin, private=True),
+                                                            windows, C, cfg, with_identity=True)
     need([len(roster[w["turn"]]) for w in windows] == cfg["roster_attestation"]["eligible_rows_by_turn"],
          "ROSTER_COUNTS")
+    records = jump_clearances(pinned(input_dir / JUMP_CLEARANCES, jump_pin, private=True), windows, roster, cfg)
+    schedules = identity_segments(pinned(input_dir / IDENTITY_SEGMENTS, identity_pin, private=True), windows, identities, C)
     primary, gaps, cash_events, statuses = actions_and_coverage(
         parse(pinned(input_dir / "distributions.json", dist_pin, private=True)),
         pinned(input_dir / CASH_COVERAGE, m["files"][CASH_COVERAGE], private=True),
@@ -476,7 +638,7 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
     split_names = {y: (*members, cfg["benchmark"]) for y, members in roster.items()}
     split_cash = {y: (funds | {cfg["benchmark"]: bench}, bench) for y, (funds, bench) in cash.items()}
     split_evidence(parse(pinned(input_dir / "split_evidence.json", m["files"]["split_evidence.json"],
-                                private=True)), windows, split_names, split_cash, C, cfg)
+                                private=True)), windows, split_names, split_cash, schedules, C, cfg)
     control = C.split_control(parse(pinned(input_dir / "split_control.json", m["files"]["split_control.json"],
                                            private=True)), windows, roster, cfg)
     window_by_year = {w["turn"]: w for w in windows}
@@ -484,14 +646,11 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
     def turn_packet(y):
         w = window_by_year[y]
         raw_bars = parse(pinned(input_dir / f"bars_{y}.json", m["files"][f"bars_{y}.json"], private=True))
-        funds, bench = C.bars_file(raw_bars, w, roster[y], cfg)
+        funds, bench = identity_bars(raw_bars, w, roster[y], schedules, C, cfg)
         C.check_control(control[y], raw_bars, cash[y], cfg)
         del raw_bars
         quotes = C.quotes_file(parse(pinned(input_dir / f"quotes_{y}.json", m["files"][f"quotes_{y}.json"],
                                             private=True)), w, roster[y], cfg)
-        for s, closes in funds.items():
-            C.check_jumps(closes, cash[y][0][s]["splits"], cfg)
-        C.check_jumps(bench, [], cfg)
         return funds, bench, quotes, cash[y]
 
     class StreamedPacket:
@@ -500,6 +659,10 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
 
         def __getitem__(self, turn):
             funds, bench, quotes, actions = turn_packet(turn)
+            # An identity break makes the whole fund-turn unusable for ranking and the eligible yardstick.
+            # Keep the original roster slots so engine roster counts still describe the frozen roster.
+            for s in identity_excluded[turn]:
+                funds[s] = {}
             if self.variant == "primary_only":
                 actions = primary[turn]
             elif self.variant == "cash_zeroed":
@@ -507,31 +670,61 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
                 actions = ({s: v | {"cash": []} for s, v in fund_actions.items()}, bench_actions | {"cash": []})
             return funds, bench, quotes, actions
 
-    eligible = {}
+    eligible, flags, ineligible = {}, set(), {}
+    benchmark_affordable = True
+    limit = C.exact(cfg["split_check_ratio"])
     for w in windows:
         y = w["turn"]
         funds, bench, quotes, actions = turn_packet(y)
-        eligible[y] = {
-            s for s, closes in funds.items()
-            if C.complete_through(closes, w, w["entry"])
-            and not any(w["anchor"] < d <= w["entry"] for d, _ in actions[0][s]["splits"])
-            and closes[w["entry"]] * (1 + C.side_costs(quotes[0][s], w, cfg)["entry"]) <= cfg["sleeve_usd"]
-        }
-        need(len(eligible[y]) >= cfg["picks"], "TOO_FEW_ELIGIBLE")
-        need(bench[w["entry"]] * (1 + C.side_costs(quotes[1], w, cfg)["entry"]) <= cfg["capital"], "BENCHMARK")
+        for s, closes in funds.items():
+            flags.update((y, s, a, b) for a, b in jump_flags(closes, actions[0][s]["splits"], limit))
+        flags.update((y, cfg["benchmark"], a, b) for a, b in jump_flags(bench, (), limit))
+        eligible[y], ineligible[y] = set(), {}
+        for s, closes in funds.items():
+            terminal = schedules.get((y, s), (None, None))[1]
+            if terminal is not None and terminal < w["entry"].isoformat():
+                reason = "terminated_before_entry"
+            elif w["entry"] not in closes:
+                reason = "missing_entry"
+            elif w["formation"] not in closes:
+                reason = "missing_formation"
+            elif not C.complete_through(closes, w, w["entry"]):
+                reason = "other_preentry_gap"
+            elif any(w["anchor"] < d <= w["entry"] for d, _ in actions[0][s]["splits"]):
+                reason = "preentry_split"
+            elif closes[w["entry"]] * (1 + C.side_costs(quotes[0][s], w, cfg)["entry"]) > cfg["sleeve_usd"]:
+                reason = "unaffordable"
+            else:
+                eligible[y].add(s)
+                continue
+            ineligible[y][s] = reason
+        benchmark_affordable &= bench[w["entry"]] * (1 + C.side_costs(quotes[1], w, cfg)["entry"]) <= cfg["capital"]
         # Drop prior turn payloads before opening the next, including when estimates are very large.
         del funds, bench, quotes, actions
+    identity_excluded, jump_report = reconcile_jumps(flags, records, windows, cfg["benchmark"])
+    for y in eligible:
+        eligible[y] -= identity_excluded[y]
+        ineligible[y].update(dict.fromkeys(identity_excluded[y], "identity_break"))
+    if not all(len(names) >= cfg["picks"] for names in eligible.values()):
+        raise JumpRefused(jump_report, "P53_TOO_FEW_ELIGIBLE")
+    if not benchmark_affordable:
+        raise JumpRefused(jump_report, "P53_BENCHMARK")
     stat_counts = {
         "turns": len(windows), "roster_rows": sum(map(len, roster.values())),
         "events_placed": cfg["picks"] * len(windows), "clusters": len(windows),
         "symbols": len(set().union(*map(set, roster.values())) | {cfg["benchmark"]}),
         "eligible_rows": sum(map(len, eligible.values())), "excluded_rows": exclusions_count,
+        "jump_flagged_pairs": len(flags), "identity_excluded_fund_turns": sum(map(len, identity_excluded.values())),
+        "identity_scheduled_fund_turns": len(schedules),
+        **{f"ineligible_{reason}": sum(reason == r for by_symbol in ineligible.values() for r in by_symbol.values())
+           for reason in ("terminated_before_entry", "missing_entry", "missing_formation", "other_preentry_gap",
+                          "preentry_split", "unaffordable", "identity_break")},
         "cash_events": cash_events, "cash_gaps": sum(map(len, gaps.values())),
         "eligible_cash_gaps": sum(len(gaps[y] & eligible[y]) for y in roster),
         "vendor_gate_passed": int(vendor_stats["passed"]), "vendor_admitted_events": vendor_stats["admitted_events"],
         **{"vendor_" + key: n for key, n in vendor_stats["overlap"].items()},
     }
-    return windows, StreamedPacket, eligible, gaps, stat_counts, m["files"][COMPARISON], vendor_stats
+    return windows, StreamedPacket, eligible, gaps, stat_counts, m["files"][COMPARISON], vendor_stats, jump_report
 
 
 def correlation(blob, years):
@@ -607,7 +800,7 @@ def main():
     mode.add_argument("--validate-inputs", action="store_true")
     mode.add_argument("--go", action="store_true")
     for flag in ("--approval-commit", "--freeze-sha256", "--input-sha256", "--roster-sha256",
-                 "--distributions-sha256"):
+                 "--distributions-sha256", "--jump-clearances-sha256", "--identity-segments-sha256"):
         p.add_argument(flag)
     a = p.parse_args()
     os.umask(0o077)
@@ -615,11 +808,12 @@ def main():
         if a.calibrate:
             # Synthetic only: reads the working-tree engine and config, never the input or run directories.
             need(not any((a.approval_commit, a.freeze_sha256, a.input_sha256, a.roster_sha256,
-                          a.distributions_sha256)), "ARGUMENTS")
+                          a.distributions_sha256, a.jump_clearances_sha256, a.identity_segments_sha256)), "ARGUMENTS")
             C = load_engine((REPO / ENGINE).read_bytes())
             sys.stdout.buffer.write(encode(C.calibrate(read_config((REPO / CONFIG).read_bytes()))))
             return
-        pins = (a.approval_commit, a.freeze_sha256, a.input_sha256, a.roster_sha256, a.distributions_sha256)
+        pins = (a.approval_commit, a.freeze_sha256, a.input_sha256, a.roster_sha256, a.distributions_sha256,
+                a.jump_clearances_sha256, a.identity_segments_sha256)
         need(all(v is not None for v in pins), "ARGUMENTS")
         check_environment()
         freeze, blobs, exclusions_pin = authorize(*pins)
@@ -630,19 +824,21 @@ def main():
             unused(RUN)
         try:
             check_calibration(C, cfg, blobs[CALIBRATION])
-            inputs = load_inputs(INPUTS, a.input_sha256, a.roster_sha256, a.distributions_sha256, exclusions_pin, C,
-                                 blobs[CALENDAR], cfg)
+            inputs = load_inputs(INPUTS, a.input_sha256, a.roster_sha256, a.distributions_sha256,
+                                 a.jump_clearances_sha256, a.identity_segments_sha256, exclusions_pin, C, blobs[CALENDAR], cfg)
         except C.Refused as exc:
             raise Refused(str(exc).replace("P48_", "P53_", 1)) from None
-        windows, packet, eligible, gaps, counts, comparison_pin, vendor_stats = inputs
+        windows, packet, eligible, gaps, counts, comparison_pin, vendor_stats, jump_report = inputs
         if a.validate_inputs:
             print("P53_INPUTS_OK", " ".join(f"{k} {v}" for k, v in counts.items()))
+            print_jump_report(jump_report)
             return
         meta = {"schema": 1, "ledger": LEDGER_ROW, "queue": QUEUE_ROW, "freeze_commit": freeze,
                 "approval_commit": a.approval_commit, "freeze_sha256": a.freeze_sha256,
                 "input_sha256": a.input_sha256, "roster_sha256": a.roster_sha256,
                 "distributions_sha256": a.distributions_sha256, "roster_exclusions_sha256": exclusions_pin,
-                "comparison_sha256": comparison_pin}
+                "comparison_sha256": comparison_pin, "jump_clearances_sha256": a.jump_clearances_sha256,
+                "identity_segments_sha256": a.identity_segments_sha256}
         need((freeze, blobs, exclusions_pin) == authorize(*pins), "APPROVAL")
 
         def evaluate():
@@ -661,6 +857,7 @@ def main():
                     row["held_cash_gaps"] = len(gaps[y] & set(row["held"]))
             result["shown_only"]["replay48_correlation"] = correlation(comp, result["judged"]["years"])
             result["shown_only"]["vendor_cash_gate"] = vendor_stats
+            result["shown_only"]["jump_clearances"] = jump_report
             result["input_counts"] = counts
             return result
 
@@ -668,6 +865,10 @@ def main():
             once(RUN, meta, (), evaluate)
         except C.Refused as exc:
             raise Refused(str(exc).replace("P48_", "P53_", 1)) from None
+    except JumpRefused as exc:
+        if a.validate_inputs:
+            print_jump_report(exc.report)
+        p.exit(2, f"{exc}\n")
     except Refused as exc:
         p.exit(2, f"{exc}\n")
     except Exception:
