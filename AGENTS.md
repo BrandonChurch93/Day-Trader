@@ -56,6 +56,7 @@ This is the partners' own method, not a limit set on the builder. It is here bec
 5. The fees and spread assumed are written next to every result.
 6. Say what was measured and what was not: MEASURED (we ran it and it is logged), STATED (someone's claim), UNKNOWN. A number in a document comes from a script's output, not from memory.
 7. Nothing is called a pass or profitable beyond what the ledger and the practice records show.
+- Data terms (the lead agent, 2026-11-26): before a new outside source is read, a helper opens the provider's own terms and writes down what they say. A source is used only in the way its provider's pages invite (a documented public endpoint at the stated limits, or a published download). A source whose terms expressly bar the purpose is not used without the owner obtaining consent; Coinbase market data is in that group (its terms bar use for algorithms, agents, automated systems and AI research, and bar passing on derived work). Raw data is never published. Where a provider's terms do not clearly allow publishing derived results, the public repo carries summary figures only and the detail stays off the repo. The record of what each provider says is research document 194 (the data source terms audit), listed in the index once merged.
 
 ## How a trader behaves
 
