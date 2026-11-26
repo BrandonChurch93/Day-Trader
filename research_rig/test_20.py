@@ -72,12 +72,86 @@ def suite(p):
             self.assertAlmostEqual(t.price, 0.15)
             self.assertAlmostEqual(t.funding, -0.009)
 
-        def test_missing_funding_never_silently_zero(self):
+        def test_labelled_missing_funding_uses_floor_then_larger_file_peak(self):
             s = C.Setup(24, 130, (), 4)
             del self.tape.funding[56]
+            self.put("mark", 56, 110)
             self.tape.finish()
-            with self.assertRaises(LookupError):
-                C.evaluate(self.tape, s, self.p, self.contract)
+            C.evaluate(self.tape, s, self.p, self.contract, validate_only=True)
+            t = C.evaluate(self.tape, s, self.p, self.contract)
+            self.assertEqual(t.missing_funding_settlements, 1)
+            self.assertAlmostEqual(t.missing_funding_debit, 0.022)
+            self.assertAlmostEqual(t.funding, -0.030)
+            self.tape.funding_peaks[self.contract] = 0.035
+            t = C.evaluate(self.tape, s, self.p, self.contract)
+            self.assertAlmostEqual(t.missing_funding_debit, 0.0385)
+            self.assertAlmostEqual(C.summary([t], 15)["missing_funding_debit_sum_entry_notional"], 0.0385)
+            self.put("mark", 56, C.NAN)
+            with self.assertRaises(C.InputFault) as error:
+                C.evaluate(self.tape, s, self.p, self.contract, validate_only=True)
+            self.assertEqual((error.exception.kind, error.exception.hour), ("markPriceKlines", 56))
+
+        def test_aligned_interval_switch_charges_only_observed_settlements(self):
+            self.assertEqual(C.funding_clock_gap(54, 2, 56, 4)[0], "consistent_interval_change")
+            self.assertEqual(C.funding_clock_gap(56, 8, 60, 4)[0], "consistent_interval_change")
+            self.assertEqual(C.funding_clock_gap(54, 2, 60, 4)[0], "unlabelled_gap")
+            self.tape.funding[54] = 2, -0.003
+            self.tape.funding[56] = 4, 0.004
+            self.tape.finish()
+            s = C.Setup(48, 130, (), 4)
+            t = C.evaluate(self.tape, s, self.p, self.contract)
+            self.assertEqual(t.missing_funding_settlements, 0)
+            self.assertAlmostEqual(t.funding, -0.007)
+            del self.tape.funding[56]
+            self.tape.finish()
+            with self.assertRaises(C.InputFault) as error:
+                C.evaluate(self.tape, s, self.p, self.contract, validate_only=True)
+            self.assertEqual(error.exception.kind, "fundingRate")
+
+        def test_missing_clock_at_entry_excluded_and_at_exit_charged(self):
+            for h in (24, 96):
+                del self.tape.funding[h]
+            self.tape.finish()
+            t = C.evaluate(self.tape, C.Setup(24, 130, (), 4), self.p, self.contract)
+            self.assertEqual(t.missing_funding_settlements, 1)
+            self.assertAlmostEqual(t.missing_funding_debit, 0.02)
+
+        def test_verified_terminal_projects_trailing_grid_but_other_expiry_refuses(self):
+            self.tape.funding = {h: (4, 0.0) for h in range(0, 33, 4)}
+            self.tape.finish()
+            ended = C.Contract("TESTUSDT", "asset-test", 0, 40 * 60)
+            t = C.evaluate(self.tape, C.Setup(24, 130, (), 4), self.p, ended)
+            self.assertEqual(t.exit_reason, "terminal_close")
+            self.assertEqual(t.missing_funding_settlements, 2)
+            self.assertAlmostEqual(t.missing_funding_debit, 0.04)
+            with self.assertRaises(C.InputFault) as error:
+                C.evaluate(self.tape, C.Setup(24, 130, (), 4), self.p, self.contract, validate_only=True)
+            self.assertEqual(error.exception.kind, "fundingRate")
+
+        def test_reused_ticker_cannot_supply_left_or_right_funding_anchor(self):
+            s = C.Setup(24, 130, (), 4)
+            for h in (24, 104):
+                del self.tape.funding[h]
+            self.tape.finish()
+            newer = C.Contract("TESTUSDT", "new-asset", 20 * 60, None)
+            older = C.Contract("TESTUSDT", "old-asset", 0, 108 * 60)
+            for contract, expected_hour in ((newer, 24), (older, 96)):
+                with self.subTest(contract=contract.asset), self.assertRaises(C.InputFault) as error:
+                    C.evaluate(self.tape, s, self.p, contract, validate_only=True)
+                self.assertEqual((error.exception.kind, error.exception.hour), ("fundingRate", expected_hour))
+
+        def test_mixed_grid_gap_outside_short_is_not_a_refusal(self):
+            self.tape.funding = {24: (8, -0.001), 36: (4, -0.001)}
+            self.tape.finish()
+            self.put("high", 27, 140)
+            t = C.evaluate(self.tape, C.Setup(25, 130, (), 4), self.p, self.contract)
+            self.assertEqual(t.exit_minute, 27 * 60)
+            self.assertEqual(t.funding, 0.0)
+            self.put("high", 28, 140)
+            self.put("high", 27, 120)
+            with self.assertRaises(C.InputFault) as error:
+                C.evaluate(self.tape, C.Setup(25, 130, (), 4), self.p, self.contract)
+            self.assertEqual((error.exception.kind, error.exception.hour), ("fundingRate", 28))
 
         def test_zero_volume_entry_no_fill_stop_skipped_timed_exit_deferred(self):
             s = C.Setup(25, 130, (9,), 4)
@@ -129,7 +203,7 @@ def suite(p):
             self.put("open", 51, 160)
             self.put("high", 51, 161)
             losing = C.evaluate(self.tape, signal, self.p, self.contract)
-            self.assertEqual(losing.exit_reason, "stop")
+            self.assertEqual(losing.exit_reason, "gap_stop")
             self.assertAlmostEqual(losing.price, -0.60)
             other = [(1970, x) for x in [0.037, 0.047] * 15]
             pool = {1970: [0] * 60}
@@ -137,9 +211,36 @@ def suite(p):
             self.assertFalse(C.judgment(self.p, other + [(1970, losing.net(15))], pool)["passes"])
             del self.tape.funding[40]
             self.tape.finish()
+            self.put("mark", 40, C.NAN)
             with self.assertRaises(C.InputFault) as err:
                 C.evaluate(self.tape, signal, self.p, self.contract, validate_only=True)
-            self.assertEqual(err.exception.kind, "fundingRate")
+            self.assertEqual(err.exception.kind, "markPriceKlines")
+
+        def test_unseen_stop_inside_missing_hour_closed_even_if_next_open_below_stop(self):
+            s = C.Setup(25, 130, (), 4)
+            self.put("high", 50, 132)
+            self.assertEqual(C.execution(self.tape, s, self.p, self.contract)[:3], (50 * 60, 125, "stop"))
+            for name in ("open", "high", "close", "volume"):
+                self.put(name, 50, C.NAN)
+            self.put("volume", 51, 0)
+            t = C.evaluate(self.tape, s, self.p, self.contract)
+            self.assertEqual((t.exit_minute, t.exit_reason), (52 * 60, "gap_stop"))
+            self.assertAlmostEqual(t.price, -0.25)
+            self.assertAlmostEqual(t.funding, -0.003)
+            self.assertAlmostEqual(t.turnover, 2.25)
+            continued = C.evaluate(self.tape, s, self.p, self.contract, continue_gaps=True)
+            self.assertEqual((continued.exit_minute, continued.exit_reason), (97 * 60, "time"))
+            self.assertAlmostEqual(continued.price, 0.0)
+
+        def test_trailing_gap_is_counted_at_official_terminal_cover(self):
+            ending = C.Contract("TESTUSDT", "asset-test", -1440, 59 * 60)
+            for h in (57, 58):
+                for name in ("open", "high", "close", "volume"):
+                    self.put(name, h, C.NAN)
+            t = C.evaluate(self.tape, C.Setup(25, 130, (), 4), self.p, ending)
+            self.assertEqual((t.exit_minute, t.exit_reason), (59 * 60, "gap_terminal_close"))
+            self.assertAlmostEqual(t.price, -0.25)
+            self.assertTrue(t.terminal_close and t.gap_close)
 
         def test_after_trigger_notice_cancels_through_entry_only(self):
             self.put("high", 6, 130)
@@ -233,12 +334,17 @@ def suite(p):
             books = {symbol: [("klines", -24, 480, Path(symbol), "")] for symbol in tapes}
             notice_data = first, {}, {}
             controls = [(C.Trade(1970, 0, 0, 0, "time"), True)] * 3
-            with patch.object(S, "load", side_effect=lambda files, _: tapes[files[0][3].name]), \
+            with patch.object(S, "load", side_effect=lambda files, _, **kw: tapes[files[0][3].name]), \
                     patch.object(S, "affected", return_value=Path("fixture-mark.zip")), \
                     patch.object(S.C, "ordinary", side_effect=lambda *a, **k: iter(()) if k["validate_only"] else iter(controls)):
                 out = S.evaluate_book(books, notice_data, roster, set(), self.p)
                 self.assertEqual(out["notice_disposition"]["traded"], 31)
                 self.assertFalse(out["judgment"]["passes"])
+                shown = out["shown_missing_hold_bar_continuation"]
+                self.assertEqual(out["judged"]["missing_hold_bar_closes"], 1)
+                self.assertEqual(shown["by_arm"]["listing"]["closes"], 1)
+                self.assertEqual(shown["listing"]["count"], 31)
+                self.assertIsNotNone(shown["joint_comparison"])
                 tapes["T30USDT"].fields["mark"][48 + 24] = C.NAN
                 with self.assertRaises(S.Refused) as error:
                     S.evaluate_book(books, notice_data, roster, set(), self.p, validate_only=True)
@@ -292,6 +398,23 @@ def suite(p):
                 with patch.object(S, "float", side_effect=AssertionError, create=True):
                     S.decode_archive("klines", start, start + 24, path, S.digest(path.read_bytes()), p, counts)
                 self.assertEqual(dict(counts), {"klines": 1, "zero_volume": 1})
+
+        def test_funding_file_peak_includes_rows_outside_tape_but_not_other_lifetime(self):
+            from . import score_20 as S
+            start = int(datetime(2020, 1, 1, tzinfo=timezone.utc).timestamp()) // 3600
+            old = C.Contract("TESTUSDT", "old-asset", start * 60, (start + 12) * 60)
+            new = C.Contract("TESTUSDT", "new-asset", (start + 24) * 60, None)
+            tape = C.Tape(start + 24, start + 48, (old, new))
+            clocks = ((0, -0.036), (8, 0.007), (16, 0.90), (24, 0.080), (48, 0.09))
+            with TemporaryDirectory() as tmp:
+                path = Path(tmp) / "fixture.zip"
+                with ZipFile(path, "w") as z:
+                    z.writestr("fixture.csv", "".join(f"{(start + h) * 3600},8,{rate}\n" for h, rate in clocks))
+                S.decode_archive("fundingRate", start, start + 72, path, S.digest(path.read_bytes()),
+                                 p, defaultdict(int), tape=tape)
+            self.assertEqual(tape.funding_peak(old), 0.036)
+            self.assertEqual(tape.funding_peak(new), 0.09)
+            self.assertEqual(set(tape.funding), {start + 24})
 
         def test_validation_failure_leaves_lock_and_result_absent(self):
             from . import score_20 as S

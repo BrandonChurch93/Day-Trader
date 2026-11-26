@@ -2,7 +2,7 @@
 from array import array
 from bisect import bisect_left, bisect_right
 from collections import Counter, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timezone
 from heapq import merge
 from math import ceil, isfinite, sqrt
@@ -32,6 +32,11 @@ class InputFault(LookupError):
 
 def policy(p):
     p = dict(p)
+    if (p["funding_interval_rule"], p["missing_funding_rule"], p["missing_funding_floor_pct"]) != (
+            "single_aligned_switch", "adverse_max_abs_contract_rate", 2.0):
+        raise Invalid("unsupported funding policy")
+    if p["missing_hold_bar_rule"] != "adverse_stop_next_executable":
+        raise Invalid("unsupported missing hold bar policy")
     p["start"] = (date.fromisoformat(p["first_date"]) - date(1970, 1, 1)).days * 24
     p["end"] = ((date.fromisoformat(p["last_date"]) - date(1970, 1, 1)).days + 1) * 24
     p["last_event_minute"] = int(datetime.fromisoformat(p["last_event_utc"]).timestamp() // 60)
@@ -84,23 +89,33 @@ class Trade:
     exit_reason: str
     favorable_terminal_price: float | None = None
     exit_minute: int | None = None
+    missing_funding_settlements: int = 0
+    missing_funding_debit: float = 0.0
 
     @property
     def stopped(self):
-        return self.exit_reason == "stop"
+        return self.exit_reason in {"stop", "gap_stop", "gap_terminal_close"}
+
+    @property
+    def gap_close(self):
+        return self.exit_reason in {"gap_stop", "gap_terminal_close"}
+
+    @property
+    def terminal_close(self):
+        return self.exit_reason in {"terminal_close", "gap_terminal_close"}
 
     def net(self, bps):
         return self.price + self.funding - self.turnover * bps / 10000
 
 
 class Tape:
-    def __init__(self, start, end):
+    def __init__(self, start, end, funding_peak_contracts=()):
         self.start, self.end = start, end
         self.fields = {key: array("d", [NAN]) * (end - start)
                        for key in ("open", "high", "close", "volume", "mark")}
         self.funding = {}
+        self.funding_peaks = dict.fromkeys(funding_peak_contracts, 0.0)
         self.settlements = ()
-        self.last_trade = start - 1
 
     def at(self, key, h):
         return self.fields[key][h - self.start] if self.start <= h < self.end else NAN
@@ -109,14 +124,19 @@ class Tape:
         if not self.start <= h < self.end or isfinite(self.at(key, h)):
             raise Invalid("outside tape or duplicate")
         self.fields[key][h - self.start] = x
-        if key == "open":
-            self.last_trade = max(self.last_trade, h)
 
     def bar(self, h):
         return isfinite(self.at("open", h))
 
     def finish(self):
         self.settlements = tuple(sorted(self.funding))
+
+    def funding_peak(self, contract):
+        if contract in self.funding_peaks:
+            return self.funding_peaks[contract]
+        return max((abs(rate) for h, (_, rate) in self.funding.items()
+                    if contract.launch_minute <= h * 60 and
+                    (contract.end_minute is None or h * 60 <= contract.end_minute)), default=0.0)
 
 
 def setup(tape, minute, p, contract, *, trigger=None, earlier=None, screen=True,
@@ -179,7 +199,7 @@ def setup(tape, minute, p, contract, *, trigger=None, earlier=None, screen=True,
     return Setup(entry, top, tuple(sorted(set(signals + tuple(range(signal_start, entry))))), minute // 60)
 
 
-def execution(tape, signal, p, contract):
+def execution(tape, signal, p, contract, *, continue_gaps=False):
     """Return exit minute, adverse fill, reason and shown terminal price."""
     h = signal.entry
     limit = h + p["hold_hours"]
@@ -196,12 +216,18 @@ def execution(tape, signal, p, contract):
     initial = tape.at("open", h)
     stop = min(signal.high, initial * (1 + p["stop_cap_pct"] / 100))
     last_positive = None
+    missing_stop = False
     stop_at = p["end"] * 60 if end is None else min(end, p["end"] * 60)
     if tail is not None:
         stop_at = min(stop_at, tail)
-    for i in range(h, min((stop_at + 59) // 60, tape.last_trade + 1)):
-        if not tape.bar(i) or tape.at("volume", i) == 0:
+    for i in range(h, (stop_at + 59) // 60):
+        if not tape.bar(i):
+            missing_stop |= not continue_gaps
             continue
+        if tape.at("volume", i) == 0:
+            continue
+        if missing_stop:
+            return i * 60, max(stop, tape.at("open", i)), "gap_stop", None
         if i >= limit:
             return (i * 60, tape.at("open", i), "time" if i == limit else "deferred_time", None)
         if tape.at("high", i) >= stop:
@@ -209,51 +235,92 @@ def execution(tape, signal, p, contract):
         last_positive = i
     if end is not None and end < p["end"] * 60 and last_positive is not None:
         shown = tape.at("close", last_positive)
-        return end, max(stop, shown), "terminal_close", shown
+        return end, max(stop, shown), "gap_terminal_close" if missing_stop else "terminal_close", shown
     if tail is not None and stop_at == tail:
         raise InputFault("unverified_end", tail // 60)
     raise InputFault("klines", limit)
 
 
-def settled(tape, start, exit_minute, *, terminal=False, validate_only=False):
+def funding_clock_gap(left, old, right, new):
+    """Classify adjacent labelled clocks on their UTC-multiple grids."""
+    if old not in {1, 2, 4, 8} or new not in {1, 2, 4, 8} or left >= right or left % old or right % new:
+        return "unlabelled_gap", ()
+    if old == new:
+        missing = range(left + old, right, old)
+        return ("labelled_missing" if missing else "regular"), missing
+    # The switch can take effect at any hour after left, through right. It
+    # must occur before the next old-grid settlement would be due, and after
+    # the last interior new-grid clock. Otherwise an omission is ambiguous.
+    if max(left, right - new) + 1 <= min(right, left + old):
+        return "consistent_interval_change", ()
+    return "unlabelled_gap", ()
+
+
+def settled(tape, start, exit_minute, p, contract, *, terminal=False, validate_only=False):
     if start * 60 == exit_minute:
         return
     exit_hour = exit_minute // 60
     s = tape.settlements
-    left, right = bisect_right(s, start), bisect_right(s, exit_hour)
-    # Published settlement intervals can vary by coin and over time. Envelope
-    # the hold with adjacent observations, rather than imputing zero funding.
-    if not left:
+    first = bisect_left(s, (contract.launch_minute + 59) // 60)
+    end = len(s) if contract.end_minute is None else bisect_right(s, contract.end_minute // 60)
+    left, right = bisect_right(s, start, first, end), bisect_right(s, exit_hour, first, end)
+    # No other lifetime of a reused ticker can anchor this contract's grid.
+    if left == first:
         raise InputFault("fundingRate", start)
-    if right == len(s) and (not terminal or exit_hour - s[-1] >= tape.funding[s[-1]][0]):
-        raise InputFault("fundingRate", min(exit_hour, s[-1] + tape.funding[s[-1]][0]))
-    for j in range(left, min(right + 1, len(s))):
-        if s[j] - s[j - 1] != tape.funding[s[j]][0]:
-            raise InputFault("fundingRate", min(s[j], s[j - 1] + tape.funding[s[j]][0]))
+    missing = []
+    if right == end:
+        last = s[end - 1]
+        interval = tape.funding[last][0]
+        next_due = last + interval
+        if not terminal or contract.end_minute != exit_minute or interval not in {1, 2, 4, 8} or last % interval:
+            raise InputFault("fundingRate", min(exit_hour, next_due))
+        missing.extend(range(max(next_due, (start // interval + 1) * interval), exit_hour + 1, interval))
+    for j in range(left, min(right + 1, end)):
+        a, b = s[j - 1], s[j]
+        old, new = tape.funding[a][0], tape.funding[b][0]
+        category, absent = funding_clock_gap(a, old, b, new)
+        if category == "unlabelled_gap":
+            if old not in {1, 2, 4, 8} or new not in {1, 2, 4, 8} or a % old or b % new:
+                raise InputFault("fundingRate", max(start, a))
+            first_open = max(start, a)
+            possible = min((first_open // interval + 1) * interval for interval in (old, new))
+            if possible < b and possible <= exit_hour:
+                raise InputFault("fundingRate", possible)
+        missing.extend(h for h in absent if start < h <= exit_hour)
     for h in s[left:right]:
         mark = tape.at("mark", h)
         if not isfinite(mark):
             raise InputFault("markPriceKlines", h)
         if not validate_only:
-            yield mark * tape.funding[h][1]
+            yield mark * tape.funding[h][1], False
+    penalty = (max(p["missing_funding_floor_pct"] / 100, tape.funding_peak(contract))
+               if missing and not validate_only else None)
+    for h in missing:
+        mark = tape.at("mark", h)
+        if not isfinite(mark):
+            raise InputFault("markPriceKlines", h)
+        if not validate_only:
+            yield -mark * penalty, True
 
 
-def evaluate(tape, signal, p, contract, *, validate_only=False):
+def evaluate(tape, signal, p, contract, *, validate_only=False, continue_gaps=False):
     h = signal.entry
-    e, price, reason, shown = execution(tape, signal, p, contract)
-    funding = tuple(settled(tape, h, e, terminal=reason == "terminal_close", validate_only=validate_only))
+    e, price, reason, shown = execution(tape, signal, p, contract, continue_gaps=continue_gaps)
+    funding = tuple(settled(tape, h, e, p, contract, terminal=reason in {"terminal_close", "gap_terminal_close"},
+                            validate_only=validate_only))
     if validate_only:
         return None
     start = tape.at("open", h)
-    return Trade(year(signal.sample_hour), 1 - price / start, sum(funding) / start, 1 + price / start,
-                 reason, shown / start if shown is not None else None, e)
+    return Trade(year(signal.sample_hour), 1 - price / start, sum(v for v, _ in funding) / start,
+                 1 + price / start, reason, shown / start if shown is not None else None, e,
+                 sum(missing for _, missing in funding), -sum(v for v, missing in funding if missing) / start)
 
 
 def last_close_version(trade):
     ratio = trade.favorable_terminal_price
     if ratio is None:
         return trade
-    return Trade(trade.year, 1 - ratio, trade.funding, 1 + ratio, trade.exit_reason, ratio, trade.exit_minute)
+    return replace(trade, price=1 - ratio, turnover=1 + ratio)
 
 
 def pump_triggers(tape, symbol, p):
@@ -267,7 +334,7 @@ def pump_triggers(tape, symbol, p):
 
 
 def ordinary(tapes, contracts, notice_index, p, counts=None, *, validate_only=False, absent=None, domains=None,
-             source_counts=None):
+             source_counts=None, gap_comparison=None):
     """Ordinary pumps, with one trigger per rolling asset week across aliases."""
     window = p["exclusion_days"] * 24
     blocks = {}
@@ -311,6 +378,8 @@ def ordinary(tapes, contracts, notice_index, p, counts=None, *, validate_only=Fa
                 source_counts[source] += 1
             if not validate_only:
                 counts[trade.exit_reason] += 1
+                if trade.gap_close and gap_comparison is not None:
+                    gap_comparison(trade, tape, signal, contract)
                 yield trade, k == len(notice_minutes) or notice_minutes[k] > trade.exit_minute
         except NoFill:
             counts["no_fill"] += 1
@@ -360,7 +429,11 @@ def summary(trades, bps, *, split=True):
                winners=sum(v > 0 for v in values) / n if n else None,
                stopped=sum(t.stopped for t in trades) / n if n else None,
                worst=min(values) if n else None, funding=fmean(t.funding for t in trades) if n else None,
-               terminal_closes=sum(t.exit_reason == "terminal_close" for t in trades),
+               missing_funding_trades=sum(t.missing_funding_settlements > 0 for t in trades),
+               missing_funding_settlements=sum(t.missing_funding_settlements for t in trades),
+               missing_funding_debit_sum_entry_notional=sum(t.missing_funding_debit for t in trades),
+               terminal_closes=sum(t.terminal_close for t in trades),
+               missing_hold_bar_closes=sum(t.gap_close for t in trades),
                deferred_timed_exits=sum(t.exit_reason == "deferred_time" for t in trades))
     if split:
         buckets = defaultdict(list)

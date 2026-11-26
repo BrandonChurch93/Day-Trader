@@ -29,20 +29,20 @@ CONFIG = ROOT / "config/thresholds.yaml"
 LEDGER = ROOT / "research_rig/TRIAL_LEDGER.md"
 NOTICE = DATA / "upbit_listings/notices.csv"
 DATED_ROSTER = NOTICE.with_name("binance_um_roster.csv")
-NOTICE_MAP = NOTICE.with_name("notice_perp_map.csv")
-IDENTITIES = NOTICE.with_name("notice_identity_sidecar.csv")
-LIFETIMES = NOTICE.with_name("symbol_lifetimes_sidecar.csv")
+NOTICE_MAP = NOTICE.with_name("notice_perp_map_v2.csv")
+IDENTITIES = NOTICE.with_name("notice_identity_sidecar_v2.csv")
+LIFETIMES = NOTICE.with_name("symbol_lifetimes_sidecar_v2.csv")
 STAGING = DATA / "replay_20_inputs"
-SUPPLEMENT = STAGING / "archives.json"
+SUPPLEMENT = STAGING / "archives_v2.json"
 US_ROSTER = DATA.parent / "ideas" / US.NAME
 LOCK = RUN / "score_20.lock"
 RESULT = ROOT / "research_rig/results_20.json"
 NOTICE_PIN = "6d7e4a67f7964d394a9412551369df27c2317b21a156d2cb5cd73f34040baec7"
 DATED_ROSTER_PIN = "dfaac9be1818f0867b1e200a6bb511a3970e01df5dbd04418726bf2567ae1ede"
-NOTICE_MAP_PIN = "6aeb01c4a0c36277e09ce4493b475a51939c35b7f2ca49ef60e7460c11299cf5"
-IDENTITY_PIN = "cd82815b67a5159c5afac0170d5ce3fa742968df3af394653fb92fbc0061b083"
-LIFETIMES_PIN = "2251f120fb63b230b2e15b3ba637e923d2591320bf4ae02ce98184e49eeab8a1"
-SUPPLEMENT_PIN = "5aa491889c0ae6a0bb14ded2558dc62311cb529d84d768b954b4355b498887e5"
+NOTICE_MAP_PIN = "888517afd7da535f48053258cf86b4ad68728522e90831b953be44c2decce61b"
+IDENTITY_PIN = "6c91e59758359fbce0ffb572973061116ae97c80ac7a29bb66741b9f6624c10a"
+LIFETIMES_PIN = "6f1123653083270389c2c2f815a87e88e39dfd5eb6e7954cdbc802691721e921"
+SUPPLEMENT_PIN = "6b4625cff91a82fb000c5d2b37f92c9ad369328b73837427d640850c27f43059"
 MANIFESTS = {
     DATA / "replay_16/manifest_futures.json": "07a28ae776606bb1430aa91ab94ae69b5cfeec37e0f48c9f2d342ab745e8b94d",
     DATA / "replay_16/manifest_futures_held.json": "d2949c130e4d98d13ed4bf376abee0700e4122fbf76af80a7d8fcf695a1e9afd",
@@ -390,6 +390,10 @@ def decode_archive(kind, a, b, path, pin, p, stats, tape=None, observe=None):
                             values[key] = v
                     if observe is not None:
                         observe(h, no_volume, interval if funding else None)
+                    if tape is not None and funding:
+                        for contract in tape.funding_peaks:
+                            if contract.launch_minute <= h * 60 and (contract.end_minute is None or h * 60 <= contract.end_minute):
+                                tape.funding_peaks[contract] = max(tape.funding_peaks[contract], abs(values["rate"]))
                     if tape is not None and tape.start <= h < tape.end:
                         if funding:
                             if h in tape.funding:
@@ -432,8 +436,11 @@ def scan(groups, p):
                     examples.append([error.code, str(error.path)])
         clocks = sorted(funding)
         stats["settlements_without_mark_open"] += len(funding.keys() - marks)
-        stats["settlement_clock_gaps_or_transitions"] += sum(
-            right - left != funding[right] for left, right in zip(clocks, clocks[1:]))
+        for left, right in zip(clocks, clocks[1:]):
+            category, absent = C.funding_clock_gap(left, funding[left], right, funding[right])
+            if category != "regular":
+                stats["settlement_" + category] += 1
+                stats["settlement_labelled_missing_clocks"] += len(absent)
     return dict(symbols=len(groups), files=checked, rows=dict(stats), refusals=dict(refusals), examples=examples)
 
 
@@ -499,13 +506,20 @@ def scan_notice_clocks(groups, events, p):
             return datetime.fromtimestamp(h * 3600, timezone.utc).isoformat(timespec="hours")
 
         for left, right in zip(clock, clock[1:]):
-            if right - left != rates[right]:
+            category, absent = C.funding_clock_gap(left, rates[left], right, rates[right])
+            if category != "regular":
                 counts["potential_funding_clock_gaps_or_transitions"] += 1
-                active_entries = [entry for entry in entries if contract.new_position_allowed(entry * 60)
-                                  and entry < end and left <= min(entry + p["hold_hours"], end) and right > entry]
-                counts["funding_discontinuities_near_potential_holds"] += bool(active_entries)
+                counts[category] += 1
+                windows = [(entry, min(entry + p["hold_hours"], end - 1)) for entry in entries
+                           if contract.new_position_allowed(entry * 60) and entry < end]
+                active_entries = [a for a, b in windows if left <= b and right > a]
+                possible_missing = [h for h in absent if any(a < h <= b for a, b in windows)]
+                counts[category + "_near_potential_holds"] += bool(active_entries)
+                counts["potential_labelled_missing_settlements"] += len(possible_missing)
+                counts["potential_labelled_missing_settlements_without_mark"] += sum(h not in marks for h in possible_missing)
                 funding_clock_discontinuities.append({
                     "symbol": event.symbol, "before_utc": stamp(left), "after_utc": stamp(right),
+                    "category": category, "possible_missing_utc": [stamp(h) for h in possible_missing],
                     "elapsed_hours": right - left, "before_interval_hours": rates[left],
                     "after_interval_hours": rates[right], "candidate_entries_utc": [stamp(h) for h in active_entries],
                     "funding_files": sorted({funding_paths[left], funding_paths[right]}),
@@ -517,8 +531,8 @@ def scan_notice_clocks(groups, events, p):
             "funding_clock_discontinuities": funding_clock_discontinuities}
 
 
-def load(files, p):
-    tape = C.Tape(p["start"] - 24, p["end"])
+def load(files, p, *, funding_peak_contracts=()):
+    tape = C.Tape(p["start"] - 24, p["end"], funding_peak_contracts)
     quiet = Counter()
     for kind, a, b, path, pin in files:
         decode_archive(kind, a, b, path, pin, p, quiet, tape)
@@ -606,10 +620,28 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
             legacy["not_trading_at_notice"] += event.legacy_path_flag
     trades, shown_us, hourly, earlier, unscreened, after_notice = [], [], [], [], [], []
     pools, clean_pools = defaultdict(list), defaultdict(list)
+    continued_trades, continued_pools = [], defaultdict(list)
+    gap_effect = {arm: dict(closes=0, continuation_unavailable=0, subset_judged_net_sum=0.0,
+                           subset_continued_net_sum=0.0) for arm in ("listing", "ordinary")}
+
+    def continuation(arm, trade, tape, signal, contract):
+        if not trade.gap_close:
+            return trade
+        counts = gap_effect[arm]
+        counts["closes"] += 1
+        try:
+            alt = C.evaluate(tape, signal, p, contract, continue_gaps=True)
+        except C.InputFault:
+            counts["continuation_unavailable"] += 1
+            return None
+        counts["subset_judged_net_sum"] += trade.net(p["judged_bps"])
+        counts["subset_continued_net_sum"] += alt.net(p["judged_bps"])
+        return alt
     disposition = dict.fromkeys(("traded", "no_red_day", "not_trading_at_notice", "no_fill", "other"), 0)
     disposition["not_trading_at_notice"] = len(absent_notices)
     absent_controls, ordinary_counts, judged_diagnostics = Counter(), Counter(), Counter()
     control_counts = {"store_symbols": 0, "supplement_only_symbols": 0}
+    funding_debits = {"ordinary": Counter(), "clean_ordinary": Counter()}
     if set(events) - groups.keys():
         symbol = sorted(set(events) - groups.keys())[0]
         start = events[symbol][0][0].minute // 60
@@ -620,7 +652,7 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
         tapes = {}
         for symbol in component:
             memory()
-            tape = tapes[symbol] = load(groups[symbol], p)
+            tape = tapes[symbol] = load(groups[symbol], p, funding_peak_contracts=() if validate_only else roster[symbol])
             for event, contract in events[symbol]:
                 try:
                     signal = C.setup(tape, event.minute, p, contract, counts=judged_diagnostics)
@@ -633,6 +665,9 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
                         legacy["traded"] += event.legacy_path_flag
                         if not validate_only:
                             trades.append(trade)
+                            alt = continuation("listing", trade, tape, signal, contract)
+                            if alt is not None:
+                                continued_trades.append(alt)
                             if event.ticker in us and symbol == event.ticker + "USDT":
                                 shown_us.append(trade)
                 except C.NoFill:
@@ -652,12 +687,24 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
                         except (C.NoFill, C.InputFault):
                             continue
         try:
+            alternates = {}
+
+            def compare_gap(trade, tape, signal, contract):
+                alternates[id(trade)] = continuation("ordinary", trade, tape, signal, contract)
+
             for trade, clean in C.ordinary(tapes, roster, notice_index, p, ordinary_counts,
                                            validate_only=validate_only, absent=absent_controls, domains=domains,
-                                           source_counts=control_counts):
+                                           source_counts=control_counts, gap_comparison=compare_gap):
                 pools[trade.year].append(trade.net(p["judged_bps"]))
+                alt = alternates.pop(id(trade), trade)
+                if alt is not None:
+                    continued_pools[alt.year].append(alt.net(p["judged_bps"]))
                 if clean:
                     clean_pools[trade.year].append(trade.net(p["judged_bps"]))
+                for pool in ("ordinary", "clean_ordinary") if clean else ("ordinary",):
+                    funding_debits[pool].update(trades_with_debit=int(trade.missing_funding_settlements > 0),
+                                                settlements=trade.missing_funding_settlements,
+                                                debit_sum_entry_notional=trade.missing_funding_debit)
         except C.InputFault as e:
             raise Refused("P20_REQUIRED_" + e.kind.upper(), affected(e.symbol, groups[e.symbol], e)) from None
     if sum(disposition.values()) != len(first) or disposition["other"] or ordinary_counts["other"]:
@@ -668,12 +715,21 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
     legacy["not_first_for_asset"] = source_counts.get("legacy_path_flags", 0) - sum(legacy.values())
     bps = p["judged_bps"]
     judged_values = [(t.year, t.net(bps)) for t in trades]
+    continuation_complete = not any(row["continuation_unavailable"] for row in gap_effect.values())
+    shown_gap = {"by_arm": gap_effect, "listing": None, "joint_comparison": None}
+    if not gap_effect["listing"]["continuation_unavailable"]:
+        shown_gap["listing"] = C.summary(continued_trades, bps)
+    if continuation_complete:
+        shown_gap["joint_comparison"] = C.judgment(p, [(t.year, t.net(bps)) for t in continued_trades],
+                                                    continued_pools, memory)
     return {"notice_counts": dict(source_counts), "first_notices": len(first),
             "trading_at_notice": len(first) - len(absent_notices), "notice_disposition": disposition,
             "legacy_nonjudging_path_flag_disposition": dict(legacy),
             "not_trading_at_notice_coins": sorted(absent_notices), "judged_diagnostics": dict(judged_diagnostics),
             "ordinary_disposition": dict(ordinary_counts), "not_trading_at_trigger_by_symbol": dict(absent_controls),
             "ordinary_trade_counts_by_source": control_counts,
+            "ordinary_missing_funding_debits": funding_debits,
+            "shown_missing_hold_bar_continuation": shown_gap,
             "judgment": C.judgment(p, judged_values, pools, memory), "judged": C.summary(trades, bps),
             "shown_clean_ordinary": C.judgment(p, judged_values, clean_pools, memory),
             "shown_last_close": C.summary([C.last_close_version(t) for t in trades], bps),
