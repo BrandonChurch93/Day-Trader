@@ -378,6 +378,7 @@ Working papers.
 | `research_rig/power_61.py`, `research_rig/POWER_61.json` | Synthetic matched-tail comparison of the plain and winsorized evidence marks | CURRENT |
 | `research_rig/score_61.py`, `research_rig/test_61.py` | One-session offline replay with counts-only validation, separate one-shot score and artificial custody fixtures. The lead agent runs the real modes, once each | CURRENT |
 | `research_rig/ADOPTION_61.md`, `research_rig/APPROVAL_61.md` | The lead agent's one-line approvals for plan 61: adoption of the plan 60 sealed inputs with no new prices, then the no-return input validation | RECORD |
+| `research_rig/count_62.py`, `research_rig/test_count_62.py` | Ledger 205: price-blind count of the vendor-ex-missing-only cohort, with synthetic checks and aggregate-only output. No trade or score | DRAFT |
 | `research_rig/vendor_60.py` | Plan 60 offline action transport verifier and deterministic native-to-window projection | DRAFT |
 | `research_rig/ADOPTION_60.md`, `research_rig/APPROVAL_60.md` | Plan 60 lead approvals: adoption of the sealed Plan 43 prices with no price acquisition, then validation only | RECORD |
 | `research_rig/GO_60.md` | Plan 60 lead approval for one scored run, names the validation approval commit and the validation receipt hash | RECORD |
