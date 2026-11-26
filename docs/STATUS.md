@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 05:47 UTC
+Last updated: 2026-11-26 05:57 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- [Replay 21](research/97_replay_21_odd_lot_tenders.md), run once 2026-11-26 05:52:52 UTC. MEASURED. Did not pass, 4 of 6 marks: 14 trades from 106 eligible filings, +11.80% mean net and t 1.688. The other 92 missed the entry discount. The rule missed the minimum of 30 trades and t of 2.0. Rule not advanced; queue 85 is a forward pretend-money watch proposal only.
 
 - Plan 45 (queue 79) closed 2026-11-26, dropped at feasibility. MEASURED: notice pages refused direct reads; 19 asset-designations across 9 indexed notices, 11 displayed minutes but 0 verified UTC publication minutes, and 9 Coinbase or Kraken USD spot ticker candidates. Full list and exact-minute overlap UNKNOWN. Untested desk-rule candidate retained in row 72; no ledger row used.
 
