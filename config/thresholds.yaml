@@ -832,6 +832,12 @@ replay_19_plan:
   note: Draft Plan 19 for queue 35. The lookback equals hold_hours. Judged only on the equal-weight pair. Not approved or run.
   source: research_rig/PREREG_19_monday_asia_DRAFT.md
 
+replay_20_plan:
+  value: {first_date: "2020-01-01", last_date: "2026-10-31", red_days: 3, entry_hour_utc: 1, hold_hours: 72, stop_cap_pct: 25, pump_min_pct: 25, notice_delay_minutes: 60, exclusion_days: 7, funding_jitter_seconds: 30, judged_bps: 15, shown_bps: 30, min_trades: 30, min_t_stat: 2.0, drop_best: 3, placebo_draws: 1000, placebo_percentile: 95, placebo_seed: 20001, calibration_seed: 20101, calibration_seeds: 20, calibration_edges_pct: [0, 1, 2, 4], calibration_trades: 60, calibration_trade_sigma: 0.08, calibration_year_sigma: 0.008}
+  status: builder
+  note: Draft Plan 20 for queue 29. Notice shorts use the source red-day wait. The earlier hourly rule is shown only. All dates viewed.
+  source: research_rig/PREREG_20_upbit_listing_short_DRAFT.md
+
 replay_14_plan:
   value: {start: "2016-01-04", end: "2026-11-24", lookback_months: 12, skip_months: 1, n_small: 10, n_wide: 50, cost_bps_per_side: 5, random_draws: 1000, seed: 14, random_percentile: 95, first_half_end: "2021-12-31", new_trials: 2}
   status: builder

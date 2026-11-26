@@ -244,6 +244,7 @@ Working papers.
 | `research_rig/MEASURE_15_breakout_fills.md` | Frozen measurement for queue 23: what a breakout order on stocks in play really paid on 60 fixed mornings, with the decision rule fixed before any trade or quote was collected. Not a trial | CURRENT |
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
 | `research_rig/report_19.py` | Prints the Replay 19 result page from the saved JSON. Does not score or read market data | CURRENT |
+| `research_rig/PREREG_20_upbit_listing_short_DRAFT.md`, `research_rig/common_20.py`, `research_rig/score_20.py`, `research_rig/test_20.py` | Queue 29 source red-day Upbit short, ordinary-jump comparison, offline clock scan and made-up tests. Draft, no real result | DRAFT |
 | `research_rig/check_identity_levels_16_17.py`, `research_rig/diagnose_identity_daily_16_17.py` | Plans 16 and 17 identity check: does a Binance pair carry the coin on the saved list, by matching saved price levels; prints counts only, computes no return | DRAFT |
 | `research_rig/PREREG_16_hot_five_hedged.md` | Plan 16, frozen 2026-11-25: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Run once, not supported | CURRENT |
 | `research_rig/build_identity_asof_16_17.py` | Builds the shared dated identity policy for plans 16 and 17 and counts changes against the every-month check | CURRENT |
