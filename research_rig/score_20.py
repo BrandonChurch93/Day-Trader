@@ -38,11 +38,11 @@ US_ROSTER = DATA.parent / "ideas" / US.NAME
 LOCK = RUN / "score_20.lock"
 RESULT = ROOT / "research_rig/results_20.json"
 NOTICE_PIN = "6d7e4a67f7964d394a9412551369df27c2317b21a156d2cb5cd73f34040baec7"
-DATED_ROSTER_PIN = ""
-NOTICE_MAP_PIN = ""
-IDENTITY_PIN = ""
-LIFETIMES_PIN = ""
-SUPPLEMENT_PIN = ""
+DATED_ROSTER_PIN = "dfaac9be1818f0867b1e200a6bb511a3970e01df5dbd04418726bf2567ae1ede"
+NOTICE_MAP_PIN = "6aeb01c4a0c36277e09ce4493b475a51939c35b7f2ca49ef60e7460c11299cf5"
+IDENTITY_PIN = "cd82815b67a5159c5afac0170d5ce3fa742968df3af394653fb92fbc0061b083"
+LIFETIMES_PIN = "2251f120fb63b230b2e15b3ba637e923d2591320bf4ae02ce98184e49eeab8a1"
+SUPPLEMENT_PIN = "5aa491889c0ae6a0bb14ded2558dc62311cb529d84d768b954b4355b498887e5"
 MANIFESTS = {
     DATA / "replay_16/manifest_futures.json": "07a28ae776606bb1430aa91ab94ae69b5cfeec37e0f48c9f2d342ab745e8b94d",
     DATA / "replay_16/manifest_futures_held.json": "d2949c130e4d98d13ed4bf376abee0700e4122fbf76af80a7d8fcf695a1e9afd",
@@ -204,8 +204,16 @@ def dated_roster(pin=None, identity_data=None):
                                                               dated["end_time_source"], dated["end_source_url"])
                     if (corrected_end, corrected_tail) != (end, tail) and corrected_end is None and len(lifetimes) == 1:
                         raise C.Invalid("unproved end override")
+                    e_verified = dated.get("end_verification_level")
+                    if dated["end_time_source"] == "binance_migration_announcement" and e_verified != "content_verified_announcement":
+                        raise C.Invalid("migration end lacks verified announcement")
+                    halt = dated.get("end_new_positions_halted_utc")
+                    if halt:
+                        halt = parse_minute(halt)
+                        if corrected_end is None or not corrected_launch < halt <= corrected_end or e_verified != "content_verified_announcement":
+                            raise C.Invalid("unproved halt on new positions")
                     contracts[symbol].append(C.Contract(symbol, dated["asset_id"], corrected_launch,
-                                                        corrected_end, corrected_tail))
+                                                        corrected_end, corrected_tail, halt or None))
         if identity_data is not None and patches.keys() != contracts.keys():
             raise C.Invalid("lifetime coverage differs from roster")
         for symbol, lifetimes in contracts.items():
@@ -432,6 +440,7 @@ def scan(groups, p):
 def scan_notice_clocks(groups, events, p):
     """Possible red-day roles only; no price-based signal or stop selected."""
     counts, stats, repairs, signals, boundaries = Counter(), Counter(), set(), set(), set()
+    funding_clock_discontinuities = []
     for event, contract in events.values():
         if contract is None:
             continue
@@ -446,7 +455,7 @@ def scan_notice_clocks(groups, events, p):
             end = min(end, (contract.archive_tail_minute + 59) // 60)
             counts["potential_unverified_terminal_windows"] += 1
             boundaries.add(event.symbol)
-        seen, zero, marks, rates = set(), set(), set(), {}
+        seen, zero, marks, rates, funding_paths = set(), set(), set(), {}, {}
 
         def observe(h, empty, interval):
             if start <= h < end:
@@ -460,6 +469,7 @@ def scan_notice_clocks(groups, events, p):
                     marks.add(h)
                 else:
                     rates[h] = interval
+                    funding_paths[h] = path.name
 
         for kind, a, b, path, pin in groups.get(event.symbol, ()):
             if a < end and start < b:
@@ -485,12 +495,26 @@ def scan_notice_clocks(groups, events, p):
         counts["potential_settlements_without_mark"] += len(no_mark)
         counts["potential_notice_windows_with_missing_marks"] += bool(no_mark)
         clock = sorted(rates)
-        counts["potential_funding_clock_gaps_or_transitions"] += sum(
-            right - left != rates[right] for left, right in zip(clock, clock[1:]))
+        def stamp(h):
+            return datetime.fromtimestamp(h * 3600, timezone.utc).isoformat(timespec="hours")
+
+        for left, right in zip(clock, clock[1:]):
+            if right - left != rates[right]:
+                counts["potential_funding_clock_gaps_or_transitions"] += 1
+                active_entries = [entry for entry in entries if contract.new_position_allowed(entry * 60)
+                                  and entry < end and left <= min(entry + p["hold_hours"], end) and right > entry]
+                counts["funding_discontinuities_near_potential_holds"] += bool(active_entries)
+                funding_clock_discontinuities.append({
+                    "symbol": event.symbol, "before_utc": stamp(left), "after_utc": stamp(right),
+                    "elapsed_hours": right - left, "before_interval_hours": rates[left],
+                    "after_interval_hours": rates[right], "candidate_entries_utc": [stamp(h) for h in active_entries],
+                    "funding_files": sorted({funding_paths[left], funding_paths[right]}),
+                })
         for h in no_mark:
             repairs.add((event.symbol, datetime.fromtimestamp(h * 3600, timezone.utc).date().isoformat()))
     return {"counts": dict(counts), "mark_repair_symbol_days": sorted(repairs),
-            "potential_signal_or_entry_symbol_days": sorted(signals), "unverified_boundary_symbols": sorted(boundaries)}
+            "potential_signal_or_entry_symbol_days": sorted(signals), "unverified_boundary_symbols": sorted(boundaries),
+            "funding_clock_discontinuities": funding_clock_discontinuities}
 
 
 def load(files, p):
@@ -689,7 +713,8 @@ def authorize(commit):
         raise Refused("P20_AUTH_REFUSED", FROZEN)
     if not re.search(rb"(?m)^\| 157 \|[^\n]*PREREG_20_upbit_listing_short\.md", LEDGER.read_bytes()):
         raise Refused("P20_AUTH_REFUSED", LEDGER)
-    if RUN.is_symlink() or RUN.stat().st_uid != os.geteuid() or RUN.stat().st_mode & 0o022:
+    if (RUN.is_symlink() or not RUN.is_dir() or RUN.stat().st_uid != os.geteuid()
+            or RUN.stat().st_mode & 0o077):
         raise Refused("P20_AUTH_REFUSED", RUN)
     return bound
 

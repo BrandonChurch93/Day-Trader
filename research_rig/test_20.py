@@ -113,6 +113,15 @@ def suite(p):
             self.put("high", 58, 131)
             self.assertEqual(C.execution(self.tape, s, self.p, tail)[2], "stop")
 
+        def test_announced_halt_disallows_entry_but_does_not_cover_existing_short(self):
+            contract = C.Contract("TESTUSDT", "asset-test", -24 * 60, 59 * 60,
+                                  new_positions_halted_minute=58 * 60 + 30)
+            with self.assertRaises(C.NoFill):
+                C.execution(self.tape, C.Setup(59, 130, (), 4), self.p, contract)
+            before_halt = C.Setup(58, 130, (), 4)
+            self.assertEqual(C.execution(self.tape, before_halt, self.p, contract)[:3],
+                             (59 * 60, 125, "terminal_close"))
+
         def test_gap_pass_flip_keeps_loser_and_all_31_trades(self):
             signal = C.Setup(25, 130, (), 12)
             for key in ("open", "high", "close", "volume"):

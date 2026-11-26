@@ -57,9 +57,14 @@ class Contract:
     launch_minute: int
     end_minute: int | None
     archive_tail_minute: int | None = None
+    new_positions_halted_minute: int | None = None
 
     def active(self, minute):
         return self.launch_minute <= minute and (self.end_minute is None or minute < self.end_minute)
+
+    def new_position_allowed(self, minute):
+        return (self.active(minute) and
+                (self.new_positions_halted_minute is None or minute < self.new_positions_halted_minute))
 
 
 @dataclass(frozen=True)
@@ -157,7 +162,7 @@ def setup(tape, minute, p, contract, *, trigger=None, earlier=None, screen=True,
             return None
     if entry >= p["end"]:
         raise InputFault("klines", entry)
-    if contract.end_minute is not None and entry * 60 >= contract.end_minute:
+    if not contract.new_position_allowed(entry * 60):
         raise NoFill
     if contract.archive_tail_minute is not None and entry * 60 >= contract.archive_tail_minute:
         raise InputFault("unverified_end", contract.archive_tail_minute // 60)
@@ -181,11 +186,11 @@ def execution(tape, signal, p, contract):
     tail = contract.archive_tail_minute
     if tail is not None and h * 60 >= tail:
         raise InputFault("unverified_end", tail // 60)
+    if not contract.new_position_allowed(h * 60):
+        raise NoFill
     if not tape.bar(h):
         raise InputFault("klines", h)
     end = contract.end_minute
-    if not contract.active(h * 60):
-        raise InputFault("klines", h)
     if tape.at("volume", h) == 0:
         raise NoFill
     initial = tape.at("open", h)
