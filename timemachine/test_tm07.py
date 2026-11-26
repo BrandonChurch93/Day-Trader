@@ -508,6 +508,48 @@ class DeskTest(unittest.TestCase):
         self.assertAlmostEqual(rec["scan"]["funding_usd"],book["qty"][A]*110*.02)
         self.assertEqual([r["utc"] for r in rec["scan"]["settlements"]],[O.stamp(T+61)])
 
+    def test_reaudit_r4_probe_rejects_foreign_context_and_checks_release(self):
+        from timemachine import tm07_isolation_probe as probe
+        markers = {i:D.digest(i) for i in probe.IDENTITIES}
+        transcript = dict(root=str(self.root),registration=D.digest("registration"),launcher_digest=D.digest("release"),
+                          operator="operator",markers=markers,observations=[])
+        checks = dict.fromkeys(probe.CHECKS-{"fresh_context","role_only_handoff"},True)
+        for n,i in enumerate(sorted(markers)):
+            tools = ["next","status","usage"]+(["notes"] if i in D.SCOUTS else ["look","pick"])
+            for phase in probe.PHASES:
+                transcript["observations"].append(dict(identity=i,phase=phase,challenge=D.digest([i,phase]),
+                    checks=checks,context=dict(conversation_id=None,memory_enabled=False,tools=tools,
+                                             markers=[markers[i]] if phase == "handoff" else []),
+                    sandbox=dict(uid=n,mnt=f"mnt:[{n}]",net="net:[1]",user=f"user:[{n}]")))
+        proof = probe.evaluate(transcript)
+        signature = D.seal(SEAL_KEY,"worker-boundary",proof)
+        D.validate_worker_boundary(SEAL_KEY,proof,signature,self.root,launcher_digest=transcript["launcher_digest"])
+        with self.assertRaisesRegex(ValueError,"isolation"):
+            D.validate_worker_boundary(SEAL_KEY,proof,signature,self.root,launcher_digest=D.digest("other release"))
+        row = next(x for x in transcript["observations"] if x["phase"] == "handoff")
+        row["context"]["markers"] = [v for k,v in markers.items() if k != row["identity"]][:1]
+        with self.assertRaisesRegex(ValueError,"isolation"):
+            probe.evaluate(transcript)
+
+    def test_reaudit_probe_bootstrap_uses_only_toy_desk_routes(self):
+        from timemachine import tm07_isolation_probe as probe
+        rehearsal,ready = self.root/"rehearsal",self.root/"ready.json"
+        with patch("http.server.ThreadingHTTPServer") as http,patch.dict(D.os.environ,{}):
+            http.return_value.__enter__.return_value.server_address = ("127.0.0.1",8765)
+            probe.rehearse(rehearsal,ready,8765)
+            profile = D.json.loads(ready.read_text())
+            self.assertEqual(set(profile["workers"]),probe.IDENTITIES)
+            for identity,entry in profile["workers"].items():
+                sid = entry["session"]
+                token = "Bearer "+D.json.loads(Path(entry["token_file"]).read_text())
+                query = {"session":[sid]}
+                code,packet = server.handle_desk_only("GET","/desk/next",query,None,token)
+                self.assertEqual(code,200)
+                route = "/desk/pick" if identity in D.SCOUTS else "/desk/notes"
+                body = D.encode({"wake_key":packet["wake_key"]})
+                self.assertEqual(server.handle_desk_only("POST",route,query,body,token)[0],403)
+                self.assertEqual(server.handle_desk_only("GET","/score",query,None,token)[0],404)
+
     def test_opus_r2_drift_does_not_allow_an_over_cap_saved_target(self):
         spec = world()
         book = P.new_book(1000)

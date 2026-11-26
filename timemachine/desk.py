@@ -60,15 +60,19 @@ def claim_tokens(root,sid,tokens):
             raise ValueError("a role token is already assigned") from exc
 
 
-def validate_worker_boundary(key,proof,signature,root):
+def validate_worker_boundary(key,proof,signature,root,*,launcher_digest=None):
     """Fail closed until an independent operator attests deployment probes."""
+    from timemachine import tm07_isolation_probe as probe
     verify_seal(key,"worker-boundary",proof,signature)
-    probes = {"desk_routes_only","wrong_role_denied","sibling_token_denied","fixture_read_denied",
-              "sibling_journal_read_denied","outbound_denied","fresh_context","role_only_handoff"}
-    if (proof.get("root") != str(Path(root).resolve()) or not proof.get("launcher_digest")
-            or not proof.get("probe_transcript_digest") or not proof.get("sandbox_identities")
-            or len(set(proof["sandbox_identities"])) != len(proof["sandbox_identities"])
-            or set(proof.get("passed",[])) != probes):
+    identities = proof.get("sandbox_identities")
+    hash_ok = lambda s:isinstance(s,str) and re.fullmatch(r"[0-9a-f]{64}",s)
+    if (proof.get("version") != probe.VERSION or proof.get("root") != str(Path(root).resolve())
+            or not hash_ok(launcher_digest) or proof.get("launcher_digest") != launcher_digest
+            or not hash_ok(proof.get("registration")) or not hash_ok(proof.get("probe_transcript_digest"))
+            or not isinstance(identities,dict) or set(identities) != probe.IDENTITIES
+            or not all(isinstance(s,str) and s for s in identities.values())
+            or len(set(identities.values())) != len(identities)
+            or proof.get("passed") != sorted(probe.CHECKS)):
         raise ValueError("worker boundary has missing isolation probes")
 
 

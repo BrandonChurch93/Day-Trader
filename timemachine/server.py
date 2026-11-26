@@ -208,12 +208,12 @@ class DeskH(H):
     desk_only = True
 
 
-def serve_desk(port,*,approval_key,proof,signature):
+def serve_desk(port,*,approval_key,proof,signature,launcher_digest):
     from timemachine.desk import validate_worker_boundary
     root = os.environ.get("TM07_RUNS_DIR")
     if not root:
         raise ValueError("set a separate TM07_RUNS_DIR")
-    validate_worker_boundary(approval_key,proof,signature,root)
+    validate_worker_boundary(approval_key,proof,signature,root,launcher_digest=launcher_digest)
     registration = proof.get("registration")
     if not isinstance(registration,str) or len(registration) != 64:
         raise ValueError("sealed worker proof must name the registered attempt")
