@@ -1,0 +1,22 @@
+{
+  "block": null,
+  "book_status": {},
+  "card": "E11",
+  "claimed_unresolved_wakes": 0,
+  "closed_by_arm": {"70-102": 0, "71-013": 0, "71-035": 0},
+  "cost_per_side_bp": {},
+  "judged_trades": 0,
+  "judged_void_reasons": {},
+  "late_wakes": 0,
+  "resting_counts_by_arm": {
+    "70-102": {"FILLED": 0, "NOT_FILLED": 0, "UNKNOWN": 0},
+    "71-013": {"FILLED": 0, "NOT_FILLED": 0, "UNKNOWN": 0},
+    "71-035": {"FILLED": 0, "NOT_FILLED": 0, "UNKNOWN": 0}
+  },
+  "seconds_after_hour": {},
+  "signals_by_arm": {"70-102": 0, "71-013": 0, "71-035": 0},
+  "slots_open": 0,
+  "status": "NOT_STARTED",
+  "void_wakes": 0,
+  "wakes": 0
+}

@@ -1212,6 +1212,21 @@ forward_e10:
   note: E10 Coinbase USD practice log only; rule and flat costs inherited; separate audit and start.
   source: practice/traders/E10_coin_trend_ratchet.md
 
+forward_e11:
+  value:
+    sizes_usd: {judged: 250, shown: 25}
+    wake_delay_s: 5
+    first_book_limit_s: 120
+    resting_window_s: 300
+    resting_page_cap: 4
+    judging_count: 150
+    judging_floor: 60
+    last_wake_utc: "2027-11-30T23:00:00Z"
+    private_roots_ref: measure_132
+  status: STATED
+  note: Ledger 228. Shared observation roots from measure_132; taker fees from forward_e10_binance_us. Four pages bound request load and never turn incomplete coverage into a no-fill.
+  source: practice/traders/E11_dip_buy_cheap_venue.md
+
 forward_e10_binance_us:
   value: {default_taker_bp: 2, taker_overrides_bp: {BNB: 1}}
   status: stated

@@ -657,6 +657,9 @@ Working papers.
 | `practice/traders/E10_coin_trend_ratchet.md` | E10, Plan 75 Coinbase USD forward practice: pretend money only, audit before launch | DRAFT |
 | `practice/forward_e10.py`, `practice/test_forward_e10.py` | E10 logger, frozen Plan 75 decision adapter, private hash chain, and offline made-up tests | CURRENT |
 | `practice/forward/E10_log.json` | E10 public counts and cost aggregates for Coinbase main and Binance.US second execution books. No prices or returns; not started | RECORD |
+| `practice/traders/E11_dip_buy_cheap_venue.md` | Ledger 228, E09 dip-buy rules on Binance.US USD depth with a shown resting-bid line; pretend money and audit before start | DRAFT |
+| `practice/forward_e11.py`, `practice/test_forward_e11.py` | E11 forward recorder, E09 signal reuse, depth walking and bounded resting-bid evidence, anchored private log, and invented-data tests | CURRENT |
+| `practice/forward/E11_log.json` | E11 public counts, book clocks and cost aggregates only, no prices or profit; not started | RECORD |
 | `practice/measure_132.py`, `practice/test_measure_132.py` | Measurement 132 forward-only taker cost logger, private hash-chained observations, and network-free made-up book checks | CURRENT |
 | `practice/forward/M132_log.json` | Measurement 132 public state; once published, counts and pooled costs only, no prices or returns. Not started | RECORD |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
