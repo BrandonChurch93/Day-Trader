@@ -3,8 +3,13 @@ import argparse
 import hashlib
 import json
 import math
+import os
+import re
+import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
 from zoneinfo import ZoneInfo
@@ -12,6 +17,8 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import yaml
 from numpy.lib.stride_tricks import sliding_window_view
+
+from coverage_70 import ROOTS as ARCHIVES, read_snapshot
 
 
 HERE = Path(__file__).resolve().parent
@@ -28,7 +35,11 @@ ET = ZoneInfo("America/New_York")
 DAYS = len(HOURS) // 24
 YEARS = 4
 ALLOWED = tuple("AAVE ADA AVAX BCH BNB BTC DOGE DOT ETH HBAR LINK LTC NEAR PEPE SHIB SOL SUI XLM XRP ZEC".split())
-ARCHIVES = ("replay_13", "replay_22", "replay_16")
+CUSTODY = Path("/home/user/workspace/rig/data")
+MANIFEST_REL = Path("sweep_70/coverage.json")
+GRID_PATH = "research_rig/GRID_70.json"
+SETTINGS_PATH = "config/thresholds.yaml"
+COVERAGE_PATH = "research_rig/COVERAGE_70.json"
 
 
 def maintenance(t):
@@ -62,16 +73,14 @@ def read_hour_rows(stream):
 
 
 def load_frozen(root, manifest, config):
-    root = root.resolve()
-    expected = root / "sweep_70/coverage.json"
-    if manifest.absolute() != expected or expected.resolve(strict=True) != expected:
+    if manifest != root / MANIFEST_REL:
         raise ValueError("not the allowed timestamp-only manifest path")
-    raw = manifest.read_bytes()
+    if tuple(config["coins"]) != ALLOWED:
+        raise ValueError("roster differs from hard allow-list")
+    raw = read_snapshot(root, MANIFEST_REL)
     if hashlib.sha256(raw).hexdigest() != config["private_manifest_sha256"]:
         raise ValueError("not the preregistered timestamp-only manifest")
     roster = json.loads(raw)
-    if tuple(config["coins"]) != ALLOWED:
-        raise ValueError("roster differs from hard allow-list")
     panel = np.full((len(config["coins"]), len(HOURS), 5), np.nan)
     for j, coin in enumerate(config["coins"]):
         for record in roster[coin]["files"]:
@@ -83,15 +92,11 @@ def load_frozen(root, manifest, config):
             rel = f"archives/data/spot/monthly/klines/{coin}USDT/1h/{expected_name}.zip"
             if record["path"] not in {f"{s}/{rel}" for s in ARCHIVES}:
                 raise ValueError("not an allowlisted archive path")
-            path = root / record["path"]
-            if path.resolve(strict=True) != path:
-                raise ValueError("archive path must not redirect")
-            # Check archive identity before reading any row values.
-            with path.open("rb") as wire:
-                if hashlib.file_digest(wire, "sha256").hexdigest() != record["sha256"]:
-                    raise ValueError("retained archive identity changed")
+            archive_bytes = read_snapshot(root, record["path"])
+            if hashlib.sha256(archive_bytes).hexdigest() != record["sha256"]:
+                raise ValueError("retained archive identity changed")
             seen = 0
-            with ZipFile(path) as z, z.open(expected_name + ".csv") as stream:
+            with ZipFile(BytesIO(archive_bytes)) as z, z.open(expected_name + ".csv") as stream:
                 for i, row in read_hour_rows(stream):
                     if not np.isnan(panel[j, i, 0]) or not record["first_utc_seconds"] <= HOURS[i] <= record["last_utc_seconds"]:
                         raise ValueError("duplicate or unexpected retained row")
@@ -263,10 +268,16 @@ def t_cluster(x, day):
     groups = np.count_nonzero(cnt)
     if groups < 2:
         return None
-    mean = float(x.mean())
-    sums = np.bincount(day, weights=x, minlength=len(cnt)) - mean * cnt
+    scale = float(np.max(np.abs(x)))
+    if not scale or not np.isfinite(scale):
+        return None
+    scaled = x / scale
+    mean = float(scaled.mean())
+    sums = np.bincount(day, weights=scaled - mean, minlength=len(cnt))
+    if np.max(np.abs(sums)) <= np.finfo(float).eps * cnt.max():
+        return None
     se = math.sqrt(groups / (groups - 1) * (sums @ sums)) / len(x)
-    return mean / se if se > 1e-14 else None
+    return mean / se
 
 
 def mean_or_null(x):
@@ -376,6 +387,46 @@ def rows_bytes(rows):
     return ("".join(json.dumps(row, sort_keys=True, allow_nan=False, separators=(",", ":")) + "\n" for row in rows)).encode()
 
 
+def checked_freeze(repo, commit, grid_pin, settings_pin):
+    """Refuse before any custody I/O unless the caller supplies the exact freeze."""
+    if not re.fullmatch(r"[0-9a-f]{40}", commit or ""):
+        raise ValueError("full frozen commit SHA required")
+    if not all(re.fullmatch(r"[0-9a-f]{64}", x or "") for x in (grid_pin, settings_pin)):
+        raise ValueError("independent grid and settings SHA-256 pins required")
+    git_env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    git_env["GIT_NO_REPLACE_OBJECTS"] = "1"
+
+    def git(*args):
+        return subprocess.check_output(["git", "--no-optional-locks", "-C", str(repo), *args],
+                                       env=git_env)
+
+    if (git("rev-parse", "--show-toplevel").decode().strip() != str(repo)
+            or git("rev-parse", "HEAD").decode().strip() != commit
+            or git("status", "--porcelain=v1", "--untracked-files=all")):
+        raise ValueError("checkout must be clean and exactly at the lead's frozen commit")
+    blobs = {}
+    for path in ("research_rig/sweep_70.py", "research_rig/coverage_70.py", GRID_PATH,
+                 SETTINGS_PATH, COVERAGE_PATH):
+        frozen = git("show", f"{commit}:{path}")
+        if read_snapshot(repo, path) != frozen:
+            raise ValueError("checked-out bytes differ from frozen commit")
+        blobs[path] = frozen
+    for path, pin in ((GRID_PATH, grid_pin), (SETTINGS_PATH, settings_pin)):
+        if hashlib.sha256(blobs[path]).hexdigest() != pin:
+            raise ValueError("supplied freeze hash differs from committed bytes")
+    return blobs
+
+
+def parse_config(coverage_bytes, settings_bytes, grid_bytes):
+    coverage = json.loads(coverage_bytes)
+    settings = yaml.safe_load(settings_bytes)["replay_70_plan"]["value"]
+    if coverage.keys() != {"coins", "private_manifest_sha256", "grid_sha256"} or coverage.keys() & settings.keys():
+        raise ValueError("settings must not override source, roster or grid pins")
+    if hashlib.sha256(grid_bytes).hexdigest() != coverage["grid_sha256"]:
+        raise ValueError("grid differs from preregistration")
+    return {**coverage, **settings}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     mode = ap.add_mutually_exclusive_group(required=True)
@@ -383,21 +434,27 @@ def main():
     mode.add_argument("--audited-search", action="store_true")
     ap.add_argument("--root", type=Path)
     ap.add_argument("--manifest", type=Path)
+    ap.add_argument("--freeze-commit")
+    ap.add_argument("--grid-sha256")
+    ap.add_argument("--settings-sha256")
     args = ap.parse_args()
-    config = json.loads((HERE / "COVERAGE_70.json").read_text())
-    config.update(yaml.safe_load((HERE.parent / "config/thresholds.yaml").read_text())["replay_70_plan"]["value"])
-    grid_bytes = (HERE / "GRID_70.json").read_bytes()
-    if hashlib.sha256(grid_bytes).hexdigest() != config["grid_sha256"]:
-        raise ValueError("grid differs from preregistration")
-    rules = json.loads(grid_bytes)
+    repo = HERE.parent
     if args.synthetic:
-        if args.root or args.manifest:
+        if any((args.root, args.manifest, args.freeze_commit, args.grid_sha256, args.settings_sha256)):
             ap.error("synthetic has no real inputs")
+        blobs = {path: (repo / path).read_bytes() for path in (COVERAGE_PATH, SETTINGS_PATH, GRID_PATH)}
+    else:
+        if args.root != CUSTODY or args.manifest != CUSTODY / MANIFEST_REL:
+            ap.error("audited search requires the exact canonical custody and manifest paths")
+        if not (sys.flags.ignore_environment and sys.dont_write_bytecode and sys.pycache_prefix == "/dev/null"):
+            ap.error("audited search requires python -E -B -X pycache_prefix=/dev/null")
+        blobs = checked_freeze(repo, args.freeze_commit, args.grid_sha256, args.settings_sha256)
+    config = parse_config(blobs[COVERAGE_PATH], blobs[SETTINGS_PATH], blobs[GRID_PATH])
+    rules = json.loads(blobs[GRID_PATH])
+    if args.synthetic:
         from synthetic_70 import synthetic_main
         synthetic_main(rules, config)
         return
-    if args.root is None or args.manifest is None:
-        ap.error("audited search needs explicit existing custody and manifest")
     panel = load_frozen(args.root, args.manifest, config)
     coins = config["coins"]
     print(rows_bytes(sweep(coins, panel, rules, np.array([config["futures_round_trip_bp"][c] for c in coins]),

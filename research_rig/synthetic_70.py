@@ -1,15 +1,119 @@
 """Plan 70 offline QA. All prices, schedules and returns are invented."""
+import hashlib
 import json
 import math
 from collections import Counter
+from io import BytesIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+from zipfile import ZipFile
 
 import numpy as np
 
+import coverage_70 as census_module
+import sweep_70 as search
 from sweep_70 import (DAY, DAYS, HALF_INDEX, HOUR, HOURS, STOP, Tape, YEARS,
-                      read_hour_rows, rows_bytes, score_signal, sweep, too_thin)
+                      read_hour_rows, rows_bytes, score_signal, sweep, t_cluster, too_thin)
 
 
 COINS = ["ADA", "BTC", "ETH", "SOL"]
+
+
+def refusal(fn, kind=ValueError):
+    try:
+        fn()
+    except kind:
+        return
+    raise AssertionError("expected refusal")
+
+
+def custody_fixtures():
+    # Reproduce the auditor's swap of a pinned open 10 for a replacement open 70.
+    def archive(name, stamp, value):
+        wire = BytesIO()
+        with ZipFile(wire, "w") as z:
+            z.writestr(name + ".csv", f"{stamp * 1000},{value},{value},{value},{value},1,{(stamp + HOUR) * 1000 - 1}\n")
+        return wire.getvalue()
+
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        coin = search.ALLOWED[0]
+        name = f"{coin}USDT-1h-2020-01"
+        rel = f"replay_13/archives/data/spot/monthly/klines/{coin}USDT/1h/{name}.zip"
+        path = root / rel
+        path.parent.mkdir(parents=True)
+        original = archive(name, search.START, 10)
+        replacement = path.with_suffix(".new")
+        path.write_bytes(original)
+        replacement.write_bytes(archive(name, search.START, 70))
+        manifest = root / search.MANIFEST_REL
+        manifest.parent.mkdir()
+        doc = {c: {"files": []} for c in search.ALLOWED}
+        doc[coin]["files"].append({"month": "2020-01", "path": rel, "rows": 1,
+                                  "first_utc_seconds": search.START, "last_utc_seconds": search.START,
+                                  "sha256": hashlib.sha256(original).hexdigest()})
+        manifest_bytes = json.dumps(doc).encode()
+        manifest.write_bytes(manifest_bytes)
+        config = {"coins": search.ALLOWED, "private_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest()}
+
+        def swap_then_open(arg):
+            replacement.replace(path)
+            return ZipFile(arg)
+
+        with patch.object(search, "ZipFile", swap_then_open):
+            assert search.load_frozen(root, manifest, config)[0, 0, 0] == 10
+        refusal(lambda: search.load_frozen(root, manifest, config))
+        path.rename(replacement)
+        path.symlink_to(replacement)
+        refusal(lambda: search.load_frozen(root, manifest, config), OSError)
+        with patch.object(census_module, "COINS", [coin]), patch.object(census_module, "MONTHS", [(2020, 1)]):
+            refusal(lambda: census_module.census(root), OSError)
+        path.unlink()
+        path.parent.rename(path.parent.with_name("other"))
+        path.parent.symlink_to(path.parent.with_name("other"), target_is_directory=True)
+        refusal(lambda: census_module.read_snapshot(root, rel), OSError)
+
+
+def freeze_fixtures():
+    commit, other = "a" * 40, "b" * 40
+    paths = ("research_rig/sweep_70.py", "research_rig/coverage_70.py", search.GRID_PATH,
+             search.SETTINGS_PATH, search.COVERAGE_PATH)
+    blobs = {path: path.encode() for path in paths}
+    grid_pin, settings_pin = (hashlib.sha256(blobs[p]).hexdigest() for p in paths[2:4])
+    root, dirty = Path("/made-up/repo"), False
+
+    def fake_git(args, env):
+        cmd = args[4:]
+        if cmd == ["rev-parse", "--show-toplevel"]:
+            return str(root).encode() + b"\n"
+        if cmd == ["rev-parse", "HEAD"]:
+            return commit.encode() + b"\n"
+        if cmd[0] == "status":
+            return b" M edited\n" if dirty else b""
+        return blobs[cmd[-1].split(":", 1)[1]]
+
+    with patch.object(search.subprocess, "check_output", fake_git), patch.object(search, "read_snapshot", side_effect=lambda _, p: blobs[p]):
+        assert search.checked_freeze(root, commit, grid_pin, settings_pin) == blobs
+        refusal(lambda: search.checked_freeze(root, other, grid_pin, settings_pin))
+        refusal(lambda: search.checked_freeze(root, commit, "0" * 64, settings_pin))
+        refusal(lambda: search.checked_freeze(root, commit, grid_pin, "0" * 64))
+        dirty = True
+        refusal(lambda: search.checked_freeze(root, commit, grid_pin, settings_pin))
+    dirty = False
+    with patch.object(search.subprocess, "check_output", fake_git), patch.object(search, "read_snapshot", return_value=b"edited"):
+        refusal(lambda: search.checked_freeze(root, commit, grid_pin, settings_pin))
+    coverage = json.dumps({"coins": [], "private_manifest_sha256": "m", "grid_sha256": grid_pin})
+    refusal(lambda: search.parse_config(coverage, "replay_70_plan: {value: {grid_sha256: changed}}", blobs[search.GRID_PATH]))
+
+
+def cluster_fixture():
+    x = np.array([.010, -.005, .015, .020])
+    d = np.array([0, 0, 1, 2])
+    for factor in (1., 1e-14, 1e14):
+        assert math.isclose(t_cluster(x * factor, d), 1.745743121887939, rel_tol=1e-14)
+    assert t_cluster(np.full(4, .003), d) is None
+    assert t_cluster(np.array([.001, .003, .001, .003]), np.array([0, 0, 1, 1])) is None
 
 
 def fake_panel(seed, plant=False, drift=0):
@@ -94,6 +198,9 @@ def power_fixture(config):
 
 
 def synthetic_main(rules, config):
+    custody_fixtures()
+    freeze_fixtures()
+    cluster_fixture()
     marks = config["search_marks"]
     assert not too_thin(200, 100, [40, 60], marks)
     assert too_thin(199, 100, [50, 50], marks)
@@ -151,6 +258,9 @@ def synthetic_main(rules, config):
     n_thin = [r["trades"] for r in thin_crossings]
     d_thin = [r["active_days"] for r in thin_crossings]
     print(json.dumps({"planted_target": target_row["rule"],
+                      "archive_swap_and_redirect_guards": True,
+                      "frozen_checkout_and_hash_guards": True,
+                      "cluster_t_scale_invariance": True,
                       "planted_finalists": [r["rule"] for r in finalists],
                       "post_cutoff_output_bytes_identical": True,
                       "future_signal_prefix_identical_rules": len(rules),
