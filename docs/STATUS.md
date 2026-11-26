@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 09:10 UTC
+Last updated: 2026-11-26 09:30 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Replay 48's pass is under identity review since 2026-11-26 09:30 UTC. Treat it as not confirmed until the review closes. MEASURED by a sweep of SEC records that read no prices and no results: the roster lists one fund (CIK 0001232860, traded as MUI through 2024) under the symbol MUNUX for turns 2016 to 2024, so it was probably absent from the test; eight funds were merged away after entry and before exit (six in January 2019, two in January 2026); twelve were delisted before entry; ten are on the roster in their IPO year. Whether any of this touched the picks or the exits is UNKNOWN until the audit of the run reports.
 
 - Plan 43 third attempt (special dividends, ledger 195) stopped at input validation 2026-11-26, not scored, no return computed. MEASURED: 35 of 442 events had a zero-volume or missing day in the trade window against a cap of 22 fixed before counting; the raw-versus-adjusted factor check held on 538 of 39,564 bar checks in 36 events, clustered on cash ex-dates. Cause of the factor mismatch is UNKNOWN; under diagnosis. Earlier attempts are ledger 178 and 188.
 
