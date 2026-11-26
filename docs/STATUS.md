@@ -51,6 +51,8 @@ The Result column is written by `tools/status_table.py` from the output files or
 
 Each line says how far to trust it.
 
+- Leveraged Treasury funds at month-end: MEASURED 2026-11-26 04:51:41 UTC. TMF gross tracking 2.5853x vs 2.7x to 3.1x (fail); marked net mean +0.6483% (pass); marked worst window -8.7%. UBT shown only. Same windows as Replay 25, not new evidence (`docs/research/82_measurement_34_tmf_ubt_month_end.md`).
+
 - What a US account pays to go long or short crypto: STATED, low published fees on larger coins at some venues; MEASURED, single public book snapshots only; normal perpetual spreads and actual fills are UNKNOWN (`docs/research/60_us_venue_costs_checked.md`).
 - No day trading rule on crypto passes at any venue cost tested. MEASURED, eight rules on hourly bitcoin and ether. At the lowest venue cost a few ether rules have a positive Sharpe ratio in the held-back years and none passes. At Alpaca cost every one lost money in the held-back years (`docs/research/16_rig_audit.md`).
 - Slow trend rules cut the largest drop and give up growth. MEASURED on bitcoin and on the US stock market index, and it matches the live record of funds built on the same rules (`docs/research/21_systematic_funds_and_published_rules.md`). In the held-back years most grew less than holding.

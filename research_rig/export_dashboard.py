@@ -19,6 +19,7 @@ Usage: python3 export_dashboard.py                 (run from research_rig/; read
 import json, os, re, sys, copy, hashlib, datetime, numpy as np, pandas as pd
 import rig2 as R
 import run_v2 as V2
+import report_34 as M34
 from rules import RULES
 
 GH = "https://github.com/BrandonChurch93/Day-Trader/blob/main/"
@@ -364,6 +365,8 @@ else:
                       summary="A test of slow trend rules on free stock market data has a written plan. Its results are not in yet.", numbers=[],
                       links=[["Plan", GH + "research_rig/PREREG_05_stock_trend_free_data.md"]]))
 if c4: tests.append(c4)
+if M34.RESULT.is_file():
+    tests.append(M34.dashboard_card(M34.load(), GH))
 
 
 # ------------------------------------------------------------------ current owner-only items, read from docs/STATUS.md at export time
