@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 05:36 UTC
+Last updated: 2026-11-26 05:44 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Plan 44 (queue 80) closed 2026-11-26, dropped at feasibility. MEASURED: 60 timed additions from 40 Coinbase posts, 29 prior-day spot ticker candidates not confirmed at the event minute, and 16 roadmap-page captures in 46 months. Full population UNKNOWN; no ledger row used.
 
 - [Replay 41](research/92_replay_41_month_end_laggard_switch.md), run once 2026-11-26 05:33:58 UTC. MEASURED. Did not pass, 4 of 8 marks. The laggard rule averaged +0.2357% net over 130 windows (t 2.29), versus +0.2209% for always-TLT on the same clock and budget. The switch added +0.0148% a window (t 0.14), and the difference was negative from 2020 and without the best three windows. Rule not advanced.
 
