@@ -1114,3 +1114,9 @@ plan_54_closure:
   status: builder
   note: Closed on synthetic power before market input. CEF sensitivity is exploratory only; neither block authorizes market access.
   source: research_rig/CLOSE_54_on_power.md
+
+jan_rows_91_92_calibration:
+  value: {"base":"replay_48_plan","seed":9192,"worlds":60000,"turns":10,"power_floor":0.5,"edge_grid_bps":{"min":0,"max":800,"step":25},"roster_premiums_bps":[0,200],"stress_loser_cost_bps":110,"preferred":{"monthly_sd_bps":[[200,100,200],[300,150,300],[400,250,400]],"round_trip_bps":[20,50,90]},"bdc":{"monthly_sd_bps":[[300,150,300],[450,250,450],[600,400,600]],"round_trip_bps":[20,40,65]}}
+  status: builder
+  note: Synthetic assumptions in benchmark, roster, loser order. Both rows closed before roster construction or market access.
+  source: research_rig/CLOSE_ROWS_91_92_on_power.md
