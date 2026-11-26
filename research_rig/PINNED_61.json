@@ -1,0 +1,23 @@
+{
+  "config/thresholds.yaml": "10c0fae05400b40a91534bfebb8a7c91454d38f8ec6ac7c1bd4ddb55924b109f",
+  "research_rig/COUNT_61.json": "39a3d1d643b43a66c0aea7c8112e8b38c00cd213447812f373fadfe99fdbca9e",
+  "research_rig/PLACEBO_61.json": "e6f85822e656a8063038d04308d60d7d7add6bd0d2e026d1b282ef4374da7750",
+  "research_rig/PLACEBO_LIQUID_61.json": "29d766ba49c868dfd3a51c95adc50713697b66eec094b1d9f1015f4c76002d8b",
+  "research_rig/POWER_61.json": "eb4e475e0ae151d525e136af113b9d4002b7ff1215e6d5d4c1f504126591ad16",
+  "research_rig/PREREG_61_special_dividend_ex_day.md": "cdd4a6c68beac81143dc9e6ce332a13723b174172bfb7a0cda8a4337e19379ac",
+  "research_rig/basis_43.py": "ed4bb95d8b1b718b24c4c970650885b5a34770d4e111b0247195d2b51cdca5fb",
+  "research_rig/calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
+  "research_rig/calendar_36.json": "87f3ad09eed18c33cd27693f450cd099dd7b61896d747698a4d9bf1d9a836aaf",
+  "research_rig/common_21.py": "ade5650831a7f47dc175e7f1043e0cb4730a6634e96fa585fe51dd95b7c99fb1",
+  "research_rig/count_61.py": "1256c78d2086a9e962506dd18ffcf8814c137bcb10a80b8059e93351fdd46c8f",
+  "research_rig/placebo_61.py": "bbfc99af13f2a58a3b973d0036ee3d01a3a38744a81e8e0195e46932b101d80e",
+  "research_rig/power_61.py": "fa8e49559b5018bd9b7d49e99247f14f75ef72336521ffa545d4b4792ae34092",
+  "research_rig/provenance_43.py": "bfe847b9a8fe63096ff798d78ca9717bd975d334d4b45de57cbda6baebae8f33",
+  "research_rig/score_43.py": "ce1ec2e09458c21d50c4f1cafd433508b6639225c070dadb703b523c92c3b059",
+  "research_rig/score_60.py": "1ec7546104bcc1919236417572dab562522bc54ad59fd2db3f61e2e3c27b6071",
+  "research_rig/score_61.py": "4e4f38816c27bd65c8a216c212c1bb4dd5827a3e3490000ff7dbc2b407ac960d",
+  "research_rig/test_43.py": "fa5cb9cd28b535eea663dbe97cde83257f29a7a43e41870b46e754cf0e716fc2",
+  "research_rig/test_60.py": "e4352becf11af5d8b01d72f3ca30a591fee3b59630b67d21b4497ae74df7951d",
+  "research_rig/test_61.py": "a3710da3df2ffe10e1c5090710ccb782491f106dc45aef6782735e1cced28517",
+  "research_rig/vendor_60.py": "f154cf5d2280c63c30eee6ba0c736432dacbdaae0c81d63649b5f93b5b1d2fce"
+}

@@ -1,0 +1,1 @@
+Approved by the lead: plan 61 ledger 203, adopt Plan 60 validation commit 8babbf959c0133549c8961733941ebab35875872, Plan 60 validation approval SHA-256 e2cd5fd7af3ddb741bea4c851caa97d638b65a6a3cdb7ff89660a638869cd20d, freeze commit 90decb33ce679d018c5769ea37f9be891647511b, freeze SHA-256 503c59a128369c81a189479e2d480399f891f015d4647e8c1d7ec4a064e1fcf9, no price acquisition.

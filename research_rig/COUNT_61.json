@@ -1,0 +1,77 @@
+{
+  "distinct_ex_dates": 345,
+  "docket_events": 443,
+  "ex_date_cluster_size_counts_by_year": {
+    "2016": {
+      "1": 27,
+      "2": 3,
+      "3": 2
+    },
+    "2017": {
+      "1": 28,
+      "2": 2,
+      "3": 1
+    },
+    "2018": {
+      "1": 28,
+      "2": 3
+    },
+    "2019": {
+      "1": 25,
+      "2": 3
+    },
+    "2020": {
+      "1": 25,
+      "2": 3,
+      "3": 2,
+      "5": 1
+    },
+    "2021": {
+      "1": 49,
+      "2": 7
+    },
+    "2022": {
+      "1": 42,
+      "2": 2
+    },
+    "2023": {
+      "1": 25,
+      "2": 2
+    },
+    "2024": {
+      "1": 21,
+      "2": 3
+    },
+    "2025": {
+      "1": 25,
+      "2": 2
+    },
+    "2026": {
+      "1": 13,
+      "3": 1
+    }
+  },
+  "ex_year_candidates": {
+    "2016": 39,
+    "2017": 35,
+    "2018": 34,
+    "2019": 31,
+    "2020": 42,
+    "2021": 63,
+    "2022": 46,
+    "2023": 29,
+    "2024": 27,
+    "2025": 29,
+    "2026": 16
+  },
+  "terminal_counts": {
+    "clock_outside_sealed_window": 17,
+    "filing_not_public_before_entry_close": 1,
+    "no_verified_cash_ex_date": 1,
+    "noncash_skip": 1,
+    "padding_not_complete_before_entry": 1,
+    "price_blind_upper_bound": 391,
+    "stock_clock_volume_unavailable": 4,
+    "stock_padding_volume_unavailable": 27
+  }
+}
