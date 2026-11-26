@@ -21,6 +21,7 @@ import rig2 as R
 import run_v2 as V2
 import report_34 as M34
 from rules import RULES
+from dashboard_status import SCORECARD_PATH, parse_status, scoreboard, validate_status_runs
 
 GH = "https://github.com/BrandonChurch93/Day-Trader/blob/main/"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -387,50 +388,19 @@ def waiting():
     return out, None
 
 
-# ------------------------------------------------------------------ what is believed now: the bullets of that section of docs/STATUS.md, read at export time
-def believed():
-    """Each bullet under "## What is believed now" in docs/STATUS.md as dict(lead, body, links, utc).
-    The lead runs to the first colon (not one inside a time such as 16:08) or the first sentence end, whichever comes first.
-    Backticks and "(`path`)" are taken out of the text; every docs/... path named becomes a link, if the file exists.
-    Bullets with a time stamp "2026-11-25 HH:MM UTC" come first, newest first; the rest keep the file order."""
-    root = os.path.abspath(os.path.join(HERE, "..")); fp = os.path.join(root, "docs", "STATUS.md")
-    if not os.path.exists(fp):
-        return []
-    lines, on = [], False
-    for ln in open(fp, encoding="utf-8").read().splitlines():
-        if ln.startswith("## "):
-            on = ln.strip() == "## What is believed now"; continue
-        if on:
-            lines.append(ln)
-    items, cur = [], None
-    for ln in lines:
-        if ln.startswith("- "):
-            cur = [ln[2:].strip()]; items.append(cur)
-        elif cur is not None and ln.strip():
-            cur.append(ln.strip())
-        else:
-            cur = None
-    out = []
-    for i, parts in enumerate(items):
-        t = " ".join(parts); links = []
-        for pth in re.findall(r"`(docs/[^`\s]+)`", t):
-            if os.path.exists(os.path.join(root, pth)) and [os.path.basename(pth), GH + pth] not in links:
-                links.append([os.path.basename(pth), GH + pth])
-        c = re.sub(r"\s*\(`[^`]*`\)", "", t)                       # "(`path`)"
-        c = re.sub(r"`docs/[^`]*`(,\s*)?", "", c)                     # a path named inside other words
-        c = re.sub(r"`([^`]*)`", r"\1", c)                           # other backticks
-        c = re.sub(r"\(\s*,?\s*\)", "", c); c = re.sub(r"\(\s*,\s*", "(", c)
-        c = re.sub(r"\s+([.,;:])", r"\1", c); c = re.sub(r"\s{2,}", " ", c).strip()
-        c = re.sub(r"(^|[.:]\s)\.\s*", r"\1", c).strip(); c = re.sub(r"\.{2,}", ".", c)
-        m_col = next((m for m in re.finditer(":", c) if not re.match(r"\d:\d", c[max(m.start() - 1, 0):m.start() + 2])), None)
-        m_dot = re.search(r"\.(\s|$)", c)
-        cut = min([m.start() for m in (m_col, m_dot) if m] or [len(c)])
-        lead, body = c[:cut].strip(), c[cut + 1:].strip()
-        body = body[:1].upper() + body[1:]
-        stamps = re.findall(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC", t)
-        out.append((i, max(stamps) if stamps else None, dict(lead=lead, body=body, links=links, utc=max(stamps) if stamps else None)))
-    stamped = sorted([x for x in out if x[1]], key=lambda x: (x[1], -x[0]), reverse=True)
-    return [x[2] for x in stamped] + [x[2] for x in out if not x[1]]
+def findings_and_scoreboard():
+    with open(STATUS, encoding="utf-8") as f:
+        status = f.read()
+    findings = parse_status(status, GH)
+    exported = [{k: item[k] for k in ("lead", "body", "links", "utc", "source_lines")} for item in findings]
+    validate_status_runs(status, exported)
+    with open(os.path.join(HERE, "..", SCORECARD_PATH), encoding="utf-8") as f:
+        score = scoreboard(f.read(), findings, GH)
+    for item in exported:
+        del item["source_lines"]
+    return exported, score
+
+
 
 
 # ------------------------------------------------------------------ where things stand: the same rows as docs/STATUS.md, from tools/status_table.py
@@ -547,6 +517,7 @@ def tm04_plan(root):
                              percentile=rb.get("model_percentile") if fin else None))
     return dict(base, scored=True, rows=rows, sessions=o.get("sessions"), pass_percentile=o.get("pass_percentile"), method=(o.get("method") or {}).get("verdict"))
 PR = practice()
+findings, research_scoreboard = findings_and_scoreboard()
 pr_on = bool(PR) and PR.get("status") in ("running", "halted")
 pr_n = PR["totals"]["orders"] if pr_on else 0
 pr_card = (dict(id="practice", label="Practice account", trades=pr_n, state="Running" if PR["status"] == "running" else "Stopped, needs you",
@@ -562,7 +533,7 @@ out = dict(
               else "No real or practice trade has been made."],
     practice=PR, practice_live_url=PRACTICE_LIVE,
     timemachine=timemachine(),
-    believed=believed(),
+    believed=findings, scoreboard=research_scoreboard,
     status_rows=status_rows(), status_link=GH + "docs/STATUS.md",
     tests=tests, series=S, compare_notes=notes,
     waiting_on_you=WAIT[0], waiting_problem=WAIT[1], waiting_link=GH + "docs/STATUS.md#waiting-on-the-owner",

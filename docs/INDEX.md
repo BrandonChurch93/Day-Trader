@@ -395,6 +395,8 @@ Working papers.
 | `research_rig/platform_bars_consolidate.py`, `research_rig/platform_bars_integrity.py`, `research_rig/platform_bars_coverage.json`, `research_rig/platform_bars_crosscheck.json` | How the stock prices collected through the workspace's own price lookup were joined, checked for gaps and compared with each other (one-minute files against daily files), and the dates and counts those checks gave. No price is in the repo and no rule was run. Whether the files may be kept is item 6 of the morning list | CURRENT |
 | `research_rig/feeds/` | Public context collector, source notes, sample, and offline Wayback announcement scaffold | CURRENT |
 | `research_rig/export_dashboard.py` | Builds the data file for the owner's screen | CURRENT |
+| `research_rig/dashboard_status.py` | Reads status findings and builds the research scoreboard from recorded results | CURRENT |
+| `research_rig/test_dashboard_status.py` | Checks status parsing, missed replay entries and scoreboard totals | CURRENT |
 
 ## practice/ (the practice desk: pretend money, live prices)
 
