@@ -9,6 +9,7 @@ from hashlib import sha256
 from io import StringIO
 import json
 from pathlib import Path
+import runpy
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -82,6 +83,28 @@ def add_blocked(event_rows, ids, bars, acts, accession=s.NONCASH_ACCESSION):
     return blocked.a
 
 
+def expand_synthetic_scope(event_rows, ids, bars, acts, n):
+    """Independent stock identities, identical matched control tape across windows."""
+    root=event_rows[0]
+    for i in range(1,n):
+        cik=f"{i+100:010d}"
+        e=SimpleNamespace(**(vars(root)|dict(a=f"{cik}-24-000001",cik=cik)))
+        event_rows.append(e)
+        symbol,ident=f"X{i:04d}",f"SECL-{i+100}"
+        for packet in (ids,bars,acts):
+            stock=copy.deepcopy(packet["records"][root.a]["stock"])
+            packet["records"][e.a]=(packet["records"][root.a]|{"stock":stock})
+            stock["identity"]=ident
+        ids["records"][e.a]["stock"].update(cik=cik,ticker=symbol)
+        b=bars["records"][e.a]["stock"]
+        b["ticker"]=symbol
+        for view in s.VIEWS:
+            for row in b[view]:
+                row["v"]+=i+100
+        acts["records"][e.a]["stock"]["target_disclosure"].update(accession=e.a,
+            filing=f"https://www.sec.gov/Archives/edgar/data/{i+100}/{e.a}.txt")
+
+
 class SyntheticRepo:
     """Real Git objects and CLI in a temporary tree; only absolute paths are redirected."""
 
@@ -98,7 +121,7 @@ sys.argv = ["score_43.py", *sys.argv[3:]]
 raise SystemExit(g["main"]())
 """
 
-    def __init__(self, base, with_blocked=False):
+    def __init__(self, base, with_blocked=False, modeled_count=1):
         self.root=base/"repo"
         self.data=base/"data"
         self.root.mkdir()
@@ -116,6 +139,7 @@ raise SystemExit(g["main"]())
         self.git("config","commit.gpgsign","false")
         ds=s.calendar([(s.ROOT/n).read_bytes() for n in s.CALENDARS])
         events,_,_,c,*self.packets=condition(ds)
+        expand_synthetic_scope(events,*self.packets,modeled_count)
         self.blocked=add_blocked(events,*self.packets) if with_blocked else None
         docket=b"".join((json.dumps(dict(accession=event.a,cik=event.cik,share_class=event.cl,
                                 disposition="eligible", acceptance=event.at.isoformat(), venue="NYSE",
@@ -194,7 +218,7 @@ raise SystemExit(g["main"]())
         flags=("-I","-B") if isolated else ("-B",)
         args=[] if ref is None else ["--approval-commit",ref]
         return subprocess.run([sys.executable,*flags,"-c",self.BOOT,str(self.root),str(self.data),
-                               "--"+flag,*args],capture_output=True,text=True,timeout=120)
+                               "--"+flag,*args],capture_output=True,text=True,timeout=300)
 
     def cli(self,test,flag,ref,expected,*,isolated=True):
         proc=self.process(flag,ref,isolated=isolated)
@@ -202,7 +226,7 @@ raise SystemExit(g["main"]())
         test.assertEqual(proc.returncode,0 if ok else 2,proc.stderr)
         test.assertEqual((proc.stdout,proc.stderr),((expected+"\n","") if ok else ("",expected+"\n")))
 
-    def stage_packets(self,acq,core_missing=False):
+    def stage_packets(self,acq,core_missing=0):
         _,bars,_=self.packets
         bars=copy.deepcopy(bars)
         bars["records"].pop(self.blocked,None)
@@ -212,8 +236,8 @@ raise SystemExit(g["main"]())
         first["stock"]["filing_all"].pop(0)
         early_index=cfg()["stale_run"]
         first["stock"]["filing_all"][early_index-1]["v"]=0
-        if core_missing:
-            first["stock"]["raw"].pop(early_index+1)
+        for legs in list(bars["records"].values())[:core_missing]:
+            legs["stock"]["raw"].pop(early_index+1)
         for legs in bars["records"].values():
             for leg in legs.values():
                 for view in s.VIEWS:
@@ -223,15 +247,20 @@ raise SystemExit(g["main"]())
         body=lambda p:(json.dumps(p,sort_keys=True,separators=(",",":"),allow_nan=False)+"\n").encode()
         s.write_exclusive(self.inp/"bars.json",body(bars))
         native=self.inp/"native"
-        native.mkdir(mode=0o700)
-        (native/"errors").mkdir(mode=0o700)
+        native.mkdir(mode=0o700,exist_ok=True)
+        (native/"errors").mkdir(mode=0o700,exist_ok=True)
         receipt=self.inp/f"acquisition.{acq}.lock"
         fetch=dict(version=1,custodian=cfg()["custodian"],acquisition_commit=acq,
                    acquisition_receipt_sha256=sha256(receipt.read_bytes()).hexdigest())
-        timestamp="2026-11-26T00:00:00Z"
-        lock=s.render(fetch|dict(ledger=s.LEDGER,input_dir=str(self.inp),acquisition_receipt_path=str(receipt),
-                                 native_dir=str(native),out_bars=str(self.inp/"bars.json"),started_utc=timestamp))
-        s.write_exclusive(self.inp/f"fetch_start.{acq}.lock",lock)
+        lock_path=self.inp/f"fetch_start.{acq}.lock"
+        if lock_path.exists():
+            lock=lock_path.read_bytes()
+            timestamp=s.parse(lock)["started_utc"]
+        else:
+            timestamp="2026-11-26T00:00:00Z"
+            lock=s.render(fetch|dict(ledger=s.LEDGER,input_dir=str(self.inp),acquisition_receipt_path=str(receipt),
+                                     native_dir=str(native),out_bars=str(self.inp/"bars.json"),started_utc=timestamp))
+            s.write_exclusive(lock_path,lock)
         header=fetch|dict(endpoint=s.ENDPOINT,feed="sip",timeframe="1Day",fetch_start_lock_sha256=sha256(lock).hexdigest())
         good,all_attempts=[],[]
         for a,legs in bars["records"].items():
@@ -449,6 +478,70 @@ class Plan43(unittest.TestCase):
             self.assertFalse((f.run/f"validation.{val}.json").exists())
             self.assertFalse((f.run/"score.lock").exists())
 
+    def test_real_cli_exact_22_of_442_boundary(self):
+        for omitted,expected in ((22,"P43_VALIDATED"),(23,"P43_COVERAGE_CAP")):
+            with self.subTest(omitted=omitted), TemporaryDirectory() as d:
+                f=SyntheticRepo(Path(d),with_blocked=True,modeled_count=442)
+                acq=f.commit(s.ACQUISITION,f.acquisition())
+                f.cli(self,"claim-acquisition",acq,"P43_ACQUISITION_CLAIMED")
+                f.cli(self,"check-custody",acq,"P43_CUSTODY_READY")
+                f.stage_packets(acq,core_missing=omitted)
+                val=f.commit(s.APPROVAL,f.validation(acq))
+                f.cli(self,"validate-inputs",val,expected)
+                summary=s.parse((f.run/f"coverage.{val}.json").read_bytes())["summary"]
+                self.assertEqual(summary["refused_by_reason"]["missing_entry"],omitted)
+                self.assertEqual((f.run/f"validation.{val}.json").exists(),omitted==22)
+                self.assertFalse((f.run/"score.lock").exists())
+
+    def test_pinned_external_collector_real_scorer_and_offline_rebuild(self):
+        if not s.COLLECTOR.exists():
+            self.skipTest("External source only: provision the exact pinned v2 collector to run this witness.")
+        collector=s.file_bytes(s.COLLECTOR,s.COLLECTOR_SHA256,2**20)
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d),with_blocked=True,modeled_count=442)
+            collector_path=f.data/"collector.py"
+            collector_path.write_bytes(collector)
+            f.collector=sha256(collector).hexdigest()
+            scorer=f.root/"research_rig/score_43.py"
+            src=scorer.read_bytes()
+            for var,value in (("DATA",f.data),("DOCKET",f.data/"docket.jsonl"),("COLLECTOR",collector_path)):
+                old=next(line for line in src.splitlines() if line.startswith(f"{var} = ".encode()))
+                src=src.replace(old,f"{var} = Path({str(value)!r})".encode(),1)
+            scorer.write_bytes(src)
+            f.repin()
+            f.freeze=f.commit()
+            acq=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,"claim-acquisition",acq,"P43_ACQUISITION_CLAIMED")
+            collector_api=runpy.run_path(str(collector_path))["preflight_and_lock"].__globals__
+            receipt=f.inp/f"acquisition.{acq}.lock"
+            native=f.inp/"native"
+            bars=f.inp/"bars.json"
+            args=(f.root,acq,receipt,f.inp,native,bars)
+            network=Mock(side_effect=AssertionError("no live transport in a synthetic witness"))
+            with patch.dict(collector_api,dict(CANONICAL_INPUT_DIR=f.inp,DOCKET=f.data/"docket.jsonl",
+                                               raw_http_attempt=network)):
+                cal=f.root/s.CALENDARS[0]
+                clean_cal=cal.read_bytes()
+                cal.write_bytes(b"synthetic mutable calendar")
+                with patch.dict(collector_api,{"run_scorer_check_custody":Mock(side_effect=AssertionError)}):
+                    with self.assertRaisesRegex(RuntimeError,"WORKTREE_DIRTY|PINNED_FILE_MISMATCH"):
+                        collector_api["preflight_and_lock"](*args)
+                self.assertFalse(native.exists())
+                cal.write_bytes(clean_cal)
+                custody=collector_api["preflight_and_lock"](*args)
+                with self.assertRaisesRegex(RuntimeError,"FETCH_ALREADY_STARTED"):
+                    collector_api["preflight_and_lock"](*args)
+                f.stage_packets(acq,core_missing=22)
+                rebuilt=f.data/"offline.bars.json"
+                with redirect_stdout(StringIO()):
+                    collector_api["build_from_native"](f.root,f.inp,native,rebuilt,*custody[1:])
+                self.assertEqual(sha256(rebuilt.read_bytes()).digest(),sha256(bars.read_bytes()).digest())
+                self.assertTrue(rebuilt.read_bytes()==bars.read_bytes())
+            network.assert_not_called()
+            val=f.commit(s.APPROVAL,f.validation(acq))
+            f.cli(self,"validate-inputs",val,"P43_VALIDATED")
+            self.assertFalse((f.run/"score.lock").exists())
+
     def test_real_cli_native_lock_journal_and_attestation_refusals(self):
         with TemporaryDirectory() as d:
             f=SyntheticRepo(Path(d))
@@ -460,23 +553,41 @@ class Plan43(unittest.TestCase):
             native=f.inp/"native/native_index.json"
             transport=f.inp/"native/transport_index.json"
             att=f.inp/"offline_rebuild.json"
-            original={p:p.read_bytes() for p in (lock,native,transport,att)}
+            page=f.inp/f"native/{next(iter(f.packets[0]['records']))}__raw__p0.json"
+            original={p:p.read_bytes() for p in (lock,native,transport,att,page)}
             for case,code in (("wrong_lock","P43_NATIVE_LOCK"),("wrong_reviewer","P43_NATIVE_ATTESTATION"),
-                              ("page_token","P43_NATIVE_REQUEST"),("body_inventory","P43_NATIVE_INVENTORY")):
+                              ("page_token","P43_NATIVE_REQUEST"),("body_inventory","P43_NATIVE_INVENTORY"),
+                              ("duplicate_key","P43_DUPLICATE_KEY"),("nonfinite","P43_NUMBER"),
+                              ("tab_token","P43_NATIVE_PAGINATION"),("long_token","P43_NATIVE_PAGINATION"),
+                              ("padded_token","P43_NATIVE_PAGINATION")):
                 with self.subTest(case=case):
                     stray=f.inp/"native/unindexed.json"
                     if case=="wrong_lock":
                         lock.write_bytes(s.render(s.parse(original[lock])|{"ledger":178}))
                     elif case=="wrong_reviewer":
                         att.write_bytes(s.render(s.parse(original[att])|{"reviewer":"unapproved"}))
-                    elif case=="page_token":
+                    elif case!="body_inventory":
                         doc=s.parse(original[transport])
-                        paged=next(x for x in doc["attempts"] if x["page"]==1)
-                        paged["params"]["page_token"]="substituted"
+                        native_doc=s.parse(original[native])
+                        if case=="page_token":
+                            paged=next(x for x in doc["attempts"] if x["page"]==1)
+                            paged["params"]["page_token"]="substituted"
+                        else:
+                            if case=="duplicate_key":
+                                payload=b'{"next_page_token":null,'+original[page][1:]
+                            elif case=="nonfinite":
+                                payload=b'{"metadata":NaN,'+original[page][1:]
+                            else:
+                                bad={"tab_token":"a\tb","long_token":"a"*8193,"padded_token":" a"}[case]
+                                payload=s.render(s.parse(original[page])|{"next_page_token":bad})
+                            page.write_bytes(payload)
+                            for rows in (doc["attempts"],native_doc["files"]):
+                                next(r for r in rows if r["file"]==page.name).update(
+                                    bytes=len(payload),sha256=sha256(payload).hexdigest())
                         new_t=s.render(doc)
                         transport.write_bytes(new_t)
                         tp=sha256(new_t).hexdigest()
-                        new_n=s.render(s.parse(original[native])|{"transport_index_sha256":tp})
+                        new_n=s.render(native_doc|{"transport_index_sha256":tp})
                         native.write_bytes(new_n)
                         att.write_bytes(s.render(s.parse(original[att])|{"transport_index_sha256":tp,
                                                                         "native_index_sha256":sha256(new_n).hexdigest()}))
@@ -843,6 +954,14 @@ class Plan43(unittest.TestCase):
         self.assertEqual(ready.decisions[e.a]["unproved_cash_bridge"],{"IWM":[str(e.entry)]})
         self.assertEqual(ready.decisions[e.a]["early"],"missing_day1")
         self.assertIn(e.a,ready)
+        # Force both cash transitions into one bridge: the first is unproved,
+        # but the second still has a present and invalid preceding raw close.
+        later=v["raw"][j]["t"][:10]
+        del v["all"][j]
+        p[6]["records"][e.a]["IWM"]["items"].append(dict(id="cash2",ex=later,kind="ordinary",
+                    value=str(v["raw"][j-1]["c"]),payment=later,available=later,sources=AUTH))
+        with self.assertRaisesRegex(s.Refused,"DIVIDEND_BASIS"):
+            s.prepared(*p)
         p=condition()
         e=p[0][0]
         v=p[5]["records"][e.a]["SPY"]

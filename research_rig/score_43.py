@@ -40,7 +40,7 @@ GO = "research_rig/GO_43_SUCCESSOR.md"
 SOURCES = {PLAN, AMENDMENT, ENGINE,PROVENANCE,*CALENDARS, CONFIG, CALIBRATION,
            "research_rig/score_43.py", "research_rig/test_43.py"}
 COLLECTOR = DATA / "plan43_provenance/fetch_plan43_bars_v2.py"
-COLLECTOR_SHA256 = "e8b8234e13e72db37c2ce873df6109dcb9d3408fd2c7702f7bc5afadf89422ae"
+COLLECTOR_SHA256 = "5c2ce9a3cbd34a7332bd988c15b62c4dc49ff11d874348703f2ee835ee62a447"
 LEDGER = 188
 SEC = "www.sec.gov"
 ENDPOINT = "https://data.alpaca.markets/v2/stocks/bars"

@@ -125,7 +125,7 @@ def verify(api,root,job,c,events,days,ids,prepared,bars_blob):
                 if token is None:
                     break
                 need(type(token) is str and 0<len(token)<=8192 and token.isprintable()
-                     and token not in seen_tokens,"NATIVE_PAGINATION")
+                     and token==token.strip() and token not in seen_tokens,"NATIVE_PAGINATION")
                 seen_tokens.add(token)
                 page+=1
             collected[view]=merged
