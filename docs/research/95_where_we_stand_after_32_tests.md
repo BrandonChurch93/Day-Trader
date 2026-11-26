@@ -1,10 +1,10 @@
-# Where We Stand After 32 Scored Tests
+# Where We Stand After 39 Scored Tests
 
 Date: 2026-11-26 UTC. Plain synthesis for the owner. Every figure below is copied from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the cited result documents; no return was recomputed. Claims are labeled MEASURED (from our own runs), STATED (from plans, schedules, or external sources cited in repo docs), or UNKNOWN (not yet measured).
 
 ## 1. Every Scored Test So Far
 
-Thirty-two scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample. Two counted trading replays passed their frozen marks: Replay 25 (US $500 reachable) and Replay 20 (not US-reachable). Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
+Thirty-nine scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample. Three counted trading replays passed their frozen marks: Replays 25 and 48 (US $500 reachable) and Replay 20 (not US-reachable). Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
 
 | # | Test | What it tested (6 words) | Family | US $500? | Result (MEASURED) | Headline net number and source |
 |---|---|---|---|---|---|---|
@@ -46,26 +46,29 @@ Thirty-two scored tests (trading replays, AI time-machine evaluations, and the o
 | 36 | Replay 46 Leg A | Altcoins after a CFTC futures filing, long leg | event | Yes | Did not pass (3 of 6 marks) | 43 events on 15 posting dates, -6.5393% mean net, +0.5643% paired versus BTC, t 0.174 (`docs/research/101_replay_46_cftc_altcoin_futures.md`) |
 | 37 | Replay 46 Leg B | Altcoins after a CFTC futures filing, short leg | event | No | Did not pass (5 of 6 marks) | 110 events on 31 posting dates, +1.2790% mean net, +0.5574% paired versus BTC, t 0.572; spot-price proxy, not an executable short (`docs/research/101_replay_46_cftc_altcoin_futures.md`) |
 | 38 | Replay 48 | Long the five worst muni closed-end funds, last December close to last January close | forced flow | Yes | Passed (7 of 7 marks) | 10 yearly turns, +1.39% mean net per turn against +0.09% for MUB and +0.59% for the roster; 8 of 10 positive (`docs/research/103_replay_48_muni_cef_january.md`) |
+| 39 | Replay 52 | Buy corporate bond funds after quarter-end | forced flow | Yes | Did not pass (0 of 6 marks) | 40 quarters, -0.0308% mean net, t -0.24; -0.0197% net of Treasury proxies, against +0.1279% net after 80 ordinary month-ends (`docs/research/113_replay_52_quarter_end_corporate_bond_funds.md`) |
 
 ## 2. Count by Family
 
-MEASURED from the 38 scored tests in Section 1 (rows 33 to 38 added 2026-11-26):
+MEASURED from the 39 scored tests in Section 1 (rows 33 to 39 added 2026-11-26):
 
 | Family | Tested | Counted passes | Notes |
 |---|---:|---:|---|
 | momentum | 8 | 0 | Replay 13 Rule A met relative marks vs all coins but lost ~70% in 3 years and is not a counted pass |
 | AI discretionary | 9 | 0 | TM06 picker met its marks on months that may lie inside the models' memory and is not a counted pass; Replay 11 held-back (2,146 releases) is still open; TM02 met its headlines-help sub-mark only |
-| forced flow | 7 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable |
+| forced flow | 8 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable. Replay 52 did not pass. |
 | chart pattern | 5 | 0 | All five failed, including Measurement 15 fill gate |
 | carry | 2 | 0 | Both cross-coin and same-coin funding carry failed after costs |
 | calendar | 2 | 0 | Replay 39 (IWM pre-holiday) missed both t marks at 1.91 and 1.82 |
 | event | 4 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable); Replay 21 and both legs of Replay 46 did not pass |
 | copy-trading | 1 | 0 | Replay 12 (Congress disclosures) lagged SPY by 1.0%/yr on held-back data |
-| Total | 38 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
+| Total | 39 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
 
-## 3. What the Two Passes Have in Common and Their Dollar Size
+## 3. What the First Two Passes Have in Common and Their Dollar Size
 
 Both counted passes are mechanical, short-horizon rules tied to a specific forced or retail flow on a fixed clock: Replay 25 holds TLT for the last three sessions of each month during Treasury index rebalancing (`docs/research/69_replay_25_treasury_month_end.md`), and Replay 20 shorts newly Upbit-KRW-listed coins for up to 72 hours after their first red UTC day (`docs/research/71_replay_20_upbit_listing_short.md`). Neither is a chart pattern, a trend rule, a carry rule, or an AI pick. Both stay in cash outside their short window.
+
+The later [Replay 48](103_replay_48_muni_cef_january.md) pass averaged about $7 on $500 once a year, before taxes. Its evidence is ten turns and does not separate the loser effect from a general year-end rally with confidence.
 
 Dollar size of Replay 25 (TLT month-end, US $500 reachable, unlevered, before taxes):
 
@@ -106,7 +109,7 @@ STATED from `docs/QUEUE.md` (header skip lists from Rounds 17, 19, 20, and 21, p
 
 Written by the lead agent on 2026-11-26. This section is opinion built on Sections 1 to 5. It is not a test result.
 
-What the 32 tests say, in plain words:
+What the original 32 tests said, in plain words:
 
 - MEASURED: nothing we tested supports fast money on a small US account. The one pass a US account can trade (Replay 25) is about $15 a year on $500, and it lost money in 2026 so far.
 - MEASURED: rules that read the price chart (trend, momentum, breakouts, dips, peaks) went 0 for 13. This held on stocks and on coins, on daily bars and on minute bars.

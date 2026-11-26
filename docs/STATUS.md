@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 07:31 UTC
+Last updated: 2026-11-26 08:05 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- [Replay 52](research/113_replay_52_quarter_end_corporate_bond_funds.md), run once 2026-11-26 08:03:16 UTC. MEASURED. Did not pass, 0 of 6 marks. The corporate bond basket averaged -0.0308% net after 40 quarter-ends (t -0.24, 20 of 40 positive), -0.0197% net of the Treasury proxy (t -0.17), and +0.1279% after 80 ordinary month-ends (t 1.73). At four trades a year the quarter-end mean was about -$0.62 on $500, before taxes. Rule not advanced.
 
 - [Replay 48](research/103_replay_48_muni_cef_january.md), run once 2026-11-26 07:11:49 UTC. MEASURED. Passed, 7 of 7 marks. Over 10 yearly turns the worst 5 muni closed-end funds by price return to late December, bought at the last December close and sold at the last January close, averaged +1.39% net, against +0.09% for MUB and +0.59% for the equal-weight roster; above zero in 8 of 10 years and ahead of MUB in 8 of 10. Against the roster +0.80% with cash and +0.79% price only. On $500 once a year that is about $7. An independent recompute matched all 50 picks and all 7 marks. Ten data points, thin funds, and a year-end rally alone passed 20.65% of synthetic worlds, so this is a reason for the December 2026 forward watch (`practice/traders/E04_muni_cef_january_watch.md`), not clearance to trade. The scoreboard counts it from this line as a dated trading-replay pass (38 tests, 3 passes: Replay 20, Replay 25, Replay 48); it is the second pass a US $500 account can reach, after Replay 25.
 
