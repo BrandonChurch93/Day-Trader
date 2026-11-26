@@ -6,17 +6,20 @@ root-owned checkpoint naming its session, and only 0-10 s after the operator rec
 checkpoint. The operator record file must be a regular file owned by the operator account. Its sha256 goes into
 the output.
 
-usage: tm09_opmatch.py ENTRIES_JSON OUT_JSON CANARIES_JSON OPLOG
+usage: tm09_opmatch.py ENTRIES_JSON OUT_JSON CANARIES_JSON   (operator records: the pinned OPLOG only)
   ENTRIES_JSON   {"sudo_entries": [...]} from `tm09_ops_sudo.py entries`
   CANARIES_JSON  {nonce: session} from the root-owned TM09 checkpoints
 """
 import json
+import pwd
 import os
 import re
 import stat
 import sys
 from hashlib import sha256
 
+OPLOG = "/tmp/tm07x/opsudo.jsonl"   # pinned: the file osudo appends to; no caller override
+OPERATOR = "user"
 SECURE_PATH = ("/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin")
 SAFE = re.compile(r"[A-Za-z0-9_./=:,+@%-]+")
 LINE = re.compile(r"\w+ +\d+ (\d\d:\d\d:\d\d) : (\S+) : (.*?)COMMAND=(.*)$")
@@ -64,7 +67,7 @@ def match(entries, recs, canaries, invoker="user", is_file=os.path.isfile):
         hit = None
         for i, r in enumerate(recs):
             dt = secs(t) - secs(r["time"])
-            if i in used or abs(dt) > 10:
+            if (i in used and not c) or abs(dt) > 10:  # a canary may share its checkpoint's record
                 continue
             user, a = split(r["argv"])
             if not a:
@@ -91,20 +94,23 @@ def match(entries, recs, canaries, invoker="user", is_file=os.path.isfile):
     return listed, miss
 
 
-def read_oplog(path):
+def read_oplog(path=OPLOG, operator=OPERATOR):
+    if path != OPLOG:
+        raise SystemExit("operator records must come from the pinned path")
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
     with os.fdopen(fd, "rb") as f:
         info = os.fstat(f.fileno())
-        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o022:
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != pwd.getpwnam(operator).pw_uid
+                or info.st_uid != os.geteuid() or info.st_mode & 0o022):
             raise SystemExit("operator record file must be a regular file owned by the operator, not group or other writable")
         raw = f.read()
     return raw, [json.loads(l) for l in raw.decode().splitlines() if l.strip()]
 
 
 if __name__ == "__main__":
-    entries_path, out, canaries_path, oplog = sys.argv[1:5]
+    entries_path, out, canaries_path = sys.argv[1:4]
     entries = json.load(open(entries_path))["sudo_entries"]
-    raw, recs = read_oplog(oplog)
+    raw, recs = read_oplog()
     listed, miss = match(entries, recs, json.load(open(canaries_path)))
     json.dump(listed, open(out, "w"), indent=1)
     print("entries", len(entries), "matched", len(listed), "unmatched", len(miss), "oplog sha256", sha256(raw).hexdigest())

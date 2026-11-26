@@ -115,25 +115,37 @@ class OperatorMatch(unittest.TestCase):
         rec = [{'time': '17:49:56', 'argv': self.CHECK + ['checkpoint', SIB, '8802']}]
         good = line('17:49:58', '/usr/bin/true tm09-' + N2)
         self.assertEqual(len(self.m([good], rec, {N2: SIB})[0]), 1)
+        own = line('17:49:56', '/usr/bin/env -i PATH=/usr/bin:/bin TM09_RELEASE=/opt/r /usr/bin/python3.14 -B /opt/r/timemachine/tm09_ops_sudo.py checkpoint ' + SIB + ' 8802')
+        self.assertEqual(self.m([own, good], rec, {N2: SIB})[1], [])                         # record shared with its own line
         self.assertEqual(len(self.m([good, good], rec, {N2: SIB})[1]), 1)                   # repeated
         self.assertEqual(len(self.m([good], rec, {})[1]), 1)                                 # no checkpoint on file
         self.assertEqual(len(self.m([good], rec, {N2: SID})[1]), 1)                          # checkpoint names another session
         self.assertEqual(len(self.m([line('17:50:09', '/usr/bin/true tm09-' + N2)], rec, {N2: SIB})[1]), 1)  # too late
         self.assertEqual(len(self.m([line('17:49:58', '/usr/bin/true tm09-' + N2, target='tm09desk')], rec, {N2: SIB})[1]), 1)
 
-    def test_operator_record_file_owner_and_mode(self):
+    def test_operator_record_file_pinned_owner_and_mode(self):
+        import pwd
         with TemporaryDirectory() as d:
             p = Path(d) / 'opsudo.jsonl'
             p.write_text('{"time":"17:50:00","argv":["true"]}\n')
             p.chmod(0o644)
-            self.assertEqual(len(om.read_oplog(p)[1]), 1)
-            p.chmod(0o666)
-            with self.assertRaises(SystemExit):
-                om.read_oplog(p)
+            me = pwd.getpwuid(os.getuid()).pw_name
+            with mock.patch.object(om, 'OPLOG', str(p)):
+                self.assertEqual(len(om.read_oplog(str(p), me)[1]), 1)
+                other = Path(d) / 'other.jsonl'
+                other.write_text(p.read_text())
+                with self.assertRaises(SystemExit):
+                    om.read_oplog(str(other), me)                     # any other path, even same owner
+                with self.assertRaises(KeyError):
+                    om.read_oplog(str(p), 'no-such-operator-account')
+                p.chmod(0o666)
+                with self.assertRaises(SystemExit):
+                    om.read_oplog(str(p), me)
             q = Path(d) / 'link'
             q.symlink_to(p)
-            with self.assertRaises(OSError):
-                om.read_oplog(q)
+            with mock.patch.object(om, 'OPLOG', str(q)), self.assertRaises(OSError):
+                om.read_oplog(str(q), me)
+        self.assertEqual(om.OPLOG, '/tmp/tm07x/opsudo.jsonl')
 
 
 class Glue(unittest.TestCase):
@@ -162,18 +174,38 @@ class Glue(unittest.TestCase):
             with self.assertRaises(ValueError):
                 ops.check_generation(c, l, SID, 8801, N1, fp)
 
-    def test_export_files_must_exist_non_empty_and_match(self):
+    def test_export_scope_names_this_dir_and_exactly_the_stage_files(self):
         with TemporaryDirectory() as d, mock.patch.object(ops, 'ROOT', Path(d)):
             ex = Path(d) / 'export'
             ex.mkdir()
-            (ex / 'stock_bars.jsonl').write_bytes(b'made-up\n')
-            body = dict(export_dir=str(ex), export_sha256={'stock_bars.jsonl': ops.h(b'made-up\n')})
-            self.assertEqual(ops.export_files(body, Path.read_bytes), 1)
-            for bad in (dict(body, export_sha256={}), dict(body, export_dir='/tmp/elsewhere'),
-                        dict(body, export_sha256={'stock_bars.jsonl': '0' * 64}),
-                        dict(body, export_sha256={'missing.jsonl': ops.h(b'')})):
+            pins = {}
+            for n in ('stock_sessions.jsonl', 'stock_bars.jsonl', 'stock_news.jsonl'):
+                (ex / n).write_bytes(b'made-up ' + n.encode())
+                pins[n] = ops.h(b'made-up ' + n.encode())
+            s1 = dict(export_dir=str(ex), export_sha256={k: pins[k] for k in ('stock_sessions.jsonl', 'stock_bars.jsonl')})
+            s2 = dict(export_dir=str(ex), export_sha256=pins)
+            self.assertEqual(ops.export_files(s1, Path.read_bytes, True, ex), 2)
+            self.assertEqual(ops.export_files(s2, Path.read_bytes, False, ex), 3)
+            other = Path(d) / 'export2'
+            for body, stage1, where in ((s2, True, ex), (s1, False, ex), (s1, True, other),
+                                        (dict(s1, export_sha256={'unrelated.jsonl': pins['stock_bars.jsonl']}), True, ex),
+                                        (dict(s1, export_sha256=dict(s1['export_sha256'], **{'stock_bars.jsonl': '0' * 64})), True, ex),
+                                        (dict(s1, export_dir='/tmp/elsewhere'), True, '/tmp/elsewhere')):
                 with self.assertRaises(ValueError):
-                    ops.export_files(bad, Path.read_bytes)
+                    ops.export_files(body, Path.read_bytes, stage1, where)
+            (ex / 'stock_bars.jsonl').write_bytes(b'')
+            with self.assertRaises(ValueError):
+                ops.export_files(dict(s1, export_sha256=dict(s1['export_sha256'], **{'stock_bars.jsonl': ops.h(b'')})), Path.read_bytes, True, ex)
+
+    def test_run_approval_needs_the_exact_go_line(self):
+        ok = b'| 222 | ... | lead text TM09_GO=' + N1.encode() + b'\n'
+        ops.go_line(ok, N1)
+        for bad in (b'TM09_GO=' + N1.encode() + b'\n', b'lead text TM09_GO=' + N1.encode() + b' |\n',
+                    b'lead text TM09_GO=' + N2.encode() + b'\n', b'lead text TM09_GO=' + N1.encode()[:-1] + b'\n', b''):
+            with self.assertRaises(ValueError, msg=bad):
+                ops.go_line(bad, N1)
+        with self.assertRaises(ValueError):
+            ops.go_line(ok, 'not-an-id')
 
     def test_repeated_file_refuses(self):
         with TemporaryDirectory() as d:
@@ -183,38 +215,65 @@ class Glue(unittest.TestCase):
                 ops.put(p, b'{}', owner=None)
 
 
-STUB = r'''#!/bin/bash
+# The stub stands in for osudo only: it appends the timed operator record exactly as osudo does and the sudo log
+# line sudo would write (resolved path, run-as account), then answers as the root step would.
+STUB = r"""#!/bin/bash
+t=$(date -u +%T)
+python3 -c 'import json,sys; print(json.dumps({"time":sys.argv[1],"argv":sys.argv[2:]}))' "$t" "$@" >> "$STUB_DIR/oplog"
+user=root; a=("$@"); [ "${a[0]}" = -u ] && { user=${a[1]}; a=("${a[@]:2}"); }
+cmd=${a[0]}; case "$cmd" in /*) ;; *) cmd=/usr/bin/$cmd ;; esac
+rest="${a[*]:1}"; [ -n "$rest" ] && cmd="$cmd $rest"
+echo "Nov 26 $t : user : PWD=/tmp ; USER=$user ; COMMAND=$cmd" >> "$STUB_DIR/sudo.log"
 printf '%s\n' "$*" >> "$STUB_DIR/calls"
 case "$*" in
-  *" checkpoint "*) echo "/var/lib/tm09/ops-v2/$SID-$NONCE-proof.json"; echo "$SID-$NONCE-launch.json abc" ;;
-  *"timemachine.tm09_operator"*" launch "*) echo "Registered desk ready; brief only this session's roles."; sleep 1 ;;
+  *" checkpoint "*) echo "Nov 26 $(date -u +%T) : user : PWD=/tmp ; USER=root ; COMMAND=/usr/bin/true tm09-$NONCE" >> "$STUB_DIR/sudo.log"
+                   echo "/var/lib/tm09/ops-v2/$SID-$NONCE-proof.json"; echo "$SID-$NONCE-launch.json abc" ;;
+  *"tm09_engine.sh launch "*) echo "Registered desk ready; brief only this session's roles."; sleep 1 ;;
   *"kill -TERM"*) touch "$STUB_DIR/killed" ;;
   *" probe "*) [ -e "$STUB_DIR/probe_fails" ] && exit 1; echo probe ok ;;
-  *" canaries") echo '{}' ;;
-  "cat "*entries.json) echo '{"sudo_entries": []}' ;;
+  *" canaries") echo "{\"$NONCE\": \"$SID\"}" ;;
+  "cat "*entries.json) python3 -c 'import json,sys; print(json.dumps({"sudo_entries": open(sys.argv[1]).read().splitlines()}))' "$STUB_DIR/sudo.log" ;;
 esac
 exit 0
-'''
-PGREP = '#!/bin/bash\n[ -e "$STUB_DIR/killed" ] && exit 1\necho 4242\n'
+"""
+PGREP = '#!/bin/bash\n[ -e "$STUB_DIR/killed" ] && exit 1\nprintf "%s\\n" "$*" >> "$STUB_DIR/pgrep_calls"\necho 4242\n'
 
 
 class Shell(unittest.TestCase):
+    """The committed scripts, copied with only the osudo, pgrep, log-dir, TM07-port and operator-record constants
+    pointed at the stubs."""
+
     def setUp(self):
+        import pwd, socket
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        d = Path(self.tmp.name)
+        d = self.d = Path(self.tmp.name)
         for name, body in (('osudo', STUB), ('pgrep', PGREP)):
             (d / name).write_text(body)
             (d / name).chmod(0o700)
         (d / 'oplog').write_text('')
         (d / 'oplog').chmod(0o600)
+        (d / 'sudo.log').write_text('')
+        free = socket.socket()
+        free.bind(('127.0.0.1', 0))
+        self.free_port = free.getsockname()[1]
+        free.close()
+        (d / 'tm').mkdir()
+        for f in ('tm09_launch.sh', 'tm09_review.sh'):
+            (d / 'tm' / f).write_text((TM / f).read_text())
+        (d / 'tm' / 'tm09_ops_env.sh').write_text((TM / 'tm09_ops_env.sh').read_text()
+            .replace('OSUDO=/opt/tm07-ops-pub/osudo', f'OSUDO={d}/osudo').replace('PGREP=pgrep', f'PGREP={d}/pgrep')
+            .replace('LOGS=/tmp/tm09x/logs', f'LOGS={d}/logs')
+            .replace('TM07_PORTS="8781 8782 8783 8784 8785 8786 8787"', f'TM07_PORTS="{self.free_port}"'))
+        me = pwd.getpwuid(os.getuid()).pw_name
+        (d / 'tm' / 'tm09_opmatch.py').write_text((TM / 'tm09_opmatch.py').read_text()
+            .replace('OPLOG = "/tmp/tm07x/opsudo.jsonl"', f'OPLOG = "{d}/oplog"').replace('OPERATOR = "user"', f'OPERATOR = "{me}"'))
 
     def run_sh(self, script, *args, mode='rehearsal', extra=None):
-        d = Path(self.tmp.name)
-        env = dict(PATH='/usr/bin:/bin', STUB_DIR=str(d), SID=SID, NONCE=N1, OSUDO=str(d / 'osudo'), PGREP=str(d / 'pgrep'),
-                   TM09_RELEASE='/opt/tm09-release-x', TM09_LOGS=str(d / 'logs'), TM09_WEEK='2026-09-07', OPLOG=str(d / 'oplog'))
+        d = self.d
+        env = dict(PATH='/usr/bin:/bin', STUB_DIR=str(d), SID=SID, NONCE=N1, TM09_RELEASE='/opt/tm09-release-x', TM09_WEEK='2026-09-07')
         env.update(extra or {})
-        argv = ['bash', str(TM / script)] + ([] if mode is None else [mode]) + list(args)
+        argv = ['bash', str(d / 'tm' / script)] + ([] if mode is None else [mode]) + list(args)
         r = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=60)
         calls = (d / 'calls').read_text().splitlines() if (d / 'calls').exists() else []
         return r, calls
@@ -230,55 +289,100 @@ class Shell(unittest.TestCase):
                                    extra=dict(TM09_APPROVAL='/var/lib/tm09/ops-v2/run.json'))
             self.assertEqual((r.returncode, calls), (2, []), role)
 
-    def test_bad_role_session_or_port_refuses(self):
-        for args in (('--role price_scout', SID, '8801'), ('boss m', SID, '8801'), ('boss m X', SID, '8801'),
+    def test_refuses_while_a_tm07_listener_answers(self):
+        import socket
+        s = socket.socket()
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('127.0.0.1', self.free_port))
+        s.listen()
+        self.addCleanup(s.close)
+        for script, args in (('tm09_launch.sh', ('price_scout', SID, '8801', SIB, '/tmp/b')),
+                             ('tm09_review.sh', ('price_scout', SID, '8801', N1, SIB, '/tmp/b'))):
+            r, calls = self.run_sh(script, *args)
+            self.assertEqual((r.returncode, calls), (3, []), script)
+
+    def test_roles_and_arms(self):
+        for args in (('--role price_scout', SID, '8801'), ('boss m', SID, '8801'), ('boss m X', SID, '8801'), ('boss m P4', SID, '8801'),
                      ('price_scout', 'TM07-x', '8801'), ('price_scout', SID, '8781')):
             r, calls = self.run_sh('tm09_launch.sh', *args, SIB, '/tmp/b')
             self.assertEqual((r.returncode, calls), (2, []), args)
+        for arm in ('P1', 'P2', 'P3', 'N', 'N1', 'N2', 'N3'):
+            (self.d / 'calls').unlink(missing_ok=True)
+            r, calls = self.run_sh('tm09_launch.sh', 'boss m ' + arm, SID, '8801', SIB, '/tmp/b')
+            self.assertEqual(r.returncode, 0, arm + r.stderr)
+            self.assertIn('--arm ' + arm + ' ', calls[2])
 
     def test_launch_wiring(self):
         r, calls = self.run_sh('tm09_launch.sh', 'boss claude_fable_5_2 N', SID, '8803', SIB, '/tmp/b')
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(calls[0].startswith('env -i ') and calls[0].endswith('tm09_ops_sudo.py preflight rehearsal'))
         self.assertTrue(calls[1].endswith(f'tm09_ops_sudo.py checkpoint {SID} 8803'))
-        serve = calls[2]
-        self.assertTrue(serve.startswith('-u tm09desk sh -c '))
-        self.assertIn(f'launch --role boss --boss claude_fable_5_2 --arm N --port 8803 --boundary /var/lib/tm09/ops-v2/{SID}-{N1}-launch.json '
-                      f'--canary-proof /var/lib/tm09/ops-v2/{SID}-{N1}-proof.json --rehearsal --root /var/lib/tm09 '
-                      f'--key-file /var/lib/tm09/operator.key --approval /var/lib/tm09/ops-v2/rehearsal-approval.json --week 2026-09-07', serve)
+        self.assertEqual(calls[2], f'-u tm09desk /opt/tm09-release-x/timemachine/tm09_engine.sh launch --role boss --boss claude_fable_5_2 --arm N '
+                         f'--port 8803 --boundary /var/lib/tm09/ops-v2/{SID}-{N1}-launch.json --canary-proof /var/lib/tm09/ops-v2/{SID}-{N1}-proof.json '
+                         f'--rehearsal --root /var/lib/tm09 --key-file /var/lib/tm09/operator.key '
+                         f'--approval /var/lib/tm09/ops-v2/rehearsal-approval.json --week 2026-09-07')
         self.assertTrue(calls[3].endswith(f'probe live {SID} 8803 {N1} {SIB} /tmp/b'))
         self.assertIn('ready, live probe passed', r.stdout)
 
-    def test_failed_live_probe_stops_the_listener(self):
-        (Path(self.tmp.name) / 'probe_fails').touch()
+    def test_failed_live_probe_stops_only_this_generation(self):
+        (self.d / 'probe_fails').touch()
         r, calls = self.run_sh('tm09_launch.sh', 'price_scout', SID, '8801', SIB, '/tmp/b')
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual(calls[-1], 'kill -TERM 4242')
+        self.assertIn(f'--boundary /var/lib/tm09/ops-v2/{SID}-{N1}-launch.json', (self.d / 'pgrep_calls').read_text())
 
-    def test_production_wiring(self):
+    def test_production_wiring_has_no_live_probe(self):
         x = dict(TM09_APPROVAL='/var/lib/tm09/ops-v2/run.json', TM09_EXPORT_DIR='/var/lib/tm09/export')
         r, calls = self.run_sh('tm09_launch.sh', 'news_scout', SID, '8802', SIB, '/tmp/b', mode='production', extra=x)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertTrue(calls[0].endswith('preflight production /var/lib/tm09/ops-v2/run.json'))
+        self.assertTrue(calls[0].endswith('preflight production /var/lib/tm09/ops-v2/run.json /var/lib/tm09/export'))
         self.assertIn('launch --role news_scout --export-dir /var/lib/tm09/export --port 8802', calls[2])
         self.assertNotIn('--rehearsal', calls[2])
-        r, calls = self.run_sh('tm09_launch.sh', 'price_scout', SID, '8801', SIB, '/tmp/b', mode='production', extra=x)
-        self.assertNotIn('--export-dir', [c for c in calls if 'tm09_operator' in c][-1])
+        self.assertFalse(any(' probe ' in c for c in calls))
+        (self.d / 'calls').unlink()
+        r, calls = self.run_sh('tm09_review.sh', 'news_scout', SID, '8802', N1, SIB, '/tmp/b', mode='production', extra=x)
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        self.assertTrue(any(c.endswith(f'review production {SID} 8802 {N1} /var/lib/tm09/TM09-2026-09-07-news_scout '
+                                       f'/var/lib/tm09/control/{SID}-{N1}-operator-sudo.json') for c in calls))
 
     def test_review_wiring(self):
         r, calls = self.run_sh('tm09_review.sh', 'boss m P1', SID, '8804', N1, SIB, '/tmp/b')
         self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
         self.assertEqual(calls[0], 'kill -TERM 4242')
+        self.assertIn(f'--port 8804 --boundary /var/lib/tm09/ops-v2/{SID}-{N1}-launch.json', (self.d / 'pgrep_calls').read_text())
         self.assertTrue(calls[1].endswith(f'probe stopped {SID} 8804 {N1} {SIB} /tmp/b'))
         self.assertTrue(calls[2].endswith(f'entries {SID} 8804 {N1}'))
         self.assertEqual(calls[3], f'cat /var/lib/tm09/control/{SID}-{N1}.entries.json')
         self.assertTrue(calls[4].endswith('canaries'))
         self.assertTrue(calls[5].startswith('install -o root -g root -m 0600 '))
-        self.assertTrue(calls[6].endswith(f'review {SID} 8804 {N1} /var/lib/tm09/invented-rehearsal/TM09-2026-09-07-m-P1 '
+        self.assertTrue(calls[6].endswith(f'review rehearsal {SID} 8804 {N1} /var/lib/tm09/invented-rehearsal/TM09-2026-09-07-m-P1 '
                                           f'/var/lib/tm09/control/{SID}-{N1}-operator-sudo.json'))
-        self.assertIn(f'review --role boss --boss m --arm P1 --boundary /var/lib/tm09/ops-v2/{SID}-{N1}-review.json '
-                      f'--probe-proof /var/lib/tm09/ops-v2/{SID}-{N1}-stopped-probe.json --rehearsal', calls[7])
-        self.assertIn('-u tm09desk sh -c', calls[7])
+        self.assertEqual(calls[7], f'-u tm09desk /opt/tm09-release-x/timemachine/tm09_engine.sh review --role boss --boss m --arm P1 '
+                         f'--boundary /var/lib/tm09/ops-v2/{SID}-{N1}-review.json --probe-proof /var/lib/tm09/ops-v2/{SID}-{N1}-stopped-probe.json '
+                         f'--rehearsal --root /var/lib/tm09 --key-file /var/lib/tm09/operator.key '
+                         f'--approval /var/lib/tm09/ops-v2/rehearsal-approval.json --week 2026-09-07')
+
+    def test_whole_session_sudo_lines_all_listed_by_the_real_matcher(self):
+        """launch then review through the real scripts; the sudo log lines they cause, cut from the checkpoint up to the
+        entries step, all match the real matcher's records and the real TM07-derived review, so nothing voids."""
+        for script, args in (('tm09_launch.sh', ('boss claude_fable_5_2 N2', SID, '8803', SIB, '/tmp/b')),
+                             ('tm09_review.sh', ('boss claude_fable_5_2 N2', SID, '8803', N1, SIB, '/tmp/b'))):
+            r, _ = self.run_sh(script, *args)
+            self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        listed = json.loads((self.d / 'logs' / f'review-{SID}-{N1}' / 'operator-sudo.json').read_text())
+        lines = (self.d / 'sudo.log').read_text().splitlines()
+        cp = next(i for i, l in enumerate(lines) if l.endswith(f'checkpoint {SID} 8803'))
+        cut = next(i for i, l in enumerate(lines) if l.endswith(f'entries {SID} 8803 {N1}'))
+        window = lines[cp + 1:cut + 1]
+        self.assertTrue(any('tm09_engine.sh launch ' in l for l in window))
+        self.assertTrue(any('/usr/bin/true tm09-' + N1 in l for l in window))
+        review = ops.sudo_review(window, listed)
+        self.assertEqual((review['unlisted'], review['void']), ([], False))
+        recs = [json.loads(l) for l in (self.d / 'oplog').read_text().splitlines()]
+        listed2, miss = om.match(window, recs, {N1: SID}, is_file=lambda p: p.startswith('/usr/bin/'))
+        self.assertEqual(miss, [])
+        tampered = [l.replace('--arm N2 ', '--arm N3 ') for l in window]
+        self.assertTrue(ops.sudo_review(tampered, listed)['void'])
 
 
 if __name__ == '__main__':

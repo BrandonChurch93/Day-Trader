@@ -12,10 +12,13 @@ worker probe run here through runuser is host-uid evidence, not proof of the hos
   bearer-copy SLOT_DIR OUT                             root: worker-owned copy of one slot bearer for the probe
   checkpoint SID PORT                                  root: canary, private checkpoint, proof, launch capsule
   probe PHASE SID PORT NONCE SIBLING BEARER            root: isolation probe as the worker uid, four canaries
-  preflight MODE [RUN_CAPSULE]                         root: canaries exist; production: signed export files match
+  new-go-id                                            root, once: authorization id for the lead's TM09_GO ledger line
+  approve-run AUTH_ID FIELDS_JSON                      root: run capsule, only if the pinned release ledger has a line
+                                                       ending exactly TM09_GO=AUTH_ID; records the ledger sha256
+  preflight MODE [RUN_CAPSULE EXPORT_DIR]              root: canaries exist; production: signed stage file set matches
   entries SID PORT NONCE                               root: after stop, cut the log lines since the checkpoint
   canaries                                             root: {nonce: session} of every TM09 checkpoint
-  review SID PORT NONCE DESK_DIR OPERATOR_SUDO         root: cut lines vs operator list, review capsule
+  review MODE SID PORT NONCE DESK_DIR OPERATOR_SUDO            root: cut lines vs operator list, review capsule
 """
 from hashlib import sha256
 import json
@@ -43,6 +46,8 @@ NONCE = re.compile(r"[0-9a-f]{32}")
 FILES = ("timemachine/tm09_desk.py","timemachine/tm09_orders.py","timemachine/tm09_fixture.py","timemachine/tm09_feed.py",
          "timemachine/tm09_operator.py","timemachine/tm09_isolation_probe.py","timemachine/score_tm09.py",
          "timemachine/tm09_blind.py","timemachine/test_tm09.py","timemachine/TM09_WORKER_BRIEFS.md")
+LEDGER = "research_rig/TRIAL_LEDGER.md"
+STAGE_FILES = {True:{"stock_sessions.jsonl","stock_bars.jsonl"},False:{"stock_sessions.jsonl","stock_bars.jsonl","stock_news.jsonl"}}
 REHEARSAL_LIMITS = dict(notes=2,note_chars=280,looks=50,look_rows=120,headline_rows=20,headline_chars=500)
 
 
@@ -167,15 +172,22 @@ def check_generation(control,launch,sid,port,nonce,fingerprint):
         raise ValueError("control receipt is not this launch's generation")
 
 
-def export_files(run_body,read):
+def export_files(run_body,read,stage1,export_dir):
     export = Path(run_body["export_dir"])
-    if export.parent != ROOT or not run_body.get("export_sha256"):
-        raise ValueError("signed export scope required")
+    if (export.parent != ROOT or export != Path(export_dir) or not isinstance(run_body.get("export_sha256"),dict)
+            or set(run_body["export_sha256"]) != STAGE_FILES[stage1]):
+        raise ValueError("signed export scope must name this directory and exactly the stage's files")
     for name,pin in sorted(run_body["export_sha256"].items()):
         f = export/name
         if not f.is_file() or h(read(f)) != pin or f.stat().st_size == 0:
             raise ValueError("a signed export file is missing, empty or changed")
     return len(run_body["export_sha256"])
+
+
+def go_line(ledger_raw,auth_id):
+    if not NONCE.fullmatch(auth_id) or not any(l.rstrip().endswith("TM09_GO="+auth_id) and l.rstrip() != "TM09_GO="+auth_id
+                                               for l in ledger_raw.decode().splitlines()):
+        raise ValueError("no ledger line ends with this TM09_GO authorization")
 
 
 def main(argv):
@@ -207,6 +219,25 @@ def main(argv):
                     resolved_settings=settings(cfg),limits=dict(REHEARSAL_LIMITS),
                     operator_boundary_sha256=h(read_private(Path(a[0]))),ports=list(PORTS))
         capsule("ledger-222-rehearse-tm09",body,OPS/"rehearsal-approval.json")
+    elif cmd == "new-go-id":
+        auth = secrets.token_hex(16)
+        put(CONTROL/"tm09-go-id",auth.encode(),owner=None)
+        print("TM09_GO="+auth)
+    elif cmd == "approve-run":
+        auth,fields = a[0],json.loads(read_private(Path(a[1])))
+        if read_private(CONTROL/"tm09-go-id").decode() != auth:
+            raise ValueError("authorization id was not issued here")
+        ledger = read_private(rel/LEDGER)
+        go_line(ledger,auth)
+        cfg = read_private(rel/"config/thresholds.yaml")
+        stage1 = settings(cfg).get("mode") == "stage1"
+        export_files(fields,read_private,stage1,fields["export_dir"])
+        body = dict(fields,root=str(ROOT),service_uid=pwd.getpwnam(SERVICE).pw_uid,release=str(rel),
+                    approved_by="lead agent, ledger 222 line TM09_GO="+auth,authorization_id=auth,ledger_sha256=h(ledger),
+                    release_files={n:h(read_private(rel/n)) for n in FILES},config_sha256=h(cfg),
+                    registration_sha256=h(read_private(rel/"timemachine/TM09_REGISTRATION.md")),
+                    resolved_settings=settings(cfg),ports=list(PORTS))
+        capsule("ledger-222-run-tm09",body,OPS/f"run-{auth}.json")
     elif cmd == "bearer-copy":
         slot_dir,out = Path(a[0]),Path(a[1])
         w = pwd.getpwnam(WORKER)
@@ -252,7 +283,8 @@ def main(argv):
         if a[0] == "production":
             cap = json.loads(read_private(Path(a[1])))
             verify_seal(key,"ledger-222-run-tm09",cap["body"],cap["seal"])
-            n = export_files(cap["body"],read_private)
+            stage1 = settings(read_private(rel/"config/thresholds.yaml")).get("mode") == "stage1"
+            n = export_files(cap["body"],read_private,stage1,a[2])
         print("preflight canaries",len(CANARIES),"export files",n)
     elif cmd == "entries":
         sid,port,nonce = a[0],int(a[1]),a[2]
@@ -270,14 +302,16 @@ def main(argv):
                 out[cp["canary"]] = cp["session"]
         print(json.dumps(out,sort_keys=True))
     elif cmd == "review":
-        sid,port,nonce,desk_dir,operator = a[0],int(a[1]),a[2],Path(a[3]),Path(a[4])
+        mode,sid,port,nonce,desk_dir,operator = a[0],a[1],int(a[2]),a[3],Path(a[4]),Path(a[5])
+        if mode not in ("rehearsal","production"):
+            raise ValueError("mode required")
         cp = json.loads(read_private(CONTROL/f"{sid}-{nonce}.checkpoint.json"))
         if not valid_log_checkpoint(cp,nonce) or (cp["session"],cp["port"]) != (sid,port):
             raise ValueError("checkpoint is for another launch")
         launch_raw = read_private(OPS/f"{sid}-{nonce}-launch.json")
         launch = json.loads(launch_raw)
         verify_seal(key,"ledger-222-tm09-launch",launch["body"],launch["seal"])
-        for phase in ("live","stopped"):
+        for phase in (("live","stopped") if mode == "rehearsal" else ("stopped",)):  # real sessions: post-stop only
             check_probe(json.loads(read_private(OPS/f"{sid}-{nonce}-{phase}-probe.json")),sid,port,phase,nonce,h(launch_raw))
         control = json.loads(read_private(desk_dir/f"{nonce}-control.json"))
         verify_seal(key,"tm09-control",control["body"],control["seal"])

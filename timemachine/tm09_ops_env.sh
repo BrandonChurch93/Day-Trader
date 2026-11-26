@@ -1,14 +1,20 @@
 # Shared setup for tm09_launch.sh and tm09_review.sh (sourced). Parameters the TM07 scripts hard-code.
-OSUDO=${OSUDO:-/opt/tm07-ops-pub/osudo}
-OPLOG=${OPLOG:-/tmp/tm07x/opsudo.jsonl}
-PGREP=${PGREP:-pgrep}
+OSUDO=/opt/tm07-ops-pub/osudo
+PGREP=pgrep
+TM07_PORTS="8781 8782 8783 8784 8785 8786 8787"
 need() { [ -n "${!1:-}" ] || { echo "$1 required${2:+ ($2)}" >&2; exit 2; }; }
 need TM09_RELEASE "pinned release directory"; REL=$TM09_RELEASE
-OPS_PY=${TM09_OPS_PY:-$REL/timemachine/tm09_ops_sudo.py}
-LOGS=${TM09_LOGS:-/tmp/tm09x/logs}
+OPS_PY=$REL/timemachine/tm09_ops_sudo.py; ENGINE=$REL/timemachine/tm09_engine.sh
+LOGS=/tmp/tm09x/logs
 BASE=/var/lib/tm09; SERVICE=tm09desk; OPS=$BASE/ops-v2; CONTROL=$BASE/control
 usage() { sed -n 2,7p "$0" >&2; exit 2; }
 ops() { "$OSUDO" env -i PATH=/usr/bin:/bin PYTHONNOUSERSITE=1 "TM09_RELEASE=$REL" /usr/bin/python3.14 -B "$OPS_PY" "$@"; }
+no_tm07() {  # TM09 runs only when no TM07 session is open (lead ruling): refuse if any TM07 listener port answers
+  local p
+  for p in $TM07_PORTS; do
+    if (exec 3<>"/dev/tcp/127.0.0.1/$p") 2>/dev/null; then echo "TM07 listener on $p answers; TM09 refuses" >&2; exit 3; fi
+  done
+}
 setup() {
   [ $# -ge 4 ] || usage
   MODE=$1; ROLE=$2; SESSION=$3; PORT=$4
@@ -17,7 +23,7 @@ setup() {
   set -- $ROLE
   case "$1 $#" in
     "price_scout 1"|"news_scout 1") ROLE_FLAGS="--role $1"; SLOT=TM09-$WEEK-$1 ;;
-    "boss 3") [[ $2 =~ ^[a-z0-9_]+$ && $3 =~ ^(P1|P2|N)$ ]] || usage; ROLE_FLAGS="--role boss --boss $2 --arm $3"; SLOT=TM09-$WEEK-$2-$3 ;;
+    "boss 3") [[ $2 =~ ^[a-z0-9_]+$ && $3 =~ ^(P[123]|N[123]?)$ ]] || usage; ROLE_FLAGS="--role boss --boss $2 --arm $3"; SLOT=TM09-$WEEK-$2-$3 ;;
     *) usage ;;
   esac
   case "$MODE" in
@@ -30,9 +36,10 @@ setup() {
     *) echo "MODE must be rehearsal or production" >&2; exit 2 ;;
   esac
   ENGINE_FLAGS+=(--root "$BASE" --key-file "$BASE/operator.key" --approval "$APPROVAL" --week "$WEEK")
+  no_tm07
 }
-stop_listener() {
-  local pat="tm09_operator launch $ROLE_FLAGS .*--port $PORT( |$)" pid
+stop_listener() {  # only this launch's generation: the pattern names its nonce-bound boundary file
+  local pat="tm09_operator launch $ROLE_FLAGS .*--port $PORT --boundary $OPS/$SESSION-$NONCE-launch.json( |$)" pid
   pid=$($PGREP -f "$pat") || { echo "no listener" >&2; return 1; }
   [ "$(echo "$pid" | wc -w)" = 1 ] || { echo "more than one listener matched" >&2; return 1; }
   "$OSUDO" kill -TERM "$pid"

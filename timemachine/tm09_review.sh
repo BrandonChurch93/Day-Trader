@@ -14,9 +14,8 @@ ops entries "$SESSION" "$PORT" "$NONCE"
 mkdir -p -m 700 "$LOGS"; W=$LOGS/review-$SESSION-$NONCE; mkdir -m 700 "$W"
 "$OSUDO" cat "$CONTROL/$SESSION-$NONCE.entries.json" > "$W/entries.json"
 ops canaries > "$W/canaries.json"
-python3 "$(dirname "$0")/tm09_opmatch.py" "$W/entries.json" "$W/operator-sudo.json" "$W/canaries.json" "$OPLOG"
+python3 "$(dirname "$0")/tm09_opmatch.py" "$W/entries.json" "$W/operator-sudo.json" "$W/canaries.json"
 "$OSUDO" install -o root -g root -m 0600 "$W/operator-sudo.json" "$CONTROL/$SESSION-$NONCE-operator-sudo.json"
-ops review "$SESSION" "$PORT" "$NONCE" "$DESK" "$CONTROL/$SESSION-$NONCE-operator-sudo.json"
-"$OSUDO" -u "$SERVICE" sh -c 'cd "$0" && exec env -i PATH=/usr/bin:/bin PYTHONNOUSERSITE=1 /usr/bin/python3.14 -B -m timemachine.tm09_operator "$@"' \
-  "$REL" review $ROLE_FLAGS $EXPORT_FLAGS --boundary "$OPS/$SESSION-$NONCE-review.json" \
+ops review "$MODE" "$SESSION" "$PORT" "$NONCE" "$DESK" "$CONTROL/$SESSION-$NONCE-operator-sudo.json"
+"$OSUDO" -u "$SERVICE" "$ENGINE" review $ROLE_FLAGS $EXPORT_FLAGS --boundary "$OPS/$SESSION-$NONCE-review.json" \
   --probe-proof "$OPS/$SESSION-$NONCE-stopped-probe.json" "${ENGINE_FLAGS[@]}"
