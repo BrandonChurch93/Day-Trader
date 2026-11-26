@@ -371,6 +371,7 @@ Working papers.
 | `research_rig/vendor_60.py` | Plan 60 offline action transport verifier and deterministic native-to-window projection | DRAFT |
 | `research_rig/ADOPTION_60.md`, `research_rig/APPROVAL_60.md` | Plan 60 lead approvals: adoption of the sealed Plan 43 prices with no price acquisition, then validation only | RECORD |
 | `research_rig/GO_60.md` | Plan 60 lead approval for one scored run, names the validation approval commit and the validation receipt hash | RECORD |
+| `research_rig/RECOMPUTE_60.json` | Replay 60 independent recompute, aggregate note only: who did it, what was re-derived, fields compared and differences. Read by `report_60.py` | RECORD |
 | `research_rig/score_43.py`, `research_rig/test_43.py`, `research_rig/CALIBRATION_43.json` | Replay 43 raw SIP and cash-action approval gate, one-shot scorer, synthetic tests and null calibration. No replay result | CURRENT |
 | `research_rig/PREREG_46_cftc_altcoin_futures.md`, `research_rig/PINNED_46.json` | Queue 83 and ledger 179 and 181. Frozen pre-launch long and post-launch short proxy rules, costs, and required marks. Unscored | CURRENT |
 | `research_rig/APPROVAL_46.md` | The lead agent's approval line for plan 46 legs A and B: validation and one scored run, names the freeze commit, the freeze manifest hash and the input manifest hash. Read by the approval gate | CURRENT |

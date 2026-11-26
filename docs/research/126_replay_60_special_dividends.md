@@ -129,7 +129,16 @@ MEASURED, shown only. Starting with $500 in 5 settled $100 sleeves, the replay p
 
 ## Independent recompute
 
-UNKNOWN. Independent recompute: pending.
+STATED by /root/decision_autopsy_analyst. Independent recompute: AGREE. The helper did not read the scorer.
+
+- Compared fields: 30; differences: 0.
+- Taken as given: Nothing in the final comparison. The 24 vendor-basis refusals were taken as given for a first pass only and then re-derived.
+- Rederived: Noncash skip, day 0, session windows, pre-entry liquidity universe, entry, exit, whole-share lot, costs, verified cash and splits for all 443 events; Vendor basis gate on all 442 x 3 legs from the plan text; Placed pairs, net mean, clustered t, paired mean and t against IWM, trimmed mean, recent mean, all 11 acceptance-year means and all seven marks.
+- Own numbers were written to disk before the result file was opened.
+- Per-event decisions matched on all 443 events and effective exits on all 339 placed pairs.
+- On a first reading of the plan text the vendor basis gate differed on 7 stock legs, all in events already outside the universe, so no judged effect. They matched once a zero-volume reference bar before a cash ex-date was treated as absent, which the plan says of zero-volume bars elsewhere.
+- Ambiguities in the plan text that did not change any result: one shared or one per-view tail multiplier, the tie order of the trim, and the unnamed calendar file.
+- Not recomputed, no mark uses them: the settled sleeves and the shown-only arms.
 
 ## Run record
 
