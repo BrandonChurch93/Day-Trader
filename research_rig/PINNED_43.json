@@ -1,12 +1,14 @@
 {
   "config/thresholds.yaml": "987fae20c6c9b3c61d6974c095cda2c11416d714fbedca9c63f20ea3a522f861",
+  "research_rig/AMENDMENT_43_BASIS.md": "444f7afa926284032ef5363a30870247f06ff1ab60ddb8c033e31854f11ef042",
   "research_rig/AMENDMENT_43_TAPE.md": "e6deccf9eb26122bf6b1cbea3de99f78eae696035b94b94a53687a3d75202779",
   "research_rig/CALIBRATION_43.json": "2faf36b867056f0a32cb7c43c40fa318037fdeca6cc115a2ae1d9dbfcdb46ea0",
   "research_rig/PREREG_43_special_dividends.md": "5a020d341efdb4fabf7a5a3653bac22f9242c40d873f5fdc4a835b32bc5ea5da",
+  "research_rig/basis_43.py": "ed4bb95d8b1b718b24c4c970650885b5a34770d4e111b0247195d2b51cdca5fb",
   "research_rig/calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
   "research_rig/calendar_36.json": "87f3ad09eed18c33cd27693f450cd099dd7b61896d747698a4d9bf1d9a836aaf",
   "research_rig/common_21.py": "ade5650831a7f47dc175e7f1043e0cb4730a6634e96fa585fe51dd95b7c99fb1",
   "research_rig/provenance_43.py": "bfe847b9a8fe63096ff798d78ca9717bd975d334d4b45de57cbda6baebae8f33",
-  "research_rig/score_43.py": "d0af96828a7e30d2792bae5a88c16bc567c872ac6da8f9e3ec281ddf280b1a5e",
-  "research_rig/test_43.py": "e2c2b93f815261f8446d694f1c684abf33a1076eaca75048ab045a1137e427db"
+  "research_rig/score_43.py": "ce1ec2e09458c21d50c4f1cafd433508b6639225c070dadb703b523c92c3b059",
+  "research_rig/test_43.py": "fa5cb9cd28b535eea663dbe97cde83257f29a7a43e41870b46e754cf0e716fc2"
 }

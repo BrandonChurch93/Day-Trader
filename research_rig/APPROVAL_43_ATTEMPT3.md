@@ -1,0 +1,1 @@
+Approved by the lead: plan 43 attempt 3 ledger 195, validation only, adoption commit 8471b8a6f318077e1c3d95cf260c53b90c2d5759, adoption approval SHA-256 d4283aae568d6c9914fc56e795205f54b306f138e52a256fece4b2f2004786b9.

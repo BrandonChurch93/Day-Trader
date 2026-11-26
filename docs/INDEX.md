@@ -356,6 +356,9 @@ Working papers.
 | `research_rig/common_41.py`, `research_rig/score_41.py`, `research_rig/test_41.py` | Replay 41 calendar and exact return math, pinned no-return validator, approval and one-shot lock, and synthetic tests | CURRENT |
 | `research_rig/PREREG_43_special_dividends.md`, `research_rig/PINNED_43.json` | Queue 74 and ledger 178. Filing-only special-dividend replay rule, scope and strategy pins; no vendor data | CURRENT |
 | `research_rig/AMENDMENT_43_TAPE.md`, `research_rig/provenance_43.py` | Queue 74 successor, ledger 188: coverage amendment and offline-only native-body verifier; no vendor data | CURRENT. Frozen, not authorized |
+| `research_rig/ACQUISITION_43_SUCCESSOR.md`, `research_rig/APPROVAL_43_SUCCESSOR.md` | Ledger 188: spent acquisition and refused validation approval retained for the third attempt's sealed adoption | RECORD |
+| `research_rig/ADOPTION_43_ATTEMPT3.md`, `research_rig/APPROVAL_43_ATTEMPT3.md` | Ledger 195: third attempt's packet adoption and validation-only approval; validation refused, no score | RECORD |
+| `research_rig/AMENDMENT_43_BASIS.md`, `research_rig/basis_43.py` | Queue 74 third attempt, ledger 195: quantization, no-return gate diagnostics, sealed adoption; no vendor data | CURRENT. Frozen, not authorized |
 | `research_rig/score_43.py`, `research_rig/test_43.py`, `research_rig/CALIBRATION_43.json` | Replay 43 raw SIP and cash-action approval gate, one-shot scorer, synthetic tests and null calibration. No replay result | CURRENT |
 | `research_rig/PREREG_46_cftc_altcoin_futures.md`, `research_rig/PINNED_46.json` | Queue 83 and ledger 179 and 181. Frozen pre-launch long and post-launch short proxy rules, costs, and required marks. Unscored | CURRENT |
 | `research_rig/APPROVAL_46.md` | The lead agent's approval line for plan 46 legs A and B: validation and one scored run, names the freeze commit, the freeze manifest hash and the input manifest hash. Read by the approval gate | CURRENT |
