@@ -6,10 +6,14 @@ from pathlib import PurePosixPath
 import re
 import stat
 
-from count_63 import candidates, intersects_target, target_intervals
-from placebo_63 import touches_deny
+from count_63 import EVENTS, EVENTS_SHA, schedule
 from placebo_native_63 import scan_page
-from placebo_run_63 import PACKET, approved_scope, exact, file_in, hashed, money, need, read_projection, stamp, valid_pin
+from placebo_run_63 import (
+    PACKET, approved_project, approved_scope, check_remediated_capture, check_transport_embargo,
+    decode, exact, file_in, hashed, money,
+    need, read_projection, stamp, valid_pin,
+)
+from preflight_63 import PLACEBO_EXCLUSIONS_NAME, parse_placebo_exclusions
 
 
 ARCHIVE_LIMIT = 12_000_000
@@ -52,17 +56,11 @@ def read_captured(page, partition, load_archive):
     return hashed(body, page["body_sha256"])
 
 
-def chain_leaves(transport, manifest, approved, retained, sessions, successor_marks, deny, load_archive):
+def chain_leaves(transport, manifest, approved, retained, sessions, successor_marks, deny, purged, load_archive):
     """Generate all close locators from verified native page chain(s)."""
-    exact(transport, "schema streams")
-    need(transport["schema"] == "plan63-placebo-bar-transport-v1" and type(transport["streams"]) is list,
-         "NATIVE_INDEX")
+    check_transport_embargo(transport, retained, sessions, successor_marks, deny, purged)
     wanted, stream_keys, paths, bodies, out, covered = {}, set(), set(), {}, {}, set()
     aliases = {x["subject_key"]: x for x in manifest["identity_map"]}
-    source_rows, _, active_days, _ = candidates(retained, sessions)
-    blocked = target_intervals(source_rows, active_days)
-    for subject, d in successor_marks:
-        blocked[subject].append((d, d))
     for (subject, start, end), m in approved.items():
         for side, d in (("entry", start), ("exit", end)):
             alias = m[f"{side}_alias"]
@@ -84,8 +82,6 @@ def chain_leaves(transport, manifest, approved, retained, sessions, successor_ma
              type(stream["pages"]) is list and stream["pages"], "NATIVE_STREAM")
         need(any(x["alias"] == symbol and stamp(x["from_session"]) <= a <= b <= stamp(x["through_session"])
                  for x in ident["dated_aliases"]), "NATIVE_ALIAS")
-        need(key == "PCEF" or (not intersects_target(blocked, key, (a, b)) and
-                               not touches_deny(deny, key, a, b)), "NATIVE_EMBARGO")
         stream_keys.add(bound)
         needs = {(sym, d) for sym, d in wanted.get((key, symbol), ()) if a <= d <= b}
         need(needs, "NATIVE_STREAM_EXTRA")
@@ -129,15 +125,32 @@ def single_token(ref, bodies):
     return value
 
 
-def project(manifest, census, sessions, proofs, field_index, transport, preflight, *, load_archive=custodian_archive):
+def project(manifest, census, sessions, proofs, field_index, transport, preflight, *,
+            placebo_exclusions=None, project_commit=None, load_archive=custodian_archive):
     """Preflight, transport, field index and evidence require exact audited pins.
 
     Generate an independent index from verified native raw pages then compare
     every supplied reference and all metadata before interpreting any price.
     Action amounts come only from exact typed, reconciled proof bytes.
     """
-    approved, successors, retained, deny = approved_scope(manifest, census, sessions, proofs, preflight)
-    scan, bodies = chain_leaves(transport, manifest, approved, retained, sessions, successors, deny, load_archive)
+    if load_archive is custodian_archive:
+        need(type(project_commit) is str and placebo_exclusions is None, "PROJECT_APPROVAL")
+        auth = approved_project(project_commit)
+        check_remediated_capture(auth)
+        need(census == decode(hashed(EVENTS.read_bytes(), EVENTS_SHA)) and sessions == schedule(), "PROJECT_CENSUS")
+        folder = os.open(PACKET, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            s = os.fstat(folder)
+            need(stat.S_IMODE(s.st_mode) == 0o700 and s.st_uid == auth["custodian_uid"], "FILE_POLICY")
+            placebo_exclusions = parse_placebo_exclusions(file_in(folder, PLACEBO_EXCLUSIONS_NAME),
+                                                          auth["placebo_exclusions_sha256"])
+        finally:
+            os.close(folder)
+    else:
+        need(placebo_exclusions is not None, "PROJECT_INPUT")
+    approved, successors, retained, deny = approved_scope(manifest, census, sessions, proofs, preflight, placebo_exclusions)
+    scan, bodies = chain_leaves(transport, manifest, approved, retained, sessions, successors, deny,
+                              placebo_exclusions, load_archive)
     wanted = {s for s, meta in approved.items() if meta["status"] == "present"}
     exact(field_index, "schema legs")
     need(field_index["schema"] == "plan63-placebo-leaf-index-v1" and type(field_index["legs"]) is list,

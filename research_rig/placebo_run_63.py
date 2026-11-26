@@ -11,14 +11,16 @@ import stat
 import subprocess
 import sys
 
-from count_63 import CUTOFF, EVENTS, EVENTS_SHA, HOLDS, candidates, schedule, select
-from placebo_63 import Leg, admissible, measure, touches_deny
+from count_63 import CUTOFF, EVENTS, EVENTS_SHA, HOLDS, candidates, intersects_target, schedule, select
+from placebo_63 import Leg, admissible, measure, placebo_embargo, touches_deny
+from preflight_63 import PLACEBO_EXCLUSIONS_NAME, PLACEBO_EXCLUSIONS_SHA, parse_placebo_exclusions
 from score_63 import Stop
 
 
 RIG = Path(__file__).resolve().parent
 PACKET = Path("/home/user/workspace/rig/data/plan63_inputs/placebo")
 APPROVAL = "research_rig/PLACEBO_APPROVE_63.json"
+PROJECT_APPROVAL = "research_rig/PLACEBO_PROJECT_APPROVE_63.json"
 FREEZE = "research_rig/PLACEBO_FREEZE_63.json"
 REVIEW = "research_rig/PLACEBO_AUDIT_63.md"
 ACQUISITION_APPROVAL = "research_rig/ACQUISITION_APPROVE_63.md"
@@ -28,16 +30,20 @@ FIELD_INDEX = "field_index.json"
 PREFLIGHT = "scope_preflight.json"
 TRANSPORT = "bar_transport.json"
 LEGS = "legs.json"
+REMEDIATION = "stage_a_custody_manifest_v2.json"
+PROJECTION_RECEIPT = "projection_receipt.json"
 CLAIM = "attempt.once"
 PENDING = "report.pending"
 REPORT = "report.json"
 PINS = {"count_63.py", "placebo_63.py", "placebo_run_63.py", "placebo_project_63.py",
-        "placebo_native_63.py", "score_63.py",
+        "placebo_native_63.py", "preflight_63.py", "score_63.py",
         "calendar_25.json", "calendar_26.json", "calendar_50.json"}
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 COMMIT = re.compile(r"[0-9a-f]{40}\Z")
 NUMBER = re.compile(r"(?:0|[1-9][0-9]{0,11})(?:(?:\.[0-9]{1,12})?(?:[Ee][+-]?[0-9]{1,2})?|/[1-9][0-9]{0,11})\Z")
 MAX = 12_000_000
+OUTPUT_PINS = ("scope_sha256", "evidence_sha256", "preflight_sha256", "transport_sha256",
+               "field_index_sha256", "legs_sha256")
 
 
 def need(ok, code):
@@ -68,33 +74,70 @@ def decode(blob):
     return json.loads(blob, object_pairs_hook=unique)
 
 
-def approved(commit):
+def require_checkout(commit):
     need(COMMIT.fullmatch(commit), "APPROVAL")
     need(git("rev-parse", "HEAD").strip().decode("ascii") == commit, "APPROVAL_CHECKOUT")
+
+
+def sole_add(commit, path):
     head, *parents = git("rev-list", "--parents", "-n1", commit).decode("ascii").split()
     need(head == commit and len(parents) == 1, "APPROVAL_PARENT")
-    freeze = parents[0]
-    diff = git("diff-tree", "--no-commit-id", "--name-status", "-r", freeze, commit)
-    need(diff == f"A\t{APPROVAL}\n".encode("ascii"), "APPROVAL_SOLE_ADD")
-    a = decode(git("show", f"{commit}:{APPROVAL}"))
-    packet_keys = ("scope_sha256", "evidence_sha256", "preflight_sha256", "transport_sha256",
-                   "field_index_sha256", "legs_sha256")
-    exact(a, "purpose approved_by freeze_commit freeze_sha256 " + " ".join(packet_keys))
-    need(a["purpose"] == "plan63_single_placebo_dispersion" and a["approved_by"] == "lead" and
-         a["freeze_commit"] == freeze, "APPROVAL")
+    parent = parents[0]
+    diff = git("diff-tree", "--no-commit-id", "--name-status", "-r", parent, commit)
+    need(diff == f"A\t{path}\n".encode("ascii"), "APPROVAL_SOLE_ADD")
+    return parent
+
+
+def projection_lineage(commit):
+    freeze = sole_add(commit, PROJECT_APPROVAL)
+    raw = git("show", f"{commit}:{PROJECT_APPROVAL}")
+    a = decode(raw)
+    input_keys = ("remediated_capture_sha256", "placebo_exclusions_sha256")
+    exact(a, "purpose approved_by freeze_commit freeze_sha256 " + " ".join(input_keys))
+    need(a["purpose"] == "plan63_placebo_projection_only" and a["approved_by"] == "lead"
+         and a["freeze_commit"] == freeze, "PROJECT_APPROVAL")
     frozen = decode(hashed(git("show", f"{freeze}:{FREEZE}"), a["freeze_sha256"]))
     exact(frozen, "status custodian_uid source_pins auditor_review_sha256 acquisition_approval_sha256 "
-          + " ".join(packet_keys))
+          + " ".join(input_keys))
     need(frozen["status"] == "placebo_source_frozen_before_hold_ruling" and type(frozen["custodian_uid"]) is int
          and frozen["custodian_uid"] == os.geteuid() and set(frozen["source_pins"]) == PINS, "APPROVAL")
-    need(all(valid_pin(a[k]) and a[k] == frozen[k] for k in packet_keys),
+    need(all(valid_pin(a[k]) and a[k] == frozen[k] for k in input_keys),
          "APPROVAL_PINS")
+    need(a["placebo_exclusions_sha256"] == PLACEBO_EXCLUSIONS_SHA, "PLACEBO_EXCLUSIONS_PIN")
     for name, pin in frozen["source_pins"].items():
         hashed((RIG / name).read_bytes(), pin)
         hashed(git("show", f"{freeze}:research_rig/{name}"), pin)
     hashed(git("show", f"{freeze}:{REVIEW}"), frozen["auditor_review_sha256"])
     hashed(git("show", f"{freeze}:{ACQUISITION_APPROVAL}"), frozen["acquisition_approval_sha256"])
-    return frozen
+    return frozen, raw
+
+
+def approved_project(commit):
+    require_checkout(commit)
+    return projection_lineage(commit)[0]
+
+
+def approved(commit):
+    require_checkout(commit)
+    project_commit = sole_add(commit, APPROVAL)
+    frozen, projection_auth = projection_lineage(project_commit)
+    a = decode(git("show", f"{commit}:{APPROVAL}"))
+    exact(a, "purpose approved_by project_commit project_approval_sha256 projection_receipt_sha256 "
+          + " ".join(OUTPUT_PINS))
+    need(a["purpose"] == "plan63_single_placebo_dispersion" and a["approved_by"] == "lead" and
+         a["project_commit"] == project_commit and valid_pin(a["projection_receipt_sha256"]) and
+         all(valid_pin(a[k]) for k in OUTPUT_PINS), "MEASUREMENT_APPROVAL")
+    hashed(projection_auth, a["project_approval_sha256"])
+    return {**frozen, **a}
+
+
+def check_projection_receipt(blob, auth):
+    receipt = decode(hashed(blob, auth["projection_receipt_sha256"]))
+    exact(receipt, "schema project_commit remediated_capture_sha256 placebo_exclusions_sha256 "
+          + " ".join(OUTPUT_PINS))
+    need(receipt["schema"] == "plan63-audited-projection-receipt-v1" and all(receipt[k] == auth[k] for k in
+         ("project_commit", "remediated_capture_sha256", "placebo_exclusions_sha256", *OUTPUT_PINS)),
+         "PROJECTION_RECEIPT")
 
 
 def file_in(folder, name):
@@ -106,6 +149,16 @@ def file_in(folder, name):
         blob = f.read(MAX + 1)
         need(len(blob) == s.st_size, "FILE_POLICY")
         return blob
+
+
+def check_remediated_capture(auth):
+    folder = os.open(PACKET.parent, os.O_DIRECTORY | os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        s = os.fstat(folder)
+        need(stat.S_IMODE(s.st_mode) == 0o700 and s.st_uid == auth["custodian_uid"], "FILE_POLICY")
+        hashed(file_in(folder, REMEDIATION), auth["remediated_capture_sha256"])
+    finally:
+        os.close(folder)
 
 
 def exclusive(folder, name, blob):
@@ -256,7 +309,7 @@ def canonical_identities(source, census, proofs, cusip_unverified):
     return by_subject, by_issue
 
 
-def approved_scope(manifest, census, sessions, proofs, preflight):
+def approved_scope(manifest, census, sessions, proofs, preflight, placebo_exclusions=()):
     exact(manifest, "schema identity_map successor_marks scopes")
     need(manifest["schema"] == "plan63-placebo-projection-v1", "ROW_SHAPE")
     need(type(manifest["successor_marks"]) is list and type(manifest["scopes"]) is list, "ROW_SHAPE")
@@ -278,6 +331,7 @@ def approved_scope(manifest, census, sessions, proofs, preflight):
     need(all((key in intended_mature) == (reason == "unresolved_identity") for key, reason in dropped.items()),
          "EXCLUSION_MATURITY")
     retained = [r for r in census if r["cef_cik"] not in dropped]
+    need(set(placebo_exclusions) <= all_subjects - dropped.keys(), "PLACEBO_EXCLUSION_COVERAGE")
     cusip_unverified = {}
     for row in preflight["cusip_unverified"]:
         exact(row, "subject_key alias from_session through_session evidence_sha256")
@@ -316,7 +370,7 @@ def approved_scope(manifest, census, sessions, proofs, preflight):
         successor_keys.add((issue, day))
         if issue in by_issue:
             successors.append((by_issue[issue], day))
-    expected = {(key, *span) for rows in admissible(retained, sessions, successors, deny).values()
+    expected = {(key, *span) for rows in admissible(retained, sessions, successors, deny, placebo_exclusions).values()
                 for row, reason, span in rows if reason == "eligible" for key in (row["fund"], "PCEF")}
     got = {}
     for o in manifest["scopes"]:
@@ -340,6 +394,28 @@ def approved_scope(manifest, census, sessions, proofs, preflight):
         got[scope] = o
     need(set(got) == expected, "SCOPE")
     return got, tuple(successors), retained, deny
+
+
+def check_transport_embargo(transport, retained, sessions, successors, deny, placebo_exclusions):
+    """Reject any forbidden stream from metadata before any archive/price opens."""
+    exact(transport, "schema streams")
+    need(transport["schema"] == "plan63-placebo-bar-transport-v1" and type(transport["streams"]) is list,
+         "NATIVE_INDEX")
+    raw, _, days, _ = candidates(retained, sessions)
+    subjects = {r["fund"] for r in raw}
+    blocked = placebo_embargo(raw, days, sessions, successors)
+    for stream in transport["streams"]:
+        exact(stream, "partition subject_key stable_security_id alias first last feed view pages")
+        key = stream["subject_key"]
+        a, b = stamp(stream["first"]), stamp(stream["last"])
+        need(a <= b, "NATIVE_STREAM")
+        if key == "PCEF":
+            need(stream["partition"] == "benchmark", "NATIVE_PARTITION")
+        else:
+            need(stream["partition"] == "placebo" and key in subjects and key not in placebo_exclusions,
+                 "NATIVE_PLACEBO_EXCLUDED")
+            need(not intersects_target(blocked, key, (a, b)) and not touches_deny(deny, key, a, b),
+                 "NATIVE_EMBARGO")
 
 
 def read_projection(payload, allowed, proofs):
@@ -397,18 +473,22 @@ def run(commit):
                 pass
             else:
                 raise Stop("ALREADY_PUBLISHED")
+        check_remediated_capture(auth)
+        check_projection_receipt(file_in(folder, PROJECTION_RECEIPT), auth)
         manifest = decode(hashed(file_in(folder, WINDOWS), auth["scope_sha256"]))
         preflight = decode(hashed(file_in(folder, PREFLIGHT), auth["preflight_sha256"]))
         evidence = Proofs(decode(hashed(file_in(folder, EVIDENCE), auth["evidence_sha256"])))
         hashed(file_in(folder, FIELD_INDEX), auth["field_index_sha256"])
-        hashed(file_in(folder, TRANSPORT), auth["transport_sha256"])
-        allowed, successors, retained, deny = approved_scope(manifest, census, sessions, evidence, preflight)
+        transport = decode(hashed(file_in(folder, TRANSPORT), auth["transport_sha256"]))
+        purged = parse_placebo_exclusions(file_in(folder, PLACEBO_EXCLUSIONS_NAME), auth["placebo_exclusions_sha256"])
+        allowed, successors, retained, deny = approved_scope(manifest, census, sessions, evidence, preflight, purged)
+        check_transport_embargo(transport, retained, sessions, successors, deny, purged)
         # Persistently reserve the sole attempt before opening the price slice.
         # No retry after any failure past this point. Never publish a partial report.
         exclusive(folder, CLAIM, (commit + "\n").encode("ascii"))
         legs = read_projection(decode(hashed(file_in(folder, LEGS), auth["legs_sha256"])), allowed, evidence)
         evidence.complete()
-        out = measure(retained, sessions, lambda k, a, b: legs[(k, a, b)], successors, deny)
+        out = measure(retained, sessions, lambda k, a, b: legs[(k, a, b)], successors, deny, purged)
         exclusive(folder, PENDING, (json.dumps(out, sort_keys=True, allow_nan=False) + "\n").encode("ascii"))
         os.link(PENDING, REPORT, src_dir_fd=folder, dst_dir_fd=folder, follow_symlinks=False)
         os.unlink(PENDING, dir_fd=folder)

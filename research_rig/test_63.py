@@ -14,11 +14,15 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from count_63 import CUTOFF, HOLDS, NY, SABA, measure as counts, schedule, self_check
+from count_63 import CUTOFF, HOLDS, NY, SABA, candidates, measure as counts, schedule, select, self_check
 from placebo_63 import Leg, admissible, leg_return, measure
 from placebo_native_63 import approved_bar_leaves
 from placebo_project_63 import project
-from placebo_run_63 import APPROVAL, Proofs, approved, approved_scope, decode, exclusive, read_projection
+from placebo_run_63 import (
+    APPROVAL, OUTPUT_PINS, Proofs, approved, approved_scope, check_projection_receipt,
+    check_transport_embargo, decode, exclusive, read_projection,
+)
+from preflight_63 import parse_placebo_exclusions, request_calendar
 from power_63 import power
 from score_63 import (
     BLIND_FLAGS, BlindFacts, Facts, PairOutcome, Stop, filer_days, fund_rates, judged_and_shown_only, load_blind_facts,
@@ -243,7 +247,8 @@ class Plan63(unittest.TestCase):
             indices["legs"].append(ix)
 
         def build(ix, v):
-            return project(manifest, raw, sessions, Proofs(evidence), ix, v, preflight, load_archive=archives.__getitem__)
+            return project(manifest, raw, sessions, Proofs(evidence), ix, v, preflight,
+                           placebo_exclusions=(), load_archive=archives.__getitem__)
 
         blob = build(indices, native)
         with patch("placebo_project_63.single_token", side_effect=AssertionError("premature price read")) as spy:
@@ -274,7 +279,7 @@ class Plan63(unittest.TestCase):
                                                     entry["start"], entry["end"])
             with self.assertRaisesRegex(Stop, "NATIVE_MISSING_STATUS"):
                 project(false_missing, raw, sessions, Proofs(evidence), indices, native, preflight,
-                        load_archive=archives.__getitem__)
+                        placebo_exclusions=(), load_archive=archives.__getitem__)
             evidence.pop()  # remove the manufactured false status attestation
             spy.assert_not_called()
         malformed = deepcopy(blob)
@@ -315,6 +320,67 @@ class Plan63(unittest.TestCase):
         with patch("placebo_run_63.git", side_effect=fixture):
             with self.assertRaisesRegex(Stop, "APPROVAL_SOLE_ADD"):
                 approved(approved_sha)
+
+    def test_eighteen_legacy_page_overlaps_are_refused_whole(self):
+        sessions = schedule()
+        trading = [d for d, t in sessions.items() if d.year == 2022 and t is not None]
+        raw = []
+        subjects = [f"{i:010d}" for i in range(1, 10)]
+        for key in subjects:
+            for offset in (30, 34, 97):
+                d = trading[offset]
+                at = sessions[d] - timedelta(hours=2)
+                raw.append({"acceptanceDateTime": at.isoformat(), "et_date": str(d),
+                            "is_cef_subject": True, "is_preferred": False, "cef_cik": key,
+                            "filer_group": SABA, "accession": f"{key}-{offset}"})
+        _, deduped, days, closes = candidates(raw, sessions)
+        # The row at 34 is skipped by every target schedule, so the old
+        # selected-only subtraction leaves days 91/92 from the late placebo.
+        legacy = {key: set() for key in subjects}
+        for n in HOLDS:
+            for r in select(deduped, closes, n):
+                self.assertNotEqual(days[r["entry"]], trading[34])
+                legacy[r["fund"]].update(days[r["entry"]:r["exit"] + 1])
+        trimmed = {key: set(trading[87:93]) - old for key, old in legacy.items()}
+        self.assertEqual(set(map(frozenset, trimmed.values())), {frozenset(trading[91:93])})
+        self.assertEqual(sum(bool(set(trading[34:95]) & leaked) * 2 for leaked in trimmed.values()), 18)
+        for n, rows in admissible(raw, sessions).items():
+            rejected = [(row, span) for row, gate, span in rows if gate == "target_overlap"]
+            self.assertEqual(len(rejected), 9)
+            self.assertTrue(all(row["day"] == trading[97] and span is None for row, span in rejected))
+        repaired = request_calendar(raw, sessions)
+        all_days = sorted(sessions)
+        self.assertTrue(all(all_days[b] < trading[30] for xs in repaired["placebo"].values() for _, b in xs))
+        listed = (json.dumps(subjects, separators=(",", ":")) + "\n").encode("ascii")
+        purged = parse_placebo_exclusions(listed, sha256(listed).hexdigest())
+        with self.assertRaises(ValueError):
+            parse_placebo_exclusions(listed + b" ", sha256(listed).hexdigest())
+        self.assertEqual(len(listed), 119)
+        post = request_calendar(raw, sessions, placebo_exclusions=purged)
+        self.assertFalse(post["placebo"])
+        self.assertEqual((post["target"], post["quote_dates"]), (repaired["target"], repaired["quote_dates"]))
+        short = request_calendar(raw, sessions, placebo_exclusions=purged, target_hold=5)
+        self.assertEqual(short["placebo_gate_counts"], post["placebo_gate_counts"])
+        s = {"partition": "placebo", "subject_key": subjects[0], "stable_security_id": "synthetic",
+             "alias": "DUMMY", "first": str(trading[91]), "last": str(trading[92]), "feed": "sip",
+             "view": "raw", "pages": []}
+        transport = {"schema": "plan63-placebo-bar-transport-v1", "streams": [s]}
+        with self.assertRaisesRegex(Stop, "NATIVE_EMBARGO"):
+            check_transport_embargo(transport, raw, sessions, (), {}, ())
+        s["first"] = s["last"] = str(trading[20])  # otherwise clean, but fund is purged
+        with self.assertRaisesRegex(Stop, "NATIVE_PLACEBO_EXCLUDED"):
+            check_transport_embargo(transport, raw, sessions, (), {}, purged)
+
+    def test_measurement_receipt_binds_projection_outputs(self):
+        auth = {**dict.fromkeys(OUTPUT_PINS, "a" * 64), "project_commit": "b" * 40,
+                "remediated_capture_sha256": "c" * 64, "placebo_exclusions_sha256": "d" * 64}
+        good = {"schema": "plan63-audited-projection-receipt-v1", **auth}
+        def check(obj):
+            b = json.dumps(obj).encode("ascii")
+            return check_projection_receipt(b, {**auth, "projection_receipt_sha256": sha256(b).hexdigest()})
+        check(good)
+        with self.assertRaisesRegex(Stop, "PROJECTION_RECEIPT"):
+            check({**good, "legs_sha256": "e" * 64})
 
     def test_native_bar_offset_scan_never_decodes_price(self):
         t = b'"2022-07-18T04:00:00Z"'

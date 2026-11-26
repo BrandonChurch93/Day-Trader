@@ -55,16 +55,22 @@ def touches_deny(deny, subject, start, end):
     return any(a <= end and start <= b for a, b in deny.get(subject, ()))
 
 
-def admissible(raw_census, sessions, successor_marks=(), deny=None):
-    """Enumerate price-free approved candidates; retain fixed exclusion reasons."""
-    raw, deduped, active_days, closes = candidates(raw_census, sessions)
-    deny = {} if deny is None else deny
+def placebo_embargo(raw, active_days, sessions, successor_marks=()):
+    """Every raw event contributes its full inclusive 60-session interval."""
     blocked = target_intervals(raw, active_days)
-    all_days = sorted(sessions)
     for key, day in successor_marks:
         if day not in sessions or key == "PCEF":
             raise Stop("SUCCESSOR_MARK")
         blocked[key].append((day, day))
+    return blocked
+
+
+def admissible(raw_census, sessions, successor_marks=(), deny=None, placebo_exclusions=()):
+    """Enumerate whole placebo windows; target scheduling stays unchanged."""
+    raw, deduped, active_days, closes = candidates(raw_census, sessions)
+    deny = {} if deny is None else deny
+    blocked = placebo_embargo(raw, active_days, sessions, successor_marks)
+    all_days = sorted(sessions)
     result = {}
     for n in HOLDS:
         ctx = []
@@ -72,6 +78,9 @@ def admissible(raw_census, sessions, successor_marks=(), deny=None):
             if active_days[row["exit"]] > CUTOFF:
                 continue
             if touches_deny(deny, row["fund"], active_days[row["entry"]], active_days[row["exit"]]):
+                continue
+            if row["fund"] in placebo_exclusions:
+                ctx.append((row, "capture_embargo_purge", None))
                 continue
             span = placebo_span(all_days, active_days, closes, row["at"], n)
             if span is None:
@@ -94,7 +103,7 @@ def admissible(raw_census, sessions, successor_marks=(), deny=None):
     return result
 
 
-def measure(raw_census, sessions, read_leg, successor_marks=(), deny=None):
+def measure(raw_census, sessions, read_leg, successor_marks=(), deny=None, placebo_exclusions=()):
     """Inputs supplied externally, only after independent audit and approval.
 
     The future adapter must require exact (CIK/benchmark, start, end)
@@ -112,7 +121,7 @@ def measure(raw_census, sessions, read_leg, successor_marks=(), deny=None):
             seen[scope] = None if leg is None else leg_return(leg, key, start, end)
         return seen[scope]
 
-    for n, planned in admissible(raw_census, sessions, successor_marks, deny).items():
+    for n, planned in admissible(raw_census, sessions, successor_marks, deny, placebo_exclusions).items():
         counts, values = Counter(), []
         for row, gate, span in planned:
             counts["scheduled_fund_windows"] += 1
@@ -134,7 +143,8 @@ def measure(raw_census, sessions, read_leg, successor_marks=(), deny=None):
         mad = MAD_FACTOR * median(abs(v - center) for v in xs)
         if not mad > 0:
             raise Stop("PLACEBO_MAD_ZERO")
-        result[str(n)] = {**{k: counts[k] for k in ("scheduled_fund_windows", "pre_sip_start", "target_overlap", "deny_segment",
+        result[str(n)] = {**{k: counts[k] for k in ("scheduled_fund_windows", "capture_embargo_purge",
+                         "pre_sip_start", "target_overlap", "deny_segment",
                          "missing_endpoint_or_identity", "contributing_fund_windows")},
                          "placebo_filer_days": len(xs), "placebo_non_saba_filer_days": sum(f != SABA for _, f, _ in groups),
                          "sample_sd_bps": stdev(xs),

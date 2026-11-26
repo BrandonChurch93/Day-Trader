@@ -22,7 +22,7 @@ PLACEMENT = (.8, .9, 1.)
 DEPENDENCE = {"independent": (0., 0., 0.), "moderate": (.10, .10, .02), "high": (.20, .25, .05)}
 TAIL = .05
 MAD_FACTOR = 1.482602218505602
-SCALAR_FIELDS = {"scheduled_fund_windows", "pre_sip_start", "target_overlap", "deny_segment", "missing_endpoint_or_identity",
+SCALAR_FIELDS = {"scheduled_fund_windows", "capture_embargo_purge", "pre_sip_start", "target_overlap", "deny_segment", "missing_endpoint_or_identity",
                  "contributing_fund_windows", "placebo_filer_days", "placebo_non_saba_filer_days",
                  "sample_sd_bps", "scaled_mad_bps", "winsor_cap_bps"}
 
@@ -118,7 +118,8 @@ def power(raw, sessions, dispersion, trials=2_000, seed=63001, deny=None):
         if not (2 <= data["placebo_filer_days"] <= len(filing) and
                 data["scheduled_fund_windows"] == len(gid) and
                 0 <= data["placebo_non_saba_filer_days"] <= data["placebo_filer_days"] and
-                data["pre_sip_start"] + data["target_overlap"] + data["deny_segment"] + data["missing_endpoint_or_identity"] +
+                data["capture_embargo_purge"] + data["pre_sip_start"] + data["target_overlap"] +
+                data["deny_segment"] + data["missing_endpoint_or_identity"] +
                 data["contributing_fund_windows"] == len(gid)):
             raise ValueError("dispersion and price-blind counts disagree")
         result[str(n)] = {}
