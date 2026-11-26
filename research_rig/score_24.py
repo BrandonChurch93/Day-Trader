@@ -2,7 +2,8 @@
 import argparse
 from array import array
 from bisect import bisect_right
-from collections import defaultdict
+from collections import Counter, defaultdict
+from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -15,6 +16,7 @@ import resource
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 
 try:
     from . import common_24 as C
@@ -77,6 +79,40 @@ def pinned(path,expected):
 
 def is_pin(value):
     return isinstance(value,str) and bool(SHA.fullmatch(value))
+
+
+class InputChecks:
+    """Collect one hard refusal per code/path, never echo input values or exceptions."""
+    # Decoder libraries may throw multiple exception families for corrupt
+    # pinned inputs. Fail closed without exposing a traceback or skipping
+    # independently addressable files. Do not swallow interrupts or exits.
+    errors = Exception
+
+    def __init__(self):
+        self.refused = Counter()
+        self.gaps = Counter()
+        self.counts = Counter()
+
+    @contextmanager
+    def scan(self,code,path):
+        self.counts[code+"_checked"] += 1
+        try:
+            yield
+        except self.errors as exc:
+            self.refused[code,str(getattr(exc,"path",path))] += 1
+
+    def report(self):
+        rows = lambda counter:[dict(code=code,path=path,count=n) for (code,path),n in sorted(counter.items()) if n]
+        return dict(counts=dict(self.counts),refusals=rows(self.refused),policy_gaps=rows(self.gaps))
+
+
+@contextmanager
+def scan(checks,code,path):
+    if checks is None:
+        yield
+    else:
+        with checks.scan(code,path):
+            yield
 
 
 def terminal_price(row):
@@ -221,7 +257,10 @@ def validate_links(rows,by_key):
 
 
 def git(*args):
-    return subprocess.check_output(("git",*args),cwd=REPO)
+    try:
+        return subprocess.check_output(("git",*args),cwd=REPO,stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError as exc:
+        raise C.Incomplete("approval commit or frozen Git blob unavailable") from exc
 
 
 def authorize(expected):
@@ -378,23 +417,26 @@ class Archive:
         f = self.closing.get(self.perp.symbols[a.perp])
         return (s,f) if C.good(s) and C.good(f) else None
 
+    def funding_inputs(self,a,t,*,full=False):
+        lag = self.perp.p["funding_interval_hours"]*self.perp.p["funding_lag_intervals"]
+        hi = t-lag
+        lo = hi-self.p["lookback_hours"]
+        rates,missing = [],0
+        for h in range(lo,hi):
+            covered,rate = self.perp.rank_funding(a.perp,h,t*C.HOUR)
+            if not covered or (rate is not None)!=self.perp.expects_settlement(a.perp,h):
+                missing += 1
+                if not full:
+                    break
+            elif rate is not None:
+                rates.append(rate)
+        return rates,missing
+
     def signal(self,a,t):
         key = a.perp,t
         if key not in self.signals:
-            lag = self.perp.p["funding_interval_hours"]*self.perp.p["funding_lag_intervals"]
-            hi = t-lag
-            lo = hi-self.p["lookback_hours"]
-            rates = []
-            for h in range(lo,hi):
-                covered,rate = self.perp.rank_funding(a.perp,h,t*C.HOUR)
-                if not covered or (rate is not None)!=self.perp.expects_settlement(a.perp,h):
-                    break
-                if rate is not None:
-                    rates.append(rate)
-            else:
-                self.signals[key] = sum(rates)*self.p["annual_days"]*C.DAY/self.p["lookback_hours"]
-                return self.signals[key]
-            self.signals[key] = None
+            rates,missing = self.funding_inputs(a,t)
+            self.signals[key] = None if missing else sum(rates)*self.p["annual_days"]*C.DAY/self.p["lookback_hours"]
         return self.signals[key]
 
     def entry_covered(self,a,t):
@@ -419,49 +461,56 @@ class Archive:
         return self.peaks[a.perp]
 
 
-def load_spot(fetch,manifest,wanted,lo,hi,*,terminal=None):
+def load_spot(fetch,manifest,wanted,lo,hi,*,terminal=None,checks=None):
     if manifest["errors"]:
         raise C.Incomplete("spot archive manifest has errors")
     store = {}
     for name,meta in sorted(manifest["archives"].items()):
         match = SPOT.fullmatch(name)
-        if match is None or match[1] not in wanted or meta["where"] not in {"replay_13","replay_16"}:
-            raise C.Incomplete(f"non-top-30 or unsupported spot archive path: {name}")
-        path = fetch.archive_root(name,meta["where"])
-        if not 0<path.stat().st_size<=8_000_000:
-            raise C.Incomplete("spot ZIP exceeds the registered per-file bound")
-        s = match[1]
-        if s not in store:
-            store[s] = tuple(array("d",[nan])*(hi-lo+1) for _ in range(3))
-        cols = store[s]
-        count = 0
-        for row in fetch.F.zip_rows(pinned(path,meta["sha256"])):
-            count += 1
-            t,rem = divmod(fetch.F.open_epoch(row[0]),C.HOUR)
-            if rem:
-                raise C.Incomplete("spot clock is not hourly")
-            if not lo<=t<=hi:
-                continue
-            if t==terminal:
-                o = terminal_price(row)
-                if isfinite(cols[0][t-lo]):
-                    raise C.Incomplete("overlapping terminal spot clock")
-                cols[0][t-lo] = o if o is not None else -1.
-                continue
-            o,low,cl,v = (float(row[i]) for i in (1,3,4,5))
-            if not all(C.good(v) for v in (o,low,cl)) or low>min(o,cl) or not isfinite(v) or v<0:
-                raise C.Incomplete("invalid spot OHLC or volume")
-            off = t-lo
-            if isfinite(cols[0][off]):
-                raise C.Incomplete("overlapping spot clock")
-            for col,value in zip(cols,(o,low,cl)):
-                col[off] = value if v>0 else -1.
-        if count!=meta["n"]:
-            raise C.Incomplete("spot row count changed")
+        path = None
+        with scan(checks,"spot_archive",name):
+            if match is None or match[1] not in wanted or meta["where"] not in {"replay_13","replay_16"}:
+                raise C.Incomplete(f"non-top-30 or unsupported spot archive path: {name}")
+            path = fetch.archive_root(name,meta["where"])
+        if path is None:
+            continue
+        with scan(checks,"spot_decode",path):
+            if not 0<path.stat().st_size<=8_000_000:
+                raise C.Incomplete("spot ZIP exceeds the registered per-file bound")
+            s = match[1]
+            if s not in store:
+                store[s] = tuple(array("d",[nan])*(hi-lo+1) for _ in range(3))
+            cols = store[s]
+            count = 0
+            for row in fetch.F.zip_rows(pinned(path,meta["sha256"])):
+                count += 1
+                t,rem = divmod(fetch.F.open_epoch(row[0]),C.HOUR)
+                if rem:
+                    raise C.Incomplete("spot clock is not hourly")
+                if not lo<=t<=hi:
+                    continue
+                if t==terminal:
+                    o = terminal_price(row)
+                    if isfinite(cols[0][t-lo]):
+                        raise C.Incomplete("overlapping terminal spot clock")
+                    cols[0][t-lo] = o if o is not None else -1.
+                    continue
+                o,low,cl,v = (float(row[i]) for i in (1,3,4,5))
+                if not all(C.good(v) for v in (o,low,cl)) or low>min(o,cl) or not isfinite(v) or v<0:
+                    raise C.Incomplete("invalid spot OHLC or volume")
+                off = t-lo
+                if isfinite(cols[0][off]):
+                    raise C.Incomplete("overlapping spot clock")
+                for col,value in zip(cols,(o,low,cl)):
+                    col[off] = value if v>0 else -1.
+            if count!=meta["n"]:
+                raise C.Incomplete("spot row count changed")
+            if checks is not None:
+                checks.counts["spot_rows_decoded"] += count
     return store
 
 
-def risk_and_cutoff(A,tape,manifests,contracts,path,supplement,cutoff):
+def risk_and_cutoff(A,tape,manifests,contracts,path,supplement,cutoff,*,checks=None):
     """Reuse checked clocks; terminal trades need an open, not a completed OHLCV bar."""
     result,closing,terminal_rates = {},{},{}
     by_pair = defaultdict(list)
@@ -470,58 +519,67 @@ def risk_and_cutoff(A,tape,manifests,contracts,path,supplement,cutoff):
     for pair,files in A.archive_groups(manifests,set(by_pair)).items():
         col = array("d",[0.])*(tape.hi-tape.lo+1)
         for name,(match,meta) in sorted(files.items()):
-            lo,hi = A.archive_span(match)
-            kind = match[2]
-            if kind=="fundingRate" and not lo<=cutoff<=hi:
-                continue
-            if hi<=tape.lo or lo>cutoff:
-                continue
-            source,_ = A.archive_input(path,supplement,name,match,meta)
-            for h,offset,jitter,row in A.archive_rows(source,match,meta,by_pair[pair],tape.p):
-                if kind=="fundingRate":
-                    if h!=cutoff or offset>=0:
+            with scan(checks,"perp_risk_archive",name):
+                lo,hi = A.archive_span(match)
+                kind = match[2]
+                if kind=="fundingRate" and not lo<=cutoff<=hi or hi<=tape.lo or lo>cutoff:
+                    continue
+                source,_ = A.archive_input(path,supplement,name,match,meta)
+                for h,offset,jitter,row in A.archive_rows(source,match,meta,by_pair[pair],tape.p):
+                    if checks is not None:
+                        checks.counts["perp_risk_rows_decoded"] += 1
+                    if kind=="fundingRate":
+                        if h!=cutoff or offset>=0:
+                            continue
+                        try:
+                            v = float(row[2])
+                        except (IndexError,TypeError,ValueError):
+                            v = nan
+                        if pair in terminal_rates or jitter or not isfinite(v):
+                            if pair!="FTTUSDT":
+                                raise C.Incomplete("duplicate or malformed pre-cutoff settlement")
+                            terminal_rates[pair] = (None,0)
+                        else:
+                            terminal_rates[pair] = v,offset
                         continue
-                    try:
-                        v = float(row[2])
-                    except (IndexError,TypeError,ValueError):
-                        v = nan
-                    if pair in terminal_rates or jitter or not isfinite(v):
-                        if pair!="FTTUSDT":
-                            raise C.Incomplete("duplicate or malformed pre-cutoff settlement")
-                        terminal_rates[pair] = (None,0)
-                    else:
-                        terminal_rates[pair] = v,offset
-                    continue
-                if h==cutoff:
-                    if kind=="klines":
-                        if pair in closing:
-                            raise C.Incomplete("duplicate terminal perpetual open")
-                        closing[pair] = terminal_price(row)
-                    continue
-                if not tape.lo<=h<=tape.hi or match[2]=="klines" and float(row[5])<=0:
-                    continue
-                high = float(row[2])
-                if not C.good(high) or high<max(float(row[1]),float(row[4])):
-                    raise C.Incomplete("invalid archived perpetual high")
-                i = h-tape.lo
-                col[i] = max(col[i],high)
+                    if h==cutoff:
+                        if kind=="klines":
+                            if pair in closing:
+                                raise C.Incomplete("duplicate terminal perpetual open")
+                            closing[pair] = terminal_price(row)
+                        continue
+                    if not tape.lo<=h<=tape.hi or match[2]=="klines" and float(row[5])<=0:
+                        continue
+                    high = float(row[2])
+                    if not C.good(high) or high<max(float(row[1]),float(row[4])):
+                        raise C.Incomplete("invalid archived perpetual high")
+                    i = h-tape.lo
+                    col[i] = max(col[i],high)
         result[pair] = col
     return result,closing,terminal_rates
 
 
-def load(binding):
-    """Only invoked after the exclusive claim; opens no full or held rank/manifest."""
-    from research_rig import archive_18 as A, common_18 as L, fetch_16 as F
-    seal,p = binding
+def read_projections(seal,checks):
     for k,pin in seal["parent_evidence"].items():
-        note = json.loads(pinned(RUN/f"{k}_provenance.json",pin))
-        parent_note(note,seal["inputs"][k])
-    data = {k:json.loads(pinned(RUN/n,seal["inputs"][k])) for k,n in INPUTS.items()}
-    universe = data["universe"]
-    universe_schema(universe)
-    contracts,symbols,notices = A.catalogue(universe)
-    aliases = A.migration_links(universe)
-    legacy = dict(L.P,start=p["start"],end=p["end"],lookback_hours=p["lookback_hours"])
+        path = RUN/f"{k}_provenance.json"
+        with scan(checks,"provenance",path):
+            note = json.loads(pinned(path,pin))
+            parent_note(note,seal["inputs"][k])
+    data = {}
+    for k,n in INPUTS.items():
+        path = RUN/n
+        with scan(checks,"projection",path):
+            data[k] = json.loads(pinned(path,seal["inputs"][k]))
+    validators = dict(universe=universe_schema,perp=lambda m:manifest_schema(m,"replay_16"),
+                      spot=lambda m:manifest_schema(m,"spot"),ftt=lambda m:manifest_schema(m,"plan18_ftt"))
+    for k,validate in validators.items():
+        if k in data:
+            with scan(checks,"projection_schema",RUN/INPUTS[k]):
+                validate(data[k])
+    return data
+
+
+def parse_ranks(A,data,p,legacy):
     if any(set(r)-{"date","known_at","hole","sha256","top_raw"}
            or any(set(q)!={"cmcRank","id"} or not 1<=q["cmcRank"]<=legacy["top_rank"] for q in r.get("top_raw",[]))
            or r.get("hole") and r.get("top_raw") for r in data["ranks"]):
@@ -530,37 +588,206 @@ def load(binding):
     if len(rank_rows)!=len(data["ranks"]):
         raise C.Incomplete("rank projection includes rows outside the authorized date scope")
     snaps,_ = A.parse_snapshots(rank_rows,(),legacy)
-    A.verify_rank_schedule(universe,rank_rows,legacy)
-    scope = {aliases.get(i,(i,0))[0] for snap in snaps for _,i in snap.ranks}
-    if any(c.coin_id not in scope for c in contracts) or any(lineage not in scope for lineage,_ in aliases.values()):
-        raise C.Incomplete("universe contains a lineage outside the top-30 projection")
-    if scope-{c.coin_id for c in contracts} != {aliases.get(int(i),(int(i),0))[0] for i in universe["unmatched_judged_ids"]}:
-        raise C.Incomplete("top-30 mapping exclusions do not reconcile")
-    snaps = tuple(L.Snapshot(s.known_at,contracts,s.ranks,tuple((i,*v) for i,v in aliases.items())) for s in snaps)
-    links,exclusions = validate_links(data["links"],{c.key:c for c in contracts})
-    manifest_schema(data["perp"],"replay_16")
-    manifest_schema(data["spot"],"spot")
-    manifest_schema(data["ftt"],"plan18_ftt")
-    manifests = (data["perp"],data["ftt"])
-    expected_ftt = A.ftt_manifest(universe,contracts,symbols) or {"archives":{},"errors":{}}
-    if data["ftt"]!=expected_ftt:
-        raise C.Incomplete("FTT projected supplement does not match Plan 18")
-    if any(not (m := A.BULK.fullmatch(name)) or m[3] not in set(symbols.values())
-           for manifest in manifests for name in manifest["archives"]):
-        raise C.Incomplete("perpetual archive is not a top-30-only projection")
-    allowed_spot = {a.spot for rows in links.values() for a,_ in rows}
-    if any(not (m := SPOT.fullmatch(name)) or m[1] not in allowed_spot for name in data["spot"]["archives"]):
-        raise C.Incomplete("spot archive is not a top-30-only projection")
+    A.verify_rank_schedule(data["universe"],rank_rows,legacy)
+    return snaps
+
+
+def scope_projections(A,L,data,p,checks):
+    universe = data["universe"]
+    legacy = dict(L.P,start=p["start"],end=p["end"],lookback_hours=p["lookback_hours"])
+    catalogue = snaps = scope = links = None
+    with scan(checks,"universe_catalogue",RUN/INPUTS["universe"]):
+        catalogue = (*A.catalogue(universe),A.migration_links(universe))
+    with scan(checks,"rank_schedule",RUN/INPUTS["ranks"]):
+        snaps = parse_ranks(A,data,p,legacy)
+    if catalogue is None:
+        return None
+    contracts,symbols,notices,aliases = catalogue
+    if snaps is not None:
+        with scan(checks,"rank_universe_scope",RUN/INPUTS["universe"]):
+            scope = {aliases.get(i,(i,0))[0] for snap in snaps for _,i in snap.ranks}
+            if any(c.coin_id not in scope for c in contracts) or any(lineage not in scope for lineage,_ in aliases.values()):
+                raise C.Incomplete("universe contains a lineage outside the top-30 projection")
+            if scope-{c.coin_id for c in contracts} != {aliases.get(int(i),(int(i),0))[0] for i in universe["unmatched_judged_ids"]}:
+                raise C.Incomplete("top-30 mapping exclusions do not reconcile")
+            snaps = tuple(L.Snapshot(s.known_at,contracts,s.ranks,tuple((i,*v) for i,v in aliases.items())) for s in snaps)
+    with scan(checks,"spot_links",RUN/INPUTS["links"]):
+        links,exclusions = validate_links(data["links"],{c.key:c for c in contracts})
+    with scan(checks,"ftt_supplement",RUN/INPUTS["ftt"]):
+        expected_ftt = A.ftt_manifest(universe,contracts,symbols) or {"archives":{},"errors":{}}
+        if data["ftt"]!=expected_ftt:
+            raise C.Incomplete("FTT projected supplement does not match Plan 18")
+    kept_symbols = set(symbols.values())
+    manifests = tuple(data[k] for k in ("perp","ftt"))
+    for key,manifest in zip(("perp","ftt"),manifests):
+        for name in manifest["archives"]:
+            if not (m := A.BULK.fullmatch(name)) or m[3] not in kept_symbols:
+                with scan(checks,"perp_path_scope",RUN/INPUTS[key]):
+                    raise C.Incomplete("perpetual archive is not a top-30-only projection")
+    if links is not None:
+        allowed_spot = {a.spot for rows in links.values() for a,_ in rows}
+        for name in data["spot"]["archives"]:
+            if not (m := SPOT.fullmatch(name)) or m[1] not in allowed_spot:
+                with scan(checks,"spot_path_scope",RUN/INPUTS["spot"]):
+                    raise C.Incomplete("spot archive is not a top-30-only projection")
+    if checks is not None and checks.refused:
+        return None
+    return contracts,symbols,notices,legacy,scope,snaps,links,exclusions,manifests,allowed_spot
+
+
+def load_perp(A,path,manifests,symbols,notices,p,contracts,supplement,checks):
+    def tape(m,sy,cs):
+        return A.Tape(path,m,sy,notices,p,contracts=cs,supplemental_dir=supplement)
+
+    if checks is None:
+        return tape(manifests,symbols,contracts)
+    groups = A.archive_groups(manifests,set(symbols.values()))
+    lo = p["start"]-p["lookback_hours"]-p["funding_interval_hours"]*p["funding_lag_intervals"]
+    # The clean path calls the same full loader once. Decoder refusal is
+    # retraced below to collect every independently addressable archive failure.
+    scoped_groups = {}
+    for pair,items in groups.items():
+        scoped = {}
+        for name,(match,m) in items.items():
+            with checks.scan("perp_archive_clock",name):
+                a,b = A.archive_span(match)
+                if b>lo and a<=p["end"]:
+                    scoped[name] = m
+        checks.counts["perp_files"] += len(scoped)
+        scoped_groups[pair] = scoped
+    first = None
+    if not checks.refused:
+        try:
+            return tape(manifests,symbols,contracts)
+        except A.ArchivePathError as exc:
+            first = str(exc.path)  # Confirm it is reported by the isolated reproduction.
+        except checks.errors:
+            checks.refused["perp_full_tape",str(path)] += 1
+    for pair,scoped in scoped_groups.items():
+        sy = {k:v for k,v in symbols.items() if v==pair}
+        cs = tuple(c for c in contracts if c.key in sy)
+        # Tape is the scorer's exact decoder. If it fails one file, report
+        # that file and retry the remaining ones for this symbol only.
+        while scoped:
+            try:
+                tape(({"archives":scoped,"errors":{}},),sy,cs)
+                break
+            except A.ArchivePathError as exc:
+                checks.refused["perp_decode",str(exc.path)] += 1
+                bad = next((name for name in scoped if str(exc.path).endswith(name)),None)
+                if bad is None:
+                    break
+                del scoped[bad]
+            except checks.errors:
+                checks.refused["perp_decode",pair] += 1
+                break
+    if first is not None and ("perp_decode",first) not in checks.refused:
+        checks.refused["perp_decode",first] += 1
+    return None
+
+
+def load(binding,checks=None):
+    """Shared authorized input loader; opens no full or held rank/manifest."""
+    from research_rig import archive_18 as A, common_18 as L, fetch_16 as F
+    seal,p = binding
+    data = read_projections(seal,checks)
+    scoped = None
+    if checks is None or not checks.refused:
+        with scan(checks,"projection_scope",RUN):
+            scoped = scope_projections(A,L,data,p,checks)
+    if scoped is None:  # Never touch archive paths whose top-30 scope was not established.
+        checks.counts["archive_scope_blocked"] += 1
+        return None
+    contracts,symbols,notices,legacy,scope,snaps,links,exclusions,manifests,allowed_spot = scoped
     path,supplement = DATA/"replay_16/archives",DATA/"replay_18/ftt_archives"
     cutoff = p["end"]
-    clock = ClockGate(A,data["spot"],data["perp"],symbols,legacy,p)
-    perp = A.Tape(path,manifests,symbols,notices,legacy|{"end":cutoff-1},contracts=contracts,supplemental_dir=supplement)
-    spot = load_spot(F,data["spot"],allowed_spot,perp.lo,cutoff,terminal=cutoff)
-    tape = Archive(perp,spot,snaps,links,L,p,*risk_and_cutoff(A,perp,manifests,contracts,path,supplement,cutoff),clock=clock)
+    prep = legacy|{"end":cutoff-1}
+    clock = perp = spot = risk = None
+    with scan(checks,"archive_clock_gate",RUN):
+        clock = ClockGate(A,data["spot"],data["perp"],symbols,legacy,p)
+    with scan(checks,"perp_group",path):
+        perp = load_perp(A,path,manifests,symbols,notices,prep,contracts,supplement,checks)
+    warmup = p["start"]-p["lookback_hours"]-legacy["funding_interval_hours"]*legacy["funding_lag_intervals"]
+    clock_tape = perp if perp is not None else SimpleNamespace(lo=warmup,hi=cutoff-1,p=prep,symbols=symbols)
+    with scan(checks,"spot_manifest",RUN/INPUTS["spot"]):
+        spot = load_spot(F,data["spot"],allowed_spot,clock_tape.lo,cutoff,terminal=cutoff,checks=checks)
+    with scan(checks,"perp_risk_group",path):
+        risk = risk_and_cutoff(A,clock_tape,manifests,contracts,path,supplement,cutoff,checks=checks)
+    if checks is not None and checks.refused:
+        checks.counts["input_access_sweep_blocked"] += 1
+        return None
+    tape = None
+    with scan(checks,"tape_assembly",RUN):
+        tape = Archive(perp,spot,snaps,links,L,p,*risk,clock=clock)
+    if tape is None:
+        return None
     tape.coverage = dict(spot_exclusions=exclusions,top_rank_lineages=len(scope),mapped_perp_contracts=len(contracts),
                          paired_perp_contracts=len(links),spot_archive_symbols=len(spot),
                          linked_majors=sorted({a.coin for pairs in links.values() for a,_ in pairs if a.coin in {1,1027}}))
     return tape
+
+
+def check_uses(tape,p,checks):
+    """Walk a superset of every reachable data access, without building a book."""
+    start,end,fill = p["start"],p["end"],p["fill_hours"]
+    counts,gaps = checks.counts,checks.gaps
+    for t in range(start,end-fill,C.DAY):
+        pool = ()
+        with checks.scan("decision_pool",RUN/INPUTS["ranks"]):
+            pool = tape.pool(t)
+        counts["decision_pool_names"] += len(pool)
+        for a in pool:
+            stamp = f"{a.perp}/{a.spot}"
+            with checks.scan("decision_funding_access",stamp):
+                # Read the exact lagged funding inputs, but do not annualize,
+                # rank, select, or compute a strategy return.
+                _,missing = tape.funding_inputs(a,t,full=True)
+                if missing:
+                    gaps["asof_signal_unavailable",stamp] += 1
+            if t+fill>=a.end:
+                gaps["possible_retrospective_link_end",stamp] += 1
+                continue
+            with checks.scan("decision_clock_access",stamp):
+                if not tape.entry_covered(a,t):
+                    gaps["entry_archive_clock_gap",stamp] += 1
+            with checks.scan("decision_bar_access",stamp):
+                if not tape.decision_traded(a,t):
+                    gaps["entry_completed_bar_gap",stamp] += 1
+            with checks.scan("fill_bar_access",stamp):
+                if tape.bar(a,t+fill) is None:
+                    gaps["entry_fill_bar_gap",stamp] += 1
+    for rows in tape.links.values():
+        for a,_ in rows:
+            stamp = f"{a.perp}/{a.spot}"
+            for h in range(max(start,a.begin),min(end,a.end+1)):
+                counts["possible_held_hours"] += 1
+                with checks.scan("held_bar_access",stamp):
+                    if tape.bar(a,h) is None:
+                        gaps["held_common_bar_gap",stamp] += 1
+                    if not C.good(tape.perp.mark_close(a.perp,h)):
+                        gaps["mark_close_fallback",stamp] += 1
+                with checks.scan("held_funding_access",stamp):
+                    if tape.payment_missing(a,h):
+                        gaps["held_scheduled_funding_gap",stamp] += 1
+                    tape.payment(a,h)
+                    tape.peak(a)
+            if a.begin<end<=a.end:
+                counts["cutoff_pairs"] += 1
+                with checks.scan("cutoff_open_access",stamp):
+                    if tape.closing_open(a,end) is None:
+                        gaps["cutoff_open_fallback",stamp] += 1
+                with checks.scan("cutoff_funding_access",stamp):
+                    tape.payment(a,end)
+
+
+def validate_inputs(binding):
+    checks = InputChecks()
+    tape = None
+    with checks.scan("input_load",RUN):
+        tape = load(binding,checks)
+    if tape is not None:
+        check_uses(tape,binding[1],checks)
+    return checks.report()
 
 
 def evaluate(tape,p):
@@ -637,20 +864,36 @@ def render(out):
     return "\n".join(lines)+"\n"
 
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__)
-    group = ap.add_mutually_exclusive_group(required=True)
-    group.add_argument("--run",metavar="OWNER_FREEZE_SHA256")
-    group.add_argument("--render",type=Path)
-    args = ap.parse_args()
-    if args.render:
-        print(render(json.loads(args.render.read_text())),end="")
-        return
+def resources():
     if os.nice(0)<10:
         raise C.Incomplete("start the owner one-shot with nice -n 10")
     soft,hard = resource.getrlimit(resource.RLIMIT_AS)
     bound = min(x for x in (288000*1024,soft,hard) if x!=resource.RLIM_INFINITY)
     resource.setrlimit(resource.RLIMIT_AS,(bound,hard))
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    group = ap.add_mutually_exclusive_group(required=True)
+    group.add_argument("--run",metavar="OWNER_FREEZE_SHA256")
+    group.add_argument("--validate-inputs",metavar="OWNER_FREEZE_SHA256")
+    group.add_argument("--render",type=Path)
+    args = ap.parse_args()
+    if args.render:
+        print(render(json.loads(args.render.read_text())),end="")
+        return
+    if args.validate_inputs is not None:
+        checks = InputChecks()
+        binding = None
+        with checks.scan("resource_policy",REPO):
+            resources()
+        with checks.scan("authorization",RUN/"freeze_24.json"):
+            if not checks.refused:
+                binding = authorize(args.validate_inputs)
+        report = validate_inputs(binding) if binding is not None else checks.report()
+        print(json.dumps(report,sort_keys=True))
+        return 1 if report["refusals"] else 0
+    resources()
     def score(binding):
         out = evaluate(load(binding),binding[1])
         out["freeze_sha256"] = args.run
@@ -661,4 +904,4 @@ def main():
 
 
 if __name__=="__main__":
-    main()
+    sys.exit(main())

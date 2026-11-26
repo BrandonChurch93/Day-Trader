@@ -255,7 +255,7 @@ Working papers.
 | `research_rig/PREREG_25_treasury_month_end.md` | Frozen Queue 41 Treasury ETF month-end window, ledger 162, nine marks. No data collected or result | CURRENT |
 | `research_rig/PREREG_24_same_coin_carry.md` | Frozen Queue 39 same-coin funding carry, ledger 161, five marks, reviewed off-repo metadata hashes. No real result | CURRENT |
 | `research_rig/common_24.py` | Replay 24 spot and perpetual event accounting, fees and matched controls | CURRENT |
-| `research_rig/score_24.py` | Replay 24 public-commit and owner-seal gated one-shot scorer and result renderer | CURRENT |
+| `research_rig/score_24.py` | Replay 24 owner-gated no-claim input validator, one-shot scorer and result renderer | CURRENT |
 | `research_rig/test_24.py` | Replay 24 invented-input fixtures and planted calibration | CURRENT |
 | `research_rig/common_25.py`, `research_rig/fetch_25.py`, `research_rig/score_25.py`, `research_rig/test_25.py` | Replay 25 accounting, raw-only off-repo collector, pinned one-shot scorer, invented-input fixtures and calibration | CURRENT |
 | `research_rig/calendar_25.json`, `research_rig/PINNED.json` | Replay 25 session-date calendar and frozen code and plan hashes. No bars, issuer amounts or other vendor rows | CURRENT |

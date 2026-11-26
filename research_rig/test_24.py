@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 from random import Random
+import sys
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
@@ -11,6 +12,7 @@ from unittest.mock import Mock, patch
 try:
     from . import common_24 as C, score_24 as S
 except ImportError:
+    sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
     import common_24 as C
     import score_24 as S
 
@@ -522,6 +524,142 @@ class Fixtures(unittest.TestCase):
                 result = list(pool.map(lambda _:runner(),range(2)))
             self.assertEqual(result.count({"won":True}),1)
             self.assertEqual(json.loads(out.read_text()),{"won":True})
+
+    def test_validate_inputs_collects_projection_and_provenance_refusals_without_archive_scope(self):
+        with tempfile.TemporaryDirectory() as d, patch.object(S,"RUN",Path(d)):
+            seal = {k:{name:"a"*64 for name in S.INPUTS} for k in ("inputs","parent_evidence")}
+            with patch.object(S,"scope_projections") as scope, patch.object(S,"load_perp") as perp:
+                report = S.validate_inputs((seal,self.p))
+                scope.assert_not_called()
+                perp.assert_not_called()
+            for code in ("projection","provenance"):
+                self.assertEqual(sum(r["code"]==code for r in report["refusals"]),6)
+            self.assertEqual(report["counts"]["archive_scope_blocked"],1)
+            self.assertEqual(list(Path(d).iterdir()),[])
+
+    def test_validate_inputs_collects_multiple_perp_decoder_refusals_for_one_symbol(self):
+        from research_rig import archive_18 as A, common_18 as L
+        t = self.t
+        p = dict(L.P,start=t,end=t+48,lookback_hours=168)
+        a = self.a
+        symbol = "AAAUSDT"
+        names = [
+            "data/futures/um/monthly/klines/AAAUSDT/1h/AAAUSDT-1h-2022-01.zip",
+            "data/futures/um/monthly/markPriceKlines/AAAUSDT/1h/AAAUSDT-1h-2022-01.zip",
+        ]
+        manifests = (dict(archives={n:dict(where="replay_16",sha256="a"*64,n=1) for n in names},errors={}),)
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d)
+            checks = S.InputChecks()
+            with self.assertRaises(A.ArchivePathError):
+                S.load_perp(A,path,manifests,{a.perp:symbol},{},p,(),path,None)
+            self.assertIsNone(S.load_perp(A,path,manifests,{a.perp:symbol},{},p,(),path,checks))
+            self.assertEqual(checks.refused,{("perp_decode",str(path/n)):1 for n in names})
+            self.assertEqual(checks.counts["perp_files"],2)
+
+    def test_validation_uses_numeric_risk_decoder_and_keeps_checking_later_files(self):
+        from hashlib import sha256
+        from types import SimpleNamespace
+        from zipfile import ZipFile
+        from research_rig import archive_18 as A, common_18 as L
+        t = self.t
+        names = ["data/futures/um/daily/klines/AAAUSDT/1h/AAAUSDT-1h-2022-01-01.zip",
+                 "data/futures/um/daily/klines/AAAUSDT/1h/AAAUSDT-1h-2022-01-02.zip"]
+        p = dict(L.P,start=t,end=t+47,lookback_hours=168)
+        contract = SimpleNamespace(key="a",begin=t-300,end=t+100,coin_id=1)
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d)
+            files = {}
+            for i,name in enumerate(names):
+                f = path/name
+                f.parent.mkdir(parents=True,exist_ok=True)
+                with ZipFile(f,"w") as z:
+                    z.writestr("rows.csv",f"{(t+24*i)*C.HOUR*1000},100,99,95,101,2\n")
+                files[name] = dict(where="replay_16",sha256=sha256(f.read_bytes()).hexdigest(),n=1)
+            m = (dict(archives=files,errors={}),)
+            symbols = {"a":"AAAUSDT"}
+            tape = A.Tape(path,m,symbols,{},p,contracts=(contract,),supplemental_dir=path)
+            with self.assertRaisesRegex(C.Incomplete,"perpetual high"):
+                S.risk_and_cutoff(A,tape,m,(contract,),path,path,t+48)
+            checks = S.InputChecks()
+            S.risk_and_cutoff(A,tape,m,(contract,),path,path,t+48,checks=checks)
+            self.assertEqual(checks.refused,{("perp_risk_archive",n):1 for n in names})
+            self.assertEqual(checks.counts["perp_risk_rows_decoded"],2)
+
+    def test_validation_sanitizes_spot_decoder_exception_and_continues(self):
+        from hashlib import sha256
+        from types import SimpleNamespace
+        t = self.t
+        bad = "data/spot/daily/klines/AAAUSDT/1h/AAAUSDT-1h-2022-01-01.zip"
+        good = "data/spot/daily/klines/AAAUSDT/1h/AAAUSDT-1h-2022-01-02.zip"
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d)
+            files = {}
+            for i,name in enumerate((bad,good)):
+                f = path/name
+                f.parent.mkdir(parents=True,exist_ok=True)
+                raw = str(i).encode()
+                f.write_bytes(raw)
+                files[name] = dict(where="replay_16",sha256=sha256(raw).hexdigest(),n=1)
+            def rows(raw):
+                if raw==b"0":
+                    raise RuntimeError("private decoder details 123.45")
+                return [[str((t+24)*C.HOUR),"100","101","99","100","1"]]
+            fetch = SimpleNamespace(archive_root=lambda name,_:path/name,F=SimpleNamespace(zip_rows=rows,open_epoch=int))
+            checks = S.InputChecks()
+            S.load_spot(fetch,dict(archives=files,errors={}),{"AAAUSDT"},t,t+48,checks=checks)
+            self.assertEqual(checks.refused,{("spot_decode",str(path/bad)):1})
+            self.assertEqual(checks.counts["spot_rows_decoded"],1)
+            self.assertNotIn("123.45",json.dumps(checks.report()))
+
+    def test_validate_cli_checks_uses_and_never_claims_ranks_or_computes_returns(self):
+        from contextlib import redirect_stdout
+        from io import StringIO
+        from types import SimpleNamespace
+        t = self.t
+        p = dict(self.p,end=t+24)
+        a = self.a
+        tape = SimpleNamespace(pool=Mock(return_value=(a,)),funding_inputs=Mock(return_value=([],1)),
+            entry_covered=Mock(return_value=True),decision_traded=Mock(return_value=True),
+            bar=Mock(return_value=None),payment_missing=Mock(return_value=True),
+            payment=Mock(),peak=Mock(),closure=Mock(),closing_open=Mock(return_value=None),
+            perp=SimpleNamespace(mark_close=Mock(return_value=None)),links={a.perp:((a,0),)})
+        cases = [(tape,0),(C.Incomplete("private return literal 123.45"),1)]
+        for response,rc in cases:
+            out = StringIO()
+            kwargs = dict(side_effect=response) if isinstance(response,Exception) else dict(return_value=(None,p))
+            with (patch.object(S.sys,"argv",["score_24","--validate-inputs","a"*64]),
+                  patch.object(S,"authorize",**kwargs),patch.object(S,"resources"),
+                  patch.object(S,"load",return_value=tape) as load,patch.object(S,"one_shot") as one,
+                  patch.object(S,"evaluate") as score,redirect_stdout(out)):
+                self.assertEqual(S.main(),rc)
+                one.assert_not_called()
+                score.assert_not_called()
+                self.assertEqual(load.call_count,1-rc)
+            raw = out.getvalue()
+            report = json.loads(raw)
+            self.assertNotIn("123.45",raw)
+            self.assertNotIn("annual",raw)
+            self.assertEqual(len(report["refusals"]),rc)
+        tape.funding_inputs.assert_called_once_with(a,t,full=True)
+        tape.closing_open.assert_called_once_with(a,p["end"])
+        # A hard hole during a possible hold does not hide later hours,
+        # the contemporaneous funding access, or the terminal checks.
+        tape.bar.reset_mock(side_effect=True,return_value=True)
+        def bar(_,h):
+            if h==t:
+                raise C.Incomplete("invented accessor error")
+            return C.Bar(100,95,100,100,100,100)
+        tape.bar.side_effect = bar
+        tape.closing_open.reset_mock()
+        tape.payment.reset_mock()
+        checks = S.InputChecks()
+        S.check_uses(tape,p,checks)
+        self.assertEqual(checks.refused,{("held_bar_access",f"{a.perp}/{a.spot}"):1})
+        self.assertEqual(checks.counts["possible_held_hours"],24)
+        tape.payment.assert_any_call(a,t)
+        tape.payment.assert_any_call(a,t+24)
+        tape.closing_open.assert_called_once_with(a,t+24)
 
 
 class Planted(Toy):
