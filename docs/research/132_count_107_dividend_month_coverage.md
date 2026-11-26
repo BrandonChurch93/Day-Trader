@@ -1,0 +1,10 @@
+# Count 107: regular dividend months
+
+MEASURED. **Closed before a plan.** The lagged SPY holdings roster supported 83 months from December 2019 to October 2026. The Alpaca corporate-action count cleared the 20-name minimum on both sides in 78 months, short of the fixed 120. No prices were read and no returns were calculated.
+
+## What the count shows
+
+- MEASURED. Before December 2019, the count had no usable keyed roster. The [first usable public SPY N-PORT](https://www.sec.gov/Archives/edgar/data/884394/000175272419166260/primary_doc.xml) has common equities keyed by CUSIP, while the [2018 legacy schedule](https://www.sec.gov/Archives/edgar/data/884394/000119312518334730/d613130dn30d.htm) has names and share classes but no CUSIP or ticker column. No later list was filled backward. The full [count record](../../research_rig/COUNT_107_dividend_month_coverage.md) gives the timing, counts and seed.
+- UNKNOWN. Vendor ex-date coverage against primary records was not adjudicated after the roster gate failed. The locked sample of 60 name-months was drawn from the usable roster. The vendor had a regular ex-date for 11 of those name-months, which is not a coverage rate.
+- STATED. The [authors' draft, page 10](https://doczz.net/doc/8702723/the-dividend-month-premium-samuel-m.-hartzmark--david-h) uses prior ex-date month lags of 3, 6, 9 or 12 for quarterly or unknown-frequency dividends, but narrower lags for semiannual and annual dividends. Its sample ends before publication. [Open-Alpha-Lab](https://raw.githubusercontent.com/Guillain-RDCDE/Open-Alpha-Lab/main/studies/516-dividend-month-premium/docs/results.md) documents the method for +40.31 and +52.28 bp/month; those are full-period figures from 2000 to May 2026 for 30 surviving US names, not a separate post-2013 test.
+- STATED, lead decision. Do not open a shorter row. With the original edge and noise assumptions, the screen falls to 3.65 at 78 turns, below 4. A later proposal could try an index fund's quarterly N-Q filings and audit the historical name matches, but that work has not started.

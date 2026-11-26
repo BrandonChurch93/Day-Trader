@@ -238,6 +238,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/122_replay_53_taxable_fund_january_rebound.md` | Replay 53 saved result: taxable closed-end fund tax-loss losers did not pass; judged marks, yearly turns, costs, diagnostics and gaps | CURRENT |
 | `docs/research/126_replay_60_special_dividends.md` | Replay 60 saved result: the special-dividend rule did not pass; judged marks, yearly means, refusal counts, shown checks and gaps | CURRENT |
 | `docs/research/130_replay_62_special_dividend_ex_day.md` | Replay 62 saved result: the special-dividend ex-day rule did not pass; judged marks, yearly means, shown checks, history and gaps | CURRENT |
+| `docs/research/132_count_107_dividend_month_coverage.md` | Count 107 closure before prices: dated roster and regular dividend-month counts below the fixed line; source check | RECORD |
 | `docs/research/128_row104_equity_cef_distribution_count.md` | Row 104 count, price-blind: equity closed-end fund non-monthly and special distributions 2016 to 2026 (472 fund-days on 241 ex-dates, pass line met; declaration lead time unknown). Addendum: second count over all SEC-classified equity closed-end funds, year-end and special distributions (461 fund-days on 261 ex-dates, passes; 36 of 60 sampled public at least 3 sessions before ex, 1 not, 23 undatable) | CURRENT |
 
 Working papers.
@@ -373,6 +374,7 @@ Working papers.
 | `research_rig/REVIEW_48_identity.md` | Ledger 200: review of Replay 48 after the roster symbol fault (MUI listed as MUNUX); steps fixed before any MUI price is read | CURRENT |
 | `research_rig/COUNT_101_earnings_date_advancers.md` | Ledger 202: pre-draw public-source hierarchy, advancement rule, seeded SEC frame and ten-year go/no-go threshold for queue 101 | RECORD |
 | `research_rig/COUNT_102_cef_13d_census.md` | Queue 102 and ledger 201: pre-count plan and pass line (>= 100 clusters advance, < 60 close) for US-listed closed-end fund activist Schedule 13D census (2016 to 2026), fixed before any SEC count or price access | CURRENT |
+| `research_rig/COUNT_107_dividend_month_coverage.md`, `research_rig/count_107.py` | Queue 107 and ledger 209: price-blind point-in-time SPY roster, seeded draw, regular cash ex-date counts and closure; raw data off-repo | RECORD |
 | `research_rig/ADOPTION_43_ATTEMPT3.md`, `research_rig/APPROVAL_43_ATTEMPT3.md` | Ledger 195: third attempt's packet adoption and validation-only approval; validation refused, no score | RECORD |
 | `research_rig/AMENDMENT_43_BASIS.md`, `research_rig/basis_43.py` | Queue 74 third attempt, ledger 195: quantization, no-return gate diagnostics, sealed adoption; no vendor data | CURRENT. Frozen, not authorized |
 | `research_rig/PREREG_60_special_dividends.md`, `research_rig/CALIBRATION_60.json`, `research_rig/PINNED_60.json` | Queue 99 / ledger 199: execution-first special dividend design, filing-only calibration and draft source pins | DRAFT |
