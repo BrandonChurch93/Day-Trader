@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 04:57 UTC
+Last updated: 2026-11-26 05:01 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Plan 40 (queue 66) held 2026-11-26 without a trial; ledger 175 stays unused. MEASURED: 9 of 9 sampled common shares that later delisted had positive-volume SIP bars on every trading session in their sampled December. That does not establish a point-in-time list of small common shares for each December. Costs of small losers are UNKNOWN, and there are only ten turns. Reopen only if a lawful free point-in-time universe is found.
 
 - [Replay 39](research/84_replay_39_iwm_pre_holiday.md), run once 2026-11-26 04:55:55 UTC. MEASURED. Did not pass, 5 of 7 marks: IWM averaged +0.1909% net over 102 pre-holiday sessions at 2 bps per side, but net t 1.91 and gross Welch t 1.82 both missed 2.0. Net mean was positive in 8 of 11 years; the shown 10 bps per side result was only +0.0307% (t 0.31). Rule not advanced.
 
