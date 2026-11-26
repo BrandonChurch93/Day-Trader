@@ -50,7 +50,7 @@ STATED. Costs below are on the amount traded, per buy or sell, unless noted. The
 | [53, taxable closed-end funds](122_replay_53_taxable_fund_january_rebound.md) | Own closing half-spread plus 5 bp; 55 bp total with short cover; for a missing exit use the higher of entry half-spread or 50 bp, plus 5 bp | Adds 5 bp beyond its own measured spread where available; closed-end funds and PCEF were not sampled here. |
 | [60, special-dividend declarations](126_replay_60_special_dividends.md) | Greater of 5 bp or $0.01/share; 10 bp with the same floor shown | Above the large-stock median at both clocks, not necessarily an opening tail quote or distressed name. |
 | [62, special-dividend ex-day](130_replay_62_special_dividend_ex_day.md) | Greater of 5 bp or $0.01/share; 10 bp with the same floor shown | Above the late large-stock and IWM medians; not an exact-close measurement for these names. |
-| [65, SPY/IEF rebalancing](../STATUS.md) | [Greater of 2 bp or $0.01/share](../../research_rig/PREREG_65_stock_bond_rebalance_spread.md) on each leg's traded value, plus borrow on shorts | Above SPY's late median and p90. IEF and borrow are not measured here. |
+| [65, SPY/IEF rebalancing](139_replay_65_stock_bond_rebalancing.md) | [Greater of 2 bp or $0.01/share](../../research_rig/PREREG_65_stock_bond_rebalance_spread.md) on each leg's traded value, plus borrow on shorts | Above SPY's late median and p90. IEF and borrow are not measured here. |
 
 ## Were any verdicts close enough for costs to matter?
 
