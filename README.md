@@ -6,16 +6,16 @@ A platform for building and testing AI traders on US stocks and crypto with pret
 
 > There has to be a way to build a successful trader, you are Fable 5.2 you have solved millennium math  problems and and the Rieman hypothesis. As an agent you have real time access to vast amounts of real time data that a normal human cannot process, there is a way for us to make a profitable strategy.
 
-Brandon, 2026-11-25. "Nothing has passed yet" is a status, not a place to stop.
+Brandon, 2026-11-25. The aim is a method that earns money, not just a replay that looks good.
 
 ## Read in this order
 
 | Step | File | What you get |
 |---|---|---|
-| 1 | `AGENTS.md` | The rules, one page. They win over everything else |
-| 2 | `docs/STATUS.md` | What has been tested and what happened |
-| 3 | `docs/QUEUE.md` | What gets tested next. Take the top item that is not blocked |
-| 4 | `docs/INDEX.md` | The map of every file. Look things up, do not read it through |
+| 1 | [Agent guide](AGENTS.md) | The owner's goal and the honest-testing rules |
+| 2 | [Status](docs/STATUS.md) | Read the top for passes, active work and owner blockers. Follow the scorecard for every scored test |
+| 3 | [Queue](docs/QUEUE.md) | Check what is in work before taking the top unblocked item under Next |
+| 4 | [Index](docs/INDEX.md) | The map of every file. Look things up, do not read it through |
 
 Then only what your task needs: `docs/GLOSSARY.md` for a word, `docs/DECISIONS.md` for what the owner said, the README of the folder you work in.
 
@@ -54,7 +54,7 @@ Day-Trader/
 
 ## Three habits that keep this repo usable
 
-1. A number is written once, in `config/thresholds.yaml`. Documents name the key.
+1. Settings live in `config/thresholds.yaml`. Documents name the key. Test numbers come from stored output.
 2. A result changes `docs/STATUS.md` in the same commit. A new or moved file changes `docs/INDEX.md` in the same commit.
 3. Run `python3 tools/check_repo.py` before a commit. It fails if the map is not true.
 
