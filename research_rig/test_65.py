@@ -346,12 +346,13 @@ def git(root, *a):
     return r.stdout.strip()
 
 
-def make_repo(tmp, status="Status: FROZEN"):
+def make_repo(tmp, status="Status: FROZEN", score_bytes=None):
     root = tmp / "repo"
     (root / "research_rig").mkdir(parents=True)
     (root / "config").mkdir()
     (root / "config/thresholds.yaml").write_bytes(S.CONFIG.read_bytes())
-    files = {S.PLAN_NAME: f"# Plan 65\n\n{status}\n".encode(), "score_65.py": (HERE / "score_65.py").read_bytes(),
+    files = {S.PLAN_NAME: f"# Plan 65\n\n{status}\n".encode(),
+             "score_65.py": score_bytes or (HERE / "score_65.py").read_bytes(),
              "test_65.py": (HERE / "test_65.py").read_bytes(), "calendar_65.json": (HERE / "calendar_65.json").read_bytes(),
              "power_65.py": b"# power\n", "POWER_65.json": b"{}\n"}
     for n, b in files.items():
@@ -464,6 +465,55 @@ def test_gate(tmp):
     refuses("parent not freeze", lambda: S.authorize(c5, root5, root5 / "config/thresholds.yaml"), "P65_NOT_APPROVED the approval")
 
 
+def test_cli_full(tmp):
+    """Both real dispatch paths through the command line: a copy of the scorer whose only change is the WS constant,
+    pointing at a temporary workspace, pinned in a temporary Git repo. Never touches the real workspace data."""
+    src = (HERE / "score_65.py").read_bytes()
+    old = b'WS = Path("/home/user/workspace")\n'
+    check("one WS constant", src.count(old) == 1)
+    ws = tmp / "ws"
+    patched = src.replace(old, ('WS = Path("' + str(ws) + '")\n').encode())
+    root, frozen = make_repo(tmp / "cli", score_bytes=patched)
+    (ws / "rig/data").mkdir(parents=True)
+    blobs = S.synthetic_inputs(SESS, CFG)
+    write_inputs(ws / "rig/data/plan65_inputs", blobs)
+    env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+    cmd = [sys.executable, str(root / "research_rig/score_65.py")]
+    r = subprocess.run(cmd + ["--validate-inputs"], capture_output=True, text=True, env=env)
+    check("cli validate runs", r.returncode == 0)
+    v = json.loads(r.stdout) if r.returncode == 0 else {}
+    check("cli validate counts and digest", v.get("judged_sessions") == 2614 and v.get("inputs_sha256") == S.inputs_digest(blobs))
+    check("cli validate wrote nothing", not (ws / "rig/data/replay_65").exists())
+    c = approve(root, frozen, v.get("inputs_sha256", "0" * 64))
+    r = subprocess.run(cmd + ["--go", "--approval-commit", c], capture_output=True, text=True, env=env)
+    check("cli go needs the run dir", r.returncode == 2 and "P65_RUN" in r.stdout)
+    run = ws / "rig/data/replay_65"
+    run.mkdir()
+    os.chmod(run, 0o700)
+    r = subprocess.run(cmd + ["--go", "--approval-commit", c], capture_output=True, text=True, env=env)
+    check("cli go runs", r.returncode == 0 and json.loads(r.stdout or "{}").get("n") == 2614)
+
+    def no_nan(x):
+        raise ValueError(x)
+    try:
+        out = json.loads((run / S.RESULT).read_text(), parse_constant=no_nan)
+        check("cli result is standard JSON", out["judged"]["n"] == 2614 and out["approval_commit"] == c)
+    except (ValueError, OSError, KeyError):
+        check("cli result is standard JSON", False)
+    r = subprocess.run(cmd + ["--go", "--approval-commit", c], capture_output=True, text=True, env=env)
+    check("cli go is one shot", r.returncode == 2 and "REFUSED" in r.stdout)
+
+
+def test_cluster_scale():
+    rng = np.random.default_rng(3)
+    x = 0.001 + 0.01 * rng.standard_normal(2400)
+    g = np.arange(2400) // 5
+    t1 = S.cluster_t(x, g)
+    check("cluster t scale free", abs(S.cluster_t(x * 1e-9, g) - t1) < 1e-9 * abs(t1)
+          and abs(S.cluster_t(x * 1e9, g) - t1) < 1e-9 * abs(t1))
+    check("jsonable", S.jsonable({"a": float("nan"), "b": [np.float64(1.5), float("inf")]}) == {"a": None, "b": [1.5, None]})
+
+
 def approve_wrong_digest(tmp, blobs):
     root, frozen = make_repo(tmp / "w")
     return root, approve(root, frozen, "f" * 64)
@@ -483,6 +533,9 @@ def main():
         test_validate_and_modes(Path(t))
     with tempfile.TemporaryDirectory() as t:
         test_gate(Path(t))
+    with tempfile.TemporaryDirectory() as t:
+        test_cli_full(Path(t))
+    test_cluster_scale()
     print(f"{COUNT[0] - len(FAILS)} of {COUNT[0]} checks pass")
     sys.exit(1 if FAILS else 0)
 

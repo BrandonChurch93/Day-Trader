@@ -412,19 +412,25 @@ def economics(w, rs, rb, cs, cb, dates, b_short_s, b_short_b, cfg, idx, round_tr
 
 
 def cluster_t(x, groups):
+    """Week-clustered t: mean / se with se = sqrt(G/(G-1) * sum of squared group sums of de-meaned x) / N.
+    Computed on x divided by its sd, so the value does not move under rescaling. Undefined (nan) for fewer than two
+    values or groups, or an exactly constant series, or a zero clustered variance."""
+    x = np.asarray(x, float)
     n = len(x)
-    if n < 2:
+    if n < 2 or np.ptp(x) == 0:
         return float("nan")
-    m = x.mean()
     u, inv = np.unique(groups, return_inverse=True)
     G = len(u)
     if G < 2:
         return float("nan")
-    g = np.bincount(inv, weights=x - m)
+    m = x.mean()
+    sd = x.std()
+    z = (x - m) / sd
+    g = np.bincount(inv, weights=z)
     se = math.sqrt(G / (G - 1) * float(np.sum(g ** 2))) / n
-    if not math.isfinite(se) or se <= 1e-15 * max(1.0, abs(m)) or np.ptp(x) == 0:
-        return float("nan")                    # constant or zero-variance series: t is undefined
-    return float(m / se)
+    if not math.isfinite(se) or se <= 1e-12:
+        return float("nan")
+    return float((m / sd) / se)
 
 
 def week_key(d):
@@ -623,10 +629,26 @@ def lock_file(path, job):
         os.close(dfd)
 
 
+def jsonable(x):
+    """nan and infinities become null so the one-shot result is standard JSON. Marks are already decided."""
+    if isinstance(x, dict):
+        return {k: jsonable(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [jsonable(v) for v in x]
+    if isinstance(x, (float, np.floating)):
+        return float(x) if math.isfinite(x) else None
+    if isinstance(x, np.integer):
+        return int(x)
+    if isinstance(x, np.bool_):
+        return bool(x)
+    return x
+
+
 def write_result(path, res):
+    res = jsonable(res)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o444)
     with os.fdopen(fd, "w") as f:
-        json.dump(res, f, sort_keys=True, indent=1, default=float)
+        json.dump(res, f, sort_keys=True, indent=1, allow_nan=False)
         f.write("\n")
         f.flush()
         os.fsync(f.fileno())
