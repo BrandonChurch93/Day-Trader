@@ -31,9 +31,9 @@ NOTICE = DATA / "upbit_listings/notices.csv"
 DATED_ROSTER = NOTICE.with_name("binance_um_roster.csv")
 NOTICE_MAP = NOTICE.with_name("notice_perp_map_v2.csv")
 IDENTITIES = NOTICE.with_name("notice_identity_sidecar_v2.csv")
-LIFETIMES = NOTICE.with_name("symbol_lifetimes_sidecar_v3.csv")
+LIFETIMES = NOTICE.with_name("symbol_lifetimes_sidecar_v4.csv")
 STAGING = DATA / "replay_20_inputs"
-SUPPLEMENT = STAGING / "archives_v3.json"
+SUPPLEMENT = STAGING / "archives_v4.json"
 US_ROSTER = DATA.parent / "ideas" / US.NAME
 LOCK = RUN / "score_20.lock"
 RESULT = ROOT / "research_rig/results_20.json"
@@ -41,8 +41,8 @@ NOTICE_PIN = "6d7e4a67f7964d394a9412551369df27c2317b21a156d2cb5cd73f34040baec7"
 DATED_ROSTER_PIN = "dfaac9be1818f0867b1e200a6bb511a3970e01df5dbd04418726bf2567ae1ede"
 NOTICE_MAP_PIN = "888517afd7da535f48053258cf86b4ad68728522e90831b953be44c2decce61b"
 IDENTITY_PIN = "6c91e59758359fbce0ffb572973061116ae97c80ac7a29bb66741b9f6624c10a"
-LIFETIMES_PIN = "1587771c64d7f28d538087539b5b00dc60c63ce1f234a855dbf0b715f41590d2"
-SUPPLEMENT_PIN = "9862a3e7c6181dac46764f677b54d6eba8ebe47eb17183b68a508252d893bfe9"
+LIFETIMES_PIN = "7f80915d9a7cdfd87de545375da5231175c970f747283c53c2d5cf201a6b325b"
+SUPPLEMENT_PIN = "52d13a2a6e3b73da9e9651c49f65985bfd000cf4e069410716d5af0e4398c2ac"
 MANIFESTS = {
     DATA / "replay_16/manifest_futures.json": "07a28ae776606bb1430aa91ab94ae69b5cfeec37e0f48c9f2d342ab745e8b94d",
     DATA / "replay_16/manifest_futures_held.json": "d2949c130e4d98d13ed4bf376abee0700e4122fbf76af80a7d8fcf695a1e9afd",
@@ -53,6 +53,11 @@ HOUR_US = 3_600_000_000
 NUMBER = re.compile(rb"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]{1,3})?")
 HEADERS = {b"open_time", b"openTime", b"calc_time", b"fundingTime"}
 BULK = re.compile(r"data/futures/um/(daily|monthly)/(klines|markPriceKlines|fundingRate)/([^\W_]+)/(?:1h/)?([^/]+)\.zip")
+# Half-open UTC coverage ranges; see the frozen plan for the archive evidence.
+CONTROL_CLOCK_SKIP = (
+    ("ICPUSDT", "fundingRate", "2021-05", "2022-09"),
+    ("币安人生USDT", "markPriceKlines", "2025-10", "2026-10"),
+)
 
 
 def digest(raw):
@@ -120,6 +125,14 @@ def parse_minute(value):
     if stamp.utcoffset() is None or stamp.utcoffset().total_seconds() or stamp.second or stamp.microsecond:
         raise C.Invalid("UTC timestamp required")
     return int(stamp.timestamp() // 60)
+
+
+def calendar_skip_domains():
+    ranges = defaultdict(list)
+    for symbol, kind, first, past in CONTROL_CLOCK_SKIP:
+        lo, hi = (parse_minute(month + "-01T00:00Z") // 60 for month in (first, past))
+        ranges[symbol].append((kind, lo, hi))
+    return ranges
 
 
 def official_notice(url):
@@ -665,6 +678,7 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False, re
         start = events[symbol][0][0].minute // 60
         required(symbol, C.InputFault("klines", start))
     domains = control_domains(groups)
+    calendar_skip, skipped = calendar_skip_domains(), Counter()
     for component in control_components(groups, roster):
         memory()
         tapes = {}
@@ -721,6 +735,7 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False, re
             for trade, clean in C.ordinary(tapes, roster, notice_index, p, ordinary_counts,
                                            validate_only=validate_only, absent=absent_controls, domains=domains,
                                            source_counts=control_counts, gap_comparison=compare_gap,
+                                           calendar_skip=calendar_skip, skipped=skipped,
                                            **({"input_fault": required} if report is not None else {})):
                 pools[trade.year].append(trade.net(p["judged_bps"]))
                 alt = alternates.pop(id(trade), trade)
@@ -756,6 +771,9 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False, re
             "not_trading_at_notice_coins": sorted(absent_notices), "judged_diagnostics": dict(judged_diagnostics),
             "ordinary_disposition": dict(ordinary_counts), "not_trading_at_trigger_by_symbol": dict(absent_controls),
             "ordinary_trade_counts_by_source": control_counts,
+            "ordinary_calendar_skips": {"total": sum(skipped.values()),
+                                         "by_symbol_month": [{"symbol": symbol, "entry_month_utc": month, "count": count}
+                                                             for (symbol, month), count in sorted(skipped.items())]},
             "ordinary_missing_funding_debits": funding_debits,
             "shown_missing_hold_bar_continuation": shown_gap,
             "judgment": C.judgment(p, judged_values, pools, memory), "judged": C.summary(trades, bps),

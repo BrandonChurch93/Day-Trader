@@ -1,5 +1,5 @@
 """Made-up Plan 20 inputs only."""
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -128,6 +128,27 @@ def suite(p):
             with self.assertRaises(C.InputFault) as error:
                 C.evaluate(self.tape, C.Setup(24, 130, (), 4), self.p, self.contract, validate_only=True)
             self.assertEqual(error.exception.kind, "fundingRate")
+
+        def test_pre_expiry_exit_needs_no_right_anchor_when_next_due_is_after_verified_end(self):
+            self.tape.funding = {0: (8, -0.001), 8: (8, -0.002)}
+            self.tape.finish()
+            self.put("high", 4, 140)
+            signal = C.Setup(1, 130, (), 0)
+            verified = C.Contract("TESTUSDT", "asset-test", 0, 4 * 60 + 30)
+            trade = C.evaluate(self.tape, signal, self.p, verified)
+            self.assertEqual((trade.exit_minute, trade.funding), (4 * 60, 0))
+            # The next due clock at 8 must be strictly after the end. An archive
+            # tail, rather than an official end, cannot supply this exception.
+            del self.tape.funding[8]
+            self.tape.finish()
+            for end, tail in ((8 * 60, None), (9 * 60, None), (None, 5 * 60)):
+                with self.subTest(end=end, tail=tail), self.assertRaises(C.InputFault) as error:
+                    C.evaluate(self.tape, signal, self.p, C.Contract("TESTUSDT", "asset-test", 0, end, tail))
+                self.assertEqual((error.exception.kind, error.exception.hour), ("fundingRate", 4))
+            self.tape.funding[0] = (3, 0)
+            self.tape.finish()
+            with self.assertRaises(C.InputFault):
+                C.evaluate(self.tape, signal, self.p, verified)
 
         def test_reused_ticker_cannot_supply_left_or_right_funding_anchor(self):
             s = C.Setup(24, 130, (), 4)
@@ -372,6 +393,54 @@ def suite(p):
                 self.put("close", h, 95)
             self.assertEqual(len(self.controls([])), 2)
             self.assertEqual(len(self.controls([4*60])), 1)
+
+        def test_scoped_clock_skip_uses_full_time_hold_not_realized_stop(self):
+            self.put("high", 6, 140)
+            self.put("close", 23, 95)
+            self.put("mark", 40, C.NAN)
+            scope = {"TESTUSDT": [("markPriceKlines", 40, 41)]}
+            self.put("high", 26, 140)
+            self.assertEqual(self.controls([])[0][0].exit_minute, 26 * 60)
+            for high in (140, 101):
+                self.put("high", 26, high)
+                skipped = Counter()
+                self.assertEqual(self.controls([], calendar_skip=scope, skipped=skipped), [])
+                self.assertEqual(skipped, {("TESTUSDT", "1970-01"): 1})
+            skipped = Counter()
+            with self.assertRaises(C.InputFault):
+                self.controls([], calendar_skip={"TESTUSDT": [("markPriceKlines", 41, 42)]}, skipped=skipped)
+            self.assertFalse(skipped)
+            # Direct event evaluation never receives a calendar skip.
+            with self.assertRaises(C.InputFault):
+                C.evaluate(self.tape, C.Setup(25, 140, (), 8), self.p, self.contract, validate_only=True)
+
+        def test_scheduled_control_funding_rejects_missing_left_and_right_coverage(self):
+            for observed, hours in (({32: (8, 0), 104: (8, 0)}, (25,)),
+                                    ({24: (8, 0)}, (32, 97)), ({}, (25, 97))):
+                self.tape.funding = observed
+                self.tape.finish()
+                faults = C.scheduled_control_faults(self.tape, 25, self.p, self.contract)
+                self.assertEqual([(e.kind, e.hour) for e in faults], [("fundingRate", h) for h in hours])
+
+        def test_allowlisted_fault_cannot_mask_other_calendar_faults(self):
+            self.put("high", 6, 140)
+            self.put("close", 23, 95)
+            variants = (
+                ({24: 8, 40: 4, 56: 8, 104: 8}, 39, 44, False),
+                ({24: 8, 40: 8, 56: 4, 104: 4}, 55, 44, True),
+            )
+            for observations, last_allowed, actual_funding_fault, no_projected_mark in variants:
+                self.tape.funding = {h: (i, 0) for h, i in observations.items()}
+                self.tape.finish()
+                self.put("mark", 32, C.NAN if no_projected_mark else 100)
+                scoped = {"TESTUSDT": [("fundingRate", 28, last_allowed + 1)]}
+                skipped = Counter()
+                with self.assertRaises(C.InputFault) as error:
+                    self.controls([], calendar_skip=scoped, skipped=skipped)
+                # The strict path still reports its first funding fault.
+                want_hour = actual_funding_fault if no_projected_mark else 28
+                self.assertEqual((error.exception.kind, error.exception.hour), ("fundingRate", want_hour))
+                self.assertFalse(skipped)
 
         def test_planted_edge_passes_and_no_edge_does_not(self):
             pools = {2025: [0.001, -0.001] * 50}

@@ -256,45 +256,83 @@ def funding_clock_gap(left, old, right, new):
     return "unlabelled_gap", ()
 
 
-def settled(tape, start, exit_minute, p, contract, *, terminal=False, validate_only=False, input_fault=None):
-    assert input_fault is None or validate_only
+def funding_schedule(tape, start, exit_minute, contract, *, terminal=False, coverage_fault=None):
+    """Locate the in-lifetime settlement clocks, without looking at rates or prices."""
     if start * 60 == exit_minute:
-        return
+        return (), ()
     exit_hour = exit_minute // 60
     s = tape.settlements
     first = bisect_left(s, (contract.launch_minute + 59) // 60)
     end = len(s) if contract.end_minute is None else bisect_right(s, contract.end_minute // 60)
     left, right = bisect_right(s, start, first, end), bisect_right(s, exit_hour, first, end)
+
+    def fail(hour, coverage_hours=()):
+        if coverage_fault is None:
+            raise InputFault("fundingRate", hour)
+        for h in coverage_hours or (hour,):
+            coverage_fault(InputFault("fundingRate", h))
+
     # No other lifetime of a reused ticker can anchor this contract's grid.
     if left == first:
-        raise InputFault("fundingRate", start)
+        fail(start, (start, exit_hour) if first == end else ())
     missing = []
-    if right == end:
+    if right == end and first < end:
         last = s[end - 1]
         interval = tape.funding[last][0]
         next_due = last + interval
-        if not terminal or contract.end_minute != exit_minute or interval not in {1, 2, 4, 8} or last % interval:
-            raise InputFault("fundingRate", min(exit_hour, next_due))
-        missing.extend(range(max(next_due, (start // interval + 1) * interval), exit_hour + 1, interval))
-    for j in range(left, min(right + 1, end)):
+        aligned = interval in {1, 2, 4, 8} and last % interval == 0
+        at_terminal = terminal and contract.end_minute == exit_minute
+        no_due_before_end = (contract.end_minute is not None and exit_minute < contract.end_minute
+                             and next_due * 60 > contract.end_minute)
+        if not aligned or not (at_terminal or no_due_before_end):
+            fail(min(exit_hour, next_due), (next_due, exit_hour))
+        elif at_terminal:
+            missing.extend(range(max(next_due, (start // interval + 1) * interval), exit_hour + 1, interval))
+    for j in range(max(left, first + 1), min(right + 1, end)):
         a, b = s[j - 1], s[j]
         old, new = tape.funding[a][0], tape.funding[b][0]
         category, absent = funding_clock_gap(a, old, b, new)
         if category == "unlabelled_gap":
             if old not in {1, 2, 4, 8} or new not in {1, 2, 4, 8} or a % old or b % new:
-                raise InputFault("fundingRate", max(start, a))
+                fail(max(start, a))
+                continue
             first_open = max(start, a)
             possible = min((first_open // interval + 1) * interval for interval in (old, new))
             if possible < b and possible <= exit_hour:
-                raise InputFault("fundingRate", possible)
+                # A skip may not mask the unknown portion of a transition
+                # extending beyond its pinned absence period.
+                fail(possible, (possible, min(b - 1, exit_hour)))
         missing.extend(h for h in absent if start < h <= exit_hour)
+    return s[left:right], missing
+
+
+def scheduled_control_faults(tape, entry, p, contract):
+    """Coverage of the full time hold, independent of actual stop or fill prices."""
+    exit_minute = (entry + p["hold_hours"]) * 60
+    if contract.end_minute is not None:
+        exit_minute = min(exit_minute, contract.end_minute)
+    recorded = tape.settlements
+    start = bisect_right(recorded, entry)
+    end = bisect_right(recorded, exit_minute // 60)
+    faults = [InputFault("markPriceKlines", h) for h in recorded[start:end]
+              if contract.launch_minute <= h * 60 and not isfinite(tape.at("mark", h))]
+    _, projected = funding_schedule(tape, entry, exit_minute, contract, terminal=exit_minute == contract.end_minute,
+                                    coverage_fault=faults.append)
+    # Only missing marks at recorded settlements qualify for the mark allowlist.
+    faults.extend(InputFault("projectedMarkPriceKlines", h) for h in projected if not isfinite(tape.at("mark", h)))
+    return faults
+
+
+def settled(tape, start, exit_minute, p, contract, *, terminal=False, validate_only=False, input_fault=None):
+    assert input_fault is None or validate_only
+    recorded, missing = funding_schedule(tape, start, exit_minute, contract, terminal=terminal)
     def mark_fault(h):
         error = InputFault("markPriceKlines", h)
         if input_fault is None:
             raise error
         input_fault(error)
 
-    for h in s[left:right]:
+    for h in recorded:
         mark = tape.at("mark", h)
         if not isfinite(mark):
             mark_fault(h)
@@ -341,7 +379,7 @@ def pump_triggers(tape, symbol, p):
 
 
 def ordinary(tapes, contracts, notice_index, p, counts=None, *, validate_only=False, absent=None, domains=None,
-             source_counts=None, gap_comparison=None, input_fault=None):
+             source_counts=None, gap_comparison=None, input_fault=None, calendar_skip=None, skipped=None):
     """Ordinary pumps, with one trigger per rolling asset week across aliases."""
     window = p["exclusion_days"] * 24
     blocks = {}
@@ -378,6 +416,14 @@ def ordinary(tapes, contracts, notice_index, p, counts=None, *, validate_only=Fa
             if not signal:
                 counts["no_red_day"] += 1
                 continue
+            if (calendar_skip is not None and symbol in calendar_skip and
+                    tape.bar(signal.entry) and tape.at("volume", signal.entry) != 0):
+                faults = scheduled_control_faults(tape, signal.entry, p, contract)
+                if faults and all(any(kind == error.kind and lo <= error.hour < hi
+                                      for kind, lo, hi in calendar_skip[symbol]) for error in faults):
+                    month = datetime.fromtimestamp(signal.entry * 3600, timezone.utc).strftime("%Y-%m")
+                    skipped[symbol, month] += 1
+                    continue
             trade = evaluate(tape, signal, p, contract, validate_only=validate_only,
                              input_fault=None if input_fault is None else lambda error: input_fault(symbol, error))
             counts["traded"] += 1
