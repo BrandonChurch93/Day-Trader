@@ -34,8 +34,8 @@ def world(minutes=None):
                          fills={s:next(([P.iso(D.wall(r[0])), r[2]] for r in minutes if r[0] >= t and r[0] < t+3600 and r[1] == s), None)
                                 for s in [A,B,BTC]}))
         common = dict(symbol=A, published=t-60, known_at=t-60, vintage="original", licensed=True)
-        evidence.append([dict(common, kind="price", id=f"p{i}", value={"price":100}),
-                         dict(common, symbol=B, kind="price", id=f"bp{i}", value={"price":100}),
+        evidence.append([dict(common, kind="price", id=f"p{i}", value={"price":100,"observed_at":t-60}),
+                         dict(common, symbol=B, kind="price", id=f"bp{i}", value={"price":100,"observed_at":t-60}),
                          dict(common, kind="news", id=f"n{i}", value={"headline":"A made-up notice"}, primary=True),
                          dict(common, kind="news", id=f"future{i}", known_at=t+1, primary=True),
                          dict(common, kind="news", id=f"mirror{i}", origins=["wire","wire"]),
@@ -399,6 +399,53 @@ class DeskTest(unittest.TestCase):
         clean = dict(price,value={"price":100,"observed_at":T-60})
         self.assertTrue(D.available(clean,T))
         self.assertFalse(D.available(dict(clean,future_hint=109),T))
+
+    def test_pass3_m5_nested_dates_are_checked_to_full_precision(self):
+        spec = world()
+        rows = spec["evidence"][0]
+        late = O.stamp(T)[:-1]+".0000000001Z"
+        proof = spec["vendor_proofs"]["n0"]
+        news = rows[2]
+        for name,stamp in (("future-origin",T+3600),("malformed-origin","not a timestamp"),
+                           ("other-key-iso",late),("valid-origin",O.stamp(T)),
+                           ("future-proof",O.stamp(T))):
+            key = "version" if name == "other-key-iso" else "observedAt"
+            item = dict(news,id=name,origins=[{"meta":[{key:stamp}]}])
+            rows.append(item)
+            spec["vendor_proofs"][name] = dict(proof,row_hash=D.digest(item))
+        spec["vendor_proofs"]["future-proof"]["metadata"] = {"verifiedAt":late}
+        rows[0]["value"].pop("observed_at",None)
+        rows[1].update(published=T,known_at=T)
+        rows[1]["value"]["observed_at"] = T-60
+        rows[1]["value"]["funding"] = dict(rate=.01,every_hours=1,stamped_utc=O.stamp(T)[:-1]+".900Z")
+        good = copy.deepcopy(rows[1])
+        good.update(id="bp-good",known_at=T)
+        good["value"]["funding"]["stamped_utc"] = O.stamp(T)[:-1]+".0000000000Z"
+        rows.append(good)
+        session = self.create("scout",spec=spec)
+        packet,key = info(session,D.SCOUTS[0])
+        bad = {"future-origin","malformed-origin","other-key-iso","future-proof","p0","bp0"}
+        ids = {e["id"] for e in packet["evidence"]}
+        self.assertFalse(ids & bad)
+        self.assertIn("valid-origin",ids)
+        self.assertIn("bp-good",ids)
+        with self.assertRaisesRegex(ValueError,"not visible"):
+            session.handle(D.SCOUTS[0],"notes",dict(wake_key=key,notes=[
+                dict(symbol=A,text="Invented",evidence_ids=["future-origin"])]))
+        with session.tx() as (con,_):
+            count = D.json.loads(con.execute("SELECT data FROM journal WHERE kind='evidence_drops'").fetchone()[0])
+        self.assertEqual(count["price"],2)
+        self.assertEqual(count["news"],7)
+        boss = self.create("A",spec=spec)
+        _,key = info(boss)
+        for symbol,kind in ((A,"news"),(A,"bars"),(B,"bars")):
+            result = boss.handle("boss","look",dict(wake_key=key,symbol=symbol,kind=kind,request_id=symbol+kind))
+            self.assertFalse({e["id"] for e in result["rows"]} & bad)
+            if kind == "bars":
+                if symbol == A:
+                    self.assertIsNone(result["quote"])
+                else:
+                    self.assertEqual(result["quote"]["observed_at"],T-60)
 
     def test_reaudit_sol_r04_signed_attention_must_match_its_own_clock(self):
         spec = world()

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import hmac
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -93,12 +94,60 @@ def wall(value):
 PRICE_FIELDS = {"price","observed_at","change_1h","change_24h","volume","funding"}
 TYPED_ROW_FIELDS = {"id","symbol","kind","published","known_at","vintage","licensed","value"}
 BAR_LENGTHS = {"1Min":60,"30Min":1800,"1Hour":3600,"1Day":86400}
+ISO_CLOCK = re.compile(r"(?P<whole>\d{4}-\d{2}-\d{2}[Tt ]\d{2}:\d{2}:\d{2})(?:[.,](?P<fraction>\d+))?(?P<zone>Z|z|[+-]\d{2}:\d{2})\Z")
+DATE_PREFIX = re.compile(r"^\d{4}[-/]\d{1,2}(?:[-/]|$)")
+CLOCK_KEY = re.compile(r"(?:^|_)(?:timestamp|datetime|date|utc|epoch|time|stamp)(?:_|$)|(?:_at|_on)$")
+EXACT_CLOCK_KEYS = {"t","ts","published","known","observed","period_start","period_end","stamped","as_of","asof"}
+
+
+def clock_not_after(stamp, bound):
+    """Compare against a whole-second bound without discarding fraction digits."""
+    if type(stamp) is int:
+        return stamp <= bound
+    if type(stamp) is float:
+        return math.isfinite(stamp) and stamp <= bound
+    if not isinstance(stamp,str):
+        return False
+    match = ISO_CLOCK.fullmatch(stamp)
+    if match:
+        whole, fraction, zone = match.groups()
+        try:
+            at = datetime.fromisoformat(whole+("Z" if zone == "z" else zone))
+            limit = wall(bound)
+        except (OSError, OverflowError, ValueError):
+            return False
+        return at < limit or at == limit and not (fraction or "").strip("0")
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}",stamp):
+        try:
+            return datetime.fromisoformat(stamp).replace(tzinfo=UTC) <= wall(bound)
+        except (OSError, OverflowError, ValueError):
+            return False
+    return False
+
+
+def dated_at_wake(item, wake):
+    """Inspect nested snapshot and provenance fields, not just the envelope."""
+    pending = [(item,False)]
+    while pending:
+        value, is_clock = pending.pop()
+        if is_clock or isinstance(value,str) and DATE_PREFIX.match(value.strip()):
+            if not clock_not_after(value, wake):
+                return False
+        elif isinstance(value,dict):
+            for field, child in value.items():
+                if not isinstance(field,str):
+                    return False
+                key = re.sub(r"(?<=[a-z0-9])(?=[A-Z])","_",field).lower().replace("-","_")
+                pending.append((child,key in EXACT_CLOCK_KEYS or bool(CLOCK_KEY.search(key))))
+        elif isinstance(value,(list,tuple)):
+            pending.extend((child,False) for child in value)
+    return True
 
 
 def typed_price(value, published):
     if (not isinstance(value,dict) or value.keys()-PRICE_FIELDS or not orders.number(value.get("price"))
             or value["price"] <= 0
-            or "observed_at" in value and (type(value["observed_at"]) is not int or value["observed_at"] > published)):
+            or not clock_not_after(value.get("observed_at"),published)):
         return False
     if any(value.get(k) is not None and not orders.number(value[k]) for k in ("change_1h","change_24h")):
         return False
@@ -112,15 +161,14 @@ def typed_price(value, published):
                 or not orders.number(funding["rate"]) or not orders.number(funding["every_hours"])
                 or not 1 <= funding["every_hours"] <= 24 or not isinstance(funding["stamped_utc"],str)):
             return False
-        try:
-            if epoch(funding["stamped_utc"]) > published:
-                return False
-        except (TypeError,ValueError,OverflowError):
+        if not clock_not_after(funding["stamped_utc"],published):
             return False
     return True
 
 
 def available(e, wake, proofs=None):
+    if not isinstance(e,dict) or not dated_at_wake(e,wake):
+        return False
     published, known = e.get("published"), e.get("known_at")
     if not (type(published) is int and type(known) is int and published <= known <= wake
             and e.get("vintage") == "original" and e.get("licensed") is True):
@@ -157,11 +205,14 @@ def available(e, wake, proofs=None):
             or "observed_at" in value and (type(value["observed_at"]) is not int or not published <= value["observed_at"] <= known)):
         return False
     proof = (proofs or {}).get(e.get("id"),{})
-    if (proof.get("row_hash") != digest(e) or proof.get("version_hash") != digest(value)
+    if (not isinstance(proof,dict) or not dated_at_wake(proof,wake)
+            or proof.get("row_hash") != digest(e) or proof.get("version_hash") != digest(value)
             or proof.get("licensed") is not True or not proof.get("version_record")
             or proof.get("published") != published or proof.get("known_at") != known):
         return False
-    confirmations = proof.get("confirmations") or []
+    confirmations = proof.get("confirmations",[])
+    if not isinstance(confirmations,list):
+        return False
     if any(not isinstance(x,dict) or not x.get("group") or not x.get("version_record") or not x.get("version_hash")
            or x.keys()-{"group","primary","known_at","published_at","version_record","version_hash"}
            or type(x.get("known_at")) is not int or x["known_at"] > known
@@ -402,7 +453,7 @@ class DeskSession:
         at = self.spec["wakes"][k]
         out = {}
         for e in self.spec["evidence"][k]:
-            if (available(e,at,self.spec.get("vendor_proofs")) and e["symbol"] in self.spec["watch"] and isinstance(e.get("id"), str)
+            if (available(e,at,self.spec.get("vendor_proofs")) and e.get("symbol") in self.spec["watch"] and isinstance(e.get("id"), str)
                     and OID.fullmatch(e["id"]) and e["kind"] in ("price", "bars", "news", "attention")):
                 if e["id"] in out and out[e["id"]] != e:
                     raise ValueError("conflicting evidence id")
@@ -454,8 +505,8 @@ class DeskSession:
             prior = self.spec.get("evidence_drops")
             dropped = Counter(prior[k] if prior else {})
             for e in self.spec["evidence"][k]:
-                if pool.get(e.get("id")) != e:
-                    kind = e.get("kind")
+                if not isinstance(e,dict) or pool.get(e.get("id")) != e:
+                    kind = e.get("kind") if isinstance(e,dict) else None
                     dropped[kind if kind in ("price","bars","news","attention") else "other"] += 1
             self.log(con,at,"operator","evidence_drops",dict(dropped))
         result = dict(session=self.sid, role=role, utc=at, step=k+1, total=len(self.spec["wakes"]), wake_key=issued[role],
@@ -504,9 +555,12 @@ class DeskSession:
 
     def quote(self,k,symbol):
         mark = self.spec["rows"][k]["marks"].get(symbol)
-        if mark is not None:
+        quotes = [e for e in self.evidence(k).values() if e["kind"] == "price" and e["symbol"] == symbol
+                  and e["value"]["price"] == mark]
+        if quotes:
+            row = max(quotes,key=lambda e:(e["known_at"],e["id"]))
             t = self.spec["wakes"][k]
-            return dict(id=f"quote:{t}:{symbol}",symbol=symbol,utc=t,price=mark)
+            return dict(id=f"quote:{t}:{symbol}",symbol=symbol,utc=t,price=mark,observed_at=row["value"]["observed_at"])
 
     def visible_marks(self,k,st,notes):
         marks = self.spec["rows"][k]["marks"]
@@ -516,7 +570,7 @@ class DeskSession:
         quoted = {e["symbol"] for e in rows if e["kind"] == "price" and isinstance(e.get("value"),dict)
                   and e["value"].get("price") == marks.get(e["symbol"])}
         return {s:m for s,m in marks.items() if s in quoted or s in st["book"]["qty"]
-                or self.quote(k,s)["id"] in ids}
+                or f"quote:{self.spec['wakes'][k]}:{s}" in ids}
 
     def scout_submit(self, con, st, role, items):
         if role in st["scout"]:
