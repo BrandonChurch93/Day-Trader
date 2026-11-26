@@ -817,8 +817,23 @@ tm09:
     delivery: {min_fraction_eligible_wakes_with_note: 0.5}
     failures: {max_successors_per_lost_worker: 1, max_lost_weeks_per_boss: 3, min_weeks_with_primary: 17, rerun_finished_sessions: false}
     execution: {starting_cash_key: tm_account_start_usd, half_spread_bps_key: tm_stock_half_spread_bps, minute_volume_cap_key: tm_max_share_of_minute_volume, stock_commission_bps: 0}
+    amendment_1:
+      stage1_weeks: 5
+      blind:
+        target_power: 0.8
+        max_edge_bps: 50
+        edge_per_primary_sd: 0.7379799846756206
+      design_b:
+        price_only: [P1, P2, P3]
+        price_plus_news: [N1, N2, N3]
+        placebo: [P1, P2]
+      feed:
+        repeat_jaccard_min: 0.8
+        repeat_min_shared_tokens: 4
+        title_token_pattern: '[^\W_]+'
+        figure_fingerprint_pattern: '[+\-\u2212]?(?:[$€£¥₹][ \t]*)?[+\-\u2212]?\d+(?:[.,:/\u2013\u2014-]\d+)*(?:[ \t]?[%‰])?'
   status: proposed
-  note: TM09 lead rulings, ledger 222. Shared stock settings are references; pin their resolved values with this key at the seal. This is not a launch authorization.
+  note: TM09 lead rulings and Amendment 1, ledger 222. Shared stock settings are references; pin their resolved values with this key at the seal. This is not a launch authorization.
   source: timemachine/TM09_REGISTRATION.md
 
 replay_12_plan:
