@@ -10,6 +10,7 @@ def test_cards():
     assert (c["replay52"]["verdict"], c["replay52"]["tone"]) == ("Did not pass, 0 of 6 marks", "fail")
     assert (c["replay53"]["verdict"], c["replay53"]["tone"]) == ("Did not pass, 5 of 7 marks", "fail")
     assert (c["replay60"]["verdict"], c["replay60"]["tone"]) == ("Did not pass, 6 of 7 marks", "fail")
+    assert (c["replay62"]["verdict"], c["replay62"]["tone"]) == ("Did not pass, 1 of 5 marks", "fail")
     assert "MUI" in c["replay48"]["summary"] and "pass stands" in c["replay48"]["summary"]
     s53 = c["replay53"]["summary"]
     assert "fifth January session is shown only" in s53 and "cannot count" in s53 and "+0.802" in s53
@@ -20,8 +21,16 @@ def test_cards():
     assert rows60["Stock minus SPY, shown only"] == "+1.06% on 281 pairs"
     assert rows60["Settled sleeves on $500, shown only"] == "$422.82 net, +84.56% of starting cash"
     assert c["replay60"]["links"][0] == ["Replay 60", "GH/" + RC.P60]
+    s62 = c["replay62"]["summary"]
+    assert "316 matched pairs from 443 filing events" in s62 and "cannot count" in s62 and "The row closes." in s62
+    rows62 = dict(c["replay62"]["numbers"])
+    assert rows62["Raw paired mean: Above zero"] == "−0.0607 pp, not met"
+    assert rows62["Earlier entry, shown only"] == "+0.2915 pp on 316 pairs"
+    assert rows62["Vendor exact match, shown only"] == "−0.0375 pp on 230 pairs"
+    assert rows62["Vendor Class A, shown only"] == "−0.1229 pp on 86 pairs"
+    assert c["replay62"]["links"][0] == ["Replay 62", "GH/" + RC.P62]
     pages = {"replay48": RC.read(RC.P48) + RC.read(RC.R48), "replay52": RC.read(RC.P52),
-             "replay53": RC.read(RC.P53), "replay60": RC.read(RC.P60)}
+             "replay53": RC.read(RC.P53), "replay60": RC.read(RC.P60), "replay62": RC.read(RC.P62)}
     for k, card in c.items():
         shown = " ".join([card["summary"]] + [v for _, v in card["numbers"]]).replace("\u2212", "-")
         for fig in re.findall(r"[+-]?\$?\d[\d,]*\.\d+%?", shown):
