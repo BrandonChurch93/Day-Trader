@@ -10,6 +10,7 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import signal
 import stat
 import sys
 import tempfile
@@ -102,10 +103,25 @@ def frozen():
 
 
 def checked_dir(off, create=False):
+    need(not off.is_symlink(), "log directory must not be a symlink")
+    off = off.resolve()
+    # An ordinary checkout, linked worktree, or submodule has a .git directory
+    # or gitfile at its root. Refuse even when the marker is broken, ignored by
+    # Git discovery settings, or supplied through a symlinked parent.
+    for parent in (off, *off.parents):
+        try:
+            (parent / ".git").lstat()
+        except (FileNotFoundError, NotADirectoryError):
+            continue
+        raise Refuse("private log directory must be outside every Git working tree")
     if create:
+        missing = [p for p in (off, *off.parents) if not p.exists()]
         off.mkdir(parents=True, exist_ok=True, mode=0o700)
-    need(off.is_dir() and not off.is_symlink() and stat.S_IMODE(off.stat().st_mode) == 0o700,
-         "log directory must be a non-symlink directory with mode 0700")
+        for p in reversed(missing):
+            fsync_dir(p.parent)
+    need(off.is_dir() and stat.S_IMODE(off.stat().st_mode) == 0o700,
+         "log directory must be a directory with mode 0700")
+    return off
 
 
 def private_open(path, flags):
@@ -119,50 +135,160 @@ def private_open(path, flags):
 
 @contextmanager
 def locked(off, *, write=True, create=False):
-    checked_dir(off, create)
+    off = checked_dir(off, create)
     flags = os.O_RDWR | os.O_CREAT if write else os.O_RDONLY
     with os.fdopen(private_open(off / ".lock", flags), "rb") as lock:
         try:
             fcntl.flock(lock, (fcntl.LOCK_EX if write else fcntl.LOCK_SH) | fcntl.LOCK_NB)
         except BlockingIOError:
             raise Refuse("logger is busy") from None
-        yield
+        yield off
 
 
-def read_log(off):
+def anchor_state(rows):
+    return {
+        "record_count": len(rows),
+        "wake_count": sum(r["kind"] in ("wake", "void") for r in rows),
+        "last_wake": next((r["wake"] for r in reversed(rows) if r.get("wake") is not None), None),
+        "tip_sha256": rows[-1]["sha256_row"] if rows else None,
+    }
+
+
+def fsync_dir(off):
+    fd = os.open(off, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def write_anchor(off, state):
+    with tempfile.NamedTemporaryFile(mode="wb", dir=off, prefix=".anchor-", delete=False) as temp:
+        try:
+            os.fchmod(temp.fileno(), 0o600)
+            temp.write(enc(state).encode() + b"\n")
+            temp.flush()
+            os.fsync(temp.fileno())
+            os.replace(temp.name, off / "anchor.json")
+            fsync_dir(off)
+        finally:
+            Path(temp.name).unlink(missing_ok=True)
+
+
+def read_anchor(off):
+    try:
+        fd = private_open(off / "anchor.json", os.O_RDONLY)
+    except FileNotFoundError:
+        return None
+    with os.fdopen(fd, "rb") as stream:
+        try:
+            value = json.load(stream)
+            need(isinstance(value, dict) and type(value.get("record_count")) is int
+                 and value["record_count"] >= 0, "invalid log anchor")
+            return value
+        except (ValueError, TypeError):
+            raise Refuse("invalid log anchor") from None
+
+
+def read_log(off, *, recover=False, clock=now_utc):
     path = off / "log.jsonl"
+    anchor = read_anchor(off)
+    rows, prev, complete_bytes, torn = [], None, 0, b""
     try:
         fd = private_open(path, os.O_RDONLY)
     except FileNotFoundError:
-        return []
-    rows, prev = [], None
-    with os.fdopen(fd, "rb") as stream:
-        for line in stream:
-            try:
-                row = json.loads(line)
-                own = row.pop("sha256_row")
-                need(line.endswith(b"\n") and row["prev"] == prev and own == digest(enc(row).encode()),
-                     "log chain broken")
-            except (ValueError, KeyError, TypeError, AttributeError):
-                raise Refuse("log chain broken") from None
-            row["sha256_row"] = prev = own
-            rows.append(row)
+        fd = None
+    if fd is not None:
+        with os.fdopen(fd, "rb") as stream:
+            for line in stream:
+                if not line.endswith(b"\n"):
+                    torn = line
+                    break
+                try:
+                    row = json.loads(line)
+                    own = row.pop("sha256_row")
+                    need(row["prev"] == prev and own == digest(enc(row).encode()), "log chain broken")
+                except (ValueError, KeyError, TypeError, AttributeError):
+                    raise Refuse("log chain broken") from None
+                row["sha256_row"] = prev = own
+                rows.append(row)
+                complete_bytes += len(line)
+    if anchor is None:
+        need(fd is None, "log exists without a durable tail anchor")
+        return rows
+    need(len(rows) >= anchor["record_count"], "log is shorter than its durable tail anchor")
+    need(len(rows) <= anchor["record_count"], "durable tail anchor is behind the log")
+    need(anchor == anchor_state(rows), "log tip does not match the durable tail anchor")
+    if torn:
+        need(rows and recover, "torn log tail; recovery requires an anchored record and writable command")
+        recover_tail(off, rows, complete_bytes, torn, clock)
     return rows
 
 
-def append(off, rows, **event):
+def next_row(rows, event):
     row = dict(event, prev=rows[-1]["sha256_row"] if rows else None)
     row["sha256_row"] = digest(enc(row).encode())
+    return row, enc(row).encode() + b"\n"
+
+
+def recover_tail(off, rows, complete_bytes, torn, clock):
+    off = checked_dir(off)
+    row, encoded = next_row(rows, dict(kind="recovery", made_utc=iso(clock()), reason="torn_final_line",
+                                      discarded_bytes=len(torn), discarded_sha256=digest(torn)))
+    # The replacement contains both the truncated prefix and its recovery row;
+    # a crash cannot leave a successfully truncated log with no recovery row.
+    path = off / "log.jsonl"
+    with tempfile.NamedTemporaryFile(mode="wb", dir=off, prefix=".recover-", delete=False) as temp:
+        try:
+            os.fchmod(temp.fileno(), 0o600)
+            with os.fdopen(private_open(path, os.O_RDONLY), "rb") as source:
+                remaining = complete_bytes
+                while remaining:
+                    data = source.read(min(remaining, 1024 * 1024))
+                    need(data, "log changed during tail recovery")
+                    temp.write(data)
+                    remaining -= len(data)
+            temp.write(encoded)
+            temp.flush()
+            os.fsync(temp.fileno())
+            os.replace(temp.name, path)
+            fsync_dir(off)
+        finally:
+            Path(temp.name).unlink(missing_ok=True)
+    rows.append(row)
+    write_anchor(off, anchor_state(rows))
+
+
+def append(off, rows, **event):
+    off = checked_dir(off)
+    row, encoded = next_row(rows, event)
     with os.fdopen(private_open(off / "log.jsonl", os.O_WRONLY | os.O_APPEND | os.O_CREAT), "ab") as stream:
-        stream.write(enc(row).encode() + b"\n")
+        stream.write(encoded)
         stream.flush()
         os.fsync(stream.fileno())
     rows.append(row)
+    write_anchor(off, anchor_state(rows))
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
         return None
+
+
+@contextmanager
+def wall_budget(seconds):
+    # The Linux runner is single-threaded. A per-socket timeout alone does not
+    # bound a response that keeps sending data slowly.
+    def expired(signum, frame):
+        raise TimeoutError("request wall-clock budget elapsed")
+
+    prior = signal.signal(signal.SIGALRM, expired)
+    try:
+        signal.setitimer(signal.ITIMER_REAL, seconds)
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, prior)
 
 
 class PublicPages:
@@ -183,8 +309,10 @@ class PublicPages:
                 raise Failure("wake_window_elapsed")
             self.last[host] = self.monotonic()
             try:
-                with self.opener.open(req, timeout=min(5, remaining)) as response:
-                    raw = response.read(8 * 1024 * 1024 + 1)
+                budget = min(5, remaining)
+                with wall_budget(budget):
+                    with self.opener.open(req, timeout=budget) as response:
+                        raw = response.read(8 * 1024 * 1024 + 1)
                     if len(raw) > 8 * 1024 * 1024:
                         raise Failure("response_too_large")
                     if self.deadline and now_utc() >= self.deadline:
@@ -242,6 +370,8 @@ class PublicPages:
 
 
 def price(x):
+    if type(x) not in (str, int, float, Decimal):
+        raise ValueError("invalid price/size scalar")
     val = Decimal(str(x))
     if not val.is_finite() or val <= 0:
         raise ValueError("nonpositive or nonfinite price/size")
@@ -263,13 +393,28 @@ def walk(levels, usd):
 
 
 def ticket(book, sizes, fee):
-    if not book["bids"] or not book["asks"]:
-        return {"status": "empty_book"}
-    bids = sorted(((price(r[0]), price(r[1])) for r in book["bids"]), reverse=True)
-    asks = sorted((price(r[0]), price(r[1])) for r in book["asks"])
+    def levels(raw, descending):
+        if not isinstance(raw, (list, tuple)) or not raw:
+            raise ValueError("empty or malformed side")
+        out = []
+        for level in raw:
+            if not isinstance(level, (list, tuple)) or len(level) < 2:
+                raise ValueError("malformed level")
+            px, qty = price(level[0]), price(level[1])
+            if out and not (out[-1][0] > px if descending else out[-1][0] < px):
+                raise ValueError("unsorted or duplicate price level")
+            out.append((px, qty))
+        return out
+
+    try:
+        if not isinstance(book, dict):
+            raise ValueError("expected depth object")
+        bids, asks = levels(book["bids"], True), levels(book["asks"], False)
+    except (KeyError, ValueError, ArithmeticError):
+        return {"status": "bad book"}
     bid, ask = bids[0][0], asks[0][0]
-    if bid > ask:
-        return {"status": "crossed_book"}
+    if bid >= ask:
+        return {"status": "bad book"}
     if book.get("auction_mode"):
         return {"status": "auction_book"}
     mid = (bid + ask) / 2
@@ -307,8 +452,8 @@ def terminal(off, rows, exc, *, phase, now, wake=None):
 
 
 def start(off, pages, clock=now_utc):
-    with locked(off, create=True):
-        rows = read_log(off)
+    with locked(off, create=True) as off:
+        rows = read_log(off, recover=True, clock=clock)
         need(not rows, "log already started")
         fixed = frozen()
         now = clock()
@@ -316,6 +461,7 @@ def start(off, pages, clock=now_utc):
         if first <= now:
             first += HOUR
         last = first + (fixed["settings"]["days"] * 24 - 1) * HOUR
+        write_anchor(off, anchor_state(rows))
         append(off, rows, kind="header", **fixed, made_utc=iso(now), first_wake=iso(first), last_wake=iso(last))
         try:
             pairs = pages.pairs()
@@ -336,12 +482,12 @@ def header(rows):
 
 
 def record(off, pages, clock=now_utc):
-    with locked(off):
+    with locked(off) as off:
         return record_locked(off, pages, clock)
 
 
 def record_locked(off, pages, clock, rows=None):
-    rows = read_log(off) if rows is None else rows
+    rows = read_log(off, recover=True, clock=clock) if rows is None else rows
     h = header(rows)
     need(not any(r["kind"] == "stop" for r in rows), "logger already stopped; see alive for host/status")
     need(all(h[k] == v for k, v in frozen().items()), "plan, logger or resolved settings changed")
@@ -395,8 +541,8 @@ def collect(off, rows, st, pairs, pages, wake, clock):
                     except Failure as exc:
                         out = {"status": ("no_usd_book" if exc.reason == "http_404"
                                           else exc.reason)}
-                    except (KeyError, TypeError, ValueError, InvalidOperation, IndexError):
-                        out = {"status": "invalid_book"}
+                    except (KeyError, TypeError, ValueError, ArithmeticError, IndexError):
+                        out = {"status": "bad book"}
                 books[venue][coin] = dict(out, observed_utc=iso(clock()))
     except Blocked as exc:
         terminal(off, rows, exc, phase="wake", now=clock(), wake=wake)
@@ -435,6 +581,8 @@ def summarize(rows, *, full=False):
             continue
         signal = row["bitcoin"]
         btc_counts[signal["status"]] += 1
+        if any(b["status"] == "wake_window_elapsed" for books in row["books"].values() for b in books.values()):
+            wake_counts["partial"] += 1
         groups = ["all"]
         if parse(row["wake"]).hour == 0:
             groups.append("midnight_utc")
@@ -498,8 +646,9 @@ def atomic_json(path, value):
 
 
 def report(off, command, clock=now_utc):
-    with locked(off, write=command == "read"):
-        rows = read_log(off)
+    official = off == DEFAULT_OFF
+    with locked(off, write=command == "read") as off:
+        rows = read_log(off, recover=command == "read", clock=clock)
         h = header(rows)
         need(all(h[k] == v for k, v in frozen().items()), "plan, logger or resolved settings changed")
         if command == "read":
@@ -509,22 +658,22 @@ def report(off, command, clock=now_utc):
                 record_locked(off, None, lambda: now, rows)
         out = summarize(rows, full=command == "read")
         if command == "publish":
-            atomic_json(PUBLIC if off == DEFAULT_OFF else off / "M132_log.json", out)
+            atomic_json(PUBLIC if official else off / "M132_log.json", out)
         return out
 
 
 def loop(off, pages, clock=now_utc):
     # A distinct lifetime lock keeps observers available between wakes. A one-shot
     # record shares the operation lock and is idempotent under the same schedule.
-    checked_dir(off)
+    off = checked_dir(off)
     with os.fdopen(private_open(off / ".loop.lock", os.O_RDWR | os.O_CREAT), "rb") as loop_lock:
         try:
             fcntl.flock(loop_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise Refuse("a loop is already running") from None
         while True:
-            with locked(off):
-                rows = read_log(off)
+            with locked(off) as off:
+                rows = read_log(off, recover=True, clock=clock)
                 h = header(rows)
                 record_locked(off, pages, clock, rows)
             now = clock()

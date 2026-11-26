@@ -6,7 +6,9 @@ import io
 import json
 from pathlib import Path
 import stat
+import subprocess
 import tempfile
+import time
 import unittest
 import urllib.error
 
@@ -35,7 +37,7 @@ class Pages:
             raise m.Blocked(m.VENUES[venue], 403)
         if coin == self.fail_coin:
             raise m.Failure("timeout")
-        return {"bids": [["100", "100"]], "asks": [["100", "100"]]}
+        return {"bids": [["99.99", "100"]], "asks": [["100.01", "100"]]}
 
 
 class Logger(unittest.TestCase):
@@ -85,6 +87,87 @@ class Logger(unittest.TestCase):
         f.write_bytes(f.read_bytes().replace(b"TRADING", b"UNTRADING", 1))
         with self.assertRaisesRegex(m.Refuse, "chain broken"):
             m.read_log(self.off)
+
+    def test_private_override_refuses_any_checkout_and_symlinked_parent(self):
+        repo = Path(self.tmp.name) / "separate"
+        subprocess.run(["git", "init", "--quiet", str(repo)], check=True)
+        alias = Path(self.tmp.name) / "alias"
+        alias.symlink_to(repo, target_is_directory=True)
+        for path in (repo / "private", alias / "private"):
+            with self.subTest(path=path), self.assertRaisesRegex(m.Refuse, "outside every Git working tree"):
+                m.start(path, self.pages, self.clock)
+            self.assertFalse(path.exists())
+        inside = repo / "already-there"
+        inside.mkdir(mode=0o700)
+        for action in (lambda: m.record(inside, self.pages, self.clock),
+                       lambda: m.loop(inside, self.pages, self.clock),
+                       lambda: m.report(inside, "read", self.clock),
+                       lambda: m.report(inside, "publish", self.clock)):
+            with self.assertRaisesRegex(m.Refuse, "outside every Git working tree"):
+                action()
+        self.assertEqual(list(inside.iterdir()), [])
+        self.assertEqual(self.pages.calls, ["pairs"])
+
+    def test_valid_prefix_rollback_refuses_without_refetch(self):
+        self.now = self.first
+        path = self.off / "log.jsonl"
+        prefix = path.read_bytes()
+        m.record(self.off, self.pages, self.clock)
+        anchor_path = self.off / "anchor.json"
+        anchor = json.loads(anchor_path.read_text())
+        self.assertEqual(stat.S_IMODE(anchor_path.stat().st_mode), 0o600)
+        self.assertEqual(anchor["wake_count"], 1)
+        self.assertEqual(anchor["last_wake"], m.iso(self.first))
+        calls = list(self.pages.calls)
+        path.write_bytes(prefix)
+        with self.assertRaisesRegex(m.Refuse, "shorter than its durable tail anchor"):
+            m.record(self.off, self.pages, self.clock)
+        self.assertEqual(self.pages.calls, calls)
+
+    def test_complete_unanchored_tail_refuses(self):
+        self.now = self.first
+        path = self.off / "anchor.json"
+        prior = path.read_bytes()
+        m.record(self.off, self.pages, self.clock)
+        calls = list(self.pages.calls)
+        path.write_bytes(prior)
+        with self.assertRaisesRegex(m.Refuse, "anchor is behind the log"):
+            m.record(self.off, self.pages, self.clock)
+        self.assertEqual(self.pages.calls, calls)
+
+    def test_torn_tail_after_begin_is_recovered_and_wake_is_not_refetched(self):
+        self.now = self.first
+        with m.locked(self.off):
+            rows = m.read_log(self.off)
+            m.append(self.off, rows, kind="begin", wake=m.iso(self.first), made_utc=m.iso(self.now))
+        fragment = b'{"kind":"wake","partial":'
+        with (self.off / "log.jsonl").open("ab") as stream:
+            stream.write(fragment)
+        m.record(self.off, self.pages, self.clock)
+        rows = m.read_log(self.off)
+        self.assertEqual([r["kind"] for r in rows], ["header", "pairs", "begin", "recovery", "void"])
+        self.assertEqual(rows[-2]["discarded_sha256"], m.digest(fragment))
+        self.assertEqual(rows[-1]["reason"], "incomplete_attempt_not_retried")
+        self.assertEqual(self.pages.calls, ["pairs"])
+
+    def test_bad_book_logged_without_a_fill_or_a_cost(self):
+        self.now = self.first + m.HOUR
+        original = self.pages.book
+
+        def fake_book(venue, coin):
+            if venue == "Binance.US" and coin == "AAVE":
+                return {"bids": ["9999999"], "asks": ["9999999"]}
+            return original(venue, coin)
+
+        self.pages.book = fake_book
+        m.record(self.off, self.pages, self.clock)
+        rows = m.read_log(self.off)
+        bad = rows[-1]["books"]["Binance.US"]["AAVE"]
+        self.assertEqual(set(bad), {"status", "observed_utc"})
+        self.assertEqual(bad["status"], "bad book")
+        out = m.summarize(rows, full=True)
+        self.assertEqual(out["decision"]["paired_midnights_by_coin"]["AAVE"], 0)
+        self.assertEqual(out["decision"]["paired_midnights_by_coin"]["ADA"], 1)
 
     def test_read_before_end_and_public_only_aggregate(self):
         self.now = self.first + m.HOUR
@@ -137,8 +220,8 @@ class Arithmetic(unittest.TestCase):
     def test_book_walk_both_wire_formats(self):
         for venue, fee, extra in (("Coinbase", 60, ["1"]), ("Binance.US", 2, [])):
             with self.subTest(venue=venue):
-                quote = m.ticket({"bids": [["98", "5"] + extra, ["99", "1"] + extra],
-                                  "asks": [["102", "5"] + extra, ["101", "1"] + extra]}, [25, 250], fee)
+                quote = m.ticket({"bids": [["99", "1"] + extra, ["98", "5"] + extra],
+                                  "asks": [["101", "1"] + extra, ["102", "5"] + extra]}, [25, 250], fee)
                 self.assertEqual(D(quote["midpoint"]), D(100))
                 self.assertEqual(D(quote["sizes"]["25"]["buy"]["cost_bp"]), 100 + fee)
                 self.assertEqual(D(quote["sizes"]["25"]["sell"]["cost_bp"]), 100 + fee)
@@ -151,6 +234,37 @@ class Arithmetic(unittest.TestCase):
         quote = m.ticket(book, [25, 250], 1)
         self.assertEqual(quote["sizes"]["250"]["sell"], {"status": "too thin"})
         self.assertEqual(D(quote["sizes"]["250"]["buy"]["cost_bp"]), 101)
+
+    def test_all_levels_checked_including_unused_levels(self):
+        for bids, asks in (
+            (["88"], ["99"]),
+            ([[99, 500], [98, "NaN"]], [[100, 500]]),
+            ([[99, 500], [98, 0]], [[100, 500]]),
+            ([[99, 500], [100, 1]], [[101, 500]]),
+            ([[99, 500]], [[101, 500], [100, 1]]),
+            ([[100, 500]], [[100, 500]]),
+            ([[101, 500]], [[100, 500]]),
+            ([], [[100, 500]]),
+        ):
+            with self.subTest(bids=bids, asks=asks):
+                self.assertEqual(m.ticket({"bids": bids, "asks": asks}, [25, 250], 2), {"status": "bad book"})
+
+    def test_slow_read_uses_total_wake_budget(self):
+        class Slow(io.BytesIO):
+            def read(self, size):
+                time.sleep(2)
+                return super().read(size)
+
+        class Opener:
+            def open(self, req, timeout):
+                return Slow(b"{}")
+
+        pages = m.PublicPages(Opener())
+        started = time.monotonic()
+        pages.deadline = m.now_utc() + timedelta(milliseconds=50)
+        with self.assertRaisesRegex(m.Failure, "timeout"):
+            pages.book("Coinbase", "BTC")
+        self.assertLess(time.monotonic() - started, 1)
 
     def test_exact_closed_candle_and_nearest_rank(self):
         wake = datetime(2030, 1, 2, 0, 0, 10, tzinfo=timezone.utc)
