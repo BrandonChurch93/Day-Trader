@@ -11,7 +11,7 @@ import sqlite3
 from zoneinfo import ZoneInfo
 
 from timemachine.tm09_fixture import encode, fingerprint as digest, project_headlines, read_private, session_layout, week_pairs
-from timemachine.tm09_feed import copied_run, figure_check
+from timemachine.tm09_feed import copied_run, extract_figures
 from timemachine.tm09_orders import SPARSE_REASONS, Minutes, benchmark, fill, number, terminal, weights
 
 SID = re.compile(r'TM09-[A-Za-z0-9_-]{1,72}\Z')
@@ -208,7 +208,7 @@ class Desk:
             if notes and not self.fixture['news_index'][str(at)]:
                 raise ValueError('no admitted items at this wake')
             if not notes:
-                return notes, 0
+                return notes
             raw = self.news_reader()
             items = [item for wake, _ in self.wakes if wake <= at
                      for item in self._project(raw, self.fixture['news_index'][str(wake)])]
@@ -218,21 +218,19 @@ class Desk:
                 # Exact token sequence only; human privacy review still required.
                 if not clean or any(t and f' {t} ' in f' {clean} ' for t in source):
                     raise ValueError('headline copy refused')
-        return notes, 0
+        return notes
 
     def _amended_notes(self, at, notes):
         if not notes:
-            return notes, 0
+            return notes
         raw = self.news_reader()
         items = week_pairs(self.fixture, self.feed, raw=raw, until=at)
         headlines = [pair['headline'] for group in items.values() for pair in group]
-        seen, undecided = set(), 0
+        seen, attached = set(), []
         for note in notes:
-            if (not isinstance(note, dict) or set(note) != {'symbol', 'source_time', 'repeat', 'has_number', 'figures', 'paraphrase'}
+            if (not isinstance(note, dict) or set(note) != {'symbol', 'source_time', 'repeat', 'paraphrase'}
                     or not isinstance(note['symbol'], str) or type(note['source_time']) is not int
-                    or type(note['repeat']) is not bool or type(note['has_number']) is not bool
-                    or not isinstance(note['figures'], list) or note['has_number'] != bool(note['figures'])
-                    or any(not isinstance(f, str) for f in note['figures'])
+                    or type(note['repeat']) is not bool
                     or not isinstance(note['paraphrase'], str) or len(encode(note)) > self.options['note_chars']):
                 raise ValueError('invalid structured news note')
             clean = text_words(note['paraphrase'])
@@ -242,17 +240,14 @@ class Desk:
             for i, pair in enumerate(items[at]):
                 if i in seen or any(note[k] != pair[k] for k in ('symbol', 'source_time', 'repeat')):
                     continue
-                try:
-                    uncertainty = figure_check(pair['headline'], note['figures'], self.feed)
-                except ValueError:
-                    continue
-                matches.append((uncertainty, i))
-            if not matches:
-                raise ValueError('news note lacks matching admitted item or literal figures')
-            uncertain, index = min(matches)
+                figures, _ = extract_figures(pair['headline'], self.feed)
+                matches.append((i, tuple(figures)))
+            if not matches or len({figures for _, figures in matches}) != 1:
+                raise ValueError('news note lacks an unambiguous admitted item')
+            index, figures = matches[0]
             seen.add(index)
-            undecided += uncertain
-        return notes, undecided
+            attached.append({**note, 'figures': list(figures), 'has_number': bool(figures)})
+        return attached
 
     def handle(self, token, action, body=None):
         body = {} if body is None else body
@@ -298,10 +293,8 @@ class Desk:
                 answer = {'bars': self.minutes.visible(s, at, limit)}
                 self.log(con, at, 'look', {'symbol': s, 'rows': len(answer['bars'])})
             elif action == 'notes' and self.role in ROLES[:2] and set(body) == {'wake_key', 'notes'}:
-                notes, undecided = self._note(at, body)
+                notes = self._note(at, body)
                 self.log(con, at, 'notes', notes)
-                if undecided:
-                    self.log(con, at, 'figure_check_undecided', {'count': undecided})
                 answer = self._advance(st)
             elif action == 'pick' and self.role == 'boss' and set(body) == {'wake_key', 'weights'}:
                 if body['weights'] is not None:
@@ -397,12 +390,6 @@ class Desk:
             raise ValueError('not a boss desk')
         with self.tx() as (con, _):
             return {wake for (wake,) in con.execute("SELECT DISTINCT wake FROM journal WHERE kind='presented_news'")}
-
-    def undecided_figures(self):
-        if self.role != 'news_scout':
-            raise ValueError('not a news scout')
-        with self.tx() as (con, _):
-            return sum(json.loads(raw)['count'] for (raw,) in con.execute("SELECT data FROM journal WHERE kind='figure_check_undecided'"))
 
     def confirm_delivery(self, wake):
         if self.role != 'boss' or not self.spec['news'].get(str(wake)):

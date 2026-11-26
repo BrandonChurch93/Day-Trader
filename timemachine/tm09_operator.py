@@ -379,11 +379,9 @@ def main():
                         arms[arm] = d.export_boss() if d and d.complete() else None
                         if d and arm in layout.news:
                             presented.update(d.delivery_wakes())
-                scout = a.root / slot(week, 'news_scout')
-                undecided = Desk(scout, fixture, key, approved_options=options).undecided_figures() if scout.exists() else 0
                 results[week] = dict(models=models, eligible_wakes=sum(map(bool, fixture['news_index'].values())),
                                      note_wakes=len(presented),
-                                     feed_counts={**feed[week], 'figure_check_undecided': undecided},
+                                     feed_counts=feed[week],
                                      **benchmark_outcome(fixture, options, models))
             store_new(a.root / 'sealed-results.json', results)
             print('TM09 result handoff sealed; no returns printed.')

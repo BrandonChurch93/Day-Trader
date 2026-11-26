@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 from timemachine.score_tm09 import DEPS, run_approved, score
 from timemachine import tm09_blind
 from timemachine.tm09_desk import Desk, PUBLIC_SID, initialize, seal, slot, store_new
-from timemachine.tm09_feed import figure_check
+from timemachine.tm09_feed import copied_run, extract_figures
 from timemachine.tm09_fixture import FILES, compile_export, compile_weeks, encode, mondays, read_private, settings, stage1_weeks, week_pairs
 from timemachine.tm09_operator import benchmark_outcome, launch, review, stage1_contrasts, worker_handler
 from timemachine.tm09_orders import Minutes, benchmark, fill, terminal, weights
@@ -28,7 +28,7 @@ NOTE = 'SYN started a facility for making widgets.'
 
 
 def scout_note(source):
-    return dict(symbol='SYN', source_time=source, repeat=False, has_number=True, figures=['$2 million'], paraphrase=NOTE)
+    return dict(symbol='SYN', source_time=source, repeat=False, paraphrase=NOTE)
 
 
 def at(day, time):
@@ -104,7 +104,8 @@ class DeskTest(unittest.TestCase):
             packets = [d.handle(t, 'next') for d, t in desks]
             self.assertTrue(all(x['price_notes'] == packets[0]['price_notes'] for x in packets))
             self.assertNotIn('news_notes', packets[0]); self.assertNotIn('news_notes', packets[1])
-            self.assertEqual(packets[2].get('news_notes'), [scout_note(self.news[0]['stated_time'])] if i == 1 else None)
+            self.assertEqual(packets[2].get('news_notes'), [dict(scout_note(self.news[0]['stated_time']),
+                                                                figures=['$2 million'], has_number=True)] if i == 1 else None)
             for (d, t), packet in zip(desks, packets):
                 row = d.handle(t, 'look', {'wake_key': packet['wake_key'], 'symbol': 'SYN', 'rows': 20})
                 self.assertTrue(all(b[0] + 60 <= wake for b in row['bars']))
@@ -175,15 +176,23 @@ class DeskTest(unittest.TestCase):
         items = week_pairs(fixture, feed, raw=raw)[when]
         self.assertEqual([i['repeat'] for i in items], [False, True, False])
         title = 'SYN issues −$4–6 million forecast on November 5, 2026, with a gain of 2%'
-        self.assertFalse(figure_check(title, ['−$4–6 million', 'November 5, 2026', '2%'], feed))
-        self.assertFalse(figure_check('SYN hires eighty people', ['eighty'], feed))
-        self.assertTrue(figure_check('SYN closes a quarter with new factory', [], feed))
-        with self.assertRaises(ValueError):
-            figure_check('SYN ships two widgets from factory', [], feed)
-        with self.assertRaises(ValueError):
-            figure_check(title, ['−$4–6', 'November 5, 2026', '2%'], feed)
-        with self.assertRaises(ValueError):
-            figure_check(title, ['−$4–6 million', '2%', 'November 5, 2026'], feed)
+        self.assertEqual(extract_figures(title, feed), (['−$4–6 million', 'November 5, 2026', '2%'], False))
+        self.assertEqual(extract_figures('SYN hires eighty people', feed), ([], True))
+        self.assertEqual(extract_figures('SYN closes a quarter with new factory', feed), ([], True))
+        self.assertEqual(extract_figures('SYN gives a general update', feed), ([], False))
+        self.assertEqual(extract_figures('SYN rises 25zorp', feed), ([], True))
+        self.assertEqual(extract_figures('SYN reports ' + '9' * 65 + ' million', feed), ([], True))
+
+    def test_paraphrase_run_and_short_title_heuristic(self):
+        feed = self.opts['study']['amendment_1']['feed']
+        words = 'alpha beta gamma delta epsilon zeta eta theta'.split()
+        for n in range(1, len(words) + 1):
+            title = ' '.join(words[:n])
+            self.assertEqual(copied_run(f'reported {title} yesterday', [title], feed), n >= 3)
+            width = min(6, n) - 1
+            self.assertFalse(copied_run(' '.join(words[:width]), [title], feed))
+        self.assertTrue(copied_run('BETA, gamma DELTA epsilon ZETA eta', [' '.join(words)], feed))
+        self.assertFalse(copied_run('alpha beta gamma delta then epsilon zeta eta theta', [' '.join(words)], feed))
 
     def test_news_refuses_prose_in_figures_and_consecutive_copies(self):
         title = 'SYN confirms private widget supplier as revenue rises to $20 million after review'
@@ -193,14 +202,53 @@ class DeskTest(unittest.TestCase):
         desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': []})
         packet = desk.handle(token, 'next')
         note = scout_note(self.news[0]['stated_time'])
-        note.update(figures=['private widget supplier as revenue rises to $20 million'])
-        for changes in ({}, {'figures': ['$20 million'], 'paraphrase': 'SYN update: private widget supplier as revenue rises this week.'}):
+        for changes in ({'figures': ['private widget supplier as revenue rises to $20 million']},
+                        {'has_number': False},
+                        {'paraphrase': 'SYN update: private widget supplier as revenue rises this week.'}):
             with self.assertRaises(ValueError) as refused:
                 desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [{**note, **changes}]})
             self.assertNotIn('private widget supplier', str(refused.exception))
-        note.update(figures=['$20 million'], paraphrase='The company confirmed a supplier and reported higher sales.')
+        note.update(paraphrase='The company confirmed a supplier and reported higher sales.')
         self.assertTrue(desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [note]})['accepted'])
         self.assertNotIn(b'private widget supplier', (desk.path / 'desk.sqlite').read_bytes())
+
+    def test_possible_miss_does_not_block_note(self):
+        raw = encode({**self.news[0], 'headline': 'SYN ships eighty fictional widgets'}).encode()
+        desk, token = self.init('news_scout', news_reader=lambda: raw)
+        for i, _ in enumerate(self.f['wakes']):
+            packet = desk.handle(token, 'next')
+            if i == 1:
+                wake = packet['wake']
+            notes = [scout_note(self.news[0]['stated_time'])] if i == 1 else []
+            desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': notes})
+        note, = desk.export_notes()['body']['wakes'][str(wake)]
+        self.assertEqual((note['figures'], note['has_number']), ([], False))
+
+    def test_attached_figures_are_literal_bytes_only_and_wrong_scales_cannot_be_submitted(self):
+        forms = ('$20M', '.5%', 'USD 20 million', 'minus 2%', '10bps')
+        headline = 'SYN reports ' + '; '.join(forms) + ' for its fictional program'
+        feed = self.opts['study']['amendment_1']['feed']
+        raw = encode({**self.news[0], 'headline': headline}).encode()
+        desk, token = self.init('news_scout', news_reader=lambda: raw)
+        packet = desk.handle(token, 'next')
+        desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': []})
+        packet = desk.handle(token, 'next')
+        note = scout_note(self.news[0]['stated_time'])
+        with self.assertRaises(ValueError):
+            desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [
+                {**note, 'has_number': True, 'figures': ['$20', '5%', '20 million', '2%', '10']}]})
+        desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [note]})
+        for _ in self.f['wakes'][2:]:
+            desk.handle(token, 'notes', {'wake_key': desk.handle(token, 'next')['wake_key'], 'notes': []})
+        sealed, = desk.export_notes()['body']['wakes'][str(packet['wake'])]
+        self.assertTrue(sealed['has_number'])
+        self.assertEqual(sealed['figures'], list(forms))
+        self.assertEqual(extract_figures(headline, feed), (list(forms), False))
+        for figure in sealed['figures']:
+            offset = raw.index(figure.encode())
+            self.assertEqual(raw[offset:offset + len(figure.encode())], figure.encode())
+        self.assertFalse(copied_run('SYN update announces a new facility today', ['SYN update'], feed))
+        self.assertTrue(copied_run('SYN update today appears in the bulletin', ['SYN update today'], feed))
 
     def test_reject_wrong_and_tampered_stream_or_token(self):
         p, n = self.scouts()
@@ -287,10 +335,33 @@ class DeskTest(unittest.TestCase):
             pins[name] = sha256(blob).hexdigest()
         self.assertEqual(compile_export(self.opts, self.path, pins, counts)[self.f['week']], self.f)
         self.assertEqual(counts, {'skipped_edited_or_changed_clock': 1,
-                                  'by_week': {self.f['week']: {'admitted_pairs': 1, 'repeat_pairs': 0}}})
+                                  'by_week': {self.f['week']: {'admitted_pairs': 1, 'repeat_pairs': 0,
+                                                              'items_with_extracted_figure': 1,
+                                                              'items_without_extracted_figure': 0,
+                                                              'possible_figure_missed': 0}}})
         pins[FILES[2]] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'hash mismatch'):
             compile_export(self.opts, self.path, pins)
+
+    def test_figure_counts_per_item_not_per_symbol(self):
+        self.opts['symbols'].append('XYZ')
+        base = self.news[0]
+        news = [{**base, 'symbols': ['SYN', 'XYZ'], 'headline': 'Fictional firm reports $20M and two deals'},
+                {**base, 'id': 'two', 'headline': 'Fictional firm reports 25zorp'},
+                {**base, 'id': 'three', 'headline': 'Fictional firm announces deal'}]
+        counts, pins = {'skipped_edited_or_changed_clock': 0}, {}
+        bars = self.bars + [dict(bar, symbol='XYZ') for bar in self.bars]
+        for name, records in zip(FILES, (self.sessions, bars, news)):
+            blob = '\n'.join(map(encode, records)).encode()
+            (self.path / name).write_bytes(blob)
+            pins[name] = sha256(blob).hexdigest()
+        fixture = compile_export(self.opts, self.path, pins, counts)
+        self.assertEqual(counts['by_week'][self.f['week']], {
+            'admitted_pairs': 4, 'repeat_pairs': 0, 'items_with_extracted_figure': 1,
+            'items_without_extracted_figure': 2, 'possible_figure_missed': 2,
+        })
+        self.assertNotIn('$20M', encode(fixture))
+        self.assertNotIn('$20M', encode(counts))
 
     def test_missing_sizing_print_is_countable_cancel(self):
         wake = self.f['wakes'][0][0]

@@ -11,7 +11,7 @@ import stat
 from zoneinfo import ZoneInfo
 
 from timemachine.tm09_orders import number
-from timemachine.tm09_feed import annotate
+from timemachine.tm09_feed import annotate, extract_figures
 
 FILES = ('stock_sessions.jsonl', 'stock_bars.jsonl', 'stock_news.jsonl')
 
@@ -324,7 +324,17 @@ def compile_export(config, directory, pins, counts=None, *, stage1=False):
         lookup = {i['id']: p for i, p in zip(index, project_headlines(raw, index))}
         for week, fixture in weeks.items():
             pairs = [pair for group in week_pairs(fixture, feed, lookup=lookup).values() for pair in group]
-            counts.setdefault('by_week', {})[week] = {'admitted_pairs': len(pairs), 'repeat_pairs': sum(p['repeat'] for p in pairs)}
+            # assign_news admits each source item once, even when it has several roster tags.
+            weekly = counts.setdefault('by_week', {})[week] = {
+                'admitted_pairs': len(pairs), 'repeat_pairs': sum(p['repeat'] for p in pairs),
+                'items_with_extracted_figure': 0, 'items_without_extracted_figure': 0,
+                'possible_figure_missed': 0,
+            }
+            for group in fixture['news_index'].values():
+                for row in group:
+                    spans, missed = extract_figures(lookup[row['id']]['headline'], feed)
+                    weekly['items_with_extracted_figure' if spans else 'items_without_extracted_figure'] += 1
+                    weekly['possible_figure_missed'] += missed
     return weeks
 
 
