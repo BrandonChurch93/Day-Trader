@@ -1501,3 +1501,8 @@ practice_gate_ex02_pick_life_minutes:
   status: example
   note: EXAMPLE, made up for the gate's tests, not a registered method. An EX02 pick not traded within this many minutes is dropped.
   source: practice/criteria/EXAMPLE_EX02.json
+practice_longterm_share_of_realized_gain:
+  value: 0.30
+  status: builder
+  note: Pretend money only. Share of each calendar month's realized net trading gain that moves to the long-term book; nothing moves in a losing month. Set by the lead agent 2026-11-26 12:03 MT as a default for the pretend run. The share for real money is the owner's to set and is not decided.
+  source: docs/DECISIONS.md (2026-11-26)
