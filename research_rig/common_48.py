@@ -184,7 +184,7 @@ def distributions(raw, windows, names_by_turn, cfg):
              and set(block["symbols"]) == set(names), "DISTRIBUTIONS")
 
         def one(fund):
-            need(type(fund) is dict and set(fund) == {"source", "cash"} and type(fund["source"]) is str
+            need(type(fund) is dict and set(fund) == {"source", "cash", "splits"} and type(fund["source"]) is str
                  and re.fullmatch(r"https://\S+", fund["source"]) is not None and type(fund["cash"]) is list,
                  "DISTRIBUTION_SOURCE")
             seen, rows, prev = set(), [], None
@@ -197,10 +197,35 @@ def distributions(raw, windows, names_by_turn, cfg):
                 seen.add(ident)
                 prev = (d, ident)
                 rows.append((d, exact(r["amount"])))
-            return rows
+            need(type(fund["splits"]) is list, "SPLITS")
+            splits, prev = [], None
+            for r in fund["splits"]:
+                # ratio = new shares per old share; the ex-date close is the first post-split close.
+                need(type(r) is dict and set(r) == {"id", "ex_date", "ratio"}, "SPLIT_FIELDS")
+                ident, d = r["id"], day(r["ex_date"])
+                need(type(ident) is str and ident and ident == ident.strip() and ident not in seen
+                     and w["anchor"] < d <= w["exit"] and d in w["sessions"] and positive_number(r["ratio"])
+                     and exact(r["ratio"]) != 1 and (prev is None or d > prev), "SPLIT_ROW")
+                seen.add(ident)
+                prev = d
+                splits.append((d, exact(r["ratio"])))
+            return {"cash": rows, "splits": splits}
 
-        out[w["turn"]] = ({s: one(block["symbols"][s]) for s in names}, one(block["benchmark"]))
+        bench = one(block["benchmark"])
+        need(not bench["splits"], "BENCHMARK_SPLIT")
+        out[w["turn"]] = ({s: one(block["symbols"][s]) for s in names}, bench)
     return out
+
+
+def check_jumps(closes, splits, cfg):
+    """Refuse a packet whose consecutive raw closes move by more than the configured factor on a session with
+    no recorded split: an unrecorded split, not a filter. Prints nothing and returns nothing."""
+    limit = exact(cfg["split_check_ratio"])
+    split_days = {d for d, _ in splits}
+    days = sorted(closes)
+    for a, b in zip(days, days[1:]):
+        r = closes[b] / closes[a]
+        need(b in split_days or 1 / limit <= r <= limit, "UNRECORDED_SPLIT")
 
 
 # ---------- costs ----------
@@ -245,8 +270,10 @@ def side_costs(quotes, window, cfg):
 
 # ---------- post-lock engine ----------
 
-def sleeve(closes, cash, costs, window, exit_key, budget, zero_cost=False):
-    """Net dollars and shares for one whole-share sleeve bought at the entry close."""
+def sleeve(closes, actions, costs, window, exit_key, budget, zero_cost=False):
+    """Net dollars and shares for one whole-share sleeve bought at the entry close. A split after entry scales
+    the share count from its ex-date; cash is paid per share held on the ex-date."""
+    cash, splits = actions["cash"], actions["splits"]
     entry, target = window["entry"], window[exit_key]
     shares = budget // (closes[entry] * (1 + costs["entry"]))  # sizing always at judged cost
     fee_in = Fraction(0) if zero_cost else costs["entry"]
@@ -255,8 +282,15 @@ def sleeve(closes, cash, costs, window, exit_key, budget, zero_cost=False):
     last = max(held)
     missing = last != target
     fee_out = Fraction(0) if zero_cost else (costs["missing_exit"] if missing else costs[exit_key])
-    payout = sum((a for d, a in cash if entry < d <= last), Fraction(0))
-    return shares * (closes[last] * (1 - fee_out) + payout - unit), shares, missing
+    def held_on(d):
+        n = Fraction(shares)
+        for x, ratio in splits:
+            if entry < x <= d:
+                n *= ratio
+        return n
+
+    payout = sum((a * held_on(d) for d, a in cash if entry < d <= last), Fraction(0))
+    return held_on(last) * closes[last] * (1 - fee_out) + payout - shares * unit, shares, missing
 
 
 def turn_result(window, funds, bench, quotes, cash, cfg, exit_key="exit", zero_cost=False):
@@ -267,6 +301,8 @@ def turn_result(window, funds, bench, quotes, cash, cfg, exit_key="exit", zero_c
     for s, closes in sorted(funds.items()):
         if not complete_through(closes, window, window["entry"]):
             continue
+        if any(window["anchor"] < d <= window["entry"] for d, _ in fund_cash[s]["splits"]):
+            continue  # a split inside the ranking window makes the raw price return meaningless
         costs = side_costs(fund_quotes[s], window, cfg)
         dollars, shares, missing = sleeve(closes, fund_cash[s], costs, window, exit_key, sleeve_usd, zero_cost)
         if shares < 1:
@@ -274,7 +310,7 @@ def turn_result(window, funds, bench, quotes, cash, cfg, exit_key="exit", zero_c
         rank = closes[window["formation"]] / closes[window["anchor"]]
         eligible.append({"symbol": s, "rank": rank, "dollars": dollars, "missing": missing,
                          "proxied": costs["proxied"]})
-    need(eligible, "NO_ELIGIBLE_FUND")
+    need(len(eligible) >= cfg["picks"], "TOO_FEW_ELIGIBLE")
     picks = sorted(eligible, key=lambda r: (r["rank"], r["symbol"]))[:cfg["picks"]]
     portfolio = sum((r["dollars"] for r in picks), Fraction(0)) / capital
     roster_ew = sum((r["dollars"] for r in eligible), Fraction(0)) / sleeve_usd / len(eligible)
@@ -282,7 +318,7 @@ def turn_result(window, funds, bench, quotes, cash, cfg, exit_key="exit", zero_c
     bdollars, bshares, bmissing = sleeve(bench, bench_cash, bcosts, window, exit_key, capital, zero_cost)
     need(bshares >= 1 and not bmissing, "BENCHMARK")
     return {"turn": window["turn"], "portfolio": portfolio, "benchmark": bdollars / capital, "roster_ew": roster_ew,
-            "picks": len(picks), "eligible": len(eligible), "roster": len(funds),
+            "held": [r["symbol"] for r in picks], "picks": len(picks), "eligible": len(eligible), "roster": len(funds),
             "held_missing_exit": sum(r["missing"] for r in picks),
             "eligible_missing_exit": sum(r["missing"] for r in eligible),
             "held_proxy_sides": sum(r["proxied"]["entry"] + r["proxied"][exit_key] for r in picks)}

@@ -16,13 +16,13 @@ All dates are subject to the [official NYSE holiday calendar](https://ir.theice.
 
 ## By December 10
 
-1. Take the 2026 muni rows of the point-in-time roster (/home/user/workspace/rig/inventories/row86_muni_cef_roster.csv, from the [SEC 2026 closed-end fund file](https://www.sec.gov/files/investment/data/other/closed-end-fund-information/closed-end-investment-company-2026.csv)). Freeze that ticker list by writing its SHA-256 into the log below. No ticker is added after that.
+1. Take all 2026 rows (71, point-in-time active) of the roster (/home/user/workspace/rig/inventories/row86_muni_cef_roster.csv, from the [SEC 2026 closed-end fund file](https://www.sec.gov/files/investment/data/other/closed-end-fund-information/closed-end-investment-company-2026.csv)). Freeze that ticker list by writing its SHA-256 into the log below. No ticker is added after that.
 2. Recheck the session dates above against the NYSE calendar.
 3. Create /home/user/workspace/rig/data/forward_e04 (mode 0700) for private records. Prices, quotes and amounts stay there, never in the repository.
 
 ## Formation, Wed 2026-12-30, after the close
 
-1. For each frozen ticker read raw SIP daily bars from 2026-01-02 through 2026-12-30. A fund missing any session is not eligible.
+1. For each frozen ticker read raw SIP daily bars from 2026-01-02 through 2026-12-30. A fund missing any session, or with a split whose ex-date is after 2026-01-02 and on or before 2026-12-31, is not eligible. Check splits from issuer, exchange or SEC records.
 2. Price return = close on 2026-12-30 over close on 2026-01-02. Rank lowest first; ties by ticker.
 3. Write the ranked list privately, with its SHA-256 in the log, before the entry session opens.
 
@@ -35,7 +35,7 @@ All dates are subject to the [official NYSE holiday calendar](https://ir.theice.
 
 ## During January
 
-Record every distribution with an ex-date after 2026-12-31 and on or before the exit, from a dated issuer or exchange notice, with its URL. A December 31 ex-date is not credited.
+Record every distribution with an ex-date after 2026-12-31 and on or before the exit, from a dated issuer or exchange notice, with its URL. A December 31 ex-date is not credited. A split of a held fund in January changes its share count from the ex-date.
 
 ## Exits
 

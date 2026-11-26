@@ -75,8 +75,8 @@ def synthetic_packet():
         ex = [d for d in w["sessions"] if d > w["entry"]][3].isoformat()
         cash["turns"][str(y)] = {
             "symbols": {s: {"source": "https://example.test/notice", "cash": [
-                {"id": f"{s}-{y}", "ex_date": ex, "amount": Decimal("0.03")}]} for s in names},
-            "benchmark": {"source": "https://example.test/etf", "cash": []}}
+                {"id": f"{s}-{y}", "ex_date": ex, "amount": Decimal("0.03")}], "splits": []} for s in names},
+            "benchmark": {"source": "https://example.test/etf", "cash": [], "splits": []}}
     roster = "turn_year,ticker\n" + "".join(f"{w['turn']},{s}\n" for w in WINDOWS for s in names)
     return names, bars, quotes, cash, roster.encode()
 
@@ -131,11 +131,25 @@ class Unit(unittest.TestCase):
         costs = {"entry": Fraction(0), "exit": Fraction(0), "shown_exit": Fraction(0),
                  "missing_exit": Fraction(1, 100)}
         later = [d for d in w["sessions"] if d > w["entry"]]
-        dollars, shares, missing = C.sleeve(closes, [(later[0], Fraction(1, 10)), (last, Fraction(5))], costs, w,
-                                            "exit", Fraction(100))
+        acts = {"cash": [(later[0], Fraction(1, 10)), (last, Fraction(5))], "splits": []}
+        dollars, shares, missing = C.sleeve(closes, acts, costs, w, "exit", Fraction(100))
         self.assertTrue(missing)
         self.assertEqual(shares, 10)
         self.assertEqual(dollars, 10 * (Fraction(10) * Fraction(99, 100) + Fraction(1, 10) - 10))
+
+    def test_split_after_entry_and_unrecorded_jump(self):
+        w = WINDOWS[0]
+        days = [d for d in w["sessions"] if d <= w["exit"]]
+        later = [d for d in days if d > w["entry"]]
+        split_day = later[2]
+        closes = {d: Fraction(20) if d < split_day else Fraction(10) for d in days}
+        zero = {"entry": Fraction(0), "exit": Fraction(0), "shown_exit": Fraction(0), "missing_exit": Fraction(0)}
+        acts = {"cash": [(later[5], Fraction(1, 10))], "splits": [(split_day, Fraction(2))]}
+        dollars, shares, _ = C.sleeve(closes, acts, zero, w, "exit", Fraction(100))
+        self.assertEqual((shares, dollars), (5, Fraction(1)))
+        C.check_jumps(closes, acts["splits"], CFG)
+        with self.assertRaises(C.Refused):
+            C.check_jumps(closes, [], CFG)
 
     def test_marks_zero_not_positive(self):
         rows = [{"portfolio": Fraction(0), "benchmark": Fraction(0), "roster_ew": Fraction(0)}] * 10
@@ -156,10 +170,14 @@ class Unit(unittest.TestCase):
         self.assertEqual(r["held_proxy_sides"], 2)
         tie = {"SYNB": dict(funds["SYNA"]), "SYNA": dict(funds["SYNA"])}
         q2 = ({"SYNA": q[0]["SYNA"], "SYNB": q[0]["SYNA"]}, q[1])
-        cash2 = ({"SYNA": [], "SYNB": []}, [])
+        none = {"cash": [], "splits": []}
+        cash2 = ({"SYNA": none, "SYNB": {"cash": [], "splits": [(w["formation"], Fraction(2))]}}, none)
         cfg1 = CFG | {"picks": 1}
         a = C.turn_result(w, tie, bench, q2, cash2, cfg1)
-        self.assertEqual(a["picks"], 1)
+        self.assertEqual((a["picks"], a["eligible"], a["held"]), (1, 1, ["SYNA"]))
+        cash3 = ({"SYNA": none, "SYNB": none}, none)
+        b = C.turn_result(w, tie, bench, q2, cash3, cfg1)
+        self.assertEqual((b["eligible"], b["held"]), (2, ["SYNA"]))
 
     def test_calibration_small(self):
         cfg = CFG | {"calibration": CFG["calibration"] | {"trials": 300}}

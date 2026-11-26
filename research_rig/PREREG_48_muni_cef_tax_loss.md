@@ -26,8 +26,8 @@ MEASURED from `research_rig/calendar_25.json` by the tests: the first turn ancho
 
 ## Universe
 
-- Each turn Y uses the muni closed-end funds on the [SEC closed-end fund roster](https://www.sec.gov/data-research/sec-markets-data/closed-end-fund-information) for year Y, exchange-listed, mapped to tickers as of that year. No fund is chosen with later knowledge. The point-in-time roster is built by /root/idea_scout at /home/user/workspace/rig/inventories/row86_muni_cef_roster.csv and enters the packet as `roster.csv` with at least columns `turn_year` and `ticker`. MEASURED in queue row 86: 130 muni or tax-free registrants on the 2026 roster.
-- Eligible in a turn: a raw SIP daily bar on every session from the first January session through entry, and at least one whole share affordable from a $100 sleeve at the judged entry cost.
+- Each turn Y uses the muni closed-end funds on the [SEC closed-end fund roster](https://www.sec.gov/data-research/sec-markets-data/closed-end-fund-information) for year Y, exchange-listed, mapped to tickers as of that year. No fund is chosen with later knowledge. The point-in-time roster is built by /root/idea_scout at /home/user/workspace/rig/inventories/row86_muni_cef_roster.csv and enters the packet as `roster.csv` with at least columns `turn_year` and `ticker`; other columns are ignored. All point-in-time active rows are used, including funds the SEC's June 2020 and June 2024 files left out while they were still listed (present in an earlier SEC file, no common-share delisting by December 1 of that year). MEASURED from that file on 2026-11-26 by the plan 48 parser: 1,327 fund-years for 2016 to 2025, from 164 (2016) down to 94 (2025); 1,218 if only rows printed in that year's SEC file were kept.
+- Eligible in a turn: a raw SIP daily bar on every session from the first January session through entry, no split with an ex-date after the first January session and on or before entry (a raw price return across a split is meaningless), and at least one whole share affordable from a $100 sleeve at the judged entry cost. Fewer than five eligible funds in any turn refuses the run.
 - Bars after entry may stop (merger, liquidation, delisting). A held fund with no bar at the exit is valued at its last close at or before the exit, charged max(entry half-spread, 50 bp proxy) plus 5 bp, and counted. It is not dropped.
 - The benchmark is MUB. It must have every bar through the exit or validation refuses.
 
@@ -37,6 +37,7 @@ MEASURED from `research_rig/calendar_25.json` by the tests: the first turn ancho
 - Buy the worst five: $100 each, largest whole-share count that fits after the entry cost, at the entry close. Leftover cash is idle with no yield. Zero commission.
 - Sell at the judged exit close less the exit cost.
 - Distributions are credited per share held when the ex-date is after entry and on or before the exit (or the last held close for a fund that stops). Cash is not reinvested. Sources are dated issuer or exchange records, one HTTPS source per fund per turn.
+- Splits: a split of a held fund with an ex-date after entry and on or before the last held close multiplies the share count from that ex-date (ratio is new shares per old share); cash on or after it is paid on the new count. MUB must have no split in the window or validation refuses.
 - The yearly portfolio return is net dollars over $500.
 - MUB is one $500 whole-share sleeve on the same clock, cost rule and distribution rule.
 - The roster comparison is the mean of $100 sleeves over all eligible funds in that turn (equal weight), with the same rules.
@@ -90,9 +91,9 @@ The custodian stages, only after the lead approves the freeze, an owner-only dir
 - `roster.csv`: the point-in-time roster.
 - `bars_Y.json` for each turn: `turn`, `symbols` (every roster ticker for that turn) and `benchmark`, each a list of raw SIP daily bars `t`, `o`, `h`, `l`, `c`, `v`, with `t` at midnight New York, sessions from the first January session of Y to the last January session of Y+1.
 - `quotes_Y.json` for each turn: `turn`, `sessions` (entry, exit, shown exit dates), and per symbol and for the benchmark the SIP quotes `t`, `bp`, `ap` from 15:53:00 to before 15:59:00 New York time on each of the three sessions.
-- `distributions.json`: `schema` 1 and per turn per symbol a `source` URL and `cash` rows `id`, `ex_date`, `amount` with ex-dates after entry and on or before the exit.
+- `distributions.json`: `schema` 1 and per turn, per symbol and for the benchmark, a `source` URL, `cash` rows `id`, `ex_date`, `amount` with ex-dates after entry and on or before the exit, and `splits` rows `id`, `ex_date`, `ratio` with ex-dates after the first January session and on or before the exit (empty when none). The custodian and an independent reviewer verify splits from issuer, exchange or SEC records for every fund-turn.
 
-JSON numbers are read as exact decimals. Gaps before entry make a fund ineligible; malformed rows, extra files or a wrong hash refuse the whole packet. The custodian and an independent reviewer check distribution coverage before approval. No prices, quotes or distribution amounts go in the repository.
+As a check on the split records, validation refuses the packet if any fund or MUB has two consecutive raw closes whose ratio is above `split_check_ratio` (1.4) or below its inverse on a session with no recorded split. This is a refusal for review, prints nothing and is not a filter. JSON numbers are read as exact decimals. Gaps before entry make a fund ineligible; malformed rows, extra files or a wrong hash refuse the whole packet. The custodian and an independent reviewer check distribution coverage before approval. No prices, quotes or distribution amounts go in the repository.
 
 ## Gate
 

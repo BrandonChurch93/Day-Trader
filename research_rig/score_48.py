@@ -29,7 +29,7 @@ PIN_NAMES = {PLAN, CALENDAR, ENGINE, CALIBRATION, CONFIG, "research_rig/score_48
 LEDGER_ROW, QUEUE_ROW = 182, 86
 CAP = 64 * 1024 * 1024
 CONFIG_KEYS = {"first_turn", "last_turn", "turns", "capital", "sleeve_usd", "picks", "formation_from_end",
-               "entry_from_end", "shown_exit_session", "benchmark", "cost", "marks", "calibration", "resources"}
+               "entry_from_end", "shown_exit_session", "benchmark", "split_check_ratio", "cost", "marks", "calibration", "resources"}
 APPROVAL_RE = (rb"Approved by the lead: plan 48, validation and one scored run, freeze commit ([0-9a-f]{40}), "
                rb"freeze SHA-256 ([0-9a-f]{64}), input SHA-256 ([0-9a-f]{64}), "
                rb"roster SHA-256 ([0-9a-f]{64}), distributions SHA-256 ([0-9a-f]{64})\.\n")
@@ -204,6 +204,9 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, C, calendar_blob, cf
                                                 private=True)), w, roster[y], cfg)
         quotes = C.quotes_file(parse(pinned(input_dir / f"quotes_{y}.json", m["files"][f"quotes_{y}.json"],
                                             private=True)), w, roster[y], cfg)
+        for s, closes in funds.items():
+            C.check_jumps(closes, cash[y][0][s]["splits"], cfg)
+        C.check_jumps(bench, [], cfg)
         packet[y] = (funds, bench, quotes, cash[y])
     return windows, packet, roster
 
@@ -298,7 +301,10 @@ def main():
                 "input_sha256": a.input_sha256, "roster_sha256": a.roster_sha256,
                 "distributions_sha256": a.distributions_sha256}
         need((freeze, blobs) == authorize(*pins), "APPROVAL")
-        once(RUN, meta, (windows, packet, cfg), C.evaluate)
+        try:
+            once(RUN, meta, (windows, packet, cfg), C.evaluate)
+        except C.Refused as exc:
+            raise Refused(str(exc)) from None
     except Refused as exc:
         p.exit(2, f"{exc}\n")
     except Exception:
