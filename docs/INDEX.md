@@ -155,6 +155,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/67_round_9_outside_evidence.md` | Checked outside evidence on dated and forced flows, with two test candidates, a broker and issuer audit, and a fill calibration | CURRENT |
 | `docs/research/68_replay_24_same_coin_carry.md` | Same-coin funding carry on viewed dates. Run once, did not pass, one of five marks | CURRENT |
 | `docs/research/69_replay_25_treasury_month_end.md` | Treasury ETF month-end rule. First counted trading-replay pass, 9 of 9 marks at 2 bps per side, with higher costs and fill limits shown | CURRENT |
+| `docs/research/70_measure_27_tlt_closing_cross.md` | Measurement 27: TLT closing cross against the SIP close on Replay 25's 260 sessions. Frozen mark 1 not met (124 of 260 found under exchange Q); where found the cross equalled the SIP close every time. After-run view with Q or T labels shown | CURRENT |
 | `docs/research/71_replay_20_upbit_listing_short.md` | Upbit listing short after a red UTC day. Second counted trading-replay pass, 5 of 5 on viewed dates; US availability and concentration limits | CURRENT |
 | `docs/research/72_replay_23_ipo_fast_track.md` | Early index buying after large US listings. Run once, did not pass, 7 of 8 marks; worked on paper 2017 to 2021, not since 2022 | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
@@ -255,6 +256,8 @@ Working papers.
 | `research_rig/PREREG_19_monday_asia.md`, `research_rig/common_19.py`, `research_rig/score_19.py`, `research_rig/test_19.py` | Frozen Queue 35 Monday Asia trend proxy for BTC and ETH, shifted-hour placebos and synthetic-only tests. Local one-shot complete | CURRENT |
 | `research_rig/MEASURE_15_breakout_fills.md` | Frozen measurement for queue 23: what a breakout order on stocks in play really paid on 60 fixed mornings, with the decision rule fixed before any trade or quote was collected. Not a trial | CURRENT |
 | `research_rig/MEASURE_27_tlt_closing_cross.md` | Frozen measurement 27 plan, TLT closing cross against the SIP close, ledger 164 | CURRENT |
+| `research_rig/measure_27.py` | Measurement 27: checks the sessions and Replay 25 input closes, reads TLT SIP trades around each close once (kept off repo), and writes the summary and doc 70 from the off-repo result | CURRENT |
+| `research_rig/measure_27_summary.json` | Measurement 27 aggregates only (counts, bps statistics, cross sizes, session dates not found). No trade or price | CURRENT |
 | `research_rig/measure_15_summary.json` | Measurement 15 aggregates only (counts, medians, means, 90th percentiles, outlier check). No trade, quote, price, time or symbol; the per-stock-day output stays off repo | CURRENT |
 | `research_rig/report_15.py` | Writes the Measurement 15 summary from the off-repo output, and prints doc 66 from the summary only. No rule run and no market-data reads | CURRENT |
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
