@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 11:23 UTC
+Last updated: 2026-11-26 11:24 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Queue 109, plan 67 (RSI(2) pullback in SPLG, QQQ, IWM, DIA; ledger 211): closed before prices 2026-11-26 11:24 UTC. MEASURED on made-up data only, no bar read: the chance of passing all marks at the assumed +16.8 bp excess is 19.29% (9,645 of 50,000 runs), under the 33% line fixed in this row; 59.8% at +33.6 bp, 7.6% at +8.4 bp, 2.3% with no edge. Assumptions: 180 entry dates in ten years, 158 weeks, within-week correlation 0.25, noise 194 bp a trade from the published index yearly swing scaled to 3.4 sessions.
 
 - Replay 22 (plan 22, ledger 159, queue 40): the range-break rule read off the Fable 5.2 picker's notes, run as a fixed rule with no AI on the monthly top-30 coins, scored once 2026-11-26 11:23 UTC. MEASURED, judged 2020-01 to 2026-03 at 12 bp a side: did not pass, 1 of 5 marks. End value 3.75 times the start against 3.74 for holding the same list (met, by a hair); daily Sharpe 0.67 against 1.0 needed; largest fall 79% against 40% allowed; 57% of 500 random-entry twins did as well or better (the rule needed to beat 95% of them; twin median 4.09, cut 13.02); 3 of 7 years positive against 5 needed. 111 trades. Shown only: Bitcoin held 9.43 times; without the best 3 trades 0.89 times; with the Bitcoin cash switch 3.54 times and a 54% largest fall; shorter exit 3.69 times; at 1, 25, 40 bp costs 4.11, 3.37, 2.97 times. Independent recompute and results page pending.
 
