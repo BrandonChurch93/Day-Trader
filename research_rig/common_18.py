@@ -248,6 +248,7 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
         step_price = fsum(q*(opens[key]-basis) for key,(_,q,basis,_,_) in old.items())
         cash += step_price
         price_pnl += step_price
+        value(h,cash,save_day=False)
         positions.clear()
         if gross_reopen:
             exit_fee = fee*fsum(opens[k]*abs(v[1]) for k,v in old.items())

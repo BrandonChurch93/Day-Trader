@@ -1,21 +1,21 @@
 # Plan 18 rank-page coverage
 
-MEASURED from the pinned rank and archive inventories only. A mapped slot means dated identity at the next-UTC-day page clock and trade, mark and funding metadata for that month. It does not mean those observations are present or the name can trade at every decision. The December 2021 warm-up page uses January 2022 metadata. Names are shown below for every page with fewer than 25 mappings. An empty reason column means no exclusion of that type, not a positive trading claim.
+MEASURED from the pinned rank and archive inventories and the FTT checksum supplement only. A mapped slot means dated identity at the next-UTC-day page clock and trade, mark and funding file metadata for that month. It does not mean those observations are present or the name can trade at every decision. The December 2021 warm-up page uses January 2022 metadata. Names are shown below for every page with fewer than 25 mappings. An empty reason column means no exclusion of that type, not a positive trading claim.
 
 | Saved page | Mapped / 30 | No mapped contract in scope | Dated segment or archive gap |
 |---|---:|---|---|
-| 2021-12-05 | 22/30 | USDT, USDC, CRO, WBTC, FTT, BUSD, DAI, UST/USTC | None |
+| 2021-12-05 | 22/30 | USDT, USDC, CRO, WBTC, BUSD, DAI, UST/USTC | FTT |
 | 2022-01-02 | 23/30 | USDT, USDC, CRO, WBTC, BUSD, DAI, UST/USTC | None |
-| 2022-02-06 | 22/30 | USDT, USDC, CRO, WBTC, FTT, BUSD, DAI, UST/USTC | None |
-| 2022-03-06 | 20/30 | USDT, USDC, CRO, WBTC, LEO, FTT, BUSD, DAI, UST/USTC, WTRX | None |
-| 2022-04-03 | 22/30 | USDT, USDC, CRO, WBTC, FTT, BUSD, DAI, UST/USTC | None |
-| 2022-05-01 | 21/30 | USDT, USDC, CRO, WBTC, LEO, FTT, BUSD, DAI, UST/USTC | None |
-| 2022-06-05 | 22/30 | USDT, USDC, CRO, WBTC, LEO, FTT, BUSD, DAI | None |
-| 2022-07-03 | 22/30 | USDT, USDC, CRO, WBTC, LEO, FTT, BUSD, DAI | None |
-| 2022-08-07 | 22/30 | USDT, USDC, CRO, WBTC, LEO, FTT, BUSD, DAI | None |
-| 2022-09-04 | 22/30 | USDT, USDC, CRO, WBTC, LEO, FTT, BUSD, DAI | None |
-| 2022-10-02 | 22/30 | USDT, USDC, CRO, WBTC, LEO, FTT, BUSD, DAI | None |
-| 2022-11-06 | 22/30 | USDT, USDC, CRO, WBTC, LEO, FTT, BUSD, DAI | None |
+| 2022-02-06 | 22/30 | USDT, USDC, CRO, WBTC, BUSD, DAI, UST/USTC | FTT |
+| 2022-03-06 | 20/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI, UST/USTC, WTRX | FTT |
+| 2022-04-03 | 22/30 | USDT, USDC, CRO, WBTC, BUSD, DAI, UST/USTC | FTT |
+| 2022-05-01 | 22/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI, UST/USTC | None |
+| 2022-06-05 | 23/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI | None |
+| 2022-07-03 | 23/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI | None |
+| 2022-08-07 | 23/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI | None |
+| 2022-09-04 | 23/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI | None |
+| 2022-10-02 | 23/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI | None |
+| 2022-11-06 | 23/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI | None |
 | 2022-12-04 | 22/30 | USDT, USDC, CRO, WBTC, LEO, BUSD, DAI | TON/GRAM |
 | 2023-01-01 | 21/30 | USDT, USDC, CRO, WBTC, OKB, LEO, BUSD, DAI | TON/GRAM |
 | 2023-02-05 | 22/30 | USDT, USDC, WBTC, OKB, LEO, BUSD, DAI | TON/GRAM |
@@ -66,14 +66,13 @@ MEASURED from the pinned rank and archive inventories only. A mapped slot means 
 
 ## Unmapped identities in the two pinned inventories
 
-STATED from the saved identity records and the two pinned manifest searches. Each name below has no mapped dated segment, not a finding that it never traded. FTT is a known futures contract without coverage in either pinned manifest.
+STATED from the saved identity records and the two pinned manifest searches. Each name below has no mapped dated segment in this registered packet. This is not a finding about all listings at this venue or elsewhere.
 
 - **BGB (CMC 11092):** BGB is Bitget's ecosystem token; a Bitget BGB contract, if any, does not establish a corresponding Binance USD-M archive. The pinned inventories contain no matched BGB underlying. ([BGB identity or venue record](https://www.bitget.com/bgb))
 - **BUSD (CMC 4687):** BUSD is the Paxos-issued dollar token. The BUSD collateral or quote format is not a contract on BUSD. Paxos stopped minting in February 2023. ([BUSD identity or venue record](https://paxos.com/busd/))
 - **CRO (CMC 3635):** CRO is Cronos, an ecosystem asset distinct from Binance CRO lookalike codes. Neither pinned USD-M inventory identifies CROUSDT on ranked dates. ([CRO identity or venue record](https://cronos.org/))
 - **DAI (CMC 4943):** DAI is the Maker/Sky USD soft-peg token; the registered inventory has no matched DAI-asset perpetual. Do not substitute MKR or SKY. ([DAI identity or venue record](https://makerdao.com/en/))
 - **FDUSD (CMC 26081):** FDUSD is First Digital's dollar token; FDUSD-quoted spot listings and campaigns do not provide an underlying FDUSD perpetual in this scope. ([FDUSD identity or venue record](https://firstdigitallabs.com/))
-- **FTT (CMC 4195):** FTTUSDT really existed and Binance announced its November 14, 2022 closure. Both pinned inventories lack the contract, so its ranked history is unavailable in this archive, not evidence of no contract. ([FTT identity or venue record](https://www.binance.com/en/support/announcement/detail/3b4c7c08479b48d48189191e37a7adca))
 - **LEO (CMC 3957):** UNUS SED LEO is the Bitfinex ecosystem utility token, not LEO lookalike tickers. No supported LEO USD-M archive path identifies this underlying. ([LEO identity or venue record](https://www.bitfinex.com/leo/))
 - **MNT (CMC 27075):** Mantle MNT is not MemeCore M or MANTRA. The saved Binance USD-M inventories do not identify MNTUSDT under Mantle on the ranked dates. ([MNT identity or venue record](https://www.mantle.xyz/))
 - **OKB (CMC 3897):** OKB is the OKX ecosystem token. No OKB USD-M history occurs in the two pinned Binance inventories; an OKX contract would not be in scope. ([OKB identity or venue record](https://www.okx.com/learn/what-is-okb))
@@ -94,5 +93,6 @@ STATED from the saved identity records and the two pinned manifest searches. Eac
 
 STATED from catalogue dates and the pinned monthly inventories. The dated reasons below apply only to the listed pages. The candidate's off-repo rank-page decisions also cover the pages at or above 25.
 
+- **FTT (CMC 4195):** Four saved pages precede the [April 15, 2022 FTTUSDT launch](https://www.binance.com/en/support/announcement/detail/fa0b406da31f45deac32f95dcf400621). Seven pages from May through November map using the official bulk filenames and checksums supplement, which is bounded by the [November 14 closure](https://www.binance.com/en/support/announcement/detail/3b4c7c08479b48d48189191e37a7adca). Actual rows were not opened.
 - **HYPE:** Before the [May 30, 2025 HYPEUSDT launch](https://www.binance.com/en/support/announcement/detail/9166fe6f7b8a4b438262df3a040b007b) on the 2025-01-05, 2025-02-02, 2025-03-02, 2025-04-06 and 2025-05-04 pages.
 - **TON/GRAM:** Before the [March 1, 2024 TONUSDT launch](https://www.binance.com/en/support/announcement/detail/57bb7f41d63a44b090b27c3df483344b) on the 2022-12-04, 2023-01-01, 2023-02-05, 2023-03-05, 2023-04-02, 2023-05-07, 2023-06-04, 2023-07-02, 2023-08-06, 2023-09-03, 2023-10-01, 2023-11-05, 2023-12-03, 2024-01-07 and 2024-02-04 pages.

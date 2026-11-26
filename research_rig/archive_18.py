@@ -122,6 +122,7 @@ def catalogue(raw):
         raise C.Incomplete("unexpected universe provenance scope")
     contracts, symbols, keys, notices = [],{},set(),set()
     links = migration_links(raw)
+    alias_begins = defaultdict(list)
     for row in raw["contracts"]:
         cid,pair,beg,end,known,close,close_known=(row[k] for k in (
             "coin_id","symbol","begin","end","listed_known_at","closed_effective","closed_known_at"))
@@ -141,15 +142,25 @@ def catalogue(raw):
         lineage,effective = links.get(cid,(cid,beg))
         if beg<effective:
             raise C.Incomplete("successor segment predates its documented migration")
+        if cid in links:
+            alias_begins[cid].append(beg)
         contracts.append(C.Contract(lineage,0,key,beg,end,known,close,close_known))
         symbols[key] = pair
-    spans = defaultdict(list)
+    if any(not alias_begins[cid] or min(alias_begins[cid])!=effective
+           for cid,(_,effective) in links.items()):
+        raise C.Incomplete("migration link must begin at the first full successor contract hour")
+    spans, families = defaultdict(list), defaultdict(list)
     for c in contracts:
         spans[symbols[c.key]].append((c.begin,c.end))
+        families[c.coin_id].append((c.begin,c.end))
     for pair,raw_spans in spans.items():
         ordered = sorted(raw_spans)
         if any(a[1]>b[0] for a,b in zip(ordered,ordered[1:])):
             raise C.Incomplete(f"overlapping accounting identity fences for {pair}")
+    for lineage,raw_spans in families.items():
+        ordered = sorted(raw_spans)
+        if any(a[1]>b[0] for a,b in zip(ordered,ordered[1:])):
+            raise C.Incomplete(f"overlapping segments for canonical lineage {lineage}")
     return tuple(contracts),symbols,notices
 
 
@@ -226,7 +237,8 @@ def zip_rows(raw):
 
 
 class Tape:
-    def __init__(self, archive_dir, manifests, symbols, notices, p, *, contracts=(), check=lambda:None):
+    def __init__(self, archive_dir, manifests, symbols, notices, p, *, contracts=(),
+                 supplemental_dir=None, check=lambda:None):
         self.lo = p["start"]-p["lookback_hours"]-p["funding_interval_hours"]*p["funding_lag_intervals"]
         self.hi = p["end"]
         self.symbols,self.notices,self.p = symbols,notices,p
@@ -265,13 +277,16 @@ class Tape:
                 lo,hi = archive_span(match)
                 if hi<=self.lo or lo>self.hi:
                     continue
-                if m["where"]!="replay_16":
-                    raise C.Incomplete("venue input is not in the pinned Plan 16 bulk store")
+                is_ftt = m["where"]=="plan18_ftt"
+                if m["where"]!="replay_16" and not (is_ftt and supplemental_dir is not None and pair=="FTTUSDT"):
+                    raise C.Incomplete("venue input is not in a pinned bulk store")
+                path = (supplemental_dir if is_ftt else archive_dir)/name
                 kind = match[2]
                 n = 0
-                if (archive_dir/name).stat().st_size>MAX_ZIP_BYTES:
+                in_segment = 0
+                if path.stat().st_size>MAX_ZIP_BYTES:
                     raise C.Incomplete("archive ZIP exceeds the preflight per-file limit")
-                for row in zip_rows(read_pinned(archive_dir/name,m["sha256"])):
+                for row in zip_rows(read_pinned(path,m["sha256"])):
                     n += 1
                     stamp = clock_us(row[0])
                     hour_us = C.H*10**6
@@ -282,6 +297,10 @@ class Tape:
                         in_period = in_period or lo*hour_us<=stamp<hi*hour_us
                     if abs(err)>(p["funding_jitter_seconds"]*10**6 if kind=="fundingRate" else 0) or not in_period:
                         raise C.Incomplete("archive event timestamp out of its permitted hour or file")
+                    if is_ftt:
+                        if not any(c.begin*hour_us<=stamp<c.end*hour_us for c in by_pair[pair]):
+                            continue
+                        in_segment += 1
                     if not self.lo<=h<=self.hi:
                         continue
                     i = h-self.lo
@@ -301,7 +320,9 @@ class Tape:
                         dest[i] = tr if vol>0 else -1.
                         if kind=="klines" and vol>0:
                             opens[i] = op
-                if n!=m["n"]:
+                if is_ftt and in_segment==0:
+                    raise C.Incomplete("FTT supplemental archive has no in-segment rows")
+                if not is_ftt and n!=m["n"]:
                     raise C.Incomplete("unexpected archive row count")
             previous = None
             last_owner = None
@@ -440,7 +461,8 @@ def require_exclusion(row, context):
     if (not isinstance(row,dict) or row.get("classification") not in
         {"identity_unresolved","product_scale_unresolved","non_perpetual_asset",
          "no_dated_listing_evidence","outside_registered_scope","before_dated_listing",
-         "archive_proxy_not_mature","between_migration_segments","archive_coverage_unavailable"}
+         "archive_proxy_not_mature","between_migration_segments","after_dated_closure",
+         "archive_coverage_unavailable"}
         or not isinstance(row.get("reason"),str) or len(row["reason"].strip())<24
         or not isinstance(row.get("searched"),list) or not row["searched"]
         or not all(isinstance(s,str) and s.startswith("https://") for s in row["searched"])):
@@ -460,10 +482,15 @@ def bind_evidence(directory,pin,claim,inventory):
         or type(record.get("retrieved_at")) is not int or record["retrieved_at"]<=0):
         raise C.Incomplete(f"source record is not bound to the exact {claim['kind']} claim")
     inventory.add(pin)
+    return record
 
 
 def verify_evidence(u, sources, directory):
     inventory = set()
+    if "ftt_archive_supplement" in u:
+        row = u["ftt_archive_supplement"]
+        bind_evidence(directory,row.get("evidence_sha256"),dict(kind="ftt_archive_listing",coin_id=4195,
+            archive_sha256=json_digest(row["archives"])),inventory)
     for cid,(lineage,effective) in migration_links(u).items():
         row = u["migration_links"][str(cid)]
         bind_evidence(directory,row.get("evidence_sha256"),dict(
@@ -472,8 +499,15 @@ def verify_evidence(u, sources, directory):
         identity = {k:row[k] for k in ("coin_id","symbol","begin","end")}
         if "listing_basis" in row:
             identity["listing_basis"] = row["listing_basis"]
-        bind_evidence(directory,row["listing_evidence_sha256"],identity|dict(
+        listing = bind_evidence(directory,row["listing_evidence_sha256"],identity|dict(
             kind="listing",listed_known_at=row["listed_known_at"]),inventory)
+        if row.get("listing_basis")=="archive_first_plus_30_days":
+            search = listing.get("primary_search")
+            if (listing.get("source_excerpt") is not None
+                or listing.get("archive_metadata")!={k:row[k] for k in ("archive_first_path","archive_first_seconds")}
+                or not isinstance(search,dict) or not search.get("queries") or not search.get("scope")
+                or search.get("result")!="No dated primary USDT perpetual launch notice corroborated"):
+                raise C.Incomplete("listing proxy needs a pinned inconclusive primary-notice search and trade clock")
         if row["closed_effective"] is not None:
             bind_evidence(directory,row["closure_evidence_sha256"],{k:v for k,v in identity.items() if k!="listing_basis"}|dict(
                 kind="closure",**{k:row[k] for k in ("closed_effective","closed_known_at","delisting_notice")}),
@@ -502,11 +536,14 @@ def first_archive_clocks(manifests, wanted):
     for manifest in manifests:
         for name,meta in manifest["archives"].items():
             match = BULK.fullmatch(name)
-            if match is None or match[3] not in wanted:
+            if match is None or match[2]!="klines" or match[3] not in wanted:
                 continue
             seconds = meta.get("first")
             if type(seconds) is not int or seconds<=0 or meta.get("n",0)<=0:
                 continue
+            lo,hi = archive_span(match)
+            if not lo*C.H<=seconds<hi*C.H or seconds%C.H:
+                raise C.Incomplete(f"invalid first trade clock for listing proxy: {name}")
             value = seconds,name
             if match[3] not in first or value<first[match[3]]:
                 first[match[3]] = value
@@ -522,11 +559,39 @@ def verify_listing_bases(u,manifests,p):
             raise C.Incomplete("listing requires a dated notice or the registered archive proxy")
         if basis!="archive_first_plus_30_days":
             continue
+        if row.get("dated_launch_notice") is not None:
+            raise C.Incomplete("a confirmed dated launch notice supersedes the archive proxy")
         clock,path = first.get(row["symbol"],(0,""))
         assumed = (clock//86400+p["archive_listing_lag_days"])*86400
         if (not path or row.get("archive_first_seconds")!=clock or row.get("archive_first_path")!=path
             or row["listed_known_at"]!=assumed or row["begin"]*C.H!=assumed):
             raise C.Incomplete("archive listing proxy disagrees with the earliest pinned clock and delay")
+
+
+def ftt_manifest(u, contracts, symbols):
+    """Only official monthly checksums, never pre-run observations of the ZIP rows."""
+    row = u.get("ftt_archive_supplement")
+    ftt = [c for c in contracts if symbols[c.key]=="FTTUSDT"]
+    if row is None and not ftt:
+        return None
+    if (not isinstance(row,dict) or set(row)!={"archives","evidence_sha256"} or len(ftt)!=1
+        or ftt[0].coin_id!=4195 or ftt[0].closed_effective!=ftt[0].end):
+        raise C.Incomplete("FTT supplement must match one closed FTT identity")
+    c, = ftt
+    expected = set()
+    m = datetime.fromtimestamp(c.begin*C.H,timezone.utc).date().replace(day=1)
+    while day_hour(str(m))<c.end:
+        for kind in ("klines","markPriceKlines","fundingRate"):
+            stem = "FTTUSDT-fundingRate" if kind=="fundingRate" else "1h/FTTUSDT-1h"
+            expected.add(f"data/futures/um/monthly/{kind}/FTTUSDT/{stem}-{str(m)[:7]}.zip")
+        m = (m.replace(day=28)+timedelta(days=4)).replace(day=1)
+    entries = row["archives"]
+    if (not isinstance(entries,dict) or set(entries)!=expected
+        or any(not isinstance(meta,dict) or set(meta)!={"sha256","where"}
+               or meta["where"]!="plan18_ftt" or not isinstance(meta["sha256"],str)
+               or not SHA.fullmatch(meta["sha256"]) for meta in entries.values())):
+        raise C.Incomplete("FTT supplement must pin each registered monthly ZIP by official checksum")
+    return dict(errors={},archives=entries)
 
 
 def verify_rank_schedule(u,rank_rows,p):
@@ -562,15 +627,16 @@ def archive_inventory(manifests, wanted, p):
     for manifest in manifests:
         for name,m in manifest["archives"].items():
             match = BULK.fullmatch(name)
-            if match is None or match[3] not in wanted or m.get("n",0)<=0:
+            listed_only = m.get("where")=="plan18_ftt"
+            if match is None or match[3] not in wanted or (not listed_only and m.get("n",0)<=0):
                 continue
             lo,hi = archive_span(match)
             if hi<=p["start"]-p["lookback_hours"]-p["funding_interval_hours"]*p["funding_lag_intervals"] or lo>=p["end"]:
                 continue
-            if (type(m.get("first")) is not int or type(m.get("last")) is not int
+            if not listed_only and (type(m.get("first")) is not int or type(m.get("last")) is not int
                 or not (lo*C.H-p["funding_jitter_seconds"]<=m["first"]<=m["last"]<hi*C.H)):
                 raise C.Incomplete(f"invalid archive observation clock: {name}")
-            clock = m["first"],m["last"],m["n"]
+            clock = None if listed_only else (m["first"],m["last"],m["n"])
             group = observed[match[3],match[2]]
             if name in group and group[name]!=clock:
                 raise C.Incomplete("conflicting archive observation metadata")
@@ -597,15 +663,21 @@ def period_inventory(contracts,symbols,observed,p):
             key = str(d)[:7]
             nxt = (d.replace(day=28)+timedelta(days=4)).replace(day=1)
             left,right = max(start,day_hour(str(d)))*C.H,min(end,day_hour(str(nxt)))*C.H
-            months[key] = {
-                kind:("manifest_rows_listed" if any(
-                    left<=first<right or left<=last<right
-                    for first,last,_ in indexed[symbols[c.key],kind,key])
+            months[key] = {}
+            for kind in ("klines","markPriceKlines","fundingRate"):
+                clocks = indexed[symbols[c.key],kind,key]
+                months[key][kind] = ("manifest_rows_listed" if any(
+                    left<=clock[0]<right or left<=clock[1]<right for clock in clocks if clock is not None)
+                    else "archive_file_listed_rows_unverified" if None in clocks
                     else "unknown_missing_manifest_rows")
-                for kind in ("klines","markPriceKlines","fundingRate")}
             d = nxt
         result[c.key] = months
     return result
+
+
+def metadata_backed(periods,c,month):
+    return month in periods[c.key] and all(v in {"manifest_rows_listed","archive_file_listed_rows_unverified"}
+                                           for v in periods[c.key][month].values())
 
 
 def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
@@ -639,6 +711,11 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
     if verify_evidence(u,{v:rows[v] for v in VENUES},evidence_dir)!=inventory_pin:
         raise C.Incomplete("catalogue evidence inventory differs from approved inventory")
     manifests = [rows[k] for k in ("viewed_manifest","held_manifest")]
+    if any(meta.get("where")=="plan18_ftt" for m in manifests for meta in m["archives"].values()):
+        raise C.Incomplete("FTT checksum-only files must come from the separate universe supplement")
+    supplement = ftt_manifest(u,contracts,symbols)
+    if supplement:
+        manifests.append(supplement)
     if "rank_page_exclusions" not in u:
         raise C.Incomplete("missing dated decisions for unrepresented rank positions")
     verify_listing_bases(u,manifests,p)
@@ -646,9 +723,7 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
     periods = period_inventory(contracts,symbols,observed,p)
     if u.get("archive_period_inventory_sha256")!=json_digest(periods):
         raise C.Incomplete("archive period coverage inventory is not pinned")
-    def metadata_backed(c, month):
-        return all(v=="manifest_rows_listed" for v in periods[c.key].get(month,{}).values()) and month in periods[c.key]
-    complete_keys = {c.key for c in contracts if any(metadata_backed(c,m) for m in periods[c.key])}
+    complete_keys = {c.key for c in contracts if any(metadata_backed(periods,c,m) for m in periods[c.key])}
     page_funnel = {}
     if set(u["rank_page_exclusions"])!={r["date"] for r in rank_rows if not r.get("hole")}:
         raise C.Incomplete("dated decisions must cover exactly the observed rank pages")
@@ -660,7 +735,7 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
         # The preliminary page standing in for the start uses observations in
         # the start month; the warmup itself is still independently checked.
         month = datetime.fromtimestamp(max(page_hour,p["start"])*C.H,timezone.utc).strftime("%Y-%m")
-        active = {c.coin_id for c in contracts if c.begin<=page_hour<c.end and metadata_backed(c,month)}
+        active = {c.coin_id for c in contracts if c.begin<=page_hour<c.end and metadata_backed(periods,c,month)}
         mapped_for_page = {i for i in page if (lineage(i) if page_hour>=links.get(i,(i,0))[1] else i) in active}
         day = datetime.fromtimestamp(snap.known_at-C.H*24,timezone.utc).date().isoformat()
         page_funnel[day] = dict(mapped=len(mapped_for_page),total=len(page),unmapped=sorted(page-mapped_for_page))
@@ -704,6 +779,7 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
                     funding_availability="finalized archive rate, full-interval lag; publication and revisions unknown",
                     us_roster_membership_looks_ahead=True)
     coverage["archive_month_labels"] = periods
+    coverage["ftt_checksum_pinned_archive_files"] = len(supplement["archives"]) if supplement else 0
     coverage["rank_page_mapping"] = page_funnel
     for venue in VENUES:
         products = u["us_rosters"][venue]
@@ -717,11 +793,11 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
     return contracts,symbols,notices,snaps,mapped,coverage,manifests,top
 
 
-def load(paths,pins,archive_dir,p,*,evidence_dir,inventory_pin,check=lambda:None):
+def load(paths,pins,archive_dir,p,*,evidence_dir,inventory_pin,supplemental_dir=None,check=lambda:None):
     contracts,symbols,notices,snaps,mapped,coverage,manifests,top = inspect_universe(
         paths,pins,p,evidence_dir=evidence_dir,inventory_pin=inventory_pin)
     tape = Tape(archive_dir,manifests,symbols,notices,p,
-                contracts=contracts,check=check)
+                contracts=contracts,supplemental_dir=supplemental_dir,check=check)
     coverage["archive_memory_budget_bytes"] = tape.budget_bytes
     coverage["observed_archive_coverage_by_month"] = tape.observed_coverage()
     archive_ids = {c.coin_id for c in contracts if symbols[c.key] in tape.store}

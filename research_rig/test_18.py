@@ -126,6 +126,10 @@ class FundingCarryTests(unittest.TestCase):
         self.assertEqual(C.eligible(Fake(),page,t-500),[])
         self.assertEqual([c for _,c in C.eligible(Fake(),replace(page,ranks=((1,42),)),t-500)],[contracts[0]])
         self.assertEqual([c for _,c in C.eligible(Fake(),page,t)],[contracts[1]])
+        u["contracts"][0] = original|dict(end=t-80)
+        with self.assertRaisesRegex(C.Incomplete,"overlapping segments for canonical lineage"):
+            A.catalogue(u)
+        u["contracts"][0] = original
         u["migration_links"]["43"]["effective_hour"] += 1
         with self.assertRaisesRegex(C.Incomplete,"predates"):
             A.catalogue(u)
@@ -237,6 +241,24 @@ class FundingCarryTests(unittest.TestCase):
         f.offsets["8",h] = f.offsets["1",h]
         simultaneous = C.run_book(f,self.snaps,self.t,self.end)
         self.assertAlmostEqual(simultaneous.max_drawdown,simultaneous.fees)
+
+    def test_drawdown_uses_pre_fee_open_equity_before_resizing(self):
+        f = Fake()
+        h = self.exit
+        f.open_overrides["1",h] = f.open_overrides["1",h+C.ROLL] = 400.
+        for b in range(h,h+C.ROLL):
+            f.mark_overrides["1",b] = 400.
+        fee = C.P["judged_cost_bps"]/10000
+        pre = 1-fee+.5
+        new_qty = pre/600
+        traded = 400*abs(new_qty/4-1/600)+500*abs(new_qty-1/600)
+        post = pre-fee*traded
+        trough = pre*(1-.2501)
+        f.mark_overrides["8",h] = 100+(post-trough)/new_qty
+        r = C.run_book(f,self.snaps,self.t,self.end+C.ROLL)
+        self.assertAlmostEqual(r.max_drawdown,.2501,places=8)
+        self.assertLess(1-trough/post,.25)
+        self.assertFalse(C.marks(C.P,r.sharpe,r.max_drawdown,r.years,r.traded)[1])
 
     def test_gap_zeroes_only_evidenced_terminal_long_and_continues(self):
         f = Fake()
@@ -479,6 +501,31 @@ class FundingCarryTests(unittest.TestCase):
             self.assertEqual(len(snaps[0].ranks),C.P["top_rank"])
             self.assertEqual(coverage["top_ids_with_dated_mapping"],12)
             self.assertIsNone(coverage["full_market_dead_coin_retention"])
+            # The January rank page is after a listed segment closed, not an
+            # unknown identity and not a missing monthly archive.
+            row = u["contracts"][11]
+            row.update(end=self.t+24,closed_effective=self.t+24,closed_known_at=self.t*C.H)
+            identity = {k:row[k] for k in ("coin_id","symbol","begin","end")}
+            row["listing_evidence_sha256"] = record(identity|dict(kind="listing",
+                listing_basis=row["listing_basis"],listed_known_at=row["listed_known_at"]))
+            row["closure_evidence_sha256"] = record(identity|dict(kind="closure",closed_effective=self.t+24,
+                closed_known_at=self.t*C.H,delisting_notice=False))
+            cs,syms,_ = A.catalogue(u)
+            u["archive_period_inventory_sha256"] = A.json_digest(A.period_inventory(
+                cs,syms,A.archive_inventory([manifest],set(syms.values()),p),p))
+            after = next(r["date"] for r in raw if r["known_at"]>=(self.t+24)*C.H)
+            u["rank_page_exclusions"][after] = dict(u["unmatched_judged_ids"])|{"12":dict(
+                classification="after_dated_closure",reason="The fabricated perpetual ended before this saved rank page.",
+                searched=["https://example.org/invented-closure-notice"])}
+            # verify_evidence binds only referenced records, not old superseded ones.
+            inv = A.verify_evidence(u,sources,root/"evidence")
+            put("universe",u)
+            self.assertIn(12,load(inv)[3]["rank_page_mapping"][after]["unmapped"])
+            u["rank_page_exclusions"][after]["12"]["classification"] = "before_dated_listing"
+            put("universe",u)
+            with self.assertRaisesRegex(C.Incomplete,"contradicts segment clocks"):
+                load(inv)
+            u["rank_page_exclusions"][after]["12"]["classification"] = "after_dated_closure"
             u["contracts"][0]["listing_evidence_sha256"] = u["contracts"][1]["listing_evidence_sha256"]
             put("universe",u)
             with self.assertRaisesRegex(C.Incomplete,"not bound to the exact listing"):
@@ -491,7 +538,8 @@ class FundingCarryTests(unittest.TestCase):
         later = name.replace("2022-01","2022-02")
         invalid = name.replace("2022-01","2021-12")
         clock,proxy = utc(2022,1,7,22),utc(2022,2,6,0)
-        manifests = [dict(archives={later:dict(first=utc(2022,2,1,0),n=1)}),
+        mark = name.replace("/klines/","/markPriceKlines/")
+        manifests = [dict(archives={later:dict(first=utc(2022,2,1,0),n=1),mark:dict(first=utc(2022,1,1,0),n=1)}),
                      dict(archives={invalid:dict(first=utc(2021,12,3,0),n=0),name:dict(first=clock,n=1)})]
         row = dict(symbol="FAKEUSDT",listing_basis="archive_first_plus_30_days",listed_known_at=proxy,
                    begin=proxy//C.H,archive_first_path=name,archive_first_seconds=clock)
@@ -500,6 +548,38 @@ class FundingCarryTests(unittest.TestCase):
                     dict(listed_known_at=proxy-1),dict(begin=proxy//C.H-1)):
             with self.assertRaisesRegex(C.Incomplete,"earliest pinned clock"):
                 A.verify_listing_bases(dict(contracts=[row|bad]),manifests,C.P)
+        with self.assertRaisesRegex(C.Incomplete,"supersedes the archive proxy"):
+            A.verify_listing_bases(dict(contracts=[row|dict(dated_launch_notice="https://example.org/launch")]),
+                                   manifests,C.P)
+        with self.assertRaisesRegex(C.Incomplete,"invalid first trade clock"):
+            A.first_archive_clocks([dict(archives={name:dict(first=utc(2022,2,1,0),n=1)})],{"FAKEUSDT"})
+
+    def test_ftt_supplement_pins_months_and_fences_rows(self):
+        t = self.t
+        c = C.Contract(4195,0,"ftt",t+1,t+9,closed_effective=t+9,closed_known_at=t*C.H)
+        syms = {"ftt":"FTTUSDT"}
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = {}
+            for kind,inside,outside in (
+                ("klines",[t*C.H+2*C.H,100,100,100,100,5],[t*C.H+9*C.H,0,0,0,0,0]),
+                ("markPriceKlines",[t*C.H+2*C.H,100,100,100,100],[t*C.H+9*C.H,0,0,0,0]),
+                ("fundingRate",[(t+8)*C.H,8,.001],[(t+16)*C.H,8,.999])):
+                name,meta = archive_fixture(root,"FTTUSDT",kind,[inside,outside])
+                files[name] = dict(where="plan18_ftt",sha256=meta["sha256"])
+            u = dict(ftt_archive_supplement=dict(archives=files,evidence_sha256="f"*64))
+            manifest = A.ftt_manifest(u,(c,),syms)
+            p = C.P|dict(end=t+24)
+            periods = A.period_inventory((c,),syms,A.archive_inventory([manifest],{"FTTUSDT"},p),p)
+            self.assertEqual(set(periods[c.key]["2022-01"].values()),{"archive_file_listed_rows_unverified"})
+            tape = A.Tape(root/"not-old-store",[manifest],syms,set(),p,contracts=(c,),supplemental_dir=root)
+            self.assertEqual(tape.open_price(c.key,t+2),100.)
+            self.assertIsNone(tape.open_price(c.key,t+9))
+            self.assertEqual(tape.funding(c.key,t+8),(True,.001))
+            self.assertEqual(tape.funding(c.key,t+16),(False,None))
+            files.pop(next(iter(files)))
+            with self.assertRaisesRegex(C.Incomplete,"each registered monthly ZIP"):
+                A.ftt_manifest(u,(c,),syms)
 
     def test_terminal_checks_same_coin_successor_evidence(self):
         t = self.t

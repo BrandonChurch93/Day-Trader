@@ -98,7 +98,20 @@ def verify(expected):
     if any(seal["inputs"][v]!=d for v,d in A.ROSTER_HASHES.items()):
         raise C.Incomplete("frozen US rosters must match the documented fingerprints")
     verify_review(seal,RUN/"reviews")
+    require_staged_ftt(seal)
     return seal,C.policy(actual[CONFIG])
+
+
+def require_staged_ftt(seal):
+    """Check only filenames and sizes before the lock; verify ZIP digests after it."""
+    u = json.loads(A.read_pinned(PATHS["universe"],seal["inputs"]["universe"]))
+    contracts,symbols,_ = A.catalogue(u)
+    supplement = A.ftt_manifest(u,contracts,symbols)
+    if supplement:
+        for name in supplement["archives"]:
+            path = RUN/"ftt_archives"/name
+            if path.is_symlink() or not path.is_file() or not 0<path.stat().st_size<=A.MAX_ZIP_BYTES:
+                raise C.Incomplete(f"stage the pinned FTT ZIP without opening the rows: {name}")
 
 
 def sync_directory(path):
@@ -164,6 +177,7 @@ def score(binding):
     seal,p = binding
     tape,snaps,rosters,coverage = A.load(PATHS,seal["inputs"],DATA/"replay_16/archives",p,
                                         evidence_dir=RUN/"evidence",
+                                        supplemental_dir=RUN/"ftt_archives",
                                         inventory_pin=seal["evidence_inventory_sha256"],check=memory_check)
     pool = {}
 
