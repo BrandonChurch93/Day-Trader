@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 21:32 UTC
+Last changed: 2026-11-26 21:39 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -83,6 +83,7 @@ The table lists current work and deferred scoring. Completed time-machine runs a
 | 126 | Swing card A, from [doc 169](research/169_what_successful_small_account_traders_look_for.md): a leading small or mid-size stock near its high, a dated earnings release, a breakout on volume, out when the market turns down, a tight stop, one add to a winner, at most 40 sessions. The owner's direction of 2026-11-26 (`docs/DECISIONS.md`): holds of a day to a couple of months. Lead agent's shape, 2026-11-26 12:03 MT: judged per signal against the market over the same days, with the switch, the news and the add each taken out in turn, the $500 book shown only; design years 2017 to 2021, held-back 2022 to 2025 opened once | `research_rig/PREREG_74_swing_cards.md` | 2026-11-26 2:04 PM MT: dead-company coverage cleared at 91% after one repair (line was 90%). Custodian building 2016 to 2021 inputs; then the lead agent validates and writes the count go |
 | 127 | Swing card B, from [doc 169](research/169_what_successful_small_account_traders_look_for.md): Cameron Fous's two daily patterns that are stated well enough to code, Gold (months under $1, then a break of $1) and Revival (a downtrend, a rising base, a break on volume), at most 10 sessions. Named as a proxy, not his method: his other patterns are chosen by eye | `research_rig/PREREG_74_swing_cards.md` | 2026-11-26 2:04 PM MT: dead-company coverage cleared at 91% after one repair (line was 90%). Custodian building 2016 to 2021 inputs; then the lead agent validates and writes the count go |
 | 131 | Practice card E10: forward log of the Plan 75 rule on live US venue quotes, pretend $500 with a second book at $5,000; measures the real spread at each order, whether orders are placeable at that size, and after a year the profit line as a record | `research_rig/PREREG_75_coin_trend_ratchet.md`, [result](research/181_plan_75_heldback_result.md) | 2026-11-26 2:32 PM MT: card, logger and tests being built on made-up data; then an audit, then the lead agent starts the log |
+| 132 | Measurement 132: what a trade really costs on Binance.US against Coinbase, forward only, no profit claim. Every hour, top of book and the cost to fill $25 and $250 on each of the 20 coins in US dollars on both venues; read out after 30 days by coin and by hour, with the 00:00 UTC hour (Plan 75's order time) and E09's signal hours shown apart | [doc 180](research/180_round_57_cost_as_the_binding_limit.md) | 2026-11-26 2:39 PM MT: to be registered on the ledger and built after practice card E10's audit; public order book pages only, no account |
 
 ## Next, in order
 
