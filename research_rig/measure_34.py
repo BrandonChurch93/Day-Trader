@@ -8,6 +8,7 @@ import sys
 import types
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
+from fractions import Fraction
 from hashlib import sha256
 from math import isfinite, prod, sqrt
 from pathlib import Path
@@ -21,6 +22,15 @@ TLT_ROOT = Path("/home/user/workspace/rig/data/replay_25/inputs")
 TLT_MANIFEST = "43f92b5249c8a2aa8778139f928cf643814e47b778d5892a903227830777aa9a"
 FROZEN = {"MEASURE_34_tmf_month_end.md", "measure_34.py", "test_34.py", "common_25.py", "calendar_25.json"}
 FUNDS = {"TMF": "direxion.com", "UBT": "proshares.com"}
+REQUIRED_SPLITS = {
+    "TMF": {
+        date(2016, 8, 25): (4, 1, "https://www.sec.gov/Archives/edgar/data/1424958/000119312516658234/0001193125-16-658234.txt"),
+        date(2023, 12, 4): (1, 10, "https://www.direxion.com/press-release/direxion-announces-reverse-splits-of-tmf-and-labu"),
+    },
+    "UBT": {
+        date(2020, 8, 18): (2, 1, "https://www.proshares.com/press-releases/proshares-announces-etf-share-splits-80420"),
+    },
+}
 INPUT_NAMES = {n for sym in FUNDS for n in (sym + ".json", sym.lower() + "_quotes.json", sym.lower() + "_actions.json")}
 NY, UTC = ZoneInfo("America/New_York"), timezone.utc
 EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
@@ -118,27 +128,35 @@ def valid_quote_state(state):
             and state[1] >= state[0])
 
 
+def quote_cost_order(state):
+    bid, ask = state[:2]
+    # Minimizing bid/ask maximizes (ask-bid)/(ask+bid). Compare exactly
+    # without computing an actual spread; prices break equal ratios canonically.
+    return Fraction(bid) / Fraction(ask), bid, ask
+
+
 def quote_book(rows, endpoints):
     need(isinstance(rows, list) and len(rows) == len(endpoints), "M34_QUOTE_COVERAGE")
-    book = {}
+    book, tied_endpoints = {}, 0
     for day, r in zip(endpoints, rows, strict=True):
         start, end = quote_bounds(day)
         need(set(r) == {"session", "request_start", "request_end", "complete", "quotes"}
              and r["session"] == day.isoformat() and r["request_start"] == start and r["request_end"] == end
              and r["complete"] is True and isinstance(r["quotes"], list) and r["quotes"], "M34_QUOTE_COVERAGE")
         lo, hi = ns(start), ns(end)
-        latest, state, invalid_tie = lo - 1, None, False
+        latest, group = lo - 1, []
         for q in r["quotes"]:
             stamp = ns(q["t"])
             need(lo <= stamp < hi and stamp >= latest, "M34_QUOTE_CLOCK")
             xp = tuple(q[k] for k in ("bp", "ap", "bs", "as"))
-            if stamp == latest:
-                invalid_tie |= xp != state or not valid_quote_state(xp)
-            else:
-                latest, state, invalid_tie = stamp, xp, not valid_quote_state(xp)
-        need(not invalid_tie, "M34_QUOTE_FINAL")
+            if stamp != latest:
+                latest, group = stamp, []
+            group.append(xp)
+        need(group and all(valid_quote_state(xp) for xp in group), "M34_QUOTE_FINAL")
+        tied_endpoints += len(group) > 1
+        state = group[0] if len(group) == 1 else min(group, key=quote_cost_order)
         book[day] = state[:2]
-    return book
+    return book, tied_endpoints
 
 
 def action_day(raw, days):
@@ -168,20 +186,20 @@ def fund_actions(d, symbol, days):
     ):
         for row in d[kind]:
             need(set(row) == fields and isinstance(row["id"], str) and row["id"].strip()
-                 and row["id"] not in known and action_source(row["source"], FUNDS[symbol]), "M34_ACTION_ROW")
+                 and row["id"] not in known, "M34_ACTION_ROW")
             known.add(row["id"])
             day = action_day(row[clock], days)
             if kind == "cash":
+                need(action_source(row["source"], FUNDS[symbol]), "M34_ACTION_ROW")
                 need(positive(row["amount"]), "M34_ACTION_AMOUNT")
                 cash[day].append(row["amount"])
             else:
                 a, b = row["new"], row["old"]
                 need(type(a) is int and type(b) is int and 0 < a <= 1_000_000 and 0 < b <= 1_000_000
                      and a != b and day not in splits, "M34_SPLIT")
+                need((a, b, row["source"]) == REQUIRED_SPLITS[symbol].get(day), "M34_KNOWN_SPLIT")
                 splits[day] = (a, b)
-    effective, new, old = (date(2023, 12, 4), 1, 10) if symbol == "TMF" else (date(2020, 8, 18), 2, 1)
-    known_split = splits.get(effective)
-    need(known_split and known_split[0] * old == known_split[1] * new, "M34_KNOWN_SPLIT")
+    need(splits.keys() == REQUIRED_SPLITS[symbol].keys(), "M34_KNOWN_SPLIT")
     return dict(cash), splits
 
 
@@ -324,12 +342,14 @@ def evaluate(job, prepared):
     tlt_fixed = {arm: fmean(w[-1] for w in simulate(spans, tlt, dict.fromkeys(sides, bps / 1e4))[0])
                  for arm, bps in FIXED.items()}
     out = {}
-    for sym, (*instrument, quotes) in funds.items():
+    for sym, (*instrument, (quotes, tied_endpoints)) in funds.items():
         spread = {d: (1 - bid / ask) / (1 + bid / ask) for d, (bid, ask) in quotes.items()}
         mean_gross = fmean(w[-1] for w in simulate(spans, instrument, {})[0])
         band = (2.7, 3.1) if sym == "TMF" else (1.8, 2.1)
         gross_ratio = ratio(mean_gross, tlt_gross)
         data = {"gross_mean": mean_gross, "gross_tracking_ratio": gross_ratio, "reference_band": band,
+                "tied_quote_endpoints": tied_endpoints,
+                "tied_quote_policy": "conservative tied-endpoint estimate: maximum half spread at the final timestamp",
                 "entry_half_spread_bps": report_spread(spread[d] for d in sides[::2]),
                 "exit_half_spread_bps": report_spread(spread[d] for d in sides[1::2]), "arms": {}}
         for arm in ARMS:

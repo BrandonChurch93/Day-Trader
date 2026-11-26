@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from datetime import date, timedelta
 from hashlib import sha256
+from itertools import permutations
 from pathlib import Path
 from unittest.mock import patch
 
@@ -27,7 +28,7 @@ def model():
     prices = lambda k: {day: x for i, (a, _, ds) in enumerate(spans)
                         for day, x in zip((a, *ds), (100, 100, 100, 100 + (i + 1) * k))}
     q = {d: (99.9, 100.1) for a, b, _ in spans for d in (a, b)}
-    return spans, (prices(1), {}, {}), {"TMF": (prices(3), {}, {}, q), "UBT": (prices(2), {}, {}, q)}
+    return spans, (prices(1), {}, {}), {"TMF": (prices(3), {}, {}, (q, 1)), "UBT": (prices(2), {}, {}, (q, 2))}
 
 
 def row(day, quotes):
@@ -54,7 +55,7 @@ class TestM34(unittest.TestCase):
         d = date(2024, 11, 29)
         q1 = quote("2024-11-29T17:59:59.999999990Z")
         q2 = quote("2024-11-29T17:59:59.999999991Z", 102, 102)
-        self.assertEqual(M.quote_book([row(d, [q1, q2, q2])], [d]), {d: (102, 102)})
+        self.assertEqual(M.quote_book([row(d, [q1, q2, q2])], [d]), ({d: (102, 102)}, 1))
 
     def test_bad_final_cannot_fall_back(self):
         d = date(2024, 11, 29)
@@ -63,8 +64,15 @@ class TestM34(unittest.TestCase):
         for bad in (quote(t, 102, 101), quote(t, 0, 101), quote(t, size=0), quote(t, True, 101)):
             with self.subTest(bad=bad), self.assertRaisesRegex(M.Refused, "QUOTE_FINAL"):
                 M.quote_book([row(d, [valid, bad])], [d])
-        with self.assertRaisesRegex(M.Refused, "QUOTE_FINAL"):
-            M.quote_book([row(d, [quote(t), quote(t, 98, 101)])], [d])
+
+    def test_latest_max_relative_spread_is_order_independent(self):
+        d = date(2024, 11, 29)
+        t = "2024-11-29T17:59:59Z"
+        earlier = quote("2024-11-29T17:59:58Z", 1, 500)
+        # 98/100 and 49/50 have a wider relative spread than 998/1002.
+        group = [quote(t, 98, 100), quote(t, 49, 50), quote(t, 998, 1002)]
+        for order in permutations(group):
+            self.assertEqual(M.quote_book([row(d, [earlier, *order])], [d]), ({d: (49, 50)}, 1))
 
     def test_malformed_latest_tie_refused_in_both_orders(self):
         d = date(2024, 11, 29)
@@ -75,7 +83,7 @@ class TestM34(unittest.TestCase):
             with self.assertRaisesRegex(M.Refused, "QUOTE_FINAL"):
                 M.quote_book([row(d, rows)], [d])
             q = quote("2024-11-29T17:59:59Z")
-            self.assertEqual(M.quote_book([row(d, [*rows, q])], [d]), {d: (99, 101)})
+            self.assertEqual(M.quote_book([row(d, [*rows, q])], [d]), ({d: (99, 101)}, 0))
 
     def test_flat_guard_resets_after_unobserved_gap(self):
         d = tuple(date(2024, m, j) for m in (6, 7) for j in (25, 26, 27, 28))
@@ -118,6 +126,8 @@ class TestM34(unittest.TestCase):
         self.assertAlmostEqual(r["TMF"]["gross_tracking_ratio"], 3)
         self.assertAlmostEqual(r["UBT"]["gross_tracking_ratio"], 2)
         self.assertNotIn("marks", r["UBT"])
+        self.assertEqual([r[s]["tied_quote_endpoints"] for s in ("TMF", "UBT")], [1, 2])
+        self.assertIn("conservative tied-endpoint estimate", r["TMF"]["tied_quote_policy"])
         for name in ("TMF", "UBT"):
             arms = r[name]["arms"]
             self.assertEqual(list(arms), list(M.ARMS))
@@ -133,8 +143,8 @@ class TestM34(unittest.TestCase):
     def test_additive_mark_not_spread_only(self):
         spans, tlt, funds = model()
         a = {d: 100 if d in [w[0] for w in spans] else 100.035 for w in spans for d in (w[0], *w[2])}
-        bids = {d: (99.995, 100.005) for d in funds["TMF"][-1]}
-        funds["TMF"] = (a, {}, {}, bids)
+        bids = {d: (99.995, 100.005) for d in funds["TMF"][-1][0]}
+        funds["TMF"] = (a, {}, {}, (bids, 0))
         r = M.evaluate({}, (spans, tlt, funds))["funds"]["TMF"]
         self.assertGreater(r["arms"]["measured_half_spread"]["mean_net"], 0)
         self.assertLess(r["arms"]["fixed_2bps_plus_half_spread"]["mean_net"], 0)
@@ -148,20 +158,33 @@ class TestM34(unittest.TestCase):
         self.assertFalse(out["funds"]["TMF"]["marks"]["gross_tracking_band"])
 
     def test_actions_issuer_known_splits_and_basis(self):
-        d0, d1 = date(2023, 12, 4), date(2020, 8, 18)
-        for sym, effective, n, old in (("TMF", d0, 1, 10), ("UBT", d1, 2, 1)):
+        d0, d1, d2 = date(2023, 12, 4), date(2020, 8, 18), date(2016, 8, 25)
+        issuer_497 = "https://www.sec.gov/Archives/edgar/data/1424958/000119312516658234/0001193125-16-658234.txt"
+        expected = {
+            "TMF": {d0: (1, 10, "https://www.direxion.com/press-release/direxion-announces-reverse-splits-of-tmf-and-labu"),
+                    d2: (4, 1, issuer_497)},
+            "UBT": {d1: (2, 1, "https://www.proshares.com/press-releases/proshares-announces-etf-share-splits-80420")},
+        }
+        days = [d0, d1, d2]
+        for sym, effective in (("TMF", d0), ("UBT", d1)):
             source = "https://www." + M.FUNDS[sym] + "/test-issuer"
+            splits = [dict(id=d.isoformat(), effective_date=d.isoformat(), new=n, old=o, source=u)
+                      for d, (n, o, u) in expected[sym].items()]
             a = dict(schema=1, symbol=sym, currency="USD", coverage_start="2016-01-04", coverage_end="2026-10-30",
                      share_basis="contemporaneous_ex_date_post_split", reviewer="toy",
                      cash=[dict(id="p", ex_date=effective.isoformat(), amount=.5, source=source)],
-                     splits=[dict(id="s", effective_date=effective.isoformat(), new=n, old=old, source=source)])
-            self.assertEqual(M.fund_actions(a, sym, [d0, d1]), ({effective: [.5]}, {effective: (n, old)}))
-            with self.assertRaisesRegex(M.Refused, "KNOWN_SPLIT"):
-                M.fund_actions(a | {"splits": []}, sym, [d0, d1])
+                     splits=splits)
+            self.assertEqual(M.fund_actions(a, sym, days), ({effective: [.5]},
+                             {d: v[:2] for d, v in expected[sym].items()}))
+            for invalid in (splits[:-1], splits[:-1] + [splits[-1] | {"source": issuer_497 + "?other"}],
+                            splits[:-1] + [splits[-1] | {"new": splits[-1]["new"] + 10}],
+                            splits + [splits[-1] | {"id": "extra", "effective_date": "2018-01-02"}]):
+                with self.assertRaisesRegex(M.Refused, "KNOWN_SPLIT"):
+                    M.fund_actions(a | {"splits": invalid}, sym, [*days, date(2018, 1, 2)])
             with self.assertRaisesRegex(M.Refused, "ACTION_COVERAGE"):
-                M.fund_actions(a | {"share_basis": "adjusted"}, sym, [d0, d1])
+                M.fund_actions(a | {"share_basis": "adjusted"}, sym, days)
             with self.assertRaisesRegex(M.Refused, "ACTION_ROW"):
-                M.fund_actions(a | {"cash": [a["cash"][0] | {"source": "https://example.org/wrong"}]}, sym, [d0, d1])
+                M.fund_actions(a | {"cash": [a["cash"][0] | {"source": issuer_497}]}, sym, days)
 
     def test_manifest_refuses_one_fund_incomplete_pins_or_wrong_source(self):
         m = dict(schema=1, symbols=["TMF", "UBT"], feed="sip", adjustment="raw", currency="USD",
