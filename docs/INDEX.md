@@ -49,6 +49,7 @@ Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEU
 | `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from output files and the generated Replay 24 result page | CURRENT |
 | `tools/report_saved_25.py` | Renders the Replay 25 result page from the pinned saved aggregate JSON. Does not open market inputs or score | CURRENT |
 | `tools/report_saved_31.py` | Renders the Replay 31 result page from one pinned saved aggregate JSON. Does not open market inputs or score | CURRENT |
+| `tools/report_saved_41.py` | Renders the Replay 41 result page from one pinned saved JSON. Does not open market inputs or score | CURRENT |
 | `tools/report_saved_35.py` | Renders the Replay 35 result page and summary lines from one pinned saved aggregate. Does not open market inputs or score | CURRENT |
 | `tools/report_saved_23.py` | Renders the Replay 23 result page from the pinned saved run outputs (off repo). Does not open bars or score | CURRENT |
 | `tools/report_saved_20.py` | Renders the Replay 20 result page from the pinned saved aggregate JSON. Does not open market inputs or score | CURRENT |
@@ -180,6 +181,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/89_replay_33_treasury_auction_days.md` | Replay 33 (ledger 168, queue 52): scored-once Treasury auction ETF clock proxy; MEASURED 3 of 11 marks, placement only; blind refreeze history, result digest, fixed controls and shown-only checks | RECORD |
 | `docs/research/90_round_19_intraday_forced_flows.md` | Round 19 intraday forced flows in liquid US ETFs (`SPY`, `QQQ`, `IWM`, `TLT`): lead-agent ruling (0 of 8 queued; all 8 added to dead-family skip list in `docs/QUEUE.md`), $500 whole-share and cash-account T+1 settlement facts, and post-2016 evidence across all 8 mechanisms | CURRENT |
 | `docs/research/91_round_20_dated_mechanical_flows.md` | Round 20 dated mechanical flows published in advance (10 flows audited): lead-agent ruling (0 new replay rows queued; muni June/July/December reinvestment folded into Queue row 69; US Treasury Liquidity Support Buybacks kept as WATCH; drops added to dead-family skip list in `docs/QUEUE.md`), explicit Replay 25 / Replay 31 / Plan 41 overlap audit | CURRENT |
+| `docs/research/92_replay_41_month_end_laggard_switch.md` | Month-end SPY/TLT laggard switch did not pass, 4 of 8 marks. The switch added +0.0148% per window versus always-TLT, t 0.14 | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
