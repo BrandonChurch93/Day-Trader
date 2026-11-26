@@ -270,6 +270,7 @@ Working papers.
 | `research_rig/PREREG_25_treasury_month_end.md` | Frozen Queue 41 Treasury ETF month-end window, ledger 162, nine marks. No data collected or result | CURRENT |
 | `research_rig/PREREG_26_treasury_month_end_early.md` | Earlier Treasury ETF month-end replication, queue 45 and ledger 163. Nine marks and a separate no-return vendor overlap check | CURRENT |
 | `research_rig/calendar_26.json`, `research_rig/source_26.json`, `research_rig/PINNED_26.json` | Replay 26 exchange calendar, private-source provenance pins and freeze manifest. No price data | CURRENT |
+| `research_rig/APPROVAL_26.md` | The lead agent's approval line for replay 26: validation and one scored run, names the freeze commit. Read by the approval gate | CURRENT |
 | `research_rig/common_26.py`, `research_rig/score_26.py`, `research_rig/test_26.py` | Replay 26 schedule, offline input validator, one-shot gate and synthetic tests. Reuses Replay 25 numerical helpers | CURRENT |
 | `research_rig/PREREG_24_same_coin_carry.md` | Frozen Queue 39 same-coin funding carry, ledger 161, five marks, reviewed off-repo metadata hashes. No real result | CURRENT |
 | `research_rig/common_24.py` | Replay 24 spot and perpetual event accounting, fees and matched controls | CURRENT |
