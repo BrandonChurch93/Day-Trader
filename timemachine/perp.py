@@ -285,11 +285,13 @@ class Minutes(list):
         self.keys = {s: [r[0] for r in rs] for s, rs in self.by.items()}
 
 
-def scan_rows(minutes, a, b, held):
+def scan_rows(minutes, a, b, held, *, watched=()):
     """The minutes from a to b in time order. From a Minutes, only the symbols held at the start (a scan never opens a
-    position, so no other symbol can matter, except as noted in perp.LIMITS); from a plain list, every row as before."""
+    position, so no other symbol can matter, except as noted in perp.LIMITS); from a plain list, every row as before.
+    The desk can also name flat symbols with a live order."""
     if isinstance(minutes, Minutes):
-        parts = [minutes.by[s][bisect.bisect_left(minutes.keys[s], a):bisect.bisect_left(minutes.keys[s], b)] for s in sorted(held) if s in minutes.by]
+        keys = set(held) | set(watched) if watched else held
+        parts = [minutes.by[s][bisect.bisect_left(minutes.keys[s], a):bisect.bisect_left(minutes.keys[s], b)] for s in sorted(keys) if s in minutes.by]
         return heapq.merge(*parts)
     keys = [m[0] for m in minutes]
     return minutes[bisect.bisect_left(keys, a):bisect.bisect_left(keys, b)]

@@ -85,6 +85,8 @@ def p_scan(book, minutes, t0, t1, pp):
 
 def run_perp(meta, table, answers, pp, minutes, cfg):
     """perp.run_perp with the faster scan. Same (book, records, final value)."""
+    if meta.get("tm07_arm") == "C":
+        raise ValueError("conditional desk answers require score_tm07.replay")
     book = P.new_book(cfg["tm_account_start_usd"], meta.get("opening")); wakes = [P.parse(w) for w in meta["wakes"]]; end = P.parse(meta["end_utc"])
     tf = [P.scan_from(table["rows"][k], wakes[k]) for k in range(len(answers))]; recs = []
     for k, (w, ex) in enumerate(answers):

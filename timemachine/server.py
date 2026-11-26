@@ -68,10 +68,67 @@ def done_answer(sess):
     return 200, dict(status="DONE", done=True, session=sess.meta["session"], result=str(sess.dir / "result.json"))
 
 
-def handle(method, path, q, body):
+def handle_desk(method, path, sid, body, authorization,registration=None,stage=None,session=None):
+    actions = {("GET", "/desk/next"): "next", ("GET", "/desk/status"): "status",
+               ("POST", "/desk/look"): "look", ("POST", "/desk/notes"): "notes",
+               ("POST", "/desk/pick"): "pick", ("POST", "/desk/usage"): "usage"}
+    action = actions.get((method, path))
+    if not action:
+        return 404, dict(ok=False, error="unknown desk route")
+    prefix = "Bearer "
+    if not isinstance(authorization, str) or not authorization.startswith(prefix):
+        return 403, dict(ok=False, error="desk access denied")
+    try:
+        token = authorization[len(prefix):]
+        if stage is not None:
+            from timemachine import desk, score_tm07
+            # One scored stage for all 20 weeks (ruling 2026-11-26); raw copies are denied in every week.
+            allowed = score_tm07.WEEKS if stage == "scored" else ()
+            if session != sid or not desk.SID.fullmatch(sid):
+                raise PermissionError
+            # The private attempt index is not a week file. Do not open or stat the
+            # session directory, manifest, fixture or tape until this passes.
+            with desk.study_ledger(os.environ["TM07_RUNS_DIR"]) as con:
+                row = con.execute("SELECT week FROM attempts WHERE reg=? AND session=?",(registration,sid)).fetchone()
+            if row is None or row[0] not in allowed:
+                raise PermissionError
+        sess = W.open_session(sid, desk_token=token)
+        if registration is not None:
+            from timemachine.desk import digest
+            if digest((sess.manifest.get("registration") or {}).get("body")) != registration:
+                raise PermissionError
+        if stage is not None and desk.wall(sess.spec["wakes"][0]).date().isoformat() != row[0]:
+            raise PermissionError
+        role = sess.authenticate(token)
+        if role is None:
+            raise PermissionError
+        obj = json.loads(body) if body else {}
+        if not isinstance(obj, dict):
+            raise ValueError("expected a JSON object")
+        return 200, sess.handle(role, action, obj)
+    except (PermissionError, FileNotFoundError):
+        return 403, dict(ok=False, error="desk access denied")
+    except (ValueError, TypeError) as exc:
+        return 400, dict(ok=False, error=str(exc)[:300])
+
+
+def handle_desk_only(method,path,q,body,authorization,registration=None,stage=None,session=None):
+    sid = (q.get("session") or [""])[0]
+    if not path.startswith("/desk/") or not sid.startswith("TM07-"):
+        return 404, dict(ok=False,error="unknown desk route")
+    return handle_desk(method,path,sid,body,authorization,registration,stage,session)
+
+
+def handle(method, path, q, body, authorization=None):
     sid = (q.get("session") or [""])[0]
     if not sid:
         return 400, dict(ok=False, error="session=... is needed")
+    if path.startswith("/desk/"):
+        if not sid.startswith("TM07-"):
+            return 404, dict(ok=False, error="unknown route")
+        return handle_desk(method, path, sid, body, authorization)
+    if sid.startswith("TM07-") and not (S.runs_dir() / sid / "session.json").is_file():
+        return 404, dict(ok=False, error="unknown legacy session")
     slot = get_session(sid)
     with slot[0]:
         if slot[1] is None:
@@ -119,14 +176,27 @@ def compact(q):
 
 
 class H(BaseHTTPRequestHandler):
+    desk_only = False
+
     def _go(self, method):
         u = urllib.parse.urlparse(self.path); q = urllib.parse.parse_qs(u.query)
-        body = self.rfile.read(int(self.headers.get("Content-Length") or 0)) if method == "POST" else None
+        size = int(self.headers.get("Content-Length") or 0) if method == "POST" else 0
+        if u.path.startswith("/desk/") and not 0 <= size <= 65536:
+            self.send_error(413)
+            return
+        body = self.rfile.read(size) if method == "POST" else None
         try:
-            code, obj = handle(method, u.path, q, body); trim_caches()
+            if self.desk_only:
+                code,obj = handle_desk_only(method,u.path,q,body,self.headers.get("Authorization"),self.server.desk_registration,
+                                            self.server.desk_stage,self.server.desk_session)
+            elif u.path.startswith("/desk/"):
+                code,obj = 404, dict(ok=False,error="use the isolated desk listener")
+            else:
+                code,obj = handle(method,u.path,q,body,self.headers.get("Authorization"))
+                trim_caches()
         except Exception as e:
             traceback.print_exc(); code, obj = 500, dict(ok=False, error=f"{type(e).__name__}: {str(e)[:300]}")
-        data = (json.dumps(obj, separators=(",", ":"), sort_keys=True) if compact(q) else json.dumps(obj, indent=1, sort_keys=True)).encode()
+        data = (json.dumps(obj, separators=(",", ":"), sort_keys=True) if self.desk_only or compact(q) else json.dumps(obj, indent=1, sort_keys=True)).encode()
         self.send_response(code); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(data))); self.end_headers()
         self.wfile.write(data)
 
@@ -147,6 +217,31 @@ def serve(port=None):
     srv = ThreadingHTTPServer(("127.0.0.1", port), H)
     print(f"time machine server on http://127.0.0.1:{srv.server_address[1]} (runs in {S.runs_dir()})", flush=True)
     return srv
+
+
+class DeskH(H):
+    desk_only = True
+
+
+def serve_desk(port,*,approval_key,proof,signature,nonce,stage,session):
+    """Consume this approval before binding the single-session listener."""
+    from timemachine.desk import validate_worker_boundary
+    from timemachine.tm07_isolation_probe import consume_receipt
+    root = os.environ.get("TM07_RUNS_DIR")
+    if not root:
+        raise ValueError("set a separate TM07_RUNS_DIR")
+    if os.getuid() != os.geteuid():
+        raise ValueError("run directly as the dedicated service uid")
+    if type(port) is not int or not 1 <= port <= 65535:
+        raise ValueError("name a fixed listener port")
+    launch = dict(nonce=nonce,port=port,stage=stage,session=session)
+    validate_worker_boundary(approval_key,proof,signature,root,service_uid=os.geteuid(),launch=launch)
+    consume_receipt(root,proof)
+    server = ThreadingHTTPServer(("127.0.0.1",port),DeskH)
+    server.desk_registration = proof["registration"]
+    server.desk_stage = stage
+    server.desk_session = session
+    return server
 
 
 if __name__ == "__main__":

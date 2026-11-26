@@ -796,6 +796,12 @@ tm06_plan:
   note: Plan TM06, the owner's method in two parts. coins is the fast tape's list without BTC, ETH and PAXG. swing_weeks and their coins were worked out once by timemachine/tm06_fix_weeks.py from daily bars (weeks at the 10th, 30th, 70th and 90th percentile of the list's weekly gain; coins are the five biggest risers of the seven days before each week). control_move_bps is the 15-minute move that triggers the negative-control rule. Fee levels are tm_perp_fee_levels_bps. Part S allows shorts from 2026-11-25 19.51 UTC, set before any part S session, after the owner said most of his trades were shorts; swing_max_gross is the cap on the summed sizes of longs and shorts.
   source: timemachine/PLAN_TM06_hot_coin_swing.md
 
+tm07_screen:
+  value: {route: coinbase_us_perpetual_style_futures, fee_sensitivities_bps: [25, 40], min_minute_coverage_pct: 90, first_seen_utc: {"2025-08-15": [SOL, XRP], "2025-12-12": [ADA, AVAX, BCH, DOGE, DOT, HBAR, LINK, LTC, SUI, XLM], "2026-02-28": [AAVE, ENA, NEAR, ONDO, PEPE, ZEC], "2026-06-05": [BNB, HYPE]}}
+  status: builder
+  note: TM07 draft only. Dates are first positive-volume UTC daily candles in the opened public windows, not minute listing clocks. The judged fee still comes from tm06_plan.main_fee_bps. Sensitivities are display only.
+  source: docs/research/98_kraken_and_coinbase_short_access.md
+
 replay_12_plan:
   value: {design_filed_from: "2019-01-01", design_filed_to: "2022-12-31", heldback_filed_from: "2023-01-01", holds_days: [21, 63, 126], main_hold_days: 63, cost_bps_per_side: 10, large_buy_min_usd: 50001, proven_lookback_days: 1095, proven_min_events: 10, proven_top_members: 10, proven_refresh_days: 63, bootstrap_draws: 5000, bootstrap_seed: 12, bootstrap_days_per_month: 21, min_events: 200, random_date_window_days: 90, random_date_draws: 200, late_entry_trading_days: 5, late_entry_calendar_days: 30, named_members: [Pelosi, Khanna, McCaul, Gottheimer, Cisneros, "Lisa C. McClain", Tuberville, Greene, Mullin, Bresnahan, Goldman, Crenshaw, "Wasserman Schultz"], new_trials: 9}
   status: builder

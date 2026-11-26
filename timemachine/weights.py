@@ -525,8 +525,11 @@ def fast_tape():
     return Tape(Path(os.environ.get("TM_STORE", str(DEFAULT_STORE))) / "tape_fast.sqlite", readonly=True)
 
 
-def open_session(session_id, tape=None):
-    """The right session object for a folder: a perp session, a weights session or a pick session."""
+def open_session(session_id, tape=None, *, desk_token=None):
+    """Open a regular session or an authenticated, separately stored TM07 desk."""
+    if desk_token is not None:
+        from timemachine.desk import open_desk
+        return open_desk(session_id, token=desk_token)
     if is_weights(session_id):
         meta = json.loads((S.runs_dir() / session_id / "session.json").read_text())
         if meta.get("tape_readonly") and (tape is None or str(tape.path) != meta.get("tape")):
