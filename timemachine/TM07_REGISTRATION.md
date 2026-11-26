@@ -4,20 +4,21 @@ STATED. Draft for review, written 2026-11-26. It fixes every week, coin, arm, pr
 
 ## What is pinned
 
-- Engine and plan: commit `bdc5f6a722a0e78036d50c3dd08c964c97703d6f` on branch `tm07` (checkout `dt-tm07`; not merged into work, which stays the lead's call). The files used, by SHA-256 at that commit:
+- Engine and plan: commit `4408b7c59fb882228fd8d8f3cb470d536fe57891` on branch `tm07` (checkout `dt-tm07`, fast-forwarded from `f37e431` through `bdc5f6a`; not merged into work, which stays the lead's call). It carries the lead's 2026-11-26 rulings: the t-based weekly mark with no screen gate, raw-copy denial in all 20 weeks, and the soft, audited sudo boundary. It replaces the earlier pin `bdc5f6a722a0e78036d50c3dd08c964c97703d6f`. `desk_orders.py`, `perp.py` and `tm06.py` are byte-identical to that pin. The files used, by SHA-256 at the new commit:
 
-| File at `bdc5f6a` | SHA-256 |
+| File at `4408b7c` | SHA-256 |
 |---|---|
-| `timemachine/PLAN_TM07_desk_DRAFT.md` | `a64b81d01d1893a6905cc345102fdc6b8fbc0e459b353526f81b18e19c03e57b` |
-| `timemachine/desk.py` | `260f3ed8d6b761ec140c070d670d6faa6546f876e3e4bd39091e267eb21b2479` |
+| `timemachine/PLAN_TM07_desk_DRAFT.md` | `0581ff2f6dfb3cd59d8c32b31ad539bc389157682c9254dc84f09db89d36f1ab` |
+| `timemachine/desk.py` | `bbbde294cbee2676b4eec4781bf2ff6f07f16a0b8f3ac8aa15ab9eceddfba236` |
 | `timemachine/desk_orders.py` | `fcbbf8cd8946dd1921ea8011f967928e6611e0b4c502f1d7b62b9250f5c8c3d8` |
-| `timemachine/score_tm07.py` | `d88cd806fe0644332d4ba1fb9b15f43f441357f0f69f58b9452155fee7a68db6` |
-| `timemachine/server.py` | `5a02526969bd81744c59f7cfff8874e7372919324449d4c21a71f69f5058b303` |
+| `timemachine/score_tm07.py` | `058f241ff71bf04b483ed211212bbcab3086286b2d6eed8a490d67e66924a0df` |
+| `timemachine/server.py` | `6dbcfe25f37a0d6d174f49bc1531b41394906ce27ae8732948b2adfdeeb3f3e3` |
 | `timemachine/perp.py` | `1a98dc755d358394ac88512cbde6cff49c1e94ff398c899ac0e7089d2b1cf2c1` |
 | `timemachine/tm06.py` | `65e5561e92b72bd7b6042c5047a2ec5e437a4e76154094d91c0d09834cba1613` |
-| `timemachine/TRADER_BRIEF_DESK.md` | `28bd33070f68f668ad9426887430aa8ae6d6ae2f538b2f6ea8fda78fedf57156` |
-| `timemachine/TM07_WORKER_PROBE.md` | `46a16741d8afc711cb089db02cac05c684866ebabe1ce275cd565f1d1f1129eb` |
-| `timemachine/tm07_isolation_probe.py` | `25f96d485e61f538e37d2f1c941257de38955296a4c5e4ded1528f50d2b1e967` |
+| `timemachine/TRADER_BRIEF_DESK.md` | `2467d44c90e82ca858cc99dc0fb06a348736dc9c2fc409c3484c3bb8e7f8a20f` |
+| `timemachine/TM07_WORKER_PROBE.md` | `75074f0aae86b7a992f060208601d1d581cabc82778f9f00590323218291d3bd` |
+| `timemachine/tm07_isolation_probe.py` | `9542c3816104f806a6ce16991f660f112ee864041c9832f351774b6040681fbd` |
+| `timemachine/test_tm07.py` | `0b4cf5eada3a683cf1598c0782225cf62c57a68bfc146804c9f0adcb03fa180f` |
 
 - Price snapshot, MEASURED: `rig/tm07_custody/tm07_coinbase_all21_20261126.sqlite`, SHA-256 `6346be0d4a10976a3531f2f2c70dd99132bfad331c47564366e0e6f4c2e486eb`, mode 0400, 21 symbols (the 20 watch coins and BTC), 4,115,728 bar rows, 74,445 funding rows. The bars are Coinbase Exchange spot one-minute and daily candles. Funding comes from the Kraken `PF_` series, as in TM06. A second fetch cannot rebuild it, so the hash is the record.
 - Week table: `timemachine/TM07_REGISTRATION_weeks.json`, built by `tools/build_tm07_registration.py` from the snapshot and the engine's own `score_tm07.week_selection` and `select_five`. It holds names, counts, reasons and digests only.
@@ -60,8 +61,8 @@ The scored set is the three screen weeks plus the 17 extension weeks: 20 weeks. 
 - Bosses: `claude_fable_5_2` and `claude_opus_5_5`. Scouts: two `gemini_neon` roles (price and news). The news role has no input, because TM07 is price-only.
 - Arms for each boss and week: A (fresh solo boss, sees the full raw packet), B (boss with the scouts' notes, its own book and the clock) and C (B plus up to two standing orders). Each arm gets three lookups per wake. That makes 2 bosses × 3 arms × 20 weeks = 120 boss sessions.
 - The scouts run once per week, as one neutral stream. The stream is sealed and copied by hash into each B and C arm of that week: 20 scout streams, each with 2 roles.
-- Order rules, fills, maintenance, funding and the min-change floor are as in the plan at `bdc5f6a` ("Orders and evidence"). The program scales every vector to 1x gross after costs (`tm06_plan.swing_max_gross`).
-- Prompt for every role: `timemachine/TRADER_BRIEF_DESK.md` at `bdc5f6a`, unchanged, SHA-256 above. It goes with the launch text below, in which only the placeholders change. A worker gets this text and its own bearer through the operator, nothing else. At a handoff, the next agent gets the same text and only the server's handoff packet.
+- Order rules, fills, maintenance, funding and the min-change floor are as in the plan at `4408b7c` ("Orders and evidence", unchanged from `bdc5f6a`). The program scales every vector to 1x gross after costs (`tm06_plan.swing_max_gross`).
+- Prompt for every role: `timemachine/TRADER_BRIEF_DESK.md` at `4408b7c`, SHA-256 above. The only change from `bdc5f6a` is one paragraph: no sudo, no price file, no web price lookup, keep a list of commands and addresses, and any of these voids the week for that arm. It goes with the launch text below, in which only the placeholders change. A worker gets this text and its own bearer through the operator, nothing else. At a handoff, the next agent gets the same text and only the server's handoff packet.
 
 ```text
 You are the {ROLE} for pretend session {SESSION_ID}, arm {ARM}, a replay of one past week. Model: {MODEL}. Pretend money only; there is no account or broker.
@@ -75,7 +76,7 @@ Answer every wake until the desk says done, then stop.
 
 ## Fixed-rule arms, shown only
 
-R1, R2 and R3 are as in the plan at `bdc5f6a` ("Fixed-rule arms (no AI)"). They are shown only, with no claims and no marks. The scorer computes them only after the registered sessions of that week are sealed. Their judged test is the forward card E06 (`practice/traders/E06_forward_hot_coin_rules.md`), which has been running since its freeze `e128e7d`.
+R1, R2 and R3 are as in the plan at `4408b7c` (unchanged from `bdc5f6a`) ("Fixed-rule arms (no AI)"). They are shown only, with no claims and no marks. The scorer computes them only after the registered sessions of that week are sealed. Their judged test is the forward card E06 (`practice/traders/E06_forward_hot_coin_rules.md`), which has been running since its freeze `e128e7d`.
 
 ## Costs, fixed now
 
@@ -90,7 +91,7 @@ For each boss, the comparisons B against A and C against A make four claims.
 
 - Ruling (lead, 2026-11-26, before the seal and before any TM07 return): the weekly mark below replaces the earlier 3 of 3 screen gate plus 16 of 20 mark. The screen gate is removed from the claim. All 20 scored weeks run for every arm, whatever happens in the first three. The two TM06 one-model marks below are unchanged.
 - Weekly mark, per claim, on the 20 weekly net differences (arm minus fresh A, 1x, main fee): a one-sided paired t of at least 2.43, at least 12 of 20 winning weeks, and a positive mean after dropping the best week. A tie, a missing week or an invalid week is not a winning week. The one-sided per-claim cap is 1.25%. The 2.43 cutoff was checked by simulation (see "Power of the registered weekly mark") and did not need raising.
-- Engine gap, MEASURED: `score_tm07.py` at the pinned `bdc5f6a` still enforces the old mark. It requires a sealed 3/3 screen gate before an extension launch (`verify_gate`), refuses extension scores without it, and passes a claim on `wins >= pass_mark` from the sign tail. The new mark needs a change on branch `tm07` and a new engine pin before the seal. That change is not made here.
+- Engine, MEASURED: `score_tm07.py` at `4408b7c` scores exactly this mark (`weekly_mark`, exact integer arithmetic on whole-cent weekly differences; the start balance is the same each week, so t, wins and the sign of the mean are the same as on percentage points). The 3/3 gate, its seal and launch check are removed, all 20 weeks are scored for every arm, and the 16 of 20 count is a shown line only (`sign_mark_shown`). A missing or invalid (including voided) week leaves the comparison incomplete, and an incomplete comparison cannot pass. Boundary tests: t exactly 2.43 passes and one cent less fails; 11 wins fails and 12 passes; a mean without the best week of exactly zero fails (such a set cannot also reach t 2.43, so that condition is checked on its own).
 - Both TM06 one-model marks must also hold, on chained net weekly gains. The arm must beat the week's five coins held equally, and it must beat the 90th percentile of 1,000 shuffled timing twins (seed 1).
 - C against B is descriptive only. Different bosses on the same week are not independent weeks.
 
@@ -108,7 +109,7 @@ History: this is the power of the replaced mark (3 of 3 screen gate plus 16 of 2
 | 0.85 | 61.41% | 55.35% |
 | 0.90 | 72.90% | 71.29% |
 
-Under the null, the chance that any of the four claims passes is at most 1.22%. STATED: the design is powered only for an arm that wins about 85% or more of its weeks against fresh A; at 70% it fails most of the time. Under the queue screen ([doc 117](../docs/research/117_power_screen_before_data.md)), it is a weakly powered test of a modest edge. It can still catch a large one.
+Under the old mark, the chance that any of the four claims passed under the null was at most 1.22%. That family statement no longer applies: the registered error control is now 1.25% per claim, which bounds the four-claim family at 5% (see "Power of the registered weekly mark"). STATED: the design is powered only for an arm that wins about 85% or more of its weeks against fresh A; at 70% it fails most of the time. Under the queue screen ([doc 117](../docs/research/117_power_screen_before_data.md)), it is a weakly powered test of a modest edge. It can still catch a large one.
 
 ## Power of the alternative weekly mark (history)
 
@@ -166,12 +167,12 @@ t cutoff used: 2.43 (start 2.43, step 0.01, stop when the null rate per claim is
 STATED, reading the tables:
 
 - The null false-pass rate per claim is at or under the 1.25% cap under both noise models at a cutoff of 2.43, so the cutoff was not raised. The normal-noise figure sits close to the cap; with 100,000 draws its simulation error is about 0.03 points.
-- The four-claim null rate (any of the four claims passing when no arm has an edge) is about four times the per-claim rate, well above 1.25%. The old mark held the four-claim rate at or under 1.22%; the new mark caps each claim, not the family. A family cap would need a higher cutoff. That is the lead's call.
+- Error control (lead ruling 2026-11-26): the registered error control is 1.25% per claim, which bounds the four-claim family at 5%. The cutoff stays at 2.43. The simulated four-claim null rate is in the table above, under that bound. This replaces the old statement that the four-claim rate was at most 1.22%.
 - Against the old mark, the new mark has much more power at every edge tested, because no screen gate can stop a claim after three weeks.
 
 ## Isolation design
 
-What each role sees at wake k (hour t). It comes from `desk.py` at `bdc5f6a`:
+What each role sees at wake k (hour t). It comes from `desk.py` at `4408b7c`:
 
 | Role | Sees | Never sees |
 |---|---|---|
@@ -192,14 +193,20 @@ How the server enforces it, from `server.py`, `TM07_WORKER_PROBE.md` and `tm07_i
 - The desk listener runs as a separate Unix service account (`tm07desk`). It binds to loopback only and serves only the desk routes, with no legacy tape routes.
 - Every route needs that role's bearer. Bearers are unique across the study root, and each worker gets only its own.
 - Launch requires a single-use, 10-minute receipt bound to the registration, session, stage, port, release and study-root inode. Before writing the receipt, the launcher runs a fresh uid-2000 rehearsal, which checks that the study and rehearsal roots cannot be listed or traversed. It also runs a sudo canary that must appear in the root-owned sudo log.
-- A request outside the allowed stage is refused before any week file is opened. For extension sessions, the launcher checks that every listed raw-bar copy is unreadable by uid 2000, both before the listener starts and after it stops.
+- One scored stage covers all 20 weeks. A request for any other week (such as the May diagnostic) is refused before any week file is opened. For every scored session, the launcher checks that every listed raw-bar copy is unreadable by uid 2000 without sudo, both before the listener starts and after it stops (lead ruling 2026-11-26, removing the old screen-stage exemption).
 
-MEASURED, open gaps that block the extension as written:
+STATED, the boundary is soft and audited (lead ruling 2026-11-26):
 
-- Every price copy on this host is owned by `user`, uid 2000, which is the worker uid. That covers the custody snapshot (`rig/tm07_custody`, mode 0700 but owned by uid 2000), the three-week TM07 file, and `rig/tm_store/tape.sqlite` and `tape_fast.sqlite`, which hold these months for the watch coins. Passwordless sudo also works for uid 2000.
-- So the fixed extension gate (raw bars unreadable by uid 2000 without sudo, throughout extension sessions) cannot pass until the operator moves or re-owns every copy behind the service account. That would also cut off the ports 8765 to 8767 servers that read `tape_fast.sqlite`, so it needs its own decision.
-- For the screen weeks, raw bars stay readable as in TM06. That is a stated limit, not a control.
-- UNKNOWN: whether a worker uses sudo, the web or any readable copy, and what provider-side memory holds. The brief forbids all three; that is an instruction, not proof.
+- Passwordless sudo for uid 2000 stays on this host. Removing it could leave the host without an admin route, and it would not close the other open door: a worker with web access could look up past prices. The receipt records `worker_passwordless_sudo: true` as a fact; it is not a refusal.
+- The launch requires every listed price copy unreadable by uid 2000 without sudo, and the sudo log present, root-owned and mode 0600, with the launch canary recorded. The after file keeps every sudo log line added during the session.
+- After each week the operator checks three things: the sudo log against the operator's own timed command list (`tm07_isolation_probe review`, which prints VOID on any unlisted line), the server log, and the worker's own list of commands and addresses. Any worker sudo entry, any direct read of a price copy, or any outside price lookup voids that week for that arm. Operator sudo commands are listed with their times so they can be told apart.
+- The brief tells every worker the same: no sudo, no price file, no web price lookup, keep and hand over the list, and a breach voids the week.
+- UNKNOWN: whether a worker uses sudo and then edits the log as root, uses the web without listing it, or what provider-side memory holds. The audit can catch a careless breach, not a deliberate and hidden one.
+
+MEASURED, host state before the move:
+
+- Every price copy on this host is owned by `user`, uid 2000. That covers the custody snapshot (`rig/tm07_custody`), the three-week TM07 file, `rig/tm_store/tape.sqlite` and `tape_fast.sqlite`, and the other copies in the approved move list. Until they are moved behind `tm07desk`, no scored session can launch.
+- Approved move list (lead ruling 2026-11-26): the first group in the permission plan, plus `rig/data/funding`. `tm_notes`, the coverage tsv and tracked repo pages stay where they are, as a stated limit: they hold TM06 weekly results and coverage counts, not bars.
 
 ## What the seal still needs
 
@@ -208,15 +215,15 @@ These are operator steps under the service account, after approval and before an
 - Build each week's fixture with `desk.prepare_week` from a protected copy of the snapshot. Record the fixture hash and the funding settlement hash (`score_tm07.funding_profile_hash`) for each week, and assign one unique neutral run ID per week.
 - Record the exact platform model IDs for the three participants, with their first-after-cutoff dates. The runner ID is `tm07_desk_v1`, and the study root is one absolute canonical path.
 - Sign the registration body with the operator key. `score_tm07.Registration` refuses a body that is missing any of these.
-- Change `score_tm07.py` on branch `tm07` to the ruled weekly mark (t cutoff 2.43, 12 of 20, mean without the best week, no screen gate or gate seal), test it, and re-pin the engine hashes in this package.
+- Auditor b reviews engine commit `4408b7c`. Then the operator moves the approved price copies behind `tm07desk` (with the rollback notes), keeps the servers on ports 8765 to 8769 down during TM07 sessions, and runs every tool that needs the tape as `tm07desk`.
 - Run the real-host rehearsal in `TM07_WORKER_PROBE.md`. The independent isolation review (`/root/rig_code_auditor_b`) comes before any registered session.
 
 ## Ledger and queue text
 
 Ledger row 198 (`research_rig/TRIAL_LEDGER.md`), as added in this commit:
 
-> 198 | 2026-11-26 MT | `timemachine/TM07_REGISTRATION.md` | Queue 33, TM07 desk. Two bosses (`claude_fable_5_2`, `claude_opus_5_5`), arms A, B and C, two `gemini_neon` scouts, price-only, hourly, 1x, 12 bp per side plus TM06 half spreads and Kraken funding proxy, on Coinbase spot minute bars, snapshot `6346be0d…`. 20 scored weeks fixed by the registered coverage and Sunday-close rule (3 screen, 17 extension; screen baskets differ from TM06 by the accepted minute rule), May 11 diagnostic. Four claims B/A and C/A per boss. Lead ruling 2026-11-26, before the seal and before any return: weekly mark is a one-sided paired t of at least 2.43 on the 20 weekly net differences, at least 12 of 20 winning weeks and a positive mean without the best week, with no screen gate (all 20 weeks run for every arm); both TM06 one-model marks unchanged. Replaces 3 of 3 screen gate plus 16 of 20. R1, R2, R3 shown only. | DRAFT registration. No session, no replay and no return. MEASURED simulated upper-bound power of the registered mark in the package, noise a proxy from TM06 pairs of different models; null per claim at or under 1.25%, four-claim null above 1.25%. Old mark power kept as history. Engine at `bdc5f6a` still scores the old mark and needs a change and new pin before the seal. Extension blocked until every raw copy is unreadable by uid 2000. Isolation review pending.
+> 198 | 2026-11-26 MT | `timemachine/TM07_REGISTRATION.md` | Queue 33, TM07 desk. Two bosses (`claude_fable_5_2`, `claude_opus_5_5`), arms A, B and C, two `gemini_neon` scouts, price-only, hourly, 1x, 12 bp per side plus TM06 half spreads and Kraken funding proxy, on Coinbase spot minute bars, snapshot `6346be0d…`. 20 scored weeks fixed by the registered coverage and Sunday-close rule (3 screen, 17 extension; screen baskets differ from TM06 by the accepted minute rule), May 11 diagnostic. Four claims B/A and C/A per boss. Lead ruling 2026-11-26, before the seal and before any return: weekly mark is a one-sided paired t of at least 2.43 on the 20 weekly net differences, at least 12 of 20 winning weeks and a positive mean without the best week, with no screen gate (all 20 weeks run for every arm); both TM06 one-model marks unchanged. Replaces 3 of 3 screen gate plus 16 of 20. R1, R2, R3 shown only. | DRAFT registration. No session, no replay and no return. MEASURED simulated upper-bound power of the registered mark in the package, noise a proxy from TM06 pairs of different models; null per claim at or under 1.25%, error control 1.25% per claim, which bounds the four-claim family at 5% (lead ruling). Old mark power kept as history. Engine pinned at `4408b7c` (branch `tm07`): ruled mark, no screen gate, raw copies denied to uid 2000 in all 20 weeks, passwordless sudo kept as a recorded fact with a soft, audited boundary (any worker sudo, direct price-copy read or outside price lookup voids the week for that arm). Every scored week blocked until the approved price copies are behind `tm07desk`. Auditor b review of `4408b7c` pending.
 
 Queue row 33, last column (`docs/QUEUE.md`):
 
-> Registration package drafted (ledger 198, `timemachine/TM07_REGISTRATION.md`): 20 weeks and coins fixed from snapshot `6346be0d…`, costs and marks fixed (weekly mark replaced by the lead's t-based ruling, no screen gate), simulated power stated. The lead accepted the 90% minute rule and the four replaced screen names (screen baskets differ from TM06). Waiting on the isolation review, operator sealing, and protected raw copies for the extension. Engine branch `tm07` not merged.
+> Registration package drafted (ledger 198, `timemachine/TM07_REGISTRATION.md`): 20 weeks and coins fixed from snapshot `6346be0d…`, costs and marks fixed (weekly mark replaced by the lead's t-based ruling, no screen gate), simulated power stated. The lead accepted the 90% minute rule and the four replaced screen names (screen baskets differ from TM06). Engine pinned at `4408b7c` with the ruled mark and the soft, audited sudo boundary. Waiting on auditor b's review of that commit, the move of the approved price copies behind `tm07desk`, the host rehearsal and operator sealing. Engine branch `tm07` not merged.
