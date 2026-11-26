@@ -1,0 +1,1 @@
+Approved by the lead: plan 62 ledger 205, validation only, adoption commit ced35221418f5eca6f2a45c0dbb2ec3a241cfec3, adoption approval SHA-256 e71a3b008f68c99c932760980248a4e790d141cf628768c5f14a51306dd39dca.
