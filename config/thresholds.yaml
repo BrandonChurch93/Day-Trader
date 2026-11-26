@@ -1138,3 +1138,9 @@ replay_60_plan:
   status: builder
   note: Draft only. Existing sealed Plan 43 price packet by hash; vendor corporate actions are a separate action-only input. No new price acquisition.
   source: research_rig/PREREG_60_special_dividends.md
+
+replay_22_plan:
+  value: {judged_start: "2020-01-01", judged_end: "2026-04-01", shown_start: "2026-04-01", shown_end: "2026-10-26", wake_hour_utc: 14, range_days: 21, volume_days: 30, volume_window_hours: 24, min_volume_ratio: 1.5, max_above_level_pct: 3.0, max_names: 5, min_parts: 3, stall_days: 2, stall_volume_ratio: 1.0, top_rank: 30, max_page_age_days: 45, judged_cost_bps: 12, shown_cost_bps: [1, 25, 40], min_sharpe: 1.0, max_drawdown: 0.40, twins: 500, twin_percentile: 95.0, twin_seed: 22001, twin_max_draws: 1000, min_positive_years: 5, annual_days: 365, drop_best: 3, btc_line_days: 7, calibration_seed: 22101, calibration_seeds: 20, calibration_edges_pct: [0, 4, 8, 16], calibration_coins: 12, calibration_days: 2283, calibration_sigma_hourly: 0.006, calibration_hl_spread: 0.002, calibration_drift_hours: 72, calibration_volume_boost: [2.0, 4.0], calibration_fade_days: 30}
+  status: builder
+  note: Plan 22 for queue 40, ledger 159. Rule A of the Fable 5.2 autopsy, one fixed version, judged 2020-01 to 2026-03 at 12 bps a side against the equal-weight hold and 500 random twins on end value. Rule C and the April to October 2026 source months are shown only. No scoring authorized by this entry; that needs the lead's approval commit.
+  source: research_rig/PREREG_22_fable_rule_a.md
