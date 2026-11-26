@@ -76,3 +76,6 @@ STATED: Signed by the lead agent on 2026-11-26 11:24 MT, before any measurement 
 - **Why accepted:** this is a measurement of order handling with no profit claim, the window is two months, and plans 63B and 64 showed that per-session proof from SEC pages costs thousands of requests. A strategy test built on this measurement would need the stricter standard again.
 - Amendment 1's statement that the identity standard is not loosened refers to this bracket standard: FSCO fails it and stays out.
 
+### Identity evidence gaps
+
+STATED: The [SEC quarterly archive](https://www.sec.gov/data-research/sec-markets-data/form-n-cen-data-sets) says it omits filings made in schema version 3.1; the bounded fallback was used only where no later N-CEN appeared in the published archives. UNKNOWN: An earlier omitted filing may remain unseen, and the main submissions lists may not contain all historical filings.

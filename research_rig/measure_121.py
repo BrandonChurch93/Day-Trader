@@ -6,15 +6,16 @@ See the accompanying test module and signed doc 166 for the decision rules.
 
 Input handoff (all paths relative to the private M121 store):
 * Place the hash-pinned roster_before_draw.json and price-free inputs.json in the
-  store. Each identity names ticker, session, state, and either a reason for an
-  unknown state or a proof with numeric cik, ticker, common_class, security_type,
-  ncen_security_class_title, exchange, from, through, url, and sha256. Each
+  store. Each fund_brackets entry names ticker and before/after references, each
+  with accession and sha256, and a filing_list reference with sha256 and
+  response_sha256. Put price-free extracts from the two filings and the frozen
+  filing-list walk at evidence/<sha256>. The bracket is not daily listing proof. Each
   halt_days entry names session, coverage, and intervals (ticker, start, resume);
   when coverage or events are asserted, give its official source url and sha256.
   Put exact evidence bytes at evidence/<sha256>. The manifest has a
-  config_sha256 and covers every scheduled session. Dated claims in the manifest
-  require substantive independent review; this program checks shape, joins,
-  declared interval and local hash, not the meaning of an external document.
+  config_sha256 and covers every originally selected fund. The validator checks
+  the extracted rows, dates, identity and filing-list outcome; substantive
+  independent review ties the extracts to the raw sources and filing order.
 * --validate-inputs is local only. It prints the pinned *_sha256 fields to carry
   into GO.json, as well as current coverage counts and free bytes. The lead also
   writes authorization_id into GO.json and appends exactly
@@ -59,12 +60,18 @@ LEDGER = ROOT / 'research_rig/TRIAL_LEDGER.md'
 CONFIG = ROOT / 'config/thresholds.yaml'
 SIGNED_CONFIG = 'fe2e5a2b3ec734e0f632e9821c3d731fb766b5ab70117f937ac1e744d41ac1f0'
 SIGNED_TEXT = '3143f7c7fe021d108e0528fcb2403fc48fc81e2812865c6eb37eed8c1e3b91b1'
+SIGNED_AMENDMENT = '850f79840c1cc66f09d0bd5719af2b11442ea1b05569b9897477020edaab2e1a'
+SIGNED_AMENDMENT_2 = '227b317db2780bcf5bf9f46597dad73083e4531509fba7c49b275d322ce5307e'
+AMENDMENT_IDENTITY_EXCLUDED = frozenset({'FSCO'})
+BRACKET_GAP = ('Two dated filings do not establish daily listing or rule out a ticker changing and changing back, '
+               'or a historical vendor-feed ticker collision with another issuer.')
 HOST = 'data.alpaca.markets'
 MIB = 2**20
 NS = 10**9
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 TIME_RE = re.compile(r'(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d{1,9}))?(Z|[+-]\d\d:\d\d)')
 SHA_RE = re.compile(r'[0-9a-f]{64}')
+ACCESSION_RE = re.compile(r'[0-9]{10}-[0-9]{2}-[0-9]{6}')
 TOKEN_RE = re.compile(r'[A-Za-z0-9_-]+')
 
 
@@ -146,6 +153,7 @@ class Settings:
     sizing: dict
     sha: str
     plan_sha: str
+    excluded_tickers: frozenset
 
     def schedule(self):
         return [(group, ticker, day) for day in self.sample['sessions']
@@ -168,11 +176,17 @@ def settings():
 
     raw, plan = CONFIG.read_bytes(), PLAN.read_bytes()
     base, marker, signature = plan.partition(b'### Signature')
+    _, heading, tail = signature.partition(b'### Amendment 1')
+    first_tail, second_heading, second_tail = tail.partition(b'### Amendment 2')
+    amendment = (heading + first_tail).rstrip(b'\n') + b'\n'
+    amendment_2 = (second_heading + second_tail.partition(b'### Identity evidence gaps')[0]).rstrip(b'\n') + b'\n'
     require(digest(raw) == SIGNED_CONFIG and bool(marker) and bool(signature.strip())
-            and digest(base.rstrip(b'\n') + b'\n') == SIGNED_TEXT, 'signed_configuration_or_text')
+            and digest(base.rstrip(b'\n') + b'\n') == SIGNED_TEXT
+            and digest(amendment) == SIGNED_AMENDMENT and digest(amendment_2) == SIGNED_AMENDMENT_2,
+            'signed_configuration_or_text')
     values = yaml.safe_load(raw)
     c = Settings(*(values[f'm121_{k}']['value'] for k in ('limits', 'sample', 'order', 'reporting', 'sizing')),
-                 digest(raw), digest(plan))
+                 digest(raw), digest(plan), AMENDMENT_IDENTITY_EXCLUDED)
     L, o = c.limits, c.order
     require(L['workers'] == 1 and not L['retry_cap']
             and L['job_disk_cap_mib'] + L['job_memory_cap_mib'] < L['job_total_peak_mib_exclusive']
@@ -677,12 +691,11 @@ def headroom(cfg, store, increment=0):
     return free
 
 
-def hashed_evidence(store, cfg, tag, seen):
+def evidence_bytes(store, cfg, tag):
     require(isinstance(tag, str) and bool(SHA_RE.fullmatch(tag)), 'evidence_hash_format')
-    if tag not in seen:
-        raw = private_read(store / 'evidence' / tag, cfg.page_cap)
-        require(bool(raw) and digest(raw) == tag, 'evidence_hash_mismatch')
-        seen.add(tag)
+    raw = private_read(store / 'evidence' / tag, cfg.page_cap)
+    require(bool(raw) and digest(raw) == tag, 'evidence_hash_mismatch')
+    return raw
 
 
 def source(url, hosts):
@@ -692,7 +705,23 @@ def source(url, hosts):
 
 def identity_source(url):
     p = urlsplit(url)
-    return (source(url, {'www.sec.gov'}) and p.path.startswith('/Archives/edgar/data/')) or source(url, {'www.nyse.com'})
+    return source(url, {'www.sec.gov'}) and (p.path.startswith('/Archives/edgar/data/')
+            or (p.path.startswith('/files/dera/data/form-n-cen-data-sets/') and p.path.endswith('.zip')))
+
+
+def filing_evidence(store, cfg, ref, cik):
+    record = strict_json(evidence_bytes(store, cfg, ref['sha256']))
+    require(record['accession'] == ref['accession'] and bool(ACCESSION_RE.fullmatch(ref['accession']))
+            and type(record['cik']) is int and record['cik'] == cik
+            and record['form'] in ('N-CEN', 'N-CEN/A') and identity_source(record['source_url'])
+            and bool(SHA_RE.fullmatch(record['source_sha256'])) and isinstance(record['listings'], list), 'identity_filing_record')
+    return record, date.fromisoformat(record['filed'])
+
+
+def listing_matches(cfg, record, sym, class_title=None):
+    return any(item['TICKER_SYMBOL'] == sym and item['EXCHANGE'] == cfg.sample['venue_primary']
+               and item['DESCRIPTION'] == cfg.sample['form_common_stock_label']
+               and (class_title is None or item['SECURITY_CLASS_TITLE'] == class_title) for item in record['listings'])
 
 
 def inputs(cfg, store):
@@ -706,28 +735,33 @@ def inputs(cfg, store):
     obj = strict_json(raw)
     require(obj['config_sha256'] == cfg.sha, 'inputs_config_hash')
     expected = {(sym, day): group for group, sym, day in cfg.schedule()}
-    selected, checked = {}, set()
-    for item in obj['identities']:
-        sym, day = item['ticker'], item['session']
-        k = sym, day
-        require(k in expected and k not in selected and ids[sym]['group'] == expected[k], 'identity_schedule')
-        if item['state'] == 'unknown':
-            require(not item.get('proof') and bool(text(item.get('reason'))), 'unknown_identity_shape')
-            selected[k] = False
-        else:
-            require(item['state'] == 'verified', 'identity_state')
-            p, r = item['proof'], ids[sym]
-            lo, hi = map(date.fromisoformat, (p['from'], p['through']))
-            require(type(p['cik']) is int and p['cik'] == r['cik'] and p['ticker'] == sym
-                    and p['ncen_security_class_title'] == r['security_class'] and bool(text(p['common_class']))
-                    and p['security_type'] == cfg.sample['form_common_stock_label']
-                    and p['exchange'] == cfg.sample['venue_primary'] and lo <= date.fromisoformat(day) <= hi
-                    and identity_source(p['url']), 'identity_proof')
-            hashed_evidence(store, cfg, p['sha256'], checked)
-            selected[k] = True
-    require(set(selected) == set(expected), 'identity_missing_session')
+    expected_funds = {sym: group for (sym, _), group in expected.items()}
+    first, last = map(date.fromisoformat, (min(cfg.sample['sessions']), max(cfg.sample['sessions'])))
+    require(cfg.excluded_tickers <= expected_funds.keys(), 'identity_exclusion_schedule')
+    walk_sha = cfg.sample['delisting_walk_sha256']
+    walk = strict_json(evidence_bytes(store, cfg, walk_sha))
+    require(walk['completed'] is True and walk['selected'] == cfg.sample['selected_in_hash_order'], 'identity_filing_walk')
+    walked = {r['ticker']: r for r in walk['visited'] if r['outcome'] == 'pass'}
+    require(walked.keys() == expected_funds.keys(), 'identity_filing_walk')
+    proved = {}
+    for item in obj['fund_brackets']:
+        sym = item['ticker']
+        require(sym in expected_funds and sym not in proved and ids[sym]['group'] == expected_funds[sym], 'identity_schedule')
+        roster_row, hit = ids[sym], walked[sym]
+        walk_ref = item['filing_list']
+        require(walk_ref['sha256'] == walk_sha and bool(SHA_RE.fullmatch(walk_ref['response_sha256']))
+                and hit['cik'] == roster_row['cik'] and hit['group'] == expected_funds[sym] and hit['forms'] == []
+                and hit['body_sha256'] == walk_ref['response_sha256'], 'identity_filing_list')
+        before, lo = filing_evidence(store, cfg, item['before'], roster_row['cik'])
+        after, hi = filing_evidence(store, cfg, item['after'], roster_row['cik'])
+        require(lo < first <= last < hi and after['form'] == 'N-CEN'
+                and listing_matches(cfg, before, sym, roster_row['security_class']), 'identity_bracket')
+        proved[sym] = listing_matches(cfg, after, sym)
+        require(proved[sym] == (sym not in cfg.excluded_tickers), 'identity_amendment_exclusions')
+    require(proved.keys() == expected_funds.keys(), 'identity_missing_fund')
+    selected = {(sym, day): proved[sym] for sym, day in expected}
 
-    coverage, halts = {}, defaultdict(list)
+    coverage, halts, checked = {}, defaultdict(list), set()
     for item in obj['halt_days']:
         day = item['session']
         require(day in cfg.sample['sessions'] and day not in coverage
@@ -735,7 +769,9 @@ def inputs(cfg, store):
         coverage[day] = item['coverage']
         if item['coverage'] != 'unavailable' or item['intervals']:
             require(source(item['url'], {'www.nyse.com', 'ftp.nyse.com'}), 'halt_source')
-            hashed_evidence(store, cfg, item['sha256'], checked)
+            if item['sha256'] not in checked:
+                evidence_bytes(store, cfg, item['sha256'])
+                checked.add(item['sha256'])
         start, end, _, _ = cfg.clocks(day)
         for event in item['intervals']:
             sym = event['ticker']
@@ -746,8 +782,9 @@ def inputs(cfg, store):
             halts[sym, day].append((a, b))
     require(set(coverage) == set(cfg.sample['sessions']), 'halt_missing_session')
     info = dict(config_sha256=cfg.sha, plan_sha256=cfg.plan_sha, runtime_sha256=digest(Path(__file__).read_bytes()),
-                inputs_sha256=digest(raw), roster_sha256=digest(roster), identity_verified=sum(selected.values()),
-                identity_unknown=len(selected) - sum(selected.values()), halt_coverage=dict(Counter(coverage.values())))
+                inputs_sha256=digest(raw), roster_sha256=digest(roster),
+                bracket_proved_fund_days=sum(selected.values()), bracket_excluded_fund_days=len(selected) - sum(selected.values()),
+                halt_coverage=dict(Counter(coverage.values())))
     return info, selected, coverage, halts, free
 
 
@@ -802,6 +839,8 @@ def execution(cfg, store, context, get):
     sync_dir(store)
     stage = store / '.building'
     rows, tallies = [], defaultdict(Counter)
+    excluded = Counter(group for group, sym, day in cfg.schedule() if not verified[sym, day])
+    total_excluded = sum(excluded.values())
     kept = 0
     made_stage = False
     try:
@@ -809,14 +848,13 @@ def execution(cfg, store, context, get):
         made_stage = True
         with (stage / 'orders.jsonl').open('xb') as f:
             for group, sym, day in cfg.schedule():
+                if not verified[sym, day]:
+                    continue
                 headroom(cfg, store)
                 pager.day_decoded = 0
-                if verified[sym, day]:
-                    new, stats = measure_day(cfg, group, sym, day, pager.records(sym, day, 'quotes'),
-                                             pager.records(sym, day, 'trades'), halts[sym, day])
-                    tallies[group].update(stats)
-                else:
-                    new = unknown_day(cfg, group, sym, day, 'unresolved_identity')
+                new, stats = measure_day(cfg, group, sym, day, pager.records(sym, day, 'quotes'),
+                                         pager.records(sym, day, 'trades'), halts[sym, day])
+                tallies[group].update(stats)
                 for row in new:
                     payload = json_bytes(row)
                     kept += len(payload)
@@ -827,8 +865,15 @@ def execution(cfg, store, context, get):
                     f.flush()
                     rows.append(row)
             os.fsync(f.fileno())
-        require(len(rows) == cfg.limits['planned_order_slots'], 'incomplete_schedule')
+        require(len(rows) == cfg.limits['planned_order_slots'] - total_excluded * len(cfg.order['placement_times']) and bool(rows),
+                'incomplete_schedule')
         report = summarize(rows, cfg)
+        report['identity'] = {'basis': 'bracket-proved', 'limit': BRACKET_GAP}
+        for group, stats in report['by_group'].items():
+            n = total_excluded if group == 'pooled' else excluded[group]
+            stats['identity_excluded_fund_days'] = n
+            stats['identity_excluded_slots'] = n * len(cfg.order['placement_times'])
+            stats['bracket_proved_fund_days'] = stats['scheduled'] // len(cfg.order['placement_times'])
         pooled = Counter()
         for counts in tallies.values():
             pooled.update(counts)
