@@ -12,10 +12,11 @@ worker probe run here through runuser is host-uid evidence, not proof of the hos
   bearer-copy SLOT_DIR OUT                             root: worker-owned copy of one slot bearer for the probe
   checkpoint SID PORT                                  root: canary, private checkpoint, proof, launch capsule
   probe PHASE SID PORT NONCE SIBLING BEARER            root: isolation probe as the worker uid, four canaries
-  new-go-id STAGE                                      root, once per stage (stage1, A, B): id for the lead's TM09_GO line
-  approve-run AUTH_ID FIELDS_JSON                      root, once per stage: run capsule, only if the pinned release
+  new-go-id                                            root, once: id for the lead's one TM09_GO line (lead ruling)
+  approve-build|approve-run AUTH_ID FIELDS_JSON        root, once per stage: fixture-build or run capsule, only if the pinned release
                                                        ledger row 222 ends exactly TM09_GO=AUTH_ID |, records the ledger
                                                        sha256; A or B also needs the engine's signed Stage 1 check
+                                                       naming that branch (no second go line, same release)
   preflight MODE [RUN_CAPSULE EXPORT_DIR]              root: canaries exist; production: signed stage file set matches
   entries SID PORT NONCE                               root: after stop, cut the log lines since the checkpoint
   canaries                                             root: {nonce: session} of every TM09 checkpoint
@@ -186,11 +187,18 @@ def export_files(run_body,read,stage1,export_dir):
 
 
 def go_line(ledger_raw,auth_id):
-    """The lead's docket: ledger row 222 must end with exactly `TM09_GO=<id> |`; the id appears nowhere else."""
-    lines = ledger_raw.decode().split("\n")
-    if (not NONCE.fullmatch(auth_id) or ledger_raw.decode().count("TM09_GO="+auth_id) != 1
-            or not any(l.startswith("| 222 | ") and l.endswith(" TM09_GO="+auth_id+" |") for l in lines)):
-        raise ValueError("ledger row 222 does not end with exactly this TM09_GO authorization")
+    """The lead's docket: the one real ledger row 222 (outside any fenced block) ends with exactly ` TM09_GO=<id> |`
+    and the id appears nowhere else. One line authorizes stage 1 and the stage 2 branch the engine's check prints."""
+    text = ledger_raw.decode()
+    rows,fenced = [],False
+    for l in text.split("\n"):
+        if l.lstrip().startswith(("```","~~~")):
+            fenced = not fenced
+        elif l.lstrip().startswith("| 222 |"):
+            rows.append((fenced,l))
+    if (not NONCE.fullmatch(auth_id) or text.count("TM09_GO="+auth_id) != 1 or len(rows) != 1 or rows[0][0]
+            or not rows[0][1].startswith("| 222 | ") or not rows[0][1].endswith(" TM09_GO="+auth_id+" |")):
+        raise ValueError("the one ledger row 222 does not end with exactly this TM09_GO authorization")
 
 
 def run_stage(body):
@@ -243,15 +251,14 @@ def main(argv):
                     operator_boundary_sha256=h(read_private(Path(a[0]))),ports=list(PORTS))
         capsule("ledger-222-rehearse-tm09",body,OPS/"rehearsal-approval.json")
     elif cmd == "new-go-id":
-        run_stage(dict(mode=a[0]))
         auth = secrets.token_hex(16)
-        put(CONTROL/f"tm09-go-id-{a[0]}",auth.encode(),owner=None)
-        print(a[0],"TM09_GO="+auth)
-    elif cmd == "approve-run":
+        put(CONTROL/"tm09-go-id",auth.encode(),owner=None)
+        print("TM09_GO="+auth)
+    elif cmd in ("approve-build","approve-run"):
         auth,fields = a[0],json.loads(read_private(Path(a[1])))
         stage1 = run_stage(fields)
-        if read_private(CONTROL/f"tm09-go-id-{fields['mode']}").decode() != auth:
-            raise ValueError("authorization id was not issued here for this stage")
+        if read_private(CONTROL/"tm09-go-id").decode() != auth:
+            raise ValueError("authorization id was not issued here")
         ledger = read_private(rel/LEDGER)
         go_line(ledger,auth)
         cfg = read_private(rel/"config/thresholds.yaml")
@@ -263,7 +270,8 @@ def main(argv):
                     release_files={n:h(read_private(rel/n)) for n in FILES},config_sha256=h(cfg),
                     registration_sha256=h(read_private(rel/"timemachine/TM09_REGISTRATION.md")),
                     resolved_settings=settings(cfg),ports=list(PORTS))
-        capsule("ledger-222-run-tm09",body,OPS/f"run-{fields['mode']}-{auth}.json")
+        scope,stem = ("ledger-222-build-fixtures","build") if cmd == "approve-build" else ("ledger-222-run-tm09","run")
+        capsule(scope,body,OPS/f"{stem}-{fields['mode']}-{auth}.json")
     elif cmd == "bearer-copy":
         slot_dir,out = Path(a[0]),Path(a[1])
         w = pwd.getpwnam(WORKER)

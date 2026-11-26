@@ -200,6 +200,8 @@ class Glue(unittest.TestCase):
     def test_run_approval_needs_the_exact_go_line(self):
         ok = b'| 222 | x | lead text TM09_GO=' + N1.encode() + b' |\n'
         ops.go_line(ok, N1)
+        with self.assertRaises(ValueError):
+            ops.go_line(b'```\n' + ok + b'```\n', N1)
         for bad in (b'TM09_GO=' + N1.encode() + b'\n', b'| 222 | lead text TM09_GO=' + N1.encode() + b'\n',
                     b'| 223 | lead text TM09_GO=' + N1.encode() + b' |\n', b'| 222 | lead text TM09_GO=' + N1.encode() + b' | \n',
                     b'| 222 | lead text TM09_GO=' + N2.encode() + b' |\n', ok + ok, b''):
@@ -268,7 +270,7 @@ class GlueCLI(unittest.TestCase):
         return str(f)
 
     def test_stage1_run_capsule_and_preflight_without_news(self):
-        auth = self.main('new-go-id', 'stage1').strip().split('=')[1]
+        auth = self.main('new-go-id').strip().split('=')[1]
         s1 = ('stock_sessions.jsonl', 'stock_bars.jsonl')
         with self.assertRaises(ValueError):
             self.main('approve-run', auth, self.fields('stage1', s1))           # no docket line yet
@@ -284,6 +286,11 @@ class GlueCLI(unittest.TestCase):
         self.assertEqual((body['mode'], body['authorization_id'], body['ledger_sha256']),
                          ('stage1', auth, ops.h((self.rel / ops.LEDGER).read_bytes())))
         self.assertIn('export files 2', self.main('preflight', 'production', str(cap), str(self.ex)))
+        self.main('approve-build', auth, self.fields('stage1', s1))
+        from timemachine.tm09_desk import verify_seal
+        b = json.loads((self.root / 'ops-v2' / f'build-stage1-{auth}.json').read_text())
+        verify_seal('k' * 48, 'ledger-222-build-fixtures', b['body'], b['seal'])
+        self.assertEqual(b['body']['authorization_id'], auth)
         with self.assertRaises(ValueError):
             self.main('preflight', 'production', str(cap), str(self.root / 'other'))
         with open(self.rel / ops.LEDGER, 'a') as f:
@@ -293,16 +300,14 @@ class GlueCLI(unittest.TestCase):
 
     def test_stage2_needs_the_engine_stage1_check_news_and_its_own_id(self):
         from timemachine import tm09_blind
-        s1 = self.main('new-go-id', 'stage1').strip().split('=')[1]
-        a = self.main('new-go-id', 'A').strip().split('=')[1]
+        a = self.main('new-go-id').strip().split('=')[1]
         with self.assertRaises(FileExistsError):
-            self.main('new-go-id', 'A')                                         # one id per stage, never reissued
-        with self.assertRaises(ValueError):
-            self.main('new-go-id', 'C')
+            self.main('new-go-id')                                              # one id, never reissued
         self.go('TM09_GO=' + a)
         full = ops.STAGE_FILES[False]
+        self.main('approve-run', a, self.fields('stage1', ('stock_sessions.jsonl', 'stock_bars.jsonl')))  # same id, stage 1
         with self.assertRaises(ValueError):
-            self.main('approve-run', s1, self.fields('A', full))                 # stage 1 id cannot approve A
+            self.main('approve-run', N3, self.fields('A', full))                 # an id not issued here
         with self.assertRaises(FileNotFoundError):
             self.main('approve-run', a, self.fields('A', full))                  # real gate: no Stage 1 check receipt
         f = self.root / 'nomode.json'
@@ -332,7 +337,7 @@ class GlueCLI(unittest.TestCase):
             self.main('preflight', 'production', str(old), str(self.ex))        # capsule without ledger binding
 
     def test_docket_line_must_be_exact(self):
-        auth = self.main('new-go-id', 'stage1').strip().split('=')[1]
+        auth = self.main('new-go-id').strip().split('=')[1]
         s1 = ('stock_sessions.jsonl', 'stock_bars.jsonl')
         for end in ('TM09_GO=' + auth + ' ', 'TM09_GO=' + auth + '.', 'xTM09_GO=' + auth, 'TM09_GO=' + auth + ' TM09_GO=' + auth,
                     '<!-- TM09_GO=' + auth + ' -->'):
@@ -342,9 +347,18 @@ class GlueCLI(unittest.TestCase):
                 self.main('approve-run', auth, self.fields('stage1', s1))
             (self.rel / ops.LEDGER).write_bytes(backup)
         ledger = (self.rel / ops.LEDGER).read_text()
-        (self.rel / ops.LEDGER).write_text(ledger + '<!-- | 222 | x TM09_GO=' + auth + ' |\n')
+        for extra in ('<!-- | 222 | x TM09_GO=' + auth + ' |\n', '```\n| 222 | x TM09_GO=' + auth + ' |\n```\n'):
+            (self.rel / ops.LEDGER).write_text(ledger + extra)                   # the real row does not authorize
+            with self.assertRaises(ValueError, msg=extra):
+                self.main('approve-run', auth, self.fields('stage1', s1))
+        (self.rel / ops.LEDGER).write_text(ledger)
+        self.go('TM09_GO=' + auth)
+        good = (self.rel / ops.LEDGER).read_text()
+        (self.rel / ops.LEDGER).write_text(good + '```\n| 222 | example row |\n```\n')   # a second 222 row, even fenced
         with self.assertRaises(ValueError):
             self.main('approve-run', auth, self.fields('stage1', s1))
+        (self.rel / ops.LEDGER).write_text(good)
+        self.main('approve-run', auth, self.fields('stage1', s1))
 
 
 # The stub stands in for osudo only: it appends the timed operator record exactly as osudo does and the sudo log
