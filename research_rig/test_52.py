@@ -1,6 +1,8 @@
 """Price-blind tests for Plan 52. The one-shot rehearsal uses only a disposable Git repo."""
 from copy import deepcopy
 from datetime import datetime, time, timezone
+from decimal import Decimal
+from fractions import Fraction
 from hashlib import sha256
 import json
 import os
@@ -119,6 +121,31 @@ class Engine(unittest.TestCase):
         self.assertAlmostEqual(shown["welch_t"], 2**0.5)
         self.assertIsNone(C.shown_gap([5, 5], [0, 0])["welch_t"])
 
+    def test_exact_signs_and_t(self):
+        f = Fraction(CFG["cost_bps_per_side"], C.BPS)
+        exact_zero = C.exact_window_return(Decimal("90.01"), Decimal("90.01"), Decimal("0.036004"), f)
+        self.assertEqual(exact_zero, 0)
+        labels = [e.month != 12 for e, _ in SPANS["quarters"]]
+        xs = [Decimal(x) for x in ["0.1", "0.2", "-0.3"] * 13 + ["0"]]
+        self.assertFalse(C.judge(xs, xs, [0], labels, CFG)["marks"]["mean_net"])
+        self.assertFalse(C.judge(xs, xs, [0], labels, CFG)["marks"]["above_non_quarter_month_ends"])
+        self.assertTrue(C.exact_stats([1, 3], Fraction(2))[1])
+        self.assertFalse(C.exact_stats([1, 3], Fraction(2) + Fraction(1, 10**16))[1])
+        self.assertEqual(S.parse(b'{"x":90.01000000000000000001}', market=True)["x"], Decimal("90.01000000000000000001"))
+
+        prices = {s: dict.fromkeys(DAYS, Decimal("90.01")) for s in SYMS}
+        cash = {s: {} for s in SYMS}
+        for ix, (_, held) in enumerate(SPANS["quarters"]):
+            for fund in CFG["funds"]:
+                cash[fund][held[-1]] = Decimal("0.036004")
+            for proxy in set(CFG["proxies"].values()):
+                prices[proxy][held[-1]] = Decimal("89.01") - Decimal(ix) / 100
+        judged = C.evaluate(SPANS, prices, cash, CFG)["judged"]
+        self.assertEqual(judged["net"]["positive"], 0)
+        self.assertFalse(judged["marks"]["mean_net"])
+        self.assertTrue(judged["marks"]["t_proxy_net"])
+        self.assertFalse(judged["supported"])
+
     def test_claim_survives_failure(self):
         with TemporaryDirectory() as d:
             run = Path(d)
@@ -160,9 +187,10 @@ class CLI(unittest.TestCase):
                 dest.chmod(mode)
                 return digest(content)
 
-            def cli(*args, ok=True):
-                cmd = [sys.executable, "-IB", str(repo / "research_rig/score_52.py"), *args]
-                r = subprocess.run(cmd, cwd=repo, env={"PATH": env["PATH"], "LC_ALL": "C"}, capture_output=True, timeout=35)
+            def cli(*args, ok=True, isolated=True, extra_env=None):
+                cmd = [sys.executable, "-IB" if isolated else "-B", str(repo / "research_rig/score_52.py"), *args]
+                r = subprocess.run(cmd, cwd=repo, env={"PATH": env["PATH"], "LC_ALL": "C"} | (extra_env or {}),
+                                   capture_output=True, timeout=120)
                 self.assertEqual(r.returncode, 0 if ok else 2, (r.stdout, r.stderr))
                 return r
 
@@ -190,13 +218,35 @@ class CLI(unittest.TestCase):
             manifest = {"schema": 1, "vendor": "synthetic", "feed": "sip", "adjustment": "raw", "frequency": "daily",
                         "start": str(DAYS[0]), "end": str(DAYS[-1]), "collected_utc": "2026-10-06T00:01:00Z", "files": hashes}
             input_pin = write(packet, "manifest.json", S.encode(manifest))
-            template = ("Approved by the lead: plan 52, validation and one scored run, freeze commit "
-                        f"{freeze}, freeze SHA-256 {freeze_pin}, input SHA-256 {input_pin}, "
-                        f"actions SHA-256 {actions_pin}.\n").encode()
 
-            def flags():
-                return ("--approval-commit", git("rev-parse", "HEAD"), "--freeze-sha256", freeze_pin,
-                        "--input-sha256", input_pin, "--actions-sha256", actions_pin)
+            def template(parent=freeze, frozen=freeze_pin, inputs=input_pin, cash=actions_pin):
+                return ("Approved by the lead: plan 52, validation and one scored run, freeze commit "
+                        f"{parent}, freeze SHA-256 {frozen}, input SHA-256 {inputs}, actions SHA-256 {cash}.\n").encode()
+
+            def flags(frozen=freeze_pin, inputs=input_pin, cash=actions_pin):
+                return ("--approval-commit", git("rev-parse", "HEAD"), "--freeze-sha256", frozen,
+                        "--input-sha256", inputs, "--actions-sha256", cash)
+
+            def approve(body):
+                write(repo, S.APPROVAL, body)
+                git("add", S.APPROVAL)
+                git("commit", "-qm", "synthetic approval")
+
+            def refuse(code, *args, mode="--go", **kwargs):
+                reply = cli(mode, *args, ok=False, **kwargs)
+                self.assertEqual((reply.stdout, reply.stderr), (b"", ("P52_" + code + "\n").encode()))
+
+            def alternate_freeze(changes, pin_changes=True):
+                git("reset", "--hard", freeze)
+                pins = dict(test_pins)
+                for name, blob in changes.items():
+                    result = write(repo, name, blob)
+                    if pin_changes and name in pins:
+                        pins[name] = result
+                p = write(repo, S.PINS, S.encode(pins))
+                git("add", ".")
+                git("commit", "-qm", "alternate synthetic freeze")
+                return git("rev-parse", "HEAD"), p
 
             synthetic_cal = cli("--calibrate")
             self.assertEqual(synthetic_cal.stdout, (BASE / S.CALIBRATION).read_bytes())
@@ -210,26 +260,101 @@ class CLI(unittest.TestCase):
                 self.assertTrue(all(both[x]["count"] <= quarter[x]["count"] for x in quarter))
             self.assertEqual(cli("--go", ok=False).stderr, b"P52_ARGUMENTS\n")
             self.assertEqual(cli("--go", *flags(), ok=False).stderr, b"P52_APPROVAL\n")
-            write(repo, S.APPROVAL, template)
+            write(repo, S.APPROVAL, template())
             write(repo, "extra.txt", b"disallowed\n")
             git("add", ".")
             git("commit", "-qm", "invalid extra-file approval")
             self.assertEqual(cli("--go", *flags(), ok=False).stderr, b"P52_APPROVAL\n")
+            for body in (b"not approval\n", template(inputs="0"*64)):
+                git("reset", "--hard", freeze)
+                approve(body)
+                refuse("APPROVAL", *flags())
             git("reset", "--hard", freeze)
-            write(repo, S.APPROVAL, template)
-            git("add", S.APPROVAL)
-            git("commit", "-qm", "sole-file synthetic approval")
+            git("commit", "--allow-empty", "-qm", "intervening synthetic commit")
+            approve(template())
+            refuse("APPROVAL", *flags())
+
+            cases = [
+                (S.PLAN, b"Status DRAFT.\n", True, "FREEZE"),
+                (S.ENGINE, (BASE / S.ENGINE).read_bytes() + b"\n# changed", False, "PIN"),
+                ("research_rig/TRIAL_LEDGER.md", b"| 186 | not a link |\n", True, "LEDGER"),
+                ("docs/QUEUE.md", b"| 94 | not a link |\n", True, "QUEUE"),
+            ]
+            tampered_cal = deepcopy(calibrated)
+            tampered_cal["variants"][0]["scenarios"]["quarter_only"]["20"]["rate"] = 0.999
+            cases.append((S.CALIBRATION, S.encode(tampered_cal), True, "CALIBRATION"))
+            for name, blob, update, err in cases:
+                parent, new_pin = alternate_freeze({name: blob}, update)
+                approve(template(parent=parent, frozen=new_pin))
+                refuse(err, *flags(frozen=new_pin))
+
+            git("reset", "--hard", freeze)
+            approve(template())
+            refuse("ENVIRONMENT", *flags(), isolated=False)
+            refuse("ENVIRONMENT", *flags(), extra_env={"PLAN52_OVERRIDE": "1"})
 
             write(repo, "dirty", b"dirty")
             self.assertEqual(cli("--go", *flags(), ok=False).stderr, b"P52_APPROVAL\n")
             (repo / "dirty").unlink()
             bar = packet / f"{SYMS[0]}.json"
+            write(packet, "extra.json", b"{}")
+            refuse("MANIFEST_FILES", *flags(), mode="--validate-inputs")
+            (packet / "extra.json").unlink()
             bar.chmod(0o644)
             self.assertEqual(cli("--validate-inputs", *flags(), ok=False).stderr, b"P52_PRIVATE\n")
             bar.chmod(0o600)
             write(packet, bar.name, b"\"tampered\"")
             self.assertEqual(cli("--go", *flags(), ok=False).stderr, b"P52_PIN\n")
             write(packet, bar.name, S.encode(closes))
+
+            def bad_packet(man, error, cash=actions_pin):
+                trial_pin = write(packet, "manifest.json", S.encode(man))
+                git("reset", "--hard", freeze)
+                approve(template(inputs=trial_pin, cash=cash))
+                refuse(error, *flags(inputs=trial_pin, cash=cash), mode="--validate-inputs")
+
+            bad_packet(manifest | {"feed": "iex"}, "MANIFEST")
+            bad_packet(manifest | {"extra": "no"}, "MANIFEST")
+            bad_packet(manifest | {"collected_utc": str(DAYS[-1])+"T21:01:00Z"}, "COLLECTION_CLOCK")
+            bad_packet(manifest | {"files": hashes | {bar.name: "1"*64}}, "PIN")
+            bad_cash = deepcopy(actions)
+            bad_cash["funds"]["JNK"]["splits"] = []
+            bad_cash_pin = write(packet, "cash_actions.json", S.encode(bad_cash))
+            bad_packet(manifest | {"files": hashes | {"cash_actions.json": bad_cash_pin}},
+                       "ACTION_SPLIT_SET", cash=bad_cash_pin)
+            write(packet, "cash_actions.json", S.encode(actions))
+            bad_rows = [closes[0] | {"t": "2016-01-04T07:00:00Z"}, *closes[1:]]
+            wrong_clock = write(packet, bar.name, S.encode(bad_rows))
+            bad_packet(manifest | {"files": hashes | {bar.name: wrong_clock}}, "BAR_CLOCK")
+            write(packet, bar.name, S.encode(closes))
+            write(packet, "manifest.json", S.encode(manifest))
+
+            # Alter only pinned synthetic source, not the production controls.
+            engine = (BASE / S.ENGINE).read_bytes()
+            dirty_engine = engine + f"""
+_original_bars = bars
+def bars(*args):
+    with open({str(repo / 'dirty_after_validation')!r}, "wb") as stream:
+        stream.write(b"synthetic dirty recheck")
+    return _original_bars(*args)
+""".encode()
+            parent, new_pin = alternate_freeze({S.ENGINE: dirty_engine})
+            approve(template(parent=parent, frozen=new_pin))
+            refuse("APPROVAL", *flags(frozen=new_pin))
+            self.assertTrue((repo / "dirty_after_validation").exists())
+            (repo / "dirty_after_validation").unlink()
+            self.assertFalse(list(run.iterdir()))
+
+            fail_engine = engine + b'\ndef evaluate(*args):\n    raise Refused("P52_SYNTHETIC_FAILURE")\n'
+            parent, new_pin = alternate_freeze({S.ENGINE: fail_engine})
+            approve(template(parent=parent, frozen=new_pin))
+            refuse("SYNTHETIC_FAILURE", *flags(frozen=new_pin))
+            self.assertEqual({p.name for p in run.iterdir()}, {"score_52.lock"})
+            refuse("CONSUMED_OR_NOT_EMPTY", *flags(frozen=new_pin))
+            (run / "score_52.lock").unlink()
+
+            git("reset", "--hard", freeze)
+            approve(template())
             self.assertFalse(list(run.iterdir()))
             validation = cli("--validate-inputs", *flags())
             self.assertRegex(validation.stdout, rb"^P52_INPUTS_OK( [a-z_]+ [0-9]+)+\n$")

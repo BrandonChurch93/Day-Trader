@@ -1,10 +1,12 @@
 """Calendar, packet contract and post-lock mathematics for Plan 52."""
 from datetime import date, datetime
+from decimal import Decimal
+from fractions import Fraction
 from itertools import groupby
 from math import isfinite, sqrt
 import random
 import re
-from statistics import fmean, stdev, variance
+from statistics import fmean, stdev
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
@@ -73,8 +75,19 @@ def windows(days, cfg):
     return out
 
 
-def positive(v):
-    return type(v) in (int, float) and isfinite(v) and v > 0
+def positive(v, cfg):
+    if type(v) not in (int, float, Decimal):
+        return False
+    d = v if type(v) is Decimal else Decimal(str(v))
+    if not d.is_finite() or d <= 0:
+        return False
+    t = d.as_tuple()
+    r = cfg["resources"]
+    return len(t.digits) <= r["max_numeric_digits"] and abs(t.exponent) <= r["max_numeric_scale"]
+
+
+def exact(v):
+    return Fraction(str(v)) if type(v) is float else Fraction(v)
 
 
 def bars(rows, days, cfg):
@@ -87,11 +100,11 @@ def bars(rows, days, cfg):
         stamp = utc(row["t"]).astimezone(ny)
         need(stamp.date() == expected and stamp.hour == stamp.minute == stamp.second == 0, "BAR_CLOCK")
         o, h, l, c = shape = tuple(row[k] for k in ("o", "h", "l", "c"))
-        need(all(map(positive, (*shape, row["v"]))) and l <= min(o, c) <= max(o, c) <= h, "BAR_VALUES")
+        need(all(positive(v, cfg) for v in (*shape, row["v"])) and l <= min(o, c) <= max(o, c) <= h, "BAR_VALUES")
         run = run + 1 if shape == prev else 1
         need(run < cfg["max_identical_ohlc_run_exclusive"], "BAR_STALE")
         prev = shape
-        closes[expected] = c
+        closes[expected] = exact(c)
     return closes
 
 
@@ -120,10 +133,9 @@ def cash_actions(obj, days, spans, cfg):
             keys(row, "id ex_date amount", "ACTION_FIELDS")
             ex, uid, amount = day(row["ex_date"]), row["id"], row["amount"]
             need(type(uid) is str and uid.strip() and uid == uid.strip() and uid not in ids
-                 and ex in clock and positive(amount), "ACTION_CASH")
+                 and ex in clock and positive(amount, cfg), "ACTION_CASH")
             ids.add(uid)
-            cash[ex] = cash.get(ex, 0) + amount
-            need(isfinite(cash[ex]), "ACTION_CASH")
+            cash[ex] = cash.get(ex, 0) + exact(amount)
         need({d.year for d in cash} == years, "ACTION_YEAR")
         result[s] = cash
     return result, splits_checked
@@ -139,9 +151,11 @@ def summary(xs):
 
 
 def shown_gap(quarters, controls):
-    difference = fmean(quarters) - fmean(controls)
-    se_squared = variance(quarters) / len(quarters) + variance(controls) / len(controls)
-    return {"net_mean_difference": difference, "welch_t": difference / sqrt(se_squared) if se_squared else None}
+    quarters, controls = [list(map(exact, xs)) for xs in (quarters, controls)]
+    qm, cm = exact_mean(quarters), exact_mean(controls)
+    difference = qm - cm
+    se_squared = exact_sample_variance(quarters, qm) / len(quarters) + exact_sample_variance(controls, cm) / len(controls)
+    return {"net_mean_difference": float(difference), "welch_t": report_t(difference, se_squared)}
 
 
 def panel(net, proxy_net, controls, is_non_december, cfg):
@@ -177,44 +191,119 @@ def apply_marks(marks, breadth_marks, raw_t_required, breadth):
     return active
 
 
+def exact_mean(values):
+    return sum(values, Fraction(0)) / len(values)
+
+
+def exact_sample_variance(values, mean):
+    return sum(((v - mean)**2 for v in values), Fraction(0)) / (len(values) - 1) if len(values) > 1 else None
+
+
+def report_t(mean, se_squared):
+    return (1 if mean >= 0 else -1) * sqrt(float(mean**2 / se_squared)) if se_squared else None
+
+
+def exact_stats(values, threshold):
+    mean = exact_mean(values)
+    var = exact_sample_variance(values, mean)
+    se_squared = var / len(values) if var is not None else None
+    passes_t = bool(se_squared and mean >= 0 and mean**2 >= threshold**2 * se_squared)
+    report = {"count": len(values), "mean": float(mean), "t": report_t(mean, se_squared),
+              "positive": sum(v > 0 for v in values)}
+    return mean, passes_t, report
+
+
 def judge(net, proxy_net, controls, is_non_december, cfg):
-    metrics, base, breadth = panel(net, proxy_net, controls, is_non_december, cfg)
+    net, proxy_net, controls = [[exact(v) for v in series] for series in (net, proxy_net, controls)]
     m = cfg["marks"]
+    floor, threshold = exact(m["strict_floor"]), exact(m["minimum_t"])
+    a, ta, raw_report = exact_stats(net, threshold)
+    b, tb, proxy_report = exact_stats(proxy_net, threshold)
+    c, _, control_report = exact_stats(controls, threshold)
+    trim = exact_mean(sorted(net)[:-m["drop_best"]])
+    non_dec = exact_mean([x for x, keep in zip(net, is_non_december, strict=True) if keep])
+    pos, n = raw_report["positive"], len(net)
+    r = m["positive_share"]
+    breadth = {"sixty_percent": pos * r["denominator"] >= n * r["numerator"], "strict_majority": pos > n - pos}
+    base = {"mean_net": a > floor, "t_net": ta, "mean_proxy_net": b > floor, "t_proxy_net": tb,
+            "above_non_quarter_month_ends": a > c, "trimmed_net": trim > floor, "non_december_net": non_dec > floor}
     marks = apply_marks(base, breadth, m["raw_t_required"], m["breadth"])
+    metrics = {"net": raw_report, "proxy_net": proxy_report, "controls_net": control_report,
+               "trimmed_net_mean": float(trim), "non_december_net_mean": float(non_dec)}
     return metrics | {"marks": marks, "supported": all(marks.values())}
 
 
+def exact_window_return(entry_close, exit_close, payouts, f):
+    return (exact(exit_close) * (1-f) + exact(payouts)) / (exact(entry_close) * (1+f)) - 1
+
+
 def window_return(entry_close, exit_close, payouts, f):
+    """Floating-point model for generated worlds only."""
     value = (exit_close * (1-f) + payouts) / (entry_close * (1+f)) - 1
     need(isfinite(value), "RETURN")
     return value
 
 
 def evaluate(spans, prices, cash, cfg):
-    f = cfg["cost_bps_per_side"] / BPS
+    f = Fraction(cfg["cost_bps_per_side"], BPS)
     book = {}
     for group, rows in spans.items():
         events = []
         for entry, held in rows:
             def ret(symbol, fee):
-                return window_return(prices[symbol][entry], prices[symbol][held[-1]],
-                                     sum(cash[symbol].get(d, 0) for d in held), fee)
+                return exact_window_return(prices[symbol][entry], prices[symbol][held[-1]],
+                                           sum((exact(cash[symbol].get(d, 0)) for d in held), Fraction(0)), fee)
 
             net = {s: ret(s, f) for s in cfg["funds"]}
             proxies = {s: ret(s, 0) for s in set(cfg["proxies"].values())}
-            raw, credit = fmean(net.values()), fmean(net[s] - proxies[p] for s, p in cfg["proxies"].items())
+            raw, credit = exact_mean(net.values()), exact_mean([net[s] - proxies[p] for s, p in cfg["proxies"].items()])
             events.append({"entry": entry.isoformat(), "exit": held[-1].isoformat(), "net": raw,
                            "proxy_net": credit, "net_usd": raw * cfg["budget_usd"]})
         book[group] = events
     q = book["quarters"]
     raw, controls = [e["net"] for e in q], [e["net"] for e in book["controls"]]
     verdict = judge(raw, [e["proxy_net"] for e in q], controls, [e["entry"][5:7] != "12" for e in q], cfg)
-    return {"judged": verdict, "events": book, "shown_only": {"quarter_minus_control_net": shown_gap(raw, controls)}}
+    report = {group: [{k: float(v) if type(v) is Fraction else v for k, v in e.items()} for e in rows]
+              for group, rows in book.items()}
+    return {"judged": verdict, "events": report, "shown_only": {"quarter_minus_control_net": shown_gap(raw, controls)}}
 
 
 def upper_wilson(hits, n, z):
     p = hits / n
     return (p + z*z / (2*n) + z * sqrt(p*(1-p)/n + z*z/(4*n*n))) / (1 + z*z/n)
+
+
+def calibration_variants():
+    return [(raw, breadth) for raw in (True, False)
+            for breadth in ("sixty_percent", "strict_majority", "none")]
+
+
+def calibration_record(cfg, hits):
+    a = cfg["calibration"]
+    n, rows = a["worlds"], []
+    edges = a["edge_bps"]
+    for raw, breadth in calibration_variants():
+        scenarios = {}
+        for world in ("quarter_only", "all_month_ends"):
+            scenarios[world] = {}
+            for edge in edges:
+                count = hits[raw, breadth, world, edge]
+                need(type(count) is int and 0 <= count <= n, "CALIBRATION")
+                scenarios[world][str(edge)] = {"count": count, "rate": count / n}
+        null = scenarios["quarter_only"]["0"]
+        need(null == scenarios["all_month_ends"]["0"]
+             and all(scenarios["all_month_ends"][str(e)]["count"] <= scenarios["quarter_only"][str(e)]["count"]
+                     for e in edges), "CALIBRATION")
+        upper = upper_wilson(null["count"], n, a["one_sided_normal_z"])
+        rows.append({"raw_t_required": raw, "breadth": breadth, "scenarios": scenarios,
+                     "null_upper_wilson": upper,
+                     "eligible": null["rate"] <= a["null_rate_cap"] and upper <= a["null_upper_cap"]})
+    # Rows are strictest-first for ties; max returns the first maximizer.
+    eligible = [row for row in rows if row["eligible"]]
+    need(eligible, "NO_CALIBRATION_CANDIDATE")
+    winner = max(eligible, key=lambda row: row["scenarios"]["quarter_only"][str(a["power_target_bps"])]["count"])
+    return {"synthetic_only": True, "assumptions": a, "observations": cfg["expected"], "variants": rows,
+            "selected": {k: winner[k] for k in ("raw_t_required", "breadth")}}
 
 
 def calibrate(cfg):
@@ -224,8 +313,7 @@ def calibrate(cfg):
     widths = cfg["held_sessions"]
     f = cfg["cost_bps_per_side"] / BPS
     edges = a["edge_bps"]
-    variants = [(raw, breadth) for raw in (True, False)
-                for breadth in ("sixty_percent", "strict_majority", "none")]
+    variants = calibration_variants()
     worlds = ("quarter_only", "all_month_ends")
     hits = {(raw, breadth, world, edge): 0 for raw, breadth in variants for world in worlds for edge in edges}
     dates = [(y, m) for y in range(cfg["judged_first_year"], cfg["judged_last_year"] + 1) for m in range(1, 13)]
@@ -253,21 +341,4 @@ def calibrate(cfg):
                 hits[raw, breadth, "quarter_only", edge] += all(plain.values())
                 hits[raw, breadth, "all_month_ends", edge] += all(shared.values())
 
-    n, rows = a["worlds"], []
-    for raw, breadth in variants:
-        scenarios = {}
-        for world in worlds:
-            scenarios[world] = {str(edge): {"count": hits[raw, breadth, world, edge],
-                                            "rate": hits[raw, breadth, world, edge] / n}
-                                for edge in edges}
-        null = scenarios["quarter_only"]["0"]
-        upper = upper_wilson(null["count"], n, a["one_sided_normal_z"])
-        rows.append({"raw_t_required": raw, "breadth": breadth, "scenarios": scenarios,
-                     "null_upper_wilson": upper,
-                     "eligible": null["rate"] <= a["null_rate_cap"] and upper <= a["null_upper_cap"]})
-    # Rows are strictest-first for ties; max returns the first maximizer.
-    eligible = [row for row in rows if row["eligible"]]
-    need(eligible, "NO_CALIBRATION_CANDIDATE")
-    winner = max(eligible, key=lambda row: row["scenarios"]["quarter_only"][str(a["power_target_bps"])]["count"])
-    return {"synthetic_only": True, "assumptions": a, "observations": cfg["expected"], "variants": rows,
-            "selected": {k: winner[k] for k in ("raw_t_required", "breadth")}}
+    return calibration_record(cfg, hits)

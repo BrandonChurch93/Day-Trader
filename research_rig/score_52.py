@@ -1,6 +1,7 @@
 """Plan 52: synthetic calibration, pinned validation, or one locked score."""
 import argparse
 from datetime import datetime, timezone
+from decimal import Decimal
 from hashlib import sha256
 import json
 import os
@@ -67,8 +68,9 @@ def reject_number(_):
     raise Refused("P52_JSON_NUMBER")
 
 
-def parse(blob):
-    return json.loads(blob, object_pairs_hook=unique, parse_constant=reject_number)
+def parse(blob, market=False):
+    return json.loads(blob, object_pairs_hook=unique, parse_constant=reject_number,
+                      parse_float=Decimal if market else float)
 
 
 def encode(data):
@@ -137,10 +139,6 @@ def authorize(approval, freeze_pin, input_pin, actions_pin):
     need(all(b == git("show", f"{freeze}:{name}") for name, b in blobs.items()), "FREEZE")
     need([s for s in blobs[PLAN].splitlines() if s.startswith(b"Status ")] == [b"Status FROZEN."], "FREEZE")
     cfg = read_config(blobs[CONFIG])
-    cal = parse(blobs[CALIBRATION])
-    need(cal["synthetic_only"] is True and cal["assumptions"] == cfg["calibration"]
-         and cal["observations"] == cfg["expected"]
-         and cal["selected"] == {k: cfg["marks"][k] for k in ("raw_t_required", "breadth")}, "CALIBRATION")
     ref = b"`" + PLAN.encode() + b"`"
     for name, row, code in (("research_rig/TRIAL_LEDGER.md", cfg["ledger_row"], "LEDGER"),
                             ("docs/QUEUE.md", cfg["queue_row"], "QUEUE")):
@@ -154,6 +152,22 @@ def load_engine(blob):
     mod = ModuleType("common_52_verified")
     exec(compile(blob, ENGINE, "exec"), mod.__dict__)
     return mod
+
+
+def check_calibration(blob, cfg, C):
+    cal = parse(blob)
+    hits = {}
+    for row in cal["variants"]:
+        raw, breadth = row["raw_t_required"], row["breadth"]
+        need(type(raw) is bool and (raw, breadth) in C.calibration_variants(), "CALIBRATION")
+        for world, edges in row["scenarios"].items():
+            for edge, value in edges.items():
+                key = raw, breadth, world, int(edge)
+                need(key not in hits, "CALIBRATION")
+                hits[key] = value["count"]
+    rebuilt = C.calibration_record(cfg, hits)
+    need(encode(rebuilt) == blob
+         and rebuilt["selected"] == {k: cfg["marks"][k] for k in ("raw_t_required", "breadth")}, "CALIBRATION")
 
 
 def load_input(input_dir, cfg, C, calendar_blobs, pin, actions_pin):
@@ -175,8 +189,8 @@ def load_input(input_dir, cfg, C, calendar_blobs, pin, actions_pin):
     need(type(m["files"]) is dict and set(m["files"]) == filenames and all(map(is_pin, m["files"].values()))
          and m["files"][actions] == actions_pin and {p.name for p in input_dir.iterdir()} == filenames | {"manifest.json"},
          "MANIFEST_FILES")
-    cash, split_count = C.cash_actions(parse(pinned(input_dir / actions, actions_pin, private=True)), days, spans, cfg)
-    prices = {s: C.bars(parse(pinned(input_dir / f"{s}.json", m["files"][f"{s}.json"], private=True)), days, cfg)
+    cash, split_count = C.cash_actions(parse(pinned(input_dir / actions, actions_pin, private=True), market=True), days, spans, cfg)
+    prices = {s: C.bars(parse(pinned(input_dir / f"{s}.json", m["files"][f"{s}.json"], private=True), market=True), days, cfg)
               for s in syms}
     return spans, prices, cash, split_count
 
@@ -247,6 +261,7 @@ def main():
         C = load_engine(blobs[ENGINE])
         resources(cfg)
         try:
+            check_calibration(blobs[CALIBRATION], cfg, C)
             spans, prices, cash, splits = load_input(INPUTS, cfg, C, [parse(blobs[name]) for name in CALENDARS],
                                                      a.input_sha256, a.actions_sha256)
             if a.validate_inputs:

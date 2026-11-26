@@ -1,9 +1,9 @@
 {
-  "config/thresholds.yaml": "2efa11a65126401505655e6401fa5b83eef8aedee260fabb2e383eb18f550f2a",
+  "config/thresholds.yaml": "5e97e0b66d8399055518ca13625e9927cc0d84f7423f8e6841396dc9624df77c",
   "research_rig/CALIBRATION_52.json": "74e07ddcc0c4e06a4873d44e8c198ca06936f7e409eec0a6752eafb1a2165958",
-  "research_rig/PREREG_52_quarter_end_dealer_rebound.md": "e43a724a6a9f327eab5bfbdc766ead5b4d4d7bc8f2a4e4d0c91010d8fe99ae03",
+  "research_rig/PREREG_52_quarter_end_dealer_rebound.md": "c4585dc88a203273216af2117a36322e9829f33a0e5e021a2b91f9273128d5ec",
   "research_rig/calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
-  "research_rig/common_52.py": "a59cb147a563660c795e30ad0b9e79dca215fd44586f11e382ea2f3f30405de0",
-  "research_rig/score_52.py": "92e8930b02671e1300e9955d8242facef199c5fe1ec234f54da3e47faa18ddc7",
-  "research_rig/test_52.py": "c7ac68f43933c7109d414a25b893ee72201cc4a37c37a0251bf0911066007c98"
+  "research_rig/common_52.py": "3c3bfe6ec44d68fcd8375f845ca4e2587f6c44c7bb6e6cf7ba60c169f6ce0fe2",
+  "research_rig/score_52.py": "d057f93d7081b23ef77eb6ab624e3bd8e7c4f5da43c68e3441421c2d3a220718",
+  "research_rig/test_52.py": "b748fe7a664acb0c965b3fe35109619456efe98afe9204d9949a2a859eb8db0d"
 }
