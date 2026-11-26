@@ -201,6 +201,7 @@ STATED, the boundary is soft and audited (lead ruling 2026-11-26):
 - The launch requires every listed price copy unreadable by uid 2000 without sudo, and the sudo log present, root-owned and mode 0600, with the launch canary recorded. The after file keeps every sudo log line added during the session.
 - After each week the operator checks three things: the sudo log against the operator's own timed command list (`tm07_isolation_probe review`, which prints VOID on any unlisted line), the server log, and the worker's own list of commands and addresses. Any worker sudo entry, any direct read of a price copy, or any outside price lookup voids that week for that arm. Operator sudo commands are listed with their times so they can be told apart.
 - The brief tells every worker the same: no sudo, no price file, no web price lookup, keep and hand over the list, and a breach voids the week.
+- Cost of a breach (lead ruling 2026-11-26): a voided week, like a missing week, leaves that arm's comparison incomplete, and an incomplete comparison cannot pass. So one voided week ends that claim. Weeks are never replaced.
 - UNKNOWN: whether a worker uses sudo and then edits the log as root, uses the web without listing it, or what provider-side memory holds. The audit can catch a careless breach, not a deliberate and hidden one.
 
 MEASURED, host state before the move:
