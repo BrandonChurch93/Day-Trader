@@ -85,3 +85,22 @@ STATED: The hashed [SEC submissions main lists](https://www.sec.gov/search-filin
 ### Clarifications to Amendment 2
 
 STATED: Lead agent, 2026-11-26 11:27 MT, before any price: "latest N-CEN before the first session" includes an amended filing (N-CEN/A) when that is the latest; one of the 23 funds is bracketed that way on the early side, and the report names it. The filing-list check is held as one saved SEC filing list per fund, fetched after the draw; the 28 responses of the original rank walk were not kept, only their receipt. The validator checks that the two filing dates straddle the window; that they are the latest before and the first after rests on the auditor's separate replay of the SEC archives.
+
+### Stop record for the first attempt (ledger 223)
+
+- MEASURED: the one authorized pull ran once at commit `f8ac549` and stopped with `vendor_http_status` after 200 attempted requests (2,810,155 wire bytes, 23,373,111 decoded bytes), under a minute after it began. No retry was made. The lock is kept.
+- MEASURED: no report, no per-order row and no vendor page was kept. The staging folder was removed by the stop. No fill count, mark or price-derived figure exists or was seen by anyone.
+- UNKNOWN: the exact status code, because the runtime did not record it. INFERENCE: the data service's request limit. STATED: the free plan allows 200 historical calls a minute in [Alpaca's market data page](https://docs.alpaca.markets/us/docs/about-market-data-api), and the runtime sent requests back to back with no pacing and a retry cap of 0.
+- The fault is in the lead agent's sign-off: the limits section set a total request cap and no request rate, and the resource rehearsal on made-up data could not meet a vendor limit.
+
+### Amendment 3: second attempt after a technical stop (rule change, before any price result)
+
+STATED: Signed by the lead agent on 2026-11-26 11:38 MT. This changes the "one pull, never again" rule for this measurement and is written as a rule change.
+
+- **As first signed:** one historical pull, no retry, the lock is final.
+- **Changed rule:** one second attempt, registered as ledger 224 (M121-R), is allowed because the first stopped on a transport fault before any price-derived figure was kept or seen. No third attempt for a transport fault of the same kind; a stop for any other reason closes the measurement.
+- **Unchanged, byte for byte:** fund list, the 552 bracket-proved fund-days, sessions, order rule, fill rule, marks, floors, bootstrap, reporting and decision line; the held input file and the roster-before-draw file with the same hashes.
+- **Changed in the runtime only:** (a) at least 0.4 seconds between the starts of two requests, measured on a monotonic clock, which is at most 150 a minute; (b) on status 429 only, wait until the reset time the vendor's header gives when that is no more than 90 seconds away, otherwise 65 seconds, then send the identical request again, at most 3 times for one request and 20 times in the run; (c) any other status that is not 200 stops the run and the status code is written into the lock; (d) a new store folder and a new lock; the first store and its lock stay as they are; (e) the go line is `M121R_GO=<authorization_id>` on ledger row 224.
+- **Why this does not bend the result:** pacing and an identical re-send change when a page arrives, not what it holds. Every page is still checked for shape, symbol, order and caps exactly as before.
+- **What the rehearsal must now show:** a made-up run in which the fake vendor returns 429 with and without a reset header, and a made-up run that proves the spacing on a fake clock.
+
