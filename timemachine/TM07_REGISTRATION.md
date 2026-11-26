@@ -222,7 +222,7 @@ STATED limits of the host boundary:
 MEASURED, host rehearsal on a made-up session (2026-11-26, receipt copies in `rig/tm_notes/TM07_REHEARSAL/`, originals root 0600 in `/var/lib/tm07/control`):
 
 - With 8766 stopped, the launcher ran as root from `/opt/tm07-release-058a543` on session `TM07-rehearsal-toy`, port 8775, stage `scored`, an empty rehearsal study root, a rehearsal-only key and registration, and all 20 moved paths as `--raw-bar`. No real week, no model session, and no worker read of a price copy.
-- The six uid-2000 probe identities passed every check: bearer required, desk routes only, own route allowed, sibling and wrong-role tokens denied, study and rehearsal roots unreadable. The sudo canary landed in the log. The raw-copy check passed before the listener started and after it stopped. The desk reported ready, then stopped on the operator's SIGTERM with outcome `operator-stop`.
+- All eight uid-2000 probe identities (six boss and arm roles, the news scout and the price scout) passed every check: bearer required, desk routes only, own route allowed, sibling and wrong-role tokens denied, study and rehearsal roots unreadable. The sudo canary landed in the log. The raw-copy check passed before the listener started and after it stopped. The desk reported ready, then stopped on the operator's SIGTERM with outcome `operator-stop`.
 - The sudo log caught both operator commands made during the session. `review` with both listed found no unlisted entry. A negative control listing only one printed VOID and named the other line.
 - SHA-256: audit `3bd8e470…`, after file `630de53a…`, review `9482ffd2…`, negative review `a45dc359…`, launcher output `d83226cc…`. The audit holds no bearer tokens.
 
