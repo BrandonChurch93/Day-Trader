@@ -2,9 +2,9 @@
   "config/thresholds.yaml": "a5ab02edd7a1e78e17f11fa50b836628f52c2d24cb89a9d9c906fb5e993ed7ca",
   "packet:roster.csv": "8abe53b7cd1fd54b1a218e0ed0a7a0ed66319418683b958cfec7a5b20168a2f5",
   "research_rig/CALIBRATION_48.json": "39244b49949c95726a8a9968661cffc7d582211b50657936935ee569f4b6ac65",
-  "research_rig/PREREG_48_muni_cef_tax_loss.md": "16b5c438ff86b56c508da5e0e4ab3b7a63abe0489b6c1b00dce10150990644b7",
+  "research_rig/PREREG_48_muni_cef_tax_loss.md": "cf98df369abfedd5d93d7650fe25ca6446cdbf4c0dce379444c2ef9d5a236565",
   "research_rig/calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
-  "research_rig/common_48.py": "23f9f3001e1788e525db58989105f19448491b5e5f8585bfc364195175496d5e",
+  "research_rig/common_48.py": "cbc6c975cee78048bce88e967af61a5b931271c70ee02ebb2d42c2c66558859e",
   "research_rig/score_48.py": "0f8843dc8c9f80f93a701bba24715ae56cf16d54368f0df8d76827e06195cd1a",
-  "research_rig/test_48.py": "a09ed6b5e9a44af3cece24ab57b75e6ece1a612cb594f573cca93e7ca73ea46a"
+  "research_rig/test_48.py": "cf38bc04f6ffb3268c1fb87863d76e13f247bac16f30fe2649b767ca99c348c2"
 }

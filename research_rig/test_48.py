@@ -78,7 +78,8 @@ def synthetic_packet():
         ex = [d for d in w["sessions"] if d > w["entry"]][3].isoformat()
         cash["turns"][str(y)] = {
             "symbols": {s: {"source": "https://example.test/notice", "cash": [
-                {"id": f"{s}-{y}", "ex_date": ex, "amount": Decimal("0.03")}], "splits": []} for s in names},
+                {"id": f"{s}-{y}", "ex_date": ex, "amount": Decimal("0.03")}] if s != "SYNE" else [],
+                "splits": []} for s in names},
             "benchmark": {"source": "https://example.test/etf", "cash": [], "splits": []}}
     roster = "turn_year,ticker\n" + "".join(f"{w['turn']},{s}\n" for w in WINDOWS for s in names)
     return names, bars, quotes, cash, roster.encode()
@@ -194,6 +195,10 @@ class Unit(unittest.TestCase):
         unrecorded = {w["turn"]: ({"SYNA": none, "SYNB": none}, none) for w in WINDOWS}
         with self.assertRaises(C.Refused):
             C.split_evidence(good, WINDOWS, names, unrecorded)
+        truncated = json.loads(json.dumps(good))
+        truncated["queries"][3]["pages"][-1]["next_page_token"] = "more"
+        with self.assertRaises(C.Refused):
+            C.split_evidence(truncated, WINDOWS, names, cash)
         short = evidence_for({w["turn"]: ("SYNA",) for w in WINDOWS}, {})
         with self.assertRaises(C.Refused):
             C.split_evidence(short, WINDOWS, names, cash)
@@ -220,6 +225,16 @@ class Unit(unittest.TestCase):
         with self.assertRaises(C.Refused):
             C.check_control(broken, parsed(dump(bars[y])), acts[y], CFG)
 
+    def test_loser_mark_needs_price_only_leg(self):
+        base = {"portfolio": Fraction(1, 10), "benchmark": Fraction(0), "roster_ew": Fraction(0)}
+        rows = [dict(base, portfolio_price=Fraction(1, 10), roster_ew_price=Fraction(0)) for _ in range(10)]
+        marks, ok = C.assess(rows, CFG)
+        self.assertTrue(ok and marks["beats_roster_mean"])
+        tilted = [dict(r, portfolio_price=Fraction(0), roster_ew_price=Fraction(1, 100)) for r in rows]
+        marks, ok = C.assess(tilted, CFG)
+        self.assertFalse(marks["beats_roster_mean"])
+        self.assertFalse(ok)
+
     def test_marks_zero_not_positive(self):
         rows = [{"portfolio": Fraction(0), "benchmark": Fraction(0), "roster_ew": Fraction(0)}] * 10
         marks, ok = C.assess(rows, CFG)
@@ -237,6 +252,8 @@ class Unit(unittest.TestCase):
         self.assertEqual((r["roster"], r["eligible"], r["picks"]), (8, 5, 5))
         self.assertNotIn("SYNH", r["held"])
         self.assertEqual(r["held_missing_exit"], 2)
+        self.assertEqual((r["held_empty_cash"], r["eligible_empty_cash"]), (1, 1))
+        self.assertLess(r["portfolio_price"], r["portfolio"])
         self.assertEqual(r["held_proxy_sides"], 2)
         tie = {"SYNB": dict(funds["SYNA"]), "SYNA": dict(funds["SYNA"])}
         q2 = ({"SYNA": q[0]["SYNA"], "SYNB": q[0]["SYNA"]}, q[1])
@@ -384,6 +401,9 @@ class EndToEnd(unittest.TestCase):
             # SYNH's zero-volume pre-entry row makes it ineligible; SYND's zero-volume exit row is a missing exit.
             self.assertTrue(all(y["roster"] == 8 and y["eligible"] == 5 and y["held_missing_exit"] == 2
                                 and "SYNH" not in y["held"] for y in out["judged"]["years"]))
+            self.assertTrue(all((y["held_empty_cash"], y["eligible_empty_cash"]) == (1, 1)
+                                and y["portfolio_price"] < y["portfolio"] for y in out["judged"]["years"]))
+            self.assertIn("mean_portfolio_minus_roster_ew_price_only", out["judged"])
             self.assertEqual(set(out["shown_only"]), {"fifth_january_session_exit", "zero_cost"})
             self.assertEqual(out["job"]["freeze_commit"], freeze)
             again = cli("--go")

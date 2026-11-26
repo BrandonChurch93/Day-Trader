@@ -236,6 +236,7 @@ def split_evidence(raw, windows, names_by_turn, cash):
              and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", q["queried_utc"]) is not None, "SPLIT_EVIDENCE")
         w = by_turn[q["turn"]]
         need(day(q["start"]) == w["anchor"] and day(q["end"]) == w["exit"], "SPLIT_EVIDENCE_WINDOW")
+        need(type(q["pages"][-1]) is dict and q["pages"][-1].get("next_page_token") is None, "SPLIT_EVIDENCE_PAGES")
         queried[q["turn"]] |= set(q["symbols"])
         for page in q["pages"]:
             need(type(page) is dict and set(page) <= {"corporate_actions", "next_page_token"}
@@ -373,17 +374,25 @@ def turn_result(window, funds, bench, quotes, cash, cfg, exit_key="exit", zero_c
         dollars, shares, missing = sleeve(closes, fund_cash[s], costs, window, exit_key, sleeve_usd, zero_cost)
         if shares < 1:
             continue
+        price_only = {"cash": [], "splits": fund_cash[s]["splits"]}
+        dollars_price, _, _ = sleeve(closes, price_only, costs, window, exit_key, sleeve_usd, zero_cost)
         rank = closes[window["formation"]] / closes[window["anchor"]]
-        eligible.append({"symbol": s, "rank": rank, "dollars": dollars, "missing": missing,
-                         "proxied": costs["proxied"]})
+        eligible.append({"symbol": s, "rank": rank, "dollars": dollars, "dollars_price": dollars_price,
+                         "missing": missing, "proxied": costs["proxied"], "no_cash": not fund_cash[s]["cash"]})
     need(len(eligible) >= cfg["picks"], "TOO_FEW_ELIGIBLE")
     picks = sorted(eligible, key=lambda r: (r["rank"], r["symbol"]))[:cfg["picks"]]
     portfolio = sum((r["dollars"] for r in picks), Fraction(0)) / capital
     roster_ew = sum((r["dollars"] for r in eligible), Fraction(0)) / sleeve_usd / len(eligible)
+    # Price-only leg of the loser mark: cash set to zero for every fund on both sides.
+    portfolio_price = sum((r["dollars_price"] for r in picks), Fraction(0)) / capital
+    roster_ew_price = sum((r["dollars_price"] for r in eligible), Fraction(0)) / sleeve_usd / len(eligible)
     bcosts = side_costs(bench_quotes, window, cfg)
     bdollars, bshares, bmissing = sleeve(bench, bench_cash, bcosts, window, exit_key, capital, zero_cost)
     need(bshares >= 1 and not bmissing, "BENCHMARK")
     return {"turn": window["turn"], "portfolio": portfolio, "benchmark": bdollars / capital, "roster_ew": roster_ew,
+            "portfolio_price": portfolio_price, "roster_ew_price": roster_ew_price,
+            "held_empty_cash": sum(r["no_cash"] for r in picks),
+            "eligible_empty_cash": sum(r["no_cash"] for r in eligible),
             "held": [r["symbol"] for r in picks], "picks": len(picks), "eligible": len(eligible), "roster": len(funds),
             "held_missing_exit": sum(r["missing"] for r in picks),
             "eligible_missing_exit": sum(r["missing"] for r in eligible),
@@ -399,6 +408,8 @@ def assess(rows, cfg):
     p = [r["portfolio"] for r in rows]
     vs_b = [r["portfolio"] - r["benchmark"] for r in rows]
     vs_ew = [r["portfolio"] - r["roster_ew"] for r in rows]
+    # The calibration rows carry no cash, so there the price-only leg equals the documented leg.
+    vs_ew_price = [r.get("portfolio_price", r["portfolio"]) - r.get("roster_ew_price", r["roster_ew"]) for r in rows]
     trimmed = sorted(p, reverse=True)[m["drop_best"]:]
     marks = {
         "all_turns": len(rows) == cfg["turns"],
@@ -407,7 +418,7 @@ def assess(rows, cfg):
         "beats_benchmark_mean": positive(vs_b),
         "beats_benchmark_years": sum(v > 0 for v in vs_b) >= m["min_years_ahead_of_benchmark"],
         "positive_without_best": positive(trimmed),
-        "beats_roster_mean": positive(vs_ew),
+        "beats_roster_mean": positive(vs_ew) and positive(vs_ew_price),
     }
     return marks, all(marks.values())
 
@@ -431,6 +442,8 @@ def evaluate(windows, packet, cfg):
                 "mean_roster_ew": mean(r["roster_ew"] for r in rows),
                 "mean_portfolio_minus_benchmark": mean(r["portfolio"] - r["benchmark"] for r in rows),
                 "mean_portfolio_minus_roster_ew": mean(r["portfolio"] - r["roster_ew"] for r in rows),
+                "mean_portfolio_minus_roster_ew_price_only": mean(r["portfolio_price"] - r["roster_ew_price"]
+                                                                  for r in rows),
                 "positive_years": sum(r["portfolio"] > 0 for r in rows),
                 "years_ahead_of_benchmark": sum(r["portfolio"] > r["benchmark"] for r in rows),
                 "mean_without_best": mean(sorted((r["portfolio"] for r in rows), reverse=True)
