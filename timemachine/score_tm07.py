@@ -271,7 +271,7 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
             bundle = dict(bundle, weights=None if weights is None else {s: v*multiple for s, v in weights.items()},
                           conditions={s: dict(o, weight=o["weight"]*multiple) for s, o in bundle.get("conditions", {}).items()})
         rec, active, changes = O.step(book, bundle, row, pp, sess.minutes, at, end, end == spec["end"], active,
-                                      spec["gross"]*multiple, first=i == 0, delay=delay)
+                                      spec["gross"]*multiple, first=i == 0, delay=delay,end_marks=spec["end_marks"])
         count += len(rec["trades"])
         hits += sum(e["kind"] == "filled" for e in changes)
         triggered += sum(e["kind"] == "triggered" for e in changes)

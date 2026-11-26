@@ -667,7 +667,7 @@ class DeskSession:
                       decision_id=decision_id, citations=cites, why=bare["why"])
         nxt = self.spec["wakes"][k+1] if k+1 < len(self.spec["wakes"]) else end
         rec, active, events = orders.step(st["book"], bundle, row, self.pp, self.minutes, at, nxt, nxt == end,
-                                          st["active"], self.spec["gross"], first=k == 0)
+                                          st["active"], self.spec["gross"], first=k == 0,end_marks=self.spec["end_marks"])
         self.log(con, at, "boss", "decision", bundle)
         for trade in rec["trades"]:
             s = trade["symbol"]

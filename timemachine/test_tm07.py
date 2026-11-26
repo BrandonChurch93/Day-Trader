@@ -230,7 +230,8 @@ class DeskTest(unittest.TestCase):
         self.assertFalse(jump["trades"])
         self.assertIsNone(calm["scan"]["closeout"])
         closeout = jump["scan"]["closeout"]
-        self.assertEqual(closeout["utc"],O.stamp(T+60))
+        self.assertEqual(closeout["utc"],O.stamp(T))
+        self.assertEqual(closeout["phase"],"pre_open_proxy")
         self.assertEqual({r["symbol"]:r["open"] for r in closeout["trades"]},{A:350,B:103})
         self.assertEqual(closeout["value_after"],0)
 
@@ -254,6 +255,52 @@ class DeskTest(unittest.TestCase):
             self.assertFalse(out["exits"])
             self.assertEqual({r["symbol"]:r["open"] for r in out["closeout"]["trades"]},{A:38,B:100})
             self.assertTrue(all(r["penalty_usd"] > 0 for r in out["closeout"]["trades"]))
+
+    def test_pass4_maintenance_checks_entry_debits_and_session_end(self):
+        for high in (220,225):
+            with self.subTest(entry_high=high):
+                spec = world([(T,A,100,high,100,100),(T+60,A,100,100,100,100)])
+                book = P.new_book(1000)
+                rec,_,_ = O.step(book,dict(weights={A:-1}),spec["rows"][0],spec["params"],
+                                 P.Minutes(spec["minutes"]),T,T+120,True,{},1,first=True)
+                self.assertEqual(len(rec["trades"]),1)
+                self.assertEqual(rec["scan"]["closeout"]["trades"][0]["open"],high)
+                self.assertEqual(book["qty"],{})
+        for qty,cash,high,rate in ((10,-900,100,.2),(-10,2000,190.43,-.0005)):
+            with self.subTest(funding_qty=qty):
+                spec = world()
+                pp = spec["params"]
+                pp["fallback_per_day"] = 0
+                pp["funding"][A] = {T+45:rate}
+                book = P.new_book(1000)
+                book.update(cash=cash,qty={A:qty},last_px={A:100})
+                scan = O.Orders().advance(book,pp,[(T,A,100,high,100,100)],T,T+60,1,last=True)
+                self.assertEqual([x["utc"] for x in scan["settlements"] if x["rate"] is not None],[O.stamp(T+45)])
+                self.assertEqual(scan["closeout"]["utc"],O.stamp(T+45))
+                self.assertEqual(scan["closeout"]["trades"][0]["open"],high)
+                self.assertEqual(book["qty"],{})
+        spec = world([(T,A,100,100,100,100)])
+        book = P.new_book(1000)
+        book.update(cash=1900,qty={A:-9},target={A:-.9},last_px={A:100})
+        rec,_,_ = O.step(book,{},spec["rows"][0],spec["params"],P.Minutes(spec["minutes"]),
+                         T,T+60,True,{},1,end_marks={A:205})
+        self.assertEqual(rec["scan"]["closeout"]["phase"],"session_end")
+        self.assertEqual(rec["scan"]["closeout"]["trades"][0]["open"],205)
+        self.assertEqual(book["qty"],{})
+
+        bars = [(t,s,100,225 if (t,s) == (T,A) else 100,100,100)
+                for t in (T,T+3600) for s in (A,B,BTC)]
+        session = self.create("A",spec=world(bars))
+        _,key = info(session)
+        session.handle("boss","pick",dict(wake_key=key,weights={A:-1},why="Toy short",
+                                         citations={A:{"evidence_ids":[f"book:{T}"]}}))
+        _,key = info(session)
+        session.handle("boss","pick",dict(wake_key=key,no_change=True,why="Stay flat."))
+        _,log = S.load_session(session.path)
+        event, = [d for _,kind,d in log if kind == "maintenance"]
+        self.assertEqual(event["execution"]["phase"],"post_open_proxy")
+        self.assertEqual(event["parents"][A]["evidence_ids"],[f"book:{T}"])
+        self.assertEqual(S.score_week(session.path)["main"]["value"],0)
 
     def test_pass3_m6_install_minute_cannot_use_new_stop_or_replacement(self):
         spec = world([(T,A,90,91,89,90),(T+60,A,90,91,89,90)])
@@ -750,7 +797,7 @@ class DeskTest(unittest.TestCase):
 
     def test_reaudit_sol_r05_settlement_uses_quantity_at_exact_stamp(self):
         spec = world([(T,A,100,100,100,100),(T+60,A,110,110,110,110),
-                      (T+120,A,120,900,120,800),(T+180,A,120,120,120,120)])
+                      (T+120,A,120,150,120,140),(T+180,A,120,120,120,120)])
         pp = spec["params"]
         pp["funding"][A] = {T+1:.01,T+61:.02}
         book = P.new_book(1000)

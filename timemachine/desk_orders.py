@@ -249,7 +249,7 @@ class Orders:
                 order["observed"] = t
                 self.event("triggered", order, t, bar_start=start, high=high, low=low)
 
-    def advance(self, book, pp, rows, start, end, gross, on_open=None, last=False):
+    def advance(self, book, pp, rows, start, end, gross, on_open=None, last=False, end_marks=None):
         """Apply the same pessimistic one-bar maintenance proxy to every arm."""
         total = dict(exits=[], closeout=None, funding_usd=0.0, fallback_hours=0, held_seconds=0,settlements=[])
         book.setdefault("held_seconds",0)
@@ -257,8 +257,9 @@ class Orders:
         upcoming = next(events, None)
         blocked = False
 
-        def fund_until(tick, opens):
+        def fund_until(tick, opens, marks, bar_start):
             nonlocal upcoming
+            forced = None
             while upcoming and upcoming[0] <= tick:
                 t,s,rate,fallback = upcoming
                 q = book["qty"].get(s)
@@ -274,7 +275,10 @@ class Orders:
                     book["funding_usd"] += cost
                     total["funding_usd"] += cost
                     total["settlements"].append(dict(utc=stamp(t),symbol=s,qty=q,mark=price,rate=rate,cost=cost))
+                    if cost > 0 and check(t,marks(),"funding_debit",bar_start):
+                        forced = t
                 upcoming = next(events, None)
+            return forced
 
         def block(tick):
             nonlocal blocked
@@ -287,11 +291,6 @@ class Orders:
             book.update(target={}, exits={}, pending=False)
             blocked = True
 
-        def hold(seconds):
-            if book["qty"]:
-                total["held_seconds"] += seconds
-                book["held_seconds"] += seconds
-
         def margin(prices):
             return (P.value_at(book, prices),
                     sum(pp["maint"][s]*abs(q)*prices[s] for s,q in book["qty"].items()))
@@ -299,6 +298,26 @@ class Orders:
         def note_drawdown(eq):
             peak = book["peak"]
             book["largest_drop"] = min(book["largest_drop"],max(0,eq)/peak-1 if peak else 0)
+
+        def check(tick, prices, phase, bar_start):
+            if not book["qty"]:
+                return False
+            eq,need = margin(prices)
+            note_drawdown(eq)
+            if eq >= need:
+                return False
+            trades = [P.trade(book,s,-q,prices[s],pp,penalty=pp["penalty"])
+                      for s,q in sorted(book["qty"].items())]
+            short = max(0.0, -book["cash"])
+            book["shortfall_usd"] += short
+            book["cash"] = max(0.0, book["cash"])
+            event = dict(utc=stamp(tick),bar_start=stamp(bar_start) if bar_start is not None else None,phase=phase,
+                         symbol=min(prices),value_before=eq,value_after=book["cash"],shortfall_usd=short,trades=trades)
+            book["closeouts"].append(event)
+            total["closeout"] = event
+            note_drawdown(book["cash"])
+            block(tick)
+            return True
 
         def protective(s, tick, hit, phase, active_exit):
             price, kind, gap = hit
@@ -320,34 +339,17 @@ class Orders:
             bars = group[1] if group and group[0] == tick else []
             opens = {r[1]: r[2] for r in bars}
             prior_close = dict(book["last_px"])
-            fund_until(tick, opens)
+            extremes = {s:(l,h) for _,s,_,h,l,_ in bars}
+
+            def adverse():
+                return {s:extremes[s][q < 0] if s in extremes else prior_close[s] for s,q in book["qty"].items()}
+
+            fund_until(tick, opens, adverse, tick)
             book["last_px"].update(opens)
             at = min(tick+MINUTE,end)
-            breach = False
             protected = set()
-            if book["qty"]:
-                extremes = {s:(l,h) for _,s,_,h,l,_ in bars}
-                stressed = {s:(extremes[s][q < 0] if s in extremes else prior_close[s]) for s,q in book["qty"].items()}
-                eq,need = margin(stressed)
-                note_drawdown(eq)
-                if eq < need:
-                    # The closed-bar proxy blocks all new fills in this minute.
-                    # Charge settlements before the proxy's bar-close exit.
-                    fund_until(at-1,{})
-                    hold(at-tick)
-                    eq,_ = margin(stressed)
-                    trades = [P.trade(book,s,-q,stressed[s],pp,penalty=pp["penalty"])
-                              for s,q in sorted(book["qty"].items())]
-                    short = max(0.0, -book["cash"])
-                    book["shortfall_usd"] += short
-                    book["cash"] = max(0.0, book["cash"])
-                    event = dict(utc=stamp(at),bar_start=stamp(tick),phase="adverse_bar",symbol=min(stressed),value_before=eq,
-                                 value_after=book["cash"],shortfall_usd=short,trades=trades)
-                    book["closeouts"].append(event)
-                    total["closeout"] = event
-                    note_drawdown(book["cash"])
-                    block(at)
-                    breach = True
+            # A deliberately noncausal check on positions carried into the open.
+            check(tick,adverse(),"pre_open_proxy",tick)
             if not blocked and bars:
                 self.activate(tick,opens)
             bar_by_symbol = {r[1]:r for r in bars}
@@ -370,9 +372,14 @@ class Orders:
                         self.remove(s, "cancelled", tick, reason="immediate_fill")
             if not blocked and bars:
                 self.execute_open(book, pp, tick, opens, gross)
-            if not breach:
-                fund_until(at-1,{})
-                hold(at-tick)
+            held = bool(book["qty"])
+            forced = fund_until(at-1,{},adverse,tick)
+            if held:
+                seconds = (at if forced is None else forced)-tick
+                total["held_seconds"] += seconds
+                book["held_seconds"] += seconds
+            # This includes exposure first opened in this minute.
+            check(at,adverse(),"post_open_proxy",tick)
             # OHLC gives no touch timestamp. Account for the resting exit at
             # the bar close, after all mid-minute funding and before the next open.
             for _,s,o,h,l,_ in bars:
@@ -390,12 +397,17 @@ class Orders:
             for bar in bars:
                 self.observe_close(bar, protected)
             self.expire(at)
-        fund_until(end, {})
+        if last:
+            book["last_px"].update(end_marks or {})
+            def closing_marks():
+                return {s:book["last_px"][s] for s in book["qty"]}
+            fund_until(end,{},closing_marks,None)
+            check(end,closing_marks(),"session_end",None)
         self.expire(end)
         return total
 
 
-def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=False, delay=0):
+def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=False, delay=0, end_marks=None):
     """One shared transition for submission and replay; no broker side effects."""
     orders = Orders(active,delay,book.pop("desk_order_updates",None))
     orders.submit(bundle, book, at)
@@ -456,7 +468,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         immediate(at, {}, set())
     symbols = set(pp["symbols"]) if changed else set(book["qty"])
     active_rows = P.scan_rows(minutes,at,end,symbols,watched=orders.active.keys()|orders.pending.keys())
-    scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate, last=last)
+    scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate, last=last,end_marks=end_marks)
     if record is None:
         record = dict(target=dict(book["target"]), trades=[],
                       skipped=[{"why":"maintenance" if scan["closeout"] else "no_common_open"}], changed=False)
