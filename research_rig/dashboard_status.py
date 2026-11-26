@@ -125,6 +125,15 @@ def scoreboard(markdown, findings, gh):
     if total != (len(base), sum(row["passed"] for row in base)):
         raise ValueError("Dashboard scoreboard: test inventory and family totals disagree")
 
+    def plain(verdict):
+        # One wording on the screen: 'Passed' or 'Did not pass', and 'N of M marks'.
+        verdict = re.sub(r"^passed\b", "Passed", verdict, flags=re.I)
+        verdict = re.sub(r"^failed\b", "Did not pass", verdict, flags=re.I)
+        return re.sub(r"\b(\d+)/(\d+) marks\b", r"\1 of \2 marks", verdict)
+
+    for row in base:
+        row["verdict"] = plain(row["verdict"])
+
     def key(match):
         return int(match[1]), (f"{match[2].title()} {match[3].upper()}" if match[2] else "")
 
