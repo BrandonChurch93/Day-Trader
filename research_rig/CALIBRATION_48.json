@@ -1,0 +1,13 @@
+{
+  "data": "synthetic only, no market data",
+  "pass_rate": {
+    "beta_only": 0.2065,
+    "loser_edge_0.01": 0.4514,
+    "loser_edge_0.02": 0.6614,
+    "loser_edge_0.03": 0.8201,
+    "zero_edge": 0.0439
+  },
+  "seed": 48001,
+  "trials": 10000,
+  "turns": 10
+}
