@@ -161,6 +161,30 @@ def bad_holdings_cases(roster, exclusions):
 
 
 class Unit(unittest.TestCase):
+    def test_jump_pairs_match_original_check_and_can_span_gaps(self):
+        a, skipped, b, c = WINDOWS[0]["sessions"][:4]
+        limit = C.exact(CFG["split_check_ratio"])
+        closes = {a: Fraction(10), b: 10 * limit, c: Fraction(10)}
+        self.assertEqual(list(S.jump_flags(closes, (), limit)), [])
+        C.check_jumps(closes, (), CFG)
+        closes[b] += Fraction(1, 100)
+        expected = [(a.isoformat(), b.isoformat()), (b.isoformat(), c.isoformat())]
+        self.assertEqual(list(S.jump_flags(closes, (), limit)), expected)
+        with self.assertRaisesRegex(C.Refused, "P48_UNRECORDED_SPLIT"):
+            C.check_jumps(closes, (), CFG)
+        self.assertEqual(list(S.jump_flags(closes, [(skipped, 2), (c, 2)], limit)), expected[:1])
+        self.assertEqual(list(S.jump_flags(closes, [(b, 2), (c, 2)], limit)), [])
+        C.check_jumps(closes, [(b, 2), (c, 2)], CFG)
+
+    def test_multiple_identity_pairs_exclude_same_fund_turn_only_once(self):
+        w, other = WINDOWS[:2]
+        a, b, c = (d.isoformat() for d in w["sessions"][:3])
+        pairs = {(w["turn"], "SYN", a, b), (w["turn"], "SYN", b, c)}
+        excluded, report = S.reconcile_jumps(pairs, dict.fromkeys(pairs, "IDENTITY_BREAK"),
+                                            [w, other], CFG["benchmark"])
+        self.assertEqual(excluded, {w["turn"]: {"SYN"}, other["turn"]: set()})
+        self.assertEqual([r["outcome"] for r in report], ["EXCLUDED_IDENTITY_BREAK"] * 2)
+
     def test_vendor_gate_exact_boundary_and_none(self):
         w = WINDOWS[0]
         y = w["turn"]
@@ -409,6 +433,12 @@ class EndToEnd(unittest.TestCase):
     def test_cli_correctly_pinned_bad_comparison_consumes_go(self):
         self.check_scenario("wrong_year")
 
+    def test_cli_jump_clearances(self):
+        self.check_scenario("jumps")
+
+    def test_cli_identity_segments(self):
+        self.check_scenario("identity")
+
     def check_scenario(self, scenario):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
@@ -456,6 +486,7 @@ def evaluate(*args, **kwargs):
             (root / S.CALIBRATION).write_bytes(S.encode(C.calibrate(cfg)))
             (root / S.PLAN).write_text("# Synthetic plan 53\n\nStatus FROZEN.\n")
             (root / S.AMENDMENT).write_text("# Synthetic cash amendment\n\nStatus FROZEN.\n")
+            (root / S.JUMP_AMENDMENT).write_text("# Synthetic jump amendment\n\nStatus FROZEN.\n")
             link = f"`{S.PLAN}`"
             (root / "research_rig/TRIAL_LEDGER.md").write_text(f"| {S.LEDGER_ROW} | {link} |\n")
             (root / "docs/QUEUE.md").write_text(f"| {S.QUEUE_ROW} | {link} |\n")
@@ -519,7 +550,73 @@ def evaluate(*args, **kwargs):
             comparison = [{"turn": y, "portfolio": Decimal(y - 2015) / 100} for y in bars]
             paired_rows = comparison if scenario != "wrong_year" else [
                 {"turn": first_turn - 1, "portfolio": comparison[0]["portfolio"]}, *comparison[1:]]
+
+            def clearance_blob(rows):
+                return (",".join(S.JUMP_FIELDS) + "\n" + "".join(
+                    f"{y},{s},{a},{b},{kind},evidence:synthetic,{digest(b'synthetic evidence')}\n"
+                    for y, s, a, b, kind in rows)).encode()
+
+            def segments_blob(rows):
+                return (",".join(S.IDENTITY_FIELDS) + "\n" + "".join(
+                    ",".join(map(str, row)) + f",evidence:synthetic,{digest(b'identity evidence')}\n" for row in rows)).encode()
+
+            identities = {(int(r["turn_year"]), r["ticker"]): r["cik"] for r in S.csv_rows(roster, {"cik"}, "TEST")}
+            segments = []
+            for sample in bars.values():
+                for s, series in sample["symbols"].items():
+                    for row in series:
+                        row["symbol"] = s
+            if scenario == "identity":
+                # First turn held fund changes ticker right after entry and its exit is present only as the alias.
+                cutoff = first["sessions"].index(first["entry"])
+                a0, a1, ae = (first["sessions"][i].isoformat() for i in (0, cutoff+1, -1))
+                first_symbols = bars[first_turn]["symbols"]
+                segments = [(first_turn, "SYNA", identities[first_turn, "SYNA"], "SYNA", a0, first["entry"].isoformat()),
+                            (first_turn, "SYNA", identities[first_turn, "SYNA"], "ALIAS", a1, ae),
+                            (first_turn, "SYNH", identities[first_turn, "SYNH"], "SYNH", a0,
+                             first["sessions"][40].isoformat()),
+                            (second_turn, "SYNA", identities[second_turn, "SYNA"], "ALIAS",
+                             second["anchor"].isoformat(), second["exit"].isoformat())]
+                for row in first_symbols["SYNA"][cutoff+1:]:
+                    row["symbol"] = "ALIAS"
+                first_symbols["SYNA"][-1].update({k: first_symbols["SYNA"][-1][k] * Decimal("1.1") for k in "ohlc"})
+                next(row for row in first_symbols["SYNG"] if row["t"] == stamp(first["formation"]))["v"] = 0
+                next(row for row in first_symbols["SYNF"] if row["t"] == stamp(first["entry"]))["v"] = 0
+                first_symbols["SYNH"] = first_symbols["SYNH"][:41]
+                control["turns"][str(first_turn)]["SYNH"]["matched"] = 41
+                for row in bars[second_turn]["symbols"]["SYNA"]:
+                    row["symbol"] = "ALIAS"
+                for q in evidence["queries"]:
+                    if q["turn"] in {first_turn, second_turn}:
+                        q["symbols"].append("ALIAS")
+                    if q["turn"] == first_turn:
+                        # Same literal ticker, wrong identity on this date; must not demand a split on SYNA.
+                        q["pages"][0]["corporate_actions"]["forward_splits"].append(
+                            {"symbol": "ALIAS", "ex_date": first["formation"].isoformat(), "new_rate": 2})
+                third = WINDOWS[2]
+                split_fund = cash["turns"][str(third["turn"])]["symbols"]["SYNF"]
+                split_fund["splits"] = [{"id": "disjoint-reason-test", "ex_date": third["formation"].isoformat(),
+                                         "ratio": 2, "source": split_fund["source"], "source_kind": "issuer_site"}]
+                control["turns"][str(third["turn"])]["SYNF"]["steps"] = 1
+
+            jump_rows = []
+            if scenario == "jumps":
+                # One genuine shock and rebound. One permanent identity break exactly on entry.
+                for s, start, stop, kind in (
+                    ("SYNA", 20, 21, "GENUINE_MOVE"),
+                    ("SYNB", first["sessions"].index(first["entry"]), None, "IDENTITY_BREAK"),
+                ):
+                    series = bars[first_turn]["symbols"][s]
+                    for row in series[start:stop]:
+                        row.update({k: row[k] * 2 for k in "ohlc"})
+                    for i in (start, stop) if stop else (start,):
+                        jump_rows.append((first_turn, s, first["sessions"][i-1].isoformat(),
+                                          first["sessions"][i].isoformat(), kind))
+                # A sixth otherwise eligible fund leaves five even after the identity exclusion.
+                bars[first_turn]["symbols"]["SYNH"][60]["v"] = 1000
             files = {"roster.csv": roster, S.EXCLUSIONS: exclusions, S.CASH_COVERAGE: coverage, S.VENDOR_CASH: dump(vendor),
+                     S.JUMP_CLEARANCES: clearance_blob(jump_rows),
+                     S.IDENTITY_SEGMENTS: segments_blob(segments),
                      S.COMPARISON: dump(paired_rows), "distributions.json": dump(cash), "split_evidence.json": dump(evidence),
                      "split_control.json": dump(control)}
             for y in bars:
@@ -531,18 +628,23 @@ def evaluate(*args, **kwargs):
             roster_pin, dist_pin = digest(roster), digest(files["distributions.json"])
 
             def write_manifest(coverage_blob, roster_blob=roster, exclusions_blob=exclusions, extra=None):
+                nonlocal jump_pin, identity_pin
                 changed = {S.CASH_COVERAGE: coverage_blob, "roster.csv": roster_blob, S.EXCLUSIONS: exclusions_blob,
-                           **{n: files[n] for n in (S.VENDOR_CASH, "split_evidence.json")}} | (extra or {})
+                           **{n: files[n] for n in (S.VENDOR_CASH, "split_evidence.json", S.JUMP_CLEARANCES, S.IDENTITY_SEGMENTS,
+                                                   f"bars_{first_turn}.json")}} | (extra or {})
                 for n, b in changed.items():
                     (inputs / n).write_bytes(b)
                 manifest = {"schema": 1, "mode": S.INPUT_MODE, "feed": "sip", "adjustment": "raw",
                             "first_turn": 2016, "last_turn": 2025, "collected_utc": "2026-11-26T00:00:00Z",
                             "files": {n: digest(b) for n, b in (files | changed).items()}}
                 payload = S.encode(manifest)
+                jump_pin = manifest["files"][S.JUMP_CLEARANCES]
+                identity_pin = manifest["files"][S.IDENTITY_SEGMENTS]
                 (inputs / "manifest.json").write_bytes(payload)
                 os.chmod(inputs / "manifest.json", 0o600)
                 return digest(payload)
 
+            jump_pin = identity_pin = None
             input_pin = write_manifest(coverage)
 
             genv = {"PATH": "/usr/bin:/bin", "HOME": str(tmp), "GIT_CONFIG_GLOBAL": "/dev/null",
@@ -557,18 +659,20 @@ def evaluate(*args, **kwargs):
                 return subprocess.run(
                     [sys.executable, "-I", "-B", str(root / "research_rig/score_53.py"), mode,
                      "--approval-commit", commit, "--freeze-sha256", freeze_pin, "--input-sha256", input_pin,
-                     "--roster-sha256", roster_pin, "--distributions-sha256", dist_pin],
+                     "--roster-sha256", roster_pin, "--distributions-sha256", dist_pin, "--jump-clearances-sha256", jump_pin,
+                     "--identity-segments-sha256", identity_pin],
                     capture_output=True, text=True, env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"}, timeout=600)
 
             git("init", "-q")
             git("add", ".")
             git("commit", "-qm", "synthetic freeze")
             freeze = git("rev-parse", "HEAD")
-            def approve(*extra):
+            def approve(*extra, legacy=False):
                 (root / S.APPROVAL).write_text(
                     f"Approved by the lead: plan 53, validation and one scored run, freeze commit {freeze}, "
                     f"freeze SHA-256 {freeze_pin}, input SHA-256 {input_pin}, roster SHA-256 {roster_pin}, "
-                    f"distributions SHA-256 {dist_pin}.\n")
+                    f"distributions SHA-256 {dist_pin}" +
+                    (".\n" if legacy else f", jump clearances SHA-256 {jump_pin}, identity segments SHA-256 {identity_pin}.\n"))
                 git("add", S.APPROVAL, *extra)
                 git("commit", "-qm", "synthetic approval")
                 return git("rev-parse", "HEAD")
@@ -578,6 +682,138 @@ def evaluate(*args, **kwargs):
                     out = cli_at(head, mode)
                     self.assertEqual((out.returncode, out.stdout, out.stderr.strip()), (2, "", reason))
                     self.assertFalse(any(run.iterdir()))
+
+            if scenario == "identity":
+                good_pin = identity_pin
+                identity_pin = digest(b"wrong identity pin")
+                both_refuse(approve(), "P53_MANIFEST_FILES")
+                git("reset", "-q", "--hard", freeze)
+                identity_pin = good_pin
+                head = approve()
+                (inputs / S.IDENTITY_SEGMENTS).write_bytes(segments_blob([]))
+                both_refuse(head, "P53_PIN")
+                git("reset", "-q", "--hard", freeze)
+                alias_action = {"symbol": "ALIAS", "ex_date": a1, "new_rate": 2}
+                native = evidence["queries"][0]
+                page = {"corporate_actions": {"forward_splits": [alias_action]}, "next_page_token": None}
+                unrecorded = evidence | {"queries": [native | {"pages": [page]}, *evidence["queries"][1:]]}
+                input_pin = write_manifest(coverage, extra={"split_evidence.json": dump(unrecorded)})
+                both_refuse(approve(), "P53_VENDOR_SPLIT_NOT_RECORDED")
+                git("reset", "-q", "--hard", freeze)
+                absent = evidence | {"queries": [native | {"symbols": [s for s in native["symbols"] if s != "ALIAS"]},
+                                                *evidence["queries"][1:]]}
+                input_pin = write_manifest(coverage, extra={"split_evidence.json": dump(absent)})
+                both_refuse(approve(), "P53_SPLIT_EVIDENCE_COVERAGE")
+                git("reset", "-q", "--hard", freeze)
+                for amended, reason in (
+                    (segments[2:], "P53_IDENTITY_BAR"),  # undeclared alias
+                    ([segments[0], (*segments[1][:4], first["sessions"][cutoff+2].isoformat(), segments[1][-1]),
+                      *segments[2:]], "P53_IDENTITY_COVERAGE"),  # one trading-session gap
+                    ([segments[0], (*segments[1][:4], first["entry"].isoformat(), segments[1][-1]),
+                      *segments[2:]], "P53_IDENTITY_COVERAGE"),  # overlap
+                    (list(reversed(segments)), "P53_IDENTITY_ORDER"),
+                    ([(segments[0][0], segments[0][1], "9999999999", *segments[0][3:]), *segments[1:]],
+                     "P53_IDENTITY_SCHEMA"),
+                    ([*segments[:2], (first_turn, "SYNG", identities[first_turn, "SYNG"], "ALIAS", a0, ae),
+                      *segments[2:]], "P53_IDENTITY_COLLISION"),
+                ):
+                    input_pin = write_manifest(coverage, extra={S.IDENTITY_SEGMENTS: segments_blob(amended)})
+                    both_refuse(approve(), reason)
+                    git("reset", "-q", "--hard", freeze)
+                original = bars[first_turn]
+                missing_tag = original | {"symbols": original["symbols"] | {"SYNA": [
+                    {k: v for k, v in original["symbols"]["SYNA"][0].items() if k != "symbol"},
+                    *original["symbols"]["SYNA"][1:]]}}
+                input_pin = write_manifest(coverage, extra={f"bars_{first_turn}.json": dump(missing_tag)})
+                both_refuse(approve(), "P53_IDENTITY_BAR")
+                git("reset", "-q", "--hard", freeze)
+                wrong = original | {"symbols": original["symbols"] | {"SYNH": [
+                    *original["symbols"]["SYNH"],
+                    original["symbols"]["SYNH"][-1] | {"t": stamp(first["sessions"][41])}]}}
+                altered = {f"bars_{first_turn}.json": dump(wrong)}
+                input_pin = write_manifest(coverage, extra=altered)
+                both_refuse(approve(), "P53_IDENTITY_BAR")  # successor after certified termination
+                git("reset", "-q", "--hard", freeze)
+                # The first alias close also participates in the very same cross-join jump guard.
+                crossed = original | {"symbols": original["symbols"] | {"SYNA": [
+                    row | {k: row[k] * 2 for k in "ohlc"} if i == cutoff+1 else row
+                    for i, row in enumerate(original["symbols"]["SYNA"])]}}
+                input_pin = write_manifest(coverage, extra={f"bars_{first_turn}.json": dump(crossed)})
+                head = approve()
+                val = cli_at(head, "--validate-inputs")
+                self.assertEqual((val.returncode, val.stderr.strip()), (2, "P53_JUMP_CLEARANCES"))
+                self.assertEqual([r["outcome"] for r in json.loads(val.stdout.split(" ", 1)[1])],
+                                 ["UNCLEARED", "UNCLEARED"])
+                self.assertEqual(json.loads(val.stdout.split(" ", 1)[1])[0]["earlier_date"], first["entry"].isoformat())
+                self.assertFalse(any(run.iterdir()))
+                git("reset", "-q", "--hard", freeze)
+                input_pin = write_manifest(coverage)
+
+            if scenario == "jumps":
+                both_refuse(approve(legacy=True), "P53_APPROVAL")
+                git("reset", "-q", "--hard", freeze)
+                good_pin = jump_pin
+                jump_pin = digest(b"wrong jump pin")
+                both_refuse(approve(), "P53_MANIFEST_FILES")
+                git("reset", "-q", "--hard", freeze)
+                jump_pin = good_pin
+                head = approve()
+                (inputs / S.JUMP_CLEARANCES).write_bytes(clearance_blob([]))
+                both_refuse(head, "P53_PIN")
+                git("reset", "-q", "--hard", freeze)
+                for payload, reason in (
+                    (b"wrong header\n", "P53_JUMP_SCHEMA"),
+                    (files[S.JUMP_CLEARANCES].replace(b"evidence:synthetic", b"https://user:secret@example.test/actions"),
+                     "P53_JUMP_SCHEMA"),
+                    (files[S.JUMP_CLEARANCES].replace(digest(b"synthetic evidence").encode(), b"bad"), "P53_JUMP_SCHEMA"),
+                    (clearance_blob([jump_rows[0], *jump_rows]), "P53_JUMP_ORDER"),
+                    (clearance_blob(list(reversed(jump_rows))), "P53_JUMP_ORDER"),
+                ):
+                    input_pin = write_manifest(coverage, extra={S.JUMP_CLEARANCES: payload})
+                    both_refuse(approve(), reason)
+                    git("reset", "-q", "--hard", freeze)
+
+                def jump_refusal(rows, expected, extra=None, code="P53_JUMP_CLEARANCES"):
+                    nonlocal input_pin
+                    input_pin = write_manifest(coverage, extra={S.JUMP_CLEARANCES: clearance_blob(rows)} | (extra or {}))
+                    head = approve()
+                    val = cli_at(head, "--validate-inputs")
+                    self.assertEqual((val.returncode, val.stderr.strip()), (2, code))
+                    prefix, body = val.stdout.strip().split(" ", 1)
+                    self.assertEqual(prefix, "P53_JUMP_REPORT")
+                    self.assertEqual([r["outcome"] for r in json.loads(body)], expected)
+                    go = cli_at(head, "--go")
+                    self.assertEqual((go.returncode, go.stdout, go.stderr.strip()), (2, "", code))
+                    self.assertFalse(any(run.iterdir()))
+                    git("reset", "-q", "--hard", freeze)
+
+                stale = (first_turn, "SYNF", *jump_rows[0][2:4], "GENUINE_MOVE")
+                jump_refusal([(*jump_rows[0][:4], "UNKNOWN"), jump_rows[2], stale],
+                             ["BAD_CLASS", "UNCLEARED", "EXCLUDED_IDENTITY_BREAK", "STALE_CLEARANCE"])
+                cutoff = first["sessions"].index(first["entry"])
+                orig = bars[first_turn]
+                post_bars = orig | {"symbols": orig["symbols"] | {"SYNB": [
+                    row | {k: row[k] / 2 for k in "ohlc"} if i == cutoff else row
+                    for i, row in enumerate(orig["symbols"]["SYNB"])]}}
+                post = (first_turn, "SYNB", first["entry"].isoformat(), first["sessions"][cutoff+1].isoformat(),
+                        "IDENTITY_BREAK")
+                jump_refusal([*jump_rows[:2], post],
+                             ["CLEARED_GENUINE_MOVE", "CLEARED_GENUINE_MOVE", "IDENTITY_BREAK_AFTER_ENTRY"],
+                             {f"bars_{first_turn}.json": dump(post_bars)})
+                pcef_bars = orig | {"benchmark": [row | {k: row[k] * 2 for k in "ohlc"} if i == 20 else row
+                                                 for i, row in enumerate(orig["benchmark"])]}
+                pcef_claim = (first_turn, benchmark, *jump_rows[0][2:4], "GENUINE_MOVE")
+                jump_refusal([pcef_claim, *jump_rows],
+                             ["BENCHMARK_FLAG", "BENCHMARK_FLAG", "CLEARED_GENUINE_MOVE", "CLEARED_GENUINE_MOVE",
+                              "EXCLUDED_IDENTITY_BREAK"], {f"bars_{first_turn}.json": dump(pcef_bars)})
+                jump_refusal([pcef_claim, *jump_rows],
+                             ["BENCHMARK_CLEARANCE", "CLEARED_GENUINE_MOVE", "CLEARED_GENUINE_MOVE",
+                              "EXCLUDED_IDENTITY_BREAK"])
+                thin = orig | {"symbols": orig["symbols"] | {"SYNH": [
+                    row | {"v": 0} if i == 60 else row for i, row in enumerate(orig["symbols"]["SYNH"])]}}
+                jump_refusal(jump_rows, ["CLEARED_GENUINE_MOVE", "CLEARED_GENUINE_MOVE", "EXCLUDED_IDENTITY_BREAK"],
+                             {f"bars_{first_turn}.json": dump(thin)}, code="P53_TOO_FEW_ELIGIBLE")
+                input_pin = write_manifest(coverage)
 
             if scenario == "valid":
                 original_freeze = freeze
@@ -685,8 +921,13 @@ def evaluate(*args, **kwargs):
             self.assertIn("cash_gaps 20 eligible_cash_gaps 20", v.stdout)
             passes = scenario not in {"vendor_fail", "currency_fail"}
             self.assertIn(f"vendor_gate_passed {int(passes)}", v.stdout)
+            headline, jump_line = v.stdout.splitlines()
             self.assertTrue(all(re.fullmatch(r"[a-z_]+ \d+", " ".join(line)) for line in
-                                zip(v.stdout.split()[1::2], v.stdout.split()[2::2])))
+                                zip(headline.split()[1::2], headline.split()[2::2])))
+            prefix, body = jump_line.split(" ", 1)
+            self.assertEqual(prefix, "P53_JUMP_REPORT")
+            jump_report = json.loads(body)
+            self.assertEqual(len(jump_report), len(jump_rows))
             self.assertFalse(any(run.iterdir()))
             g = cli("--go")
             if scenario in {"wrong_digest", "wrong_year"}:
@@ -701,7 +942,44 @@ def evaluate(*args, **kwargs):
             self.assertEqual((g.returncode, g.stdout.strip(), g.stderr), (0, "P53_RESULT_WRITTEN", ""))
             self.assertEqual({p.name for p in run.iterdir()}, {"score_53.lock", "results_53.json"})
             out = json.loads((run / "results_53.json").read_bytes())
+            counts = out["input_counts"]
+            self.assertEqual(counts["eligible_rows"] + sum(n for k, n in counts.items() if k.startswith("ineligible_")),
+                             counts["roster_rows"])
             shown = out["shown_only"]
+            self.assertEqual(shown["jump_clearances"], jump_report)
+            if scenario == "identity":
+                self.assertEqual(out["job"]["identity_segments_sha256"], identity_pin)
+                self.assertEqual(out["input_counts"]["identity_scheduled_fund_turns"], 3)
+                self.assertEqual(out["input_counts"]["ineligible_terminated_before_entry"], 1)
+                self.assertEqual(out["input_counts"]["ineligible_missing_entry"], 1)
+                self.assertEqual(out["input_counts"]["ineligible_missing_formation"], 1)
+                self.assertEqual(out["input_counts"]["ineligible_preentry_split"], 1)
+                self.assertEqual(out["input_counts"]["ineligible_other_preentry_gap"], 18)
+                self.assertEqual(out["input_counts"]["ineligible_unaffordable"], 8)
+                self.assertEqual(out["input_counts"]["identity_excluded_fund_turns"], 0)
+                for row in out["judged"]["years"][:2]:
+                    self.assertIn("SYNA", row["held"])
+                    self.assertNotIn("SYNH", row["held"])
+                    self.assertEqual(row["held_missing_exit"], 2)  # only the pre-existing fixtures
+                self.assertGreater(out["judged"]["years"][0]["portfolio"], out["judged"]["years"][1]["portfolio"])
+                self.assertEqual(cli("--go").stderr.strip(), "P53_CONSUMED_OR_NOT_EMPTY")
+                return
+            if scenario == "jumps":
+                self.assertEqual([r["outcome"] for r in jump_report],
+                                 ["CLEARED_GENUINE_MOVE", "CLEARED_GENUINE_MOVE", "EXCLUDED_IDENTITY_BREAK"])
+                self.assertEqual(out["job"]["jump_clearances_sha256"], jump_pin)
+                self.assertEqual(out["input_counts"]["identity_excluded_fund_turns"], 1)
+                self.assertEqual(out["input_counts"]["ineligible_identity_break"], 1)
+                self.assertEqual(out["input_counts"]["jump_flagged_pairs"], 3)
+                for table in (out["judged"], shown["primary_only"], shown["cash_zeroed"],
+                              shown["zero_cost"], shown["fifth_january_session_exit"]):
+                    first_row, second_row = table["years"][:2]
+                    self.assertEqual((first_row["roster"], first_row["eligible"]), (8, 5))
+                    self.assertIn("SYNA", first_row["held"])
+                    self.assertNotIn("SYNB", first_row["held"])
+                    self.assertIn("SYNB", second_row["held"])
+                self.assertEqual(cli("--go").stderr.strip(), "P53_CONSUMED_OR_NOT_EMPTY")
+                return
             gate = shown["vendor_cash_gate"]
             self.assertEqual((gate["passed"], gate["admitted_source_kind"], gate["admitted_events"]),
                              (passes, "vendor_crosschecked", 2 if passes else 0))
@@ -736,14 +1014,14 @@ def evaluate(*args, **kwargs):
                                 and y["portfolio_price"] < y["portfolio"] for i, y in enumerate(out["judged"]["years"])))
             self.assertIn("mean_portfolio_minus_roster_ew_price_only", out["judged"])
             self.assertEqual(set(shown), {"fifth_january_session_exit", "zero_cost", "replay48_correlation",
-                                          "primary_only", "cash_zeroed", "vendor_cash_gate"})
+                                          "primary_only", "cash_zeroed", "vendor_cash_gate", "jump_clearances"})
             self.assertTrue(all(y["held_cash_gaps"] == 2 for y in out["judged"]["years"]))
             self.assertTrue(all(y["held_quote_coverage_proxy_sides"] == 2 for y in out["judged"]["years"]))
             self.assertNotIn("held_proxy_sides", out["judged"]["years"][0])
             no_cash_returns = []
             for w, row in zip(WINDOWS, out["judged"]["years"]):
                 y = w["turn"]
-                _, closes = C.bars_file(bars[y], w, names, cfg)
+                _, closes = S.identity_bars(bars[y], w, names, {}, C, cfg)
                 _, benchmark_quotes = C.quotes_file(quotes[y], w, names, cfg)
                 dollars, shares, _ = C.sleeve(closes, {"cash": [], "splits": []},
                                              C.side_costs(benchmark_quotes, w, cfg), w, "exit", cfg["capital"])
@@ -768,7 +1046,8 @@ def evaluate(*args, **kwargs):
             other = subprocess.run(
                 [sys.executable, "-I", "-B", str(root / "research_rig/score_53.py"), "--validate-inputs",
                  "--approval-commit", head, "--freeze-sha256", freeze_pin, "--input-sha256", input_pin,
-                 "--roster-sha256", digest(roster + b"2016,SYNZ\n"), "--distributions-sha256", dist_pin],
+                 "--roster-sha256", digest(roster + b"2016,SYNZ\n"), "--distributions-sha256", dist_pin,
+                 "--jump-clearances-sha256", jump_pin, "--identity-segments-sha256", identity_pin],
                 capture_output=True, text=True, env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"}, timeout=600)
             self.assertEqual(other.stderr.strip(), "P53_APPROVAL")
 
