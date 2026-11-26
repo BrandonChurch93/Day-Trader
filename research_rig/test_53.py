@@ -130,25 +130,43 @@ def holdings_roster(names, cfg):
     return tuple(("\n".join(rows) + "\n").encode() for rows in (roster, exclusions))
 
 
+def bad_holdings_cases(roster, exclusions):
+    return (
+        ("cutoff", roster.replace(b"2016-10-20", b"2016-12-01"), exclusions, "ROSTER_CLOCK"),
+        ("future_period", roster.replace(b"2016-08-31,2016-10-20", b"2016-12-01,2016-12-02"), exclusions,
+         "ROSTER_CLOCK"),
+        ("impossible_period", roster.replace(b"2016-08-31", b"2016-10-21"), exclusions, "ROSTER_CLOCK"),
+        ("cross_file_snapshot", roster, exclusions.replace(b"2016-10-20", b"2016-11-01", 1), "ROSTER_SNAPSHOT"),
+        ("wrong_form", roster.replace(b"N-Q,", b"13F-HR,", 1), exclusions, "ROSTER_SNAPSHOT"),
+        ("wrong_series", roster.replace(b"S000027370", b"S999999999", 1), exclusions, "ROSTER_SNAPSHOT"),
+        ("wrong_host", roster.replace(b"www.sec.gov", b"www.sec.gov.example.test", 1), exclusions, "ROSTER_SNAPSHOT"),
+        ("wrong_path", roster.replace(b"/edgar/data/1378872/", b"/edgar/data/1378873/", 1), exclusions,
+         "ROSTER_SNAPSHOT"),
+        ("accession_mismatch", roster.replace(b"16-999999-index", b"16-999998-index", 1), exclusions,
+         "ROSTER_SNAPSHOT"),
+        ("municipal_admission", roster.replace(b"SYNA Fund", b"SYNA Tax-Exempt Fund", 1), exclusions,
+         "ROSTER_METADATA"),
+        ("municipal_mislabel", roster, exclusions.replace(b"municipal_name", b"replay48_overlap", 1),
+         "ROSTER_EXCLUSIONS"),
+        ("duplicate_admitted_cik", roster.replace(b"2016,2,SYNB,0000000002", b"2016,2,SYNB,0000000001", 1),
+         exclusions, "ROSTER_METADATA"),
+        ("noncontiguous_id", roster, exclusions.replace(b"2016,", b"2016,999", 1), "ROSTER_HOLDINGS_IDS"),
+        ("duplicate_id", roster, re.sub(rb"\n2016,\d+,", b"\n2016,2,", exclusions, count=1), "ROSTER_METADATA"),
+        ("unknown_roster_column", roster.replace(b",filing_url\n", b",filing_url,unknown\n", 1), exclusions,
+         "ROSTER_METADATA"),
+        ("unknown_exclusion_column", roster, exclusions.replace(b",reason\n", b",reason,unknown\n", 1),
+         "ROSTER_EXCLUSIONS"),
+    )
+
+
 class Unit(unittest.TestCase):
     def test_roster_holdings_metadata_and_strict_cutoff(self):
         roster, exclusions = holdings_roster(["SYNA", "SYNB"], CFG)
         admitted, excluded = S.roster_metadata(roster, exclusions, WINDOWS, C, CFG)
         self.assertEqual(admitted[WINDOWS[0]["turn"]], ("SYNA", "SYNB"))
         self.assertEqual(excluded, len(WINDOWS))
-        cases = (
-            (roster.replace(b"2016-10-20", b"2016-12-01"), exclusions, "ROSTER_CLOCK"),
-            (roster.replace(b"2016-08-31,2016-10-20", b"2016-12-01,2016-12-02"), exclusions, "ROSTER_CLOCK"),
-            (roster.replace(b"2016-10-20", b"2016-11-01", 1), exclusions, "ROSTER_SNAPSHOT"),
-            (roster.replace(b"N-Q,", b"13F-HR,", 1), exclusions, "ROSTER_SNAPSHOT"),
-            (roster.replace(b"S000027370", b"S999999999", 1), exclusions, "ROSTER_SNAPSHOT"),
-            (roster.replace(b"SYNA Fund", b"SYNA Tax-Exempt Fund", 1), exclusions, "ROSTER_METADATA"),
-            (roster, exclusions.replace(b",3,SYNZ,", b",4,SYNZ,", 1), "ROSTER_HOLDINGS_IDS"),
-            (roster, exclusions.replace(b",3,SYNZ,", b",2,SYNZ,", 1), "ROSTER_METADATA"),
-            (roster, exclusions.replace(b"municipal_name", b"replay48_overlap", 1), "ROSTER_EXCLUSIONS"),
-        )
-        for included, removed, error in cases:
-            with self.subTest(error=error), self.assertRaisesRegex(S.Refused, "P53_" + error):
+        for label, included, removed, error in bad_holdings_cases(roster, exclusions):
+            with self.subTest(case=label), self.assertRaisesRegex(S.Refused, "P53_" + error):
                 S.roster_metadata(included, removed, WINDOWS, C, CFG)
         self.assertFalse(S.municipal_name("Municipally Fund", CFG))
         self.assertTrue(S.municipal_name("A muni. fund", CFG))
@@ -443,11 +461,13 @@ def evaluate(*args, **kwargs):
                 os.chmod(inputs / n, 0o600)
             roster_pin, dist_pin = digest(roster), digest(files["distributions.json"])
 
-            def write_manifest(coverage_blob):
-                (inputs / S.CASH_COVERAGE).write_bytes(coverage_blob)
+            def write_manifest(coverage_blob, roster_blob=roster, exclusions_blob=exclusions):
+                changed = {S.CASH_COVERAGE: coverage_blob, "roster.csv": roster_blob, S.EXCLUSIONS: exclusions_blob}
+                for n, b in changed.items():
+                    (inputs / n).write_bytes(b)
                 manifest = {"schema": 1, "mode": "plan53_raw_sip_v1", "feed": "sip", "adjustment": "raw",
                             "first_turn": 2016, "last_turn": 2025, "collected_utc": "2026-11-26T00:00:00Z",
-                            "files": {n: digest(b) for n, b in (files | {S.CASH_COVERAGE: coverage_blob}).items()}}
+                            "files": {n: digest(b) for n, b in (files | changed).items()}}
                 payload = S.encode(manifest)
                 (inputs / "manifest.json").write_bytes(payload)
                 os.chmod(inputs / "manifest.json", 0o600)
@@ -490,6 +510,24 @@ def evaluate(*args, **kwargs):
                     self.assertFalse(any(run.iterdir()))
 
             if scenario == "valid":
+                original_freeze = freeze
+                for label, included, removed, reason in bad_holdings_cases(roster, exclusions):
+                    with self.subTest(bad_holdings_packet=label):
+                        self.assertNotEqual((included, removed), (roster, exclusions))
+                        roster_pin = digest(included)
+                        bad_pins = S.encode(pins | {S.ROSTER_PIN: roster_pin, S.EXCLUSIONS_PIN: digest(removed)})
+                        (root / S.PINS).write_bytes(bad_pins)
+                        freeze_pin = digest(bad_pins)
+                        git("add", S.PINS)
+                        git("commit", "--amend", "-qm", "synthetic freeze with malformed holdings attestation")
+                        freeze = git("rev-parse", "HEAD")
+                        input_pin = write_manifest(coverage, included, removed)
+                        both_refuse(approve(), "P53_" + reason)
+                        git("reset", "-q", "--hard", original_freeze)
+                freeze = original_freeze
+                freeze_pin = digest((root / S.PINS).read_bytes())
+                roster_pin = digest(roster)
+                input_pin = write_manifest(coverage)
                 (root / "NOTE.md").write_text("extra file in the approval\n")
                 both_refuse(approve("NOTE.md"), "P53_APPROVAL")
                 git("reset", "-q", "--hard", freeze)
