@@ -6,6 +6,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 ## Where things stand
 
+- Plan 32 (queue 51) is blocked on data: the free sources did not establish a point-in-time market-wide dividend pay-date series. No replay was built or run, and ledger 167 stays unused.
+
 - Russell 2000 additions (queue 42) stopped at the source check. STATED: exact point-in-time membership changes are in [FTSE Russell's client files](https://research.ftserussell.com/products/index-notices/home/getnotice?id=2611754), and the [public list terms](https://www.lseg.com/content/dam/ftse-russell/en_us/documents/other/ru3000-additions-20261113.pdf) require a licence for data use and written permission for storage. No data were staged and no replay ran.
 - First counted trading-replay pass. MEASURED. Replay 25's unlevered TLT month-end rule met all nine frozen marks at 2 bps per side. It averaged +0.2562% net across 130 monthly windows with a t-statistic of 2.36. The last partial year lost, and higher assumed costs weakened the result. [Replay 25](research/69_replay_25_treasury_month_end.md) is a reason to test again on separate data, not clearance to trade.
 - [Replay 26](research/73_replay_26_blocked_at_source_check.md). STATED. Blocked at input validation on 2026-11-26 04:13:59 UTC, not scored, lock unused. MEASURED. The vendor differed from SIP by more than one cent on 42 TLT and 13 IEF sessions in 2016–2018, at most 14 and 5 cents, respectively; every overlap session from 2019 on agreed within one cent.
