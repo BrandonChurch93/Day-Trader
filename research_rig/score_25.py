@@ -38,7 +38,7 @@ def prepare(draft_sha, manifest_sha, actions_sha, root):
     m = json.loads(F.pinned(path / "manifest.json", manifest_sha, private=True))
     C.need(set(m) == {"schema", "mode", "feed", "adjustment", "start", "end", "collected_utc",
                        "draft_sha256", "files"} and m["schema"] == 1 and m["feed"] == "sip"
-           and m["start"] == str(C.ANCHOR_FROM) and m["end"] == str(C.DATA_END)
+           and m["start"] == str(C.BAR_FROM) and m["end"] == str(C.DATA_END)
            and m["draft_sha256"] == draft_sha, "P25_MANIFEST")
     C.need(m["mode"] == F.RAW and m["adjustment"] == "raw", "P25_MANIFEST")
     names = {s + ".json" for s in C.SYMBOLS} | {"cash_actions.json"}

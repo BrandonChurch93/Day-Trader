@@ -8,7 +8,8 @@ from zoneinfo import ZoneInfo
 
 FIRST = date(2016, 1, 1)
 LAST = date(2026, 10, 31)
-ANCHOR_FROM = date(2015, 12, 31)
+BAR_FROM = date(2016, 1, 4)
+ACTION_COVERAGE_FROM = date(2015, 12, 31)
 DATA_END = date(2026, 11, 24)
 POST = date(2020, 1, 1)
 YEARS = tuple(range(FIRST.year, LAST.year + 1))
@@ -42,7 +43,7 @@ def check_calendar(raw):
     need(set(raw) == {"calendar", "version", "sessions"} and raw["calendar"] == "XNYS"
          and raw["version"] == "4.13.3", "P25_CALENDAR")
     days = tuple(date.fromisoformat(v) for v in raw["sessions"])
-    need(days == tuple(sorted(set(days))) and days[0] == ANCHOR_FROM and days[-1] == DATA_END,
+    need(len(days) == 2740 and days == tuple(sorted(set(days))) and days[0] == BAR_FROM and days[-1] == DATA_END,
          "P25_CALENDAR")
     m = months(days)
     need(len(m) == EXPECTED_MONTHS and all(len(rows) >= 6 for rows in m.values()), "P25_CALENDAR")
@@ -62,7 +63,7 @@ def check_bar_clocks(rows, days):
 def check_actions(raw, days):
     """Only metadata/date checks. Rates are validated silently in scorer, not fetcher."""
     need(set(raw) == {"schema", "coverage_start", "coverage_end", "funds"} and raw["schema"] == 1
-         and date.fromisoformat(raw["coverage_start"]) <= ANCHOR_FROM
+         and date.fromisoformat(raw["coverage_start"]) <= ACTION_COVERAGE_FROM
          and date.fromisoformat(raw["coverage_end"]) >= DATA_END
          and set(raw["funds"]) == set(SYMBOLS), "P25_ACTION_COVERAGE")
     for fund in raw["funds"].values():

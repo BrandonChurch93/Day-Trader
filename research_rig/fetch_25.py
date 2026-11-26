@@ -75,7 +75,7 @@ def get(url):
 
 def fetch(symbol, transport=get):
     # End-stamp allows the entire last New York session but never Nov 25.
-    query = dict(symbols=symbol, timeframe="1Day", start=C.ANCHOR_FROM.isoformat(),
+    query = dict(symbols=symbol, timeframe="1Day", start=C.BAR_FROM.isoformat(),
                  end=f"{C.DATA_END.isoformat()}T23:59:59-05:00", adjustment="raw",
                  limit=10000, feed="sip", sort="asc")
     rows, seen = [], set()
@@ -115,7 +115,7 @@ def collect(args):
             payloads[symbol + ".json"] = encode(rows)
         payloads["cash_actions.json"] = actions
         index = {
-            "schema": 1, "mode": RAW, "feed": "sip", "adjustment": "raw", "start": str(C.ANCHOR_FROM),
+            "schema": 1, "mode": RAW, "feed": "sip", "adjustment": "raw", "start": str(C.BAR_FROM),
             "end": str(C.DATA_END), "collected_utc": datetime.now(timezone.utc).isoformat(),
             "draft_sha256": args.approved_draft_sha256, "files": {k: digest(v) for k, v in payloads.items()},
         }

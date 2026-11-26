@@ -15,13 +15,14 @@ import score_25 as S
 
 def dates():
     return C.check_calendar(json.loads(F.pinned(F.HERE / "calendar_25.json",
-                            "df4231332e084b400d8d9cfe5db3b59e3beef925445cf40060ef4849544b277a")))
+                            "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b")))
 
 
 def plant(days, seed, drift, edge):
     r = Random(seed)
     inside = {d for _, _, ds in C.windows(days, 3) for d in ds}
-    px = 100.0
+    # Preserve the previous seeded synthetic paths on all surviving sessions.
+    px = 100.0 * (1 + drift + r.gauss(0, 0.004))
     tape = {}
     for d in days:
         old = px
@@ -33,7 +34,7 @@ def plant(days, seed, drift, edge):
 def auditor_one_regime(days):
     rng = Random(2026)
     inside = {d for _, _, ds in C.windows(days, 3) for d in ds}
-    px, tape = 100.0, {}
+    px, tape = 100.0 * (1 + 0.00019 + rng.gauss(0, 0.00006)), {}
     for d in days:
         prev = px
         r = (0.00019 if d.year <= 2021 else 0) + rng.gauss(0, 0.00006)
@@ -72,7 +73,8 @@ class Tests(unittest.TestCase):
                                    tuple(date(2016, 1, d) for d in (27, 28, 29))))
         self.assertEqual(spans[-1][1], date(2026, 10, 30))
         self.assertEqual(C.next_three(ds)[-1][1], date(2026, 11, 4))
-        self.assertEqual(ds[0], date(2015, 12, 31))
+        self.assertEqual(len(ds), 2740)
+        self.assertEqual(ds[0], date(2016, 1, 4))
         self.assertEqual(ds[-1], date(2026, 11, 24))
         self.assertNotIn(date(2018, 12, 5), ds)
         self.assertNotIn(date(2025, 1, 9), ds)
@@ -104,7 +106,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(r["judged"]["daily_comparison"]["inside_n"], 390)
         self.assertEqual(r["judged"]["daily_comparison"]["inside_n"] +
                          r["judged"]["daily_comparison"]["outside_n"],
-                         sum(C.FIRST <= d <= C.LAST for d in ds))
+                         sum(C.FIRST <= d <= C.LAST for d in ds[1:]))
         self.assertLess(r["shown"]["next_month_first_three_at_2bps"]["mean_net"], r["judged"]["mean_net"])
         self.assertLess(r["shown"]["other_costs_same_window"]["10"]["mean_net"],
                         r["shown"]["other_costs_same_window"]["5"]["mean_net"])
@@ -159,16 +161,38 @@ class Tests(unittest.TestCase):
                          (date(2020, 3, 6), date(2020, 3, 9)))
         self.assertIn("feed=sip", seen[0])
         self.assertIn("adjustment=raw", seen[0])
+        self.assertIn("start=2016-01-04", seen[0])
         self.assertIn("2026-11-24", seen[0])
         self.assertIn("page_token=token", seen[1])
         with self.assertRaisesRegex(C.Refused, "^P25_BAR_CLOCK$"):
             C.check_bar_clocks([rows[0], rows[0]], (date(2020, 3, 6), date(2020, 3, 9)))
 
+    def test_missing_2015_anchor_removes_only_one_outside_interval(self):
+        ds = dates()
+        old = (date(2015, 12, 31),) + ds
+        spans = C.windows(ds, 3)
+        self.assertEqual(spans, C.windows(old, 3))
+        self.assertEqual(len(spans), 130)
+        bars = {d: C.Bar(100, 100, 100, 100, 1) for d in old}
+        before, old_years = C.daily_split(old, bars, {}, spans)
+        after, new_years = C.daily_split(ds, bars, {}, spans)
+        self.assertEqual((before["inside_n"], after["inside_n"]), (390, 390))
+        self.assertEqual((before["outside_n"], after["outside_n"]), (2333, 2332))
+        self.assertEqual(old_years["2016"]["outside_n"], new_years["2016"]["outside_n"] + 1)
+        self.assertEqual({y: x for y, x in old_years.items() if y != "2016"},
+                         {y: x for y, x in new_years.items() if y != "2016"})
+        jan = [{"t": f"{d}T05:00:00Z", "v": 1} for d in ds[:3]]
+        self.assertEqual(C.check_bar_clocks(jan, ds[:3]), ds[:3])
+        with self.assertRaisesRegex(C.Refused, "^P25_BAR_CLOCK$"):
+            C.check_bar_clocks(jan[1:], ds[:3])
+        with self.assertRaisesRegex(C.Refused, "^P25_BAR_CLOCK$"):
+            C.check_bar_clocks([jan[0], jan[2]], ds[:3])
+
     def test_distribution_metadata_refuses_duplicate_action(self):
         ds = dates()
         row = {"id": "invented", "ex_date": str(ds[3]), "amount": "not checked by fetcher"}
         fund = {"source": "https://example.com", "splits": [], "cash": [row]}
-        packet = dict(schema=1, coverage_start=str(C.ANCHOR_FROM), coverage_end=str(C.DATA_END),
+        packet = dict(schema=1, coverage_start=str(C.ACTION_COVERAGE_FROM), coverage_end=str(C.DATA_END),
                       funds={s: fund for s in C.SYMBOLS})
         C.check_actions(packet, ds)
         with self.assertRaisesRegex(C.Refused, "^P25_ACTION_AMOUNT$"):
@@ -243,7 +267,7 @@ class Tests(unittest.TestCase):
             return F.encode([dict(t=stamp, o=px, h=px, l=px, c=px, v=10)
                              for stamp in ("2020-03-06T05:00:00Z", "2020-03-09T04:00:00Z")])
         payload = bars(10)
-        actions = F.encode(dict(schema=1, coverage_start=str(C.ANCHOR_FROM), coverage_end=str(C.DATA_END),
+        actions = F.encode(dict(schema=1, coverage_start=str(C.ACTION_COVERAGE_FROM), coverage_end=str(C.DATA_END),
                                 funds={s: {"source": "https://example.com", "splits": [],
                                            "cash": [{"id": s, "ex_date": str(ds[0]), "amount": 1}]}
                                        for s in C.SYMBOLS}))
@@ -262,7 +286,7 @@ class Tests(unittest.TestCase):
             for name in files:
                 put(name, payload)
             files["cash_actions.json"] = action_pin
-            index = dict(schema=1, mode=F.RAW, feed="sip", adjustment="raw", start=str(C.ANCHOR_FROM),
+            index = dict(schema=1, mode=F.RAW, feed="sip", adjustment="raw", start=str(C.BAR_FROM),
                          end=str(C.DATA_END), collected_utc="synthetic", draft_sha256=key, files=files)
             def manifest():
                 data = F.encode(index)
