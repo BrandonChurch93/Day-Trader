@@ -172,7 +172,9 @@ class DeskTest(unittest.TestCase):
         table = dict(rows=spec["rows"],end_marks=spec["end_marks"])
         legacy = P.run_perp(meta,table,[(x["weights"],x["exits"]) for x in bundles],s.pp,s.minutes,spec["cfg"])
         got = S.replay(s,bundles)
-        self.assertEqual(got["book"],legacy[0])
+        self.assertEqual({k:v for k,v in got["book"].items() if k != "target"},
+                         {k:v for k,v in legacy[0].items() if k != "target"})
+        O.check_saved_holdings(got["book"])
         self.assertEqual(got["book"]["held_seconds"],7200)
 
     def test_reaudit_r6_flat_idle_wake_needs_no_open(self):
@@ -549,7 +551,8 @@ class DeskTest(unittest.TestCase):
                              P.Minutes(sorted(times)),T,T+120,True,{},1)
             self.assertEqual({t["symbol"] for t in rec["trades"]},{B})
             self.assertEqual(set(book["qty"]),{B})
-            self.assertEqual(book["target"],{B:weights[B]})
+            self.assertEqual(rec["target"],{B:weights[B]})
+            self.assertEqual(book["target"],P.weights_at(book,book["last_px"]))
             self.assertIn(dict(symbol=A,why="protective_exit"),rec["skipped"])
             self.assertEqual(rec["scan"]["cancelled_target_legs"],[A])
             if weights[B] == .6:
@@ -584,6 +587,74 @@ class DeskTest(unittest.TestCase):
                             self.assertAlmostEqual(book["cash"],cash-scan["funding_usd"])
                             if q1 == q2 == -10:
                                 self.assertEqual(P.value_at(book,marks),2000)
+
+    def test_pass6_explicit_target_closes_a_standing_holding_it_omits(self):
+        bars = [(t,s,p,104 if s == B and t == T+120 else p,p,p)
+                for t,ap in ((T,100),(T+60,80),(T+120,80),(T+180,80),(T+240,80))
+                for s,p in ((A,ap),(B,100))]
+        spec = world(bars)
+        pp = spec["params"]
+        pp["fallback_per_day"] = 0
+        book = P.new_book(1000)
+        mins = P.Minutes(bars)
+        O.step(book,dict(weights={A:-1}),dict(marks={A:100,B:100}),pp,mins,T,T+60,False,{},1,first=True)
+        _,_,events = O.step(book,dict(conditions=condition(T+60,B,weight=.25)),dict(marks={A:80,B:100}),pp,mins,
+                            T+60,T+240,False,{},1)
+        self.assertEqual([e["kind"] for e in events],["armed","triggered","filled"])
+        self.assertAlmostEqual(book["qty"][B],2.99520910,places=8)
+        held_after_standing = book["target"].copy()
+        rec,_,_ = O.step(book,dict(weights={A:-1}),dict(marks={A:80,B:100}),pp,mins,T+240,T+300,True,{},1)
+        self.assertNotIn(B,book["qty"])
+        self.assertIn(B,held_after_standing)
+        self.assertEqual({t["symbol"] for t in rec["trades"]},{A,B})
+        self.assertEqual(book["target"],P.weights_at(book,book["last_px"]))
+
+    def test_pass6_standing_holdings_remain_visible_on_restart_and_match_replay(self):
+        bars = [(t,s,p,104 if s == B and t == T+60 else p,p,p)
+                for t in (T,T+60,T+120,T+3600) for s in (A,B,BTC)
+                for p in [80 if s == A and t > T else 100]]
+        spec = world(bars)
+        spec["rows"][1]["marks"][A] = spec["end_marks"][A] = 80
+        spec["end_marks"][B] = 90
+        spec["params"]["fallback_per_day"] = 0
+        spec["params"]["funding"] = {}
+        session = self.create("C",self.scout_export(spec),spec=spec)
+        _,key = info(session)
+        session.handle("boss","look",dict(wake_key=key,symbol=B,kind="bars",request_id="show-b"))
+        session.handle("boss","pick",dict(wake_key=key,weights={A:-1},why="Toy entry and condition.",
+                  citations={A:{"evidence_ids":[f"book:{T}"]}},conditions=[
+                      dict(symbol=B,direction="above",price=102,hours=2,weight=.5,evidence_ids=[f"quote:{T}:{B}"])]))
+        session = D.DeskSession(session.path)
+        packet,key = info(session)
+        self.assertIn(B,packet["book"]["weights"])
+        self.assertEqual(packet["book"]["weights"],packet["book"]["current_target"])
+        at = T+3600
+        reply = session.handle("boss","pick",dict(wake_key=key,weights={A:-1},why="Close the omitted coin.",
+                  citations={s:{"evidence_ids":[f"book:{at}"]} for s in (A,B)}))
+        self.assertTrue(reply["accepted"])
+        _,log = S.load_session(session.path)
+        bundles = [entry for _,kind,entry in log if kind == "decision"]
+        final, = [entry["book"] for _,kind,entry in log if kind == "finish"]
+        self.assertNotIn(B,final["qty"])
+        O.check_saved_holdings(final)
+        explicit = S.replay(session,bundles,journal=True)
+        self.assertEqual(final,explicit["book"])
+        self.assertEqual(round(explicit["value"],2),1196.17)
+        filled, = [e for e in explicit["events"] if e["kind"] == "filled"]
+        self.assertAlmostEqual(filled["trade"]["qty"],3.98723065,places=8)
+        control = S.replay(session,[bundles[0],dict(bundles[1],weights={A:-.999999})])
+        self.assertEqual(round(control["value"],2),round(explicit["value"],2))
+        hold = S.replay(session,[bundles[0],dict(bundles[1],weights=None)])
+        self.assertEqual(round(hold["value"],2),1157.57)
+        self.assertAlmostEqual(hold["book"]["qty"][B],3.98723065,places=8)
+        self.assertIn("main",S.score_week(session.path))
+
+    def test_pass6_saved_book_consistency_check_fails_if_update_is_skipped(self):
+        spec = world([(T,A,100,100,100,100)])
+        book = P.new_book(1000)
+        book.update(cash=900,qty={A:1},last_px={A:100})
+        with patch.object(O,"save_holdings"),self.assertRaisesRegex(AssertionError,"disagree with the actual book"):
+            O.step(book,{},spec["rows"][0],spec["params"],P.Minutes(spec["minutes"]),T,T+60,False,{},1)
 
     def test_pass5_atomic_final_book_handles_feasible_reversals_and_scales(self):
         C = "CCC/USD"
@@ -1089,11 +1160,12 @@ class DeskTest(unittest.TestCase):
             F.run_perp(dict(args, tm07_arm="C"), table, ans, p.pp, p.minutes, spec["cfg"])
         dsk = S.replay(p,bundles,journal=True)
         self.assertEqual(slow,fast)
-        differing = {"exits_hit","largest_drop"}
+        differing = {"exits_hit","largest_drop","target"}
         self.assertEqual({k:v for k,v in slow[0].items() if k not in differing},
                          {k:v for k,v in dsk["book"].items() if k not in differing})
         self.assertLess(dsk["book"]["largest_drop"],slow[0]["largest_drop"])
         self.assertEqual(slow[2],dsk["value"])
+        O.check_saved_holdings(dsk["book"])
         # The desk records boundary funding at the opening wake, not in the
         # last wake's receipt. The complete book and exit history still match.
         before, = [e for r in slow[1] for e in r["scan"]["exits"]]

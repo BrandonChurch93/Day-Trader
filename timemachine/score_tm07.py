@@ -261,7 +261,7 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
     if len(spec["wakes"]) != len(bundles):
         raise ValueError("one answer per wake required")
     pp = sess.pp if fee is None else P.with_fee(sess.pp, fee)
-    book = P.new_book(spec["cfg"]["tm_account_start_usd"], spec.get("opening"))
+    book = P.new_book(spec["cfg"]["tm_account_start_usd"])
     active, events, scans, unsupported = {}, [], [], []
     count = hits = triggered = 0
     for i, (at, bundle, row) in enumerate(zip(spec["wakes"], bundles, spec["rows"])):
@@ -280,7 +280,6 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
         if journal:
             events.extend(changes)
             scans.append(rec["scan"])
-    book["last_px"].update(spec["end_marks"])
     final = max(0.0, P.value_at(book, spec["end_marks"]))
     return dict(value=final, book=book, events=events, scans=scans, immediate=count, standing=hits,
                 triggered=triggered, unsupported=unsupported)

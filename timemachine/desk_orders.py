@@ -19,6 +19,16 @@ def priced_target(weights, gross):
     return {s:w*(gross/total) for s,w in target.items()} if total > gross else target
 
 
+def save_holdings(book):
+    """Keep the persisted display field derived from positions at their last marks."""
+    book["target"] = P.weights_at(book,book["last_px"])
+
+
+def check_saved_holdings(book):
+    if book["target"] != P.weights_at(book,book["last_px"]) or not book["exits"].keys() <= book["qty"].keys():
+        raise AssertionError("TM07 saved holdings or exits disagree with the actual book")
+
+
 def basket_quote(book, desired, opens, pp, penalty=0):
     """Price the deltas without making any intermediate book."""
     qty = dict(book["qty"])
@@ -228,33 +238,25 @@ class Orders:
                 continue
             previous = P.weights_at(book, opens)
             before = dict(book["qty"])
-            other_saved = math.fsum(abs(w) for s,w in book["target"].items() if s not in weights)
-            saved_gross = other_saved+math.fsum(abs(w) for w in weights.values())
             target_gross = math.fsum(abs(w) for s,w in previous.items() if s not in weights)+math.fsum(map(abs,weights.values()))
             trades,reason = apply_basket(book,weights,opens,pp,gross)
             if reason:
                 for s in weights:
-                    self.remove(s,"refused",at,reason=reason,open=opens[s],
-                                gross_wanted=target_gross,saved_target_gross=saved_gross)
+                    self.remove(s,"refused",at,reason=reason,open=opens[s],gross_wanted=target_gross)
                 continue
             traded = {tr["symbol"]:tr for tr in trades}
-            saved = priced_target(weights,max(0,gross-other_saved))
+            book["last_px"].update(opens)
             for s,w in weights.items():
                 mark = opens[s]
-                book["last_px"][s] = mark
-                if s in saved and saved[s]:
-                    book["target"][s] = saved[s]
-                else:
-                    book["target"].pop(s,None)
-                if before.get(s,0)*w <= 0:
+                if before.get(s,0)*book["qty"].get(s,0) <= 0:
                     book["exits"].pop(s,None)
                 if s not in traded:
-                    self.remove(s,"refused",at,reason="small_change",open=mark,
-                                gross_wanted=target_gross,saved_target_gross=saved_gross)
+                    self.remove(s,"refused",at,reason="small_change",open=mark,gross_wanted=target_gross)
                 else:
                     trade = traded[s]
                     self.remove(s,"filled",at,open=mark,previous_weight=previous.get(s,0),gross_wanted=target_gross,
-                                spread_usd=trade["qty"]*mark*pp["hs"][s],trade=trade)
+                                held_after=s in book["qty"],spread_usd=trade["qty"]*mark*pp["hs"][s],trade=trade)
+            save_holdings(book)
 
     def observe_close(self, bar, protected=()):
         start, sym, _, high, low, _ = bar
@@ -316,7 +318,7 @@ class Orders:
                 if change["order"]:
                     self.event("cancelled",change["order"],tick,reason="maintenance")
             self.pending.clear()
-            book.update(target={}, exits={}, pending=False)
+            book.update(exits={}, pending=False)
             blocked = True
 
         def margin(prices):
@@ -353,7 +355,6 @@ class Orders:
             book["exits"].pop(s,None)
             event = dict(utc=stamp(tick),symbol=s,kind=kind,level=active_exit[kind],
                          filled_at=price,gap=gap,price=trade["price"],side=trade["side"],qty=trade["qty"],phase=phase)
-            book["target"].pop(s,None)
             book["exits_hit"].append(event)
             total["exits"].append(event)
             if s in self.active:
@@ -439,6 +440,7 @@ class Orders:
             if checked_at != end:
                 check(end,closing_marks(),"session_end",None)
         self.expire(end)
+        save_holdings(book)
         return total
 
 
@@ -447,11 +449,8 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     orders = Orders(active,delay,book.pop("desk_order_updates",None))
     orders.submit(bundle, book, at)
     weights, exits = bundle.get("weights"), bundle.get("exits")
-    requested = P.norm(book["target"] if weights is None else weights)
-    effective = priced_target(requested,gross)
-    needs_open = bool(book["qty"] or effective)
-    changed = needs_open and (first or book.get("pending") or effective != P.norm(book["target"]))
-    update_exits = bool(book["qty"] and weights is not None and (exits or {}) != book["exits"])
+    requested = P.norm(weights)
+    explicit = weights is not None
     book["last_px"].update(row["marks"])
     record = None
     cancelled = []
@@ -466,35 +465,37 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         if record is not None:
             return
         target = priced_target(requested,gross)
-        touched = set(book["qty"]) | target.keys()
-        if (changed or update_exits) and not touched <= opens.keys():
+        touched = (book["qty"].keys() | target.keys()) if explicit else set()
+        if not touched <= opens.keys():
             return
         value = P.value_at(book,opens)
-        record = dict(target=dict(book["target"]),exits=dict(book["exits"]),changed=changed,retry=book["pending"],
+        record = dict(target=target,exits=dict(book["exits"]),changed=False,retry=False,
                       value_before=value,value_after=value,weights_after=P.weights_at(book,opens),
                       trades=[],skipped=cancelled.copy(),fill_utc=None)
-        if changed and touched:
+        if touched:
             trades,reason = apply_basket(book,{s:target.get(s,0) for s in touched},opens,pp,gross)
             if reason and reason != "small_change":
                 record["skipped"].append(dict(why=reason))
                 return
             record["trades"] = [dict(tr,fill_utc=stamp(tick)) for tr in trades]
-        new_exits = book["exits"] if weights is None else exits or {}
-        book.update(target=target, exits={s:e for s,e in new_exits.items() if s in target}, pending=False)
-        record.update(target=dict(target), exits=dict(book["exits"]), value_after=P.value_at(book,opens),
+        if explicit:
+            book["exits"] = {s:e for s,e in (exits or {}).items() if s in book["qty"] and s in target}
+        book["pending"] = False
+        save_holdings(book)
+        record.update(changed=bool(record["trades"]),exits=dict(book["exits"]), value_after=P.value_at(book,opens),
                       weights_after=P.weights_at(book,opens), fill_utc=stamp(tick) if record["trades"] else None)
         return {tr["symbol"] for tr in record["trades"]}
 
-    if not (changed or update_exits):
+    if not explicit or not (requested or book["qty"]):
         immediate(at, {})
-    symbols = set(pp["symbols"]) if changed else set(book["qty"])
+    symbols = set(pp["symbols"]) if explicit else set(book["qty"])
     active_rows = P.scan_rows(minutes,at,end,symbols,watched=orders.active.keys()|orders.pending.keys())
     scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate, last=last,
                           end_marks=end_marks,on_exit=on_exit)
     if record is None and cancelled and not (requested or book["qty"]):
         immediate(end,{})
     if record is None:
-        record = dict(target=dict(book["target"]), trades=[],
+        record = dict(target=priced_target(requested,gross), trades=[],
                       skipped=[*cancelled,{"why":"maintenance" if scan["closeout"] else "no_common_open"}], changed=False)
     if cancelled:
         scan["cancelled_target_legs"] = [entry["symbol"] for entry in cancelled]
@@ -504,4 +505,5 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         orders.pending.clear()
     if orders.pending:
         book["desk_order_updates"] = orders.pending
+    check_saved_holdings(book)
     return record, orders.active, orders.events

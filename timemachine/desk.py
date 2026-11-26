@@ -406,7 +406,7 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, app
                           "CREATE TRIGGER no_change BEFORE UPDATE ON journal BEGIN SELECT RAISE(ABORT,'append only'); END;"
                           "CREATE TRIGGER no_delete BEFORE DELETE ON journal BEGIN SELECT RAISE(ABORT,'append only'); END;")
         con.execute("INSERT INTO state VALUES (0, ?)", (encode(dict(k=0, issued={}, scout={}, active={}, looks=[],
-                    book=P.new_book(spec["cfg"]["tm_account_start_usd"], spec.get("opening")))),))
+                    book=P.new_book(spec["cfg"]["tm_account_start_usd"]))),))
 
 
 @contextmanager
@@ -542,8 +542,10 @@ class DeskSession:
         if role == "boss":
             marks = self.spec["rows"][k]["marks"]
             b = st["book"]
+            orders.check_saved_holdings(b)
+            holdings = P.weights_at(b,marks)
             result.update(arm=self.arm, book=dict(cash=b["cash"], equity=P.value_at(b, marks),
-                          weights=P.weights_at(b, marks), current_target=b["target"], exits=b["exits"],
+                          weights=holdings, current_target=holdings, exits=b["exits"],
                           marks={s:marks[s] for s in b["qty"] if s in marks}),
                           active=self.resting(st), looks_left=self.opts["looks"]-len(st["looks"]),
                           book_evidence=f"book:{at}")
@@ -670,12 +672,9 @@ class DeskSession:
                     or any(not isinstance(x, str) or x not in ids for x in e)):
                 raise ValueError("cite a visible note, tape row or book id")
 
-        weights = orders.priced_target(asked,self.spec["gross"]) if asked is not None else None
-        if weights is not None:
-            old = st["book"]["target"]
-            for s in set(old) | set(weights):
-                if weights.get(s, 0) != old.get(s, 0):
-                    cite(cites.get(s))
+        if asked is not None:
+            for s in st["book"]["qty"].keys() | P.norm(asked).keys():
+                cite(cites.get(s))
         for c in cites.values():
             cite(c)
         new = orders.normalize_conditions(conditions, marks, self.spec["symbols"], at,
@@ -713,11 +712,11 @@ class DeskSession:
             s = tr["symbol"]
             timeline.append((epoch(tr["fill_utc"]), 0, s, dict(decision_id=decision_id, order_id=None,
                              note_ids=cites.get(s, {}).get("note_ids", []),
-                             evidence_ids=cites.get(s, {}).get("evidence_ids", [])) if rec["target"].get(s, 0) else None))
+                             evidence_ids=cites.get(s, {}).get("evidence_ids", [])) if s in rec["weights_after"] else None))
         for e in events:
             if e["kind"] == "filled":
                 timeline.append((e["utc"], 1, e["symbol"], {k:e[k] for k in ("decision_id","order_id","note_ids","evidence_ids")}
-                                 if e["target"] else None))
+                                 if e["held_after"] else None))
         for e in rec["scan"]["exits"]:
             timeline.append((epoch(e["utc"]), 2, e["symbol"], e))
         if rec["scan"]["closeout"]:
@@ -745,7 +744,6 @@ class DeskSession:
         self.log(con, at, "executor", "scan", rec["scan"])
         st["active"] = active
         if nxt == end:
-            st["book"]["last_px"].update(self.spec["end_marks"])
             self.log(con, at, "executor", "finish", dict(value=max(0.0, P.value_at(st["book"], self.spec["end_marks"])),
                                                         book=st["book"]))
         self.next(st)

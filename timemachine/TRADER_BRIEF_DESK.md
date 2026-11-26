@@ -12,7 +12,7 @@ Send `{"wake_key":"...","notes":[{"symbol":"SOL/USD","text":"One sentence about 
 
 Arm A sees the scouts' raw packet but not their notes. B and C get only the notes, their own book and the clock. You can make up to three lookups per wake. Each is one tradable coin and one view: bars, news, or attention. Give each new lookup a different request ID. If you lose the reply, retry the same request with the same ID. Cite visible note and row IDs. You can cite the current book ID. Use a visible price from the book, note, raw packet or bars lookup before giving a stop, target or condition. Do not trade just because a coin was mentioned.
 
-Send a full vector of signed weights. Unlisted names go to zero. The order program scales the whole vector down if needed to fit 1x after costs. Use `no_change` to keep the last target and its protective exits. Your reasons and citations must cover each change.
+Send a full vector of signed weights to rebalance against the live book. Unlisted holdings go to zero, including coins acquired by a standing order. The order program scales the whole vector down if needed to fit 1x after costs. Use `no_change` to leave current holdings and protective exits alone, rather than resubmitting old weights. Include a citation for each requested or currently held coin when you send a vector.
 
 A new or updated stop or target is not live on the bar where it is installed. It first applies on the next recorded minute bar for that coin. On a complete bar that can hit both levels, the stop is taken. If the bar opens beyond the selected level, the exit uses that open.
 
