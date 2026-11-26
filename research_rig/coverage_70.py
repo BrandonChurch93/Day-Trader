@@ -17,13 +17,13 @@ HOUR_MS = 3_600_000
 WRONG_CLOSE_CLOCK = "wrong_close_clock"
 
 
-def has_hour_close(fields, open_ms):
+def has_hour_close(fields, opening, ticks_per_ms=1):
     """Inspect only the close-time field of an opening timestamp already checked."""
     try:
-        close_ms = int(fields[6])
+        close = int(fields[6])
     except (IndexError, ValueError):
         raise ValueError("missing or noninteger close timestamp") from None
-    return close_ms == open_ms + HOUR_MS - 1
+    return close == opening + HOUR_MS * ticks_per_ms - 1
 
 
 def read_snapshot(root, rel):
