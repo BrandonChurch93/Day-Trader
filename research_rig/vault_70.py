@@ -6,6 +6,7 @@ import math
 import os
 import re
 import sys
+from contextlib import contextmanager
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -156,6 +157,7 @@ def check_vectors(raw, rules, chosen):
             seen_days.add(entry // 86400)
         if len(seen_days) != row["active_days"]:
             raise ValueError("carry ticket entry dates do not reconcile")
+    return obj
 
 
 def score(panel, config, rules, ids):
@@ -172,7 +174,9 @@ def score(panel, config, rules, ids):
                **marks(net, net - reference, day, config["vault_marks"])}
 
 
-def dispatch(root, args, config, rules):
+@contextmanager
+def unused_vault(root):
+    """Serialize all entry points on the same custody directory and lock name."""
     with exact_parent(root, LOCK) as (parent, lock_name):
         # Both modes coordinate on the directory inode, not a new validation file.
         fcntl.flock(parent, fcntl.LOCK_EX)
@@ -182,6 +186,11 @@ def dispatch(root, args, config, rules):
             pass
         else:
             raise FileExistsError("Plan 70 vault use is already claimed")
+        yield parent, lock_name
+
+
+def dispatch(root, args, config, rules):
+    with unused_vault(root) as (parent, lock_name):
         summary = carry.pinned(root, carry.SEARCH_REL, args.search_summary_sha256)
         receipt = json.loads(carry.pinned(root, carry.CARRY_REL, args.carry_sha256))
         approval = json.loads(carry.pinned(root, APPROVAL, args.approval_sha256))

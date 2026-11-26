@@ -357,9 +357,9 @@ def ticket_legs(tape, rule, costs, funding):
     return j, i, signs, net, reference, unresolved, adjust
 
 
-def evaluate(tape, rule, costs, funding, stress, spot, marks):
+def evaluate(tape, rule, costs, funding, stress, spot, marks, ticket_fn=None):
     hold = rule["hold_hours"]
-    j, i, signs, net, reference, unresolved, adjust = ticket_legs(tape, rule, costs, funding)
+    j, i, signs, net, reference, unresolved, adjust = (ticket_fn or ticket_legs)(tape, rule, costs, funding)
     paired = net - reference
     half_ts, half_means, half_plain, half_n, half_days = [], [], [], [], []
     for idx, mask in enumerate((i + hold < HALF_INDEX, i >= HALF_INDEX), 1):
