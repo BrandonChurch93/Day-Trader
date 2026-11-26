@@ -147,6 +147,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/62_round_7_outside_evidence.md` | Checked outside evidence on AI crypto traders, funding and basis, trading hours, and token unlocks. Reading only, no test | CURRENT |
 | `docs/research/63_round_8_outside_evidence.md` | Checked outside evidence on eight dated-event ideas. Keeps the fast-track IPO test and small-lot tender audit; reading only, no test | CURRENT |
 | `docs/research/64_replay_19_monday_asia.md` | Monday Asia stand-in on viewed dates. Run once, did not pass, one of five marks | CURRENT |
+| `docs/research/65_replay_18_funding_carry.md` | Funding carry on the reconstructed ranked subset. Did not pass, one of three marks; four US rosters shown only | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -239,7 +240,9 @@ Working papers.
 | `research_rig/common_16.py`, `research_rig/score_16.py`, `research_rig/test_16.py`, `research_rig/report_16.py` | Plan 16 rules, scorer (refuses until plans 16 and 17 are both frozen), self-tests on made-up prices, and the result page writer; not audited yet | DRAFT |
 | `research_rig/common_17.py`, `research_rig/score_17.py`, `research_rig/test_17.py`, `research_rig/report_17.py` | Plan 17 rules, scorer (refuses until plans 16 and 17 are both frozen), self-tests on made-up prices, and the result page writer; not audited yet | DRAFT |
 | `research_rig/look_17_signal.py`, `research_rig/look_17_signal.json` | Viewed-only ledger 152 signal-look builder and aggregate measurements | CURRENT |
-| `research_rig/PREREG_18_funding_carry.md`, `research_rig/PLAN_18_rank_page_coverage.md`, `research_rig/common_18.py`, `research_rig/archive_18.py`, `research_rig/score_18.py`, `research_rig/test_18.py` | Frozen Queue 27 funding carry, rank-page mapping and exclusions, audited-clock proxy and shown US rosters. Sealed one-shot pending publication and lead agent execution; no result | CURRENT |
+| `research_rig/PREREG_18_funding_carry.md`, `research_rig/PLAN_18_rank_page_coverage.md`, `research_rig/common_18.py`, `research_rig/archive_18.py`, `research_rig/score_18.py`, `research_rig/test_18.py` | Frozen Queue 27 funding carry, rank-page mapping and exclusions, audited-clock proxy and shown US rosters. Sealed one-shot completed by the lead agent | CURRENT |
+| `research_rig/results_18.json` | Saved one-shot aggregate return, scope and coverage, comparison books and forced accounting closes | CURRENT |
+| `research_rig/report_18.py` | Prints the Replay 18 result page from saved JSON only. No scoring or market-data reads | CURRENT |
 | `research_rig/PREREG_19_monday_asia.md`, `research_rig/common_19.py`, `research_rig/score_19.py`, `research_rig/test_19.py` | Frozen Queue 35 Monday Asia trend proxy for BTC and ETH, shifted-hour placebos and synthetic-only tests. Local one-shot complete | CURRENT |
 | `research_rig/MEASURE_15_breakout_fills.md` | Frozen measurement for queue 23: what a breakout order on stocks in play really paid on 60 fixed mornings, with the decision rule fixed before any trade or quote was collected. Not a trial | CURRENT |
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
