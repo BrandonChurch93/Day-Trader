@@ -51,6 +51,8 @@
 - STATED, ruling 27, the t statistic: G is the number of calendar months that hold at least one judged entry, as the power script counts it, not a fixed 60.
 - STATED, ruling 28, the shown comparison pool: names that passed the screen at t and did not trigger that day, without the signal's own symbol. A pool name lacking either endpoint print is skipped for that signal. With fewer than five names left the comparison is blank for that signal and the count of blanks is printed.
 - STATED, ruling 29, two exits in Card B: the market fund return of a Card B signal is share-weighted over its two halves, each measured to its own exit print, like the signal itself. The comparison pool is weighted the same way.
+- STATED, ruling 30, same round, before any price: if missing bars push an exit past the last design day despite ruling 25, the position is sold at the close of its last bar on or before the last design day, with the card's cost, and the count of such cases is printed. Above 1% of judged signals the run prints a coverage warning beside the result line.
+- STATED, ruling 31, same round: the count stage is its own one-time run, `--go-count`, which needs one committed `P74_COUNT_GO=p74c-<manifest sha256>` on ledger row 226, a clean checkout and its own lock, separate from the scoring lock and approval. The smallest comparison pool of ruling 28 is five names and goes in the config (key compare_shown.min_pool).
 
 ## Card A, primary
 
