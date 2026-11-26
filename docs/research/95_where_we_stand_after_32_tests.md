@@ -42,22 +42,26 @@ Thirty-two scored tests (trading replays, AI time-machine evaluations, and the o
 | 32 | Measurement 15 | Opening-range breakout fills stocks in play | chart pattern | Yes | Failed fill gate (idea dropped) | Entry 0.0757 + stop exit 0.1332 = 0.2089 of stop distance vs 0.05 limit (`docs/research/66_measure_15_breakout_fills.md`) |
 | 33 | TM06-P six models | Six AI models pick hot coins daily, eight months | AI discretionary | Yes | Shown by its marks, not counted pass | 5/6 above twin median, 2/6 clear all marks; gains sit in April to June, all six lost July to November and none beat either yardstick there; memory not ruled out (`docs/research/102_time_machine_tm06_six_models.md`) |
 | 34 | TM06-S six models | Six AI models trade the owner's swing card hourly, four weeks | AI discretionary | Yes | Failed (not shown, 0/6 clear both marks) | None above holding the five coins (`docs/research/102_time_machine_tm06_six_models.md`) |
+| 35 | Replay 21 | Buy below the price of an odd-lot tender offer | event | Yes | Did not pass (4 of 6 marks) | 14 trades from 106 eligible filings, +11.80% mean net, t 1.688; under the floor of 30 trades (`docs/research/97_replay_21_odd_lot_tenders.md`) |
+| 36 | Replay 46 Leg A | Altcoins after a CFTC futures filing, long leg | event | Yes | Did not pass (3 of 6 marks) | 43 events on 15 posting dates, -6.5393% mean net, +0.5643% paired versus BTC, t 0.174 (`docs/research/101_replay_46_cftc_altcoin_futures.md`) |
+| 37 | Replay 46 Leg B | Altcoins after a CFTC futures filing, short leg | event | No | Did not pass (5 of 6 marks) | 110 events on 31 posting dates, +1.2790% mean net, +0.5574% paired versus BTC, t 0.572; spot-price proxy, not an executable short (`docs/research/101_replay_46_cftc_altcoin_futures.md`) |
+| 38 | Replay 48 | Long the five worst muni closed-end funds, last December close to last January close | forced flow | Yes | Passed (7 of 7 marks) | 10 yearly turns, +1.39% mean net per turn against +0.09% for MUB and +0.59% for the roster; 8 of 10 positive (`docs/research/103_replay_48_muni_cef_january.md`) |
 
 ## 2. Count by Family
 
-MEASURED from the 34 scored tests in Section 1 (rows 33 and 34 added 2026-11-26):
+MEASURED from the 38 scored tests in Section 1 (rows 33 to 38 added 2026-11-26):
 
 | Family | Tested | Counted passes | Notes |
 |---|---:|---:|---|
 | momentum | 8 | 0 | Replay 13 Rule A met relative marks vs all coins but lost ~70% in 3 years and is not a counted pass |
 | AI discretionary | 9 | 0 | TM06 picker met its marks on months that may lie inside the models' memory and is not a counted pass; Replay 11 held-back (2,146 releases) is still open; TM02 met its headlines-help sub-mark only |
-| forced flow | 6 | 1 | Replay 25 passed (9/9 marks, US $500 reachable) |
+| forced flow | 7 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable |
 | chart pattern | 5 | 0 | All five failed, including Measurement 15 fill gate |
 | carry | 2 | 0 | Both cross-coin and same-coin funding carry failed after costs |
 | calendar | 2 | 0 | Replay 39 (IWM pre-holiday) missed both t marks at 1.91 and 1.82 |
-| event | 1 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable) |
+| event | 4 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable); Replay 21 and both legs of Replay 46 did not pass |
 | copy-trading | 1 | 0 | Replay 12 (Congress disclosures) lagged SPY by 1.0%/yr on held-back data |
-| Total | 34 | 2 | 1 US $500 reachable pass (Replay 25); 1 offshore-only pass (Replay 20) |
+| Total | 38 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
 
 ## 3. What the Two Passes Have in Common and Their Dollar Size
 

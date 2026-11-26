@@ -77,7 +77,7 @@
     return acc.trades > 0 ? 'badge-test' : 'badge-neutral';
   }
   function renderStatus(d) {
-    $('freshness').textContent = 'Static snapshot. Data made ' + d.generated_utc + ' UTC. This screen only reads; it cannot trade.';
+    $('freshness').textContent = 'Static snapshot. Data made ' + mtFromUtc(d.generated_utc) + '. All times are Mountain Time. This screen only reads; it cannot trade.';
     $('headline').innerHTML = '<ul>' + (d.headline || []).map(function (h) { return '<li>' + esc(h) + '</li>'; }).join('') + '</ul>';
     $('accounts').innerHTML = (d.accounts || []).map(function (a) {
       return '<article class="card account" data-testid="card-account-' + esc(a.id) + '">' +
@@ -93,7 +93,7 @@
       return '<article class="card status-row">' +
         '<h4 class="status-test">' + esc(r.test) + '</h4>' +
         (r.asked ? '<p class="status-asked">' + esc(r.asked) + '</p>' : '') +
-        '<p class="status-result">' + esc(r.result) + '</p>' +
+        '<p class="status-result">' + esc(mtStampsIn(r.result)) + '</p>' +
         ((r.links || []).length ? '<p class="links">' + r.links.map(function (l) {
           return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + '</a>'; }).join(' ') + '</p>' : '') +
         '</article>';
@@ -131,8 +131,8 @@
     var html = '<ul class="believed-list" id="believed-list">' + list.map(function (b, i) {
       var lead = String(b.lead || '');
       var stop = /[.?:]$/.test(lead) ? '' : '.';
-      return '<li class="believed-item"' + (i >= BELIEVED_FIRST ? ' hidden' : '') + '><span class="believed-lead">' + esc(lead + stop) + '</span>' +
-        (b.body ? ' ' + esc(b.body).replace(/\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2}(?::\d{2})? UTC)?/g, '<span class="believed-date">$&</span>') : '') +
+      return '<li class="believed-item"' + (i >= BELIEVED_FIRST ? ' hidden' : '') + '><span class="believed-lead">' + esc(mtStampsIn(lead) + stop) + '</span>' +
+        (b.body ? ' ' + esc(b.body).replace(/\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2}(?::\d{2})? UTC)?/g, function (x) { return '<span class="believed-date">' + esc(/UTC$/.test(x) ? mtFromUtc(x) : x) + '</span>'; }) : '') +
         ((b.links || []).length ? ' <span class="believed-links">' + b.links.map(believedLink).join(', ') + '</span>' : '') + '</li>';
     }).join('') + '</ul>';
     if (list.length > BELIEVED_FIRST) {
@@ -423,11 +423,11 @@
     body.innerHTML =
       '<div class="trade-info"><p><span class="testlabel">Past-price test. Not real money.</span> ' + esc(s.label) + '. ' + shownNote + '</p></div>' +
       '<div class="tablewrap"><table class="trades-table"><thead><tr>' +
-        '<th><button type="button" class="sort-btn" id="sort-time" aria-label="Sort by time, now ' + (state.sortDesc ? 'newest first' : 'oldest first') + '">Time (UTC) <span aria-hidden="true">' + (state.sortDesc ? '\u2193' : '\u2191') + '</span></button></th>' +
+        '<th><button type="button" class="sort-btn" id="sort-time" aria-label="Sort by time, now ' + (state.sortDesc ? 'newest first' : 'oldest first') + '">Time (Mountain) <span aria-hidden="true">' + (state.sortDesc ? '\u2193' : '\u2191') + '</span></button></th>' +
         '<th>Buy or sell</th><th class="n">Price</th><th class="n">Share of account traded</th><th class="n">Fee, share of account</th>' +
       '</tr></thead><tbody>' +
       pageRows.map(function (t) {
-        return '<tr><td>' + esc(t.time) + '</td><td class="act">' + esc(t.action) + '</td>' +
+        return '<tr><td>' + esc(mtFromUtc(t.time)) + '</td><td class="act">' + esc(t.action) + '</td>' +
           '<td class="n">' + priceFmt(t.price) + '</td><td class="n">' + pct(t.share_of_account) + '</td>' +
           '<td class="n">' + pct(t.cost_share_of_account, 3) + '</td></tr>';
       }).join('') +
@@ -469,13 +469,33 @@
 
   function isNum(x) { return typeof x === 'number' && isFinite(x); }
   function timeOf(s) { var t = Date.parse(s || ''); return isNaN(t) ? null : t; }
+  // The owner reads Mountain Time. Stored stamps stay UTC; the screen converts them.
+  var OWNER_ZONE = 'America/Boise';
+  function mtText(t) {
+    try {
+      return new Date(t).toLocaleString('en-US', { timeZone: OWNER_ZONE, year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+    } catch (e) { return new Date(t).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
+  }
+  // Turns 'YYYY-MM-DD HH:MM[:SS][ UTC]' (a UTC stamp) into Mountain Time. Anything else is returned as it is.
+  function mtFromUtc(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z| UTC)?$/.exec(String(s || ''));
+    return m ? mtText(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0))) : String(s || '');
+  }
+  function mtInText(s) {
+    return String(s || '').replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?(?: UTC)?/g, function (x) { return mtFromUtc(x); });
+  }
+  // Converts only stamps that say UTC ('YYYY-MM-DD HH:MM[:SS] UTC') inside a sentence.
+  function mtStampsIn(s) {
+    return String(s || '').replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})? UTC/g, function (x) { return mtFromUtc(x); })
+      .replace(/(\d{2}:\d{2}) UTC on (\d{4}-\d{2}-\d{2})/g, function (x, hm, day) { return mtFromUtc(day + ' ' + hm); });
+  }
   function utcText(s) {
     var t = timeOf(s);
     return t === null ? (s ? String(s) : 'Not recorded') : new Date(t).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
   }
   function localText(t, withZone) {
     var d = new Date(t), now = new Date();
-    var o = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    var o = { timeZone: OWNER_ZONE, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
     if (d.getFullYear() !== now.getFullYear()) o.year = 'numeric';
     if (withZone !== false) o.timeZoneName = 'short';
     try { return d.toLocaleString('en-US', o); } catch (e) { return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
@@ -653,13 +673,13 @@
         html += '<h4 class="tm-h4">Sessions and why each trade was made</h4>' +
           pl.sessions.map(function (x) {
             var why = x.why.length ? '<div class="tablewrap"><table class="pr-stack tm-why"><caption class="sr-only">Buys of ' + esc(x.model) + ' in ' + esc(x.month) + '</caption><thead><tr>' +
-              '<th scope="col">Woke (UTC)</th><th scope="col">Coin</th><th scope="col">Looked at</th><th scope="col">Its reason</th>' +
+              '<th scope="col">Woke (Mountain)</th><th scope="col">Coin</th><th scope="col">Looked at</th><th scope="col">Its reason</th>' +
               (pl.id === 'TM02' ? '<th scope="col">Headlines it named</th>' : '') + '<th scope="col">Ended</th><th scope="col" class="n">Result</th></tr></thead><tbody>' +
               x.why.map(function (w) {
-                return '<tr><th scope="row">' + esc(w.wake) + '</th><td data-label="Coin">' + esc(w.coin) + '</td><td class="tm-wrap" data-label="Looked at">' + esc(w.looked) + '</td>' +
+                return '<tr><th scope="row">' + esc(mtFromUtc(w.wake)) + '</th><td data-label="Coin">' + esc(w.coin) + '</td><td class="tm-wrap" data-label="Looked at">' + esc(w.looked) + '</td>' +
                   '<td class="tm-wrap tm-reason" data-label="Its reason">' + esc(w.reason) + '</td>' +
                   (pl.id === 'TM02' ? '<td class="tm-wrap tm-reason" data-label="Headlines it named">' + (w.sources.length ? w.sources.map(esc).join('<br>') : 'None') + '</td>' : '') +
-                  '<td class="tm-wrap" data-label="Ended">' + esc(capital(w.ended)) + '</td>' +
+                  '<td class="tm-wrap" data-label="Ended">' + esc(capital(mtInText(w.ended))) + '</td>' +
                   '<td class="n" data-label="Result">' + (isNum(w.gain) ? esc(capital(w.result)) + ' ' + gainHtml(w.gain, w.gain_pct) : esc(capital(w.result))) + '</td></tr>';
               }).join('') + '</tbody></table></div>' : '<p class="meta">It bought nothing this month.</p>';
             return '<details class="tm-session"><summary><span class="tm-sum-name">' + esc(x.month) + ', ' + esc(x.model) + '</span>' +
@@ -1009,7 +1029,7 @@
     o.scales.x.ticks.callback = function (v) {
       var d = new Date(Number(v));
       try {
-        return span < 2 * 864e5 ? d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit' }) : d.toLocaleString('en-US', { month: 'short', day: 'numeric' });
+        return span < 2 * 864e5 ? d.toLocaleString('en-US', { timeZone: OWNER_ZONE, hour: 'numeric', minute: '2-digit' }) : d.toLocaleString('en-US', { timeZone: OWNER_ZONE, month: 'short', day: 'numeric' });
       } catch (e) { return d.toISOString().slice(5, 16); }
     };
     o.scales.y.ticks.callback = function (v) { return pct(Number(v), Math.abs(Number(v)) < 0.1 ? 1 : 0); };

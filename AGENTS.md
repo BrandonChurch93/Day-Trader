@@ -107,5 +107,6 @@ These are his because they are his accounts and his money, not because the build
 ## Writing to the owner
 
 - Lists and plain words. No hype. No predictions of how long work takes.
+- Times written for the owner (messages, the screen) are in Mountain Time, America/Boise (owner, 2026-11-26). Stamps that scripts parse and stored data stay UTC.
 - Show unfinished and bad results as they come.
 - When there is a real choice only he can make, recommend one option and give the reason.

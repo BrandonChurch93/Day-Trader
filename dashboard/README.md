@@ -27,7 +27,7 @@ The "Practice account" section at the top of the page is a scoreboard for the pr
 
 From the top, the section shows:
 
-- One line of state (waiting for the key, running, or stopped), with the last check in local time. The UTC time is in the tooltip.
+- One line of state (waiting for the key, running, or stopped), with the last check in Mountain Time (the owner asked for Mountain Time on 2026-11-26). The UTC time is in the tooltip. Every stamp on the screen is shown in Mountain Time; the stored data stays UTC.
 - The whole account: pretend value, gain since the start, wins, losses, win rate and closed trades.
 - The traders, best gain first: kind (rule or AI, with the model), gain, the gain from just holding its benchmark, wins and losses, holdings, and a stopped note with the reason. Opening a trader shows its holdings with the exit in force, its last pick with the thesis and sources, its orders with the reason for each, and its closed trades.
 - Gain over time in percent: the whole account, just holding, and a thin line per trader. One trader can be picked out.
