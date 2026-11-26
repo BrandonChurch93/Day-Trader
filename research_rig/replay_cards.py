@@ -1,4 +1,4 @@
-"""Test cards for Replays 48, 52, 53, 60 and 62, read from their result pages.
+"""Test cards for Replays 22, 48, 52, 53, 60 and 62, read from their result pages.
 
 The saved results for these replays are kept outside the repo. Each card therefore reads its figures, at export
 time, from the result page in docs/research/ (and, for Replay 48, from research_rig/REVIEW_48_identity.md). Only
@@ -14,6 +14,7 @@ P52 = "docs/research/113_replay_52_quarter_end_corporate_bond_funds.md"
 P53 = "docs/research/122_replay_53_taxable_fund_january_rebound.md"
 P60 = "docs/research/126_replay_60_special_dividends.md"
 P62 = "docs/research/130_replay_62_special_dividend_ex_day.md"
+P22 = "docs/research/137_replay_22_fable_rule_a.md"
 R48 = "research_rig/REVIEW_48_identity.md"
 
 
@@ -190,5 +191,31 @@ def card_62(gh):
                         ["Replay 60", gh + P60]])
 
 
+def card_22(gh):
+    text = read(P22)
+    top = need(r"on the monthly top (\d+) coins", section(text, "The rule", P22), P22)[1]
+    days = need(r"highest hourly high of the (\d+) full days before", section(text, "The rule", P22), P22)[1]
+    rule, hold = need(r"the rule ended at ([+-][\d,.]+%) and holding the same coins at ([+-][\d,.]+%)", section(text, "Did it pass?", P22), P22).groups()
+    means = section(text, "What it means", P22)
+    twins = need(r"(\d+%) of random-entry twins did as well or better", means, P22)[1]
+    n_best, without = need(r"Without its best (\d+) trades it lost money \(([+-][\d,.]+%)\)", means, P22).groups()
+    need(r"The row closes\.", means, P22)
+    shown = section(text, "Shown only", P22)
+    need(r"None of them can count toward a mark", shown, P22)
+    btc = need(r"^- Bitcoin held over the judged window: ([+-][\d,.]+%)", shown, P22, re.M)[1]
+    src = need(r"^- The months the rule came from, (\S+) to (\S+), a fresh account at \d+ bp: rule ([+-][\d,.]+%), same-list hold ([+-][\d,.]+%)", shown, P22, re.M).groups()
+    return card("replay22", "Fable rule A, no AI", P22,
+                f"Buys a fresh break of its {days}-day range on high volume, read off the Fable 5.2 picker's notes and run as a fixed rule with no AI, "
+                f"on the monthly top {top} coins. It ended at {minus(rule)} against {minus(hold)} for holding the same coins.",
+                [f"{twins} of random-entry twins did as well or better, so it cannot be told apart from random entries.",
+                 f"Without its best {n_best} trades it lost money.",
+                 "Bitcoin held and the months the rule came from are shown only and cannot count toward a mark.",
+                 "The row closes."],
+                [[f"Without the best {n_best} trades, shown only", minus(without)],
+                 ["Bitcoin held, same window, shown only", minus(btc)],
+                 [f"Months the rule came from, {src[0]} to {src[1]}, shown only", f"rule {minus(src[2])}, same-list hold {minus(src[3])}"]],
+                [["Replay 22", gh + P22], ["Plan", gh + "research_rig/PREREG_22_fable_rule_a.md"]])
+
+
 def cards(gh):
-    return [card_48(gh), card_52(gh), card_53(gh), card_60(gh), card_62(gh)]
+    return [card_48(gh), card_52(gh), card_53(gh), card_60(gh), card_62(gh), card_22(gh)]

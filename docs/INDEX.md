@@ -241,6 +241,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/122_replay_53_taxable_fund_january_rebound.md` | Replay 53 saved result: taxable closed-end fund tax-loss losers did not pass; judged marks, yearly turns, costs, diagnostics and gaps | CURRENT |
 | `docs/research/126_replay_60_special_dividends.md` | Replay 60 saved result: the special-dividend rule did not pass; judged marks, yearly means, refusal counts, shown checks and gaps | CURRENT |
 | `docs/research/130_replay_62_special_dividend_ex_day.md` | Replay 62 saved result: the special-dividend ex-day rule did not pass; judged marks, yearly means, shown checks, history and gaps | CURRENT |
+| `docs/research/137_replay_22_fable_rule_a.md` | Replay 22 result: Fable rule A run as a fixed rule with no AI on the monthly top 30 coins did not pass, 1 of 5 marks; the row closes | CURRENT |
 | `docs/research/132_count_107_dividend_month_coverage.md` | Count 107 closure before prices: dated roster and regular dividend-month counts below the fixed line; source check | RECORD |
 | `docs/research/128_row104_equity_cef_distribution_count.md` | Row 104 count, price-blind: equity closed-end fund non-monthly and special distributions 2016 to 2026 (472 fund-days on 241 ex-dates, pass line met; declaration lead time unknown). Addendum: second count over all SEC-classified equity closed-end funds, year-end and special distributions (461 fund-days on 261 ex-dates, passes; 36 of 60 sampled public at least 3 sessions before ex, 1 not, 23 undatable) | CURRENT |
 
@@ -424,6 +425,7 @@ Working papers.
 | `research_rig/report_53.py` | Prints the Replay 53 result page from the pinned saved result and frozen settings. Does not open market inputs or score | CURRENT |
 | `research_rig/report_60.py` | Writes the Replay 60 result page from the pinned saved aggregate result, validation output and optional independent aggregate note. Does not open market inputs or score | CURRENT |
 | `research_rig/report_62.py` | Writes the Replay 62 result page from the pinned saved aggregate result and the earlier tracked aggregate class count. Does not open market inputs or score | CURRENT |
+| `research_rig/report_22.py` | Writes doc 137 from the pinned saved Replay 22 aggregate and the two pre-run calibration files. No scoring or market-data reads | CURRENT |
 | `research_rig/PREREG_51_momentum_when_it_pays.md`, `research_rig/CALIBRATION_51.json`, `research_rig/CALIBRATION_51_UNIFORM.json`, `research_rig/CLOSE_51_on_power.md` | Queue 96 and ledger 185. Original and uniform-placement synthetic power checks; closed before any prices | RECORD |
 | `research_rig/common_51.py`, `research_rig/score_51.py`, `research_rig/test_51.py`, `research_rig/calibrate_51.py` | Retained engine and gates for a plan closed before any prices; disposable synthetic Git fixture only | RECORD |
 | `research_rig/PREREG_53_taxable_cef_tax_loss.md`, `research_rig/PINNED_53.json` | Queue 90 and ledger 187. Frozen PCEF holdings-derived taxable closed-end fund replay and roster attestations; no market data or result | CURRENT |

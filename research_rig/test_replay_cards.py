@@ -29,8 +29,17 @@ def test_cards():
     assert rows62["Vendor exact match, shown only"] == "−0.0375 pp on 230 pairs"
     assert rows62["Vendor Class A, shown only"] == "−0.1229 pp on 86 pairs"
     assert c["replay62"]["links"][0] == ["Replay 62", "GH/" + RC.P62]
+    assert (c["replay22"]["title"], c["replay22"]["verdict"], c["replay22"]["tone"]) == ("Fable rule A, no AI", "Did not pass, 1 of 5 marks", "fail")
+    s22 = c["replay22"]["summary"]
+    assert "Missed: Daily Sharpe; Largest fall; Random twins; Positive years." in s22 and "57% of random-entry twins" in s22
+    assert "+275.40% against +274.25%" in s22 and "cannot count toward a mark" in s22 and "The row closes." in s22
+    rows22 = dict(c["replay22"]["numbers"])
+    assert rows22["Beats holding: End value above holding the same list in equal weights, same costs"] == "+275.40% against +274.25%, met"
+    assert rows22["Largest fall: 40% or less"] == "79.40%, not met"
+    assert rows22["Without the best 3 trades, shown only"] == "\u221211.14%"
+    assert c["replay22"]["links"][0] == ["Replay 22", "GH/" + RC.P22]
     pages = {"replay48": RC.read(RC.P48) + RC.read(RC.R48), "replay52": RC.read(RC.P52),
-             "replay53": RC.read(RC.P53), "replay60": RC.read(RC.P60), "replay62": RC.read(RC.P62)}
+             "replay53": RC.read(RC.P53), "replay60": RC.read(RC.P60), "replay62": RC.read(RC.P62), "replay22": RC.read(RC.P22)}
     for k, card in c.items():
         shown = " ".join([card["summary"]] + [v for _, v in card["numbers"]]).replace("\u2212", "-")
         for fig in re.findall(r"[+-]?\$?\d[\d,]*\.\d+%?", shown):
