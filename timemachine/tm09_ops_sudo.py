@@ -187,16 +187,9 @@ def export_files(run_body,read,stage1,export_dir):
 
 
 def go_line(ledger_raw,auth_id):
-    """The lead's docket. No markdown parsing: the ledger may hold no HTML comment, fence or other hiding construct
-    at all (it has none today), exactly one line may mention row 222 as a table row, and that line ends exactly
-    ` TM09_GO=<id> |`; the id appears nowhere else. One line authorizes stage 1 and the stage 2 branch the
-    engine's own signed Stage 1 check prints."""
-    text = ledger_raw.decode()
-    rows = [l for l in text.split("\n") if re.match(r"\s*\|\s*222\s*\|",l)]
-    if (not NONCE.fullmatch(auth_id) or any(m in text for m in ("<!--","-->","```","~~~","<script","<pre","\r"))
-            or text.count("TM09_GO="+auth_id) != 1 or len(rows) != 1 or not rows[0].startswith("| 222 | ")
-            or not rows[0].endswith(" TM09_GO="+auth_id+" |")):
-        raise ValueError("the one ledger row 222 does not end with exactly this TM09_GO authorization")
+    """The engine's own docket check (tm09_operator.go_line), so ops and engine cannot disagree."""
+    from timemachine.tm09_operator import go_line as engine_go_line
+    engine_go_line(ledger_raw,auth_id)
 
 
 def run_stage(body):
