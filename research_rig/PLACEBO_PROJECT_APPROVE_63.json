@@ -1,0 +1,8 @@
+{
+  "purpose": "plan63_placebo_projection_only",
+  "approved_by": "lead",
+  "freeze_commit": "e8f0a2bd6a4786a837a13b8217b3d4ea5804b34a",
+  "freeze_sha256": "86474d3cc445b0865fcfadb59c7712c721d27c189a0bbfc7431e979dd2a1c609",
+  "remediated_capture_sha256": "8a22771fdd44a79b964f09a6a78bee626a6b5696d1cc097b0d3a436fba0bdebc",
+  "placebo_exclusions_sha256": "7eceed81899f00a7002ded8fbf2577da73d46af02f5a8ea4ecce90448b81f405"
+}
