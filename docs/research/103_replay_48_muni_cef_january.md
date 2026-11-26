@@ -110,3 +110,7 @@ MEASURED. The saved result records the claim at 2026-11-26 07:11:49 UTC for queu
 - Input manifest SHA-256 `5e160e3370baeb27f9cfb15208868bd0ffd7bc100f1dc2d9338b5c50dd96b250`
 - Roster SHA-256 `8abe53b7cd1fd54b1a218e0ed0a7a0ed66319418683b958cfec7a5b20168a2f5`
 - Distributions SHA-256 `12885c559698eae4fb7af0e00ad97ea916b0ba1fd97d55d9a2fde7f2db435139`
+
+## Identity review, 2026-11-26
+
+A later review ([`research_rig/REVIEW_48_identity.md`](../../research_rig/REVIEW_48_identity.md), ledger 200) found one fund listed under the wrong symbol (MUI as MUNUX) and so absent from turns 2016 to 2024. MEASURED on pre-entry bars: it was outside the worst five in every one of those turns, so the picks and marks on this page are unchanged. The shown-only equal-weight roster line omitted that fund.

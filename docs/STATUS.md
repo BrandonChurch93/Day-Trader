@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 09:10 UTC
+Last updated: 2026-11-26 09:45 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Replay 48 identity review ([review](../research_rig/REVIEW_48_identity.md), ledger 200) opened and closed 2026-11-26. MEASURED: the pass stands. One fund (MUI, listed as MUNUX) was absent from nine turns; on pre-entry bars it was eligible every turn and outside the worst five every turn (closest rank 42 of 124), so all 50 picks and all marks are unchanged. The eight funds merged away during a January holding month were not picked; the run did not remove any fund for lacking an exit bar. The shown-only equal-weight roster line omitted that one fund.
 
 - Plan 43 third attempt (special dividends, ledger 195) stopped at input validation 2026-11-26, not scored, no return computed. MEASURED: 35 of 442 events had a zero-volume or missing day in the trade window against a cap of 22 fixed before counting; the raw-versus-adjusted factor check held on 538 of 39,564 bar checks in 36 events, clustered on cash ex-dates. Cause of the factor mismatch is UNKNOWN; under diagnosis. Earlier attempts are ledger 178 and 188.
 
