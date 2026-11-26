@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 10:21 UTC
+Last updated: 2026-11-26 10:51 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Queue 102, US-listed closed-end fund activist Schedule 13D census ([doc 124](research/124_count_102_cef_activist_13d_census.md), `research_rig/COUNT_102_cef_13d_census.md`, ledger 201), completed 2026-11-26 with zero price access. MEASURED: 437 qualifying common-stock activist events across 337 primary same-day clusters (293 5-day waves; 256 initial-13D-only clusters; 147 non-Saba clusters), clearing the 100-cluster pass line and advancing to pre-registration eligibility. 44.2% of events arrived during market hours, 41.2% after close, and 14.6% pre-market; Saba Capital Management accounts for 56.4% of clusters; 60-trading-day common-stock listing survival is 97.9% (97.4% raw Form 25-NSE). Post-filing tradable return is UNKNOWN.
 
 - Queue 104 count ([doc 128](research/128_row104_equity_cef_distribution_count.md), ledger 204) done 2026-11-26, price-blind. MEASURED: 472 distinct fund-days on 241 distinct ex-dates for equity closed-end funds that do not pay monthly, 2016 to October 2026, above the line of 150 fixed before counting. Thinning by year (58 in 2016, 24 in 2025) as funds move to monthly payouts; four Nuveen option funds are 164 of 454. UNKNOWN: how many days ahead each date was public. That is being checked before any plan is written.
 
