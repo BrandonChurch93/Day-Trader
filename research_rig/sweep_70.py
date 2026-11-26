@@ -53,18 +53,19 @@ LONDON_CLOSE = np.array([datetime.fromtimestamp(int(t), timezone.utc).astimezone
                          for t in HOURS])
 
 
-def read_hour_rows(stream):
+def read_hour_rows(stream, start=START, stop=STOP, ticks_per_ms=1):
     """Yield each in-range physical row; None means the clocked hour is missing."""
+    per_second = 1000 * ticks_per_ms
     for wire in stream:
         stamp, _, payload = wire.partition(b",")
-        t_ms = int(stamp)
-        if not START * 1000 <= t_ms < STOP * 1000:
+        opening = int(stamp)
+        if not start * per_second <= opening < stop * per_second:
             continue
-        if t_ms % HOUR_MS:
+        if opening % (HOUR_MS * ticks_per_ms):
             raise ValueError("unaligned retained hourly bar")
-        i = (t_ms // 1000 - START) // HOUR
+        i = (opening // per_second - start) // HOUR
         fields = [stamp, *payload.split(b",", 6)]
-        if not has_hour_close(fields, t_ms):
+        if not has_hour_close(fields, opening, ticks_per_ms):
             yield i, None
             continue
         row = tuple(float(x) for x in fields[1:6])  # open, high, low, close, base volume
@@ -138,8 +139,21 @@ def trailing(x, n, reduce):
 class Tape:
     coins: list
     bars: np.ndarray
+    hours: np.ndarray = None
+    split: int = HALF_INDEX
 
     def __post_init__(self):
+        if self.hours is None:
+            self.hours, self.clock, self.weekend, self.maintenance, self.london = (
+                HOURS, UTC_HOUR, WEEKEND, MAINT, LONDON_CLOSE)
+        else:
+            self.clock = self.hours // HOUR % 24
+            self.weekend = (self.hours // 86400 + 3) % 7 >= 5
+            self.maintenance = np.array([maintenance(t) for t in self.hours])
+            self.london = np.array([datetime.fromtimestamp(int(t), timezone.utc).astimezone(LONDON).hour == 16
+                                    for t in self.hours])
+        if self.bars.shape != (len(self.coins), len(self.hours), 5):
+            raise ValueError("time axis differs from tape")
         self.o, self.high, self.low, self.close, self.volume = self.bars.transpose(2, 0, 1)
         self.btc = self.coins.index("BTC")
         self.logc = np.log(self.close)
@@ -153,7 +167,7 @@ class Tape:
                             (~np.isfinite(self.o)).cumsum(axis=1)]
 
     def signal_valid(self, n):
-        idx = np.arange(len(HOURS))
+        idx = np.arange(len(self.hours))
         return ((self.missing[:, idx] - self.missing[:, np.maximum(0, idx - n)]) == 0) & (idx >= n)
 
     def lag(self, n):
@@ -172,19 +186,22 @@ class Tape:
     def fill(self, hold):
         if hold not in self.exec_cache:
             gross = np.full_like(self.o, np.nan, dtype=float)
-            length = len(HOURS) - hold
+            length = len(self.hours) - hold
             idx = np.arange(length)
             eligible = self.missing[:, idx + hold + 1] == self.missing[:, idx]
             # No position or clock baseline straddles the CDE weekly maintenance hour.
             for h in range(hold + 1):
-                eligible &= ~MAINT[idx + h]
+                eligible &= ~self.maintenance[idx + h]
             ratio = self.o[:, hold:] / self.o[:, :length] - 1
             gross[:, :length] = np.where(eligible, ratio, np.nan)
             baselines = []
-            for lo, hi in ((0, len(HOURS)), (0, HALF_INDEX), (HALF_INDEX, len(HOURS))):
+            blocks = [(0, len(self.hours))]
+            if self.split is not None:
+                blocks.extend(((0, self.split), (self.split, len(self.hours))))
+            for lo, hi in blocks:
                 # For half blocks both entry and exit must be inside that block.
                 b = gross[:, lo:hi - hold].copy()
-                clock = UTC_HOUR[lo:hi - hold]
+                clock = self.clock[lo:hi - hold]
                 samples = np.full((len(self.coins), 24), np.nan)
                 for h in range(24):
                     matches = b[:, clock == h]
@@ -202,7 +219,7 @@ def score_signal(tape, rule):
         strength = -side * tape.lag(p["lag"])
         ok = strength >= cut
         if f == "clock_after_move":
-            ok &= (UTC_HOUR == p["entry_hour"]) & (WEEKEND == (p["day_type"] == "weekend"))
+            ok &= (tape.clock == p["entry_hour"]) & (tape.weekend == (p["day_type"] == "weekend"))
         if f in ("hourly_shock", "midnight_stop_run", "volume_shock"):
             with np.errstate(invalid="ignore", divide="ignore"):
                 prior = tape.ref("vol", p["volume_lookback"])
@@ -211,10 +228,10 @@ def score_signal(tape, rule):
         if f == "midnight_stop_run":
             pierce = (tape.l1 < tape.ref("min", p["lag_range"]) if side == 1
                       else tape.h1 > tape.ref("max", p["lag_range"]))
-            ok &= (UTC_HOUR == 0) & pierce
+            ok &= (tape.clock == 0) & pierce
     elif f == "london_brr_fade":
         strength = -side * tape.open_to_close1
-        ok = (strength >= cut) & LONDON_CLOSE
+        ok = (strength >= cut) & tape.london
         ok[np.arange(len(tape.coins)) != tape.btc] = False
     elif f == "btc_overextension_fade":
         signed = -side * tape.lag(p["lag"])
@@ -257,11 +274,12 @@ def order_times(tape, rule, signal):
     # another coin using exit observability or exit prices.
     signal = np.where(np.isfinite(signal), signal, -np.inf)
     j = np.argmax(signal, axis=0)  # coins sorted; stable ties
-    valid_clock = np.ones(len(HOURS), dtype=bool)
+    n = len(tape.hours)
+    valid_clock = np.ones(n, dtype=bool)
     for h in range(hold + 1):
-        valid_clock[:len(HOURS) - h] &= ~MAINT[h:]
-    valid_clock[len(HOURS) - hold:] = False
-    schedule = np.flatnonzero(np.isfinite(signal[j, np.arange(len(HOURS))]) & valid_clock)
+        valid_clock[:n - h] &= ~tape.maintenance[h:]
+    valid_clock[n - hold:] = False
+    schedule = np.flatnonzero(np.isfinite(signal[j, np.arange(n)]) & valid_clock)
     accepted = []
     next_free = 0
     for i in schedule:
@@ -308,7 +326,7 @@ def registered_marks(plain, full_t, halves, trimmed, annual, marks):
             and trimmed is not None and trimmed > 0 and annual >= marks["annual_min"])
 
 
-def evaluate(tape, rule, costs, funding, stress, spot, marks):
+def ticket_legs(tape, rule, costs, funding):
     side, hold = rule["side"], rule["hold_hours"]
     hedge = rule["btc_hedge"]
     j, i = order_times(tape, rule, score_signal(tape, rule))
@@ -327,18 +345,25 @@ def evaluate(tape, rule, costs, funding, stress, spot, marks):
 
     def adjust(which, loc):
         c, ix = j[loc], i[loc]
-        b = side * baselines[which][c, UTC_HOUR[ix]]
+        b = side * baselines[which][c, tape.clock[ix]]
         if hedge:
-            b = .5 * (b - side * baselines[which][tape.btc, UTC_HOUR[ix]])
-        return net[loc] - b
+            b = .5 * (b - side * baselines[which][tape.btc, tape.clock[ix]])
+        return b
 
     whole = np.ones(len(i), dtype=bool)
-    paired = adjust(0, whole)
-    if not np.all(np.isfinite(paired)):
+    reference = adjust(0, whole)
+    if not np.all(np.isfinite(net)) or not np.all(np.isfinite(reference)):
         raise ValueError("matched baseline absent for a retained own-clock ticket")
+    return j, i, signs, net, reference, unresolved, adjust
+
+
+def evaluate(tape, rule, costs, funding, stress, spot, marks):
+    hold = rule["hold_hours"]
+    j, i, signs, net, reference, unresolved, adjust = ticket_legs(tape, rule, costs, funding)
+    paired = net - reference
     half_ts, half_means, half_plain, half_n, half_days = [], [], [], [], []
     for idx, mask in enumerate((i + hold < HALF_INDEX, i >= HALF_INDEX), 1):
-        x = adjust(idx, mask)
+        x = net[mask] - adjust(idx, mask)
         half_ts.append(t_cluster(x, DAY[i[mask]]))
         half_means.append(mean_or_null(x))
         half_plain.append(mean_or_null(net[mask]))
@@ -399,7 +424,7 @@ def rows_bytes(rows):
     return ("".join(json.dumps(row, sort_keys=True, allow_nan=False, separators=(",", ":")) + "\n" for row in rows)).encode()
 
 
-def checked_freeze(repo, commit, grid_pin, settings_pin):
+def checked_freeze(repo, commit, grid_pin, settings_pin, extra_paths=(), ancestor=None):
     """Refuse before any custody I/O unless the caller supplies the exact freeze."""
     if not re.fullmatch(r"[0-9a-f]{40}", commit or ""):
         raise ValueError("full frozen commit SHA required")
@@ -416,9 +441,11 @@ def checked_freeze(repo, commit, grid_pin, settings_pin):
             or git("rev-parse", "HEAD").decode().strip() != commit
             or git("status", "--porcelain=v1", "--untracked-files=all")):
         raise ValueError("checkout must be clean and exactly at the lead's frozen commit")
+    if ancestor is not None and git("merge-base", ancestor, commit).decode().strip() != ancestor:
+        raise ValueError("runner freeze must descend from the audited search freeze")
     blobs = {}
     for path in ("research_rig/sweep_70.py", "research_rig/coverage_70.py", GRID_PATH,
-                 SETTINGS_PATH, COVERAGE_PATH):
+                 SETTINGS_PATH, COVERAGE_PATH, *extra_paths):
         frozen = git("show", f"{commit}:{path}")
         if read_snapshot(repo, path) != frozen:
             raise ValueError("checked-out bytes differ from frozen commit")
