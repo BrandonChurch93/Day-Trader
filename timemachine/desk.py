@@ -73,7 +73,7 @@ def validate_worker_boundary(key,proof,signature,root,*,service_uid,launch):
     hash_ok = lambda s:isinstance(s,str) and re.fullmatch(r"[0-9a-f]{64}",s)
     now = probe.time.time()
     if (proof.get("version") != probe.VERSION or proof.get("root") != str(Path(root).resolve())
-            or stage not in probe.STAGES or not isinstance(raw,dict) or bool(raw) != (stage == "extension")
+            or stage not in probe.STAGES or not isinstance(raw,dict) or not raw
             or any(not Path(p).is_absolute() or k not in ("file","dir") for p,k in raw.items())
             or type(service_uid) is not int or service_uid in (0,probe.WORKER_UID)
             or proof.get("service_uid") != service_uid or proof.get("worker_uid") != probe.WORKER_UID
@@ -85,7 +85,8 @@ def validate_worker_boundary(key,proof,signature,root,*,service_uid,launch):
             or type(proof.get("issued_at")) is not int or type(proof.get("expires_at")) is not int
             or proof["expires_at"] != proof["issued_at"]+probe.LAUNCH_TTL
             or not proof["issued_at"] <= now < proof["expires_at"]
-            or proof.get("raw_checked") is not (stage == "extension")
+            or proof.get("raw_checked") is not True
+            or type(proof.get("worker_passwordless_sudo")) is not bool
             or not probe.valid_log_checkpoint(proof.get("sudo_log"),proof["nonce"])):
         raise ValueError("worker boundary has missing isolation probes")
     if proof.get("root_id") != probe.private_root(root,service_uid):
@@ -399,8 +400,9 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, app
         reg = Registration(registration,approval_key)
         reg.check_root(path)
         meta.update(registration=registration,model_build=model_build,gates=gates or [])
+        if gates:
+            raise ValueError("screen gates were removed by the 2026-11-26 ruling; every arm runs all 20 weeks")
         week = reg.validate(spec,meta,path.name)
-        reg.verify_gate(week,boss,arm,gates,approval_key)
         record_attempt(path,reg.hash,week,boss,arm,gates)
     claim_tokens(path.parent,path.name,tokens)
     path.mkdir(mode=0o700, parents=False)

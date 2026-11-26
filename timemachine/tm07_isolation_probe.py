@@ -20,11 +20,12 @@ import urllib.request
 
 from timemachine import desk
 
-VERSION = "TM07-worker-probe-v4"
+VERSION = "TM07-worker-probe-v5"
 SCOPE = "same-host-service-account-sample"
 WORKER_UID = 2000
 SUDO_LOG = Path("/var/log/tm07-sudo.log")
-STAGES = {"screen","extension"}
+# Ruling 2026-11-26: one scored stage; every one of the 20 weeks needs raw price copies denied to uid 2000.
+STAGES = {"scored"}
 IDENTITIES = {*desk.SCOUTS,*(f"{boss}/{arm}" for boss in desk.BOSSES for arm in desk.ARMS)}
 CHECKS = {"own_route_allowed","bearer_required","desk_routes_only","wrong_role_denied",
           "sibling_token_denied","study_and_rehearsal_unreadable"}
@@ -97,6 +98,35 @@ def valid_log_checkpoint(value,nonce):
             and re.fullmatch(r"[0-9a-f]{64}",value["sha256"]) is not None
             and type(value.get("before_size")) is int and type(value.get("size")) is int
             and 0 <= value["before_size"] < value["size"] and value.get("canary") == nonce)
+
+
+def log_entries_after(checkpoint,limit=1<<20):
+    """Lines the root-owned sudo log gained after a checkpoint (the soft, audited boundary)."""
+    now = log_snapshot(prefix=checkpoint)
+    fd = os.open(SUDO_LOG,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    with os.fdopen(fd,"rb") as log:
+        log.seek(checkpoint["size"])
+        data = log.read(min(now["size"]-checkpoint["size"],limit))
+    if now["size"]-checkpoint["size"] > limit:
+        raise ValueError("sudo log grew too much during the session to review")
+    return now,[line for line in data.decode("utf-8","replace").splitlines() if line.strip()]
+
+
+def sudo_review(entries,operator):
+    """Void unless every sudo entry during the session matches an operator-listed time and command."""
+    if not isinstance(operator,list) or any(not isinstance(o,dict) or not isinstance(o.get("time"),str)
+                                            or not isinstance(o.get("command"),str) or not o["time"] or not o["command"]
+                                            for o in operator):
+        raise ValueError("operator sudo list must be [{time, command}] with both fields filled")
+    unused = list(operator)
+    unlisted = []
+    for line in entries:
+        hit = next((o for o in unused if o["time"] in line and ("COMMAND="+o["command"]) in line),None)
+        if hit is None:
+            unlisted.append(line)
+        else:
+            unused.remove(hit)
+    return dict(entries=len(entries),operator_listed=len(operator),unlisted=unlisted,void=bool(unlisted))
 
 
 def consume_receipt(root,proof):
@@ -193,10 +223,10 @@ def readable_raw_path(paths):
 
 def check_raw(paths):
     if not paths or inventory(paths) != paths:
-        raise ValueError("extension raw bar inventory is missing or changed")
+        raise ValueError("raw bar inventory is missing or changed")
     readable = as_worker("worker-raw",paths)
     if readable is not None:
-        raise ValueError(f"extension raw bar source is readable: {readable}")
+        raise ValueError(f"raw bar source is readable: {readable}")
 
 
 def evaluate(transcript):
@@ -204,9 +234,9 @@ def evaluate(transcript):
     rows = transcript["observations"]
     stage = transcript["stage"]
     paths = transcript["raw_paths"]
-    if (stage not in STAGES or bool(paths) != (stage == "extension")
+    if (stage not in STAGES or not paths
             or any(not Path(p).is_absolute() or kind not in {"dir","file"} for p,kind in paths.items())):
-        raise ValueError("invalid screen or extension raw bar inventory")
+        raise ValueError("invalid scored-stage raw bar inventory")
     if len(rows) != len(IDENTITIES) or {r["identity"] for r in rows} != IDENTITIES:
         raise ValueError("isolation probes are missing roles")
     if len({r["challenge"] for r in rows}) != len(rows):
@@ -408,11 +438,12 @@ def launch_session(args):
             proof = evaluate(transcript)
         finally:
             stop(toy)
-    if args.stage == "extension":
-        check_raw(proof["raw_paths"])
+    check_raw(proof["raw_paths"])
     checkpoint = sudo_checkpoint(launch["nonce"])
+    # Ruling 2026-11-26: passwordless worker sudo stays. It is a recorded fact, not a refusal;
+    # the canary just succeeded with sudo -n, so it is true for this launch.
     proof.update(launch,root_id=root_id,issued_at=issued,expires_at=issued+LAUNCH_TTL,
-                 raw_checked=(args.stage == "extension"),sudo_log=checkpoint)
+                 raw_checked=True,worker_passwordless_sudo=True,sudo_log=checkpoint)
     signature = desk.seal(key,"worker-boundary",proof)
     desk.validate_worker_boundary(key,proof,signature,root,service_uid=account.pw_uid,launch=launch)
     # The receipt travels on a private inherited pipe, not as a reusable file.
@@ -436,10 +467,9 @@ def launch_session(args):
             stop(child)
         after = {"outcome":outcome}
         try:
-            after["sudo_after"] = log_snapshot(prefix=checkpoint)
-            if args.stage == "extension":
-                check_raw(proof["raw_paths"])
-                after["raw_denied_after"] = True
+            after["sudo_after"],after["sudo_entries"] = log_entries_after(checkpoint)
+            check_raw(proof["raw_paths"])
+            after["raw_denied_after"] = True
         except (ValueError,OSError,subprocess.SubprocessError) as exc:
             after.update(outcome="invalid",error=str(exc))
             raise
@@ -463,6 +493,9 @@ def main():
     r.add_argument("--rehearsal-root",type=Path,required=True)
     r.add_argument("--ready",type=Path,required=True)
     r.add_argument("--port",type=int,required=True)
+    rv = action.add_parser("review")
+    for key in ("after","operator-sudo","out"):
+        rv.add_argument("--"+key,type=Path,required=True)
     run = action.add_parser("serve")
     run.add_argument("--key-file",type=Path,required=True)
     args = p.parse_args()
@@ -479,6 +512,15 @@ def main():
             raise KeyboardInterrupt
         signal.signal(signal.SIGTERM,interrupt)
         launch_session(args)
+    elif args.action == "review":
+        after = json.loads(args.after.read_text())
+        if "sudo_entries" not in after:
+            raise ValueError("after-audit has no sudo entries; the session cannot be reviewed")
+        result = sudo_review(after["sudo_entries"],json.loads(args.operator_sudo.read_text()))
+        put(args.out,dict(result,after=str(args.after),manual_checks_pending=[
+            "server log: no route other than the session's own desk routes",
+            "worker command and address list: no direct read of a listed price copy, no outside price lookup"]))
+        print("VOID" if result["void"] else "no unlisted sudo entry")
     elif args.action == "serve":
         from timemachine import server
         receipt = json.load(sys.stdin)

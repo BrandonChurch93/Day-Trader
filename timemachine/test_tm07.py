@@ -847,9 +847,9 @@ class DeskTest(unittest.TestCase):
         for s in other:
             if s["arm"] == "B":
                 s["scout_hash"] = D.digest(["alternate",s["week"]])
-        S.seal_screen_gate([reg.attest_score(s) for s in good],D.BOSSES[0],"B",reg,SEAL_KEY)
+        S.paired([reg.attest_score(s) for s in good],D.BOSSES[0],"B",registration=reg)
         with self.assertRaisesRegex(ValueError,"neutral"):
-            S.seal_screen_gate([reg.attest_score(s) for s in other],D.BOSSES[1],"B",reg,SEAL_KEY)
+            S.paired([reg.attest_score(s) for s in other],D.BOSSES[1],"B",registration=reg)
         week = S.SCREEN[0]
         with self.assertRaisesRegex(ValueError,"already finalized"):
             reg.bind_neutral(week,reg.weeks[week]["neutral_id"],D.digest("other"))
@@ -1003,8 +1003,7 @@ class DeskTest(unittest.TestCase):
         reg = registered_fixture(self.root)
         with self.assertRaisesRegex(ValueError,"1,000"):
             S.paired([reg.attest_score(x) for x in synthetic_scores(reg,boss,draws=1)],boss,"B",registration=reg)
-        with self.assertRaisesRegex(ValueError,"sealed"):
-            reg.verify_gate(S.EXTENSION[0],boss,"B",[],SEAL_KEY)
+        self.assertFalse(hasattr(reg,"verify_gate"))
 
     def test_registered_create_checks_full_week_and_records_attempt_once(self):
         spec = registered_world()
@@ -1063,14 +1062,15 @@ class DeskTest(unittest.TestCase):
         from timemachine import tm07_isolation_probe as probe
         release = D.digest("release")
         transcript = dict(root=str(self.root),registration=D.digest("registration"),release_digest=release,
-                          service_uid=992,stage="screen",raw_paths={},
+                          service_uid=992,stage="scored",raw_paths={"/toy/raw":"file"},
                           observations=[dict(identity=i,challenge=D.digest(i),uid=2000,checks=dict.fromkeys(probe.CHECKS,True))
                                         for i in sorted(probe.IDENTITIES)])
-        launch = dict(nonce=D.digest("fresh launch"),port=8765,stage="screen",session="TM07-toy")
+        launch = dict(nonce=D.digest("fresh launch"),port=8765,stage="scored",session="TM07-toy")
         info = self.root.stat()
         checkpoint = dict(id=[1,2],before_size=0,size=170,sha256=D.digest("log"),canary=launch["nonce"])
         screen = dict(probe.evaluate(transcript),**{k:v for k,v in launch.items() if k != "stage"},
-                      issued_at=1000,expires_at=1600,root_id=[info.st_dev,info.st_ino],sudo_log=checkpoint,raw_checked=False)
+                      issued_at=1000,expires_at=1600,root_id=[info.st_dev,info.st_ino],sudo_log=checkpoint,raw_checked=True,
+                      worker_passwordless_sudo=True)
         fake = SimpleNamespace(st_dev=info.st_dev,st_ino=info.st_ino,st_uid=992,st_mode=info.st_mode)
         def start(proof=screen,**overrides):
             return server.serve_desk(**(launch|overrides),approval_key=SEAL_KEY,proof=proof,
@@ -1080,7 +1080,7 @@ class DeskTest(unittest.TestCase):
               patch.object(D.os,"getuid",return_value=992),patch.object(D.os,"geteuid",return_value=992),
               patch.object(Path,"lstat",return_value=fake),patch.object(D.os,"fstat",return_value=fake),
               patch.object(probe.time,"time",return_value=1100)):
-            for change in (dict(port=8766),dict(stage="extension"),dict(nonce=D.digest("different launch")),dict(session="TM07-other")):
+            for change in (dict(port=8766),dict(stage="screen"),dict(nonce=D.digest("different launch")),dict(session="TM07-other")):
                 with self.assertRaisesRegex(ValueError,"isolation"):
                     start(**change)
             for bad in (dict(screen,scope="sampled-rehearsal-only"),dict(screen,service_uid=2000),
@@ -1093,26 +1093,29 @@ class DeskTest(unittest.TestCase):
                     start()
             with patch.object(probe.time,"time",return_value=1600),self.assertRaisesRegex(ValueError,"isolation"):
                 start()
-            extension = dict(screen,stage="extension",raw_paths={"/toy/raw":"file"})
-            with self.assertRaisesRegex(ValueError,"isolation"):
-                start(extension,stage="extension")
+            # Ruling 2026-11-26: no week is exempt from raw denial, and the sudo fact must be recorded.
+            for bad in (dict(screen,raw_paths={}),dict(screen,raw_checked=False),
+                        {k:v for k,v in screen.items() if k != "worker_passwordless_sudo"}):
+                with self.assertRaisesRegex(ValueError,"isolation"):
+                    start(bad)
             http.assert_not_called()
             listener = start()
-            self.assertEqual(listener.desk_stage,"screen")
+            self.assertEqual(listener.desk_stage,"scored")
             with self.assertRaisesRegex(ValueError,"already consumed"):
                 start()
             http.assert_called_once()
-        with self.assertRaisesRegex(ValueError,"inventory"):
-            probe.evaluate(dict(transcript,stage="extension"))
+        for bad in (dict(transcript,stage="screen"),dict(transcript,stage="extension"),dict(transcript,raw_paths={})):
+            with self.assertRaisesRegex(ValueError,"inventory"):
+                probe.evaluate(bad)
         transcript["observations"][0]["uid"] = 0
         with self.assertRaisesRegex(ValueError,"isolation"):
             probe.evaluate(transcript)
 
     def test_pass8_wrong_stage_refuses_all_routes_before_touching_week_files(self):
         registration = D.digest(None)
-        for allowed,week,stage in ((True,S.SCREEN[0],"screen"),(False,S.EXTENSION[0],"screen"),
-                                   (True,S.EXTENSION[0],"extension"),(False,S.SCREEN[0],"extension"),
-                                   (False,S.DIAGNOSTIC,"screen")):
+        for allowed,week,stage in ((True,S.SCREEN[0],"scored"),(True,S.EXTENSION[0],"scored"),
+                                   (False,S.SCREEN[0],"screen"),(False,S.EXTENSION[0],"extension"),
+                                   (False,S.DIAGNOSTIC,"scored")):
             root = self.root/(week+"-"+stage)
             root.mkdir()
             sid = "TM07-toy"
@@ -1177,10 +1180,12 @@ class DeskTest(unittest.TestCase):
                     return dict(identity=payload["identity"],challenge=payload["challenge"],uid=2000,
                                 checks=dict.fromkeys(probe.CHECKS,True))
 
+                toy_raw = self.root/"toy-raw.sqlite"
+                toy_raw.write_text("invented")
                 with patch.object(probe,"as_worker",side_effect=sampled):
                     transcript = probe.collect(dict(profile,root=str(study),registration=D.digest("reg"),
-                                                    stage="screen",raw_bars=[]))
-                self.assertEqual(probe.evaluate(transcript)["stage"],"screen")
+                                                    stage="scored",raw_bars=[str(toy_raw)]))
+                self.assertEqual(probe.evaluate(transcript)["stage"],"scored")
                 for entry in profile["workers"].values():
                     self.assertNotIn(D.json.loads(Path(entry["token_file"]).read_text()),D.encode(transcript))
 
@@ -1260,21 +1265,21 @@ class DeskTest(unittest.TestCase):
                     probe.main()
                 parsed = run.call_args.args[0]
                 self.assertEqual(parsed.port,8765)
-                self.assertEqual(bool(parsed.raw_bar),parsed.stage=="extension")
+                self.assertTrue(parsed.raw_bar)
                 stages.append(parsed.stage)
-        self.assertEqual(stages,["screen","extension"])
+        self.assertEqual(stages,["scored"])
 
     def test_pass8_extension_launcher_checks_raw_now_and_audits_after(self):
         from types import SimpleNamespace
         from unittest.mock import MagicMock
         from timemachine import tm07_isolation_probe as probe
         reg = {"study_root":str(self.root)}
-        args = SimpleNamespace(root=self.root,session="TM07-toy",stage="extension",port=8765,
+        args = SimpleNamespace(root=self.root,session="TM07-toy",stage="scored",port=8765,
                                key_file=self.root/"key",registration=self.root/"reg",audit=self.root/"audit",
                                raw_bar=["/invented/raw"])
         args.key_file.write_text(SEAL_KEY)
         probe.put(args.registration,dict(body=reg,seal=D.seal(SEAL_KEY,"registration",reg)))
-        transcript = dict(root=str(self.root),registration=D.digest(reg),stage="extension",
+        transcript = dict(root=str(self.root),registration=D.digest(reg),stage="scored",
                           release_digest=D.digest("release"),service_uid=992,raw_paths={"/invented/raw":"file"},
                           observations=[dict(identity=i,challenge=D.digest(i),uid=2000,checks=dict.fromkeys(probe.CHECKS,True))
                                         for i in probe.IDENTITIES])
@@ -1300,7 +1305,8 @@ class DeskTest(unittest.TestCase):
               patch.object(probe,"private_root",return_value=[3,4]),patch.object(probe,"release_fingerprint",return_value=transcript["release_digest"]),
               patch.object(probe,"sudo_log_state",return_value=[1,2]),patch.object(probe,"collect",return_value=transcript),
               patch.object(probe,"sudo_checkpoint",side_effect=checkpoint),patch.object(probe,"stop"),
-              patch.object(probe,"log_snapshot",return_value=dict(id=[1,2],size=44,sha256=D.digest("after"))),
+              patch.object(probe,"log_entries_after",return_value=(dict(id=[1,2],size=44,sha256=D.digest("after")),
+                                                                  ["Nov 26 14:00:01 : user : ... ; COMMAND=/usr/bin/ls"])),
               patch.object(probe.subprocess,"Popen",side_effect=spawn)):
             with patch.object(probe,"check_raw",side_effect=ValueError("invented raw file readable")):
                 with self.assertRaisesRegex(ValueError,"readable"):
@@ -1313,9 +1319,13 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(events,["rehearse","raw","sudo","serve","raw"])
         receipt = D.json.loads(child.stdin.write.call_args.args[0])
         self.assertTrue(receipt["body"]["raw_checked"])
+        self.assertIs(receipt["body"]["worker_passwordless_sudo"],True)
         self.assertEqual(receipt["body"]["nonce"],receipt["launch"]["nonce"])
         self.assertEqual(D.json.loads(args.audit.read_text())["sudo_before"]["size"],42)
-        self.assertEqual(D.json.loads((self.root/"audit.after.json").read_text())["sudo_after"]["size"],44)
+        after = D.json.loads((self.root/"audit.after.json").read_text())
+        self.assertEqual(after["sudo_after"]["size"],44)
+        self.assertEqual(after["sudo_entries"],["Nov 26 14:00:01 : user : ... ; COMMAND=/usr/bin/ls"])
+        self.assertTrue(after["raw_denied_after"])
 
     def test_pass7_root_must_belong_to_service_uid_and_be_mode_0700(self):
         from stat import S_IFDIR
@@ -1531,26 +1541,74 @@ class DeskTest(unittest.TestCase):
             obj = D.encode({"wake_key":packet["wake_key"],"notes":[]})
             self.assertEqual(server.handle("POST","/desk/notes",target,obj,auth)[0],403)
 
-    def test_sign_mark_gate_and_fixed_weeks(self):
+    def test_weekly_mark_no_gate_and_fixed_weeks(self):
         self.assertEqual(len(S.EXTENSION),17)
+        self.assertEqual(len(S.WEEKS),20)
         self.assertEqual(S.WEEKS[-1],"2026-11-16")
         self.assertEqual(S.sign_mark(20),16)
         self.assertAlmostEqual(S.sign_tail(20,16),.005908966064453125)
+        self.assertFalse(hasattr(S,"seal_screen_gate"))
         boss=D.BOSSES[1]
         reg = registered_fixture(self.root)
         specs = synthetic_scores(reg,boss)
-        signed = [reg.attest_score(x) for x in specs]
-        got=S.paired(signed,boss,"B",registration=reg)
-        self.assertEqual(got["wins"],20)
-        self.assertTrue(got["passes"])
-        gate = S.seal_screen_gate(signed,boss,"B",reg,SEAL_KEY)
-        reg.verify_gate(S.EXTENSION[0],boss,"B",[gate],SEAL_KEY)
-        with self.assertRaisesRegex(ValueError,"screen gate"):
-            reg.verify_gate(S.EXTENSION[0],boss,"C",[gate],SEAL_KEY)
-        specs[2*S.WEEKS.index(S.SCREEN[0])+1]["main"]["value"]=1000
-        with self.assertRaisesRegex(ValueError,"screen gate"):
-            S.paired([reg.attest_score(x) for x in specs],boss,"B",registration=reg)
+        lift = lambda specs,i:specs[2*i+1]["main"].__setitem__("value",1000+i%3)
+        for i in range(20):
+            lift(specs,i)
+        got=S.paired([reg.attest_score(x) for x in specs],boss,"B",registration=reg)
+        self.assertEqual((got["weeks"],got["wins"]),(20,13))
+        self.assertTrue(got["weekly_mark"]["passes"] and got["passes"])
+        self.assertNotIn("extension_eligible",got)
+        # Losing all three screen weeks no longer stops a claim: all 20 weeks are scored.
+        for w in S.SCREEN:
+            specs[2*S.WEEKS.index(w)+1]["main"]["value"]=999.99
+        got=S.paired([reg.attest_score(x) for x in specs],boss,"B",registration=reg)
+        self.assertEqual(got["screen_wins_shown"],0)
+        self.assertEqual(got["weeks"],20)
+        self.assertIn("weekly_mark",got)
         self.assertEqual(S.select_five({str(i):100 for i in range(6)},{str(i):100 for i in range(6)}),list("12345"))
+
+    def test_weekly_mark_boundaries(self):
+        # t exactly 2.43: mean 243 cents, residuals +-900 +-800 +-600 +-300 and twelve zeros, so s^2 = 200000 and t^2 = 2.43^2.
+        exact = [243+e for e in (900,-900,800,-800,600,-600,300,-300)]+[243]*12
+        m = S.weekly_mark(exact)
+        self.assertTrue(m["t_ok"] and m["wins_ok"] and m["without_best_ok"] and m["passes"])
+        self.assertAlmostEqual(m["t"],2.43,places=12)
+        below = list(exact)
+        below[-1] -= 1
+        self.assertFalse(S.weekly_mark(below)["t_ok"])
+        self.assertFalse(S.weekly_mark(below)["passes"])
+        # 11 wins fails even with a very large t; 12 wins passes.
+        eleven = [1000]*11+[-1]*9
+        m = S.weekly_mark(eleven)
+        self.assertTrue(m["t_ok"] and m["without_best_ok"])
+        self.assertEqual(m["wins"],11)
+        self.assertFalse(m["passes"])
+        self.assertTrue(S.weekly_mark([1000]*12+[-1]*8)["passes"])
+        # A cent tie is not a win.
+        self.assertEqual(S.weekly_mark([1000]*11+[0]+[-1]*8)["wins"],11)
+        # Mean without the best week of exactly zero fails. Such a set cannot also reach t 2.43
+        # (t is at most sqrt(20/19) when the other 19 sum to zero), so the condition is checked directly.
+        zero = [1900]+[1]*14+[-2,-3,-3,-3,-3]
+        m = S.weekly_mark(zero)
+        self.assertEqual(m["sum_without_best_cents"],0)
+        self.assertTrue(m["wins_ok"])
+        self.assertFalse(m["without_best_ok"])
+        self.assertFalse(m["passes"])
+        self.assertTrue(S.weekly_mark([1900]+[1]*15+[-2,-3,-3,-3])["without_best_ok"])
+        with self.assertRaises(ValueError):
+            S.weekly_mark([1.5]*20)
+
+    def test_sudo_review_voids_any_unlisted_entry(self):
+        from timemachine import tm07_isolation_probe as probe
+        op = [dict(time="Nov 26 14:00:01",command="/usr/bin/ls /var/lib/tm07")]
+        listed = "Nov 26 14:00:01 : user : TTY=pts/1 ; PWD=/ ; USER=root ; COMMAND=/usr/bin/ls /var/lib/tm07"
+        other = "Nov 26 15:10:00 : user : TTY=unknown ; PWD=/ ; USER=root ; COMMAND=/usr/bin/cat /var/lib/tm07/raw/x"
+        self.assertFalse(probe.sudo_review([listed],op)["void"])
+        self.assertTrue(probe.sudo_review([listed,other],op)["void"])
+        self.assertTrue(probe.sudo_review([listed,listed],op)["void"])
+        self.assertFalse(probe.sudo_review([],[])["void"])
+        with self.assertRaises(ValueError):
+            probe.sudo_review([listed],[dict(time="",command="/usr/bin/ls")])
 
     def test_cfm_listing_and_coverage_keep_fixed_survivors_and_fill_only_vacancies(self):
         screen = S.screen_config()

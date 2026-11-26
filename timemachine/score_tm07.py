@@ -15,6 +15,9 @@ FIXED = dict(zip((DIAGNOSTIC,*SCREEN),("ENA NEAR ONDO SUI ZEC","LINK LTC ONDO PE
 WATCH = frozenset(s+"/USD" for s in "AAVE ADA AVAX BCH BNB DOGE DOT ENA HBAR HYPE LINK LTC NEAR ONDO PEPE SOL SUI XLM XRP ZEC".split())
 DRAW_COUNT, PERCENTILE, SEED = 1000, 90, 1
 ALPHA = 0.05/4
+# Lead ruling 2026-11-26: registered weekly mark, per claim, on all 20 weekly net differences.
+T_CUT_HUNDREDTHS = 243
+MIN_WINS = 12
 FIRST, LAST = date(2026, 7, 6), date(2026, 11, 16)
 WEEKS = tuple((FIRST + timedelta(weeks=i)).isoformat() for i in range((LAST-FIRST).days//7+1))
 EXTENSION = tuple(w for w in WEEKS if w not in SCREEN)
@@ -223,18 +226,6 @@ class Registration:
             raise ValueError("freeze the legacy benchmark inputs before launch")
         return w
 
-    def verify_gate(self,week,boss,arm,gates,key):
-        if week not in EXTENSION:
-            return
-        for envelope in gates or ():
-            item = envelope["body"]
-            desk.verify_seal(key,"screen-gate",item,envelope.get("seal"))
-            if (item.get("registration") == self.hash and item.get("wins") == 3
-                    and item.get("screen_weeks") == list(SCREEN)
-                    and (arm == "scout" or item.get("boss") == boss and (arm == "A" or item.get("arm") == arm))):
-                return
-        raise ValueError("extension launch requires a sealed 3/3 screen gate")
-
     def attest_score(self,summary):
         return dict(summary,attestation=desk.seal(self._key,"score",summary))
 
@@ -244,7 +235,31 @@ def sign_tail(n, k):
 
 
 def sign_mark(n, cap=ALPHA):
+    """Shown only since the 2026-11-26 ruling; no longer part of a pass."""
     return next((k for k in range(1, n+1) if sign_tail(n, k) <= cap), None)
+
+
+def weekly_mark(diffs):
+    """Registered weekly mark on whole-cent weekly differences (arm minus fresh A), exact integer arithmetic.
+
+    The start balance is the same in every week, so t, wins and the sign of the mean are the same on
+    cents as on percentage points. Passes when the one-sided paired t is at least T_CUT_HUNDREDTHS/100,
+    at least MIN_WINS weeks are won (a cent tie is not a win), and the mean after dropping the single
+    best week is above zero.
+    """
+    d = [int(x) for x in diffs]
+    if len(d) < 3 or any(type(x) is not int for x in diffs):
+        raise ValueError("weekly mark needs whole-cent integer differences for at least three weeks")
+    n, s1, s2 = len(d), sum(d), sum(x*x for x in d)
+    spread = n*s2 - s1*s1
+    # t^2 = s1^2 (n-1) / (n s2 - s1^2); compare t >= c as s1 > 0 and t^2 >= c^2 without rounding.
+    t_ok = s1 > 0 and (spread == 0 or s1*s1*(n-1)*10000 >= T_CUT_HUNDREDTHS**2*spread)
+    t = (float("inf") if s1 > 0 else float("-inf") if s1 < 0 else 0.0) if spread == 0 else s1*((n-1)/spread)**.5
+    wins = sum(x > 0 for x in d)
+    rest = s1 - max(d)
+    return dict(weeks=n, t=t, t_cut=T_CUT_HUNDREDTHS/100, t_ok=t_ok, wins=wins, min_wins=MIN_WINS,
+                wins_ok=wins >= MIN_WINS, sum_without_best_cents=rest, without_best_ok=rest > 0,
+                passes=t_ok and wins >= MIN_WINS and rest > 0)
 
 
 def select_five(before, last, *, eligible=None, count=5):
@@ -382,7 +397,6 @@ def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None)
         reg = Registration(registered,approval_key)
         reg.check_root(sess.path)
         week = reg.validate(spec,sess.manifest,sess.sid)
-        reg.verify_gate(week,sess.manifest["boss"],sess.arm,sess.manifest.get("gates"),approval_key)
     else:
         reg = None
     fee = cfg["tm06_plan"]["main_fee_bps"]
@@ -502,17 +516,15 @@ def paired(scores, boss, arm, *, registration=None):
             if baseline["fixture"] != candidate["fixture"] or baseline.get("settings") != candidate.get("settings"):
                 raise ValueError("unmatched input")
             pairs[week] = (baseline["main"], candidate["main"])
-    win = lambda p: cents(p[1]["value"]) > cents(p[0]["value"])
-    screen_wins = sum(w in pairs and win(pairs[w]) for w in SCREEN)
-    gate = screen_wins == len(SCREEN)
-    if not gate and any((w, arm) in grouped for w in EXTENSION):
-        raise ValueError("extension was scored without its screen gate")
-    weeks = WEEKS if gate else SCREEN
-    vals = [pairs[w] for w in weeks if w in pairs]
-    complete = len(vals) == len(weeks)
-    wins = sum(win(p) for p in vals)
-    result = dict(boss=boss, arm=arm, screen_wins=screen_wins, extension_eligible=gate,
-                  weeks=len(weeks), wins=wins, missing=[w for w in weeks if w not in pairs], pass_mark=sign_mark(len(WEEKS)))
+    lift = lambda p: int((cents(p[1]["value"]) - cents(p[0]["value"]))*100)
+    # Lead ruling 2026-11-26: no screen gate. All 20 weeks are scored for every arm.
+    vals = [pairs[w] for w in WEEKS if w in pairs]
+    complete = len(vals) == len(WEEKS)
+    diffs = [lift(p) for p in vals]
+    wins = sum(x > 0 for x in diffs)
+    result = dict(boss=boss, arm=arm, weeks=len(WEEKS), wins=wins, missing=[w for w in WEEKS if w not in pairs],
+                  screen_wins_shown=sum(w in pairs and lift(pairs[w]) > 0 for w in SCREEN),
+                  sign_mark_shown=sign_mark(len(WEEKS)))
     if complete:
         blocks = [p[1] for p in vals]
         count = {len(b["twin"]) for b in blocks}
@@ -524,17 +536,9 @@ def paired(scores, boss, arm, *, registration=None):
         equal = join(b["equal"] for b in blocks)
         twin = [join(xs) for xs in zip(*(b["twin"] for b in blocks))]
         mark = SW.judge(twin, gain, PERCENTILE)
-        result.update(gain=gain, equal=equal, timing=mark, sign_p=sign_tail(len(weeks), wins),
+        weekly = weekly_mark(diffs)
+        result.update(gain=gain, equal=equal, timing=mark, weekly_mark=weekly,
+                      sign_p_shown=sign_tail(len(WEEKS), wins), sign_mark_met_shown=wins >= result["sign_mark_shown"],
                       lifts=[cent_lift(a["value"],b["value"]) for a, b in vals],
-                      passes=gate and gain > equal and mark["model_above_pass_percentile"] and wins >= result["pass_mark"])
+                      passes=weekly["passes"] and gain > equal and mark["model_above_pass_percentile"])
     return result
-
-
-def seal_screen_gate(scores,boss,arm,registration,key):
-    screened = [s for s in scores if s["week"] in SCREEN]
-    result = paired(screened,boss,arm,registration=registration)
-    if not result["extension_eligible"]:
-        raise ValueError("did not win all three screen weeks")
-    body = dict(registration=registration.hash,boss=boss,arm=arm,wins=3,screen_weeks=list(SCREEN),
-                screens=desk.digest(screened))
-    return dict(body=body,seal=desk.seal(key,"screen-gate",body))

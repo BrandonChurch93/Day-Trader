@@ -82,7 +82,8 @@ def handle_desk(method, path, sid, body, authorization,registration=None,stage=N
         token = authorization[len(prefix):]
         if stage is not None:
             from timemachine import desk, score_tm07
-            allowed = score_tm07.SCREEN if stage == "screen" else score_tm07.EXTENSION if stage == "extension" else ()
+            # One scored stage for all 20 weeks (ruling 2026-11-26); raw copies are denied in every week.
+            allowed = score_tm07.WEEKS if stage == "scored" else ()
             if session != sid or not desk.SID.fullmatch(sid):
                 raise PermissionError
             # The private attempt index is not a week file. Do not open or stat the
