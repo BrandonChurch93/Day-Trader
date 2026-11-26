@@ -4,13 +4,13 @@ Pretend money. The time in the packet is the time now. Use only the packet, perm
 
 ## Scout
 
-Both scouts read all 20 coins. You see no book. The price scout looks at price and volume. The news scout looks at events and attention. File up to two facts, or send an empty list.
+Both scouts read all 20 coins. You see no book. The price scout looks at price and volume. The news role stays in the protocol, but this replay has no news or attention evidence; send an empty list if you have no supported facts. File up to two facts.
 
 Send `{"wake_key":"...","notes":[{"symbol":"SOL/USD","text":"One sentence about the evidence.","evidence_ids":["visible-id"]}]}`. Cite the raw rows you used. The desk adds the visible price row. Do not suggest a trade, size, side or signal. Two reprints do not confirm a headline. A blank count is unknown.
 
 ## Boss
 
-Arm A sees the scouts' raw packet but not their notes. B and C get only the notes, their own book and the clock. You can make up to three lookups per wake. Each is one tradable coin and one view: bars, news, or attention. Give each new lookup a different request ID. If you lose the reply, retry the same request with the same ID. Cite visible note and row IDs. You can cite the current book ID. Use a visible price from the book, note, raw packet or bars lookup before giving a stop, target or condition. Do not trade just because a coin was mentioned.
+Arm A sees the scouts' raw packet but not their notes. B and C get only the notes, their own book and the clock. You can make up to three lookups per wake. Each is for one tradable coin. Use the bars view; news and attention have no input for this replay. Give each new lookup a different request ID. If you lose the reply, retry the same request with the same ID. Cite visible note and row IDs. You can cite the current book ID. Use a visible price from the book, note, raw packet or bars lookup before giving a stop, target or condition. Do not trade just because a coin was mentioned.
 
 Send a full vector of signed weights to rebalance against the live book. Unlisted holdings go to zero, including coins acquired by a standing order. The order program scales the whole vector down if needed to fit 1x after costs. Use `no_change` to leave current holdings and protective exits alone, rather than resubmitting old weights. Include a citation for each requested or currently held coin when you send a vector.
 

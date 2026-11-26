@@ -67,22 +67,21 @@ def condition(wake, symbol=A, **kw):
 
 def registered_fixture(root,spec=None):
     weeks = {}
+    screen = S.screen_config()
     for w in S.WEEKS:
         item = dict(fixture=D.digest(w),neutral_id="TM07-scout-"+w,funding_ref="made-up tape",funding_hash=D.digest(w))
-        if w in S.FIXED:
-            item["symbols"] = sorted(s+"/USD" for s in S.FIXED[w].split())
-        else:
-            prior = (S.date.fromisoformat(w)-S.timedelta(days=7)).isoformat()
-            preceding = {s:100 for s in S.WATCH}
-            item.update(before=preceding,last=preceding,before_known_on=prior,last_known_on=w,
-                        symbols=S.select_five(preceding,preceding))
+        prior = (S.date.fromisoformat(w)-S.timedelta(days=7)).isoformat()
+        preceding = dict.fromkeys(S.WATCH,100)
+        item.update(before=preceding,last=preceding,before_known_on=prior,last_known_on=w,
+                    minute_counts=dict.fromkeys(S.WATCH,7*24*60))
+        item["symbols"],item["displaced"] = S.week_selection(w,item,screen)
         weeks[w] = item
     if spec is not None:
         w = D.wall(spec["wakes"][0]).date().isoformat()
         weeks[w]["fixture"] = D.digest(D.json.loads(D.encode(spec)))
         weeks[w]["funding_hash"] = S.funding_profile_hash(spec["params"])
-    body = dict(version="TM07-v1",runner_id="toy-runner",ledger_ref="toy-no-run",study_root=str(root.resolve()),
-                cost_hash=S.canonical_cost_hash(),
+    body = dict(version="TM07-CFM-v1",runner_id="toy-runner",ledger_ref="toy-no-run",study_root=str(root.resolve()),
+                cost_hash=S.canonical_cost_hash(),screen_hash=D.digest(screen),
                 builds={s:{"id":s+"-toy","first_after_cutoff":"2026-07-01"}
                         for s in (*D.BOSSES,"gemini_neon")},weeks=weeks)
     return S.Registration(dict(body=body,seal=D.seal(SEAL_KEY,"registration",body)),SEAL_KEY)
@@ -411,6 +410,9 @@ class DeskTest(unittest.TestCase):
         with patch.object(S,"replay",side_effect=broken),patch.object(S,"buy_and_hold",side_effect=unsupported):
             score = S.score_week(session.path)
         self.assertEqual(score["main"]["value"],1000)
+        self.assertIn("1x/25",score["by_fee_multiple"])
+        self.assertIn("1x/40",score["by_fee_multiple"])
+        self.assertNotIn("1x/1",score["by_fee_multiple"])
         for cell in ("2x/12","3x/12"):
             self.assertEqual(score["by_fee_multiple"][cell]["status"],"not computed")
             self.assertNotIn("value",score["by_fee_multiple"][cell])
@@ -1549,6 +1551,37 @@ class DeskTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"screen gate"):
             S.paired([reg.attest_score(x) for x in specs],boss,"B",registration=reg)
         self.assertEqual(S.select_five({str(i):100 for i in range(6)},{str(i):100 for i in range(6)}),list("12345"))
+
+    def test_cfm_listing_and_coverage_keep_fixed_survivors_and_fill_only_vacancies(self):
+        screen = S.screen_config()
+        self.assertEqual(S.WATCH-S.listed_at_open(S.DIAGNOSTIC,screen),{"BNB/USD","HYPE/USD"})
+        self.assertTrue(all(S.listed_at_open(w,screen)==S.WATCH for w in S.WEEKS))
+        reg = registered_fixture(self.root)
+        week = S.SCREEN[0]
+        item = copy.deepcopy(reg.weeks[week])
+        item["minute_counts"].update({"LTC/USD":9071,"LINK/USD":9072})
+        selected,swaps = S.week_selection(week,item,screen)
+        self.assertEqual(swaps,{"LTC/USD":"minute coverage"})
+        self.assertEqual(set(selected),set(item["symbols"])-{"LTC/USD"}|{"XRP/USD"})
+        item["minute_counts"].pop("ADA/USD")
+        with self.assertRaisesRegex(ValueError,"complete watch"):
+            S.week_selection(week,item,screen)
+        item = copy.deepcopy(reg.weeks[week])
+        screen["first_seen_utc"]["2025-12-12"].remove("LTC")
+        screen["first_seen_utc"][week] = ["LTC"]
+        selected,swaps = S.week_selection(week,item,screen)
+        self.assertEqual(swaps,{"LTC/USD":"listing"})
+        self.assertEqual(set(selected),set(item["symbols"])-{"LTC/USD"}|{"XRP/USD"})
+
+    def test_cfm_registered_fixture_rejects_news_and_unrecorded_displacement(self):
+        spec = registered_world()
+        spec["evidence"][0] = [{"kind":"news"}]
+        reg = registered_fixture(self.root,spec)
+        with self.assertRaisesRegex(ValueError,"price-only"):
+            reg.validate(spec,dict(fixture=reg.weeks[S.SCREEN[0]]["fixture"],settings=D.SETTINGS),"toy")
+        reg.body["weeks"][S.SCREEN[0]]["displaced"] = {"LTC/USD":"listing"}
+        with self.assertRaisesRegex(ValueError,"displacement"):
+            S.Registration(dict(body=reg.body,seal=D.seal(SEAL_KEY,"registration",reg.body)),SEAL_KEY)
 
     def test_token_usage_missing_fields(self):
         s = self.create("B",self.scout_export())

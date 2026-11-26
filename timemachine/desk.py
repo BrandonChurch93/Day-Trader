@@ -309,7 +309,9 @@ def desk_funding(tape, symbols, cfg, start, end):
 
 
 def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_proofs=None,runner_id=None):
-    """Builder helper only. Reads a caller-supplied tape and separately vetted existing rows."""
+    """Build the price-only fixture from a caller-supplied tape."""
+    if any(evidence_by_wake.values()) or vendor_proofs:
+        raise ValueError("TM07 is price-only; the dated headline store has no known_at clock")
     a, b = epoch(start), epoch(end)
     wakes = list(range(a, b, 3600))
     watch = [c if "/" in c else c + "/USD" for c in cfg["tm06_plan"]["coins"]]
@@ -325,7 +327,7 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
             bar = tape.fill_bar(s, wall(t), wall(t + 3600))
             fills[s] = [P.iso(bar["t"]), bar["o"]] if bar else None
         rows.append(dict(marks=desk_marks(tape, priced, t), fills=fills))
-    evidence, dropped = [], []
+    evidence = []
     for t in wakes:
         w = wall(t)
         packet = []
@@ -349,14 +351,6 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
                     packet.append(dict(id=f"bar:{size}:{stamp}:{s}", symbol=s, kind="bars", published=stamp+size,
                                        known_at=stamp+size, period_end=stamp+size, vintage="original", licensed=True,
                                        packet=True, value=dict(t=stamp, timeframe=tf, **{k: bar.get(k) for k in "ohlcv"})))
-        rejected = Counter()
-        for e in evidence_by_wake.get(str(t),[]):
-            kind = e.get("kind") if isinstance(e,dict) else None
-            if kind in ("news","attention") and available(e,t,vendor_proofs):
-                packet.append(e)
-            else:
-                rejected[kind if kind in ("news","attention") else "other"] += 1
-        dropped.append(dict(rejected))
         evidence.append(packet)
     legacy_meta = dict(market="crypto",symbols=symbols,benchmark="BTC/USD",
                        wakes=[P.iso(wall(t)) for t in wakes],end_utc=P.iso(wall(b)))
@@ -364,7 +358,7 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
                   funding=tm06.fast_funding(tape,priced,cfg,wall(a),wall(b))[0])
     return dict(wakes=wakes, end=b, symbols=symbols, watch=watch, benchmark="BTC/USD", opening={},
                 rows=rows, minutes=list(mins), end_marks=desk_marks(tape, priced, b),
-                evidence=evidence, evidence_drops=dropped, cfg=cfg, params=pp, vendor_proofs=vendor_proofs or {},
+                evidence=evidence, evidence_drops=[{} for _ in wakes], cfg=cfg, params=pp, vendor_proofs={},
                 gross=float(cfg["tm06_plan"]["swing_max_gross"]),runner_id=runner_id,legacy_yardsticks=legacy)
 
 

@@ -35,6 +35,44 @@ def canonical_cost_hash():
     return desk.digest(effective_costs(tm06.full_config(),WATCH|{"BTC/USD"}))
 
 
+def screen_config():
+    return P.W.lev_config(keys=("tm07_screen",), proposed=P.ROOT / "timemachine" / "no_such_file")["tm07_screen"]
+
+
+def listed_at_open(week, screen):
+    dates = [(s+"/USD", d) for d, names in screen["first_seen_utc"].items() for s in names]
+    if len(dates) != len(WATCH) or {s for s, _ in dates} != WATCH:
+        raise ValueError("first-seen dates must cover the fixed watch exactly once")
+    # A daily observation on Monday does not prove availability at Monday 00:00.
+    start = date.fromisoformat(week)
+    return {s for s, d in dates if date.fromisoformat(d) < start}
+
+
+def week_selection(week, item, screen):
+    """Keep the original fixed names that qualify; rank only for vacancies and extension."""
+    counts = item.get("minute_counts")
+    minutes = 7*24*60
+    if (not isinstance(counts,dict) or counts.keys() != WATCH
+            or any(type(n) is not int or not 0 <= n <= minutes for n in counts.values())):
+        raise ValueError("register exact minute counts for the complete watch")
+    listed = listed_at_open(week,screen)
+    eligible = {s for s in listed if counts[s]*100 >= minutes*screen["min_minute_coverage_pct"]}
+    fixed = {s+"/USD" for s in FIXED.get(week,"").split()}
+    keep = fixed & eligible
+    displaced = {s:"listing" if s not in listed else "minute coverage" for s in fixed-keep}
+    if len(keep) < 5:
+        prior = (date.fromisoformat(week)-timedelta(days=7)).isoformat()
+        if item.get("last_known_on") != week or item.get("before_known_on") != prior:
+            raise ValueError("selection requires two finished Sunday closes")
+        before,last = item.get("before",{}),item.get("last",{})
+        if (set(before)|set(last))-WATCH or not all(
+                s in before and s in last and O.number(before[s]) and O.number(last[s])
+                and before[s] > 0 and last[s] > 0 for s in eligible-keep):
+            raise ValueError("selection requires valid Sunday pairs for every eligible candidate")
+        keep.update(select_five(before,last,eligible=eligible-keep,count=5-len(keep)))
+    return sorted(keep),displaced
+
+
 def settlement_map(rows):
     if not isinstance(rows,dict):
         raise ValueError("invalid funding settlement mapping")
@@ -59,12 +97,15 @@ class Registration:
         self.body = json.loads(desk.encode(document["body"]))
         desk.verify_seal(key,"registration",self.body,document.get("seal"))
         self.hash = desk.digest(self.body)
-        if self.body.get("version") != "TM07-v1" or not self.body.get("runner_id") or not self.body.get("ledger_ref"):
+        if self.body.get("version") != "TM07-CFM-v1" or not self.body.get("runner_id") or not self.body.get("ledger_ref"):
             raise ValueError("register the runner and ledger reference before launch")
         self.root = Path(self.body.get("study_root",""))
         if not self.root.is_absolute() or self.root != self.root.resolve():
             raise ValueError("register one absolute canonical study root")
         self.cost_cfg = tm06.full_config()
+        screen = screen_config()
+        if self.body.get("screen_hash") != desk.digest(screen):
+            raise ValueError("register the exact Coinbase proxy roster and settings")
         if self.body.get("cost_hash") != desk.digest(effective_costs(self.cost_cfg,WATCH|{"BTC/USD"})):
             raise ValueError("registration cost profile does not match TM06")
         models = self.body.get("builds",{})
@@ -86,18 +127,9 @@ class Registration:
                     or len(funding_id) != 64 or any(c not in "0123456789abcdef" for c in funding_id)):
                 raise ValueError("register the source snapshot and funding settlement hash for each week")
             neutral_ids.add(neutral_id)
-            if w in FIXED:
-                symbols = sorted(s+"/USD" for s in FIXED[w].split())
-            else:
-                d = date.fromisoformat(w)
-                if item.get("last_known_on") != w or item.get("before_known_on") != (d-timedelta(days=7)).isoformat():
-                    raise ValueError("extension selection requires two finished Sunday closes")
-                before,last = item["before"],item["last"]
-                if (set(before)|set(last))-WATCH:
-                    raise ValueError("extension selection is outside the fixed watch list")
-                symbols = select_five(before,last)
-            if item["symbols"] != symbols:
-                raise ValueError("wrong registered tradable list")
+            symbols, displaced = week_selection(w,item,screen)
+            if item["symbols"] != symbols or item.get("displaced") != displaced:
+                raise ValueError("wrong registered tradable list or displacement record")
 
     def check_root(self,path):
         path = Path(path)
@@ -142,6 +174,9 @@ class Registration:
             raise ValueError("fixture differs from registered windows, coins or runner")
         cfg = spec["cfg"]
         pp = spec["params"]
+        if spec.get("vendor_proofs") or any(e.get("kind") not in ("price","bars")
+                                           for packet in spec["evidence"] for e in packet):
+            raise ValueError("registered TM07 screen is price-only")
         if (spec["gross"] != 1 or spec["opening"] or cfg["tm_account_start_usd"] != 1000
                 or cfg["tm06_plan"]["main_fee_bps"] != 12 or cfg["tm06_plan"]["carried_leverage"] != [2,3]
                 or sorted(cfg["tm_perp_fee_levels_bps"]) != [1,12,25]
@@ -212,12 +247,13 @@ def sign_mark(n, cap=ALPHA):
     return next((k for k in range(1, n+1) if sign_tail(n, k) <= cap), None)
 
 
-def select_five(before, last):
+def select_five(before, last, *, eligible=None, count=5):
     """TM06's reverse sorted (rise, symbol) tie rule. Caller supplies the two prior Sunday closes."""
-    ranks = sorted(((last[s]/p - 1, s) for s, p in before.items() if p > 0 and last.get(s, 0) > 0), reverse=True)
-    if len(ranks) < 5:
-        raise ValueError("fewer than five known prior Sunday pairs")
-    return sorted(s for _, s in ranks[:5])
+    ranks = sorted(((last[s]/p - 1, s) for s, p in before.items()
+                    if (eligible is None or s in eligible) and p > 0 and last.get(s, 0) > 0), reverse=True)
+    if len(ranks) < count:
+        raise ValueError("not enough listed, covered names with prior Sunday pairs")
+    return sorted(s for _, s in ranks[:count])
 
 
 def load_session(path):
@@ -410,8 +446,9 @@ def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None)
         fields = {"failed_draw":exc.draw} if hasattr(exc,"draw") else {}
         return emit(dict(ident,invalid=str(exc),**fields))
     by = {main_key:main}
+    fees = sorted(set(screen_config()["fee_sensitivities_bps"])|{fee})
     for mult in (1,*cfg["tm06_plan"]["carried_leverage"]):
-        for f in sorted(set(cfg["tm_perp_fee_levels_bps"])|{fee}):
+        for f in fees:
             key = f"{mult}x/{f:g}"
             if key != main_key:
                 by[key] = not_computed(lambda:cell(f,mult,draw_sensitivities))
