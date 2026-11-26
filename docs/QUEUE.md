@@ -22,6 +22,8 @@ Skip list from Round 25 (`docs/research/100_round_25_too_small_for_big_money.md`
 
 ## Running now
 
+Standing chore at every wake-up (lead agent, 2026-11-26): the E06 forward log (`practice/traders/E06_forward_hot_coin_rules.md`) runs as a detached loop from the frozen worktree `/home/user/workspace/wt-e05`. Check it with `cd /home/user/workspace/wt-e05 && (pgrep -f "forward_e06.py loop" >/dev/null || python3 practice/forward_e06.py record)`. If the loop is dead, restart it from that folder. A missed wake is void and is never back-filled; never run `start` again; do not check out or edit in that worktree.
+
 As of 2026-11-25 21:12 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
 
 | # | What | Plan | Started |
