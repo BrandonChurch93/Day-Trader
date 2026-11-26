@@ -369,6 +369,11 @@ Working papers.
 | `research_rig/AMENDMENT_43_BASIS.md`, `research_rig/basis_43.py` | Queue 74 third attempt, ledger 195: quantization, no-return gate diagnostics, sealed adoption; no vendor data | CURRENT. Frozen, not authorized |
 | `research_rig/PREREG_60_special_dividends.md`, `research_rig/CALIBRATION_60.json`, `research_rig/PINNED_60.json` | Queue 99 / ledger 199: execution-first special dividend design, filing-only calibration and draft source pins | DRAFT |
 | `research_rig/score_60.py`, `research_rig/test_60.py` | Plan 60 offline validation, one-shot scorer and artificial Git/custody fixtures | DRAFT |
+| `research_rig/PREREG_61_special_dividend_ex_day.md`, `research_rig/PINNED_61.json` | Plan 61, queue 105 and ledger 203: one-session special dividend replay, frozen-mark proposal and draft source pins | DRAFT |
+| `research_rig/count_61.py`, `research_rig/COUNT_61.json` | Price-blind ex-day feasibility screen and aggregate count and cluster schedule | CURRENT |
+| `research_rig/placebo_61.py`, `research_rig/PLACEBO_61.json`, `research_rig/PLACEBO_LIQUID_61.json` | Audited pre-freeze placebo code and aggregate dispersion for both screens; no target returns | CURRENT |
+| `research_rig/power_61.py`, `research_rig/POWER_61.json` | Synthetic matched-tail comparison of the plain and winsorized evidence marks | CURRENT |
+| `research_rig/score_61.py`, `research_rig/test_61.py` | One-session offline replay with counts-only validation, separate one-shot score and artificial custody fixtures | DRAFT |
 | `research_rig/vendor_60.py` | Plan 60 offline action transport verifier and deterministic native-to-window projection | DRAFT |
 | `research_rig/ADOPTION_60.md`, `research_rig/APPROVAL_60.md` | Plan 60 lead approvals: adoption of the sealed Plan 43 prices with no price acquisition, then validation only | RECORD |
 | `research_rig/GO_60.md` | Plan 60 lead approval for one scored run, names the validation approval commit and the validation receipt hash | RECORD |

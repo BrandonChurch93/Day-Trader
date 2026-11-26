@@ -1,0 +1,8 @@
+{
+  "between_ex_date_variance_share": 0.2871289240583738,
+  "events_contributing": 259,
+  "liquidity_subset_events": 259,
+  "mad_scaled_bps": 174.93383759608994,
+  "placebo_observations": 777,
+  "sample_sd_bps": 526.9428355683785
+}
