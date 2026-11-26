@@ -1108,3 +1108,9 @@ replay_47_plan:
   status: builder
   note: Plan 47 closed on count with no price read. Retained draft scalars are not authorization or a runtime override. Coinbase Advanced retail fee is unknown, with published Exchange proxy and shown-only higher-fee check.
   source: research_rig/PREREG_47_edgar_altcoin_treasuries.md
+
+plan_54_closure:
+  value: {"first":2016,"last":2025,"shown":2026,"turns":10,"lookback_first":1996,"lookback_turns":30,"cutoff":"10-01","roster_sample":80,"min_mapped":76,"capital":500,"picks":10,"formation_from_end":2,"cost":{"quoted_floor_half_bps":10,"extra_bps":5,"fallback_half_bps":50},"power_floor":0.5,"marks":{"positive_years":8,"ahead_years":7,"paired_t":2.0,"drop_best":1},"calibration":{"worlds":30000,"seed":54189,"market_sd_bps":600,"roster_sd_bps":150,"relative_sd_bps":[200,400,600],"benchmark_cost_bps":30,"roster_cost_bps":30,"loser_cost_bps":50,"gross_edge_bps":[0,50,100,200,300],"shared_edge_bps":200},"cef_sensitivity":{"worlds":30000,"seed":54190,"market_sd_bps":[150,300],"roster_sd_bps":[100,150],"relative_sd_bps":[100,200],"benchmark_cost_bps":30,"roster_cost_bps":50,"loser_cost_bps":50,"gross_edge_bps":[0,25,50,100,200],"shared_edge_bps":100}}
+  status: builder
+  note: Closed on synthetic power before market input. CEF sensitivity is exploratory only; neither block authorizes market access.
+  source: research_rig/CLOSE_54_on_power.md

@@ -1,0 +1,159 @@
+{
+  "synthetic_only": true,
+  "worlds": 30000,
+  "seed": 54189,
+  "turns": 10,
+  "market_sd_bps": 600,
+  "roster_relative_sd_bps": 150,
+  "assumed_round_trip_bps": {
+    "benchmark": 30,
+    "roster": 30,
+    "loser": 50
+  },
+  "scenarios": [
+    {
+      "loser_relative_sd_bps": 200,
+      "planted_loser_gross_edge_bps": 0,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.0086,
+      "also_require_paired_t_pass_rate": 0.0017,
+      "paired_t_alone_pass_rate": 0.018133333333333335
+    },
+    {
+      "loser_relative_sd_bps": 200,
+      "planted_loser_gross_edge_bps": 50,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.025033333333333335,
+      "also_require_paired_t_pass_rate": 0.008566666666666667,
+      "paired_t_alone_pass_rate": 0.09186666666666667
+    },
+    {
+      "loser_relative_sd_bps": 200,
+      "planted_loser_gross_edge_bps": 100,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.051666666666666666,
+      "also_require_paired_t_pass_rate": 0.029166666666666667,
+      "paired_t_alone_pass_rate": 0.2718
+    },
+    {
+      "loser_relative_sd_bps": 200,
+      "planted_loser_gross_edge_bps": 200,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.13986666666666667,
+      "also_require_paired_t_pass_rate": 0.12893333333333334,
+      "paired_t_alone_pass_rate": 0.7916333333333333
+    },
+    {
+      "loser_relative_sd_bps": 200,
+      "planted_loser_gross_edge_bps": 300,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.26276666666666665,
+      "also_require_paired_t_pass_rate": 0.2618333333333333,
+      "paired_t_alone_pass_rate": 0.9869333333333333
+    },
+    {
+      "loser_relative_sd_bps": 200,
+      "planted_loser_gross_edge_bps": 0,
+      "shared_gross_edge_bps": 200,
+      "plan48_style_pass_rate": 0.0291,
+      "also_require_paired_t_pass_rate": 0.004366666666666666,
+      "paired_t_alone_pass_rate": 0.018133333333333335
+    },
+    {
+      "loser_relative_sd_bps": 400,
+      "planted_loser_gross_edge_bps": 0,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.015133333333333334,
+      "also_require_paired_t_pass_rate": 0.0043,
+      "paired_t_alone_pass_rate": 0.0264
+    },
+    {
+      "loser_relative_sd_bps": 400,
+      "planted_loser_gross_edge_bps": 50,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.0284,
+      "also_require_paired_t_pass_rate": 0.010866666666666667,
+      "paired_t_alone_pass_rate": 0.060533333333333335
+    },
+    {
+      "loser_relative_sd_bps": 400,
+      "planted_loser_gross_edge_bps": 100,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.0483,
+      "also_require_paired_t_pass_rate": 0.0232,
+      "paired_t_alone_pass_rate": 0.11756666666666667
+    },
+    {
+      "loser_relative_sd_bps": 400,
+      "planted_loser_gross_edge_bps": 200,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.11176666666666667,
+      "also_require_paired_t_pass_rate": 0.07873333333333334,
+      "paired_t_alone_pass_rate": 0.3227333333333333
+    },
+    {
+      "loser_relative_sd_bps": 400,
+      "planted_loser_gross_edge_bps": 300,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.2093,
+      "also_require_paired_t_pass_rate": 0.18086666666666668,
+      "paired_t_alone_pass_rate": 0.5981
+    },
+    {
+      "loser_relative_sd_bps": 400,
+      "planted_loser_gross_edge_bps": 0,
+      "shared_gross_edge_bps": 200,
+      "plan48_style_pass_rate": 0.04253333333333333,
+      "also_require_paired_t_pass_rate": 0.0099,
+      "paired_t_alone_pass_rate": 0.0264
+    },
+    {
+      "loser_relative_sd_bps": 600,
+      "planted_loser_gross_edge_bps": 0,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.020666666666666667,
+      "also_require_paired_t_pass_rate": 0.007166666666666667,
+      "paired_t_alone_pass_rate": 0.029233333333333333
+    },
+    {
+      "loser_relative_sd_bps": 600,
+      "planted_loser_gross_edge_bps": 50,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.0332,
+      "also_require_paired_t_pass_rate": 0.0142,
+      "paired_t_alone_pass_rate": 0.05213333333333333
+    },
+    {
+      "loser_relative_sd_bps": 600,
+      "planted_loser_gross_edge_bps": 100,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.049166666666666664,
+      "also_require_paired_t_pass_rate": 0.023733333333333332,
+      "paired_t_alone_pass_rate": 0.08393333333333333
+    },
+    {
+      "loser_relative_sd_bps": 600,
+      "planted_loser_gross_edge_bps": 200,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.09783333333333333,
+      "also_require_paired_t_pass_rate": 0.0604,
+      "paired_t_alone_pass_rate": 0.1862
+    },
+    {
+      "loser_relative_sd_bps": 600,
+      "planted_loser_gross_edge_bps": 300,
+      "shared_gross_edge_bps": 0,
+      "plan48_style_pass_rate": 0.16613333333333333,
+      "also_require_paired_t_pass_rate": 0.1242,
+      "paired_t_alone_pass_rate": 0.3396666666666667
+    },
+    {
+      "loser_relative_sd_bps": 600,
+      "planted_loser_gross_edge_bps": 0,
+      "shared_gross_edge_bps": 200,
+      "plan48_style_pass_rate": 0.050833333333333335,
+      "also_require_paired_t_pass_rate": 0.014366666666666666,
+      "paired_t_alone_pass_rate": 0.029233333333333333
+    }
+  ]
+}
