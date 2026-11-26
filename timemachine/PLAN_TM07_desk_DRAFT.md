@@ -28,7 +28,26 @@ Months refer to UTC. Ends are excluded. The table preserves the five original TM
 | 2026-08-31 | BNB, HYPE, LINK, SOL, ZEC | Screen |
 | 2026-10-05 | AAVE, ADA, BNB, HBAR, XLM | Screen |
 
-STATED by Anthropic: both [Fable 5.2](https://platform.claude.com/docs/en/models/fable-5-2/overview.md) and [Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview.md) have a June 2026 training cutoff. July 1 is the earliest scored day on that evidence. Check the exact build and scout knowledge line too. Use the later line. An unresolved model or a later cutoff blocks the affected weeks. Do not move the dates.
+### Model clocks and build gap
+
+The [TM06 knowledge check](../docs/research/31_model_knowledge_lines.md) records the models' own statements, not verified training dates. For each TM07 participant, take the day after the later stated bound; for a month, take its last day as the bound. The latest participant bound makes July 1, 2026 the earliest scored day. May remains diagnostic only. If the declared model changes, recheck the cutoff before approval; a later date blocks affected fixed weeks rather than moving them.
+
+| Participant | Platform model ID | Maker cutoff | TM06 self-report | Earliest after both |
+|---|---|---|---|---|
+| Claude Fable 5.2 | `claude_fable_5_2` | STATED: June 2026 ([Anthropic](https://platform.claude.com/docs/en/models/fable-5-2/overview.md)) | STATED: February 2026 | 2026-07-01 |
+| Claude Opus 5.5 | `claude_opus_5_5` | STATED: June 2026 ([Anthropic](https://platform.claude.com/docs/en/models/opus-5-5/overview.md)) | STATED: January 2026 | 2026-07-01 |
+| Gemini 4 Neon | `gemini_neon` | STATED: March 2026 ([Google DeepMind](https://deepmind.google/models/model-cards/gemini-4-neon/)) | STATED: March 2026 | 2026-04-01 |
+
+For each run record the exact platform model ID and actual UTC run date. Run date is UNKNOWN until launch; the immutable weights or serving build are UNKNOWN because the platform does not export them here. A matching platform ID is not proof of an unchanged build. Seal the three approved platform IDs in the registration model fields and record runner ID `tm07_desk_v1`. An unresolved platform ID blocks launch.
+
+The other four models from the original TM06 six are context only and do not veto TM07 weeks:
+
+| TM06 model | Maker cutoff | TM06 self-report | Later planning bound (not a TM07 gate) |
+|---|---|---|---|
+| GPT-6.2 Sol | STATED: June 1, 2026 ([OpenAI model page](https://developers.openai.com/api/docs/models/gpt-6.2-sol)) | STATED: December 2025 | 2026-06-01 |
+| Claude Sonnet 5.5 | STATED: June 2026 ([Anthropic](https://platform.claude.com/docs/en/models/sonnet-5-5/overview)) | STATED: November 2025 | 2026-06-30 |
+| Kimi K3 | UNKNOWN: no cutoff established in [Moonshot's model guide](https://platform.moonshot.ai/docs/guide/kimi-k3-quickstart) | STATED: July 2025 | 2026-06-30 as a conservative planning bound only, not a cutoff claim |
+| Grok 4.7 | STATED: May 2026 knowledge cutoff ([xAI API docs](https://docs.x.ai/developers/grok-4-7.md)); June pretraining, supplemental data as late as August 2026 ([xAI model card](https://media.x.ai/v1/website/card4p7-3a96f40b.pdf)) | STATED: January 2025 | 2026-08-31, conservatively including supplemental data |
 
 These are the 17 fixed Monday starts for extension. The last week ends November 23. For each week require a first-seen date before Monday 00:00 UTC and at least 90% distinct minute coverage. Keep eligible original fixed names. For vacancies in a fixed basket, and all five names for extension, rank eligible candidates by the ratio of the two prior completed Sunday closes, largest rise first, with the descending symbol tie rule. Record each displaced name, reason and replacement in the sealed registration before any session. Missing exact counts, missing required Sunday pairs, or fewer than five eligible names block the week; never move the week or choose replacements after the freeze. Freeze without reading answers or returns.
 
@@ -143,7 +162,7 @@ Sol's review of the first branch flagged the findings below. The fixes were test
 - B06: A real immediate fill cancels a queued condition on that name at the same open, even if the submitted target for that name did not change.
 - B07: Use all held prices from the same open. Book due funding and check maintenance before new fills. Recompute after costs. A move over the gross cap can only reduce existing gross risk. No same-open maintenance breach may be traded through.
 - B08: Keep the whole shuffled bundle. Missing marks or no common required open make the fixed week invalid. Do not change the draw, resample it, or replace the week.
-- B09: Seal the registered calendar, exact model builds, cost and runner identity, fixture hashes and designated scout. The judged path uses exactly 1,000 twins, seed 1 and the 90th percentile. An extension needs a sealed 3/3 gate and a recorded attempt before its launch. Preview results cannot pass.
+- B09: Seal the registered calendar, exact platform model IDs and cutoff bounds, cost and runner identity, fixture hashes and designated scout. The immutable serving builds are UNKNOWN. The judged path uses exactly 1,000 twins, seed 1 and the 90th percentile. An extension needs a sealed 3/3 gate and a recorded attempt before its launch. Preview results cannot pass.
 - S01: Count exposure through gaps; book due funding without skipping a wake boundary. The complete made-up book matches TM06 in the gap fixture.
 - S02: A legacy session keeps its ID, including IDs that start with `TM07-`. The guarded desk route is separate.
 - S03: Stops and conditions validate only against visible marks in the book, a note, the solo packet, or a metered bars lookup.
