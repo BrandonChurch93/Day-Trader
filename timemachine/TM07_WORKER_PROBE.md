@@ -1,6 +1,6 @@
 # TM07 worker isolation probe
 
-The operator runs this after preparing the actual deployment release and before starting any registered worker. This procedure uses only a disposable rehearsal with invented bars and tokens, and the provider wrapper in request-assembly mode without a model call. Passing it does not verify the provider's internal memory or actual tape quality.
+The operator runs this after preparing the actual deployment release and before starting any registered worker. This is a bounded sample using a disposable rehearsal with invented bars and tokens, and the provider wrapper in request-assembly mode without a model call. The sample tests nominated paths and one outbound destination, not all shared state or egress. Distinct OS identity tuples are not proof of disjoint access, and the launcher shim reports rather than independently proves request context. Deployed isolation, provider-internal memory and real tape coverage remain UNKNOWN until separately verified.
 
 ## Rehearsal inputs
 
@@ -48,11 +48,11 @@ nice -n 10 python3 -B -m timemachine.tm07_isolation_probe collect \
   --profile "$PROFILE_FILE" --transcript "$TRANSCRIPT_FILE"
 ```
 
-Inspect all 24 rows for the three phases of all eight identities. Every role needs a successful own route and denial on the wrong role, sibling session, legacy routes, fixture files, journals, scorer/token files and outbound canary. Confirm the release inputs and isolation policy independently. Once satisfied, seal the user-reviewed transcript with the private operator key:
+Inspect all 24 rows for the three phases of all eight identities. Every role needs a successful own route and denial on the wrong role, sibling session, legacy routes, fixture files, journals, scorer/token files and the outbound canary. Separately from the sample, an independent operator must review the actual launcher policy, effective mounts and permissions, shared writable state across roles and lifecycle phases, outbound lanes and sidecars, and how the wrapper assembles requests and passes context. Confirm the rehearsal uses equivalent policy and the same release as deployment. Record that review separately; do not treat a signed sample as a substitute. Seal the sampled transcript with the private operator key after inspection:
 
 ```sh
 nice -n 10 python3 -B -m timemachine.tm07_isolation_probe seal \
   --transcript "$TRANSCRIPT_FILE" --key-file "$OPERATOR_KEY_FILE" --receipt "$RECEIPT_FILE"
 ```
 
-The receipt is JSON with a `body` and `seal`. The body names `version`, `root`, `registration`, `launcher_digest`, `probe_transcript_digest`, the distinct OS identities, and all required passed checks. Stop the rehearsal listener and discard the rehearsal credentials. Only after explicit launch approval may the operator set `TM07_RUNS_DIR` to the registered root and call `server.serve_desk(port, approval_key=key, proof=receipt["body"], signature=receipt["seal"], launcher_digest=actual_release_digest)`. Compute `actual_release_digest` from the release files running now with `launch_fingerprint`, not by copying the digest from the receipt.
+The receipt is JSON with a `body` and `seal`. The body names `version`, `scope: "sampled-rehearsal-only"`, `root`, `registration`, `launcher_digest`, `probe_transcript_digest`, the distinct OS identity tuples, and the required sampled checks. An older receipt without this scope is not accepted. Stop the rehearsal listener and discard the rehearsal credentials. Only after independent review, the real-launcher rehearsal and explicit launch approval may the operator set `TM07_RUNS_DIR` to the registered root and call `server.serve_desk(port, approval_key=key, proof=receipt["body"], signature=receipt["seal"], launcher_digest=actual_release_digest)`. Compute `actual_release_digest` from the release files running now with `launch_fingerprint`, not by copying the digest from the receipt.

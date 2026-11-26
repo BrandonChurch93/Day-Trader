@@ -607,6 +607,7 @@ class DeskTest(unittest.TestCase):
             self.create("B",bad)
 
     def test_b05_desk_service_never_dispatches_legacy_and_tokens_are_unique(self):
+        from timemachine import tm07_isolation_probe as probe
         a = self.create("A")
         with patch.object(server,"handle",side_effect=AssertionError("legacy route dispatched")):
             self.assertEqual(server.handle_desk_only("GET","/next",{"session":[a.sid]},None,None)[0],404)
@@ -614,7 +615,7 @@ class DeskTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"already assigned"):
             D.create_desk(self.root/"TM07-other",spec,"A",D.BOSSES[0],{"boss":TOKEN},
                           approval_key=SEAL_KEY,vendor_signature=D.seal(SEAL_KEY,"vendor",spec["vendor_proofs"]))
-        incomplete = dict(root=str(self.root),launcher_digest="toy",probe_transcript_digest="toy",
+        incomplete = dict(scope=probe.SCOPE,root=str(self.root),launcher_digest="toy",probe_transcript_digest="toy",
                           sandbox_identities=["toy"],passed=["desk_routes_only"])
         with self.assertRaisesRegex(ValueError,"missing isolation"):
             D.validate_worker_boundary(SEAL_KEY,incomplete,D.seal(SEAL_KEY,"worker-boundary",incomplete),self.root)
@@ -699,6 +700,13 @@ class DeskTest(unittest.TestCase):
         proof = probe.evaluate(transcript)
         signature = D.seal(SEAL_KEY,"worker-boundary",proof)
         D.validate_worker_boundary(SEAL_KEY,proof,signature,self.root,launcher_digest=transcript["launcher_digest"])
+        for scope in (None,"independent-isolation-proof"):
+            misleading = {k:v for k,v in proof.items() if k != "scope"}
+            if scope is not None:
+                misleading["scope"] = scope
+            with self.assertRaisesRegex(ValueError,"sampled"):
+                D.validate_worker_boundary(SEAL_KEY,misleading,D.seal(SEAL_KEY,"worker-boundary",misleading),
+                                           self.root,launcher_digest=transcript["launcher_digest"])
         with self.assertRaisesRegex(ValueError,"isolation"):
             D.validate_worker_boundary(SEAL_KEY,proof,signature,self.root,launcher_digest=D.digest("other release"))
         row = next(x for x in transcript["observations"] if x["phase"] == "handoff")

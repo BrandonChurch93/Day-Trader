@@ -209,6 +209,7 @@ class DeskH(H):
 
 
 def serve_desk(port,*,approval_key,proof,signature,launcher_digest):
+    """The sampled receipt is required; separate deployment review is operator-owned."""
     from timemachine.desk import validate_worker_boundary
     root = os.environ.get("TM07_RUNS_DIR")
     if not root:
@@ -216,7 +217,7 @@ def serve_desk(port,*,approval_key,proof,signature,launcher_digest):
     validate_worker_boundary(approval_key,proof,signature,root,launcher_digest=launcher_digest)
     registration = proof.get("registration")
     if not isinstance(registration,str) or len(registration) != 64:
-        raise ValueError("sealed worker proof must name the registered attempt")
+        raise ValueError("sealed rehearsal receipt must name the registered attempt")
     server = ThreadingHTTPServer(("127.0.0.1",int(port)),DeskH)
     server.desk_registration = registration
     return server

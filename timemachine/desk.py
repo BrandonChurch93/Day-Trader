@@ -62,9 +62,11 @@ def claim_tokens(root,sid,tokens):
 
 
 def validate_worker_boundary(key,proof,signature,root,*,launcher_digest=None):
-    """Fail closed until an independent operator attests deployment probes."""
+    """Require a sealed, release-bound receipt of the sampled rehearsal."""
     from timemachine import tm07_isolation_probe as probe
     verify_seal(key,"worker-boundary",proof,signature)
+    if proof.get("scope") != probe.SCOPE:
+        raise ValueError("worker boundary receipt must be scoped to the sampled rehearsal")
     identities = proof.get("sandbox_identities")
     hash_ok = lambda s:isinstance(s,str) and re.fullmatch(r"[0-9a-f]{64}",s)
     if (proof.get("version") != probe.VERSION or proof.get("root") != str(Path(root).resolve())

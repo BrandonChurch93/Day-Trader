@@ -1,4 +1,4 @@
-"""Operator-only rehearsal of the real TM07 launch path, with no model call."""
+"""Sampled operator rehearsal checks for the TM07 launch path, without a model call."""
 import argparse
 import errno
 from hashlib import sha256
@@ -15,7 +15,8 @@ import urllib.request
 
 from timemachine import desk
 
-VERSION = "TM07-worker-probe-v1"
+VERSION = "TM07-worker-probe-v2"
+SCOPE = "sampled-rehearsal-only"
 IDENTITIES = {*desk.SCOUTS,*(f"{boss}/{arm}" for boss in desk.BOSSES for arm in desk.ARMS)}
 CHECKS = {"desk_routes_only","wrong_role_denied","sibling_token_denied","fixture_read_denied",
           "sibling_journal_read_denied","scorer_state_denied","outbound_denied","fresh_context","role_only_handoff"}
@@ -83,7 +84,7 @@ def worker(challenge):
 
 
 def evaluate(transcript):
-    """Accept observations only when every role and lifecycle phase passed."""
+    """Validate the sampled observations, not the deployed boundary."""
     rows = transcript["observations"]
     identities = transcript["markers"]
     if set(identities) != IDENTITIES or len(set(identities.values())) != len(IDENTITIES):
@@ -111,7 +112,7 @@ def evaluate(transcript):
     if any(len(set(group.values())) != len(IDENTITIES) or transcript["operator"] in group.values()
            for group in sandbox.values()):
         raise ValueError("worker identities share an OS boundary")
-    return dict(version=VERSION,root=transcript["root"],registration=transcript["registration"],
+    return dict(version=VERSION,scope=SCOPE,root=transcript["root"],registration=transcript["registration"],
                 launcher_digest=transcript["launcher_digest"],probe_transcript_digest=desk.digest(transcript),
                 sandbox_identities=sandbox["fresh"],passed=sorted(CHECKS))
 
