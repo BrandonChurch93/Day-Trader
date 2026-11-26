@@ -611,8 +611,8 @@ Working papers.
 | `research_rig/test_dashboard_status.py` | Checks status parsing, missed replay entries and scoreboard totals | CURRENT |
 | `research_rig/replay_cards.py` | Builds the Replay 48, 52, 53, 60 and 62 cards on the owner's screen from their result pages and the Replay 48 identity review. No scoring or market-data reads | CURRENT |
 | `research_rig/test_replay_cards.py` | Checks those cards: verdicts, tones, the required plain lines, and that each figure shown is on its source page | CURRENT |
-| `research_rig/newest_cards.py` | Builds the newest cards on the owner's screen (Plan 75 on the sealed years, coin sweep of plans 70 and 71, plan 73, the E09 forward log) from the pinned files behind docs 152, 154, 157 and 181 and from `practice/forward/E09_log.json`, plus the Running now strip from `docs/QUEUE.md`. Refuses when a pin or a figure stops fitting. No prices read | CURRENT |
-| `research_rig/test_newest_cards.py` | Checks those cards and the strip: figures against the pinned files (Plan 75 included), refusal on a changed file, no figure when the files are absent, "no signal yet" for E09 (needs pytest) | CURRENT |
+| `research_rig/newest_cards.py` | Builds the newest cards on the owner's screen (Plan 75 on the sealed years, coin sweep of plans 70 and 71, plan 73, the E09 and E10 forward logs) from the pinned files behind docs 152, 154, 157 and 181 and from `practice/forward/E09_log.json` and `practice/forward/E10_log.json` (refuses an E10 log of another shape), plus the Running now strip from `docs/QUEUE.md`. Refuses when a pin or a figure stops fitting. No prices read | CURRENT |
+| `research_rig/test_newest_cards.py` | Checks those cards and the strip: figures against the pinned files (Plan 75 included), refusal on a changed file, no figure when the files are absent, "no signal yet" for E09, and the E10 placeholder, a made-up populated log and a stopped venue built through `practice/test_forward_e10.py` helpers in a temp folder (needs pytest) | CURRENT |
 
 ## practice/ (the practice desk: pretend money, live prices)
 

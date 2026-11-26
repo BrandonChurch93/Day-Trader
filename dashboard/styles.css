@@ -500,3 +500,12 @@ select {
 }
 #newest-list .numlist dd { white-space: nowrap; text-align: right; }
 .nowrap { white-space: nowrap; }
+
+/* Side-by-side figures inside a result card (E10: Coinbase and Binance.US). */
+table.cols { width: 100%; max-width: 640px; border-collapse: collapse; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums lining-nums; }
+table.cols th, table.cols td { padding: 4px 0 4px 12px; text-align: left; vertical-align: top; }
+table.cols th:first-child { padding-left: 0; }
+table.cols thead th { color: var(--muted); font-weight: 600; font-size: 14px; padding-top: 8px; }
+table.cols tbody th { color: var(--muted); font-weight: 400; }
+table.cols .n { text-align: right; white-space: nowrap; font-weight: 600; }
+table.cols thead .n { font-weight: 600; }
