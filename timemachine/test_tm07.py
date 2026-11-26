@@ -223,7 +223,8 @@ class DeskTest(unittest.TestCase):
                           (T+60,A,170,171,169,170),(T+60,B,120,121,119,120)])
             book = P.new_book(1000)
             book.update(cash=1900,qty={A:-6,B:-3},target={A:-.6,B:-.3},last_px={A:100,B:100})
-            return O.step(book,dict(weights={A:-.6,B:-.35}),spec["rows"][0],spec["params"],
+            pp = dict(spec["params"],funding={},fallback_per_day=0)
+            return O.step(book,dict(weights={A:-.6,B:-.35}),spec["rows"][0],pp,
                           P.Minutes(spec["minutes"]),T,T+120,True,{},1)[0]
         calm, jump = trial(101),trial(350)
         self.assertEqual(calm["trades"][0]["fill_utc"],O.stamp(T))
@@ -554,6 +555,33 @@ class DeskTest(unittest.TestCase):
             if opening == 90:
                 outcomes.append((book["cash"],book["qty"],book["fee_usd"]))
         self.assertEqual(outcomes[0],outcomes[1])
+
+    def test_pass5_same_stamp_funding_nets_before_one_maintenance_check(self):
+        for offset in (0,45):
+            for debit,credit in ((A,B),(B,A)):
+                for legs,cash,must_close in (
+                    ((-10,100,190.47,-.0005,-10,100,190.47,.0005),4000,False),
+                    ((-9,200,200,-.0001,1,100,100,-.001),1795.13,False),
+                    ((-9,200,200,-.0002,1,100,100,-.001),1795.13,True),
+                ):
+                    with self.subTest(offset=offset,debit=debit,legs=legs):
+                        q1,o1,h1,r1,q2,o2,h2,r2 = legs
+                        pp = world()["params"]
+                        pp["fallback_per_day"] = 0
+                        pp["funding"] = {debit:{T+offset:r1},credit:{T+offset:r2}}
+                        marks = {debit:o1,credit:o2}
+                        book = P.new_book(1000)
+                        book.update(cash=cash,qty={debit:q1,credit:q2},last_px=marks.copy())
+                        bars = [(T,debit,o1,h1,o1,o1),(T,credit,o2,h2,o2,o2)]
+                        scan = O.Orders().advance(book,pp,sorted(bars),T,T+60,1)
+                        settled = [s for s in scan["settlements"] if s["rate"] is not None]
+                        self.assertEqual({s["symbol"]:s["qty"] for s in settled},{debit:q1,credit:q2})
+                        self.assertAlmostEqual(scan["funding_usd"],q1*o1*r1+q2*o2*r2,places=12)
+                        self.assertEqual(bool(scan["closeout"]),must_close)
+                        if must_close:
+                            self.assertEqual(scan["closeout"]["utc"],O.stamp(T+offset))
+                        else:
+                            self.assertAlmostEqual(book["cash"],cash-scan["funding_usd"])
 
     def test_reaudit_opr_r5_price_packet_rejects_unscreened_fields(self):
         spec = world()

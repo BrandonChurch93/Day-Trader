@@ -279,17 +279,21 @@ class Orders:
         """Apply the same pessimistic one-bar maintenance proxy to every arm."""
         total = dict(exits=[], closeout=None, funding_usd=0.0, fallback_hours=0, held_seconds=0,settlements=[])
         book.setdefault("held_seconds",0)
-        events = iter(funding_schedule(pp,start,end if last else end-1))
+        events = ((stamp_at, list(batch)) for stamp_at,batch in
+                  groupby(funding_schedule(pp,start,end if last else end-1),key=lambda event:event[0]))
         upcoming = next(events, None)
         blocked = False
 
         def fund_until(tick, opens, marks, bar_start):
             nonlocal upcoming
-            forced = None
+            forced = checked_at = None
             while upcoming and upcoming[0] <= tick:
-                t,s,rate,fallback = upcoming
-                q = book["qty"].get(s)
-                if q:
+                t,batch = upcoming
+                costs = []
+                for _,s,rate,fallback in batch:
+                    q = book["qty"].get(s)
+                    if not q:
+                        continue
                     price = opens.get(s,book["last_px"][s]) if t == tick else book["last_px"][s]
                     if fallback:
                         cost = abs(q)*price*pp["fallback_per_day"]*fallback/24
@@ -297,14 +301,18 @@ class Orders:
                         total["fallback_hours"] += fallback
                     else:
                         cost = q*price*rate
-                    book["cash"] -= cost
-                    book["funding_usd"] += cost
-                    total["funding_usd"] += cost
+                    costs.append(cost)
                     total["settlements"].append(dict(utc=stamp(t),symbol=s,qty=q,mark=price,rate=rate,cost=cost))
-                    if cost > 0 and check(t,marks(),"funding_debit",bar_start):
+                if any(costs):
+                    net = math.fsum(costs)
+                    book["cash"] -= net
+                    book["funding_usd"] += net
+                    total["funding_usd"] += net
+                    checked_at = t
+                    if check(t,marks(),"funding_batch",bar_start):
                         forced = t
                 upcoming = next(events, None)
-            return forced
+            return forced, checked_at
 
         def block(tick):
             nonlocal blocked
@@ -318,8 +326,8 @@ class Orders:
             blocked = True
 
         def margin(prices):
-            return (P.value_at(book, prices),
-                    sum(pp["maint"][s]*abs(q)*prices[s] for s,q in book["qty"].items()))
+            return (math.fsum([book["cash"],*(q*prices[s] for s,q in book["qty"].items())]),
+                    math.fsum(pp["maint"][s]*abs(q)*prices[s] for s,q in book["qty"].items()))
 
         def note_drawdown(eq):
             peak = book["peak"]
@@ -375,12 +383,13 @@ class Orders:
             def adverse():
                 return {s:extremes[s][q < 0] if s in extremes else prior_close[s] for s,q in book["qty"].items()}
 
-            fund_until(tick, opens, adverse, tick)
+            _,checked_at = fund_until(tick, opens, adverse, tick)
             book["last_px"].update(opens)
             at = min(tick+MINUTE,end)
             protected = set()
             # A deliberately noncausal check on positions carried into the open.
-            check(tick,adverse(),"pre_open_proxy",tick)
+            if checked_at != tick:
+                check(tick,adverse(),"pre_open_proxy",tick)
             if not blocked and bars:
                 self.activate(tick,opens)
             bar_by_symbol = {r[1]:r for r in bars}
@@ -404,7 +413,7 @@ class Orders:
             if not blocked and bars:
                 self.execute_open(book, pp, tick, opens, gross)
             held = bool(book["qty"])
-            forced = fund_until(at-1,{},adverse,tick)
+            forced,_ = fund_until(at-1,{},adverse,tick)
             if held:
                 seconds = (at if forced is None else forced)-tick
                 total["held_seconds"] += seconds
@@ -432,8 +441,9 @@ class Orders:
             book["last_px"].update(end_marks or {})
             def closing_marks():
                 return {s:book["last_px"][s] for s in book["qty"]}
-            fund_until(end,{},closing_marks,None)
-            check(end,closing_marks(),"session_end",None)
+            _,checked_at = fund_until(end,{},closing_marks,None)
+            if checked_at != end:
+                check(end,closing_marks(),"session_end",None)
         self.expire(end)
         return total
 
