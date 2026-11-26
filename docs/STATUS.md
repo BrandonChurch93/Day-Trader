@@ -1,12 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 03:53 UTC
+Last updated: 2026-11-26 03:54 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
 
-- Nothing tested so far is good enough to trade. That is the list below, and it is a short list.
+- First counted trading-replay pass. MEASURED. Replay 25's unlevered TLT month-end rule met all nine frozen marks at 2 bps per side. It averaged +0.2562% net across 130 monthly windows with a t-statistic of 2.36. The last partial year lost, and higher assumed costs weakened the result. [Replay 25](research/69_replay_25_treasury_month_end.md) is a reason to test again on separate data, not clearance to trade.
 - Three machines exist or are being built: the rig (`research_rig/`, working), the practice desk (`practice/`, running), the time machine (`timemachine/`, working, running AI sessions on crypto since 2026-11-25).
 - The practice desk is running with pretend money since 2026-11-25 16:31 UTC, with the two fixed rules. GitHub's own schedule did not start a single run in its first two hours, MEASURED 2026-11-25 17:16 UTC, cause UNKNOWN. Since 17:20 UTC each run starts the next one itself about ten minutes later, and the research machine starts one if none has begun for 14 minutes. What it has done is on the owner's screen and in the summary file on the `practice-records` branch. This page does not repeat it.
 - No real-money account. No purchases. No real trades.
@@ -15,9 +15,9 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 The Result column is written by `tools/status_table.py` from the output files or, for Replay 24, its generated result page. Do not edit it by hand.
 
-- "Pass" in the table means a rule cleared the five pass marks in that run (`research_rig/README.md` lists them). No pass from 2026-11-25 is counted. Each came from a run where the pass mark or the costs changed after results had been seen, or where the ledger row was late. Under "Honest testing" in `AGENTS.md` that makes it a new attempt, not a result. Fails stand.
+- "Pass" means a rule cleared the marks in that run's frozen plan. No pass from 2026-11-25 is counted. Each came from a run where the pass mark or the costs changed after results had been seen, or where the ledger row was late. Under "Honest testing" in `AGENTS.md` that makes it a new attempt, not a result. Fails stand.
 - Where the table says "question 18b" or "the morning list", it points at `archive/decisions/morning_list_2026-11-25.md`, which is history. The builder settled it as written in the line above.
-- A counted pass would mean "worth running on the practice desk". It would not mean "makes money".
+- A counted pass can justify a further check. It does not show what an order would earn in practice.
 
 <!-- results:start (written by tools/status_table.py, do not edit by hand) -->
 | Test | What was asked | Result, MEASURED | Full write-up |
