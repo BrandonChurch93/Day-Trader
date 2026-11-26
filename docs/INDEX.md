@@ -258,6 +258,7 @@ Working papers.
 | `research_rig/PREREG_23_ipo_fast_track.md` | Frozen Queue 37 IPO fast-track index buying, ledger 160, eight marks. No bar collected or result | CURRENT |
 | `research_rig/common_23.py`, `research_rig/fetch_23.py`, `research_rig/score_23.py`, `research_rig/report_23.py`, `research_rig/calibrate_23.py`, `research_rig/test_23.py` | Replay 23 engine and approval gate, off-repo bar collector and freeze, one-shot scorer, page writer, planted-path calibration, invented-input fixtures | CURRENT |
 | `research_rig/PINNED_23.json` | Replay 23 frozen plan, code and config-block hashes read by the approval gate. No bars, breakpoints or prices | CURRENT |
+| `research_rig/APPROVAL_23.md` | The lead agent's approval line for replay 23: one collection and one scored run, names the freeze commit. Read by the approval gate | CURRENT |
 | `research_rig/PREREG_25_treasury_month_end.md` | Frozen Queue 41 Treasury ETF month-end window, ledger 162, nine marks. No data collected or result | CURRENT |
 | `research_rig/PREREG_24_same_coin_carry.md` | Frozen Queue 39 same-coin funding carry, ledger 161, five marks, reviewed off-repo metadata hashes. No real result | CURRENT |
 | `research_rig/common_24.py` | Replay 24 spot and perpetual event accounting, fees and matched controls | CURRENT |
