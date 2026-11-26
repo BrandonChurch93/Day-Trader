@@ -7,8 +7,17 @@ import stat
 from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
 
-from timemachine.tm09_desk import PORTS, PUBLIC_SID, TOKEN
+from timemachine.tm09_desk import PORTS, PUBLIC_SID, ROLES, TOKEN
 from timemachine.tm09_fixture import read_private
+
+# Workers of every role are denied direct reads of these same four targets.
+CANARY_TARGETS = ('private tape', 'notes', 'key', 'results')
+
+
+def required_canary_targets(role):
+    if role not in ROLES:
+        raise ValueError('invalid worker role for isolation review')
+    return CANARY_TARGETS
 
 
 def request(opener, port, sid, route, token, data=None):
@@ -34,7 +43,8 @@ def probe(port, sid, sibling, token, canaries, stopped=False):
     if (port not in PORTS or not PUBLIC_SID.fullmatch(sid) or not PUBLIC_SID.fullmatch(sibling)
             or not TOKEN.fullmatch(token) or sid == sibling or not os.geteuid()):
         raise ValueError('invalid rehearsal boundary parameters')
-    if not canaries or not all(cannot_open(p) for p in canaries):
+    if (len(canaries) != len(CANARY_TARGETS) or len(set(canaries)) != len(canaries)
+            or not all(cannot_open(p) for p in canaries)):
         raise ValueError('raw-copy boundary not proven')
     opener = build_opener(ProxyHandler({}))
     if stopped:
@@ -64,7 +74,8 @@ if __name__ == '__main__':
     p.add_argument('--session', required=True)
     p.add_argument('--sibling', required=True)
     p.add_argument('--bearer-file', type=Path, required=True)
-    p.add_argument('--canary', type=Path, action='append', required=True)
+    p.add_argument('--canary', type=Path, action='append', required=True,
+                   help='one distinct, operator-verified path per target, in order: ' + ', '.join(CANARY_TARGETS))
     p.add_argument('--stopped', action='store_true')
     a = p.parse_args()
     try:
