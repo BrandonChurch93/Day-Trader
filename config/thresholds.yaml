@@ -1350,3 +1350,149 @@ m121_reporting:
   status: builder
   note: STATED draft evidence rule for discussing a later strategy test, not a profitability threshold or authorization.
   source: docs/research/166_m121_cef_resting_bid.md
+
+# Criteria gate example cards (practice/criteria/EXAMPLE_*.json). Made-up numbers for the gate's tests only. Not registered, not tradable.
+
+practice_gate_ex01_candidate_max_age_minutes:
+  value: 90
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. How old an EX01 candidate's event may be when the gate reads it.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_min_bars:
+  value: 24
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 needs at least this many complete hourly bars.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_fall_lookback_bars:
+  value: 3
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 measures the fall over this many hourly bars.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_min_fall:
+  value: 0.04
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 entry, the coin fell at least this share over the look-back.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_volume_lookback_bars:
+  value: 20
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 compares the last bar's volume with the mean of this many bars before it.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_volume_multiple:
+  value: 1.5
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 entry, the last bar's volume is at least this many times that mean.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_size_usd:
+  value: 100
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 buys this many pretend dollars.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_target:
+  value: 0.03
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 exit, sell all when the price is this share above the gate's reference price.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_stop:
+  value: 0.02
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 exit, sell all when the price is this share below the gate's reference price.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_hold_minutes:
+  value: 360
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 exit, sell all this many minutes after the decision.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_fee_bps_per_side:
+  value: 25
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 cost assumed, fee per side, in basis points.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_slippage_bps_per_side:
+  value: 5
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX01 cost assumed, slippage per side, in basis points.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex01_pick_life_minutes:
+  value: 30
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. An EX01 pick not traded within this many minutes is dropped.
+  source: practice/criteria/EXAMPLE_EX01.json
+
+practice_gate_ex02_candidate_max_age_minutes:
+  value: 1440
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. How old an EX02 candidate's event may be when the gate reads it.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_min_bars:
+  value: 21
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 needs at least this many complete daily bars.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_high_lookback_bars:
+  value: 20
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 entry, the last close is above the highest high of this many bars before it.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_trend_lookback_bars:
+  value: 20
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 entry, the last close is above the mean close of this many bars, the last one included.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_size_usd:
+  value: 200
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 buys this many pretend dollars.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_target:
+  value: 0.05
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 exit, sell all at this share above the reference price.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_stop:
+  value: 0.03
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 exit, sell all at this share below the reference price.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_hold_minutes:
+  value: 4320
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 exit, sell all this many minutes after the decision.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_fee_bps_per_side:
+  value: 0
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 cost assumed, fee per side, in basis points.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_slippage_bps_per_side:
+  value: 5
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. EX02 cost assumed, slippage per side, in basis points.
+  source: practice/criteria/EXAMPLE_EX02.json
+
+practice_gate_ex02_pick_life_minutes:
+  value: 60
+  status: example
+  note: EXAMPLE, made up for the gate's tests, not a registered method. An EX02 pick not traded within this many minutes is dropped.
+  source: practice/criteria/EXAMPLE_EX02.json

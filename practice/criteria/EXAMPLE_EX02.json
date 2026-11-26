@@ -1,0 +1,21 @@
+{
+ "id": "EX02",
+ "status": "EXAMPLE",
+ "registered": false,
+ "tradable": false,
+ "title": "EXAMPLE ONLY. Made-up breakout buy on a stock that closes above its recent highs while above its average. Not a method, not registered, not tradable.",
+ "trader": "GX02",
+ "ledger_row": null,
+ "market": {"kind": "stock", "symbols": ["ABC", "XYZ"]},
+ "candidate": {"events": ["earnings_beat", "guidance_raise"], "max_age_minutes": "practice_gate_ex02_candidate_max_age_minutes"},
+ "timeframe": "1Day",
+ "entry": [
+  {"check": "enough_bars", "bars": "practice_gate_ex02_min_bars"},
+  {"check": "close_above_high", "lookback_bars": "practice_gate_ex02_high_lookback_bars"},
+  {"check": "close_above_mean", "lookback_bars": "practice_gate_ex02_trend_lookback_bars"}
+ ],
+ "size": {"rule": "fixed_usd", "usd": "practice_gate_ex02_size_usd"},
+ "exit": {"target": "practice_gate_ex02_target", "stop": "practice_gate_ex02_stop", "hold_minutes": "practice_gate_ex02_hold_minutes"},
+ "costs": {"fee_bps_per_side": "practice_gate_ex02_fee_bps_per_side", "slippage_bps_per_side": "practice_gate_ex02_slippage_bps_per_side"},
+ "pick_life_minutes": "practice_gate_ex02_pick_life_minutes"
+}
