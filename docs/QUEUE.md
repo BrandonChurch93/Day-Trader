@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 22:06 UTC
+Last changed: 2026-11-26 22:17 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -155,6 +155,7 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 | Watch only (round 55, second-checked): a web-searching agent making daily stock calls (STATED +18.4 hundredths of a percent a day before costs over nine months, unnamed model, tables disagree). Revisit after TM09's noise stage, which measures whether our own desk can tell such a signal from luck | [doc 178](research/178_idea_round_55_language_model_signals.md) |
 | Watch only (round 51, second-checked): company insiders' open-market purchases in stocks already rising, and clusters of insider buying with an upbeat outlook. Both rest on unreviewed sources; no count stage on those sources | [doc 174](research/174_idea_round_51_larger_swing_edges.md) |
 | Watch only (round 59, second-checked): index changes in December 2026. Russell reconstitution effective at the close 2026-12-11 (free lists cover the Russell 3000 and Microcap only); S&P SmallCap 600 quarterly changes expected announced 2026-12-04, effective at the close 2026-12-18; narrow queue 87's December note to S&P 600 deletions that leave the index family. Two to four dates a year, so no verdict is reachable soon; notes only, beside queue rows 42, 76 and 87 | [doc 184](research/184_round_59_dated_flows_next_eight_weeks.md) |
+| Watch only (round 60, second-checked): a spread estimate from Binance.US's own one-minute bars, compared once against Measurement 132's live readings after 2026-12-26, as a diagnostic only. It needs its own fixed protocol before the readout and cannot make past costs usable: the venue had no dollar trading from 2023-07-13 to February 2025 | [doc 185](research/185_round_60_using_the_cost_finding.md) |
 
 ## Looked at and dropped before testing
 
