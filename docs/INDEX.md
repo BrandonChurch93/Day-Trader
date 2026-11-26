@@ -48,6 +48,7 @@ Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEU
 | `tools/check_repo.py` | Checks this index, paths named in the map, playbook and research pages, config keys named in documents, the results table in the status page, the coverage tables in `docs/research/10_historical_data_and_practice.md`, and stored outputs against `research_rig/provenance.json`. With `--builders` it also runs the document builders and fails if a built page changes | CURRENT |
 | `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from output files and the generated Replay 24 result page | CURRENT |
 | `tools/report_saved_25.py` | Renders the Replay 25 result page from the pinned saved aggregate JSON. Does not open market inputs or score | CURRENT |
+| `tools/report_saved_23.py` | Renders the Replay 23 result page from the pinned saved run outputs (off repo). Does not open bars or score | CURRENT |
 | `tools/report_saved_20.py` | Renders the Replay 20 result page from the pinned saved aggregate JSON. Does not open market inputs or score | CURRENT |
 | `tools/bars_coverage.py` | With `--write`, writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from `research_rig/platform_bars_coverage.json` and `research_rig/platform_bars_crosscheck.json`, so no figure there is typed. With `--summarise`, on a machine that has the price files, rebuilds the first of those two files from the gap check's output | CURRENT |
 
@@ -155,6 +156,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/68_replay_24_same_coin_carry.md` | Same-coin funding carry on viewed dates. Run once, did not pass, one of five marks | CURRENT |
 | `docs/research/69_replay_25_treasury_month_end.md` | Treasury ETF month-end rule. First counted trading-replay pass, 9 of 9 marks at 2 bps per side, with higher costs and fill limits shown | CURRENT |
 | `docs/research/71_replay_20_upbit_listing_short.md` | Upbit listing short after a red UTC day. Second counted trading-replay pass, 5 of 5 on viewed dates; US availability and concentration limits | CURRENT |
+| `docs/research/72_replay_23_ipo_fast_track.md` | Early index buying after large US listings. Run once, did not pass, 7 of 8 marks; worked on paper 2017 to 2021, not since 2022 | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
