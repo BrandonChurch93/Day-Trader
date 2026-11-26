@@ -1,0 +1,21 @@
+{
+ "id": "EX01",
+ "status": "EXAMPLE",
+ "registered": false,
+ "tradable": false,
+ "title": "EXAMPLE ONLY. Made-up dip buy on a coin after a sharp hourly fall on high volume. Not a method, not registered, not tradable. It exists so the gate's tests have a long entry, a refusal and three kinds of exit.",
+ "trader": "GX01",
+ "ledger_row": null,
+ "market": {"kind": "crypto", "symbols": ["ETH/USD", "SOL/USD"]},
+ "candidate": {"events": ["sharp_drop"], "max_age_minutes": "practice_gate_ex01_candidate_max_age_minutes"},
+ "timeframe": "1Hour",
+ "entry": [
+  {"check": "enough_bars", "bars": "practice_gate_ex01_min_bars"},
+  {"check": "fell_at_least", "lookback_bars": "practice_gate_ex01_fall_lookback_bars", "min_fall": "practice_gate_ex01_min_fall"},
+  {"check": "volume_above_mean", "lookback_bars": "practice_gate_ex01_volume_lookback_bars", "multiple": "practice_gate_ex01_volume_multiple"}
+ ],
+ "size": {"rule": "fixed_usd", "usd": "practice_gate_ex01_size_usd"},
+ "exit": {"target": "practice_gate_ex01_target", "stop": "practice_gate_ex01_stop", "hold_minutes": "practice_gate_ex01_hold_minutes"},
+ "costs": {"fee_bps_per_side": "practice_gate_ex01_fee_bps_per_side", "slippage_bps_per_side": "practice_gate_ex01_slippage_bps_per_side"},
+ "pick_life_minutes": "practice_gate_ex01_pick_life_minutes"
+}
