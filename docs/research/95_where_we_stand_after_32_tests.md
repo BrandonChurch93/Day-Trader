@@ -1,10 +1,10 @@
-# Where We Stand After 40 Scored Tests
+# Where We Stand After 41 Scored Tests
 
-Last changed: 2026-11-26 UTC (Replay 53 result, the Bitcoin cost stop and new queue checks). Plain synthesis for the owner. Figures come from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the named repo files, including drafts where noted; no return was recomputed. Claims are labeled MEASURED (from our own runs), STATED (from plans, schedules, or external sources cited in repo docs), or UNKNOWN (not yet measured).
+Last changed: 2026-11-26 UTC (Replay 60 result added after Replay 53 and the Bitcoin cost stop). Plain synthesis for the owner. Figures come from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the named repo files, including drafts where noted; no return was recomputed. Claims are labeled MEASURED (from our own runs), STATED (from plans, schedules, or external sources cited in repo docs), or UNKNOWN (not yet measured).
 
 ## 1. Every Scored Test So Far
 
-MEASURED: Forty scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample, as counted below. Three counted trading replays passed their frozen marks: Replays 25 and 48 (US $500 reachable) and Replay 20 (not US-reachable). Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
+MEASURED: Forty-one scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample, as counted below. Three counted trading replays passed their frozen marks: Replays 25 and 48 (US $500 reachable) and Replay 20 (not US-reachable). Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
 
 | # | Test | What it tested (6 words) | Family | US $500? | Result (MEASURED) | Headline net number and source |
 |---|---|---|---|---|---|---|
@@ -48,10 +48,11 @@ MEASURED: Forty scored tests (trading replays, AI time-machine evaluations, and 
 | 38 | Replay 48 | Long the five worst muni closed-end funds, last December close to last January close | forced flow | Yes | Passed (7 of 7 marks) | 10 yearly turns, +1.39% mean net per turn against +0.09% for MUB and +0.59% for the roster; 8 of 10 positive (`docs/research/103_replay_48_muni_cef_january.md`); MEASURED identity review on 2026-11-26 found MUI under the wrong symbol for nine turns, and pre-entry prices show it would not have been picked in any turn, so the pass stands (`research_rig/REVIEW_48_identity.md`). |
 | 39 | Replay 52 | Buy corporate bond funds after quarter-end | forced flow | Yes | Did not pass (0 of 6 marks) | 40 quarters, -0.0308% mean net, t -0.24; -0.0197% net of Treasury proxies, against +0.1279% net after 80 ordinary month-ends (`docs/research/113_replay_52_quarter_end_corporate_bond_funds.md`) |
 | 40 | Replay 53 | Buy taxable closed-end fund losers into January | forced flow | Yes | Did not pass (5 of 7 marks) | +2.74% mean net, versus +2.00% for PCEF and +1.83% for the roster; positive in 6 of 10 turns and ahead of PCEF in 6 of 10, both below the frozen marks (`docs/research/122_replay_53_taxable_fund_january_rebound.md`) |
+| 41 | Replay 60 | Buy special-dividend declarations two sessions after the filing, hold 20 sessions | event | Yes | Did not pass (6 of 7 marks) | 339 placed pairs, +1.96% mean net (clustered t 2.38); +0.96% against IWM with clustered t 1.23 against a mark of 2, the one missed mark (`docs/research/126_replay_60_special_dividends.md`) |
 
 ## 2. Count by Family
 
-MEASURED from the 40 scored tests in Section 1:
+MEASURED from the 41 scored tests in Section 1:
 
 | Family | Tested | Counted passes | Notes |
 |---|---:|---:|---|
@@ -61,9 +62,9 @@ MEASURED from the 40 scored tests in Section 1:
 | chart pattern | 5 | 0 | All five failed, including Measurement 15 fill gate |
 | carry | 2 | 0 | Both cross-coin and same-coin funding carry failed after costs |
 | calendar | 2 | 0 | Replay 39 (IWM pre-holiday) missed both t marks at 1.91 and 1.82 |
-| event | 4 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable); Replay 21 and both legs of Replay 46 did not pass |
+| event | 5 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable); Replay 21, both legs of Replay 46 and Replay 60 did not pass |
 | copy-trading | 1 | 0 | Replay 12 (Congress disclosures) lagged SPY by 1.0%/yr on held-back data |
-| Total | 40 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
+| Total | 41 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
 
 ## 3. What the First Two Passes Have in Common and Their Dollar Size
 
@@ -74,6 +75,7 @@ The later [Replay 48](103_replay_48_muni_cef_january.md) pass averaged about $7 
 - MEASURED: [Replay 53](122_replay_53_taxable_fund_january_rebound.md) beat PCEF and the eligible roster on average, but missed both year-count marks: years above zero and years ahead of PCEF.
 - MEASURED, shown only: the taxable and muni yearly results had a correlation of 0.80. STATED interpretation: the two replays are mostly the same bet, not independent evidence ([Replay 53](122_replay_53_taxable_fund_january_rebound.md)).
 - STATED: the fifth-session exit was shown only, so it cannot count as a pass ([Replay 53](122_replay_53_taxable_fund_january_rebound.md)).
+- MEASURED: [Replay 60](126_replay_60_special_dividends.md) made +1.96% net per 20-session hold after special-dividend declarations, but only +0.96% more than IWM over the same days, with clustered t 1.23. STATED interpretation: about half of the gain was the market, and the stock-specific half is not clear of chance on 339 events.
 
 Dollar size of Replay 25 (TLT month-end, US $500 reachable, unlevered, before taxes):
 
