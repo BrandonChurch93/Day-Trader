@@ -1,0 +1,180 @@
+{
+  "seed": 67109,
+  "worlds_per_case": 50000,
+  "assumed_hold_sessions": 3.4,
+  "assumed_plain_minus_excess_bp": 14.7,
+  "required_power": 0.33,
+  "central_case_index": 0,
+  "cases": [
+    {
+      "assumed_dates": 180,
+      "synthetic_weeks": 158,
+      "weekly_shock_correlation": 0.25,
+      "published_annual_vol_percent": 16.72,
+      "implied_hold_noise_bp": 194.2117,
+      "trim_dates": 2,
+      "scenarios": [
+        {
+          "assumed_excess_bp": 0.0,
+          "passes": 1143,
+          "pass_rate": 0.02286,
+          "t_mark_rate": 0.0231
+        },
+        {
+          "assumed_excess_bp": 8.4,
+          "passes": 3808,
+          "pass_rate": 0.07616,
+          "t_mark_rate": 0.0765
+        },
+        {
+          "assumed_excess_bp": 16.8,
+          "passes": 9645,
+          "pass_rate": 0.1929,
+          "t_mark_rate": 0.19372
+        },
+        {
+          "assumed_excess_bp": 33.6,
+          "passes": 29887,
+          "pass_rate": 0.59774,
+          "t_mark_rate": 0.5992
+        }
+      ]
+    },
+    {
+      "assumed_dates": 180,
+      "synthetic_weeks": 158,
+      "weekly_shock_correlation": 0.0,
+      "published_annual_vol_percent": 15.54,
+      "implied_hold_noise_bp": 180.5054,
+      "trim_dates": 2,
+      "scenarios": [
+        {
+          "assumed_excess_bp": 0.0,
+          "passes": 1176,
+          "pass_rate": 0.02352,
+          "t_mark_rate": 0.02366
+        },
+        {
+          "assumed_excess_bp": 8.4,
+          "passes": 4292,
+          "pass_rate": 0.08584,
+          "t_mark_rate": 0.08622
+        },
+        {
+          "assumed_excess_bp": 16.8,
+          "passes": 11297,
+          "pass_rate": 0.22594,
+          "t_mark_rate": 0.22686
+        },
+        {
+          "assumed_excess_bp": 33.6,
+          "passes": 34263,
+          "pass_rate": 0.68526,
+          "t_mark_rate": 0.68668
+        }
+      ]
+    },
+    {
+      "assumed_dates": 180,
+      "synthetic_weeks": 158,
+      "weekly_shock_correlation": 0.25,
+      "published_annual_vol_percent": 17.48,
+      "implied_hold_noise_bp": 203.0395,
+      "trim_dates": 2,
+      "scenarios": [
+        {
+          "assumed_excess_bp": 0.0,
+          "passes": 1143,
+          "pass_rate": 0.02286,
+          "t_mark_rate": 0.0231
+        },
+        {
+          "assumed_excess_bp": 8.4,
+          "passes": 3636,
+          "pass_rate": 0.07272,
+          "t_mark_rate": 0.07304
+        },
+        {
+          "assumed_excess_bp": 16.8,
+          "passes": 8984,
+          "pass_rate": 0.17968,
+          "t_mark_rate": 0.18052
+        },
+        {
+          "assumed_excess_bp": 33.6,
+          "passes": 27974,
+          "pass_rate": 0.55948,
+          "t_mark_rate": 0.56112
+        }
+      ]
+    },
+    {
+      "assumed_dates": 164,
+      "synthetic_weeks": 142,
+      "weekly_shock_correlation": 0.25,
+      "published_annual_vol_percent": 16.72,
+      "implied_hold_noise_bp": 194.2117,
+      "trim_dates": 2,
+      "scenarios": [
+        {
+          "assumed_excess_bp": 0.0,
+          "passes": 1151,
+          "pass_rate": 0.02302,
+          "t_mark_rate": 0.02314
+        },
+        {
+          "assumed_excess_bp": 8.4,
+          "passes": 3614,
+          "pass_rate": 0.07228,
+          "t_mark_rate": 0.07262
+        },
+        {
+          "assumed_excess_bp": 16.8,
+          "passes": 8851,
+          "pass_rate": 0.17702,
+          "t_mark_rate": 0.17794
+        },
+        {
+          "assumed_excess_bp": 33.6,
+          "passes": 27853,
+          "pass_rate": 0.55706,
+          "t_mark_rate": 0.55866
+        }
+      ]
+    },
+    {
+      "assumed_dates": 150,
+      "synthetic_weeks": 135,
+      "weekly_shock_correlation": 0.25,
+      "published_annual_vol_percent": 16.72,
+      "implied_hold_noise_bp": 194.2117,
+      "trim_dates": 2,
+      "scenarios": [
+        {
+          "assumed_excess_bp": 0.0,
+          "passes": 1180,
+          "pass_rate": 0.0236,
+          "t_mark_rate": 0.0237
+        },
+        {
+          "assumed_excess_bp": 8.4,
+          "passes": 3525,
+          "pass_rate": 0.0705,
+          "t_mark_rate": 0.07082
+        },
+        {
+          "assumed_excess_bp": 16.8,
+          "passes": 8382,
+          "pass_rate": 0.16764,
+          "t_mark_rate": 0.1684
+        },
+        {
+          "assumed_excess_bp": 33.6,
+          "passes": 26343,
+          "pass_rate": 0.52686,
+          "t_mark_rate": 0.52836
+        }
+      ]
+    }
+  ]
+}
