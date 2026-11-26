@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 12:45 UTC
+Last updated: 2026-11-26 13:40 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -14,6 +14,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- Plan 70, the coin discovery sweep ([plan](../research_rig/PREREG_70_coin_sweep.md), [design](150_discovery_sweep_design.md)), search step run once 2026-11-26 06:40 MT on 2020 to 2023 only. MEASURED: of 188 written rules on 20 coins, 160 had enough trades and 142 of those lost clearly to their baseline after cost. One rule cleared every search mark: 70-102, fade a coin that has moved more than twice as far as bitcoin during a 1.5% two-hour bitcoin move, hold two hours. 691 trades on 435 days, +56.5 bp a trade net at the judged US futures cost, t 3.51 against a bar of 3.5, both halves positive, +36.4 bp without its best 1% of trades. Its family holds the next four rules by t as well. STATED: this is a search result on prices standing in for the futures contract, picked as the best of 188, so some of it is luck by construction; at the US spot fee it loses. It is not a pass. The dates from 2024 on have not been read by this rule and decide it, once.
 
 - [What the two passes are worth on $500](research/149_what_the_passes_are_worth.md), written 2026-11-26 05:45 MT from results already on the repo, no price read. MEASURED: Replay 25 (TLT month-end) averaged +0.2562% a window, about +3.07% or +$15.37 a year on $500 at 1x; full years ran from +1.92% (2023) to +7.31% (2019) and the 10 windows of 2026 sum to -5.50%. With TMF (Measurement 34, which failed its tracking mark) the mean was +0.6483% a window, about +$38.90 a year, with a worst window of -8.66% and a largest fall of 25.44%. Replay 48 (muni funds in January) averaged +1.39% a turn, +$6.96 a year, from -5.06% to +8.00%. Both sit idle most of the year (86% and 92% of sessions). Neither has a finished forward record yet. So the passes are real enough to keep logging and far too small to be the answer for a $500 account.
 
