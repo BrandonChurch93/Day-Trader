@@ -987,10 +987,9 @@ class DeskTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"already assigned"):
             D.create_desk(self.root/"TM07-other",spec,"A",D.BOSSES[0],{"boss":TOKEN},
                           approval_key=SEAL_KEY,vendor_signature=D.seal(SEAL_KEY,"vendor",spec["vendor_proofs"]))
-        incomplete = dict(scope=probe.SCOPE,root=str(self.root),launcher_digest="toy",probe_transcript_digest="toy",
-                          sandbox_identities=["toy"],passed=["desk_routes_only"])
+        incomplete = dict(scope=probe.SCOPE,root=str(self.root),passed=["desk_routes_only"])
         with self.assertRaisesRegex(ValueError,"missing isolation"):
-            D.validate_worker_boundary(SEAL_KEY,incomplete,D.seal(SEAL_KEY,"worker-boundary",incomplete),self.root)
+            D.validate_worker_boundary(SEAL_KEY,incomplete,D.seal(SEAL_KEY,"worker-boundary",incomplete),self.root,service_uid=992)
 
     def test_b09_one_draw_cannot_pass_the_registered_gate(self):
         boss = D.BOSSES[0]
@@ -1056,44 +1055,55 @@ class DeskTest(unittest.TestCase):
         self.assertAlmostEqual(rec["scan"]["funding_usd"],book["qty"][A]*110*.02)
         self.assertEqual([r["utc"] for r in rec["scan"]["settlements"]],[O.stamp(T+61)])
 
-    def test_reaudit_r4_probe_rejects_foreign_context_and_checks_release(self):
+    def test_pass7_probe_receipt_binds_release_uid_and_stage(self):
         from timemachine import tm07_isolation_probe as probe
-        markers = {i:D.digest(i) for i in probe.IDENTITIES}
-        transcript = dict(root=str(self.root),registration=D.digest("registration"),launcher_digest=D.digest("release"),
-                          operator="operator",markers=markers,observations=[])
-        checks = dict.fromkeys(probe.CHECKS-{"fresh_context","role_only_handoff"},True)
-        for n,i in enumerate(sorted(markers)):
-            tools = ["next","status","usage"]+(["notes"] if i in D.SCOUTS else ["look","pick"])
-            for phase in probe.PHASES:
-                transcript["observations"].append(dict(identity=i,phase=phase,challenge=D.digest([i,phase]),
-                    checks=checks,context=dict(conversation_id=None,memory_enabled=False,tools=tools,
-                                             markers=[markers[i]] if phase == "handoff" else []),
-                    sandbox=dict(uid=n,mnt=f"mnt:[{n}]",net="net:[1]",user=f"user:[{n}]")))
-        proof = probe.evaluate(transcript)
-        signature = D.seal(SEAL_KEY,"worker-boundary",proof)
-        D.validate_worker_boundary(SEAL_KEY,proof,signature,self.root,launcher_digest=transcript["launcher_digest"])
-        for scope in (None,"independent-isolation-proof"):
-            misleading = {k:v for k,v in proof.items() if k != "scope"}
-            if scope is not None:
-                misleading["scope"] = scope
-            with self.assertRaisesRegex(ValueError,"sampled"):
-                D.validate_worker_boundary(SEAL_KEY,misleading,D.seal(SEAL_KEY,"worker-boundary",misleading),
-                                           self.root,launcher_digest=transcript["launcher_digest"])
+        release = D.digest("release")
+        transcript = dict(root=str(self.root),registration=D.digest("registration"),release_digest=release,
+                          service_uid=992,stage="screen",sudo_log=[1,2],raw_paths={},
+                          observations=[dict(identity=i,challenge=D.digest(i),uid=2000,checks=dict.fromkeys(probe.CHECKS,True))
+                                        for i in sorted(probe.IDENTITIES)])
+        screen = dict(probe.evaluate(transcript),sudo_log_reviewed=True)
+        extension = dict(screen,stage="extension",raw_paths={"/toy/raw":"dir"},passed=sorted(probe.CHECKS|{probe.EXTENSION_CHECK}))
+        seal = lambda proof:D.seal(SEAL_KEY,"worker-boundary",proof)
+        with (patch.multiple(probe,release_fingerprint=lambda:release,sudo_log_state=lambda:[1,2],private_root=lambda *a:None),
+              patch.dict(D.os.environ,{"TM07_RUNS_DIR":str(self.root)}),patch.object(server,"ThreadingHTTPServer")):
+            for proof in (screen,extension):
+                with patch.object(D.os,"getuid",return_value=992),patch.object(D.os,"geteuid",return_value=992):
+                    listener = server.serve_desk(8765,approval_key=SEAL_KEY,proof=proof,signature=seal(proof))
+                self.assertEqual(listener.desk_stage,proof["stage"])
+            for bad in (dict(screen,scope="sampled-rehearsal-only"),dict(screen,service_uid=2000),
+                        dict(screen,stage="extension"),dict(extension,passed=screen["passed"]),
+                        dict(screen,release_digest=D.digest("wrong release")),dict(screen,sudo_log=[1,3]),
+                        dict(screen,sudo_log_reviewed=False)):
+                with self.assertRaises(ValueError):
+                    D.validate_worker_boundary(SEAL_KEY,bad,seal(bad),self.root,service_uid=992)
+        with self.assertRaisesRegex(ValueError,"inventory"):
+            probe.evaluate(dict(transcript,stage="extension"))
         with self.assertRaisesRegex(ValueError,"isolation"):
-            D.validate_worker_boundary(SEAL_KEY,proof,signature,self.root,launcher_digest=D.digest("other release"))
-        row = next(x for x in transcript["observations"] if x["phase"] == "handoff")
-        row["context"]["markers"] = [v for k,v in markers.items() if k != row["identity"]][:1]
+            probe.evaluate(dict(transcript,stage="extension",raw_paths=extension["raw_paths"]))
+        transcript["observations"][0]["uid"] = 0
         with self.assertRaisesRegex(ValueError,"isolation"):
             probe.evaluate(transcript)
+
+    def test_pass7_screen_receipt_cannot_serve_an_extension_week(self):
+        a = self.create("A")
+        for allowed,week,stage in ((True,S.SCREEN[0],"screen"),(False,S.EXTENSION[0],"screen"),
+                                   (True,S.EXTENSION[0],"extension"),(False,S.SCREEN[0],"extension"),
+                                   (False,S.DIAGNOSTIC,"screen")):
+            a.spec["wakes"][0] = D.epoch(week+"T00:00:00Z")
+            with patch.object(W,"open_session",return_value=a),patch.object(a,"handle",return_value={}):
+                self.assertEqual(server.handle_desk_only("GET","/desk/next",{"session":[a.sid]},None,
+                                 "Bearer "+TOKEN,D.digest(None),stage)[0],200 if allowed else 403)
 
     def test_reaudit_probe_bootstrap_uses_only_toy_desk_routes(self):
         from timemachine import tm07_isolation_probe as probe
         rehearsal,ready = self.root/"rehearsal",self.root/"ready.json"
-        with patch("http.server.ThreadingHTTPServer") as http,patch.dict(D.os.environ,{}):
+        with patch("http.server.ThreadingHTTPServer") as http,patch.dict(D.os.environ,{}),patch.object(D.os,"geteuid",return_value=992):
             http.return_value.__enter__.return_value.server_address = ("127.0.0.1",8765)
             probe.rehearse(rehearsal,ready,8765)
             profile = D.json.loads(ready.read_text())
             self.assertEqual(set(profile["workers"]),probe.IDENTITIES)
+            self.assertEqual(profile["service_uid"],992)
             for identity,entry in profile["workers"].items():
                 sid = entry["session"]
                 token = "Bearer "+D.json.loads(Path(entry["token_file"]).read_text())
@@ -1104,6 +1114,67 @@ class DeskTest(unittest.TestCase):
                 body = D.encode({"wake_key":packet["wake_key"]})
                 self.assertEqual(server.handle_desk_only("POST",route,query,body,token)[0],403)
                 self.assertEqual(server.handle_desk_only("GET","/score",query,None,token)[0],404)
+
+            def request(base,route,sid,token,body=None):
+                return server.handle_desk_only("GET" if body is None else "POST",route,{"session":[sid]},
+                                               None if body is None else D.encode(body),
+                                               None if token is None else "Bearer "+token)
+
+            with (patch.object(probe,"request",side_effect=request),patch.object(D.os,"getuid",return_value=2000),
+                  patch.object(D.os,"geteuid",return_value=2000),patch.object(probe,"denied_read",return_value=True),
+                  patch.object(probe,"denied_directory",return_value=True)):
+                for identity,entry in profile["workers"].items():
+                    sid = entry["session"]
+                    row = probe.worker(dict(identity=identity,desk_url=profile["desk_url"],session=sid,challenge="toy",
+                        token=D.json.loads(Path(entry["token_file"]).read_text()),roots=[str(rehearsal)],
+                        siblings=sorted({e["session"] for e in profile["workers"].values()}-{sid}),
+                        canaries=[entry["fixture"]],raw_paths={}))
+                    self.assertEqual(row["checks"],dict.fromkeys(probe.CHECKS,True))
+
+            study = self.root/"study"
+            study.mkdir(mode=0o700)
+            with patch.multiple(probe,private_root=lambda *a:None,release_fingerprint=lambda:D.digest("release"),
+                                sudo_log_state=lambda:[1,2]):
+                def sampled(action,payload):
+                    self.assertEqual(action,"worker")
+                    self.assertEqual(payload["roots"],[str(study),str(rehearsal)])
+                    self.assertTrue(all(Path(p).is_file() for p in payload["canaries"]))
+                    self.assertIn(payload["token"],[D.json.loads(Path(e["token_file"]).read_text())
+                                                   for e in profile["workers"].values()])
+                    return dict(identity=payload["identity"],challenge=payload["challenge"],uid=2000,
+                                checks=dict.fromkeys(probe.CHECKS,True))
+
+                with patch.object(probe,"as_worker",side_effect=sampled):
+                    transcript = probe.collect(dict(profile,root=str(study),registration=D.digest("reg"),
+                                                    stage="screen",raw_bars=[]))
+                self.assertEqual(probe.evaluate(transcript)["stage"],"screen")
+                for entry in profile["workers"].values():
+                    self.assertNotIn(D.json.loads(Path(entry["token_file"]).read_text()),D.encode(transcript))
+
+    def test_pass7_file_probe_distinguishes_access_denied_missing_and_readable(self):
+        from timemachine import tm07_isolation_probe as probe
+        toy = self.root/"toy.json"
+        probe.put(toy,{"invented":True})
+        self.assertFalse(probe.denied_read(toy))
+        self.assertFalse(probe.denied_directory(self.root))
+        with self.assertRaises(FileNotFoundError):
+            probe.denied_read(self.root/"missing")
+        with patch("builtins.open",side_effect=PermissionError(13,"denied")):
+            self.assertTrue(probe.raw_denied({str(toy):"file"}))
+
+    def test_pass7_root_must_belong_to_service_uid_and_be_mode_0700(self):
+        from stat import S_IFDIR
+        from types import SimpleNamespace
+        from timemachine import tm07_isolation_probe as probe
+        with patch.object(Path,"resolve",return_value=self.root):
+            with patch.object(Path,"lstat",return_value=SimpleNamespace(st_uid=992,st_mode=S_IFDIR|0o700)):
+                probe.private_root(self.root,992)
+                with self.assertRaisesRegex(ValueError,"dedicated"):
+                    probe.private_root(self.root,2000)
+            for uid,mode in ((2000,0o700),(992,0o750)):
+                with patch.object(Path,"lstat",return_value=SimpleNamespace(st_uid=uid,st_mode=S_IFDIR|mode)):
+                    with self.assertRaisesRegex(ValueError,"0700"):
+                        probe.private_root(self.root,992)
 
     def test_opus_r2_drift_does_not_allow_an_over_cap_saved_target(self):
         spec = world()

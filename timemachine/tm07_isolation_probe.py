@@ -1,4 +1,4 @@
-"""Sampled operator rehearsal checks for the TM07 launch path, without a model call."""
+"""Sample the TM07 service-account boundary without sudo as a worker or any model call."""
 import argparse
 import errno
 from hashlib import sha256
@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 import secrets
-import socket
+import stat
 import subprocess
 import sys
 import urllib.error
@@ -15,12 +15,31 @@ import urllib.request
 
 from timemachine import desk
 
-VERSION = "TM07-worker-probe-v2"
-SCOPE = "sampled-rehearsal-only"
+VERSION = "TM07-worker-probe-v3"
+SCOPE = "same-host-service-account-sample"
+WORKER_UID = 2000
+SUDO_LOG = Path("/var/log/tm07-sudo.log")
+STAGES = {"screen","extension"}
 IDENTITIES = {*desk.SCOUTS,*(f"{boss}/{arm}" for boss in desk.BOSSES for arm in desk.ARMS)}
-CHECKS = {"desk_routes_only","wrong_role_denied","sibling_token_denied","fixture_read_denied",
-          "sibling_journal_read_denied","scorer_state_denied","outbound_denied","fresh_context","role_only_handoff"}
-PHASES = ("fresh","handoff","reset")
+CHECKS = {"own_route_allowed","bearer_required","desk_routes_only","wrong_role_denied",
+          "sibling_token_denied","study_and_rehearsal_unreadable"}
+EXTENSION_CHECK = "extension_raw_bars_unreadable"
+
+
+def private_root(path,uid):
+    path = Path(path)
+    info = path.lstat()
+    if (uid in (0,WORKER_UID) or not stat.S_ISDIR(info.st_mode)
+            or info.st_uid != uid or stat.S_IMODE(info.st_mode) != 0o700
+            or str(path.resolve()) != str(path)):
+        raise ValueError("expected a canonical mode-0700 root owned by the dedicated service uid")
+
+
+def sudo_log_state():
+    info = SUDO_LOG.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or stat.S_IMODE(info.st_mode) != 0o600:
+        raise ValueError("expected a root-owned mode-0600 sudo log")
+    return [info.st_dev,info.st_ino]
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -31,8 +50,10 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 def request(base,route,sid,token,body=None):
     url = base.rstrip("/")+route+"?"+urllib.parse.urlencode({"session":sid})
     op = urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
-    req = urllib.request.Request(url,None if body is None else desk.encode(body).encode(),
-                                 {"Authorization":"Bearer "+token,"Content-Type":"application/json"})
+    headers = {"Content-Type":"application/json"}
+    if token is not None:
+        headers["Authorization"] = "Bearer "+token
+    req = urllib.request.Request(url,None if body is None else desk.encode(body).encode(),headers)
     try:
         with op.open(req,timeout=3) as resp:
             return resp.status,json.loads(resp.read(200000))
@@ -46,22 +67,29 @@ def denied_read(path):
         with open(path,"rb") as f:
             f.read(1)
     except OSError as exc:
-        if exc.errno in (errno.ENOENT,errno.EACCES,errno.EPERM):
+        if exc.errno in (errno.EACCES,errno.EPERM):
             return True
         raise
     return False
 
 
-def connect(canary):
-    try:
-        with socket.create_connection((canary["host"],canary["port"]),timeout=2):
-            return True
-    except OSError:
+def denied_directory(path):
+    if os.access(path,os.X_OK):
         return False
+    try:
+        with os.scandir(path) as entries:
+            next(entries,None)
+    except OSError as exc:
+        if exc.errno in (errno.EACCES,errno.EPERM):
+            return True
+        raise
+    return False
 
 
 def worker(challenge):
-    """Run inside the same namespace and identity as the rehearsal worker."""
+    """Run on the same host as a sibling worker, without sudo."""
+    if os.getuid() != WORKER_UID or os.geteuid() != WORKER_UID:
+        raise ValueError("probe must run as uid 2000")
     identity = challenge["identity"]
     base,sid,token = challenge["desk_url"],challenge["session"],challenge["token"]
     code, own = request(base,"/desk/next",sid,token)
@@ -70,65 +98,85 @@ def worker(challenge):
         raise ValueError("positive control: worker could not read its live rehearsal packet")
     forbidden = "/desk/notes" if role == "boss" else "/desk/pick"
     checks = {
-        "desk_routes_only":all(request(base,r,sid,token)[0] == 404 for r in ("/status","/score","/desk/score")),
+        "own_route_allowed":True,
+        "bearer_required":all(request(base,r,sid,None,body)[0] == 403 for r,body in
+                              [(r,None) for r in ("/desk/next","/desk/status")]+
+                              [(r,{}) for r in ("/desk/look","/desk/pick","/desk/usage","/desk/notes")]),
+        "desk_routes_only":all(request(base,r,sid,token,body)[0] == 404 for r,body in
+                               (("/next",None),("/status",None),("/look",None),("/pick",{}),("/score",None),("/desk/score",None))),
         "wrong_role_denied":request(base,forbidden,sid,token,{"wake_key":own["wake_key"]})[0] == 403,
         "sibling_token_denied":all(request(base,"/desk/next",s,token)[0] == 403 for s in challenge["siblings"]),
-        "fixture_read_denied":all(denied_read(p) for p in challenge["fixtures"]),
-        "sibling_journal_read_denied":all(denied_read(p) for p in challenge["journals"]),
-        "scorer_state_denied":all(denied_read(p) for p in challenge["scorer"]),
-        "outbound_denied":not connect(challenge["egress_canary"]),
+        "study_and_rehearsal_unreadable":(all(denied_directory(p) for p in challenge["roots"])
+                                         and all(denied_read(p) for p in challenge["canaries"])),
     }
-    ns = {name:os.readlink("/proc/self/ns/"+name) for name in ("mnt","net","user")}
-    return dict(identity=identity,phase=challenge["phase"],challenge=challenge["challenge"],
-                checks=checks,context=challenge["context"],sandbox=dict(uid=os.geteuid(),**ns))
+    if challenge["raw_paths"]:
+        checks[EXTENSION_CHECK] = raw_denied(challenge["raw_paths"])
+    return dict(identity=identity,challenge=challenge["challenge"],checks=checks,uid=os.geteuid())
+
+
+def raw_denied(paths):
+    return all((denied_directory if kind == "dir" else denied_read)(p) for p,kind in paths.items())
 
 
 def evaluate(transcript):
     """Validate the sampled observations, not the deployed boundary."""
     rows = transcript["observations"]
-    identities = transcript["markers"]
-    if set(identities) != IDENTITIES or len(set(identities.values())) != len(IDENTITIES):
-        raise ValueError("probe requires every distinct TM07 worker identity")
-    expected = {(i,p) for i in IDENTITIES for p in PHASES}
-    if len(rows) != len(expected) or {(r["identity"],r["phase"]) for r in rows} != expected:
-        raise ValueError("isolation probes are missing worker phases")
+    stage = transcript["stage"]
+    paths = transcript["raw_paths"]
+    if (stage not in STAGES or bool(paths) != (stage == "extension")
+            or any(not Path(p).is_absolute() or kind not in {"dir","file"} for p,kind in paths.items())):
+        raise ValueError("invalid screen or extension raw bar inventory")
+    expected = CHECKS | ({EXTENSION_CHECK} if paths else set())
+    if len(rows) != len(IDENTITIES) or {r["identity"] for r in rows} != IDENTITIES:
+        raise ValueError("isolation probes are missing roles")
     if len({r["challenge"] for r in rows}) != len(rows):
         raise ValueError("worker probe observation replayed")
-    sandbox = {phase:{} for phase in PHASES}
     for row in rows:
-        identity,phase = row["identity"],row["phase"]
-        checks,ctx,ns = row["checks"],row["context"],row["sandbox"]
-        role = identity if identity in desk.SCOUTS else "boss"
-        tools = {"next","status","usage","look","pick"} if role == "boss" else {"next","status","usage","notes"}
-        if (set(checks) != CHECKS-{"fresh_context","role_only_handoff"} or any(v is not True for v in checks.values())
-                or ctx.get("conversation_id","missing") is not None or ctx.get("memory_enabled") is not False
-                or set(ctx.get("tools",[])) != tools
-                or ctx.get("markers") != ([identities[identity]] if phase == "handoff" else [])):
-            raise ValueError(f"isolation probes failed for {identity} ({phase})")
-        if (set(ns) != {"uid","mnt","net","user"} or type(ns["uid"]) is not int
-                or not all(isinstance(ns[k],str) and ns[k] for k in ("mnt","net","user"))):
-            raise ValueError("isolation probes lack worker identity evidence")
-        sandbox[phase][identity] = f'{ns["uid"]}:{ns["user"]}:{ns["mnt"]}'
-    if any(len(set(group.values())) != len(IDENTITIES) or transcript["operator"] in group.values()
-           for group in sandbox.values()):
-        raise ValueError("worker identities share an OS boundary")
+        checks = row["checks"]
+        if row["uid"] != WORKER_UID or set(checks) != expected or any(v is not True for v in checks.values()):
+            raise ValueError(f'isolation probes failed for {row["identity"]}')
     return dict(version=VERSION,scope=SCOPE,root=transcript["root"],registration=transcript["registration"],
-                launcher_digest=transcript["launcher_digest"],probe_transcript_digest=desk.digest(transcript),
-                sandbox_identities=sandbox["fresh"],passed=sorted(CHECKS))
+                release_digest=transcript["release_digest"],probe_transcript_digest=desk.digest(transcript),
+                service_uid=transcript["service_uid"],worker_uid=WORKER_UID,sudo_log=transcript["sudo_log"],
+                stage=stage,raw_paths=paths,passed=sorted(expected))
 
 
-def launch_fingerprint(files):
+def release_fingerprint():
     digests = {}
-    for name in files:
-        path = Path(name).resolve(strict=True)
+    package = Path(__file__).resolve().parent
+    for path in sorted(package.rglob("*.py")):
+        info = path.stat()
+        if info.st_uid != 0 or info.st_mode & 0o022:
+            raise ValueError("release code must be root-owned and not group/world writable")
         with path.open("rb") as f:
             hashing = sha256()
             for block in iter(lambda:f.read(65536),b""):
                 hashing.update(block)
-            digests[str(path)] = hashing.hexdigest()
-    if not digests:
-        raise ValueError("name all launcher and wrapper release files")
-    return desk.digest(digests)
+            digests[str(path.relative_to(package))] = hashing.hexdigest()
+    return desk.digest([sys.version,digests])
+
+
+def as_worker(action,payload):
+    if os.geteuid() != 0:
+        raise ValueError("operator command must run as root")
+    return json.loads(subprocess.run(
+        ["/usr/sbin/runuser","-u","user","--",sys.executable,"-B","-m","timemachine.tm07_isolation_probe",action],
+        input=desk.encode(payload),text=True,
+        capture_output=True,timeout=90,check=True).stdout)
+
+
+def inventory(files):
+    paths = {}
+    for name in files:
+        path = Path(name).resolve(strict=True)
+        mode = path.stat().st_mode
+        if stat.S_ISDIR(mode):
+            paths[str(path)] = "dir"
+        elif stat.S_ISREG(mode):
+            paths[str(path)] = "file"
+        else:
+            raise ValueError("raw bar inventory must contain regular files or directories")
+    return paths
 
 
 def collect(profile):
@@ -137,47 +185,35 @@ def collect(profile):
     rehearsal = Path(profile["rehearsal_root"]).resolve(strict=True)
     if Path(root) == rehearsal or Path(root).is_relative_to(rehearsal) or rehearsal.is_relative_to(Path(root)):
         raise ValueError("rehearsal and registered roots must be separate")
-    launch = profile["launcher"]
-    release = profile["release_files"]
-    if not Path(launch[0]).is_absolute() or launch[0] not in release or set(entries) != IDENTITIES:
-        raise ValueError("name the absolute real launcher and all eight workers")
-    if not connect(profile["egress_canary"]):
-        raise ValueError("egress canary must be reachable from the operator namespace")
+    uid = profile["service_uid"]
+    private_root(root,uid)
+    private_root(rehearsal,uid)
+    if set(entries) != IDENTITIES:
+        raise ValueError("name all eight roles")
     declared = [e["session"] for e in entries.values()]
     if len(set(declared)) != 7:
         raise ValueError("probe expects two scout roles, sharing one scout session, and six boss sessions")
     if entries[desk.SCOUTS[0]]["session"] != entries[desk.SCOUTS[1]]["session"]:
         raise ValueError("probe scout roles must share the rehearsal scout session ID")
-    for p in [v[k] for v in entries.values() for k in ("fixture","journal","token_file")] + profile["scorer_only"]:
-        if not Path(p).resolve(strict=True).is_relative_to(rehearsal) or denied_read(p):
-            raise ValueError("a probe file is unreadable even to the operator")
-    if not profile["scorer_only"]:
-        raise ValueError("name at least one readable scorer-only rehearsal canary")
-    markers = {i:"tm07-probe-"+secrets.token_hex(20) for i in sorted(entries)}
-    operator = ":".join([str(os.geteuid()),os.readlink("/proc/self/ns/user"),os.readlink("/proc/self/ns/mnt")])
-    transcript = dict(root=root,registration=profile["registration"],launcher_digest=launch_fingerprint(release),operator=operator,
-                      markers=markers,observations=[])
-    for phase in PHASES:
-        for i,e in sorted(entries.items()):
-            foreign = [v for v in entries.values() if v["session"] != e["session"]]
-            challenge = dict(identity=i,phase=phase,challenge=secrets.token_hex(16),marker=markers[i],
-                             desk_url=profile["desk_url"],session=e["session"],token=json.loads(Path(e["token_file"]).read_text()),
-                             siblings=sorted({v["session"] for v in foreign}),
-                             fixtures=sorted({v["fixture"] for v in entries.values()}),
-                             journals=sorted({v["journal"] for v in entries.values()}),
-                             scorer=profile["scorer_only"]+[v["token_file"] for v in entries.values()],
-                             egress_canary=profile["egress_canary"])
-            proc = subprocess.run([*launch,i,phase],input=desk.encode(challenge),text=True,
-                                  capture_output=True,timeout=35,check=False)
-            if proc.returncode:
-                raise ValueError(f"launcher probe failed for {i} ({phase})")
-            row = json.loads(proc.stdout)
-            if (set(row) != {"identity","phase","challenge","checks","context","sandbox"}
-                    or any(row[k] != challenge[k] for k in ("identity","phase","challenge"))
-                    or set(row["context"]) != {"conversation_id","memory_enabled","tools","markers"}
-                    or any(v not in markers.values() for v in row["context"]["markers"])):
-                raise ValueError("launcher did not return the matching challenge")
-            transcript["observations"].append(row)
+    canaries = [Path(v[k]).resolve(strict=True) for v in entries.values() for k in ("fixture","journal","token_file")]
+    canaries += [rehearsal/"operator"/"scorer-canary.json"]
+    if any(not p.is_relative_to(rehearsal) or not p.is_file() or denied_read(p) for p in canaries):
+        raise ValueError("missing or unreadable rehearsal control file")
+    # A real private directory and every named rehearsal file are positive-tested
+    # by the operator before accepting any permission denial as evidence.
+    raw_paths = inventory(profile["raw_bars"])
+    transcript = dict(root=root,registration=profile["registration"],release_digest=release_fingerprint(),
+                      service_uid=uid,stage=profile["stage"],raw_paths=raw_paths,sudo_log=sudo_log_state(),observations=[])
+    for i,e in sorted(entries.items()):
+        challenge = dict(identity=i,challenge=secrets.token_hex(16),desk_url=profile["desk_url"],
+                         session=e["session"],token=json.loads(Path(e["token_file"]).read_text()),
+                         siblings=sorted(set(declared)-{e["session"]}),roots=[root,str(rehearsal)],
+                         canaries=sorted(set(map(str,canaries))),raw_paths=raw_paths)
+        row = as_worker("worker",challenge)
+        if (set(row) != {"identity","challenge","checks","uid"}
+                or any(row[k] != challenge[k] for k in ("identity","challenge"))):
+            raise ValueError("worker did not return the matching challenge")
+        transcript["observations"].append(row)
     return transcript
 
 
@@ -194,6 +230,8 @@ def rehearse(root,ready,port):
     from timemachine.test_tm07 import world
 
     root = root.resolve()
+    if os.geteuid() in (0,WORKER_UID):
+        raise ValueError("start rehearsal under the dedicated service account")
     root.mkdir(mode=0o700)
     secrets_dir = root/"operator"
     secrets_dir.mkdir(mode=0o700)
@@ -231,7 +269,8 @@ def rehearse(root,ready,port):
     with ThreadingHTTPServer(("127.0.0.1",port),server.DeskH) as srv:
         # This listener has only the generated rehearsal root, never a registered study.
         srv.desk_registration = None
-        put(ready,dict(workers=entries,scorer_only=[str(scorer)],rehearsal_root=str(root),
+        srv.desk_stage = None
+        put(ready,dict(workers=entries,service_uid=os.geteuid(),rehearsal_root=str(root),
                        desk_url=f"http://127.0.0.1:{srv.server_address[1]}"))
         srv.serve_forever()
 
@@ -240,9 +279,15 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     action = p.add_subparsers(dest="action",required=True)
     action.add_parser("worker")
+    action.add_parser("worker-raw")
+    a = action.add_parser("check-raw")
+    a.add_argument("--receipt",type=Path,required=True)
+    a.add_argument("--key-file",type=Path,required=True)
     c = action.add_parser("collect")
-    for key in ("profile","transcript"):
+    for key in ("ready","registration","root","transcript"):
         c.add_argument("--"+key,type=Path,required=True)
+    c.add_argument("--stage",choices=sorted(STAGES),required=True)
+    c.add_argument("--raw-bar",action="append",default=[])
     r = action.add_parser("rehearse")
     r.add_argument("--rehearsal-root",type=Path,required=True)
     r.add_argument("--ready",type=Path,required=True)
@@ -250,20 +295,50 @@ def main():
     s = action.add_parser("seal")
     for key in ("transcript","key-file","receipt"):
         s.add_argument("--"+key,type=Path,required=True)
+    s.add_argument("--sudo-log-reviewed",action="store_true",required=True)
+    run = action.add_parser("serve")
+    for key in ("receipt","key-file"):
+        run.add_argument("--"+key,type=Path,required=True)
+    run.add_argument("--port",type=int,required=True)
     args = p.parse_args()
     if args.action == "worker":
         print(desk.encode(worker(json.load(sys.stdin))))
+    elif args.action == "worker-raw":
+        if os.getuid() != WORKER_UID or os.geteuid() != WORKER_UID:
+            raise ValueError("probe must run as uid 2000")
+        print(desk.encode(raw_denied(json.load(sys.stdin))))
+    elif args.action == "check-raw":
+        receipt = json.loads(args.receipt.read_text())
+        proof = receipt["body"]
+        desk.validate_worker_boundary(args.key_file.read_text().strip(),proof,receipt["seal"],
+                                      proof["root"],service_uid=proof["service_uid"])
+        if (proof["stage"] != "extension" or inventory(proof["raw_paths"]) != proof["raw_paths"]
+                or not as_worker("worker-raw",proof["raw_paths"])):
+            raise ValueError("extension raw bar access check failed")
     elif args.action == "rehearse":
         rehearse(args.rehearsal_root,args.ready,args.port)
     elif args.action == "collect":
-        transcript = collect(json.loads(args.profile.read_text()))
-        put(args.transcript,transcript)
+        profile = json.loads(args.ready.read_text())
+        profile.update(root=str(args.root),registration=desk.digest(json.loads(args.registration.read_text())["body"]),
+                       stage=args.stage,raw_bars=args.raw_bar)
+        transcript = collect(profile)
         evaluate(transcript)
+        put(args.transcript,transcript)
+    elif args.action == "serve":
+        from timemachine import server
+        receipt = json.loads(args.receipt.read_text())
+        with server.serve_desk(args.port,approval_key=args.key_file.read_text().strip(),
+                               proof=receipt["body"],signature=receipt["seal"]) as listener:
+            listener.serve_forever()
     else:
-        proof = evaluate(json.loads(args.transcript.read_text()))
+        if os.geteuid() != 0:
+            raise ValueError("seal as the operator from a root shell")
+        proof = dict(evaluate(json.loads(args.transcript.read_text())),sudo_log_reviewed=args.sudo_log_reviewed)
+        if sudo_log_state() != proof["sudo_log"]:
+            raise ValueError("sudo log changed since collection")
         key = args.key_file.read_text().strip()
         signature = desk.seal(key,"worker-boundary",proof)
-        desk.validate_worker_boundary(key,proof,signature,proof["root"],launcher_digest=proof["launcher_digest"])
+        desk.validate_worker_boundary(key,proof,signature,proof["root"],service_uid=proof["service_uid"])
         put(args.receipt,dict(body=proof,seal=signature))
 
 

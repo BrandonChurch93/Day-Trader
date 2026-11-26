@@ -63,22 +63,28 @@ def claim_tokens(root,sid,tokens):
             raise ValueError("a role token is already assigned") from exc
 
 
-def validate_worker_boundary(key,proof,signature,root,*,launcher_digest=None):
-    """Require a sealed, release-bound receipt of the sampled rehearsal."""
+def validate_worker_boundary(key,proof,signature,root,*,service_uid):
+    """Require a sealed sample of the actual same-host service-account profile."""
     from timemachine import tm07_isolation_probe as probe
     verify_seal(key,"worker-boundary",proof,signature)
     if proof.get("scope") != probe.SCOPE:
-        raise ValueError("worker boundary receipt must be scoped to the sampled rehearsal")
-    identities = proof.get("sandbox_identities")
+        raise ValueError("worker boundary receipt must be scoped to the sampled service-account rehearsal")
+    stage,raw = proof.get("stage"),proof.get("raw_paths")
+    expected = probe.CHECKS | ({probe.EXTENSION_CHECK} if stage == "extension" else set())
     hash_ok = lambda s:isinstance(s,str) and re.fullmatch(r"[0-9a-f]{64}",s)
     if (proof.get("version") != probe.VERSION or proof.get("root") != str(Path(root).resolve())
-            or not hash_ok(launcher_digest) or proof.get("launcher_digest") != launcher_digest
+            or stage not in probe.STAGES or not isinstance(raw,dict) or bool(raw) != (stage == "extension")
+            or any(not Path(p).is_absolute() or k not in ("file","dir") for p,k in raw.items())
+            or type(service_uid) is not int or service_uid in (0,probe.WORKER_UID)
+            or proof.get("service_uid") != service_uid or proof.get("worker_uid") != probe.WORKER_UID
+            or proof.get("sudo_log_reviewed") is not True
+            or not hash_ok(proof.get("release_digest"))
             or not hash_ok(proof.get("registration")) or not hash_ok(proof.get("probe_transcript_digest"))
-            or not isinstance(identities,dict) or set(identities) != probe.IDENTITIES
-            or not all(isinstance(s,str) and s for s in identities.values())
-            or len(set(identities.values())) != len(identities)
-            or proof.get("passed") != sorted(probe.CHECKS)):
+            or proof.get("passed") != sorted(expected)):
         raise ValueError("worker boundary has missing isolation probes")
+    probe.private_root(root,service_uid)
+    if proof.get("release_digest") != probe.release_fingerprint() or proof.get("sudo_log") != probe.sudo_log_state():
+        raise ValueError("worker boundary release or sudo log changed")
 
 
 def epoch(value):
