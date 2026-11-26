@@ -1,6 +1,6 @@
 # 140. False-pass audit: how many of our 3 passes could be luck
 
-Written 2026-11-26 11:58 UTC by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.
+Written 2026-11-26 13:24 UTC by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.
 
 Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's own pre-run file. MEASURED, one mark means only one of the marks was counted that way, so the all-mark rate is lower. NOMINAL means no rate was measured; the figure is the textbook tail of the plan's mark (a one-sided normal tail for a t of 2, or a percentile tail), worked out here, not measured. STATED means taken from a plan or results page as written. UNKNOWN means not on the repo.
 
@@ -11,7 +11,7 @@ Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's
 - Expected luck passes in the 34 trading tests that could give a counted pass: low 0.36, high 2.09. Against 3 seen, that is 1.4 to 8.2 times what luck alone gives.
 - Chance of 3 or more passes by luck alone in those 34: 0.49% on the low figures, 34.92% on the high figures (independent tests assumed; the month-end tests share windows, which widens this).
 - Rates: 13 tests have a measured all-mark no-edge rate, 8 have one measured mark only, 20 have no measured rate (UNKNOWN) and are bracketed by the nominal tail of their own t or percentile mark as the high and a stated low of 0.005 per test, and 3 could not pass at all (design only, inconclusive by design, a cost gate).
-- Ideas closed before any return on count, power, cost, coverage, validation or feasibility: 30 (7 on count, 12 on power). They had no chance to pass by luck, so they add nothing to the luck figure.
+- Ideas closed before any return on count, power, cost, coverage, validation or feasibility: 35 (7 on count, 13 on power). They had no chance to pass by luck, so they add nothing to the luck figure.
 
 ## Assumptions, stated
 
@@ -138,14 +138,14 @@ Results are copied from `docs/research/95_where_we_stand_after_32_tests.md`. Res
 
 ## Ideas closed before a return
 
-MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE.md`, one count per idea (queue rows already in the ledger are not counted twice): 30 ideas closed before any return was computed.
+MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE.md`, one count per idea (queue rows already in the ledger are not counted twice): 35 ideas closed before any return was computed.
 
 - cost: 1
 - count: 7
 - coverage: 1
 - feasibility: 4
-- other, before prices: 2
-- power: 12
+- other, before prices: 6
+- power: 13
 - validation: 3
 
 - ledger 163: research_rig/PREREG_26_treasury_month_end_early.md, closed on validation
@@ -165,11 +165,16 @@ MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE
 - ledger 209: research_rig/COUNT_107_dividend_month_coverage.md, closed on count
 - ledger 210: research_rig/PREREG_66_third_friday_settlement.md, closed on power
 - ledger 211: research_rig/PREREG_67_rsi2_pullback.md, closed on power
+- ledger 213: research_rig/PREREG_68_earnings_drift_plain.md (screen page only; no plan was frozen), closed on other, before prices
+- ledger 214: none yet (screen first; a plan only if it clears), closed on other, before prices
+- ledger 215: none yet (screen first; plans only if a row clears), closed on other, before prices
+- ledger 216: none yet (screen first; a plan only if it clears), closed on other, before prices
 - queue 48: Plan 28, US-reachable Upbit listing short version: data scouting compl, closed on other, before prices
 - queue 59: Plan 42, marketed non-overnight seasoned equity offerings, closed on feasibility
 - queue 61: Blocked. Plan 37, US DoD daily contract awards: long-only, 3 to 5 trad, closed on other, before prices
 - queue 62: Plan 38, going-private Schedule 13E-3 first filings, long-only post-an, closed on feasibility
 - queue 74: Plan 43, declaration drift: `research_rig/PREREG_43_special_dividends., closed on validation
+- queue 30: Dip entries against breakout entries for the AI crypto trader: the sam, closed on power
 - queue 67: Overnight versus intraday return gap in SPY and QQQ, as a low-frequenc, closed on power
 - queue 68: Option expiry week in SPY, closed on power
 - queue 69: Municipal bond month-end index extension and June, July, December rein, closed on power
