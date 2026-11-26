@@ -1,10 +1,10 @@
-"""M121. Run --selftest on invented data; no historical access without a lead go.
+"""M121-R. Run --selftest on invented data; no historical access without a lead go.
 
 The custodian runs the approved command inside its host-scoped credential proxy.
 Only the proxy address is visible to this program; it is never written or printed.
 See the accompanying test module and signed doc 166 for the decision rules.
 
-Input handoff (all paths relative to the private M121 store):
+Input handoff (all paths relative to the new private M121-R store):
 * Place the hash-pinned roster_before_draw.json and price-free inputs.json in the
   store. Each fund_brackets entry names ticker and before/after references, each
   with accession and sha256, and a filing_list reference with sha256 and
@@ -20,8 +20,8 @@ Input handoff (all paths relative to the private M121 store):
 * --validate-inputs is local only. It prints the pinned *_sha256 fields to carry
   into GO.json, as well as current coverage counts and free bytes. The lead also
   writes authorization_id into GO.json and appends exactly
-  ; Approved for one M121 historical pull: `M121_GO=<authorization_id>`
-  at the end of the status cell in ledger row 223. The
+  ; Approved for one M121-R historical pull: `M121R_GO=<authorization_id>`
+  at the end of the status cell in ledger row 224. The
   ledger_sha256 field is the hash of that final ledger file.
 * Neither an empty go file nor the plan signature authorizes a pull. The
   custodian and lead must preserve the exclusive RUN.lock permanently, even
@@ -50,19 +50,24 @@ import shutil
 import signal
 import stat
 import sys
+from time import monotonic_ns, sleep, time as epoch_time
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 
 ROOT = Path(__file__).resolve().parents[1]
-STORE = Path('/home/user/workspace/rig/data/m121')
+STORE = Path('/home/user/workspace/rig/data/m121r')
 PLAN = ROOT / 'docs/research/166_m121_cef_resting_bid.md'
 LEDGER = ROOT / 'research_rig/TRIAL_LEDGER.md'
 CONFIG = ROOT / 'config/thresholds.yaml'
-SIGNED_CONFIG = 'fe2e5a2b3ec734e0f632e9821c3d731fb766b5ab70117f937ac1e744d41ac1f0'
+SIGNED_CONFIG = 'bc7ac1a1926a075830e92aac02afe87b161597b26de88525a77a7926ed0a8f13'
+INPUT_CONFIG = 'fe2e5a2b3ec734e0f632e9821c3d731fb766b5ab70117f937ac1e744d41ac1f0'
+FROZEN_INPUTS = 'a470e92e9dd14d8d4ae80e337aef1016273f6c4ec49e9a11ac981f7c88275023'
 SIGNED_TEXT = '3143f7c7fe021d108e0528fcb2403fc48fc81e2812865c6eb37eed8c1e3b91b1'
 SIGNED_AMENDMENT = '850f79840c1cc66f09d0bd5719af2b11442ea1b05569b9897477020edaab2e1a'
 SIGNED_AMENDMENT_2 = '227b317db2780bcf5bf9f46597dad73083e4531509fba7c49b275d322ce5307e'
+SIGNED_STOP_RECORD = '7104096986e172eaffacbb13a3ced7e3416faa4fbc5bf30f8f1b9a4e9de445cb'
+SIGNED_AMENDMENT_3 = '2a588be3002f7916032ecac99525cfccfaf50f8a1f44e1ccd80c80760a2cebac'
 AMENDMENT_IDENTITY_EXCLUDED = frozenset({'FSCO'})
 BRACKET_GAP = ('Two dated filings do not establish daily listing or rule out a ticker changing and changing back, '
                'or a historical vendor-feed ticker collision with another issuer.')
@@ -78,6 +83,12 @@ TOKEN_RE = re.compile(r'[A-Za-z0-9_-]+')
 
 class Stop(Exception):
     """A price-free stop code. Never put vendor content in the message."""
+
+
+class HttpStatus(Stop):
+    def __init__(self, status, reset=None, code='vendor_http_status'):
+        super().__init__(code)
+        self.status, self.reset = status, reset
 
 
 def require(ok, code):
@@ -155,6 +166,8 @@ class Settings:
     sha: str
     plan_sha: str
     excluded_tickers: frozenset
+    transport: dict
+    input_sha: str
 
     def schedule(self):
         return [(group, ticker, day) for day in self.sample['sessions']
@@ -172,22 +185,27 @@ class Settings:
                 wall(day, o['close_bid_clock'], zone), [wall(day, s, zone) for s in o['placement_times']])
 
 
+def section_hash(plan, prefix):
+    matching = [s for s in re.split(rb'(?m)(?=^### )', plan) if s.startswith(b'### ' + prefix)]
+    require(len(matching) == 1, 'signed_configuration_or_text')
+    return digest(matching[0].rstrip(b'\n') + b'\n')
+
+
 def settings():
     import yaml
 
     raw, plan = CONFIG.read_bytes(), PLAN.read_bytes()
     base, marker, signature = plan.partition(b'### Signature')
-    _, heading, tail = signature.partition(b'### Amendment 1')
-    first_tail, second_heading, second_tail = tail.partition(b'### Amendment 2')
-    amendment = (heading + first_tail).rstrip(b'\n') + b'\n'
-    amendment_2 = (second_heading + second_tail.partition(b'### Identity evidence gaps')[0]).rstrip(b'\n') + b'\n'
     require(digest(raw) == SIGNED_CONFIG and bool(marker) and bool(signature.strip())
             and digest(base.rstrip(b'\n') + b'\n') == SIGNED_TEXT
-            and digest(amendment) == SIGNED_AMENDMENT and digest(amendment_2) == SIGNED_AMENDMENT_2,
+            and section_hash(plan, b'Amendment 1:') == SIGNED_AMENDMENT
+            and section_hash(plan, b'Amendment 2:') == SIGNED_AMENDMENT_2
+            and section_hash(plan, b'Stop record for the first attempt (ledger 223)') == SIGNED_STOP_RECORD
+            and section_hash(plan, b'Amendment 3:') == SIGNED_AMENDMENT_3,
             'signed_configuration_or_text')
     values = yaml.safe_load(raw)
     c = Settings(*(values[f'm121_{k}']['value'] for k in ('limits', 'sample', 'order', 'reporting', 'sizing')),
-                 digest(raw), digest(plan), AMENDMENT_IDENTITY_EXCLUDED)
+                 digest(raw), digest(plan), AMENDMENT_IDENTITY_EXCLUDED, values['m121r_transport']['value'], FROZEN_INPUTS)
     L, o = c.limits, c.order
     require(L['workers'] == 1 and not L['retry_cap']
             and L['job_disk_cap_mib'] + L['job_memory_cap_mib'] < L['job_total_peak_mib_exclusive']
@@ -206,11 +224,52 @@ def settings():
 
 
 class Paged:
-    """No retry. Count attempts before calling the injected transport."""
+    """Pace all actual attempts; send identical arguments on bounded 429 only."""
 
-    def __init__(self, cfg, get):
+    def __init__(self, cfg, get, *, clock_ns=monotonic_ns, wait=sleep, wall_clock=epoch_time, before_attempt=lambda: None):
         self.cfg, self.get = cfg, get
+        self.clock_ns, self.wait, self.wall_clock, self.before_attempt = clock_ns, wait, wall_clock, before_attempt
         self.requests = self.wire = self.decoded = self.day_decoded = 0
+        self.retries, self.last_start = 0, None
+
+    def wait_until(self, target):
+        while (remaining := target - self.clock_ns()) > 0:
+            self.wait(remaining / NS)
+
+    def fetch(self, url, args):
+        R = self.cfg.transport
+        spacing = int(Fraction(str(R['min_request_spacing_seconds'])) * NS)
+        decoded = min(self.cfg.page_cap, self.cfg.limits['decoded_bytes_cap_per_day_mib'] * MIB - self.day_decoded)
+        for_request, reset_target = 0, None
+        while True:
+            require(self.requests < self.cfg.limits['history_requests_total'], 'request_cap')
+            if reset_target is not None:
+                self.wait_until(reset_target)
+            if self.last_start is not None:
+                self.wait_until(self.last_start + spacing)
+            self.before_attempt()
+            self.last_start = self.clock_ns()
+            self.requests += 1
+            self.retries += reset_target is not None
+            try:
+                return self.get(url, dict(args), decoded, self.cfg.page_cap)
+            except HttpStatus as exc:
+                if exc.status != 429:
+                    raise
+                if for_request >= R['retry_cap_per_request']:
+                    raise HttpStatus(exc.status, code='vendor_429_request_retry_cap') from None
+                if self.retries >= R['retry_cap_per_run']:
+                    raise HttpStatus(exc.status, code='vendor_429_run_retry_cap') from None
+                if self.requests >= self.cfg.limits['history_requests_total']:
+                    raise HttpStatus(exc.status, code='request_cap') from None
+                for_request += 1
+                try:
+                    delay = Decimal(str(exc.reset)) - Decimal(str(self.wall_clock()))
+                except (ValueError, DecimalException):
+                    delay = Decimal(-1)
+                if not delay.is_finite() or not 0 <= delay <= R['max_reset_wait_seconds']:
+                    delay = Decimal(R['fallback_wait_seconds'])
+                reset_target = self.clock_ns() + int((delay * NS).to_integral_value(rounding=ROUND_CEILING))
 
     def records(self, symbol, day, endpoint):
         require(endpoint in ('quotes', 'trades'), 'bad_endpoint')
@@ -226,11 +285,8 @@ class Paged:
             require(self.requests < self.cfg.limits['history_requests_total']
                     and pages < self.cfg.limits['pages_per_endpoint_per_day'], 'request_cap')
             require(self.day_decoded < self.cfg.limits['decoded_bytes_cap_per_day_mib'] * MIB, 'day_decoded_cap')
-            self.requests += 1
             pages += 1
-            raw, wire = self.get(url, dict(args), min(self.cfg.page_cap,
-                                 self.cfg.limits['decoded_bytes_cap_per_day_mib'] * MIB - self.day_decoded),
-                                 self.cfg.page_cap)
+            raw, wire = self.fetch(url, args)
             require(wire <= self.cfg.page_cap and len(raw) <= self.cfg.page_cap, 'page_cap')
             self.day_decoded += len(raw)
             self.decoded += len(raw)
@@ -263,7 +319,8 @@ class Paged:
 
 
 def read_page(response, decoded_cap, wire_cap):
-    require(response.status_code == 200, 'vendor_http_status')
+    if response.status_code != 200:
+        raise HttpStatus(response.status_code, response.headers.get('X-RateLimit-Reset') if response.status_code == 429 else None)
     encoding = (response.headers.get('Content-Encoding') or 'identity').strip().lower()
     require(encoding in ('identity', 'gzip'), 'vendor_encoding')
     advertised = response.headers.get('Content-Length')
@@ -746,8 +803,9 @@ def inputs(cfg, store):
     require(digest(roster) == cfg.sample['roster_before_draw_sha256'], 'roster_hash')
     ids = {r['ticker']: r for r in strict_json(roster) if not r['rules']}
     raw = private_read(store / 'inputs.json', cfg.page_cap)
+    require(digest(raw) == cfg.input_sha, 'frozen_inputs_hash')
     obj = strict_json(raw)
-    require(obj['config_sha256'] == cfg.sha, 'inputs_config_hash')
+    require(obj['config_sha256'] == INPUT_CONFIG, 'inputs_config_hash')
     expected = {(sym, day): group for group, sym, day in cfg.schedule()}
     expected_funds = {sym: group for (sym, _), group in expected.items()}
     first, last = map(date.fromisoformat, (min(cfg.sample['sessions']), max(cfg.sample['sessions'])))
@@ -812,11 +870,11 @@ def go_context(cfg, store):
     token = go.get('authorization_id')
     require(isinstance(token, str) and bool(TOKEN_RE.fullmatch(token)), 'go_authorization_id')
     ledger = LEDGER.read_bytes()
-    marker = f'; Approved for one M121 historical pull: `M121_GO={token}`'.encode()
-    rows = [line for line in ledger.splitlines() if line.startswith(b'| 223 |')]
+    marker = f'; Approved for one M121-R historical pull: `M121R_GO={token}`'.encode()
+    rows = [line for line in ledger.splitlines() if line.startswith(b'| 224 |')]
     status = rows[0].rsplit(b'|', 2)[1].strip() if len(rows) == 1 and rows[0].endswith(b'|') else b''
     require(go.get('ledger_sha256') == digest(ledger) and status.endswith(marker)
-            and rows[0].count(b'M121_GO=') == 1, 'go_ledger_not_authorized')
+            and rows[0].count(b'M121R_GO=') == 1, 'go_ledger_not_authorized')
     info, selected, coverage, halts, _ = inputs(cfg, store)
     required = {k: v for k, v in info.items() if k.endswith('_sha256')}
     require(all(go.get(k) == v for k, v in required.items()), 'go_hash_mismatch')
@@ -845,9 +903,9 @@ def sync_dir(path):
         os.close(fd)
 
 
-def execution(cfg, store, context, get):
+def execution(cfg, store, context, get, **clock):
     token, info, verified, coverage, halts = context
-    pager = Paged(cfg, get)
+    pager = Paged(cfg, get, before_attempt=lambda: headroom(cfg, store), **clock)
     lock = store / 'RUN.lock'
     reserved = os.statvfs(store).f_frsize
     locked = json_bytes(dict(authorization_id=token, **info))
@@ -912,9 +970,11 @@ def execution(cfg, store, context, get):
         if made_stage and stage.exists():
             shutil.rmtree(stage)
         require(not stage.exists() and not (store / 'completed').exists(), 'cleanup_failed')
-        stop = json_bytes(dict(authorization_id=token, **info,
-                               stop=dict(code=str(exc) if isinstance(exc, Stop) else 'processing_failure',
-                                         attempted_requests=pager.requests, wire_bytes=pager.wire, decoded_bytes=pager.decoded)))
+        counts = dict(code=str(exc) if isinstance(exc, Stop) else 'processing_failure', attempted_requests=pager.requests,
+                      retry_attempts=pager.retries, wire_bytes=pager.wire, decoded_bytes=pager.decoded)
+        if isinstance(exc, HttpStatus):
+            counts['http_status'] = exc.status
+        stop = json_bytes(dict(authorization_id=token, **info, stop=counts))
         require(len(stop) <= reserved, 'stop_receipt_payload_cap')
         # Reuse the preallocated lock block: a free-floor breach must not
         # require more space or unlink the one-shot record to log the stop.
@@ -943,7 +1003,6 @@ def live_transport(cfg, store):
     ca = os.environ.get('REQUESTS_CA_BUNDLE') or os.environ.get('CURL_CA_BUNDLE') or True
 
     def get(url, args, decoded_cap, wire_cap):
-        headroom(cfg, store)
         require(source(url, {HOST}), 'vendor_origin')
         try:
             with session.get(url, params=args, headers={'Accept': 'application/json', 'Accept-Encoding': 'gzip'},

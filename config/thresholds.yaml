@@ -1252,6 +1252,17 @@ m121_limits:
   note: STATED draft limits, not authority to implement or pull; MiB is binary.
   source: docs/research/166_m121_cef_resting_bid.md
 
+m121r_transport:
+  value:
+    min_request_spacing_seconds: 0.4
+    max_reset_wait_seconds: 90
+    fallback_wait_seconds: 65
+    retry_cap_per_request: 3
+    retry_cap_per_run: 20
+  status: builder
+  note: STATED Amendment 3 limits for the one second attempt; only HTTP 429 may be retried.
+  source: docs/research/166_m121_cef_resting_bid.md
+
 m121_sample:
   value:
     quarterly_archives:

@@ -12,6 +12,7 @@ from pathlib import Path
 import resource
 from tempfile import TemporaryDirectory
 import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -20,6 +21,22 @@ import measure_121 as m
 
 DAY = '2025-09-08'
 SECOND = m.NS
+
+
+class FakeClock:
+    def __init__(self):
+        self.ns = 0
+
+    def sleep(self, seconds):
+        self.ns += round(seconds * SECOND)
+
+    def inject(self):
+        return dict(clock_ns=lambda: self.ns, wait=self.sleep, wall_clock=lambda: 1_700_000_000 + self.ns / SECOND)
+
+
+def fake_429(reset, decoded, wire):
+    headers = {'X-RateLimit-Reset': str(reset)} if reset is not None else {}
+    return m.read_page(SimpleNamespace(status_code=429, headers=headers), decoded, wire)
 
 
 def fake_settings():
@@ -179,7 +196,7 @@ class PagesTest(unittest.TestCase):
             raw = m.json_bytes(next(queue))
             return raw, len(raw)
         c = self.c if cap is None else replace(self.c, limits=dict(self.c.limits, **cap))
-        p = m.Paged(c, send)
+        p = m.Paged(c, send, **FakeClock().inject())
         self.p = p
         return list(p.records('GDO', DAY, 'trades')), p.requests, seen
 
@@ -220,6 +237,42 @@ class PagesTest(unittest.TestCase):
             m.read_page(Response(wire), len(payload), len(wire)-1)
         with self.assertRaisesRegex(m.Stop, 'vendor_http_status'):
             m.read_page(Response(wire, status=302), len(payload), len(wire))
+
+    def test_spacing_and_429_header_fallback_use_identical_page(self):
+        for reset, expected in [(1_700_000_020, 20), (None, 65), ('broken', 65), (1_700_000_101, 65)]:
+            with self.subTest(reset=reset):
+                clock, starts, sent = FakeClock(), [], []
+                def send(url, args, decoded, wire):
+                    starts.append(clock.ns)
+                    sent.append((url, args, decoded, wire))
+                    if len(starts) == 2:
+                        return fake_429(reset, decoded, wire)
+                    raw = m.json_bytes(dict(trades=[], next_page_token='cursor' if len(starts) == 1 else None))
+                    return raw, len(raw)
+                p = m.Paged(self.c, send, **clock.inject())
+                list(p.records('GDO', DAY, 'trades'))
+                self.assertEqual(starts, [0, 400_000_000, (expected * SECOND if reset == 1_700_000_020 else
+                                                        (expected * SECOND + 400_000_000))])
+                self.assertEqual(sent[1], sent[2])
+                self.assertEqual((p.requests, p.retries), (3, 1))
+
+    def test_request_and_run_retry_caps(self):
+        for cap, sent, touches in [('request', 4, 1), ('run', 41, 21)]:
+            with self.subTest(cap=cap):
+                clock = FakeClock()
+                seen = 0
+                def send(url, args, decoded, wire):
+                    nonlocal seen
+                    seen += 1
+                    if cap == 'request' or seen % 2:
+                        return fake_429(None, decoded, wire)
+                    raw = m.json_bytes(dict(trades=[], next_page_token=None))
+                    return raw, len(raw)
+                p = m.Paged(self.c, send, **clock.inject())
+                with self.assertRaisesRegex(m.HttpStatus, f'vendor_429_{cap}_retry_cap') as caught:
+                    for _ in range(touches):
+                        list(p.records('GDO', DAY, 'trades'))
+                self.assertEqual((caught.exception.status, p.requests, seen), (429, sent, sent))
 
 
 class BootstrapTest(unittest.TestCase):
@@ -275,7 +328,7 @@ class InterlockTest(unittest.TestCase):
         self.after = self.filing('0000000001-25-000002', '2025-09-09')
         latest = self.keep(dict(cik='1', filings=dict(recent=dict(form=['N-CEN', 'N-CEN', '25'],
                       filingDate=['2025-09-07', '2025-09-09', '2025-09-10']))))
-        self.i = dict(config_sha256=self.c.sha, fund_brackets=[dict(ticker='GDO', before=self.ref(self.before),
+        self.i = dict(config_sha256=m.INPUT_CONFIG, fund_brackets=[dict(ticker='GDO', before=self.ref(self.before),
                       after=self.ref(self.after), filing_list=dict(sha256=walk, response_sha256=check, current_sha256=latest))],
             halt_days=[dict(session=DAY, coverage='unavailable', intervals=[])])
         self.replace_inputs()
@@ -297,7 +350,9 @@ class InterlockTest(unittest.TestCase):
     def replace_inputs(self):
         path = self.store / 'inputs.json'
         path.unlink(missing_ok=True)
-        m.private_write(path, m.json_bytes(self.i))
+        raw = m.json_bytes(self.i)
+        m.private_write(path, raw)
+        self.c = replace(self.c, input_sha=m.digest(raw))
 
     def test_proof_requires_both_filings_and_the_frozen_walk(self):
         info, identities, _, _, _ = m.inputs(self.c, self.store)
@@ -325,20 +380,19 @@ class InterlockTest(unittest.TestCase):
         self.replace_inputs()
         with self.assertRaisesRegex(m.Stop, 'identity_amendment_exclusions'):
             m.inputs(self.c, self.store)
-        excluded = replace(self.c, excluded_tickers=frozenset({'GDO'}))
         entry['filing_list'] = {k: v for k, v in original['filing_list'].items() if k != 'current_sha256'}
         self.replace_inputs()
-        self.assertFalse(m.inputs(excluded, self.store)[1]['GDO', DAY])
+        self.assertFalse(m.inputs(replace(self.c, excluded_tickers=frozenset({'GDO'})), self.store)[1]['GDO', DAY])
         self.i['fund_brackets'].clear()
         self.replace_inputs()
         with self.assertRaisesRegex(m.Stop, 'identity_missing_fund'):
-            m.inputs(excluded, self.store)
+            m.inputs(self.c, self.store)
 
     def test_guard_requires_exact_ledger_go_and_hashes(self):
         with self.assertRaises(FileNotFoundError):
             m.go_context(self.c, self.store)
         ledger = self.store / 'invented_ledger.md'
-        ledger.write_text('| 223 | date | plan | trial | Signed; Approved for one M121 historical pull: `M121_GO=test_approval` |\n')
+        ledger.write_text('| 224 | date | plan | trial | Signed; Approved for one M121-R historical pull: `M121R_GO=test_approval` |\n')
         info, *_ = m.inputs(self.c, self.store)
         go = dict(**info, authorization_id='test_approval', ledger_sha256=m.digest(ledger.read_bytes()))
         m.private_write(self.store / 'GO.json', m.json_bytes(go))
@@ -348,7 +402,7 @@ class InterlockTest(unittest.TestCase):
             self.replace_inputs()
             with self.assertRaisesRegex(m.Stop, 'go_hash_mismatch'):
                 m.go_context(self.c, self.store)
-            ledger.write_text('| 223 | date | plan | trial | No go; `M121_GO=test_approval` |\n')
+            ledger.write_text('| 223 | date | plan | trial | Signed; Approved for one M121 historical pull: `M121_GO=test_approval` |\n')
             (self.store / 'GO.json').unlink()
             go['ledger_sha256'] = m.digest(ledger.read_bytes())
             m.private_write(self.store / 'GO.json', m.json_bytes(go))
@@ -372,13 +426,14 @@ class InterlockTest(unittest.TestCase):
         info, verified, coverage, halts, _ = m.inputs(self.c, self.store)
         ctx = 'invented', info, verified, coverage, halts
         def stop(*_):
-            raise m.Stop('synthetic_cap')
-        with self.assertRaisesRegex(m.Stop, 'synthetic_cap'):
+            return m.read_page(SimpleNamespace(status_code=503, headers={}), 0, 0)
+        with self.assertRaisesRegex(m.Stop, 'vendor_http_status'):
             m.execution(self.c, self.store, ctx, stop)
         self.assertFalse((self.store / '.building').exists())
         self.assertFalse((self.store / 'completed').exists())
         outcome = json.loads((self.store / 'RUN.lock').read_bytes())['stop']
-        self.assertEqual((outcome['code'], outcome['attempted_requests']), ('synthetic_cap', 1))
+        self.assertEqual((outcome['code'], outcome['attempted_requests'], outcome['http_status'], outcome['retry_attempts']),
+                         ('vendor_http_status', 1, 503, 0))
         self.assertTrue((self.store / 'RUN.lock').is_file())
         with self.assertRaises(FileExistsError):
             m.execution(self.c, self.store, ctx, self.fail)
@@ -405,7 +460,7 @@ class InterlockTest(unittest.TestCase):
             raw = m.json_bytes({endpoint: records, 'symbol': 'GDO', 'next_page_token': nex})
             self.assertLessEqual(len(raw), min(decoded, wire))
             return raw, len(raw)
-        m.execution(c, self.store, ('invented', info, verified, coverage, halts), fabricated_get)
+        m.execution(c, self.store, ('invented', info, verified, coverage, halts), fabricated_get, **FakeClock().inject())
         self.assertEqual(list(responses), [])
         done = self.store / 'completed'
         self.assertEqual(set(p.name for p in done.iterdir()), {'orders.jsonl', 'summary.json', 'receipt.json'})
@@ -428,12 +483,20 @@ def full_shape_receipt():
     fake_ids = {(s, d): s not in c.excluded_tickers for _, s, d in c.schedule()}
     halt = {(s, d): [] for _, s, d in c.schedule()}
     n = len(c.order['placement_times'])
+    clock = FakeClock()
+    starts, resent = [], []
 
     def stamp(ns):
         base = datetime.fromtimestamp(ns // SECOND, timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
         return f'{base}.{ns % SECOND:09d}Z'
 
     def fabricated_get(url, args, decoded, wire):
+        starts.append(clock.ns)
+        if len(starts) <= 3:
+            resent.append((url, args, decoded, wire))
+        if len(starts) <= 2:
+            reset = clock.inject()['wall_clock']() + 12 if len(starts) == 1 else None
+            return fake_429(reset, decoded, wire)
         symbol, endpoint = url.rsplit('/', 2)[-2:]
         date = args['asof']
         assert fake_ids[symbol, date]
@@ -462,17 +525,23 @@ def full_shape_receipt():
     try:
         with TemporaryDirectory() as path, patch('socket.socket', side_effect=AssertionError('no network in fixture')):
             tmp = Path(path)
-            m.execution(c, tmp, ('invented_resource_test', {}, fake_ids, dict.fromkeys(c.sample['sessions'], 'unavailable'), halt), fabricated_get)
+            m.execution(c, tmp, ('invented_resource_test', {}, fake_ids, dict.fromkeys(c.sample['sessions'], 'unavailable'), halt),
+                        fabricated_get, **clock.inject())
             report = json.loads((tmp / 'completed' / 'summary.json').read_bytes())
             receipt = json.loads((tmp / 'completed' / 'receipt.json').read_bytes())
             assert report['consider_later_strategy_test']
             assert report['by_group']['pooled']['scheduled'] == sum(fake_ids.values()) * n
-            assert receipt['attempted_requests'] == 2 * sum(fake_ids.values())
+            assert receipt['attempted_requests'] == 2 * sum(fake_ids.values()) + 2
+            assert resent[0] == resent[1] == resent[2]
+            assert starts[:3] == [0, 12 * SECOND, (12 + c.transport['fallback_wait_seconds']) * SECOND]
+            assert all(b - a >= round(c.transport['min_request_spacing_seconds'] * SECOND) for a, b in zip(starts, starts[1:]))
     finally:
         os.umask(old)
     peaks = {k[:-1]: int(v) for s in Path('/proc/self/status').read_text().splitlines()
              if (k := s.split()[0]) in ('VmPeak:', 'VmHWM:') and (v := s.split()[1])}
     print(m.json_bytes(dict(invented=True, historical_requests=0, fund_days=sum(fake_ids.values()), slots=sum(fake_ids.values()) * n,
+                            fake_429_resends=2, fake_429_elapsed_wait_s=starts[2] / SECOND,
+                            min_fake_spacing_ns=min(b - a for a, b in zip(starts, starts[1:])),
                             bootstrap_draws_per_method=c.report['bootstrap_draws'], nice=os.nice(0),
                             child_rlimit_as_bytes=resource.getrlimit(resource.RLIMIT_AS), child_peak_kib=peaks,
                             elapsed_seconds=round(time.monotonic() - t0, 2))).decode(), end='')
