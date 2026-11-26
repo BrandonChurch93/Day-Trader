@@ -1,4 +1,6 @@
 """Synthetic Plan 19 tests. No real bars, manifests or canonical lock."""
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -119,12 +121,11 @@ class Plan19(unittest.TestCase):
     def test_require_complete_coverage_and_valid_archive_clock(self):
         p = setup()
         tapes = fixtures(p, False)
-        S.validate_tapes(tapes, p)
+        self.assertIsNone(next(S.validate_tapes(tapes, p), None))
         t = tapes[C.SYMBOLS[0]]
         start = p["start"]
         t.rates.pop(start)
-        with self.assertRaisesRegex(C.Incomplete, "missing"):
-            S.validate_tapes(tapes, p)
+        self.assertEqual(next(S.validate_tapes(tapes, p)), (C.SYMBOLS[0], "fundingRate", start))
         ms = start * C.HOUR * 1000
         S.add_row(t, "fundingRate", start, start + 24, [str(ms + 1000), "8", "0.0001"], p)
         self.assertEqual(t.rates[start], .0001)
@@ -154,18 +155,58 @@ class Plan19(unittest.TestCase):
         with TemporaryDirectory() as d:
             lock, result = Path(d) / "lock", Path(d) / "result"
 
-            def fail():
+            def fail(_prepared):
                 raise RuntimeError("invented")
 
             with self.assertRaises(RuntimeError):
-                S.claim(lock, result, {}, fail)
+                S.claim(lock, result, {}, lambda: None, fail)
             self.assertIn('"failed"', lock.read_text())
             self.assertFalse(result.exists())
-            with self.assertRaisesRegex(C.Incomplete, "consumed"):
-                S.claim(lock, result, {}, lambda: {})
+            with self.assertRaisesRegex(S.Refused, "P19_CONSUMED"):
+                S.claim(lock, result, {}, lambda: None, lambda _: {})
             new_lock = lock.with_name("other synthetic lock")
-            S.claim(new_lock, result, {}, lambda: {"made_up": 1})
+            S.claim(new_lock, result, {}, lambda: {"made_up": 1}, lambda prepared: prepared)
             self.assertIn('"completed"', new_lock.read_text())
             self.assertIn('"made_up"', result.read_text())
-            with self.assertRaisesRegex(C.Incomplete, "consumed"):
-                S.claim(new_lock, result, {}, lambda: {})
+            with self.assertRaisesRegex(S.Refused, "P19_CONSUMED"):
+                S.claim(new_lock, result, {}, lambda: None, lambda _: {})
+
+    def test_prepare_failure_does_not_claim_and_scoring_starts_after_claim(self):
+        with TemporaryDirectory() as d:
+            lock, result = Path(d) / "lock", Path(d) / "result"
+
+            def fail():
+                self.assertFalse(lock.exists())
+                raise S.Refused("P19_LOAD_REFUSED", Path(d) / "invented.zip")
+
+            def prepare():
+                self.assertFalse(lock.exists())
+                return 42
+
+            def calculate(prepared):
+                self.assertIn('"consumed"', lock.read_text())
+                return {"prepared": prepared}
+
+            with self.assertRaisesRegex(S.Refused, "P19_LOAD_REFUSED"):
+                S.claim(lock, result, {}, fail, calculate)
+            self.assertFalse(lock.exists())
+            self.assertFalse(result.exists())
+            S.claim(lock, result, {}, prepare, calculate)
+            self.assertIn('"prepared": 42', result.read_text())
+
+    def test_bad_payload_load_and_cli_refusal_are_path_only(self):
+        p = setup()
+        z = Path("/synthetic/fake.zip")
+        rec = (z, "a" * 64, C.SYMBOLS[0], "klines", p["start"], p["end"])
+        with patch.object(S.A, "read_pinned", side_effect=ValueError("synthetic-private-value")):
+            with self.assertRaises(S.Refused) as seen:
+                S.load([rec], p)
+        self.assertEqual(seen.exception.code, "P19_LOAD_REFUSED")
+        self.assertEqual(seen.exception.path, z)
+        out, err = StringIO(), StringIO()
+        with (patch.object(S, "go", side_effect=seen.exception),
+              patch("sys.argv", ["score_19", "--go"]),
+              redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit)):
+            S.main()
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(), "P19_LOAD_REFUSED /synthetic/fake.zip\n")

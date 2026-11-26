@@ -32,6 +32,13 @@ US_HOUR = C.HOUR * 10**6
 FOLDERS = {"klines", "markPriceKlines", "fundingRate"}
 
 
+class Refused(Exception):
+    """Public refusal communicates only a fixed code and named path."""
+    def __init__(self, code, path):
+        super().__init__(code)
+        self.code, self.path = code, path
+
+
 def digest(b):
     return sha256(b).hexdigest()
 
@@ -54,19 +61,28 @@ def authorize(commit, manifest_pin):
         raise C.Incomplete("check out the clean approved commit before running")
     approved = {}
     for name in PINNED:
-        approved[name] = (ROOT / name).read_bytes()
-        if approved[name] != git("show", f"{commit}:{name}"):
-            raise C.Incomplete("approved scorer bytes differ")
+        try:
+            approved[name] = (ROOT / name).read_bytes()
+            if approved[name] != git("show", f"{commit}:{name}"):
+                raise C.Incomplete("approved scorer bytes differ")
+        except (Exception, KeyboardInterrupt):
+            raise Refused("P19_AUTH_REFUSED", ROOT / name) from None
     if not re.search(rb"(?m)^Status FROZEN\.$", approved[PLAN]):
         raise C.Incomplete("Plan 19 remains a draft")
     if not re.search(rb"(?m)^\| 155 \|[^\n]+PREREG_19_monday_asia", approved[LEDGER]):
         raise C.Incomplete("missing ledger row 155")
     if RUN.is_symlink() or RUN.stat().st_uid != os.geteuid() or RUN.stat().st_mode & 0o022:
         raise C.Incomplete("canonical run folder must not be group/world writable or linked")
-    p = C.policy(yaml.safe_load(approved[CONFIG])["replay_19_plan"]["value"])
-    m = json.loads(A.read_pinned(MANIFEST, manifest_pin))
-    if m.get("version") != 1 or not isinstance(m.get("archives"), dict):
-        raise C.Incomplete("invalid Plan 19 archive inventory")
+    try:
+        p = C.policy(yaml.safe_load(approved[CONFIG])["replay_19_plan"]["value"])
+    except (Exception, KeyboardInterrupt):
+        raise Refused("P19_AUTH_REFUSED", ROOT / CONFIG) from None
+    try:
+        m = json.loads(A.read_pinned(MANIFEST, manifest_pin))
+        if m.get("version") != 1 or not isinstance(m.get("archives"), dict):
+            raise C.Incomplete("invalid Plan 19 archive inventory")
+    except (Exception, KeyboardInterrupt):
+        raise Refused("P19_INVENTORY_REFUSED", MANIFEST) from None
     return p, m["archives"], {name: digest(raw) for name, raw in approved.items()}
 
 
@@ -121,12 +137,15 @@ def add_row(tape, kind, a, b, row, p):
 
 
 def validate_tapes(tapes, p):
-    for tape in tapes.values():
+    for symbol, tape in tapes.items():
         for h in range(p["start"], p["end"]):
             if h not in tape.opens or h not in tape.closes:
-                raise C.Incomplete("required hourly trade bar is missing")
-            if h % p["funding_hours"] == 0 and (h not in tape.marks or h not in tape.rates):
-                raise C.Incomplete("required mark or settled funding rate is missing")
+                yield symbol, "klines", h
+            if h % p["funding_hours"] == 0:
+                if h not in tape.marks:
+                    yield symbol, "markPriceKlines", h
+                if h not in tape.rates:
+                    yield symbol, "fundingRate", h
 
 
 def verify_inventory(archives, p):
@@ -137,8 +156,11 @@ def verify_inventory(archives, p):
         memory()
         store = STORES[spec["where"]].resolve()
         path = store / name
-        if path.resolve() != path or not path.is_file() or not 0 < path.stat().st_size <= A.MAX_ZIP_BYTES:
-            raise C.Incomplete("missing, linked or oversized ZIP")
+        try:
+            if path.resolve() != path or not path.is_file() or not 0 < path.stat().st_size <= A.MAX_ZIP_BYTES:
+                raise C.Incomplete("missing, linked or oversized ZIP")
+        except (Exception, KeyboardInterrupt):
+            raise Refused("P19_INVENTORY_REFUSED", path) from None
         spans[symbol, kind].append((max(a, p["start"]), min(b, p["end"])))
         selected.append((path, spec["sha256"], symbol, kind, a, b))
     for periods in spans.values():
@@ -156,9 +178,16 @@ def load(selected, p):
     tapes = {s: C.Tape({}, {}, {}, {}) for s in C.SYMBOLS}
     for path, pin, symbol, kind, a, b in selected:
         memory()
-        for row in A.zip_rows(A.read_pinned(path, pin)):
-            add_row(tapes[symbol], kind, a, b, row, p)
-    validate_tapes(tapes, p)
+        try:
+            for row in A.zip_rows(A.read_pinned(path, pin)):
+                add_row(tapes[symbol], kind, a, b, row, p)
+        except (Exception, KeyboardInterrupt):
+            raise Refused("P19_LOAD_REFUSED", path) from None
+    fault = next(validate_tapes(tapes, p), None)
+    if fault is not None:
+        symbol, kind, h = fault
+        path = next((f for f, _, s, k, a, b in selected if (s, k) == (symbol, kind) and a <= h < b), MANIFEST)
+        raise Refused("P19_LOAD_REFUSED", path)
     return tapes
 
 
@@ -176,14 +205,21 @@ def sync(folder):
         os.close(fd)
 
 
-def claim(lock, result, job, calculate):
+def claim(lock, result, job, prepare, calculate):
     if os.path.lexists(lock) or os.path.lexists(result):
-        raise C.Incomplete("Plan 19 one-shot already consumed")
-    with os.fdopen(os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as stream:
+        raise Refused("P19_CONSUMED", lock if os.path.lexists(lock) else result)
+    prepared = prepare()
+    if os.path.lexists(result):
+        raise Refused("P19_CONSUMED", result)
+    try:
+        fd = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        raise Refused("P19_CONSUMED", lock) from None
+    with os.fdopen(fd, "w") as stream:
         write(stream, dict(status="consumed", **job))
         sync(lock.parent)
         try:
-            payload = calculate()
+            payload = calculate(prepared)
             with result.open("x") as output:
                 write(output, payload)
             sync(result.parent)
@@ -194,24 +230,45 @@ def claim(lock, result, job, calculate):
 
 
 def go(commit, pin):
-    memory()
-    soft, hard = resource.getrlimit(resource.RLIMIT_AS)
-    cap = min(v for v in (A.MEMORY_CAP, soft, hard) if v != resource.RLIM_INFINITY)
-    resource.setrlimit(resource.RLIMIT_AS, (cap, hard))
-    os.nice(max(0, 10 - os.nice(0)))
-    p, archives, hashes = authorize(commit, pin)
+    try:
+        memory()
+        soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+        cap = min(v for v in (A.MEMORY_CAP, soft, hard) if v != resource.RLIM_INFINITY)
+        resource.setrlimit(resource.RLIMIT_AS, (cap, hard))
+        os.nice(max(0, 10 - os.nice(0)))
+    except (Exception, KeyboardInterrupt):
+        raise Refused("P19_RESOURCE_REFUSED", "/proc/meminfo") from None
+    try:
+        p, archives, hashes = authorize(commit, pin)
+    except Refused:
+        raise
+    except (Exception, KeyboardInterrupt):
+        raise Refused("P19_AUTH_REFUSED", ROOT / PLAN) from None
     if os.path.lexists(ROOT / "research_rig" / LOCK.name):
-        raise C.Incomplete("repository lock already exists")
-    selected = verify_inventory(archives, p)
+        raise Refused("P19_CONSUMED", ROOT / "research_rig" / LOCK.name)
     job = dict(started_utc=datetime.now(timezone.utc).isoformat(), ledger=155,
                commit=commit, manifest_sha256=pin, repo_sha256=hashes)
 
-    def calculate():
-        tapes = load(selected, p)
-        memory()
+    def prepare():
+        try:
+            selected = verify_inventory(archives, p)
+        except Refused:
+            raise
+        except (Exception, KeyboardInterrupt):
+            raise Refused("P19_INVENTORY_REFUSED", MANIFEST) from None
+        try:
+            tapes = load(selected, p)
+            memory()
+            return tapes
+        except Refused:
+            raise
+        except (Exception, KeyboardInterrupt):
+            raise Refused("P19_LOAD_REFUSED", MANIFEST) from None
+
+    def calculate(tapes):
         return dict(job=job, policy=p, outcome=C.measure(tapes, p, check=memory))
 
-    claim(LOCK, RESULT, job, calculate)
+    claim(LOCK, RESULT, job, prepare, calculate)
 
 
 def main():
@@ -228,8 +285,11 @@ def main():
         return int(not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful())
     try:
         go(args.approval_commit, args.manifest_sha256)
+    except Refused as exc:
+        safe_path = str(exc.path).encode("unicode_escape").decode("ascii")
+        parser.exit(1, f"{exc.code} {safe_path}\n")
     except (Exception, KeyboardInterrupt):
-        parser.exit(1, "P19_REFUSED. Check whether the one-shot lock was claimed before taking any action.\n")
+        parser.exit(1, f"P19_RUN_REFUSED {LOCK}\n")
     return 0
 
 
