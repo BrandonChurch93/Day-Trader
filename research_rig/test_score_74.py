@@ -376,6 +376,17 @@ def test_guards(cfg):
             assert (folder / "COUNT.lock").read_text() == count_go + "\n"
             refusal("REFUSE_LOCK", p.guarded_count, fd, count_token, pin, cfg)
             assert not (folder / "RUN.lock").exists()
+            receipt = folder / "COUNT.receipt.json"
+            original = receipt.read_bytes()
+            for entry, bad in (("two\nlines", True), (r"literal\n", False)):
+                changed = json.loads(original)
+                changed["count_lines"] = [entry]
+                receipt.write_bytes(to_json(changed))
+                if bad:
+                    refusal("REFUSE_COUNT_NOT_COMPLETE", p.completed_count, fd, pin)
+                else:
+                    assert p.completed_count(fd, pin) == [entry]
+            receipt.write_bytes(original)
 
             def decoder(layout, stream, _):
                 assert (folder / "RUN.lock").read_text() == go + "\n"
@@ -392,6 +403,52 @@ def test_guards(cfg):
     print("MEASURED fixture: independent count and design locks; pinned opaque adapter; missing IWM dates refused before design lock")
 
 
+def test_dead_name_coverage(cfg):
+    default = {"C": None, "forced_half_line": False, "closed_cards": []}
+    assert cfg["dead_name_coverage"] == default
+    forced = {**cfg, "dead_name_coverage": {**default, "C": .84, "forced_half_line": True}}
+    dates = [date(y, m, d) for y in range(2017, 2022) for m in range(1, 13) for d in (3, 5, 7)]
+    for card in ("A", "B"):
+        fee = cfg["costs_bp_per_side"][card] / p.BP_PER_UNIT
+        rows = []
+        for i, day in enumerate(dates):
+            raw = 10 * (1 + fee) / (1 - fee) * (1.0065 + ((day.month % 3) - 1) * .001)
+            leg = p.Leg(0, "close", "delisted" if i == 0 else "close_trigger", 1, raw, 0, 0)
+            rows.append(p.Trade(day, 10, (leg,)))
+        original = p.aggregate(rows, card, cfg)
+        altered = p.aggregate(rows, card, forced)
+        assert original["passed"] and not original["delisted_trigger"]
+        assert altered["main"]["passed"] and altered["delisted_trigger"] and not altered["passed"]
+        assert altered["delisted_shown"]["0.5"]["mean"] < cfg["marks"]["mean_floor"]
+
+    for closed, opened in (("A", "B"), ("B", "A")):
+        policy = {**cfg, "dead_name_coverage": {**default, "C": .7, "closed_cards": [closed]}}
+        tape, signal = bars_fixture(cfg)
+        clock = tuple(date(2017, 1, 3) + timedelta(days=i) for i in range(60))
+        samples = [Signal("A", "earnings", "SYN-A", 0, 7, 7, 8),
+                   Signal("B", "pooled", "SYN-B", 0, 7, 7, 8)]
+        counts = count_signals(samples, clock, policy)
+        assert counts and all(c == opened for c, _ in counts)
+        lines = list(count_lines(counts, policy, {"missing_share_name_days": 0}))
+        assert [x for x in lines if x.startswith(closed + " ")] == [closed + " CLOSED ON COVERAGE"]
+        if closed == "A":
+            hits, _ = close_signals(tape.view(signal.day), policy)
+            assert hits == []
+        with patch.object(p, "design_candidates", return_value=(samples, {})), \
+             patch.object(p, "play_arm", return_value=([], 0, 0)) as play, \
+             patch.object(p, "cash_book", return_value={}) as book:
+            need = {**policy["count_branch"], "need_signals": {"A": 1, "B": 1}}
+            report = p.design_replay(replace(tape, days=clock, bars={}),
+                                     {**policy, "count_branch": need})
+        assert report[closed] == {"judged_arm": "close_on_coverage", "passed": False}
+        assert all(s.card == opened for call in play.call_args_list for s in call.args[1])
+        assert book.call_count == 1 and book.call_args.args[2] == opened
+        warning = list(p.summary(report, policy))
+        assert all(x.endswith(" SURVIVORSHIP WARNING C=0.7") for x in warning[:2])
+        assert warning[-1] == "closed"
+        assert all("SURVIVORSHIP WARNING" not in x for x in p.summary(report, cfg))
+
+
 def self_test():
     cfg = config()
     test_play(cfg)
@@ -401,6 +458,7 @@ def self_test():
     test_b_and_pool(cfg)
     test_gap_add_book(cfg)
     test_guards(cfg)
+    test_dead_name_coverage(cfg)
 
 
 if __name__ == "__main__":

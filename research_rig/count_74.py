@@ -28,7 +28,16 @@ def require(ok, code):
 
 def config():
     lines = (ROOT / "config/thresholds.yaml").read_text().splitlines()
-    return json.loads(lines[lines.index("replay_74_plan:") + 1].split("value:", 1)[1])
+    cfg = json.loads(lines[lines.index("replay_74_plan:") + 1].split("value:", 1)[1])
+    coverage = cfg.get("dead_name_coverage")
+    require(isinstance(coverage, dict) and set(coverage) == {"C", "forced_half_line", "closed_cards"},
+            "REFUSE_DEAD_NAME_COVERAGE")
+    c, forced, closed = (coverage[k] for k in ("C", "forced_half_line", "closed_cards"))
+    require((c is None or (type(c) in (int, float) and 0 <= c <= 1))
+            and type(forced) is bool and type(closed) is list
+            and all(isinstance(card, str) and card in ARMS for card in closed)
+            and len(closed) == len(set(closed)), "REFUSE_DEAD_NAME_COVERAGE")
+    return cfg
 
 
 @dataclass(frozen=True)
@@ -151,14 +160,15 @@ def market(view, cfg, arm):
 def close_signals(view, cfg, *, branches_only=False, exclusions=None, diagnostics=None):
     """Return close-only candidates plus the two pre-trigger comparison pools."""
     a, b = (cfg["signal_rules"][c] for c in ("A", "B"))
+    closed = cfg["dead_name_coverage"]["closed_cards"]
     t = view.t
     ranks, scan_b, hits = [], [], []
-    for name in sorted(view.eligible):
+    for name in sorted(view.eligible) if len(closed) < len(ARMS) else ():
         now = view.series(name, t, t)
         if not now:
             continue
         bar = now[0]
-        if a["price_min"] <= bar.close <= a["price_max"]:
+        if "A" not in closed and a["price_min"] <= bar.close <= a["price_max"]:
             raw = view.series(name, t - a["turn_sessions"], t - 1)
             ret = view.series(name, t - 1 - a["rank_sessions"], t - 1, t - 1)
             if raw and ret and fmean(x.close * x.volume for x in raw) >= a["turn_min"]:
@@ -167,7 +177,7 @@ def close_signals(view, cfg, *, branches_only=False, exclusions=None, diagnostic
                         diagnostics["missing_share_name_days"] += 1
                 elif a["cap_min"] <= view.shares[name] * raw[-1].close <= a["cap_max"]:
                     ranks.append((ret[-1].close / ret[0].close - 1, name))
-        if not b["price_min"] <= bar.close <= b["price_max"]:
+        if "B" in closed or not b["price_min"] <= bar.close <= b["price_max"]:
             continue
         first = t - b["vol_sessions"]
         raw = view.series(name, first, t - 1)
@@ -209,6 +219,8 @@ def close_signals(view, cfg, *, branches_only=False, exclusions=None, diagnostic
 
     leaders = []
     arms = COUNT_ARMS["A"] if branches_only else ARMS["A"]
+    if "A" in closed:
+        return hits, {"A": (), "B": tuple(scan_b)}
     primary_switch = market(view, cfg, "earnings")
     switch = {arm: market(view, cfg, arm) if arm in ("52w", "without_market") else primary_switch
               for arm in arms}
@@ -250,8 +262,9 @@ def count_signals(signals, clock, cfg):
     """No data past signal close, and no fill/return/benchmark logic."""
     raw, lower = defaultdict(set), defaultdict(set)
     prior = {}
+    closed = cfg["dead_name_coverage"]["closed_cards"]
     for s in sorted(signals, key=lambda s: (s.day, s.card, s.arm, s.id)):
-        if s.arm not in COUNT_ARMS[s.card] or not in_fence(clock, s.day, s.card, cfg):
+        if s.card in closed or s.arm not in COUNT_ARMS[s.card] or not in_fence(clock, s.day, s.card, cfg):
             continue
         key = s.card, s.arm
         raw[key].add((s.day, s.id))
@@ -265,7 +278,7 @@ def count_signals(signals, clock, cfg):
         return len(pairs), len({d for d, _ in pairs})
 
     return {(card, arm): (*numbers(raw[card, arm]), *numbers(lower[card, arm]))
-            for card, arms in COUNT_ARMS.items() for arm in arms}
+            for card, arms in COUNT_ARMS.items() if card not in closed for arm in arms}
 
 
 def in_fence(clock, day, card, cfg):
@@ -282,6 +295,9 @@ def branches(counts, cfg):
             and branch["bound"] == "lower", "REFUSE_COUNT_NEED")
     picked = {}
     for card in ARMS:
+        if card in cfg["dead_name_coverage"]["closed_cards"]:
+            picked[card] = "close_on_coverage"
+            continue
         *arms, closed = branch[f"card_{card}"]
         picked[card] = next((a for a in arms if counts[card, a][2] >= need[card]), closed)
     return picked
@@ -292,12 +308,12 @@ def count_lines(counts, cfg, diagnostics=None):
     for (card, arm), numbers in counts.items():
         require(all(type(v) is int for v in numbers), "REFUSE_COUNT_OUTPUT")
         yield f"{card} {arm} raw={numbers[0]} raw_days={numbers[1]} lower={numbers[2]} lower_days={numbers[3]}"
-    if diagnostics is not None:
+    if diagnostics is not None and "A" not in cfg["dead_name_coverage"]["closed_cards"]:
         missing = diagnostics["missing_share_name_days"]
         require(type(missing) is int, "REFUSE_COUNT_OUTPUT")
         yield f"A missing_share_name_days={missing}"
     for card, arm in picked.items():
-        yield f"BRANCH {card} {arm}"
+        yield f"{card} CLOSED ON COVERAGE" if arm == "close_on_coverage" else f"BRANCH {card} {arm}"
 
 
 def main(args):

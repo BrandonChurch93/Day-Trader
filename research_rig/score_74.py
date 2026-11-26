@@ -356,7 +356,7 @@ def completed_count(fd, pin):
             and set(result) == {"schema", "go_id", "count_lines"}
             and type(result["schema"]) is int and result["schema"] == 1
             and result["go_id"] == go and isinstance(result["count_lines"], list)
-            and all(isinstance(x, str) and "\\n" not in x for x in result["count_lines"]), "REFUSE_COUNT_NOT_COMPLETE")
+            and all(isinstance(x, str) and "\n" not in x for x in result["count_lines"]), "REFUSE_COUNT_NOT_COMPLETE")
     return result["count_lines"]
 
 
@@ -758,7 +758,8 @@ def aggregate(trades, card, cfg, *, months=None):
     fence = sum(any(leg.reason == "design_fence" for leg in t.legs) for t in trades)
     cases = docs + undocumented
     sides = {str(x): line(cost, slip, x) for x in d["shown"]}
-    trigger = bool(trades) and cases / len(trades) > d["share_trigger"]
+    trigger = cfg["dead_name_coverage"]["forced_half_line"] or (
+        bool(trades) and cases / len(trades) > d["share_trigger"])
     passed = main["passed"] and (not trigger or sides[str(d["trigger_line"])]["passed"])
     return {"main": main, "delisted_documented": docs, "bars_ended_undocumented": undocumented,
             "design_fence_exits": fence,
@@ -774,8 +775,9 @@ def design_candidates(tape, cfg, *, branches_only=False, diagnostics=None):
     last = iso(cfg["design_last"])
     require(tape.days[-1] <= last, "REFUSE_FENCE")
     out, pools = [], {}
+    open_cards = set(ARMS) - set(cfg["dead_name_coverage"]["closed_cards"])
     for i, d in enumerate(tape.days):
-        allowed = {card for card in ARMS if in_fence(tape.days, i, card, cfg)}
+        allowed = {card for card in open_cards if in_fence(tape.days, i, card, cfg)}
         if not allowed:
             continue
         excluded = None if branches_only else {card: set() for card in ARMS}
@@ -1031,10 +1033,14 @@ def design_replay(tape, cfg, expected_counts=None):
         bars = tape.bars.get(name)
         return bars is not None and (bars.present(i) if isinstance(bars, BarSeries) else bars[i] is not None)
 
-    absent = sum(d >= first and any(not present(n, i) for n in switch_funds)
-                 for i, d in enumerate(tape.days))
+    absent = (sum(d >= first and any(not present(n, i) for n in switch_funds)
+                  for i, d in enumerate(tape.days))
+              if picks["A"] != "close_on_coverage" else 0)
     report = {}
     for card, arm in picks.items():
+        if arm == "close_on_coverage":
+            report[card] = {"judged_arm": arm, "passed": False}
+            continue
         extra = {"missing_switch_days": absent} if card == "A" else {}
         if arm == "close_on_count":
             report[card] = {"judged_arm": arm, "passed": False, **extra}
@@ -1067,8 +1073,10 @@ def decode_design(layout, opaque, cfg, expected_counts=None):
 
 
 def summary(report, cfg):
+    c = cfg["dead_name_coverage"]["C"]
+    warning = "" if c is None else f" SURVIVORSHIP WARNING C={c}"
     for card in ARMS:
-        yield card + " " + json.dumps(report[card], sort_keys=True, allow_nan=False)
+        yield card + " " + json.dumps(report[card], sort_keys=True, allow_nan=False) + warning
     yield cfg["result_line"][not any(x["passed"] for x in report.values())]
 
 
