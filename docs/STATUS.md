@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 05:44 UTC
+Last updated: 2026-11-26 05:47 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Plan 45 (queue 79) closed 2026-11-26, dropped at feasibility. MEASURED: notice pages refused direct reads; 19 asset-designations across 9 indexed notices, 11 displayed minutes but 0 verified UTC publication minutes, and 9 Coinbase or Kraken USD spot ticker candidates. Full list and exact-minute overlap UNKNOWN. Untested desk-rule candidate retained in row 72; no ledger row used.
 
 - Plan 44 (queue 80) closed 2026-11-26, dropped at feasibility. MEASURED: 60 timed additions from 40 Coinbase posts, 29 prior-day spot ticker candidates not confirmed at the event minute, and 16 roadmap-page captures in 46 months. Full population UNKNOWN; no ledger row used.
 
