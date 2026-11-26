@@ -319,6 +319,7 @@ Working papers.
 | `research_rig/common_36.py` | Plan 36 event, liquidity, spread, action and comparator logic; nine scoring marks | CURRENT |
 | `research_rig/score_36.py` | Plan 36 no-return validator and approval-gated one-shot runner | CURRENT |
 | `research_rig/test_36.py` | Plan 36 synthetic-only clock, coverage, outcome and gate tests | CURRENT |
+| `research_rig/CLOSE_36_on_coverage.md` | Plan 36, queue 60 and ledger 171: INCONCLUSIVE on the frozen coverage limit. No scored run or return calculation | RECORD |
 | `research_rig/measure_15_summary.json` | Measurement 15 aggregates only (counts, medians, means, 90th percentiles, outlier check). No trade, quote, price, time or symbol; the per-stock-day output stays off repo | CURRENT |
 | `research_rig/report_15.py` | Writes the Measurement 15 summary from the off-repo output, and prints doc 66 from the summary only. No rule run and no market-data reads | CURRENT |
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
