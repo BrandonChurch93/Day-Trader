@@ -243,6 +243,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/126_replay_60_special_dividends.md` | Replay 60 saved result: the special-dividend rule did not pass; judged marks, yearly means, refusal counts, shown checks and gaps | CURRENT |
 | `docs/research/130_replay_62_special_dividend_ex_day.md` | Replay 62 saved result: the special-dividend ex-day rule did not pass; judged marks, yearly means, shown checks, history and gaps | CURRENT |
 | `docs/research/137_replay_22_fable_rule_a.md` | Replay 22 result: Fable rule A run as a fixed rule with no AI on the monthly top 30 coins did not pass, 1 of 5 marks; the row closes | CURRENT |
+| `docs/research/140_false_pass_audit.md` | False-pass audit: no-edge pass rate of each of the 44 scored tests, expected passes by luck against the 3 counted, trust in each pass, ideas closed before a return | CURRENT |
 | `docs/research/132_count_107_dividend_month_coverage.md` | Count 107 closure before prices: dated roster and regular dividend-month counts below the fixed line; source check | RECORD |
 | `docs/research/128_row104_equity_cef_distribution_count.md` | Row 104 count, price-blind: equity closed-end fund non-monthly and special distributions 2016 to 2026 (472 fund-days on 241 ex-dates, pass line met; declaration lead time unknown). Addendum: second count over all SEC-classified equity closed-end funds, year-end and special distributions (461 fund-days on 261 ex-dates, passes; 36 of 60 sampled public at least 3 sessions before ex, 1 not, 23 undatable) | CURRENT |
 
@@ -505,6 +506,7 @@ Working papers.
 | `research_rig/results_09.json` | Replay 09 results, input fingerprints and coverage snapshot | CURRENT |
 | `research_rig/PREREG_10_negative_funding.md` | Fixed plan for a spot rule using negative perpetual funding. Not run: too few events in the design years | RECORD |
 | `research_rig/count_10_design.py`, `research_rig/design_counts_10.json` | Funding coverage audit and design-only entry counts for replay 10. No price returns or held-back signals | CURRENT |
+| `research_rig/build_doc140_false_pass_audit.py` | Builds doc 140 from repo files only: reads each plan's no-edge rate or mark, sums luck passes, counts ideas closed before a return | CURRENT |
 | `research_rig/run_v2.py`, `research_rig/compare_v1_v2.py`, `research_rig/noise_pbo.py`, `research_rig/build_doc16.py`, `research_rig/results_v2.json`, `research_rig/compare_v1_v2.json`, `research_rig/noise_pbo.json`, `research_rig/venue_price_gap.json` | The rerun after the audits and its outputs | CURRENT |
 | `research_rig/run_04.py`, `research_rig/results_04.json`, `research_rig/build_doc23.py`, `research_rig/NOTES_04_builder.md` | Replay 04 | CURRENT |
 | `research_rig/run_05.py`, `research_rig/AMENDMENT_05_I2_equal_thirds.md`, `research_rig/results_05.json`, `research_rig/results_05b.json`, `research_rig/build_doc22.py`, `research_rig/i2_2020_note.py`, `research_rig/i2_2020_note.json`, `research_rig/data_notes_french.md` | Replay 05: script, the correction to rule I2, first-run output, corrected-run output | CURRENT |
