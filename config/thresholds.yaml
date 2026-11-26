@@ -944,6 +944,12 @@ replay_31_plan:
   note: Frozen strategy only. The treasury and equity controls are untraded benchmarks. These entries mirror the pinned scorer; real validation and scoring require a separate lead approval.
   source: research_rig/PREREG_31_bond_etf_month_end.md
 
+replay_52_plan:
+  value: {"ledger_row":186,"queue_row":94,"judged_first_year":2015,"judged_last_year":2025,"shown_last_month":"2026-09","first_bar_date":"2015-01-02","last_bar_date":"2026-10-05","sessions_per_symbol":2956,"funds":["LQD","HYG","JNK","VCIT"],"proxies":{"LQD":"IEF","HYG":"IEI","JNK":"IEI","VCIT":"IEF"},"expected_splits":{"JNK":[{"ex_date":"2019-05-06","new":1,"old":3}]},"budget_usd":500,"held_sessions":3,"cost_bps_per_side":2,"max_identical_ohlc_run_exclusive":5,"expected":{"quarters":44,"non_december":33,"controls":88,"shown":3},"marks":{"strict_floor":0,"minimum_t":2.0,"drop_best":3,"positive_share":{"numerator":3,"denominator":5}},"calibration":{"worlds":5000,"seed":52,"edge_bps":[0,10,20,30],"proxy_daily_sd_bps":25,"credit_daily_sd_bps":35,"year_sd_bps":15},"resources":{"minimum_free_mib":768,"process_cap_mib":256,"nice":10}}
+  status: builder
+  note: Draft settings before any Plan 52 market data. The cost is the Replay 31 assumption; the proxies are untraded comparisons. No scoring authorized.
+  source: research_rig/PREREG_52_quarter_end_dealer_rebound.md
+
 replay_14_plan:
   value: {start: "2016-01-04", end: "2026-11-24", lookback_months: 12, skip_months: 1, n_small: 10, n_wide: 50, cost_bps_per_side: 5, random_draws: 1000, seed: 14, random_percentile: 95, first_half_end: "2021-12-31", new_trials: 2}
   status: builder
