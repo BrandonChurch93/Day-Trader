@@ -1066,3 +1066,9 @@ replay_43_plan:
   status: builder
   note: Only numeric and scope source for Plan 43; approval-only custody, validation and one lock. No market acquisition authorized by the freeze.
   source: research_rig/PREREG_43_special_dividends.md
+
+replay_60_plan:
+  value: {"inherit":"replay_43_plan","pre_padding_sessions":5,"min_median_dollar_volume":100000,"exit_wait_sessions":5,"vendor_tail_days":90,"placement_cases":[0.75,0.65],"ohlc_tick":"0.01","ohlc_slack":"0.00000001"}
+  status: builder
+  note: Draft only. Existing sealed Plan 43 price packet by hash; vendor corporate actions are a separate action-only input. No new price acquisition.
+  source: research_rig/PREREG_60_special_dividends.md
