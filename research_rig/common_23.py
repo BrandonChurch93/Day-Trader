@@ -8,7 +8,7 @@ import bisect, csv, datetime as dt, hashlib, io, json, math, os, re, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-CONFIG = os.environ.get("P23_CONFIG", os.path.join(ROOT, "config", "thresholds.yaml"))
+CONFIG = os.path.join(ROOT, "config", "thresholds.yaml")     # fixed: no environment override (gate audit B1)
 PLAN_NAME = "PREREG_23_ipo_fast_track.md"
 PINNED_NAMES = (PLAN_NAME, "common_23.py", "fetch_23.py", "score_23.py", "report_23.py", "calibrate_23.py", "test_23.py")
 CONFIG_PIN = "thresholds.yaml#replay_23_plan"
@@ -22,7 +22,7 @@ def config_block_sha256(raw):
                                      default=str).encode()).hexdigest()
 
 
-def authorize(commit, root=ROOT):
+def authorize(commit, root=ROOT, config=None):
     """Refuse collection, freeze and scoring unless HEAD is the lead's approval commit.
     The approval commit must: be HEAD with no tracked change; add research_rig/APPROVAL_23.md holding the exact
     approval line, which names the freeze commit; descend from that freeze commit, where the approval file did not
@@ -37,6 +37,12 @@ def authorize(commit, root=ROOT):
         return git("show", f"{c}:{path}").stdout
     if not re.fullmatch(r"[0-9a-f]{40}", commit or ""):
         raise Refused("P23_NOT_APPROVED no approval commit given")
+    env = sorted(k for k in os.environ if k.startswith("P23_"))
+    if env:                                            # no P23_ variable may steer a judged step
+        raise Refused("P23_NOT_APPROVED environment " + ",".join(env))
+    config = CONFIG if config is None else config
+    if os.path.realpath(config) != os.path.realpath(os.path.join(root, "config", "thresholds.yaml")):
+        raise Refused("P23_NOT_APPROVED config path")
     if git("rev-parse", "HEAD").stdout.decode().strip() != commit:
         raise Refused("P23_NOT_APPROVED HEAD is not the approval commit")
     if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
@@ -58,7 +64,9 @@ def authorize(commit, root=ROOT):
             raise Refused("P23_NOT_APPROVED pin " + name)
     cfg = "config/thresholds.yaml"
     h = config_block_sha256(show(commit, cfg))
-    if h != pins.get(CONFIG_PIN) or h != config_block_sha256(show(frozen, cfg)):
+    with open(config, "rb") as fh:
+        on_disk = config_block_sha256(fh.read())
+    if h != pins.get(CONFIG_PIN) or h != config_block_sha256(show(frozen, cfg)) or h != on_disk:
         raise Refused("P23_NOT_APPROVED pin " + CONFIG_PIN)
     if not re.search(rb"(?m)^Status FROZEN\.", show(commit, "research_rig/" + PLAN_NAME)):
         raise Refused("P23_NOT_APPROVED plan not frozen")

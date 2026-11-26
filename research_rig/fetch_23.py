@@ -11,15 +11,15 @@
 The credential is used only through `pplx credentials run`; it is never read, printed or stored here. Bars stay in
 RUN (off repo). Output is counts, dates and accessions only, never a price. One process, one request at a time.
 """
-import argparse, csv, datetime as dt, json, os, subprocess, sys, time
+import argparse, csv, datetime as dt, json, os, re, subprocess, sys, time
 
 import common_23 as C
 
 HERE = C.HERE
 SRC = os.path.expanduser("~/workspace/rig/data/ipo_fasttrack")
-RUN = os.environ.get("P23_RUN", os.path.expanduser("~/workspace/rig/data/replay_23"))
+RUN = os.path.expanduser("~/workspace/rig/data/replay_23")       # fixed: no environment override (gate audit B1)
 CRED = "custom-cred:2c245581-eef5-452d-8434-2b80a170c040@data.alpaca.markets"
-PLAN = os.environ.get("P23_PLAN", C.PLAN_NAME)
+PLAN = C.PLAN_NAME
 CODE = ("common_23.py", "fetch_23.py", "score_23.py", "test_23.py", "calibrate_23.py", "report_23.py",
         os.path.relpath(C.CONFIG, HERE), PLAN)
 
@@ -114,24 +114,47 @@ def put(path, rows):
     os.replace(tmp, path)
 
 
+TICKER = re.compile(r"[A-Z]{1,5}")
+
+
+def fetch_plan(ev, p):
+    """Every active row's request, checked before the first network call (gate audit S1): ISO filing date inside
+    the pricing range, a plain ticker, and start < asof < end <= bar_end. Any bad row refuses the whole fetch."""
+    end_cap, out, bad = str(p["bar_end"]), [], []
+    for e in ev:
+        if e["status"] or not e["ticker"]:
+            continue
+        try:
+            d0 = dt.date.fromisoformat(e["filing_date"])        # one rule for every event: windows key on the filing date
+        except (TypeError, ValueError):
+            bad.append(e["accession"]); continue
+        start = (d0 - dt.timedelta(days=p["prior_listing_days"])).isoformat()
+        end = min((d0 + dt.timedelta(days=p["fetch_after_days"])).isoformat(), end_cap)
+        asof = (d0 + dt.timedelta(days=p["asof_days"])).isoformat()   # inside the first-bar window
+        if (not TICKER.fullmatch(e["ticker"]) or not str(p["first_pricing"]) <= e["filing_date"] <= end_cap
+                or not start < asof < end <= end_cap or not re.fullmatch(r"[0-9-]{20}", e["accession"])):
+            bad.append(e["accession"]); continue
+        out.append((e["accession"], e["ticker"], start, end, asof))
+    if bad:
+        raise C.Refused("P23_EVENT_ROW_BAD " + " ".join(bad))
+    return out
+
+
 def cmd_fetch(p):
     P = paths()
-    os.makedirs(P["bars"], exist_ok=True)
     ev = C.parse_events(open(P["selected"], "rb").read())
+    plan = fetch_plan(ev, p)                                     # refuses before any request
+    os.makedirs(P["bars"], exist_ok=True)
     end_cap = str(p["bar_end"])
     spy = os.path.join(P["bars"], "SPY.json")
     if not os.path.exists(spy):
         put(spy, bars("SPY", str(p["spy_start"]), end_cap, None, p))
     n = 0
-    for e in ev:
-        f = os.path.join(P["bars"], e["accession"] + ".json")
-        if os.path.exists(f) or not e["ticker"] or e["status"]:
+    for acc, ticker, start, end, asof in plan:
+        f = os.path.join(P["bars"], acc + ".json")
+        if os.path.exists(f):
             continue
-        d0 = dt.date.fromisoformat(e["filing_date"])       # one rule for every event: windows key on the filing date
-        start = (d0 - dt.timedelta(days=p["prior_listing_days"])).isoformat()
-        end = min((d0 + dt.timedelta(days=p["fetch_after_days"])).isoformat(), end_cap)
-        asof = (d0 + dt.timedelta(days=p["asof_days"])).isoformat()   # inside the first-bar window, so the listing's own ticker
-        put(f, bars(e["ticker"], start, end, asof, p))
+        put(f, bars(ticker, start, end, asof, p))
         n += 1
         if n % 50 == 0:
             print("fetched", n, flush=True)
@@ -140,9 +163,7 @@ def cmd_fetch(p):
 
 def repo_ready():
     """The freeze is for the repo copy only: the config must be the repo's thresholds.yaml and the plan must not be
-    the draft (audit pass 1, S3). P23_ALLOW_DRAFT=1 lets the tests freeze inside a temporary folder."""
-    if os.environ.get("P23_ALLOW_DRAFT") == "1":
-        return
+    the draft (audit pass 1, S3). No environment variable can turn this off (gate audit B1)."""
     plan = [f for f in CODE if os.path.basename(f).startswith("PREREG_23")]
     if os.path.basename(C.CONFIG) != "thresholds.yaml" or not plan or any("DRAFT" in os.path.basename(f) for f in plan):
         raise SystemExit("P23_FREEZE_ON_DRAFT config=" + C.CONFIG + " plan=" + ",".join(plan))

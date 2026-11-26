@@ -2,7 +2,7 @@
 
 Status FROZEN.
 
-Frozen 2026-11-26 03:37 UTC (read from `date -u`) after audit pass 2 and its delta were CLEAR (`rig_code_auditor_b`). Drafted off repo 2026-11-26 03:06 UTC; revised 03:12 UTC (ruling on the choices), 03:28 UTC (rulings on audit pass 1: B1, B2, four should-fix items, a 50 bps line) and 03:35 UTC (pass 2 should-fix items, the power limit). Queue row 37, ledger row 160. No bar has been fetched for this plan and no return has been worked out on real prices. The design below was fixed by the lead on 2026-11-26 before any price; the lines under "Choices made in the draft" are the helper's, approved by the lead on 2026-11-26. Every number is a key in `replay_23_plan` in `config/thresholds.yaml`. Collection, freeze and scoring refuse without the lead's approval commit (see Order of work).
+Frozen 2026-11-26 03:37 UTC (read from `date -u`) after audit pass 2 and its delta were CLEAR (`rig_code_auditor_b`); refrozen 03:53 UTC after the gate audit (B1: no environment override of the config, plan or run folder; S1: every row checked before the first request). Drafted off repo 2026-11-26 03:06 UTC; revised 03:12 UTC (ruling on the choices), 03:28 UTC (rulings on audit pass 1: B1, B2, four should-fix items, a 50 bps line) and 03:35 UTC (pass 2 should-fix items, the power limit). Queue row 37, ledger row 160. No bar has been fetched for this plan and no return has been worked out on real prices. The design below was fixed by the lead on 2026-11-26 before any price; the lines under "Choices made in the draft" are the helper's, approved by the lead on 2026-11-26. Every number is a key in `replay_23_plan` in `config/thresholds.yaml`. Collection, freeze and scoring refuse without the lead's approval commit (see Order of work).
 
 ## The question
 
@@ -132,7 +132,8 @@ None of these changes a mark.
 - Refusals before the lock:
   - `fetch_23.py --events` refuses on a 424B4 cover it cannot place (`P23_SECURITY_UNKNOWN`);
   - `fetch_23.py --freeze` refuses on any event with a real first bar and no real close in sessions 2 to 8 (`P23_REFUSED_NO_EXIT_BAR`, with the accessions) and writes no freeze record;
-  - `fetch_23.py --fetch`, `fetch_23.py --freeze` and `score_23.py --run` refuse unless HEAD is the lead's approval commit (`P23_NOT_APPROVED`, `common_23.authorize`);
+  - `fetch_23.py --fetch`, `fetch_23.py --freeze` and `score_23.py --run` refuse unless HEAD is the lead's approval commit (`P23_NOT_APPROVED`, `common_23.authorize`). They also refuse if any `P23_` environment variable is set or the config read is not the repo's `config/thresholds.yaml` with the pinned block; the config, plan and run folder paths are fixed in the code;
+  - `fetch_23.py --fetch` checks every active row (ISO filing date in range, ticker of 1 to 5 capital letters, accession form, request window order) before its first request, and refuses the whole fetch on any bad row (`P23_EVENT_ROW_BAD`);
   - `fetch_23.py --freeze` refuses on a config other than `config/thresholds.yaml` or a draft plan (`P23_FREEZE_ON_DRAFT`) and on a short SPY calendar (`P23_CALENDAR_SHORT`);
   - `score_23.py --run` refuses on any pin that differs: freeze record, code, config, `ipos.csv`, `breakpoints.csv`, the cover cache, the selected and frozen event files, or each bar file.
 - The freeze record (`freeze.json`) holds the SHA-256 of every code file, this plan, the config block, both event files, the three inputs (`ipos.csv`, `breakpoints.csv`, `snips.jsonl.gz`) and every bar file used. The lead keeps the freeze record's own SHA-256 apart and passes it to the run.

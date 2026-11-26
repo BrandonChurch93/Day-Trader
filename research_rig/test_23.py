@@ -1,7 +1,6 @@
 """Plan 23 tests. Invented prospectus rows, breakpoints and bars only, in temporary folders."""
 import subprocess, csv, datetime as dt, gzip, json, math, os, shutil, tempfile, unittest
 
-os.environ["P23_ALLOW_DRAFT"] = "1"          # the tests freeze in temporary folders with the draft config
 import common_23 as C
 import fetch_23 as F
 import score_23 as S
@@ -393,6 +392,49 @@ class OneShot(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.run, S.LOCK)))
 
 
+class FetchPlan(unittest.TestCase):
+    """Every row is checked before the first network call (gate audit S1)."""
+
+    def row(self, **k):
+        e = dict(accession="0001193125-21-000001", ticker="ABCD", filing_date="2021-06-10", status="")
+        e.update(k)
+        return e
+
+    def test_good_rows_and_skips(self):
+        plan = F.fetch_plan([self.row(), self.row(accession="0001193125-21-000002", status="duplicate"),
+                             self.row(accession="0001193125-21-000003", ticker="")], P)
+        self.assertEqual(plan, [("0001193125-21-000001", "ABCD", "2021-05-11", "2021-07-20", "2021-06-15")])
+
+    def test_any_bad_row_refuses_before_a_request(self):
+        for bad in (dict(filing_date="2021-13-01"), dict(filing_date=""), dict(ticker="AB/CD"), dict(ticker="abc"),
+                    dict(ticker="ABCDEFG"), dict(filing_date="2026-11-25"), dict(accession="../x")):
+            with self.assertRaises(C.Refused) as cm:
+                F.fetch_plan([self.row(), self.row(**dict(dict(accession="0001193125-21-000009"), **bad))], P)
+            self.assertIn("P23_EVENT_ROW_BAD", str(cm.exception))
+
+    def test_fetch_refuses_without_any_network_call(self):
+        calls = []
+        old = F.bars
+        F.bars = lambda *a: calls.append(a) or []
+        tmp = tempfile.TemporaryDirectory()
+        try:
+            P2 = F.paths(run=tmp.name)
+            with open(P2["selected"], "wb") as fh:
+                fh.write(C.events_csv_bytes([dict({k: "" for k in C.EVENT_FIELDS}, **self.row(ticker="A B"))]))
+            old_paths = F.paths
+            F.paths = lambda run=None, src=None: P2
+            try:
+                with self.assertRaises(C.Refused):
+                    F.cmd_fetch(P)
+            finally:
+                F.paths = old_paths
+            self.assertEqual(calls, [])
+            self.assertFalse(os.path.exists(P2["bars"]))
+        finally:
+            F.bars = old
+            tmp.cleanup()
+
+
 class Approval(unittest.TestCase):
     """The gate: collection, freeze and scoring need the lead's approval commit (invented repo, no bars)."""
 
@@ -438,7 +480,7 @@ class Approval(unittest.TestCase):
 
     def refuses(self, commit, why):
         with self.assertRaises(C.Refused) as cm:
-            C.authorize(commit, root=self.root)
+            C.authorize(commit, root=self.root, config=os.path.join(self.root, "config", "thresholds.yaml"))
         self.assertIn(why, str(cm.exception))
 
     def test_freeze_commit_alone_refuses(self):
@@ -447,7 +489,7 @@ class Approval(unittest.TestCase):
 
     def test_approval_passes_and_names_the_freeze(self):
         c = self.approve()
-        self.assertEqual(C.authorize(c, root=self.root), self.frozen)
+        self.assertEqual(C.authorize(c, root=self.root, config=os.path.join(self.root, "config", "thresholds.yaml")), self.frozen)
 
     def test_wrong_line_or_head_or_dirty_refuses(self):
         c = self.approve("Approved: plan 23")
@@ -468,10 +510,30 @@ class Approval(unittest.TestCase):
         c = self.approve()
         self.refuses(c, "pin " + C.CONFIG_PIN)
 
+    def test_environment_or_other_config_refuses(self):
+        c = self.approve()
+        for k in ("P23_CONFIG", "P23_PLAN", "P23_RUN", "P23_ALLOW_DRAFT"):
+            os.environ[k] = "/tmp/x"
+            try:
+                self.refuses(c, "environment " + k)
+            finally:
+                del os.environ[k]
+        other = os.path.join(self.root, "elsewhere", "thresholds.yaml")
+        os.makedirs(os.path.dirname(other))
+        shutil.copy(os.path.join(self.root, "config", "thresholds.yaml"), other)
+        with self.assertRaises(C.Refused) as cm:
+            C.authorize(c, root=self.root, config=other)
+        self.assertIn("config path", str(cm.exception))
+        with self.assertRaises(C.Refused) as cm:
+            C.authorize(c, root=self.root)                       # the repo's own config is not this root's
+        self.assertIn("config path", str(cm.exception))
+        self.assertEqual(C.CONFIG, os.path.join(C.ROOT, "config", "thresholds.yaml"))
+        self.assertEqual(F.PLAN, C.PLAN_NAME)
+
     def test_other_config_keys_may_change(self):
         self.put("config/thresholds.yaml", b"replay_23_plan:\n  value: {judged_bps: 10}\nother: {value: 2}\n")
         c = self.approve()
-        self.assertEqual(C.authorize(c, root=self.root), self.frozen)
+        self.assertEqual(C.authorize(c, root=self.root, config=os.path.join(self.root, "config", "thresholds.yaml")), self.frozen)
 
 if __name__ == "__main__":
     unittest.main()
