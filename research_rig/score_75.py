@@ -1,13 +1,24 @@
 """Plan 75 repeat only: invented tests, no-decode validation, and a one-shot go."""
 
+import sys
+import os
+
+# Vault CLI uses no checkout-local imports. Do this before importing dependencies
+# so an untracked shadow module is not run (or turned into bytecode) before the gate.
+if __name__ == "__main__" and sys.argv[1:2] in (["--go-vault"], ["--validate-vault"]):
+    sys.dont_write_bytecode = True
+    checkout = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    sys.path[:] = [p for p in sys.path if not (
+        os.path.realpath(p or ".") == checkout
+        or os.path.realpath(p or ".").startswith(checkout + os.sep)
+    )]
+
 import csv
 import hashlib
 import json
-import os
 import re
 import stat
 import subprocess
-import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -621,15 +632,50 @@ def vault_approval_id(ledger):
     rows = re.findall(r"^\|[ \t]*225[ \t]*\|[^\n]*$", ledger, flags=re.M)
     require(len(rows) == 1, "REFUSE_LEDGER_ROW")
     row = rows[0]
-    keys = re.findall(r"(?<![A-Za-z0-9_])P75_VAULT_GO\s*=", row)
+    keys = re.findall(r"(?<![A-Za-z0-9_])P75_VAULT_GO(?![A-Za-z0-9_])", ledger)
     matches = re.findall(r"(?<![A-Za-z0-9_])P75_VAULT_GO=(p75v-[0-9a-f]{64})(?=[\s`|]|$)", row)
     require(len(keys) == len(matches) == 1, "REFUSE_LEDGER_GO")
     return matches[0]
 
 
+def committed_vault_approval():
+    """The vault additionally refuses hidden index entries and all untracked files."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+    def git(*args):
+        result = subprocess.run(("git", *args), cwd=ROOT, env=env,
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+        require(result.returncode == 0, "REFUSE_GIT")
+        return result.stdout
+
+    commit = git("rev-parse", "--verify", "HEAD").strip()
+    require(re.fullmatch(rb"[0-9a-f]{40,64}", commit), "REFUSE_GIT")
+    tags = git("ls-files", "-v", "-z").split(b"\x00")
+    require(not any(t[:1].islower() or t[:1] == b"S" for t in tags), "REFUSE_GIT_FLAGS")
+    require(git("ls-files", "--others", "-z") == b"", "REFUSE_UNTRACKED")
+    require(git("status", "--porcelain", "--untracked-files=all") == b"", "REFUSE_DIRTY")
+    approved = vault_approval_id(git("show", f"{commit.decode('ascii')}:{LEDGER}").decode("utf-8"))
+    require(git("rev-parse", "--verify", "HEAD").strip() == commit, "REFUSE_GIT")
+    return approved
+
+
+def read_vault_at(fd, name, limit):
+    """Check mode and file type on the same descriptor used to read the bytes."""
+    child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
+    with os.fdopen(child, "rb") as f:
+        meta = os.fstat(f.fileno())
+        require(stat.S_ISREG(meta.st_mode) and meta.st_nlink == 1 and meta.st_size <= limit,
+                "REFUSE_FILE")
+        require(stat.S_IMODE(meta.st_mode) == 0o600, "REFUSE_VAULT_FILE_MODE")
+        blob = f.read(limit + 1)
+        require(len(blob) == meta.st_size, "REFUSE_SIZE")
+        return blob
+
+
 def vault_receipt_pin(fd, approved):
+    raw = read_vault_at(fd, "vault_receipt.json", 4096)
     try:
-        receipt = json.loads(read_at(fd, "vault_receipt.json", 4096), object_pairs_hook=unique)
+        receipt = json.loads(raw, object_pairs_hook=unique)
     except (ValueError, RecursionError, Refusal):
         raise Refusal("REFUSE_RECEIPT") from None
     require(isinstance(receipt, dict) and set(receipt) == {
@@ -696,13 +742,38 @@ def validate_vault_bytes(cfg, manifest, index, payload, pin):
 
 def load_vault_snapshot(fd, cfg, pin):
     require(HASH.fullmatch(pin), "REFUSE_PIN")
-    manifest = read_at(fd, "manifest.json", 8192)
+    manifest = read_vault_at(fd, "manifest.json", 8192)
     require(sha(manifest) == pin, "REFUSE_PIN")
     days = vault_axes(cfg)
-    index = read_at(fd, "index.csv", len(days) * len(NAMES) * 64 + len(VAULT_HEADER))
-    opaque = read_at(fd, "prices.f64", 16 * len(days) * len(NAMES))
+    index = read_vault_at(fd, "index.csv", len(days) * len(NAMES) * 64 + len(VAULT_HEADER))
+    opaque = read_vault_at(fd, "prices.f64", 16 * len(days) * len(NAMES))
     flags, counts = validate_vault_bytes(cfg, manifest, index, opaque, pin)
     return flags, opaque, counts
+
+
+def vault_preflight(cfg, flags):
+    """Read only authenticated index flags; the outage mask never uses a price."""
+    days = vault_axes(cfg)
+    admitted, opening, closing, sale = np.moveaxis(flags, -1, 0)
+    outage = ~np.any(admitted | sale, axis=1)
+    btc = NAMES.index(cfg["vault_benchmark"])
+    missing_btc = int(np.count_nonzero(~opening[:, btc]) + np.count_nonzero(~closing[:, btc]))
+    invalid_outage = (outage[0] or outage[-1] or np.any(outage[:-1] & outage[1:])
+                      or any(day.day == 1 for day, stopped in zip(days, outage, strict=True) if stopped))
+    refusal = None
+    if invalid_outage:
+        refusal = "REFUSE_VAULT_OUTAGE"
+    else:
+        for j in range(len(NAMES)):
+            dates_admitted = np.flatnonzero(admitted[:, j])
+            if not dates_admitted.size:
+                continue
+            later = slice(dates_admitted[-1] + 1, None)
+            if not (np.any(opening[later, j] & sale[later, j])
+                    or (closing[-1, j] and sale[-1, j])):
+                refusal = "REFUSE_VAULT_NO_EXIT"
+                break
+    return outage, missing_btc, refusal
 
 
 def validate_vault(pin):
@@ -710,16 +781,22 @@ def validate_vault(pin):
     cfg, _, _ = load_config()
     with open_folder(VAULT_DIR) as fd:
         require_private_vault(fd)
-        load_vault_snapshot(fd, cfg, pin)
+        flags, _, _ = load_vault_snapshot(fd, cfg, pin)
+        return vault_preflight(cfg, flags)
 
 
-def decode_vault(cfg, flags, opaque):
+def decode_vault(cfg, flags, opaque, outage):
     days = vault_axes(cfg)
     values = np.frombuffer(opaque, dtype="<f8").reshape(len(days), len(NAMES), 2)
     present = flags[..., 1:3]
     require(np.all(np.where(present, np.isfinite(values) & (values > 0), np.isnan(values))),
             "REFUSE_PRICES")
-    return Tape(days, NAMES, values[..., 0], values[..., 1], flags[..., 0], flags[..., 3])
+    opens = values[..., 0].copy()
+    eligible = flags[..., 0].copy()
+    opens[outage] = np.nan
+    halted = np.flatnonzero(outage)
+    eligible[halted] = eligible[halted - 1]
+    return Tape(days, NAMES, opens, values[..., 1], eligible, flags[..., 3])
 
 
 def daily_simple(nav):
@@ -745,13 +822,16 @@ def matched_btc(gross_nav, gross_fills, strategy_nav, fee):
     return (terminal if np.isfinite(terminal) else None), scale
 
 
-def btc_comparison(tape, book, fee, cfg, inp, clock, save_fills):
+def btc_comparison(tape, book, fee, cfg, inp, clock, save_fills, outage=None, missing_btc=0):
     j = tape.names.index(cfg["vault_benchmark"])
     column = [j]
     btc = Tape(tape.days, (tape.names[j],), tape.opens[:, column], tape.closes[:, column],
                tape.eligible[:, column], tape.sell[:, column])
     stats = {"matched_net": None, "scale": None, "unscaled_net": None, "status": "UNSCORABLE"}
-    if not (np.isfinite(btc.opens).all() and np.isfinite(btc.closes).all()):
+    present = np.isfinite(btc.opens[:, 0])
+    if outage is not None:
+        present |= outage
+    if missing_btc or not (present.all() and np.isfinite(btc.closes).all()):
         return stats
     solo = tuple(a[:, column] for a in inp)
     timing = clock[0][:, column], clock[1]
@@ -789,7 +869,7 @@ def shown_book(tape, fee, cfg, cap, inputs, clock):
         raise
 
 
-def score_vault(tape, cfg, costs, counts, save_fills=None):
+def score_vault(tape, cfg, costs, counts, save_fills=None, *, outage=None, missing_btc=0):
     """One vault book per fixed line, using the existing, unmodified trading functions."""
     require(tape.days == vault_axes(cfg) and tape.names == NAMES, "REFUSE_VAULT_FENCE")
     metrics = {"annual_days": cfg["vault_annual_days"]}
@@ -823,7 +903,7 @@ def score_vault(tape, cfg, costs, counts, save_fills=None):
             summary = summarize(tape, book, metrics)
             after = period_return(book.nav, tape.days, slice_first, stop)
             private("primary", book.fills)
-            btc = btc_comparison(tape, book, fee, cfg, inputs, clock, private)
+            btc = btc_comparison(tape, book, fee, cfg, inputs, clock, private, outage, missing_btc)
         line_report = {"primary": summary, "after_paper_net": after, "btc": btc,
                        "cost_per_side": fee, "shown_only": {}}
         if line == "main":
@@ -851,9 +931,11 @@ def run_vault(fd, approved):
     cfg, _, costs = load_config()
     pin = vault_receipt_pin(fd, approved)
     flags, opaque, counts = load_vault_snapshot(fd, cfg, pin)
+    outage, missing_btc, refusal = vault_preflight(cfg, flags)
+    require(refusal is None, refusal)
     with new_private(fd, "RUN.lock", "REFUSE_LOCK") as lock:
         lock.write(approved + "\n")
-    tape = decode_vault(cfg, flags, opaque)
+    tape = decode_vault(cfg, flags, opaque, outage)
     with new_private(fd, "fills.csv", "REFUSE_OUTPUT") as fills:
         out = csv.writer(fills)
         out.writerow(("cost_line", "book", "date_utc", "coin", "signed_notional", "cost"))
@@ -862,7 +944,7 @@ def run_vault(fd, approved):
             out.writerows((cost_line, book, tape.days[d].isoformat(), tape.names[j], notional, cost)
                           for d, j, notional, cost in rows)
 
-        return score_vault(tape, cfg, costs, counts, save_fills)
+        return score_vault(tape, cfg, costs, counts, save_fills, outage=outage, missing_btc=missing_btc)
 
 
 def vault_summary(report):
@@ -882,6 +964,10 @@ def vault_summary(report):
     return "\n".join(output)
 
 
+def require_vault_dir(path):
+    require(path == str(VAULT_DIR), "REFUSE_DIR")
+
+
 def main(args):
     if args == ["--self-test"]:
         from test_score_75 import self_test
@@ -890,11 +976,14 @@ def main(args):
     if len(args) == 2 and args[0] in {"--validate-vault", "--go-vault"}:
         try:
             if args[0] == "--validate-vault":
-                validate_vault(args[1])
+                outage, missing_btc, refusal = validate_vault(args[1])
+                print(f"VENUE_WIDE_DAYS {np.count_nonzero(outage)}")
+                print(f"MISSING_BTC_ENDPOINTS {missing_btc}")
+                require(refusal is None, refusal)
                 summary = "VALIDATED_VAULT_NO_PRICE_DECODE"
             else:
-                require(args[1] == str(VAULT_DIR), "REFUSE_DIR")
-                approved = committed_approval(vault_approval_id)
+                require_vault_dir(args[1])
+                approved = committed_vault_approval()
                 with open_folder(VAULT_DIR) as fd:
                     summary = vault_summary(run_vault(fd, approved))
         except Refusal as e:

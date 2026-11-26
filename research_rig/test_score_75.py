@@ -218,7 +218,8 @@ def vault_warmup(cfg, fee):
 def vault_guards(cfg):
     days = scorer.vault_axes(cfg)
     index = scorer.VAULT_HEADER + b"".join(
-        f"{d},{coin},NOT_ADMITTED,0,0,0\n".encode() for d in days for coin in NAMES)
+        f"{d},{coin},NOT_ADMITTED,0,0,{int(coin == NAMES[0])}\n".encode()
+        for d in days for coin in NAMES)
     n = len(days) * len(NAMES)
     opaque = b"\xff" * (n * 16)
     counts = {"PROVED": 0, "INFERRED": 0, "NOT_ADMITTED": n}
@@ -237,19 +238,26 @@ def vault_guards(cfg):
     assert parse(f"| 225 | `{repeat}` `{token}` |") == go
     assert_refusal("REFUSE_LEDGER_GO", parse, f"| 225 | {repeat} |")
     assert_refusal("REFUSE_LEDGER_GO", parse, f"| 225 | {token} {token} |")
+    assert_refusal("REFUSE_LEDGER_GO", parse, f"| 225 | {token} |\n| 226 | {token} |")
+    assert_refusal("REFUSE_LEDGER_GO", parse, f"| 225 | {token} |\n<!-- P75_VAULT_GO -->")
     assert_refusal("REFUSE_LEDGER_GO", parse, f"| 225 | P75_VAULT_GO=p75r-{pin} |")
     assert_refusal("REFUSE_LEDGER_ROW", parse, f"| 226 | {token} |")
-    with patch.object(scorer.subprocess, "run") as git:
-        git.side_effect = [
-            scorer.subprocess.CompletedProcess([], 0, b"a" * 40 + b"\n"),
-            scorer.subprocess.CompletedProcess([], 0, b" M research_rig/TRIAL_LEDGER.md\n"),
-        ]
-        assert_refusal("REFUSE_DIRTY", scorer.committed_approval, parse)
-        assert git.call_count == 2
-    out = StringIO()
-    with redirect_stdout(out):
-        assert scorer.main(["--go-vault", "/not-the-vault"]) == 2
-    assert out.getvalue() == "REFUSE_DIR\n"
+    def mock_git(*outputs):
+        return patch.object(scorer.subprocess, "run", side_effect=[
+            scorer.subprocess.CompletedProcess([], 0, value) for value in outputs])
+
+    head = b"a" * 40 + b"\n"
+    for hidden in (b"h", b"S", b"s"):
+        with mock_git(head, hidden + b" config/thresholds.yaml\x00"):
+            assert_refusal("REFUSE_GIT_FLAGS", scorer.committed_vault_approval)
+    with mock_git(head, b"H config/thresholds.yaml\x00", b"research_rig/__pycache__/score_75.pyc\x00") as git:
+        assert_refusal("REFUSE_UNTRACKED", scorer.committed_vault_approval)
+        assert git.call_args.args[0] == ("git", "ls-files", "--others", "-z")
+    with mock_git(head, b"H config/thresholds.yaml\x00", b"", b" M config/thresholds.yaml\n"):
+        assert_refusal("REFUSE_DIRTY", scorer.committed_vault_approval)
+    with mock_git(head, b"H config/thresholds.yaml\x00", b"", b"", f"| 225 | {token} |".encode(), head):
+        assert scorer.committed_vault_approval() == go
+    assert_refusal("REFUSE_DIR", scorer.require_vault_dir, "/not-the-vault")
     validate = scorer.validate_vault_bytes
     assert_refusal("REFUSE_PIN", validate, cfg, raw, index, opaque, "0" * 64)
     pre = index.replace(b"2024-01-01", b"2023-12-31", 1)
@@ -259,7 +267,7 @@ def vault_guards(cfg):
         "PROVED": 1, "INFERRED": 0, "NOT_ADMITTED": n - 1})).encode()
     assert_refusal("REFUSE_ADMISSION", validate, cfg, revised, index, opaque, sha(revised))
     flags, actual = validate(cfg, raw, index, opaque, pin)
-    assert actual == counts and not flags.any()
+    assert actual == counts and not flags[..., :3].any() and flags[:, 0, 3].all()
     proved, inferred = b",PROVED,0,0,1\n", b",INFERRED,0,0,1\n"
     mixed = index.replace(b",NOT_ADMITTED,0,0,0\n", proved, 1)
     mixed = mixed.replace(b",NOT_ADMITTED,0,0,0\n", inferred, 1)
@@ -268,16 +276,19 @@ def vault_guards(cfg):
     _, actual = validate(cfg, revised, mixed, opaque, sha(revised))
     assert actual == mixed_counts
 
-    def write_fixture(folder, payload):
-        m = json.dumps(dict(manifest, payload_sha256=sha(payload))).encode()
+    def write_fixture(folder, payload, index_bytes=index, admission=counts):
+        m = json.dumps(dict(manifest, payload_sha256=sha(payload), index_sha256=sha(index_bytes),
+                            admission_coin_days=admission)).encode()
         approved = "p75v-" + sha(m)
         (folder / "manifest.json").write_bytes(m)
-        (folder / "index.csv").write_bytes(index)
+        (folder / "index.csv").write_bytes(index_bytes)
         (folder / "prices.f64").write_bytes(payload)
         (folder / "vault_receipt.json").write_text(json.dumps({
             "schema": 1, "go_id": approved, "manifest_sha256": sha(m),
             "scorer_absent_during_extract": True,
         }))
+        for file in ("manifest.json", "index.csv", "prices.f64", "vault_receipt.json"):
+            (folder / file).chmod(0o600)
         return approved
 
     with TemporaryDirectory() as d:
@@ -287,8 +298,14 @@ def vault_guards(cfg):
         with patch.object(scorer, "VAULT_DIR", folder), patch.object(scorer, "decode_vault") as decode, redirect_stdout(out):
             assert scorer.main(["--validate-vault", approved[5:]]) == 0
             decode.assert_not_called()
-        assert out.getvalue() == "VALIDATED_VAULT_NO_PRICE_DECODE\n"
+        assert out.getvalue() == f"VENUE_WIDE_DAYS 0\nMISSING_BTC_ENDPOINTS {2 * len(days)}\nVALIDATED_VAULT_NO_PRICE_DECODE\n"
         assert not (folder / "RUN.lock").exists()
+        with open_folder(folder) as fd:
+            for name in ("manifest.json", "index.csv", "prices.f64", "vault_receipt.json"):
+                (folder / name).chmod(0o644)
+                assert_refusal("REFUSE_VAULT_FILE_MODE", scorer.run_vault, fd, approved)
+                assert not (folder / "RUN.lock").exists()
+                (folder / name).chmod(0o600)
         prices = folder / "prices.f64"
         redirected = folder / "made_up_redirect"
         prices.rename(redirected)
@@ -326,6 +343,35 @@ def vault_guards(cfg):
             assert_refusal("REFUSE_LOCK", scorer.run_vault, fd, approved)
     with TemporaryDirectory() as d:
         folder = Path(d)
+        # One fully closed first date: validator prints authenticated counts, then refuses.
+        closed_first = index.replace(b"2024-01-01,AAVE,NOT_ADMITTED,0,0,1",
+                                     b"2024-01-01,AAVE,NOT_ADMITTED,0,0,0", 1)
+        assert closed_first != index
+        approved = write_fixture(folder, opaque, closed_first)
+        out = StringIO()
+        with patch.object(scorer, "VAULT_DIR", folder), patch.object(scorer, "decode_vault") as decode, redirect_stdout(out):
+            assert scorer.main(["--validate-vault", approved[5:]]) == 2
+            decode.assert_not_called()
+        assert out.getvalue() == f"VENUE_WIDE_DAYS 1\nMISSING_BTC_ENDPOINTS {2 * len(days)}\nREFUSE_VAULT_OUTAGE\n"
+        with open_folder(folder) as fd:
+            assert_refusal("REFUSE_VAULT_OUTAGE", scorer.run_vault, fd, approved)
+        assert not (folder / "RUN.lock").exists()
+    with TemporaryDirectory() as d:
+        folder = Path(d)
+        no_exit = index.replace(b"2026-10-31,AAVE,NOT_ADMITTED,0,0,1",
+                                b"2026-10-31,AAVE,PROVED,1,0,1", 1)
+        assert no_exit != index
+        approved = write_fixture(folder, opaque, no_exit, dict(counts, PROVED=1, NOT_ADMITTED=n - 1))
+        out = StringIO()
+        with patch.object(scorer, "VAULT_DIR", folder), patch.object(scorer, "decode_vault") as decode, redirect_stdout(out):
+            assert scorer.main(["--validate-vault", approved[5:]]) == 2
+            decode.assert_not_called()
+        assert out.getvalue().endswith("REFUSE_VAULT_NO_EXIT\n")
+        with open_folder(folder) as fd:
+            assert_refusal("REFUSE_VAULT_NO_EXIT", scorer.run_vault, fd, approved)
+        assert not (folder / "RUN.lock").exists()
+    with TemporaryDirectory() as d:
+        folder = Path(d)
         approved = write_fixture(folder, b"\x00" * len(opaque))
         with open_folder(folder) as fd:
             assert_refusal("REFUSE_PRICES", scorer.run_vault, fd, approved)
@@ -338,6 +384,106 @@ def vault_guards(cfg):
             assert_refusal("REFUSE_NAV", scorer.run_vault, fd, approved)
             assert (folder / "RUN.lock").read_text() == approved + "\n"
             assert_refusal("REFUSE_LOCK", scorer.run_vault, fd, approved)
+
+
+def vault_outage_translation(cfg, fee):
+    days = scorer.vault_axes(cfg)
+    aave, btc = NAMES.index("AAVE"), NAMES.index("BTC")
+    d = 2  # Jan 3, not a fence or reset.
+    flags = np.zeros((len(days), len(NAMES), 4), dtype=bool)
+    flags[..., 1:3] = True
+    flags[:, [aave, btc], 0] = flags[:, [aave, btc], 3] = True
+    values = np.full(flags.shape[:2] + (2,), 100., dtype="<f8")
+    values[d, aave, 1] = 110.
+    gap = flags.copy()
+    gap[d, :, 0] = gap[d, :, 3] = False
+    outage, missing, reason = scorer.vault_preflight(cfg, gap)
+    assert np.flatnonzero(outage).tolist() == [d] and missing == 0 and reason is None
+    translated = scorer.decode_vault(cfg, gap, values.tobytes(), outage)
+    assert np.isnan(translated.opens[d]).all() and not translated.sell[d].any()
+    assert np.array_equal(translated.eligible[d], flags[d - 1, :, 0])
+    assert np.array_equal(translated.closes, values[..., 1])
+
+    def play_six(tape):
+        tape = Tape(tape.days[:6], tape.names, tape.opens[:6],
+                    tape.closes[:6], tape.eligible[:6], tape.sell[:6])
+        long = np.zeros((6, len(NAMES), 1), dtype=bool)
+        long[0, aave, 0] = True
+        long[1:, btc, 0] = True
+        inputs = long, np.full((6, len(NAMES)), .5), np.ones_like(long)
+        clock = calendar(tape, inputs[2])
+        return play(tape, fee, cfg, cfg["cap"], inputs, clock), clock[0]
+
+    book, roster = play_six(translated)
+    assert roster[d - 1:d + 2, [aave, btc]].all()
+    assert not any(day == d for day, *_ in book.fills)
+    assert {(j, notional > 0) for day, j, notional, _ in book.fills if day == d + 1} == {
+        (aave, False), (btc, True),
+    }
+    assert book.nav[d] > book.nav[d - 1]  # The outage close is still a book mark.
+    warm_cfg = dict(cfg, vol_days=2)
+    normal_signal = indicators(scorer.decode_vault(cfg, flags, values.tobytes(), outage & False),
+                               (2,), warm_cfg, cfg["vault_annual_days"])
+    paused_signal = indicators(translated, (2,), warm_cfg, cfg["vault_annual_days"])
+    for normal, paused in zip(normal_signal, paused_signal, strict=True):
+        np.testing.assert_array_equal(normal, paused)
+    # A premature restoration of the raw open alone would let the new buy through.
+    unsafe = Tape(translated.days, NAMES, values[..., 0], translated.closes,
+                  translated.eligible, translated.sell)
+    rogue, _ = play_six(unsafe)
+    assert any(day == d and j == btc and notional > 0 for day, j, notional, _ in rogue.fills)
+
+    single = flags.copy()
+    single[d, aave, 0] = single[d, aave, 3] = False
+    one, missing, reason = scorer.vault_preflight(cfg, single)
+    assert not one.any() and missing == 0 and reason is None
+    raw = Tape(days, NAMES, values[..., 0], values[..., 1], single[..., 0], single[..., 3])
+    one_book, one_roster = play_six(scorer.decode_vault(cfg, single, values.tobytes(), one))
+    old_book, old_roster = play_six(raw)
+    np.testing.assert_array_equal(one_roster, old_roster)
+    np.testing.assert_array_equal(one_book.nav, old_book.nav)
+    assert one_book.fills == old_book.fills and not one_roster[d:d+2, aave].any()
+
+    for banned in ([0], [len(days) - 1], [days.index(date(2024, 2, 1))], [d, d + 1]):
+        invalid = flags.copy()
+        invalid[banned, :, 0] = invalid[banned, :, 3] = False
+        assert scorer.vault_preflight(cfg, invalid)[2] == "REFUSE_VAULT_OUTAGE"
+    sale = flags.copy()
+    sale[:, aave, 0] = False
+    sale[d, aave, 0] = True
+    sale[d + 1:, aave, 3] = False
+    assert scorer.vault_preflight(cfg, sale)[2] == "REFUSE_VAULT_NO_EXIT"  # Same-day open is not later.
+    sale[d + 1, aave, 3] = True
+    assert scorer.vault_preflight(cfg, sale)[2] is None
+    sale[d + 1, aave, 1] = False
+    assert scorer.vault_preflight(cfg, sale)[2] == "REFUSE_VAULT_NO_EXIT"
+    sale[-1, aave, 3] = True
+    sale[-1, aave, 1] = False
+    assert scorer.vault_preflight(cfg, sale)[2] is None  # Executable last-day close.
+    sale[-1, aave, 2] = False
+    assert scorer.vault_preflight(cfg, sale)[2] == "REFUSE_VAULT_NO_EXIT"
+
+    # Same strategy risk scale on both copies isolates what the mask does to BTC.
+    d = days.index(date(2024, 5, 8))
+    values[:, btc, :] = (100 + np.arange(len(days)) / 7)[:, None]
+    gap = flags.copy()
+    gap[d, :, 0] = gap[d, :, 3] = False
+    mid, missing, reason = scorer.vault_preflight(cfg, gap)
+    assert missing == 0 and reason is None
+    no_pause = scorer.decode_vault(cfg, flags, values.tobytes(), mid & False)
+    paused = scorer.decode_vault(cfg, gap, values.tobytes(), mid)
+    sig = indicators(no_pause, cfg["lookbacks"], cfg, cfg["vault_annual_days"])
+    primary = play(no_pause, fee, cfg, cfg["cap"], sig, calendar(no_pause, sig[2]))
+    benchmark = scorer.btc_comparison(no_pause, primary, fee, cfg, sig, calendar(no_pause, sig[2]), None)
+    after = scorer.btc_comparison(paused, primary, fee, cfg, sig, calendar(paused, sig[2]), None, mid, missing)
+    assert benchmark["status"] == "SCORED" and benchmark == after
+    for endpoint in (1, 2):
+        absent = gap.copy()
+        absent[d, btc, endpoint] = False
+        still_mid, raw_missing, reason = scorer.vault_preflight(cfg, absent)
+        assert np.array_equal(mid, still_mid) and raw_missing == 1 and reason is None
+        assert scorer.btc_comparison(paused, primary, fee, cfg, sig, calendar(paused, sig[2]),
+                                     None, mid, raw_missing)["status"] == "UNSCORABLE"
 
 
 def vault_shown_only_isolation(cfg, costs):
@@ -435,8 +581,12 @@ def self_test():
     vault_marks_and_btc(cfg)
     vault_warmup(cfg, costs["main"])
     vault_guards(cfg)
+    vault_outage_translation(cfg, costs["main"])
     vault_shown_only_isolation(cfg, costs)
     print("MEASURED SYNTHETIC vault boundaries, hand-matched BTC with fees, missing BTC fails, in-vault warm-up only")
     print("MEASURED SYNTHETIC vault fence, admission, wrong directory, dirty checkout, ledger, hash, symlink and lock refusals")
     print("MEASURED SYNTHETIC nonpositive scaled BTC fails its mark; shown-only refusal cannot gate; primary refusal locks")
+    print("MEASURED SYNTHETIC venue-wide day pauses buys and sells, retains roster and close, leaves BTC match unchanged")
+    print("MEASURED SYNTHETIC single-coin halt unchanged; outage placement and no-exit refusals pre-lock; raw BTC endpoints counted")
+    print("MEASURED SYNTHETIC hidden Git flags, untracked bytecode, extra ledger token and four non-0600 modes refused")
     print("MEASURED SYNTHETIC repeat summary byte-identical to d454509")
