@@ -956,6 +956,31 @@ measure_15_build_max_slip_share_of_stop:
   note: Measurement 15, queue row 23. A full plan for the opening-range rule on stocks in play is written only if mean entry slippage plus mean stop-exit slippage, as a share of the stop distance, is at or below this. Fixed 2026-11-26 before any trade or quote was collected.
   source: research_rig/MEASURE_15_breakout_fills.md
 
+measure_34_plan:
+  value:
+    ledger_row: 169
+    queue_row: 56
+    marked_symbol: TMF
+    shown_symbol: UBT
+    reference_symbol: TLT
+    first_month: "2016-01"
+    last_month: "2026-10"
+    windows: 130
+    held_sessions: 3
+    bars_per_fund: 520
+    quote_endpoints_per_fund: 260
+    quote_lookback_seconds: 60
+    trim_best_windows: 3
+    fixed_cost_bps_per_side: [2, 5, 10]
+    marks:
+      gross_mean_ratio_to_tlt_inclusive: [2.7, 3.1]
+      net_strictly_above: 0
+      marked_cost: {fixed_bps_per_side: 2, plus_measured_half_spread: true}
+    ubt_informational_gross_mean_ratio_to_tlt: [1.8, 2.1]
+  status: builder
+  note: Mirrors the byte-pinned, independently audited Measurement 34 plan and scorer. Not a new trial or a runtime override. The fixed and half-spread-only cost lines are shown.
+  source: research_rig/MEASURE_34_tmf_month_end.md
+
 tm_server_day_bars_cache_max:
   value: 400
   status: builder

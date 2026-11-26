@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "files": {
+    "MEASURE_34_tmf_month_end.md": "f4645b46b6bca58bf8101e7d135998f1a97ad6919023e48113a85976778368d7",
+    "measure_34.py": "e3a890d09ec6088412ab19c7a0b16ab073ab408535c0bd5b67bddadd50033a11",
+    "test_34.py": "8a6fb326a873bc117e744c00aec9d85747aefe5436b68bd0c3963179b4fc2303",
+    "common_25.py": "da563866bb1dbd37d53f1a0ea9354094137b4568b20d895a29365b8aa832a97f",
+    "calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b"
+  }
+}

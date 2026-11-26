@@ -262,6 +262,9 @@ Working papers.
 | `research_rig/MEASURE_27_tlt_closing_cross.md` | Frozen measurement 27 plan, TLT closing cross against the SIP close, ledger 164 | CURRENT |
 | `research_rig/measure_27.py` | Measurement 27: checks the sessions and Replay 25 input closes, reads TLT SIP trades around each close once (kept off repo), and writes the summary and doc 70 from the off-repo result | CURRENT |
 | `research_rig/measure_27_summary.json` | Measurement 27 aggregates only (counts, bps statistics, cross sizes, session dates not found). No trade or price | CURRENT |
+| `research_rig/MEASURE_34_tmf_month_end.md` | Frozen Measurement 34, queue 56 and ledger 169: TMF instrument tracking, cost and drawdown on Replay 25's windows, with UBT shown only | CURRENT |
+| `research_rig/measure_34.py`, `research_rig/test_34.py` | Measurement 34: offline no-return input validation, an exclusive one-run lock and synthetic tests. Bar and quote inputs and run results stay off repo | CURRENT |
+| `research_rig/FREEZE.json` | Measurement 34 freeze manifest: pins the approved plan, code, tests and reused Replay 25 calendar and common code. No market inputs | CURRENT |
 | `research_rig/measure_15_summary.json` | Measurement 15 aggregates only (counts, medians, means, 90th percentiles, outlier check). No trade, quote, price, time or symbol; the per-stock-day output stays off repo | CURRENT |
 | `research_rig/report_15.py` | Writes the Measurement 15 summary from the off-repo output, and prints doc 66 from the summary only. No rule run and no market-data reads | CURRENT |
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
