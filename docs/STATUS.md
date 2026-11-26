@@ -1,10 +1,14 @@
 # Status
 
-Last updated: 2026-11-26 05:57 UTC
+Last updated: 2026-11-26 06:54 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- [Replay 46 Leg A](research/101_replay_46_cftc_altcoin_futures.md), run once 2026-11-26 06:51:58 UTC. MEASURED. Did not pass, 3 of 6 marks. 43 events on 15 posting dates, -6.5393% mean net, +0.5643% paired versus BTC (t 0.174), -3.7069% paired without the best posting dates. Rule not advanced.
+
+- [Replay 46 Leg B](research/101_replay_46_cftc_altcoin_futures.md), run once 2026-11-26 06:51:58 UTC. MEASURED. Did not pass, 5 of 6 marks. 110 events on 31 posting dates, +1.2790% mean net, +0.5574% paired versus BTC (t 0.572), +0.3032% paired without the best posting dates. The short result uses a spot-price proxy, not an executable short. Rule not advanced.
 
 - [Replay 21](research/97_replay_21_odd_lot_tenders.md), run once 2026-11-26 05:52:52 UTC. MEASURED. Did not pass, 4 of 6 marks: 14 trades from 106 eligible filings, +11.80% mean net and t 1.688. The other 92 missed the entry discount. The rule missed the minimum of 30 trades and t of 2.0. Rule not advanced; queue 85 is a forward pretend-money watch proposal only.
 
