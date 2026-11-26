@@ -20,7 +20,7 @@ Most candidate families in the Round 53 brief are already tested, blocked on lic
 
 ## Ranked evaluation of new and time-critical forced-flow candidates
 
-Six candidates were evaluated in full: the time-critical re-examination of held Row 66 (individual small-stock year-end tax-loss selling), two untested slices from the brief (CEF ATM issuance and crypto quarterly futures roll), and three fresh additions not in `docs/QUEUE.md` (sector ETF intramonth momentum cycle, `SVXY` on the day before monthly VIX expiration, and monthly commodity ETF roll front-running and curve switching). None clears Doc 117 for a historical count or replay stage. Only Rank 1 warrants consideration as a zero-cost December 2026 forward watch card (pretend money only, not a tested edge).
+Six candidates were evaluated in full: the time-critical re-examination of held Row 66 (individual small-stock year-end tax-loss selling), two untested slices from the brief (CEF ATM issuance and crypto quarterly futures roll), one family already on the Round 36 skip list (monthly commodity ETF roll front-running and curve switching), and two fresh additions not in `docs/QUEUE.md` (sector ETF intramonth momentum cycle and `SVXY` on the day before monthly VIX expiration). None clears Doc 117 for a historical count or replay stage. Only Rank 1 warrants consideration as a zero-cost December 2026 forward watch card (pretend money only, not a tested edge).
 
 ### Rank 1 (Time-critical re-examination of held Row 66): Year-end tax-loss selling rebound in individual beaten-down US small stocks
 
@@ -31,14 +31,14 @@ Who is forced, why, and when:
 
 Exact rule supported by the literature:
 - STATED ([Alpha Strategic Growth, Sep 2026](https://www.alphastrategicgrowth.com/blog/january-effect/)): universe of US common stocks with market capitalization above $300 million and price above $5 at November 30 (to exclude microcap bid-ask bounce), selection of names down 30% or more from January 1 to November 30, equal-weight entry at the close of December 31 (with sensitivity checks on December 15 and December 20), exit at the close of January 15, judged against the equal-weight universe (or IWM) over the same window.
-- STATED alternative screen ([EquityCompass, Oct 2022](https://www.equitycompass.com/content/Insights/content/mccann_tax_loss_selling_oct2022.pdf)): Russell 3000 stocks down more than 50% through October 31, held from End December to Mid January.
+- STATED alternative screen ([EquityCompass, Oct 2022](https://www.equitycompass.com/content/Insights/content/mccann_tax_loss_selling_oct2022.pdf)): US stocks covered by EquityCompass (table source note: ~2,133 Russell 3000 stocks as of year-end; 5,514 unique stocks overall) down more than 50% through October 31, held from End December to Mid January.
 
 Stated numbers, sample, years, costs, and newest evidence:
 - STATED ([EquityCompass, Oct 2022](https://www.equitycompass.com/content/Insights/content/mccann_tax_loss_selling_oct2022.pdf)): across 5,514 unique US stocks (40,521 observations, 2003 to 2021), stocks down more than 50% through October 31 averaged +5.6% from End December to Mid January (+3.5% excluding 2020), raw before costs and before benchmark subtraction. Recent years in Table 2 were highly volatile: 2015 -19.5%, 2016 +11.3%, 2017 +8.5%, 2018 +25.2%, 2019 +9.6%, 2020 +16.1%, 2021 -9.5%. "During the 19-year time period analyzed, the strongest performing segment from mid-December through mid-January were those stocks that had previously performed the worst through the end of October."
 - STATED survivorship-free S&P 500 benchmark ([Xfinlink, Nov 2026](https://xfinlink.com/blog/january-effect-survivorship-bias-python)): "On point-in-time S&P 500 rosters, the fifth of members with the worst calendar-year return beat the best fifth by 2.22 percentage points in the average January of 2000-2024, against -0.09 points in the other months." "The January figure has a t-statistic of 1.46, and 2001 supplies most of it." "Without 2001 the January average drops to 0.98 points, and the median January is 0.42." Crucially, in the recent half (2013 to 2024), the January losers-minus-winners spread fell to +0.66% gross (and 14 of 25 Januaries positive overall). Using today's survivor roster omits 51.2% of point-in-time December losers and inflates January loser returns from +1.85% to +2.43%.
 - STATED recent small-cap after-cost reality ([Alpha Strategic Growth, Sep 2026](https://www.alphastrategicgrowth.com/blog/january-effect/)): a 50-name small-cap basket pays about 40 basis points round-trip in spread and impact, cutting a hypothetical +1.8% excess return to +1.4% with 6% year-to-year standard deviation (t = 1.5 over 25 years; needs about 44 years to reach t = 2). "December does not cause the bounce; December selling of a large loser cohort does."
-- STATED unconditional small-cap index ([PapersWithBacktest, Nov 2026](https://paperswithbacktest.com/strategies/january-effect)): Russell 2000 minus S&P 500 in January averaged -0.05% (1988 to 2025) and -0.43% (2010 to 2025), while December averaged +0.97%.
-- STATED 2021 to 2024 check ([chungderson, Nov 2026](https://github.com/chungderson/loss-harvesting-and-january-effect)): prior-year return negatively predicted January returns (`Beta = -0.0148, p < 0.01`), "massive in Jan 2023 (after the 2022 bear market) but non-existent in Jan 2024."
+- STATED unconditional small-cap index ([PapersWithBacktest, Oct 2026](https://paperswithbacktest.com/strategies/january-effect)): Russell 2000 minus S&P 500 in January averaged -0.05% (1988 to 2025) and -0.43% (2010 to 2025), while December averaged +0.97%.
+- STATED 2021 to 2024 check ([chungderson, Dec 2025](https://github.com/chungderson/loss-harvesting-and-january-effect)): prior-year return negatively predicted January returns (`Beta = -0.0148, p < 0.01`), "massive in Jan 2023 (after the 2022 bear market) but non-existent in Jan 2024" (current Russell 3000 constituents, gross; loser decile averaged ~2.4% vs S&P 500 in the first two weeks of January, noted by the author as noisy and not necessarily statistically significant).
 
 Data needed, event count, Doc 117 power statement, $500 fit, and how it could fool us:
 - Data: historical backtesting remains blocked (no free point-in-time 2016 to 2025 small-cap roster without survivorship bias). A live December 2026 forward watch needs only a frozen November 30, 2026 screen of US common stocks (`> $300M` market cap, `> $5` price, down `>= 30%` YTD) plus Alpaca SIP closes on December 31, 2026 and January 15, 2027.
@@ -87,18 +87,18 @@ Data needed, event count, Doc 117 power statement, $500 fit, and how it could fo
 - How it could fool us: one Volmageddon-style VIX spike on an `OE-1` Tuesday can wipe out years of small gains; weekly VIX options since Oct 2015 may have eliminated the monthly `OE-1` drop.
 - Plain recommendation: DROP (no post-2015 quantitative evidence and severe single-day tail risk).
 
-### Rank 4 (Added family, distinct from Round 24's annual January BCOM/GSCI rebalance): Monthly commodity ETF (`USO`, `UNG`) roll front-running and curve switching
+### Rank 4 (Already on Round 36 skip list for `USO` vs `USL`; distinct from Round 24's annual January BCOM/GSCI rebalance): Monthly commodity ETF (`USO`, `UNG`) roll front-running and curve switching
 
 Who is forced, why, and when:
 - Front-month commodity futures ETFs (`USO` for WTI crude, `UNG` for natural gas) must mechanically roll expiring front-month NYMEX futures every month on a published schedule.
 
 Exact rule as stated:
 - STATED early-roll rule ([qrlow.me, Aug 2026](https://qrlow.me/blog/oil-etf/)): roll WTI futures 1 to 4 trading days ahead of `USO`'s published monthly roll schedule.
-- STATED ETF switching rule ([Gaurav Gupta, Nov 2026](https://guptagaurav.info/articles/commodity-roll-cost)): "At each month-end, hold the front-month fund next month if its realised roll over the previous one, three or six months was positive; otherwise hold the strip" (`USO` vs `USL`, `UNG` vs `UNL`).
+- STATED ETF switching rule ([Gaurav Gupta, Oct 2026](https://guptagaurav.info/articles/commodity-roll-cost)): "At each month-end, hold the front-month fund next month if its realised roll over the previous one, three or six months was positive; otherwise hold the strip" (`USO` vs `USL`, `UNG` vs `UNL`).
 
 Stated numbers, sample, years, costs, and newest evidence:
 - STATED ([qrlow.me, Aug 2026](https://qrlow.me/blog/oil-etf/)): "January 2011 - April 2020: a four-day roll beginning two calendar weeks before the nearest contract's last trading day." "Before 2020, every early-roll strategy beat the published roll. The strongest result came from moving the schedule three days earlier, which added 4.89% of compounded relative wealth over almost nine years." However, from "May 2020 - December 2025: a ten-trading-day roll beginning on the first trading day of each month" was adopted, and "it seems like the edge has eroded since..." (exact post-2020 figures not given; assumes zero commissions or slippage at settlement).
-- STATED ([Gaurav Gupta, Nov 2026](https://guptagaurav.info/articles/commodity-roll-cost)): 2008 to Oct 2026 on `USO`/`USL` and `UNG`/`UNL`: "After a positive three-month roll, the front month still trailed the strip the following month by 0.49% on average." "The pre-specified switching rule trailed the strip at every lookback."
+- STATED ([Gaurav Gupta, Oct 2026](https://guptagaurav.info/articles/commodity-roll-cost)): Jan 2008 to Oct 2026 on `USO`/`USL` (Feb 2010 onward on `UNG`/`UNL`): "After a positive three-month roll, the front month still trailed the strip the following month by 0.49% on average." "Every switching rule beat the front month and trailed the strip."
 
 Data needed, event count, Doc 117 power statement, $500 fit, and how it could fool us:
 - Data: NYMEX futures curve required for early-roll (not held, unreachable on $500); ETF bars held for switching.
@@ -127,7 +127,35 @@ Who is forced, why, and when:
 
 Exact rule, stated numbers, data, power, and $500 fit:
 - STATED ([Blasco, Corredor and Satrustegui, 2023](https://zaguan.unizar.es/record/125822/files/texto_completo.pdf)): while intraday CME monthly expiration effects appeared in earlier samples (which already failed on `IBIT` in Replay 35 at -0.1626%, t = -0.72), "Finally, other expiration dates such as quarterly expiration dates in Binance are assumed not to cause the monthly reactions detected."
-- STATED ([TDZNBEER, Nov 2026](https://github.com/TDZNBEER/crypto-backtest-lab/blob/main/BASIS_FINDINGS.md)): across 2,622 daily observations of Deribit BTC quarterly futures basis from December 31, 2018 through August 2, 2026 (32 quarters), "None of the three basis-timing directions beats simple buy-and-hold on total return".
+- STATED ([TDZNBEER, Jul 2026](https://github.com/TDZNBEER/crypto-backtest-lab/blob/main/BASIS_FINDINGS.md)): across 2,622 daily observations of Deribit BTC quarterly futures basis from December 31, 2018 through August 2, 2026 (32 quarters), "None of the three basis-timing directions beats simple buy-and-hold on total return".
 - STATED ([BSIC, Nov 2025](https://bsic.it/carry-trading-dynamics-in-cryptocurrency-markets/)): mean annualized quarterly delivery carry (2021 to Oct 2025) was 8.68% for BTC and 8.18% for ETH, which requires shorting quarterly futures against spot (unreachable on $500 US spot at 150 bp round trip).
 - Event count and Doc 117 power statement: only 4 quarterly dates per year (28 to 32 quarters since 2019) and no positive long-only spot edge after 150 bp US spot round-trip fees; power = 0.
 - Plain recommendation: DROP.
+
+## Second check
+
+Checked: 2026-11-26 against commit `9ff7481` (14 of 14 source links re-opened cleanly, 0 failed to open; 6 items fixed in place). No price data was opened.
+
+Fixes applied in place (6):
+1. Rank 1 (`EquityCompass, Oct 2022`): clarified that the table source note covers ~2,133 Russell 3000 stocks covered by EquityCompass as of year-end (5,514 unique stocks in the full study), not all Russell 3000 stocks. All quoted figures (+5.6% all, +3.5% ex-2020, and 2015 to 2021 Table 2 single-year returns) were confirmed exact.
+2. Rank 1 (`PapersWithBacktest`): corrected date from `Nov 2026` to `Oct 2026` (`2026-10-28`). Confirmed figures (-0.05% Jan 1988 to 2025, -0.43% Jan 2010 to 2025, +0.97% Dec 1988 to 2025) are Russell 2000 minus S&P 500 index averages (not `IWM` minus `SPY` ETF tickers).
+3. Rank 1 (`chungderson`): corrected date from `Nov 2026` to `Dec 2025` (`2025-12-21`) and noted its current-constituent Russell 3000 gross screen (~2.4% vs S&P 500 in the first two weeks of January, noted by the author as noisy / not necessarily statistically significant).
+4. Rank 4 (overlap label): corrected "Added family" to note that monthly commodity ETF roll (`USO` vs `USL`) was already on the Round 36 skip list (`docs/QUEUE.md`, Irwin, Sanders, and Yan 2022, screen 0).
+5. Rank 4 (`Gaurav Gupta`): corrected date from `Nov 2026` to `Oct 2026` (`2026-10-26`), clarified `UNG`/`UNL` starts Feb 2010 (`USO`/`USL` Jan 2008), and replaced the paraphrased quote with the exact text `"Every switching rule beat the front month and trailed the strip."`
+6. Rank 6 (`TDZNBEER`): corrected date from `Nov 2026` to `Jul 2026` (`2026-07-04`, data through `2026-08-02`).
+
+Key figure and math verification:
+- Rank 1: `EquityCompass` (+5.6% raw 2003 to 2021, +3.5% ex-2020, 2015 to 2021 Table 2 single-year figures), `Xfinlink` (+2.22 pp 2000 to 2024, t = 1.46, +0.98 ex-2001, +0.42 median, +0.66% gross 2013 to 2024, 51.2% omitted, +1.85% vs +2.43%), `Alpha Strategic Growth` (hypothetical +1.8% -> +1.4% net at 40 bp RT and 6% SD), and Doc 117 math (`10 * (0.014 / 0.06)^2 = 0.54`, `10 * (0.025 / 0.08)^2 = 0.98`, 41 years for 50% power) are all confirmed exact.
+- Rank 2 (`QuantPedia, Aug 2026`): all `Strat1-SPY` and `Strat2` figures and the `120 * (0.0023 / 0.0206)^2 = 1.50` Doc 117 screen are confirmed exact.
+- Rank 3 (`CXO Advisory, Jul 2015`): all 77-observation `VXX` `OE-1` counts (56/57 negative, 4/2 >= +5%, gross/frictions quote) are confirmed exact.
+- Repo overlap spot-check (5 items in `/home/user/workspace/dt-work/docs/QUEUE.md`): Row 66 (Plan 40 held), Row 87 (Nasdaq Legal Section 11 / HTTP 403), Row 59 / Round 32 (Plan 42 overnight SEOs closed), Round 34 / 36 / 41 (LETFs, IPO lock-ups, convertibles), and Replay 35 / Row 57 (`IBIT` CME expiry -0.1626%, t = -0.72) all match; spot-check also caught the Rank 4 overlap with Round 36's skip list (`USO` vs `USL`).
+- Independent post-2015 after-cost search (Rank 1): no stronger post-2015 after-cost empirical study on single-stock January tax-loss rebounds was found. Recent practitioner pieces either measure unexecutable Q4-low-to-Jan-high hindsight spreads or emphasize that illiquid small-cap spreads erode the rebound net of costs.
+
+Verdicts per rank:
+- Rank 1 (Year-end tax-loss selling rebound in single small stocks): AGREE WITH DROP FOR HISTORICAL TESTING (keep Row 66 held; Doc 117 0.54 to 0.98 < 4, no free point-in-time roster, no post-2015 after-cost proof). Zero-cost Dec 31, 2026 to Jan 15, 2027 pretend-money watch card is optional only if labeled explicitly as an untested watch, not a trading edge.
+- Rank 2 (US Sector ETF intramonth momentum cycle): AGREE WITH DROP (Doc 117 0 to 1.50 < 4; short leg unreachable on $500; no post-2015 split).
+- Rank 3 (Long `SVXY` on `OE-1`): AGREE WITH DROP (no post-2015 quantitative evidence; severe tail risk).
+- Rank 4 (Monthly commodity ETF roll front-running / curve switching): AGREE WITH DROP (already on Round 36 skip list for `USO` vs `USL`; negative net edge).
+- Rank 5 (CEF ATM equity issuance): AGREE WITH DROP (wrong sign for long-only; no dated execution clock; power 0).
+- Rank 6 (Crypto quarterly delivery futures roll): AGREE WITH DROP (4 dates/yr; no positive long-only spot edge after 150 bp RT fees; power 0).
+
