@@ -1,5 +1,6 @@
 """TM07 fixtures only. No real tape, session registry, provider or HTTP listener."""
 import copy
+import math
 from pathlib import Path
 import random
 import sqlite3
@@ -655,6 +656,18 @@ class DeskTest(unittest.TestCase):
         book.update(cash=900,qty={A:1},last_px={A:100})
         with patch.object(O,"save_holdings"),self.assertRaisesRegex(AssertionError,"disagree with the actual book"):
             O.step(book,{},spec["rows"][0],spec["params"],P.Minutes(spec["minutes"]),T,T+60,False,{},1)
+
+    def test_pass7_saved_book_accepts_roundoff_but_not_a_real_mismatch(self):
+        book = P.new_book(1000)
+        book.update(cash=900,qty={A:1},last_px={A:100})
+        O.save_holdings(book)
+        weight = book["target"][A]
+        book["target"][A] = weight + 3 * math.ulp(weight)
+        O.check_saved_holdings(book)
+        for stale in ({A:weight+1e-10},{},{A:weight,B:0},{A:float("nan")}):
+            book["target"] = stale
+            with self.assertRaisesRegex(AssertionError,"disagree with the actual book"):
+                O.check_saved_holdings(book)
 
     def test_pass5_atomic_final_book_handles_feasible_reversals_and_scales(self):
         C = "CCC/USD"

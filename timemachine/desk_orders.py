@@ -25,7 +25,12 @@ def save_holdings(book):
 
 
 def check_saved_holdings(book):
-    if book["target"] != P.weights_at(book,book["last_px"]) or not book["exits"].keys() <= book["qty"].keys():
+    saved = book["target"]
+    actual = P.weights_at(book,book["last_px"])
+    if (saved.keys() != actual.keys()
+            or any(not math.isfinite(saved[s]) or not math.isclose(saved[s],w,rel_tol=8*math.ulp(1.0))
+                   for s,w in actual.items())
+            or not book["exits"].keys() <= book["qty"].keys()):
         raise AssertionError("TM07 saved holdings or exits disagree with the actual book")
 
 

@@ -72,6 +72,10 @@ MEASURED by exact arithmetic, not market results. The test assumes independent w
 
 ## Review answers
 
+### Seventh pass at `24e6c66`
+
+- Opr B1: The saved display check allows a few ULPs of relative rounding difference. Symbol membership and exit ownership still match exactly. MEASURED: three ULPs pass; stale values, nonfinite values and missing or extra names fail. This does not change legacy valuation, sizing or replay.
+
 ### Sixth pass at `293635e`
 
 - Opr A1: MEASURED: after a −1 short at $100 and a drift to $80, a standing +.25 order buys 2.99520910 B. The next explicit `{A: -1}` resizes A and closes B. Actual holdings set the eligible common open and the saved display reflects the resulting book.
