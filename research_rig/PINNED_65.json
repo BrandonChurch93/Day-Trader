@@ -1,0 +1,9 @@
+{
+ "POWER_65.json": "5ad7b0c52fec7504d2acacdcb458adeef1fb9f68a220afbdaf35bc3f6294cbba",
+ "PREREG_65_stock_bond_rebalance_spread.md": "f5cb21becf52a7e7844f29d322d79790b77f65dff326b2d6c5576b308af708bd",
+ "calendar_65.json": "032edca80faef207ed48b68e2619b8dd27af8fe63f6ca9b6d947c2637d6d36d1",
+ "power_65.py": "233490f2c6df8a961412afc7627242e991446c1c784c9ed4e50f53d23dbf7324",
+ "score_65.py": "9861d74f99a28d2f004f5d4559866b0453dc24bc5c48bf9740f500b6fa4fdfc7",
+ "test_65.py": "d5e79fcdc7d1fa98ce47097d91798ff73b805d5ca1316bc295eb6e43536fa474",
+ "thresholds.yaml#replay_65_plan": "179207552bca84e7c949726ed18360a8f402d98d3406aea92e63fcce25848233"
+}

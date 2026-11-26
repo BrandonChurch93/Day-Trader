@@ -1,6 +1,8 @@
 # Plan 65: stock-bond rebalancing spread, the paper's own rule
 
-Status: DRAFT. Written 2026-11-26 11:15 UTC. Not frozen. No bar has been opened and no return computed by anyone for this plan.
+Status: FROZEN. Frozen 2026-11-26 11:32 UTC on the lead's word after the code auditor cleared commit 0338917. Ledger row 208 in `research_rig/TRIAL_LEDGER.md`. No bar has been opened and no return computed by anyone for this plan.
+
+Sealed inputs (custodian's pins, hashes only; the files stay off-repo in `rig/data/plan65_inputs`): input-set digest a95018d183acdc0b9598996a55ad564cf18bbf253f93d17d43f8f436c1cd3aae (equal to `inputs_digest` in the scorer), manifest sha256 324dee4e32f6ad8b19248da0efb70fc31c4c13c1268e2316d766d8c33fd183be. SPY_15m.json c429aa422d06aa8fecc81c7915b2e1d766a098918b7c77b012f37e34085c056d, IEF_15m.json 5388726e80d72cb7ed8fcf4d0ab21df4527753e41fae2b2b670fe23f1566c312, SPY_1d.json 2c1edd20f0ee5f3b862eca0d9b89fdae32849128438b260f1800ca6a0720ebff, IEF_1d.json b6c0a2536e5bee3be7a87dff2537e47e4fd14331eb592beff9e20c3b281da3ef, TLT_1d.json 8da924d1b8d0adc6c491f22e6bbc7a2b555ec5b48c074a088976154ea0be954f, SH_1d.json 322db3740830ff3a717a7fcc57f6af22b3e22e8c4c5dd857c6a6cd23c8a6606e, actions.json cada348aa4ef674c967a040d3958efec8bb984205d096927cc8df0e9919e9754.
 
 Queue 106, ledger 208, from [idea round 34](../docs/129_idea_round_34.md). Source: Harvey, Mazzoleni and Melone, "The Unintended Consequences of Rebalancing", NBER working paper w33554, March 2025, revised January 2026 ([PDF](https://www.nber.org/system/files/working_papers/w33554/w33554.pdf)). Page numbers are the printed page numbers of that revision. Settings live in `replay_65_plan`. Code: `research_rig/score_65.py`, tests `research_rig/test_65.py`, power `research_rig/power_65.py`.
 
