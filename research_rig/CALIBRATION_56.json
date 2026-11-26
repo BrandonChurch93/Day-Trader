@@ -1,0 +1,21 @@
+{
+  "status": "closed_on_synthetic_power_no_market_access",
+  "worlds_per_case": 5000,
+  "seed": 56576,
+  "filing_years": [2016, 2025],
+  "primary_clusters": 2391,
+  "issuer_count": 1479,
+  "calendar_month_count": 120,
+  "acceptance_contenders_clocked": 5763,
+  "acceptance_contenders_total": 5763,
+  "modeled_round_trip_cost_bp": 100,
+  "power_floor": 0.5,
+  "central_variance_shares_assumed": {"issuer": 0.15, "month": 0.20, "idiosyncratic": 0.65},
+  "central_attrition": 0.05,
+  "maximum_refusal_share": 0.10,
+  "cumulative_marks": ["paired_month_t_at_least_2", "positive_mean", "positive_without_best_month", "refusal_cap"],
+  "central_results": [
+    {"hold_sessions": 10, "assumed_paired_sigma": 0.12, "gross_edge_bp": 112.2513, "net_edge_bp": 12.2513, "pass_counts": [230, 230, 230, 230], "null_pass_counts": [165, 165, 165, 165]},
+    {"hold_sessions": 20, "assumed_paired_sigma": 0.173, "gross_edge_bp": 153.0, "net_edge_bp": 53.0, "pass_counts": [460, 460, 460, 460], "null_pass_counts": [165, 165, 165, 165]}
+  ]
+}
