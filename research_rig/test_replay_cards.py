@@ -1,0 +1,26 @@
+"""Checks the Replay 48, 52 and 53 screen cards: verdicts, tones, required plain lines, and that every figure shown is on its source page."""
+import os, re, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import replay_cards as RC
+
+
+def test_cards():
+    c = {x["id"]: x for x in RC.cards("GH/")}
+    assert (c["replay48"]["verdict"], c["replay48"]["tone"]) == ("Passed, 7 of 7 marks", "mixed")
+    assert (c["replay52"]["verdict"], c["replay52"]["tone"]) == ("Did not pass, 0 of 6 marks", "fail")
+    assert (c["replay53"]["verdict"], c["replay53"]["tone"]) == ("Did not pass, 5 of 7 marks", "fail")
+    assert "MUI" in c["replay48"]["summary"] and "pass stands" in c["replay48"]["summary"]
+    s53 = c["replay53"]["summary"]
+    assert "fifth January session is shown only" in s53 and "cannot count" in s53 and "+0.802" in s53
+    pages = {"replay48": RC.read(RC.P48) + RC.read(RC.R48), "replay52": RC.read(RC.P52), "replay53": RC.read(RC.P53)}
+    for k, card in c.items():
+        shown = " ".join([card["summary"]] + [v for _, v in card["numbers"]]).replace("\u2212", "-")
+        for fig in re.findall(r"[+-]?\$?\d[\d,]*\.\d+%?", shown):
+            assert fig in pages[k] or fig.lstrip("+-") in pages[k], (k, fig)
+    for card in c.values():
+        text = card["summary"] + card["basis"] + "".join(a + b for a, b in card["numbers"])
+        assert "\u2014" not in text and "!" not in text
+
+
+if __name__ == "__main__":
+    test_cards(); print("replay cards ok")

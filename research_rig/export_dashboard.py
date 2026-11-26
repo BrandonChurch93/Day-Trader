@@ -20,6 +20,7 @@ import json, os, re, sys, copy, hashlib, datetime, numpy as np, pandas as pd
 import rig2 as R
 import run_v2 as V2
 import report_34 as M34
+import replay_cards as RC
 from rules import RULES
 from dashboard_status import SCORECARD_PATH, parse_status, scoreboard, validate_status_runs
 
@@ -368,6 +369,7 @@ else:
 if c4: tests.append(c4)
 if M34.RESULT.is_file():
     tests.append(M34.dashboard_card(M34.load(), GH))
+tests += RC.cards(GH)   # Replays 48, 52 and 53, read from their result pages (replay_cards.py)
 
 
 # ------------------------------------------------------------------ current owner-only items, read from docs/STATUS.md at export time
