@@ -65,7 +65,7 @@ class TransportTests(unittest.TestCase):
             self.assertEqual(captured, {'archive_records': 2, 'bars_sha256': sweep.digest(raw)})
             self.assertEqual(json.loads(receipt.read_bytes())['bars_sha256'], captured['bars_sha256'])
 
-        self.assertEqual(self.sleep.call_args_list, [call(2)])
+        self.assertEqual(self.sleep.call_args_list, [call(.25), call(2), call(.25), call(.25)])
         params = []
         for args, kwargs in self.runner.call_args_list:
             argv, = args
@@ -93,26 +93,48 @@ class TransportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r'^Alpaca bars HTTP 504; no response body logged$'):
             sweep.bars_transport()({})
         self.assertEqual(self.runner.call_count, 5)
-        self.assertEqual(self.sleep.call_args_list, [call(2), call(4), call(8), call(16)])
+        self.assertEqual(self.sleep.call_args_list,
+                         [call(.25), call(2), call(.25), call(4), call(.25),
+                          call(8), call(.25), call(16), call(.25)])
 
     def test_non_retryable_error_and_redirect(self):
-        for status, body in ((401, b'private'), (302, b'https://elsewhere.invalid')):
-            with self.subTest(status=status):
+        for status, rc in ((401, 0), (403, 0), (404, 18), (302, 0)):
+            with self.subTest(status=status, rc=rc):
                 self.runner.reset_mock()
-                self.runner.return_value = reply(status, body)
+                self.sleep.reset_mock()
+                self.runner.return_value = reply(status, b'private response', rc=rc)
                 with self.assertRaisesRegex(ValueError, rf'^Alpaca bars HTTP {status}; no response body logged$'):
                     sweep.bars_transport()({})
                 self.runner.assert_called_once()
-        self.sleep.assert_not_called()
+                self.sleep.assert_called_once_with(.25)
 
-    def test_truncated_body(self):
-        self.runner.return_value = reply(200, b'{"bars":')
-        with self.assertRaises(json.JSONDecodeError):
-            sweep.bars_transport()({})
-        self.runner.return_value = reply(200, b'{"bars":{}}', rc=18)
-        with self.assertRaisesRegex(ValueError, r'^Alpaca bars transport failed; no response body logged$'):
-            sweep.bars_transport()({})
-        self.sleep.assert_not_called()
+    def test_transport_retries_recover(self):
+        failures = {'zero status': reply('000', rc=28),
+                    'missing status': subprocess.CompletedProcess([], 0, b'\nno status', b''),
+                    'nonzero exit with 200': reply(200, b'{"bars":{}}', rc=18),
+                    'truncated JSON': reply(200, b'{"bars":'),
+                    'truncated encoding': reply(200, b'{"bars":"\xc3')}
+        for kind, failure in failures.items():
+            with self.subTest(kind=kind):
+                self.runner.reset_mock()
+                self.sleep.reset_mock()
+                self.runner.side_effect = [failure, reply(200, b'{"bars":{},"next_page_token":null}')]
+                self.assertEqual(sweep.bars_transport()({}), {'bars': {}, 'next_page_token': None})
+                self.assertEqual(self.runner.call_count, 2)
+                self.assertEqual(self.sleep.call_args_list, [call(.25), call(2), call(.25)])
+
+    def test_transport_retries_exhausted(self):
+        for failure in (reply('000'), reply(200, b'{"bars":'), reply(200, b'{}', rc=18)):
+            with self.subTest(failure=failure):
+                self.runner.reset_mock()
+                self.sleep.reset_mock()
+                self.runner.side_effect = [failure] * 5
+                with self.assertRaisesRegex(ValueError, r'^Alpaca bars transport failed; no response body logged$'):
+                    sweep.bars_transport()({})
+                self.assertEqual(self.runner.call_count, 5)
+                self.assertEqual(self.sleep.call_args_list,
+                                 [call(.25), call(2), call(.25), call(4), call(.25),
+                                  call(8), call(.25), call(16), call(.25)])
 
     def test_no_proxy_never_starts_curl(self):
         del os.environ['HTTPS_PROXY']
