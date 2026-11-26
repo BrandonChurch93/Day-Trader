@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 12:44 UTC
+Last updated: 2026-11-26 12:45 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -14,6 +14,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- [What the two passes are worth on $500](research/149_what_the_passes_are_worth.md), written 2026-11-26 05:45 MT from results already on the repo, no price read. MEASURED: Replay 25 (TLT month-end) averaged +0.2562% a window, about +3.07% or +$15.37 a year on $500 at 1x; full years ran from +1.92% (2023) to +7.31% (2019) and the 10 windows of 2026 sum to -5.50%. With TMF (Measurement 34, which failed its tracking mark) the mean was +0.6483% a window, about +$38.90 a year, with a worst window of -8.66% and a largest fall of 25.44%. Replay 48 (muni funds in January) averaged +1.39% a turn, +$6.96 a year, from -5.06% to +8.00%. Both sit idle most of the year (86% and 92% of sessions). Neither has a finished forward record yet. So the passes are real enough to keep logging and far too small to be the answer for a $500 account.
 
 - [Queue 110](research/148_screen_queue_110_dip_vs_breakout_rules.md) (dip gate against breakout gate as fixed rules, no model; ledger 216): closed before prices 2026-11-26 05:44 MT. MEASURED on made-up data, no price read and no gate-open count taken: 2.11% chance to pass at the defensible outside size (STATED: Grobys and others 2025, top 30 coins, August 2020 to December 2023, weekly winner-minus-loser spread -0.19%, t -0.13), 7.12% at the most generous published size (+1.36% a week, gross, favouring breakouts), and 33% would need 3.8% a week. Zero-edge pass rate 3.38% central, 4.89% at worst. No published sample shows weekly reversal in large coins, and Replays 13, 17 and 22 point the same way: no dip edge.
 
