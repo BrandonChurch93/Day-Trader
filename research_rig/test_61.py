@@ -96,6 +96,13 @@ def artificial(wrong_date=False):
 
 
 class Plan61(unittest.TestCase):
+    def test_real_queue_and_ledger_rows_name_exact_preregistration(self):
+        for number, name in ((s.QUEUE, "docs/QUEUE.md"), (s.LEDGER, "research_rig/TRIAL_LEDGER.md")):
+            rows = [line for line in (s.ROOT / name).read_bytes().splitlines()
+                    if line.startswith(f"| {number} |".encode())]
+            self.assertEqual(len(rows), 1, name)
+            self.assertIn(s.PLAN.encode(), rows[0], name)
+
     def test_cli_synthetic_validation_then_once(self):
         with TemporaryDirectory() as d:
             f = Temp61(Path(d))
@@ -189,6 +196,19 @@ class Plan61(unittest.TestCase):
         items = [(target, "cash", Fraction(1), None)] * 2
         self.assertEqual(s.crosscheck_ex(e, act, (True, items)), "vendor_ex_ambiguous")
         self.assertLess(act[0][0][3], target)  # Synthetic deferred ex-date.
+
+    def test_vendor_crosswalk_consumes_one_record_per_other_verified_cash_action(self):
+        q, days, _, _, verified, _, _ = artificial()
+        e = q[0]
+        seq, target = verified[1][e.a]["stock"]
+        earlier = days[days.index(target)-1]
+        ordinary = lambda d: (d, "ordinary", Fraction(1), d, d)
+        vendor = lambda d: (d, "cash", Fraction(1), None)
+        self.assertEqual(s.crosscheck_ex(e, (seq+[ordinary(target)], target),
+                                         (True, [vendor(target), vendor(target)])), "pass")
+        self.assertEqual(s.crosscheck_ex(e, (seq+[ordinary(earlier)], target),
+                                         (True, [vendor(earlier), vendor(earlier), vendor(target)])),
+                         "vendor_ex_ambiguous")
 
     def test_close_clocks_holding_basis_fees_and_haircut(self):
         _, _, _, cfg, *_ = artificial()

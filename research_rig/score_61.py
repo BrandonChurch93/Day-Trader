@@ -198,10 +198,12 @@ def crosscheck_ex(e, act, vendor_leg):
     # The filing target is the unique verified special on its date.
     # Remove vendor records already assigned exactly to a different verified
     # cash action before comparing the remaining same-amount candidates.
-    verified_other = {(ex, amount) for ex, kind, amount, *_ in seq
-                      if kind in ("ordinary", "special") and not (kind == "special" and ex == target)}
-    matching = [ex for ex, kind, value, _ in items if kind == "cash" and value == p.exact(e.declared)
-                and e.start <= ex <= e.end and (ex, value) not in verified_other]
+    verified_other = Counter((ex, amount) for ex, kind, amount, *_ in seq
+                             if kind in ("ordinary", "special") and not (kind == "special" and ex == target))
+    amount = p.exact(e.declared)
+    vendor_cash = Counter((ex, value) for ex, kind, value, _ in items
+                          if kind == "cash" and value == amount and e.start <= ex <= e.end)
+    matching = [ex for ex, _ in (vendor_cash - verified_other).elements()]
     if not matching:
         return "vendor_ex_missing"
     if len(matching) != 1:
