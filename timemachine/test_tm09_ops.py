@@ -15,6 +15,7 @@ from timemachine import tm09_opmatch as om
 REPO = Path(__file__).resolve().parents[1]
 TM = REPO / 'timemachine'
 N1, N2, N3 = 'a' * 32, 'b' * 32, 'c' * 32
+GO = lambda auth: '; Approved for TM09 stage 1 and the registered stage 2 branch: `TM09_GO=' + auth + '`'
 SID, SIB = 'TM09-' + 'd' * 32, 'TM09-' + 'e' * 32
 BINS = {'/usr/bin/kill', '/usr/bin/install', '/usr/bin/true', '/usr/bin/env', '/usr/bin/cat'}
 
@@ -198,24 +199,20 @@ class Glue(unittest.TestCase):
                 ops.export_files(dict(s1, export_sha256=dict(s1['export_sha256'], **{'stock_bars.jsonl': ops.h(b'')})), Path.read_bytes, True, ex)
 
     def test_run_approval_needs_the_exact_go_line(self):
-        ok = b'| 222 | x | lead text TM09_GO=' + N1.encode() + b' |\n'
+        """The engine's parser (lead ruling): one raw row starting `| 222 |`, its final cell ending exactly with the
+        approval wording and id, and one TM09_GO= marker in the whole file."""
+        ok = b'| 222 | x | lead text' + GO(N1).encode() + b' |\n'
         ops.go_line(ok, N1)
-        with self.assertRaises(ValueError):
-            ops.go_line(b'```\n' + ok + b'```\n', N1)
-        for wrap in ((b'<!--\n', b'-->\n'), (b'````\n```\n', b'````\n'), (b'~~~\n', b'~~~\n'), (b'<pre>\n', b'</pre>\n')):
-            with self.assertRaises(ValueError, msg=wrap):
-                ops.go_line(wrap[0] + ok + wrap[1], N1)
-        with self.assertRaises(ValueError):
-            ops.go_line(ok + b' | 222 | other |\n', N1)
-        with self.assertRaises(ValueError):
-            ops.go_line(ok.replace(b'\n', b'\r\n'), N1)
-        for bad in (b'TM09_GO=' + N1.encode() + b'\n', b'| 222 | lead text TM09_GO=' + N1.encode() + b'\n',
-                    b'| 223 | lead text TM09_GO=' + N1.encode() + b' |\n', b'| 222 | lead text TM09_GO=' + N1.encode() + b' | \n',
-                    b'| 222 | lead text TM09_GO=' + N2.encode() + b' |\n', ok + ok, b''):
+        for bad in (b'| 222 | x | lead text TM09_GO=' + N1.encode() + b' |\n',            # bare marker, no wording
+                    b'| 222 | x | lead text' + GO(N1).encode() + b'. |\n',
+                    b'| 222 | x | lead text' + GO(N2).encode() + b' |\n',
+                    b'| 223 | x | lead text' + GO(N1).encode() + b' |\n',
+                    b'| 222 | x | lead text' + GO(N1).encode() + b'\n',
+                    ok + b'| 222 | other |\n', ok + b'TM09_GO=other\n', ok + ok, b''):
             with self.assertRaises(ValueError, msg=bad):
                 ops.go_line(bad, N1)
         with self.assertRaises(ValueError):
-            ops.go_line(ok, 'not-an-id')
+            ops.go_line(ok, 'Not An Id')
 
     def test_repeated_file_refuses(self):
         with TemporaryDirectory() as d:
@@ -268,7 +265,7 @@ class GlueCLI(unittest.TestCase):
         ledger = self.rel / ops.LEDGER
         lines = ledger.read_text().split('\n')
         i = next(i for i, l in enumerate(lines) if l.startswith('| 222 | '))
-        lines[i] = lines[i][:-2] + ' ' + row_end + ' |'
+        lines[i] = lines[i][:-2] + row_end + ' |'
         ledger.write_text('\n'.join(lines))
 
     def fields(self, mode, names):
@@ -281,7 +278,7 @@ class GlueCLI(unittest.TestCase):
         s1 = ('stock_sessions.jsonl', 'stock_bars.jsonl')
         with self.assertRaises(ValueError):
             self.main('approve-run', auth, self.fields('stage1', s1))           # no docket line yet
-        self.go('TM09_GO=' + auth)
+        self.go(GO(auth))
         with self.assertRaises(ValueError):
             self.main('approve-run', auth, self.fields('stage1', ops.STAGE_FILES[False]))   # stage 1 with news refuses
         with self.assertRaises(ValueError):
@@ -310,7 +307,7 @@ class GlueCLI(unittest.TestCase):
         a = self.main('new-go-id').strip().split('=')[1]
         with self.assertRaises(FileExistsError):
             self.main('new-go-id')                                              # one id, never reissued
-        self.go('TM09_GO=' + a)
+        self.go(GO(a))
         full = ops.STAGE_FILES[False]
         self.main('approve-run', a, self.fields('stage1', ('stock_sessions.jsonl', 'stock_bars.jsonl')))  # same id, stage 1
         with self.assertRaises(ValueError):
@@ -346,20 +343,19 @@ class GlueCLI(unittest.TestCase):
     def test_docket_line_must_be_exact(self):
         auth = self.main('new-go-id').strip().split('=')[1]
         s1 = ('stock_sessions.jsonl', 'stock_bars.jsonl')
-        for end in ('TM09_GO=' + auth + ' ', 'TM09_GO=' + auth + '.', 'xTM09_GO=' + auth, 'TM09_GO=' + auth + ' TM09_GO=' + auth,
-                    '<!-- TM09_GO=' + auth + ' -->'):
+        for end in (' TM09_GO=' + auth, GO(auth) + '.', GO(auth)[:-1], GO(auth) + ' TM09_GO=' + auth, GO(N3)):
             backup = (self.rel / ops.LEDGER).read_bytes()
             self.go(end)
             with self.assertRaises(ValueError, msg=end):
                 self.main('approve-run', auth, self.fields('stage1', s1))
             (self.rel / ops.LEDGER).write_bytes(backup)
         ledger = (self.rel / ops.LEDGER).read_text()
-        for extra in ('<!-- | 222 | x TM09_GO=' + auth + ' |\n', '```\n| 222 | x TM09_GO=' + auth + ' |\n```\n'):
+        for extra in ('<!-- | 222 | x' + GO(auth) + ' |\n', '```\n| 222 | x' + GO(auth) + ' |\n```\n'):
             (self.rel / ops.LEDGER).write_text(ledger + extra)                   # the real row does not authorize
             with self.assertRaises(ValueError, msg=extra):
                 self.main('approve-run', auth, self.fields('stage1', s1))
         (self.rel / ops.LEDGER).write_text(ledger)
-        self.go('TM09_GO=' + auth)
+        self.go(GO(auth))
         good = (self.rel / ops.LEDGER).read_text()
         (self.rel / ops.LEDGER).write_text(good + '```\n| 222 | example row |\n```\n')   # a second 222 row, even fenced
         with self.assertRaises(ValueError):
