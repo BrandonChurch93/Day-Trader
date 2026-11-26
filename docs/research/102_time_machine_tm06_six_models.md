@@ -49,6 +49,8 @@ MEASURED. Each month's percentile among its 1000 random twins.
 | October | 1.4 | 39.6 | 1.4 | 8.8 | 24.6 | 22.9 |
 | November | 0.0 | 4.1 | 6.6 | 37.8 | 6.2 | 1.1 |
 
+Why May happened, model by model: [doc 110](110_tm06_why_may.md). MEASURED: the six models bought coins already at the top of the screen; May was the month the plain top_7d_rise rule paid by far the most (+55.2%). Verdict: screen-based for all six, memory not ruled out.
+
 ## Part P split: April to June against July to November
 
 STATED. Why this split, fixed before any result was read: when the Claude Fable 5.2 arm was added (2026-11-25, before any g session and before any TM06 model score was read), the plan recorded that the maker states June 2026 as the reliable knowledge cutoff for Claude Fable 5.2, Claude Opus 5.5 and GPT-6.2 Sol (`docs/research/11_ai_trader_experiment_design.md`), so for those three the April to June sessions lie before the maker's stated knowledge line. Each model's picker months are therefore also shown split at that line (plan section "Added arm: Claude Fable 5.2"). For Claude Sonnet 5.5, Gemini Neon, Grok 4.7 and Kimi K3 that page gives no maker statement (UNKNOWN). The split is shown only and changes no mark. Twin percentiles are not split, because the result file holds no per-draw lists.
