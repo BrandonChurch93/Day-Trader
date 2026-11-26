@@ -1,5 +1,5 @@
 """Plan 53 tests: synthetic numbers only, no market data. Run: python3 -I -B research_rig/test_53.py"""
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from fractions import Fraction
 from hashlib import sha256
@@ -97,14 +97,15 @@ def dump(obj):
     return json.dumps(obj).encode()
 
 
-def evidence_for(names, reported):
+def evidence_for(names, reported, tail_days=0):
     """Synthetic split evidence in the vendor's native page shape; split arrays omitted when empty."""
     queries = []
     for w in WINDOWS:
         recs = reported.get(w["turn"], [])
         page = {"corporate_actions": ({"forward_splits": recs} if recs else {}), "next_page_token": None}
         queries.append({"turn": w["turn"], "symbols": list(names[w["turn"]]), "start": w["anchor"].isoformat(),
-                        "end": w["exit"].isoformat(), "queried_utc": "2026-11-26T00:00:00Z", "pages": [page]})
+                        "end": (w["exit"] + timedelta(days=tail_days)).isoformat(),
+                        "queried_utc": "2026-11-26T00:00:00Z", "pages": [page]})
     return {"schema": 1, "vendor": "synthetic", "queries": queries}
 
 
@@ -404,16 +405,23 @@ def evaluate(*args, **kwargs):
             self.assertEqual(len(block), 1)
             small = block[0].replace('"trials":10000', '"trials":200')
             self.assertNotEqual(small, block[0])
-            scope = conf.split("replay_53_plan:\n", 1)[1].splitlines()[0]
-            (root / S.CONFIG).write_text(f"replay_48_plan:\n{small}\nreplay_53_plan:\n{scope}\n")
+            scope = json.loads(conf.split("replay_53_plan:\n  value: ", 1)[1].splitlines()[0])
+            names, bars, quotes, cash, _ = synthetic_packet()
+            roster, exclusions = holdings_roster(names, CFG)
+
+            def write_config(included, removed, counts=None):
+                attested = {"eligible_rows_by_turn": [len(names)] * len(WINDOWS) if counts is None else counts,
+                            "roster_sha256": digest(included), "exclusions_sha256": digest(removed)}
+                payload = json.dumps(scope | {"roster_attestation": attested})
+                (root / S.CONFIG).write_text(f"replay_48_plan:\n{small}\nreplay_53_plan:\n  value: {payload}\n")
+
+            write_config(roster, exclusions)
             cfg = S.read_config((root / S.CONFIG).read_bytes())
             (root / S.CALIBRATION).write_bytes(S.encode(C.calibrate(cfg)))
             (root / S.PLAN).write_text("# Synthetic plan 53\n\nStatus FROZEN.\n")
             link = f"`{S.PLAN}`"
             (root / "research_rig/TRIAL_LEDGER.md").write_text(f"| {S.LEDGER_ROW} | {link} |\n")
             (root / "docs/QUEUE.md").write_text(f"| {S.QUEUE_ROW} | {link} |\n")
-            names, bars, quotes, cash, _ = synthetic_packet()
-            roster, exclusions = holdings_roster(names, cfg)
             pins = {n: digest((root / n).read_bytes()) for n in sorted(S.PIN_NAMES)} | {
                 S.ROSTER_PIN: digest(roster), S.EXCLUSIONS_PIN: digest(exclusions)}
             (root / S.PINS).write_bytes(S.encode(pins))
@@ -424,8 +432,12 @@ def evaluate(*args, **kwargs):
             run.mkdir()
             os.chmod(inputs, 0o700)
             os.chmod(run, 0o700)
-            evidence = evidence_for({w["turn"]: names + [cfg["benchmark"]] for w in WINDOWS},
-                                    {2016: [{"symbol": "OTHER", "ex_date": "2016-06-01", "new_rate": 2}]})
+            initial = WINDOWS[0]
+            evidence = evidence_for({w["turn"]: names + [cfg["benchmark"]] for w in WINDOWS}, {
+                initial["turn"]: [{"symbol": "OTHER", "ex_date": "2016-06-01", "new_rate": 2},
+                                  {"symbol": names[0], "ex_date": (initial["exit"] + timedelta(days=1)).isoformat(),
+                                   "new_rate": 2}],
+            }, cfg["split_query_tail_days"])
             control = {"schema": 1, "vendor": "synthetic", "queried_utc": "2026-11-26T00:00:00Z",
                        "turns": {str(y): {s: {"matched": len(bars[y]["symbols"][s]), "one_sided": 0, "steps": 0}
                                           for s in names} | {"PCEF": {"matched": len(bars[y]["benchmark"]),
@@ -461,8 +473,9 @@ def evaluate(*args, **kwargs):
                 os.chmod(inputs / n, 0o600)
             roster_pin, dist_pin = digest(roster), digest(files["distributions.json"])
 
-            def write_manifest(coverage_blob, roster_blob=roster, exclusions_blob=exclusions):
-                changed = {S.CASH_COVERAGE: coverage_blob, "roster.csv": roster_blob, S.EXCLUSIONS: exclusions_blob}
+            def write_manifest(coverage_blob, roster_blob=roster, exclusions_blob=exclusions, extra=None):
+                changed = {S.CASH_COVERAGE: coverage_blob, "roster.csv": roster_blob,
+                           S.EXCLUSIONS: exclusions_blob} | (extra or {"split_evidence.json": files["split_evidence.json"]})
                 for n, b in changed.items():
                     (inputs / n).write_bytes(b)
                 manifest = {"schema": 1, "mode": "plan53_raw_sip_v1", "feed": "sip", "adjustment": "raw",
@@ -511,14 +524,19 @@ def evaluate(*args, **kwargs):
 
             if scenario == "valid":
                 original_freeze = freeze
-                for label, included, removed, reason in bad_holdings_cases(roster, exclusions):
+                cases = (*bad_holdings_cases(roster, exclusions), ("wrong_counts", roster, exclusions, "ROSTER_COUNTS"),
+                         ("attestation_mismatch", roster, exclusions, "FREEZE_ROSTER"))
+                for label, included, removed, reason in cases:
                     with self.subTest(bad_holdings_packet=label):
-                        self.assertNotEqual((included, removed), (roster, exclusions))
+                        counts = [len(names) + 1] + [len(names)] * (len(WINDOWS) - 1) if label == "wrong_counts" else None
+                        cfg_roster = included + b"invalid config digest" if label == "attestation_mismatch" else included
+                        write_config(cfg_roster, removed, counts)
                         roster_pin = digest(included)
-                        bad_pins = S.encode(pins | {S.ROSTER_PIN: roster_pin, S.EXCLUSIONS_PIN: digest(removed)})
+                        bad_pins = S.encode(pins | {S.ROSTER_PIN: roster_pin, S.EXCLUSIONS_PIN: digest(removed),
+                                                    S.CONFIG: digest((root / S.CONFIG).read_bytes())})
                         (root / S.PINS).write_bytes(bad_pins)
                         freeze_pin = digest(bad_pins)
-                        git("add", S.PINS)
+                        git("add", S.PINS, S.CONFIG)
                         git("commit", "--amend", "-qm", "synthetic freeze with malformed holdings attestation")
                         freeze = git("rev-parse", "HEAD")
                         input_pin = write_manifest(coverage, included, removed)
@@ -527,6 +545,20 @@ def evaluate(*args, **kwargs):
                 freeze = original_freeze
                 freeze_pin = digest((root / S.PINS).read_bytes())
                 roster_pin = digest(roster)
+                input_pin = write_manifest(coverage)
+                for label, end in (("too_short", initial["exit"]), ("too_long", initial["exit"] + timedelta(
+                        days=cfg["split_query_tail_days"] + 1))):
+                    with self.subTest(padded_split_query=label):
+                        queries = [evidence["queries"][0] | {"end": end.isoformat()}, *evidence["queries"][1:]]
+                        input_pin = write_manifest(coverage, extra={"split_evidence.json": dump(evidence | {"queries": queries})})
+                        both_refuse(approve(), "P53_SPLIT_EVIDENCE_TAIL")
+                        git("reset", "-q", "--hard", freeze)
+                unrecorded = {"symbol": names[0], "ex_date": initial["exit"].isoformat(), "new_rate": 2}
+                padded_missing_split = evidence_for({w["turn"]: names + [cfg["benchmark"]] for w in WINDOWS},
+                                                    {initial["turn"]: [unrecorded]}, cfg["split_query_tail_days"])
+                input_pin = write_manifest(coverage, extra={"split_evidence.json": dump(padded_missing_split)})
+                both_refuse(approve(), "P53_VENDOR_SPLIT_NOT_RECORDED")
+                git("reset", "-q", "--hard", freeze)
                 input_pin = write_manifest(coverage)
                 (root / "NOTE.md").write_text("extra file in the approval\n")
                 both_refuse(approve("NOTE.md"), "P53_APPROVAL")

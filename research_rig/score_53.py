@@ -1,7 +1,7 @@
 """Plan 53: synthetic calibration, silent validation, or one locked score from an approved, pinned packet."""
 import argparse
 import csv
-from datetime import date, datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from hashlib import sha256
 import io
@@ -143,6 +143,9 @@ def authorize(approval, freeze_pin, input_pin, roster_pin, dist_pin):
          and pins[ROSTER_PIN] == roster_pin, "FREEZE")
     blobs = {name: pinned(REPO / name, pins[name]) for name in PIN_NAMES}
     need(all(b == contents(freeze, name) == contents(approval, name) for name, b in blobs.items()), "FREEZE")
+    attested = read_config(blobs[CONFIG])["roster_attestation"]
+    need((pins[ROSTER_PIN], pins[EXCLUSIONS_PIN]) == (attested["roster_sha256"], attested["exclusions_sha256"]),
+         "FREEZE_ROSTER")
     need([line for line in blobs[PLAN].splitlines() if line.startswith(b"Status ")] == [b"Status FROZEN."], "FREEZE")
     link = b"`" + PLAN.encode() + b"`"
     for name, row, code in (("research_rig/TRIAL_LEDGER.md", LEDGER_ROW, "LEDGER"),
@@ -170,11 +173,13 @@ def read_config(blob):
 
     scope = block(b"replay_53_plan")
     need(type(scope) is dict and set(scope) == {"base", "benchmark", "roster_cutoff", "holdings_trust_cik", "holdings_series",
-                                               "holdings_forms", "municipal_name_terms"}
+                                               "holdings_forms", "municipal_name_terms", "split_query_tail_days",
+                                               "roster_attestation"}
          and scope["base"] == "replay_48_plan" and type(scope["benchmark"]) is str
          and re.fullmatch(r"\d{2}-\d{2}", scope["roster_cutoff"]) is not None
          and re.fullmatch(r"\d{10}", scope["holdings_trust_cik"]) is not None
          and re.fullmatch(r"S\d{9}", scope["holdings_series"]) is not None
+         and type(scope["split_query_tail_days"]) is int and scope["split_query_tail_days"] > 0
          and all(type(scope[k]) is list and scope[k]
                  and all(type(v) is str and v for v in scope[k])
                  and len(set(scope[k])) == len(scope[k]) for k in ("holdings_forms", "municipal_name_terms")), "CONFIG")
@@ -187,6 +192,11 @@ def read_config(blob):
                                          "group_residual_sd", "beta_only_premium", "loser_residual_sd",
                                          "null_ceiling"}
          and set(cfg["resources"]) == {"minimum_free_mib", "process_cap_mib", "nice"}, "CONFIG")
+    attested = scope["roster_attestation"]
+    need(type(attested) is dict and set(attested) == {"eligible_rows_by_turn", "roster_sha256", "exclusions_sha256"}
+         and all(is_pin(attested[k]) for k in ("roster_sha256", "exclusions_sha256"))
+         and type(attested["eligible_rows_by_turn"]) is list and len(attested["eligible_rows_by_turn"]) == cfg["turns"]
+         and all(type(n) is int and n >= cfg["picks"] for n in attested["eligible_rows_by_turn"]), "CONFIG")
     return cfg | {k: v for k, v in scope.items() if k != "base"}
 
 
@@ -303,6 +313,20 @@ def actions_and_coverage(raw, coverage_blob, windows, roster, C, cfg):
     return C.distributions(raw, windows, roster, cfg), gaps, documented_events
 
 
+def split_evidence(raw, windows, names, cash, C, cfg):
+    # Preserve native pages. Only the projected query end is adapted to the shared engine's window check.
+    need(type(raw) is dict and type(raw.get("queries")) is list, "SPLIT_EVIDENCE")
+    exits = {w["turn"]: w["exit"] for w in windows}
+    projected = []
+    for q in raw["queries"]:
+        need(type(q) is dict and type(q.get("turn")) is int and q["turn"] in exits, "SPLIT_EVIDENCE")
+        exit_date = exits[q["turn"]]
+        padded = exit_date + timedelta(days=cfg["split_query_tail_days"])
+        need(q.get("end") == padded.isoformat(), "SPLIT_EVIDENCE_TAIL")
+        projected.append(q | {"end": exit_date.isoformat()})
+    C.split_evidence(raw | {"queries": projected}, windows, names, cash)
+
+
 def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, calendar_blob, cfg):
     private_dir(input_dir)
     windows = C.turns(parse(calendar_blob), cfg)
@@ -324,13 +348,15 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
     roster, exclusions_count = roster_metadata(pinned(input_dir / "roster.csv", roster_pin, private=True),
                                                 pinned(input_dir / EXCLUSIONS, exclusions_pin, private=True),
                                                 windows, C, cfg)
+    need([len(roster[w["turn"]]) for w in windows] == cfg["roster_attestation"]["eligible_rows_by_turn"],
+         "ROSTER_COUNTS")
     cash, gaps, cash_events = actions_and_coverage(parse(pinned(input_dir / "distributions.json", dist_pin, private=True)),
                                                  pinned(input_dir / CASH_COVERAGE, m["files"][CASH_COVERAGE], private=True),
                                                  windows, roster, C, cfg)
     split_names = {y: (*members, cfg["benchmark"]) for y, members in roster.items()}
     split_cash = {y: (funds | {cfg["benchmark"]: bench}, bench) for y, (funds, bench) in cash.items()}
-    C.split_evidence(parse(pinned(input_dir / "split_evidence.json", m["files"]["split_evidence.json"],
-                                  private=True)), windows, split_names, split_cash)
+    split_evidence(parse(pinned(input_dir / "split_evidence.json", m["files"]["split_evidence.json"],
+                                private=True)), windows, split_names, split_cash, C, cfg)
     control = C.split_control(parse(pinned(input_dir / "split_control.json", m["files"]["split_control.json"],
                                            private=True)), windows, roster, cfg)
     window_by_year = {w["turn"]: w for w in windows}
