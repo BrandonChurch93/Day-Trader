@@ -1072,3 +1072,9 @@ replay_46_plan:
   status: builder
   note: Plan 46 fixed rule settings. The scorer binds the config to the approved Git freeze and never downloads prices.
   source: research_rig/PREREG_46_cftc_altcoin_futures.md
+
+replay_48_plan:
+  value: {"first_turn":2016,"last_turn":2025,"turns":10,"capital":500,"sleeve_usd":100,"picks":5,"formation_from_end":2,"entry_from_end":1,"shown_exit_session":5,"benchmark":"MUB","cost":{"extra_bps":5,"proxy_half_bps":50,"window_start":"15:53:00","measure_start":"15:54:00","measure_end":"15:59:00","expiry_seconds":60,"min_coverage_seconds":180},"marks":{"min_positive_years":8,"min_years_ahead_of_benchmark":7,"drop_best":1},"calibration":{"trials":10000,"seed":48001,"edges":[0,0.01,0.02,0.03],"benchmark_sd":0.015,"group_beta":1.5,"group_residual_sd":0.03,"beta_only_premium":0.02,"loser_residual_sd":0.03,"null_ceiling":0.1},"resources":{"minimum_free_mib":1024,"process_cap_mib":480,"nice":10}}
+  status: builder
+  note: Only numeric and scope source for Plan 48 calendar, sizing, cost, marks, synthetic calibration and resource caps. JSON flow value for isolated standard-library parsing. The scorer binds the file to the freeze; it is not a runtime override. Calibration spreads are stated assumptions, not measured.
+  source: research_rig/PREREG_48_muni_cef_tax_loss.md
