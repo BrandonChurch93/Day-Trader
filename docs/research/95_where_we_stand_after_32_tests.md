@@ -40,22 +40,24 @@ Thirty-two scored tests (trading replays, AI time-machine evaluations, and the o
 | 30 | TM04 | Six AI models pick eight large stocks | AI discretionary | Yes | Failed (2/6 median, 0/6 90th pct) | 7 of 12 runs lagged equal-weight 38 stocks (`docs/research/36_time_machine_tm04_stock_basket.md`) |
 | 31 | TM06-P-g / TM06-R | Fable 5.2 daily hot-coin picker repeats | AI discretionary | Yes | Mixed / did not repeat | Run 1 twin pct 98.8, run 2 96.6 (pass), run 3 84.0 (fail); all 3 negative without May (`docs/research/78_time_machine_tm06r_fable_repeat.md`) |
 | 32 | Measurement 15 | Opening-range breakout fills stocks in play | chart pattern | Yes | Failed fill gate (idea dropped) | Entry 0.0757 + stop exit 0.1332 = 0.2089 of stop distance vs 0.05 limit (`docs/research/66_measure_15_breakout_fills.md`) |
+| 33 | TM06-P six models | Six AI models pick hot coins daily, eight months | AI discretionary | Yes | Shown by its marks, not counted pass | 5/6 above twin median, 2/6 clear all marks; gains sit in April to June, all six lost July to November and none beat either yardstick there; memory not ruled out (`docs/research/102_time_machine_tm06_six_models.md`) |
+| 34 | TM06-S six models | Six AI models trade the owner's swing card hourly, four weeks | AI discretionary | Yes | Failed (not shown, 0/6 clear both marks) | None above holding the five coins (`docs/research/102_time_machine_tm06_six_models.md`) |
 
 ## 2. Count by Family
 
-MEASURED from the 32 scored tests in Section 1:
+MEASURED from the 34 scored tests in Section 1 (rows 33 and 34 added 2026-11-26):
 
 | Family | Tested | Counted passes | Notes |
 |---|---:|---:|---|
 | momentum | 8 | 0 | Replay 13 Rule A met relative marks vs all coins but lost ~70% in 3 years and is not a counted pass |
-| AI discretionary | 7 | 0 | Replay 11 held-back (2,146 releases) is still open; TM02 met its headlines-help sub-mark only |
+| AI discretionary | 9 | 0 | TM06 picker met its marks on months that may lie inside the models' memory and is not a counted pass; Replay 11 held-back (2,146 releases) is still open; TM02 met its headlines-help sub-mark only |
 | forced flow | 6 | 1 | Replay 25 passed (9/9 marks, US $500 reachable) |
 | chart pattern | 5 | 0 | All five failed, including Measurement 15 fill gate |
 | carry | 2 | 0 | Both cross-coin and same-coin funding carry failed after costs |
 | calendar | 2 | 0 | Replay 39 (IWM pre-holiday) missed both t marks at 1.91 and 1.82 |
 | event | 1 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable) |
 | copy-trading | 1 | 0 | Replay 12 (Congress disclosures) lagged SPY by 1.0%/yr on held-back data |
-| Total | 32 | 2 | 1 US $500 reachable pass (Replay 25); 1 offshore-only pass (Replay 20) |
+| Total | 34 | 2 | 1 US $500 reachable pass (Replay 25); 1 offshore-only pass (Replay 20) |
 
 ## 3. What the Two Passes Have in Common and Their Dollar Size
 
@@ -84,7 +86,7 @@ STATED from `docs/QUEUE.md`, `research_rig/TRIAL_LEDGER.md`, `research_rig/PRERE
 - Plan 36, Form 4 officer and director cluster buys (queue 60, ledger 171, `research_rig/PREREG_36_form4_cluster_buys.md`): Frozen for Jan 2016 to Sep 2026 filings, $500 whole shares, 20-session hold, measured closing half-spread + 5 bps/side. Must meet all 9 marks: unresolved coverage <= 5% overall and <= 10% per year, >= 500 paired fills across >= 100 issuers, net stock mean > 0, paired excess over size-matched ETF (IWM/IJH/IVV) >= +25 bps with strictly positive 95% block-bootstrap lower bound, positive excess trimming best 3 events and best issuer, >= 7 of 11 positive years, positive 2020+ excess, positive every leave-one-year-out, and positive excess stressing unresolved exits at 100% loss.
 - Plan 43, special dividend declarations (queue 74, ledger 178 reserved): the count-first check is done. MEASURED: 546 filing-eligible declarations out of 3,218 read (2016 to September 2026), and a blind re-read of 30 agreed on 29. A consistency sweep of repeat payers is under way and the plan, marks and scorer are being written; no price has been read. Marks the lead agent has asked for: at least 300 placed, net mean above zero at 5 bps a side, t at least 2.0, positive without the best 1%, positive in at least 7 of 11 years, positive from 2020 on, and above IWM over the same window.
 - Replay 11 held-back earnings reader (queue 9b, ledger 121 to 134): 2,146 held-back releases already read by Claude Sonnet 5.5 and hashed; waiting for the last 5-day exits to trade after 2026-11-24 before one final score against buying all releases and 95th percentile of random picks.
-- TM06 six-model comparison (queue 9g, `timemachine/PLAN_TM06_hot_coin_swing.md`): 48 monthly daily-picker sessions finished trading and are being scored; 24 one-week hourly swing sessions (shorts allowed) under way. Must show whether any of the six models clears the plan's marks over holding all 20 coins and random twins (Fable arm g repeats in TM06-R were already mixed).
+- TM06 six-model comparison (queue 9g): finished 2026-11-26, rows 33 and 34 above and `docs/research/102_time_machine_tm06_six_models.md`. What it leaves open: whether the picker's April to June gains were skill or memory. TM07 runs on weeks after the stated knowledge lines and must show it there.
 - Desk test TM07 (queue 33): Cheap scout agents read coin lists and headlines (the exit rule candidates in rows 72 and 75 are queue notes and are not wired into the desk test yet) and file short notes for a big model (Fable 5.2 or Opus 5.5) with standing orders, compared against the big model working alone on the same post-cutoff weeks. First a 3-week screen to decide if a longer run is warranted.
 - Forward log E01 (queue 46, ledger 165, `practice/traders/E01_tlt_month_end_close.md`): Live-clock forward log of Replay 25's TLT month-end rule from Dec 2026 to Dec 2027 at 2 bps/side on SIP closes plus ex-date payouts; fails if forward mean net return <= 0 after 12 counted months.
 - Forward watch E02 (queue 71, `practice/traders/E02_iwm_pre_holiday.md`): Manual pretend-money forward watch of IWM pre-holiday sessions starting Dec 2026 (Replay 39 did not pass at 5 of 7 marks; not a tested edge).
