@@ -1,10 +1,14 @@
 # Status
 
-Last updated: 2026-11-26 10:11 UTC
+Last updated: 2026-11-26 10:21 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Queue 104 count ([doc 128](research/128_row104_equity_cef_distribution_count.md), ledger 204) done 2026-11-26, price-blind. MEASURED: 472 distinct fund-days on 241 distinct ex-dates for equity closed-end funds that do not pay monthly, 2016 to October 2026, above the line of 150 fixed before counting. Thinning by year (58 in 2016, 24 in 2025) as funds move to monthly payouts; four Nuveen option funds are 164 of 454. UNKNOWN: how many days ahead each date was public. That is being checked before any plan is written.
+
+- Idea round 33 ([doc 127](127_idea_round_33.md)) merged 2026-11-26: 8 ideas screened, 2 queued (rows 104 and 105), 6 dropped on the power screen. Row 105 is plan 61, the special-dividend ex-day trade on the Replay 60 events with no new price call; draft in progress, no return computed.
 
 - Queue 101, earnings-date advancements ([doc 125](research/125_count_101_earnings_date_advancers.md), ledger 202), closed on the tested free sources. MEASURED: 200-firm EDGAR pilot, 59 future earnings-release notices, zero qualifying advancements under the fixed history proxy. STATED: the conditional 1,500-firm projection is 0 with a 95% upper count of 75, below the 400 close line. Issuer-only public-time provenance, total eligible count and historical $500 orderability are UNKNOWN. No market inputs or score.
 
