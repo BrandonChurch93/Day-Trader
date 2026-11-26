@@ -202,6 +202,13 @@ class Glue(unittest.TestCase):
         ops.go_line(ok, N1)
         with self.assertRaises(ValueError):
             ops.go_line(b'```\n' + ok + b'```\n', N1)
+        for wrap in ((b'<!--\n', b'-->\n'), (b'````\n```\n', b'````\n'), (b'~~~\n', b'~~~\n'), (b'<pre>\n', b'</pre>\n')):
+            with self.assertRaises(ValueError, msg=wrap):
+                ops.go_line(wrap[0] + ok + wrap[1], N1)
+        with self.assertRaises(ValueError):
+            ops.go_line(ok + b' | 222 | other |\n', N1)
+        with self.assertRaises(ValueError):
+            ops.go_line(ok.replace(b'\n', b'\r\n'), N1)
         for bad in (b'TM09_GO=' + N1.encode() + b'\n', b'| 222 | lead text TM09_GO=' + N1.encode() + b'\n',
                     b'| 223 | lead text TM09_GO=' + N1.encode() + b' |\n', b'| 222 | lead text TM09_GO=' + N1.encode() + b' | \n',
                     b'| 222 | lead text TM09_GO=' + N2.encode() + b' |\n', ok + ok, b''):

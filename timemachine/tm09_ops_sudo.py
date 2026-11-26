@@ -187,17 +187,15 @@ def export_files(run_body,read,stage1,export_dir):
 
 
 def go_line(ledger_raw,auth_id):
-    """The lead's docket: the one real ledger row 222 (outside any fenced block) ends with exactly ` TM09_GO=<id> |`
-    and the id appears nowhere else. One line authorizes stage 1 and the stage 2 branch the engine's check prints."""
+    """The lead's docket. No markdown parsing: the ledger may hold no HTML comment, fence or other hiding construct
+    at all (it has none today), exactly one line may mention row 222 as a table row, and that line ends exactly
+    ` TM09_GO=<id> |`; the id appears nowhere else. One line authorizes stage 1 and the stage 2 branch the
+    engine's own signed Stage 1 check prints."""
     text = ledger_raw.decode()
-    rows,fenced = [],False
-    for l in text.split("\n"):
-        if l.lstrip().startswith(("```","~~~")):
-            fenced = not fenced
-        elif l.lstrip().startswith("| 222 |"):
-            rows.append((fenced,l))
-    if (not NONCE.fullmatch(auth_id) or text.count("TM09_GO="+auth_id) != 1 or len(rows) != 1 or rows[0][0]
-            or not rows[0][1].startswith("| 222 | ") or not rows[0][1].endswith(" TM09_GO="+auth_id+" |")):
+    rows = [l for l in text.split("\n") if re.match(r"\s*\|\s*222\s*\|",l)]
+    if (not NONCE.fullmatch(auth_id) or any(m in text for m in ("<!--","-->","```","~~~","<script","<pre","\r"))
+            or text.count("TM09_GO="+auth_id) != 1 or len(rows) != 1 or not rows[0].startswith("| 222 | ")
+            or not rows[0].endswith(" TM09_GO="+auth_id+" |")):
         raise ValueError("the one ledger row 222 does not end with exactly this TM09_GO authorization")
 
 
