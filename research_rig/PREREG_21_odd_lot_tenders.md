@@ -10,6 +10,8 @@ CALENDAR_SHA256: c1f97c05fced8108038eae966c8c7999265ad250d8cdca290ab4a9d597fa2b8
 
 REQUEST_SCOPE_SHA256: b8e664b593cb11145de348927a4f38ca269f5cc9457b4842552a54667a9da30e
 
+On November 26, 2026 at 05:38:10 UTC, the approved custodian's first acquisition stopped on Alpaca's shared HTTP 429 rate limit before any bar was kept or seen; no bundle or return exists. A status-only probe discarded response bodies. The transport-only refreeze keeps the docket, calendar, request scope, scoring and marks unchanged. Requests are spaced at least half a second apart, and the same request is retried only for HTTP 429 or a transport timeout, for at most five attempts with bounded exponential backoff. The successful bundle records request and retry counts. Before a newly approved acquisition, the custodian archives the original lock unchanged as `rig/data/plan21_provenance/acquire_21.lock.failed_20261126T053810Z` and the collector still requires a fresh exclusive lock; no score was attempted.
+
 ## Filing population and evidence
 
 Use the hashed EDGAR audit at `rig/data/tender_offers/offers.csv`: U.S.-organized issuers with affirmative U.S. exchange evidence on the original filing date, inclusive from 2016-01-01 through 2026-10-31. Restrict the judged set to listed common-equity fixed-price or Dutch-auction cash offers, positive odd-lot priority and a filed terminal result matched by the end of October 31 Eastern. An offer announced in October but matched only after October 31 is not retrospectively judged. Noncash, NAV-formula, BDC, non-traded and interval funds are excluded; report audit counts by category and distinguish filed accession–CIK entries from unique offers. Unknown clause is not no; report it separately.

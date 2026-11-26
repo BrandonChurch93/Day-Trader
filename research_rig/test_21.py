@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 from random import Random
+import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -348,6 +349,61 @@ class Test21(unittest.TestCase):
         self.assertEqual(r["cases"], {e.accession: dict(ticker="ZTEST",
             start=start.isoformat(),end=end.isoformat(),filing_asof="2024-03-08",entry_asof="2024-03-11")})
         self.assertEqual(r["fields"],list("tohlcv"))
+
+    def exercise_transport(self, outcomes, expected, refusal=False):
+        d = C.d("2024-03-11")
+        transport = dict(requests=0,retries=0)
+        with patch.object(S.subprocess,"run",side_effect=outcomes) as run, patch.object(S,"sleep") as sleep:
+            def fetch():
+                return S.fetch("invented-handle","ZTEST",d,d,d,"raw",transport)
+            if refusal:
+                with self.assertRaisesRegex(C.Incomplete,"acquisition transport refused"):
+                    fetch()
+            else:
+                self.assertEqual(fetch(),[])
+            self.assertEqual(transport,dict(requests=len(outcomes),retries=len(outcomes)-1))
+            urls = [call.args[0][-1] for call in run.call_args_list]
+            self.assertEqual(urls,[urls[0]]*len(outcomes))
+            self.assertIn("symbols=ZTEST",urls[0])
+            self.assertIn("adjustment=raw",urls[0])
+            self.assertEqual([call.args[0] for call in sleep.call_args_list],expected)
+
+    def test_fetch_retries_rate_limit_then_success(self):
+        limited = subprocess.CompletedProcess([],0,b"not-json\n429")
+        okay = subprocess.CompletedProcess([],0,b'{"bars":{}}\n200')
+        self.exercise_transport([limited,okay],[5,0.5])
+
+    def test_fetch_repeated_rate_limit_refuses_at_fifth_attempt(self):
+        limited = subprocess.CompletedProcess([],0,b"not-json\n429")
+        self.exercise_transport([limited]*5,[5,0.5,10,0.5,20,0.5,40,0.5],refusal=True)
+
+    def test_fetch_non_rate_limit_status_refuses_without_retry(self):
+        for status in (b"401",b"403",b"404",b"500"):
+            with self.subTest(status=status):
+                denied = subprocess.CompletedProcess([],0,b"not-json\n"+status)
+                self.exercise_transport([denied],[],refusal=True)
+
+    def test_fetch_retries_timeouts_only(self):
+        curl_timeout = subprocess.CompletedProcess([],28,b"partial\n200")
+        wrapper_timeout = subprocess.TimeoutExpired("invented command",135,output=b"partial")
+        okay = subprocess.CompletedProcess([],0,b'{"bars":{}}\n200')
+        self.exercise_transport([curl_timeout,wrapper_timeout,okay],[5,0.5,10,0.5])
+        self.exercise_transport([subprocess.CompletedProcess([],28,b"partial\n503")],[],refusal=True)
+
+    def test_acquire_paces_across_series_and_records_transport_totals(self):
+        c = calendar()
+        e = C.schedule(invented(),c)
+        limited = subprocess.CompletedProcess([],0,b"not-json\n429")
+        okay = subprocess.CompletedProcess([],0,b'{"bars":{}}\n200')
+        with patch.object(S.subprocess,"run",side_effect=[okay,limited,okay,okay]) as run, (
+                patch.object(S,"sleep")) as sleep:
+            bundle = S.acquire([e],c,C.POLICY,"custom-cred:invented@data.alpaca.markets")
+        self.assertEqual(bundle["transport"],dict(requests=4,retries=1))
+        urls = [call.args[0][-1] for call in run.call_args_list]
+        self.assertEqual(urls[1],urls[2])
+        self.assertNotEqual(urls[0],urls[1])
+        self.assertNotEqual(urls[1],urls[3])
+        self.assertEqual([call.args[0] for call in sleep.call_args_list],[0.5,5,0.5,0.5])
 
     def test_separate_exclusive_custody_and_no_return_validation(self):
         c = calendar()
