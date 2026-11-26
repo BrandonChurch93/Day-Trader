@@ -38,8 +38,19 @@ def test_cards():
     assert rows22["Largest fall: 40% or less"] == "79.40%, not met"
     assert rows22["Without the best 3 trades, shown only"] == "\u221211.14%"
     assert c["replay22"]["links"][0] == ["Replay 22", "GH/" + RC.P22]
+    assert (c["replay65"]["title"], c["replay65"]["verdict"], c["replay65"]["tone"]) == ("Stock-bond rebalancing", "Did not pass, 3 of 5 marks", "fail")
+    s65 = c["replay65"]["summary"]
+    assert "Missed: Evidence; Trim." in s65 and "not shown, not refuted" in s65 and "cannot count toward a mark" in s65
+    assert "2,614 sessions, mean +1.01 bp a session net, t 1.04" in s65 and "the row closes." in s65
+    rows65 = dict(c["replay65"]["numbers"])
+    assert rows65["Evidence: t at least 2, clustered by calendar week of the exit session"] == "1.04, not met"
+    assert rows65["Trim: Mean above zero after dropping the best 1% of sessions, rounded up"] == "\u22121.76 bp; dropped 27, not met"
+    assert rows65["Net yearly Sharpe"] == "0.35"
+    assert rows65["Without March 2020, shown only"] == "\u22120.07 bp a session"
+    assert rows65["Cash account a $500 account could hold, shown only"] == "\u22120.73 bp a session"
+    assert c["replay65"]["links"][0] == ["Replay 65", "GH/" + RC.P65]
     pages = {"replay48": RC.read(RC.P48) + RC.read(RC.R48), "replay52": RC.read(RC.P52),
-             "replay53": RC.read(RC.P53), "replay60": RC.read(RC.P60), "replay62": RC.read(RC.P62), "replay22": RC.read(RC.P22)}
+             "replay53": RC.read(RC.P53), "replay60": RC.read(RC.P60), "replay62": RC.read(RC.P62), "replay22": RC.read(RC.P22), "replay65": RC.read(RC.P65)}
     for k, card in c.items():
         shown = " ".join([card["summary"]] + [v for _, v in card["numbers"]]).replace("\u2212", "-")
         for fig in re.findall(r"[+-]?\$?\d[\d,]*\.\d+%?", shown):
