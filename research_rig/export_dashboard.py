@@ -21,6 +21,7 @@ import rig2 as R
 import run_v2 as V2
 import report_34 as M34
 import replay_cards as RC
+import newest_cards as NC
 from rules import RULES
 from dashboard_status import SCORECARD_PATH, parse_status, scoreboard, validate_status_runs
 
@@ -537,6 +538,7 @@ out = dict(
     timemachine=timemachine(),
     believed=findings, scoreboard=research_scoreboard,
     status_rows=status_rows(), status_link=GH + "docs/STATUS.md",
+    newest=NC.cards(GH), running_now=NC.running_now(), running_link=GH + "docs/QUEUE.md#running-now",
     tests=tests, series=S, compare_notes=notes,
     waiting_on_you=WAIT[0], waiting_problem=WAIT[1], waiting_link=GH + "docs/STATUS.md#waiting-on-the-owner",
     glossary=[["Past-price test", "Running a rule over old prices to see how it would have done. Also called a replay or backtest."],

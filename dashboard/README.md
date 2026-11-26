@@ -49,6 +49,12 @@ The "Time machine" section comes right after the Practice account section. It sh
 - TM04, the stock basket: from `timemachine/results_tm04.json` (`timemachine/score_tm04.py`). One row per model and run: gain, equal shares of the list, the percentile among random baskets, and the verdict. A run that is not finished shows its verdict ("running" or "not started") and no figures. Until the file exists the plan says "Being scored".
 
 
+## Running now and newest results
+
+The "Running now" strip at the top lists the rows of the "Running now" table in `docs/QUEUE.md`: the row number and the first sentence of each row, with file pointers removed. It is read each time the export runs.
+
+"Newest results" comes next. It holds three cards made by `research_rig/newest_cards.py`. The coin sweep card (plans 70 and 71) and the plan 73 card read the pinned summary files that the builders of docs 152, 154 and 157 read, with the same SHA-256 pins, and stop the export if a pin or a figure stops fitting. Those files are kept off the repo; on a computer without them the two cards say "Figures not on this computer" and show no figure. The plan 73 card has a small bar chart drawn in plain HTML, with each value written beside its bar. The E09 card reads `practice/forward/E09_log.json` and shows "No signal yet" when the file is missing or not started. Times are shown in Mountain Time with the label MT.
+
 ## Files
 
 - `index.html`: page layout
