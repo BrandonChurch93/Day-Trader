@@ -453,11 +453,22 @@ def collect(grid, start, end, root_fd, bufs, pins):
         fcntl.flock(root_fd, fcntl.LOCK_UN)
 
 
+# Ledger 217 pre-return ruling: accept only the completed, audited legacy collection.
+LEGACY_COLLECTOR_SHA256 = 'f79efee37eefdc2c27d2a8ef51f10435169e87852e6becbd209f9141fe8ec43b'
+LEGACY_ARCHIVE_SHA256 = '29abd63c9b371cb61e7e21ff65197bdedbd8b96451f8adcad847003c5985cd9e'
+LEGACY_RECEIPT_SHA256 = '5dee5c67aa865a12a22937e1c4255751b8195285e3ffa0581a941df83e82c01a'
+# Ledger 217 pre-return ruling: at most 0.1% overall and 10 masked days per member.
+MASKED_DAY_LIMIT_DENOMINATOR, MASKED_DAYS_PER_MEMBER_LIMIT = 1000, 10
+
+
 def archive_input(root_fd, pins, *, score):
     receipt_raw = read_once(STORE / RECEIPT, root_fd)
     receipt = json.loads(receipt_raw)
     receipt_pin = digest(receipt_raw)
-    if (receipt.get('scope') != SCOPE or receipt.get('input_sha256') != pins
+    recorded = receipt.get('input_sha256')
+    legacy = (receipt_pin == LEGACY_RECEIPT_SHA256 and receipt.get('bars_sha256') == LEGACY_ARCHIVE_SHA256
+              and 'sweep_69.py' in pins and recorded == dict(pins, **{'sweep_69.py': LEGACY_COLLECTOR_SHA256}))
+    if (receipt.get('scope') != SCOPE or (recorded != pins and not legacy)
             or type(receipt.get('archive_records')) is not int or receipt['archive_records'] <= 0):
         raise ValueError('Invalid Plan 69 collection receipt')
     if score:
@@ -468,37 +479,63 @@ def archive_input(root_fd, pins, *, score):
             raise ValueError('Missing or mismatched independent Plan 69 scoring approval')
     raw = read_once(STORE / BAR_FILE, root_fd)
     pin = verified(raw, receipt.get('bars_sha256'), BAR_FILE)
-    return raw, pin, receipt['archive_records']
+    return raw, pin, receipt['archive_records'], recorded
 
 
 def is_number(value):
     return type(value) in (int, float) and math.isfinite(value)
 
 
-def validate_jumps(a, dates, names, actions):
+def jump_mask(a, dates, names, actions):
+    """Screen the observed tape before mutating it; local bad days cannot seed overnight jumps."""
     limits = P['jump_ratio']
+    outside = lambda v: (v < limits['lower']) | (v > limits['upper'])
+    masked = np.zeros((len(dates), len(names)), dtype=bool)
     for i, name in enumerate(names):
         o, c = a[0, :, i].ravel(), a[3, :, i].ravel()
         seen = np.flatnonzero(np.isfinite(o) & np.isfinite(c))
         if not seen.size:
             continue
-        steps = [c[seen].astype(np.float64) / o[seen]]
-        origins = [seen]
-        if len(seen) > 1:
-            steps += [o[seen[1:]].astype(np.float64) / c[seen[:-1]], c[seen[1:]].astype(np.float64) / c[seen[:-1]]]
-            origins += [seen[1:], seen[1:]]
-        bad = sorted({int(k) // BARS for v, ix in zip(steps, origins)
-                      for k in ix[(v < limits['lower']) | (v > limits['upper'])]})
-        for d in bad:
-            if (name, dates[d]) not in actions:
-                raise ValueError(f'Unexplained price jump: {name} {dates[d]}')
+        days = seen // BARS
+        earlier, later = days[:-1], days[1:]
+        change = (outside(o[seen[1:]].astype(np.float64) / c[seen[:-1]])
+                  | outside(c[seen[1:]].astype(np.float64) / c[seen[:-1]]))
+        allowed = np.array([(name, day) in actions for day in dates])
+        local = np.zeros(len(dates), dtype=bool)
+        local[days[outside(c[seen].astype(np.float64) / o[seen])]] = True
+        local[later[change & (earlier == later)]] = True
+        local &= ~allowed
+        masked[:, i] = local
+        # Attribute a boundary jump to the later session, unless either endpoint
+        # was already locally bad. Do not bridge over a masked session or rescan.
+        overnight = change & (earlier != later) & ~local[earlier] & ~local[later] & ~allowed[later]
+        masked[later[overnight], i] = True
+    return masked
+
+
+def mask_report(mask, dates, names, active_days):
+    pairs = [(names[n], dates[d].isoformat()) for d, n in zip(*np.nonzero(mask))]
+    years, members = defaultdict(int), defaultdict(int)
+    for member, day in pairs:
+        years[day[:4]] += 1
+        members[member] += 1
+    exceeded = (len(pairs) * MASKED_DAY_LIMIT_DENOMINATOR > active_days
+                or any(total > MASKED_DAYS_PER_MEMBER_LIMIT for total in members.values()))
+    return {'active_member_days': active_days, 'masked_member_days': len(pairs),
+            'masked_member_day_pairs': pairs, 'masked_member_days_by_year': dict(years),
+            'masked_member_days_by_member': dict(members), 'masked_member_day_limit_exceeded': exceeded}
+
+
+def enforce_mask_limit(counts):
+    if counts['masked_member_day_limit_exceeded']:
+        raise ValueError('Masked member-day limit exceeded; stop for lead review')
 
 
 def load_collection(grid, start, end, root_fd, bufs, pins, *, score):
     date_fence(start, end)
     if (start, end) != (FIRST, LAST):
         raise ValueError('The registered search uses the whole search period')
-    raw, bar_pin, expected_count = archive_input(root_fd, pins, score=score)
+    raw, bar_pin, expected_count, collection_pins = archive_input(root_fd, pins, score=score)
     spans, splits, actions = read_identity(grid, bufs['identity.json'])
     sessions, names = session_list(start, end, calendar_raw=bufs['calendar_65.json']), roster(grid)
     dates = [x[0] for x in sessions]
@@ -508,7 +545,7 @@ def load_collection(grid, start, end, root_fd, bufs, pins, *, score):
     count, kept = 0, 0
     with gzip.GzipFile(fileobj=io.BytesIO(raw), mode='rb') as f:
         header = json.loads(next(f))
-        expected = collection_header(start, end, pins)
+        expected = collection_header(start, end, collection_pins)
         if header != expected:
             raise ValueError('Collection header does not match the registered inputs')
         for line in f:
@@ -548,12 +585,14 @@ def load_collection(grid, start, end, root_fd, bufs, pins, *, score):
         split_array[di[day], si[member]] = factor
     if any(day not in di for _, day in actions):
         raise ValueError('Corporate-action date must be its first effective search session')
-    validate_jumps(a, dates, names, actions)
+    mask = jump_mask(a, dates, names, actions)
     counts = {'archive_rows': count, 'regular_rows': kept, 'sessions': len(dates),
               'registered_instruments': len(names), 'active_alias_spans': len(spans),
               'instruments_with_regular_rows': int(np.any(np.isfinite(a[0]), axis=(0, 2)).sum()),
               'registered_splits': len(splits), 'registered_action_dates': len(actions)}
-    return dates, names, a, [int((c - o).total_seconds() / (60 * MINS)) for _, o, c in sessions], split_array, counts, bar_pin
+    counts.update(mask_report(mask, dates, names, len(active)))
+    a[:, mask, :] = np.nan
+    return dates, names, a, [int((c - o).total_seconds() / (60 * MINS)) for _, o, c in sessions], split_array, mask, counts, bar_pin
 
 
 def ratio(end, start):
@@ -582,13 +621,14 @@ def prior_top(val, eligible, fraction):
 
 
 class Tape:
-    def __init__(self, dates, names, a, lengths, splits):
+    def __init__(self, dates, names, a, lengths, splits, masked=None):
         if not dates or any(a >= b for a, b in zip(dates, dates[1:])):
             raise ValueError('Search session dates must be strictly ordered')
         date_fence(dates[0], dates[-1])
         if tuple(names) != tuple(sorted(set(names))):
             raise ValueError('Stable symbols must be unique and sorted')
         self.dates, self.names, self.a, self.splits = dates, names, a, splits
+        self.masked = masked if masked is not None and masked.any() else None
         self.lengths = np.asarray(lengths)
         self.d = len(dates)
         self.first_half = np.array([d < SECOND for d in dates])
@@ -636,6 +676,42 @@ class Tape:
             daily = ratio(raw * self.splits, lag(raw, 1))
             return past(daily, length, np.std)
         return self.cached(('rv', length), calc)
+
+    def masked_signal_windows(self, r, grid):
+        """Identify candidates with an unknowable signal; never calculate one on bad bars."""
+        if self.masked is None:
+            return None
+        fam, p = r['family'], r['signal']
+        if fam == 'TEST':
+            return None
+        prior = p.get('volume_days', 0)
+        current = fam != 'S8' and not (fam == 'S10' and p['type'] == 'low_vol')
+        if fam == 'S6':
+            prior = p['range_days']
+        elif fam == 'S8':
+            prior = p['past_days']
+        elif fam == 'S10':
+            prior = (p['vol_days'] if p['type'] == 'low_vol' else p['past_days']) + 1
+        elif fam == 'S11':
+            prior = max(prior, p['risk_days'] + p['risk_median_days'] + 1)
+        elif fam == 'S4':
+            prior = max(prior, 1)
+        blocked = self.masked.copy() if current else np.zeros_like(self.masked)
+        if prior:
+            def history():
+                prefix = np.vstack((np.zeros((1, len(self.names)), dtype=np.int64),
+                                    np.cumsum(self.masked, axis=0)))
+                idx = self.prior_indices
+                return prefix[idx] > prefix[np.maximum(0, idx - prior)]
+            blocked |= self.cached(('masked-history', prior), history)
+        if fam == 'S5':
+            blocked |= self.masked[:, self.names.index(p['benchmark']), None]
+        if fam == 'S10':
+            friday_monday = [d.weekday() == 4 and n.weekday() == 0
+                             for d, n in zip(self.dates[:-1], self.dates[1:])] + [False]
+            blocked &= np.array(friday_monday)[:, None]
+        allowed = frozenset(grid['pools'][r['pool']])
+        return blocked & np.array([name in allowed for name in self.names])
 
     def signals(self, r, grid):
         """Candidate rank from data already closed at the declared signal cutoff."""
@@ -773,7 +849,7 @@ def clearing_session(day):
     return day != veterans
 
 
-def execute(tape, grid, r, scores):
+def execute(tape, grid, r, scores, *, mask_counts=None):
     en, ex, mult, bases = tape.paired(r)
     blocks = [[], [], []]
     first = tape.first_half
@@ -792,6 +868,12 @@ def execute(tape, grid, r, scores):
                 or x - (xmode == 'close') >= tape.lengths[d + over]):
             continue
         n = winners[d]
+        # A known masked fill or sizing print is a dropped candidate, not a
+        # normal missing input and not a reason to try the next-ranked member.
+        if tape.masked is not None and (tape.masked[d, n] or (e < 2 and d and tape.masked[d - 1, n])):
+            if mask_counts is not None:
+                mask_counts['masked_trade_drops'] += 1
+            continue
         # Fix whole shares using only an earlier completed bar. A cash-limited order
         # is modeled as unfilled if its single print would spend more than settled cash.
         cash_available = min(CASH, balance)
@@ -806,6 +888,10 @@ def execute(tape, grid, r, scores):
         buy = en[d, n] * (1 + ec[n])
         if shares * buy > cash_available:
             continue
+        if tape.masked is not None and tape.masked[d + over, n]:
+            if mask_counts is not None:
+                mask_counts['masked_trade_drops'] += 1
+            continue  # no P&L, settlement, fallback or repricing for this candidate
         if not np.isfinite(ex[d, n]):
             return out, blocks, missing_entries, True  # no erasing a taken trade with an unknown exit
         sell = ex[d, n] * mult[d, n] * (1 - xc[n])
@@ -878,8 +964,15 @@ def search(tape, grid):
         if not r['cash_500']:
             summaries.append({'id': r['id'], 'family': r['family'], 'status': 'shown_short_unscored'})
             continue
-        trades, blocks, absent, no_exit = execute(tape, grid, r, tape.signals(r, grid))
+        blocked = tape.masked_signal_windows(r, grid)
+        scores = tape.signals(r, grid)
+        mask_counts = {'masked_signal_candidates': int(blocked.sum()) if blocked is not None else 0,
+                       'masked_trade_drops': 0}
+        if blocked is not None:
+            scores[blocked] = -np.inf
+        trades, blocks, absent, no_exit = execute(tape, grid, r, scores, mask_counts=mask_counts)
         row = summarize(r, trades, blocks, absent, no_exit)
+        row.update(mask_counts)
         summaries.append(row)
         if row['status'] == 'eligible':
             eligible.append((row, {d: n for d, n, _ in trades}))
@@ -995,13 +1088,11 @@ def internal_tests(grid, calendar_raw):
     assert overlap_corr({i: i for i in range(100)}, {i: i for i in range(80, 180)}) > MARKS['duplicate_r']
     assert overlap_corr({i: i for i in range(100)}, {i: -i for i in range(80, 180)}) < -MARKS['duplicate_r']
     assert not is_number(True) and is_number(1.0)
-    jump = np.full((len(FIELDS), 2, 1, BARS), np.nan)
-    jump[0, :, 0, 0] = jump[3, :, 0, 0] = [20, 80]
+    jump = np.full((len(FIELDS), 2, 1, BARS), 20.)
     second = FIRST + timedelta(days=1)
-    assert_raises(lambda: validate_jumps(jump, [FIRST, second], ['FAKE'], set()))
-    validate_jumps(jump, [FIRST, second], ['FAKE'], {('FAKE', second)})
-    jump[0, 0, 0, 1] = jump[3, 0, 0, 1] = 9
-    assert_raises(lambda: validate_jumps(jump, [FIRST, second], ['FAKE'], {('FAKE', second)}))
+    jump[:, 1, 0] *= 4
+    assert jump_mask(jump, [FIRST, second], ['FAKE'], set()).ravel().tolist() == [False, True]
+    assert not jump_mask(jump, [FIRST, second], ['FAKE'], {('FAKE', second)}).any()
 
     tape, fake = synthetic_tape(grid, SYN['plant_seed'], 'plant', calendar_raw=calendar_raw)
     res = search(tape, fake)
@@ -1131,6 +1222,8 @@ def main():
         *data, counts, bar_pin = load_collection(grid, args.start, args.end, root_fd, bufs, pins, score=args.search)
         if args.validate_inputs:
             print(json.dumps(counts, sort_keys=True))
+        enforce_mask_limit(counts)
+        if args.validate_inputs:
             return
         with np.errstate(invalid='ignore', divide='ignore'):
             for row in search(Tape(*data), grid):

@@ -14,6 +14,8 @@ import unittest
 from unittest.mock import call, patch
 from urllib.parse import parse_qs, urlsplit
 
+import numpy as np
+
 import sweep_69 as sweep
 
 
@@ -300,6 +302,104 @@ class SpanTests(unittest.TestCase):
             self.run_collect(folder, self.vendor)
         self.assertEqual(partial.read_bytes(), b'untouched')
         self.assertFalse((folder / 'chunks').exists())
+
+
+class MaskTests(unittest.TestCase):
+    def setUp(self):
+        calendar = sweep.read_once(sweep.HERE / 'calendar_65.json')
+        self.dates = [d for d, _, _ in sweep.session_list(calendar_raw=calendar)[:15]]
+        self.names = ('FAKE',)
+        self.a = np.full((len(sweep.FIELDS), len(self.dates), 1, sweep.BARS), 20., dtype=np.float32)
+        self.base = {'id': 'fixture', 'family': 'TEST', 'cash_500': True, 'signal': {}, 'pool': 'fixture',
+                     'entry': {'clock_et': '15:30', 'print': 'open'},
+                     'exit': {'clock_et': '09:35', 'print': 'open', 'session_offset': 1}}
+        self.grid = {'pools': {'fixture': list(self.names)}, 'measured_cost_symbols': {}}
+
+    def tape(self, mask):
+        self.a[:, mask, :] = np.nan
+        return sweep.Tape(self.dates, self.names, self.a, [sweep.BARS] * len(self.dates),
+                          np.ones_like(mask, dtype=float), mask)
+
+    def test_single_bad_bar_field_and_boundaries_only_mask_its_own_day(self):
+        for fields, bar, bad in (((0,), 20, 80.), ((3,), 20, 5.), ((0, 3), 0, 80.),
+                                 ((0, 3), sweep.BARS - 1, 5.), ((3,), sweep.BARS - 1, 80.)):
+            with self.subTest(fields=fields, bar=bar, bad=bad):
+                self.a.fill(20.)
+                self.a[list(fields), 1, 0, bar] = bad
+                mask = sweep.jump_mask(self.a, self.dates, self.names, set())
+                self.assertEqual(np.flatnonzero(mask).tolist(), [1])
+                tape = self.tape(mask)
+                self.assertTrue(np.isnan(tape.a[:, 1, 0]).all())
+                scores = np.full_like(mask, -np.inf, dtype=float)
+                scores[[0, 1], 0] = 0.  # one masked exit and one masked entry
+                counters = {'masked_trade_drops': 0}
+                trades, blocks, _, unpriced = sweep.execute(tape, self.grid, self.base, scores, mask_counts=counters)
+                self.assertEqual((trades, blocks, unpriced, counters['masked_trade_drops']), ([], [[], [], []], False, 2))
+
+    def test_signal_window_and_ordinary_missing_exit(self):
+        rule = dict(self.base, family='S8', latest_signal_close_et=None,
+                    signal={'from_et': '09:30', 'to_et': '10:00', 'past_days': 1, 'threshold': -1.})
+        mask = np.zeros((len(self.dates), 1), dtype=bool)
+        mask[1] = True
+        tape = self.tape(mask)
+        np.testing.assert_array_equal(np.flatnonzero(tape.masked_signal_windows(rule, self.grid)), [2])
+        row, = sweep.search(tape, self.grid | {'rules': [rule]})
+        self.assertEqual(row['masked_signal_candidates'], 1)
+        self.assertEqual(row['masked_trade_drops'], 1)
+        self.assertNotEqual(row['status'], 'unpriced_exit')
+        self.a[0, 1, 0, 1] = np.nan
+        ordinary = self.tape(np.zeros_like(mask))
+        scores = np.full_like(mask, -np.inf, dtype=float)
+        scores[0] = 0.
+        self.assertTrue(sweep.execute(ordinary, self.grid, self.base, scores)[3])
+
+    def test_documented_gap_is_preserved(self):
+        self.a[:4, 1:] *= 4
+        self.assertEqual(np.flatnonzero(sweep.jump_mask(self.a, self.dates, self.names, set())).tolist(), [1])
+        mask = sweep.jump_mask(self.a, self.dates, self.names, {('FAKE', self.dates[1])})
+        self.assertFalse(mask.any())
+        self.assertTrue(np.isfinite(self.tape(mask).a).all())
+
+    def test_limits_and_price_free_report(self):
+        mask = np.zeros((len(self.dates), 1), dtype=bool)
+        mask[0] = True
+        counts = sweep.mask_report(mask, self.dates, self.names, 1000)
+        sweep.enforce_mask_limit(counts)
+        self.assertEqual(counts['masked_member_day_pairs'], [('FAKE', self.dates[0].isoformat())])
+        self.assertEqual(counts['masked_member_days_by_year'], {'2016': 1})
+        self.assertEqual(counts['masked_member_days_by_member'], {'FAKE': 1})
+        with self.assertRaisesRegex(ValueError, 'Masked member-day limit exceeded'):
+            sweep.enforce_mask_limit(sweep.mask_report(mask, self.dates, self.names, 999))
+        mask[:10] = True
+        sweep.enforce_mask_limit(sweep.mask_report(mask, self.dates, self.names, 100_000))
+        mask[10] = True
+        with self.assertRaisesRegex(ValueError, 'Masked member-day limit exceeded'):
+            sweep.enforce_mask_limit(sweep.mask_report(mask, self.dates, self.names, 100_000))
+
+    def test_exception_requires_exact_legacy_archive_and_receipt_and_all_other_pins(self):
+        def receipt_bytes(pins, bars):
+            return json.dumps({'scope': sweep.SCOPE, 'input_sha256': pins, 'bars_sha256': bars,
+                               'archive_records': 1}).encode()
+        old = {'sweep_69.py': 'old-fixture', 'identity.json': 'same', 'thresholds.yaml': 'fixed'}
+        current = dict(old, **{'sweep_69.py': 'new-fixture'})
+        raw = b'fake archive bytes'
+        receipt = receipt_bytes(old, sweep.digest(raw))
+        with patch.multiple(sweep, LEGACY_COLLECTOR_SHA256=old['sweep_69.py'],
+                            LEGACY_ARCHIVE_SHA256=sweep.digest(raw), LEGACY_RECEIPT_SHA256=sweep.digest(receipt)):
+            with patch.object(sweep, 'read_once', side_effect=[receipt, raw]):
+                self.assertEqual(sweep.archive_input(None, current, score=False)[3], old)
+            with patch.object(sweep, 'read_once', side_effect=[receipt, b'tampered']):
+                with self.assertRaisesRegex(ValueError, 'Custody SHA-256 mismatch'):
+                    sweep.archive_input(None, current, score=False)
+            for changed_receipt, pins in ((receipt + b' ', current), (receipt_bytes(old, 'other archive'), current),
+                                          (receipt, dict(current, **{'identity.json': 'changed'}))):
+                with patch.object(sweep, 'read_once', return_value=changed_receipt) as reader:
+                    with self.assertRaisesRegex(ValueError, 'Invalid Plan 69 collection receipt'):
+                        sweep.archive_input(None, pins, score=False)
+                    reader.assert_called_once()
+            with patch.object(sweep, 'read_once', side_effect=[receipt, b'{}']):
+                with self.assertRaisesRegex(ValueError, 'scoring approval'):
+                    sweep.archive_input(None, current, score=True)
 
 
 if __name__ == '__main__':
