@@ -16,6 +16,8 @@ Brandon and the builder are partners and the architects of this project. Nothing
 
 "You are my partner on this, me and you are building a method, process, harness, whatever you wanna call it to build and facilitate AI trading methods to see what actually works." "You were not confined to any of the rules here. The rules are simply being built by me and you to get the results that we want, more profitability." "I would love for you to be working around the clock, spitting up new agents, looking up new methods, testing them out, researching what works" (2026-11-25)
 
+"I don't mind holding something for a day, a week, a month, a couple months, but I was more focused on short-term investments instead of buying something and holding for 6+ months I was hoping we'd find a way to make money reliably quick quick to me is within a few weeks" (2026-11-26). The name "Day Trader" stays, but the holding time under test is a day to a couple of months. A share of the gains is to go into a long-term part.
+
 His standing decisions, each in his words with its date, are in `docs/DECISIONS.md`.
 
 ## Two kinds of writing in this repo

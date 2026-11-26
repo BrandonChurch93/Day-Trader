@@ -4,6 +4,15 @@ Brandon's own words, with the date he wrote them, and what each one settles. New
 
 The rules that follow from these are in `AGENTS.md`. This page is the evidence for them.
 
+## 2026-11-26
+
+| His words | What it settles |
+|---|---|
+| "I don't mind holding something for a day, a week, a month, a couple months, but I was more focused on short-term investments instead of buying something and holding for 6+ months I was hoping we'd find a way to make money reliably quick quick to me is within a few weeks" | The holding time he wants: from a day up to a couple of months. "Quick" means a few weeks. Not six months or more. Same-day trading is allowed and is not the aim. |
+| "my thoughts where we do, short-term and daytrading to build capital and then a percentage of the gains goes into long-term" and "that's where I wanna throw the profits into places like Nvidia, Tesla, SpaceX, entropic and other really high earning companies that are going to shape the future" | Two parts. A trading part that builds capital over days to weeks, and a long-term part that receives a share of the gains and holds large companies he names (Nvidia, Tesla, SpaceX, Anthropic). The share is not set. |
+| "So that must mean that we need to continue researching and experimenting to figure out which actually works and then create that harness and guard rails that the agents have to abide to. they are proactively looking, and when they find something, they run it through the harness to see if it meets the criteria and if it is a good buy and they buy in and then they look for the criteria to exit and they do So." | The shape of the trader: agents look, fixed criteria decide the buy and the exit. Built as the criteria gate (`practice/gate.py`). |
+| "you have people who make fortunes on training people who start off with little money and actually flip it multiple times successfully for years... How do they do it? We need to have the understanding that they have what they look for" | Study what traders with checked records look for, and Cameron Fous whom he followed, and write it as rules that can be tested. |
+
 ## 2026-11-25
 
 | His words | What it settles |
