@@ -147,6 +147,7 @@ def vector_shape(raw, chosen, grid):
             days.add(entry // 86400)
         if len(days) != row["active_days"]:
             raise ValueError("bad Plan 71 carry date count")
+    return obj
 
 
 def vault_commitment(root, args, cfg, grid):
