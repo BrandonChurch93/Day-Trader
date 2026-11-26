@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 22:43 UTC
+Last changed: 2026-11-26 22:47 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -138,6 +138,7 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 
 | Idea | From |
 |---|---|
+| What an AI desk should be shown (idea round 62 angle): which feeds give a trading agent real context, and how to test each feed's worth in the time machine with nothing from the future. In the lead agent's order: a base-rate lookup (how often a setup happened before and what followed after costs), a dated forced-trade calendar (index changes, unlocks, listings, auctions), a positioning feed (funding, open interest, liquidations, short interest), then on-chain flows and cross-venue lead and lag. Each feed is tested as its own arm against the same desk without it | the owner's question, 2026-11-26 3:50 PM MT: what context and data would an AI need to make money steadily |
 | Small cheap agents watch all the time and wake a strong agent only for the few things that matter | the owner's first request |
 | Copy the stated methods of traders with verified records, one trader per method | `docs/research/17_verified_traders_and_their_methods.md` |
 | Rebuild the methods of AI systems with public live records and run them in the time machine | `docs/research/18_ai_systems_with_live_records.md` |
