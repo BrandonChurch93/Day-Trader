@@ -173,6 +173,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/82_measurement_34_tmf_ubt_month_end.md` | Measurement 34 results: leveraged Treasury month-end tracking, spreads, net results and drawdown on the same Replay 25 windows; not a new trial | CURRENT |
 | `docs/research/83_round_14_treasury_month_end_relatives.md` | Round 14 relatives of Treasury month-end index buying reachable via US-listed funds (14 candidates: 3 fixed-income siblings not queued per doc 80 ruling, 2 WATCH added as queue rows 69 and 70, 9 DROP) | CURRENT |
 | `docs/research/84_replay_39_iwm_pre_holiday.md` | Replay 39 results: IWM's pre-holiday net mean was positive, but both required t marks failed; 5 of 7 marks | CURRENT |
+| `docs/research/85_round_15_crypto_scheduled_events.md` | Round 15 forced and scheduled crypto events reachable by a US spot account (13 candidates, 2026 US retail fee floor table, lead-agent rulings: 0 profit tests, delisting desk-rule candidate row 72, unlock sources folded into row 36, Binance already-US-listed WATCH row 73, airdrop snapshots WATCH in doc only, 9 DROP) | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
