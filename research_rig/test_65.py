@@ -504,6 +504,39 @@ def test_cli_full(tmp):
     check("cli go is one shot", r.returncode == 2 and "REFUSED" in r.stdout)
 
 
+def test_marks_exact_witness():
+    exits = DATES[127:127 + 2400]
+    wk = [S.week_key(d) for d in exits]
+    x = np.full(2400, 2.0 ** -9)
+    idx = {}
+    for i, k in enumerate(wk):
+        idx.setdefault(k, []).append(i)
+    for members in idx.values():              # +h, -h in successive pairs; an odd last day keeps the base
+        for a, b in zip(members[0::2], members[1::2]):
+            x[a] += 2.0 ** -10
+            x[b] -= 2.0 ** -10
+    x[-1] += 2.0 ** -48
+    r = S.marks(x, exits, CFG)
+    check("evidence witness finite large t", r["t_week"] is not None and abs(r["t_week"] - 1.3178592545209525e15) < 1e3)
+    check("evidence witness passes", all(r["marks"].values()))
+
+
+def test_sub_breach():
+    ds = S.deltas(CFG)
+    w1 = 0.6 + ds[-1] - 5e-13
+    n = 4
+    rs = np.zeros(n); rb = np.zeros(n)
+    rs[1] = 0.4 * w1 / (0.6 * (1 - w1)) - 1
+    ps = np.zeros(n); pb = np.zeros(n)
+    ps[1] = rs[1]
+    f = np.zeros(n, bool)
+    _, _, th, _ = S.signals(rs, rb, ps, pb, f, f, f, CFG)
+    d1 = S.drift(0.6, rs[1], 0.0)
+    want = -0.5 * (d1 - 0.6) / len(ds) / CFG["threshold_scale"]
+    check("sub-breach close below largest delta", abs(d1 - 0.6) < ds[-1])
+    check("sub-breach no reset at largest delta", abs(th[2] - want) < 1e-12 and th[2] < -0.032)
+
+
 def test_cluster_scale():
     rng = np.random.default_rng(3)
     x = 0.001 + 0.01 * rng.standard_normal(2400)
@@ -511,6 +544,11 @@ def test_cluster_scale():
     t1 = S.cluster_t(x, g)
     check("cluster t scale free", abs(S.cluster_t(x * 1e-9, g) - t1) < 1e-9 * abs(t1)
           and abs(S.cluster_t(x * 1e9, g) - t1) < 1e-9 * abs(t1))
+    check("cluster t exact tiny variance", S.cluster_t(np.array([2., -1., 2., -1. + 2. ** -45]), np.array([0, 0, 1, 1])) > 1e13)
+    w = np.tile([.007, .010, .009, .011], 100)
+    gw = np.arange(400) // 3
+    tw = S.cluster_t(w, gw)
+    check("cluster t extreme scales", all(abs(S.cluster_t(w * f, gw) - tw) < 1e-12 * tw for f in (1e-17, 1e17, 1e-200, 1e200)))
     check("jsonable", S.jsonable({"a": float("nan"), "b": [np.float64(1.5), float("inf")]}) == {"a": None, "b": [1.5, None]})
 
 
@@ -536,6 +574,8 @@ def main():
     with tempfile.TemporaryDirectory() as t:
         test_cli_full(Path(t))
     test_cluster_scale()
+    test_sub_breach()
+    test_marks_exact_witness()
     print(f"{COUNT[0] - len(FAILS)} of {COUNT[0]} checks pass")
     sys.exit(1 if FAILS else 0)
 

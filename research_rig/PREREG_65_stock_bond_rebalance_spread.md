@@ -16,7 +16,7 @@ Queue 106, ledger 208, from [idea round 34](../docs/129_idea_round_34.md). Sourc
 ## What the paper states (STATED)
 
 - Weight drift (p.10; Appendix B, p.53): w(t+1) = w(t)(1+R_SP) / [w(t)(1+R_SP) + (1 − w(t))(1+R_10Y)]. Target 60% (key `target`).
-- Threshold portfolio (B.1, p.53): reset to 60% when the weight exceeds the target by δ. The printed condition is one-sided. The lead ruled it two-sided, |w − 60%| ≥ δ, with the reset at the breach day's close. The signal is the drifted weight minus 60%.
+- Threshold portfolio (B.1, p.53): the printed condition is ‖w_t^T − 60%‖ ≥ δ, which is two-sided. Page 12 gives the same reading: rebalancing occurs "when the distance of a portfolio weight from its target exceeds δ". The words on p.53, "exceed their targets by more than δ", are looser than the equation, and the plan follows the equation. B.1 tests the weight held at t, before that day's drift. Following the lead's ruling, the plan tests the drifted weight at day t's close instead and resets at that same breach close. The comparison is ≥ δ exactly, with no tolerance. The signal is the drifted weight minus 60%.
 - Threshold Signal (eq. 2, p.12): equal average over δ from 0% to 2.5% in steps of 0.1%, 26 portfolios (keys `delta_min`, `delta_max`, `delta_step`).
 - Calendar portfolio (B.2, p.53): reset on the last business day of each month. The signal is the drifted weight minus 60%.
 - Trading rule (section 4, p.37 to 38): w = average of (−Threshold Signal / 1.5%) and a modified Calendar signal (key `threshold_scale`). The modified Calendar is sign(−Calendar) in the last week of the month (last 5 sessions, key `week4_sessions`; the paper's Dummy5Days, p.14). On the first business day of a new month it is sign(Calendar Signal at −4) (key `reversal_lag`). Otherwise it is 0. Return = w × (R_SP − R_10Y).
@@ -66,7 +66,7 @@ Queue 106, ledger 208, from [idea round 34](../docs/129_idea_round_34.md). Sourc
 | --- | --- |
 | Judged sessions | At least 2,400 (key `replay_65_plan`, `marks.min_sessions`) |
 | Money | Mean net daily return above zero |
-| Evidence | t at least 2 on the net daily series, clustered by ISO calendar week of the exit session. Finite-group variance: G/(G−1) times the sum of squared week sums of de-meaned returns, divided by N squared. An undefined t does not meet the mark. |
+| Evidence | t at least 2 on the net daily series, clustered by ISO calendar week of the exit session. Finite-group variance: G/(G−1) times the sum of squared week sums of de-meaned returns, divided by N squared. The t is undefined only when the clustered variance is exactly zero or there are fewer than two weeks. Otherwise the finite value is reported, however large, and computed in exact rational arithmetic with no tolerance. An undefined t does not meet the mark. |
 | Trim | Mean above zero after dropping the best 1% of sessions, drop count rounded up |
 | Year breadth | At least 7 of the 11 calendar years 2016 to 2026 with a positive mean by exit session. An empty year is not positive. |
 

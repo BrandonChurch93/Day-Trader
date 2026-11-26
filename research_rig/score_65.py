@@ -20,6 +20,8 @@ import shutil
 import stat
 import subprocess
 import sys
+from decimal import Decimal, localcontext
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -337,7 +339,7 @@ def signals(rs, rb, ps, pb, last, week4, first, cfg, alt_reversal=False):
             cal_part[i] = drift(post_c, ps[i], pb[i]) - tgt
         dt_ = drift(post_t, rs[i], rb[i])
         thr_full[i] = np.mean(dt_ - tgt)
-        post_t = np.where(np.abs(dt_ - tgt) >= ds - 1e-12, tgt, dt_)   # two-sided, reset at the breach close
+        post_t = np.where(np.abs(dt_ - tgt) >= ds, tgt, dt_)   # two-sided, reset at the breach close
         dc = drift(post_c, rs[i], rb[i])
         cal_full[i] = dc - tgt
         post_c = tgt if last[i] else dc
@@ -413,24 +415,30 @@ def economics(w, rs, rb, cs, cb, dates, b_short_s, b_short_b, cfg, idx, round_tr
 
 def cluster_t(x, groups):
     """Week-clustered t: mean / se with se = sqrt(G/(G-1) * sum of squared group sums of de-meaned x) / N.
-    Computed on x divided by its sd, so the value does not move under rescaling. Undefined (nan) for fewer than two
-    values or groups, or an exactly constant series, or a zero clustered variance."""
-    x = np.asarray(x, float)
+    Computed in exact rational arithmetic on the float values. With S the total, n the count, and S_g, c_g each
+    week's sum and count, D_g = n*S_g - c_g*S, and t^2 = S^2 n^2 (G-1) / (G * sum D_g^2). Undefined (nan) for
+    fewer than two values or groups, a non-finite value, or all D_g exactly zero. No tolerance is used."""
+    x = [float(v) for v in np.asarray(x, float)]
     n = len(x)
-    if n < 2 or np.ptp(x) == 0:
+    if n < 2 or not all(math.isfinite(v) for v in x):
         return float("nan")
-    u, inv = np.unique(groups, return_inverse=True)
-    G = len(u)
+    gs, cs = {}, {}
+    for v, k in zip(x, np.asarray(groups).tolist()):
+        gs[k] = gs.get(k, Fraction(0)) + Fraction(v)
+        cs[k] = cs.get(k, 0) + 1
+    G = len(gs)
     if G < 2:
         return float("nan")
-    m = x.mean()
-    sd = x.std()
-    z = (x - m) / sd
-    g = np.bincount(inv, weights=z)
-    se = math.sqrt(G / (G - 1) * float(np.sum(g ** 2))) / n
-    if not math.isfinite(se) or se <= 1e-12:
+    S = sum(gs.values(), Fraction(0))
+    sd2 = sum(((n * gs[k] - cs[k] * S) ** 2 for k in gs), Fraction(0))
+    if sd2 == 0:
         return float("nan")
-    return float((m / sd) / se)
+    t2 = S * S * n * n * (G - 1) / (G * sd2)
+    with localcontext() as ctx:
+        ctx.prec = 40
+        r = (Decimal(t2.numerator) / Decimal(t2.denominator)).sqrt()
+        t = float(r)
+    return t if S >= 0 else -t
 
 
 def week_key(d):
