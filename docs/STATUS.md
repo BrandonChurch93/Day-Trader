@@ -1,19 +1,21 @@
 # Status
 
-Last updated: 2026-11-26 11:57 UTC
+Last updated: 2026-11-26 12:05 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
 
 - Passed: [44 scored tests, three counted passes](research/95_where_we_stand_after_32_tests.md). [Replay 25, TLT at month-end](research/69_replay_25_treasury_month_end.md) and [Replay 48, muni fund January rebound](research/103_replay_48_muni_cef_january.md) are reachable with a US $500 account. [Replay 20, Upbit listing short](research/71_replay_20_upbit_listing_short.md) is not. None clears a real-money trade.
-- In work: queue 55 is counting closed-end fund rights offerings without prices (ledger 212); queue 17 is screening plain earnings drift (ledger 213). The practice desk and forward logs are pretend only. See [Running now](QUEUE.md#running-now) for assignments and [Next, in order](QUEUE.md#next-in-order) for unclaimed work.
-- Gated work: Plan 63 stopped before opening prices and needs a fresh placebo projection approval. Plan 64's placebo preflight is under review; it has no approval to pull prices. Replay 11's held-back score waits on exit prices. TM07 has not started; see [its registration](../timemachine/TM07_REGISTRATION.md).
+- In work: queue 55 is counting closed-end fund rights offerings without prices (ledger 212); TM07 week 1 is running its second pair of bosses (ledger 198; no weekly profit figure is read before the end). The practice desk and forward logs are pretend only. See [Running now](QUEUE.md#running-now) for assignments and [Next, in order](QUEUE.md#next-in-order) for unclaimed work.
+- Gated work: Plan 63 stopped before opening prices; its code is being rebuilt to check vendor evidence itself and needs a fresh placebo projection approval. Plan 64 has approval to pull placebo ranges only, sealed and undecoded (ledger 207); decoding and projection are not approved. Replay 11's held-back score waits on exit prices.
 - Owner: [nothing in current work waits on him](#waiting-on-the-owner). No real-money account, purchases or real trades.
 
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- Queue 17, plan 68 (plain earnings drift on the filing clock; ledger 213): closed before prices 2026-11-26 05:05 MT. MEASURED on made-up data only, no price read: with the count of usable releases found from SEC data sets (11,491 of 36,982 candidates, 2016 to 2026 Q3; about 41 to 50 entries a quarter through 2020, falling to 2 or 3 by 2026) the chance to pass all four marks is 7.15% at +78 bp net and 8.11% at +88 bp, against the 33% line fixed in ledger 213. With a flat 50 entries a quarter it is 9.34% and 10.58%. It clears 33% only if returns inside a quarter are almost unrelated (0.05) and there are 90 entries a quarter, which the count does not support. STATED: +88 bp gross is the largest comparable published long-side size (Liu, Mao, Tang and Zhou, announcement clock); the closest tradable comparisons are +16 bp and -4 bp gross. UNKNOWN: why usable releases fall from 1,415 in 2021 to 301 in 2022; it may be a gap in the tagged-figure join and not a real fall, which is why the flat-count figure is given too; both are under the line. See [the screen page](../research_rig/PREREG_68_earnings_drift_plain.md).
 
 - [Queue 67, 68 and 69](research/142_power_screen_rows_67_68_69.md) closed on synthetic power before prices at 04:56 MT. None was scored.
 

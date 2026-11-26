@@ -1,0 +1,1057 @@
+{
+  "kind": "synthetic_only",
+  "seed": 681213,
+  "worlds_per_case": 30000,
+  "calendar_quarters": 43,
+  "years": 11,
+  "hold_sessions": 60,
+  "marks": {
+    "mean_strictly_positive": true,
+    "min_quarter_clustered_t": 2.0,
+    "trim_top_fraction": 0.01,
+    "trimmed_mean_strictly_positive": true,
+    "min_positive_years": 7
+  },
+  "required_power": 0.33,
+  "published_marginal_excess_noise_proxy_bp": 1130.572,
+  "nearest_announcement_spy_proxy_gross_bp": -4,
+  "matched_style_benchmark_proxy_gross_bp": 16,
+  "announcement_capm_upper_proxy_gross_bp": 88,
+  "illustrative_min_stock_round_trip_bp": 10,
+  "known_exact_clock_after_cost_market_long_side_bp": null,
+  "sec_quarterly_structurally_usable_release_counts": [
+    437,
+    441,
+    409,
+    409,
+    442,
+    457,
+    451,
+    474,
+    468,
+    479,
+    473,
+    469,
+    450,
+    460,
+    456,
+    503,
+    496,
+    493,
+    494,
+    488,
+    379,
+    376,
+    355,
+    305,
+    78,
+    80,
+    72,
+    71,
+    45,
+    47,
+    42,
+    43,
+    38,
+    40,
+    37,
+    38,
+    32,
+    32,
+    31,
+    33,
+    22,
+    23,
+    23
+  ],
+  "central_case_index": 0,
+  "cases": [
+    {
+      "entries_per_quarter_assumed": 50,
+      "events": 2150,
+      "trim": 22,
+      "within_quarter_correlation": 0.5,
+      "adjacent_quarter_shared_shock_correlation": 0.0,
+      "effective_n_ignoring_adjacent_overlap": 84.3137,
+      "first_grid_point_reaching_gate_net_bp": 200,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 593,
+          "all_pass_rate": 0.019766666666666665,
+          "t_only_pass_rate": 0.020166666666666666
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 728,
+          "all_pass_rate": 0.024266666666666666,
+          "t_only_pass_rate": 0.024833333333333332
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 783,
+          "all_pass_rate": 0.0261,
+          "t_only_pass_rate": 0.0268
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 868,
+          "all_pass_rate": 0.028933333333333332,
+          "t_only_pass_rate": 0.029666666666666668
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 1044,
+          "all_pass_rate": 0.0348,
+          "t_only_pass_rate": 0.0357
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 1845,
+          "all_pass_rate": 0.0615,
+          "t_only_pass_rate": 0.06263333333333333
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 2801,
+          "all_pass_rate": 0.09336666666666667,
+          "t_only_pass_rate": 0.09486666666666667
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 3173,
+          "all_pass_rate": 0.10576666666666666,
+          "t_only_pass_rate": 0.1076
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 3749,
+          "all_pass_rate": 0.12496666666666667,
+          "t_only_pass_rate": 0.12706666666666666
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 6757,
+          "all_pass_rate": 0.22523333333333334,
+          "t_only_pass_rate": 0.22896666666666668
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 10659,
+          "all_pass_rate": 0.3553,
+          "t_only_pass_rate": 0.36036666666666667
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 15377,
+          "all_pass_rate": 0.5125666666666666,
+          "t_only_pass_rate": 0.5184666666666666
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 19998,
+          "all_pass_rate": 0.6666,
+          "t_only_pass_rate": 0.6722
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 26625,
+          "all_pass_rate": 0.8875,
+          "t_only_pass_rate": 0.8908333333333334
+        }
+      ]
+    },
+    {
+      "entries_per_quarter_assumed": 90,
+      "events": 3870,
+      "trim": 39,
+      "within_quarter_correlation": 0.25,
+      "adjacent_quarter_shared_shock_correlation": 0.0,
+      "effective_n_ignoring_adjacent_overlap": 166.4516,
+      "first_grid_point_reaching_gate_net_bp": 150,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 533,
+          "all_pass_rate": 0.017766666666666667,
+          "t_only_pass_rate": 0.0181
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 683,
+          "all_pass_rate": 0.022766666666666668,
+          "t_only_pass_rate": 0.023066666666666666
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 769,
+          "all_pass_rate": 0.025633333333333334,
+          "t_only_pass_rate": 0.026066666666666665
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 902,
+          "all_pass_rate": 0.030066666666666665,
+          "t_only_pass_rate": 0.030533333333333332
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 1150,
+          "all_pass_rate": 0.03833333333333333,
+          "t_only_pass_rate": 0.039
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 2436,
+          "all_pass_rate": 0.0812,
+          "t_only_pass_rate": 0.08326666666666667
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 4151,
+          "all_pass_rate": 0.13836666666666667,
+          "t_only_pass_rate": 0.14076666666666668
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 4936,
+          "all_pass_rate": 0.16453333333333334,
+          "t_only_pass_rate": 0.16756666666666667
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 6010,
+          "all_pass_rate": 0.20033333333333334,
+          "t_only_pass_rate": 0.20343333333333333
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 11623,
+          "all_pass_rate": 0.38743333333333335,
+          "t_only_pass_rate": 0.39203333333333334
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 18330,
+          "all_pass_rate": 0.611,
+          "t_only_pass_rate": 0.6168333333333333
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 24005,
+          "all_pass_rate": 0.8001666666666667,
+          "t_only_pass_rate": 0.8057333333333333
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 27545,
+          "all_pass_rate": 0.9181666666666667,
+          "t_only_pass_rate": 0.9210666666666667
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 29803,
+          "all_pass_rate": 0.9934333333333333,
+          "t_only_pass_rate": 0.9940333333333333
+        }
+      ]
+    },
+    {
+      "entries_per_quarter_assumed": 20,
+      "events": 860,
+      "trim": 9,
+      "within_quarter_correlation": 0.5,
+      "adjacent_quarter_shared_shock_correlation": 0.0,
+      "effective_n_ignoring_adjacent_overlap": 81.9048,
+      "first_grid_point_reaching_gate_net_bp": 200,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 578,
+          "all_pass_rate": 0.019266666666666668,
+          "t_only_pass_rate": 0.019733333333333332
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 709,
+          "all_pass_rate": 0.023633333333333333,
+          "t_only_pass_rate": 0.0243
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 769,
+          "all_pass_rate": 0.025633333333333334,
+          "t_only_pass_rate": 0.026233333333333334
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 843,
+          "all_pass_rate": 0.0281,
+          "t_only_pass_rate": 0.0287
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 1004,
+          "all_pass_rate": 0.033466666666666665,
+          "t_only_pass_rate": 0.03423333333333333
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 1757,
+          "all_pass_rate": 0.05856666666666667,
+          "t_only_pass_rate": 0.05973333333333333
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 2659,
+          "all_pass_rate": 0.08863333333333333,
+          "t_only_pass_rate": 0.0904
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 3088,
+          "all_pass_rate": 0.10293333333333334,
+          "t_only_pass_rate": 0.10483333333333333
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 3675,
+          "all_pass_rate": 0.1225,
+          "t_only_pass_rate": 0.1247
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 6519,
+          "all_pass_rate": 0.2173,
+          "t_only_pass_rate": 0.22086666666666666
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 10546,
+          "all_pass_rate": 0.3515333333333333,
+          "t_only_pass_rate": 0.35613333333333336
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 15073,
+          "all_pass_rate": 0.5024333333333333,
+          "t_only_pass_rate": 0.5074666666666666
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 19550,
+          "all_pass_rate": 0.6516666666666666,
+          "t_only_pass_rate": 0.6575
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 26258,
+          "all_pass_rate": 0.8752666666666666,
+          "t_only_pass_rate": 0.8798666666666667
+        }
+      ]
+    },
+    {
+      "entries_per_quarter_assumed": 50,
+      "events": 2150,
+      "trim": 22,
+      "within_quarter_correlation": 0.5,
+      "adjacent_quarter_shared_shock_correlation": 0.25,
+      "effective_n_ignoring_adjacent_overlap": 84.3137,
+      "first_grid_point_reaching_gate_net_bp": 200,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 1374,
+          "all_pass_rate": 0.0458,
+          "t_only_pass_rate": 0.047266666666666665
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 1558,
+          "all_pass_rate": 0.05193333333333333,
+          "t_only_pass_rate": 0.0537
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 1635,
+          "all_pass_rate": 0.0545,
+          "t_only_pass_rate": 0.05636666666666667
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 1781,
+          "all_pass_rate": 0.059366666666666665,
+          "t_only_pass_rate": 0.06116666666666667
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 2035,
+          "all_pass_rate": 0.06783333333333333,
+          "t_only_pass_rate": 0.07036666666666666
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 3005,
+          "all_pass_rate": 0.10016666666666667,
+          "t_only_pass_rate": 0.104
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 4088,
+          "all_pass_rate": 0.13626666666666667,
+          "t_only_pass_rate": 0.14103333333333334
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 4549,
+          "all_pass_rate": 0.15163333333333334,
+          "t_only_pass_rate": 0.1565
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 5142,
+          "all_pass_rate": 0.1714,
+          "t_only_pass_rate": 0.17693333333333333
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 7910,
+          "all_pass_rate": 0.26366666666666666,
+          "t_only_pass_rate": 0.2722333333333333
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 11329,
+          "all_pass_rate": 0.3776333333333333,
+          "t_only_pass_rate": 0.3884666666666667
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 15201,
+          "all_pass_rate": 0.5067,
+          "t_only_pass_rate": 0.518
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 19085,
+          "all_pass_rate": 0.6361666666666667,
+          "t_only_pass_rate": 0.6475666666666666
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 25119,
+          "all_pass_rate": 0.8373,
+          "t_only_pass_rate": 0.8466333333333333
+        }
+      ]
+    },
+    {
+      "entries_per_quarter_assumed": 90,
+      "events": 3870,
+      "trim": 39,
+      "within_quarter_correlation": 0.1,
+      "adjacent_quarter_shared_shock_correlation": 0.0,
+      "effective_n_ignoring_adjacent_overlap": 390.9091,
+      "first_grid_point_reaching_gate_net_bp": 100,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 436,
+          "all_pass_rate": 0.014533333333333334,
+          "t_only_pass_rate": 0.014733333333333333
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 661,
+          "all_pass_rate": 0.022033333333333332,
+          "t_only_pass_rate": 0.022333333333333334
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 765,
+          "all_pass_rate": 0.0255,
+          "t_only_pass_rate": 0.025933333333333333
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 974,
+          "all_pass_rate": 0.032466666666666665,
+          "t_only_pass_rate": 0.0331
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 1393,
+          "all_pass_rate": 0.04643333333333333,
+          "t_only_pass_rate": 0.0472
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 4059,
+          "all_pass_rate": 0.1353,
+          "t_only_pass_rate": 0.13793333333333332
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 7968,
+          "all_pass_rate": 0.2656,
+          "t_only_pass_rate": 0.26913333333333334
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 9716,
+          "all_pass_rate": 0.3238666666666667,
+          "t_only_pass_rate": 0.3282333333333333
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 12081,
+          "all_pass_rate": 0.4027,
+          "t_only_pass_rate": 0.40753333333333336
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 21892,
+          "all_pass_rate": 0.7297333333333333,
+          "t_only_pass_rate": 0.7354
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 27884,
+          "all_pass_rate": 0.9294666666666667,
+          "t_only_pass_rate": 0.9320666666666667
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 29699,
+          "all_pass_rate": 0.9899666666666667,
+          "t_only_pass_rate": 0.9904
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 29968,
+          "all_pass_rate": 0.9989333333333333,
+          "t_only_pass_rate": 0.999
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 30000,
+          "all_pass_rate": 1.0,
+          "t_only_pass_rate": 1.0
+        }
+      ]
+    },
+    {
+      "entries_per_quarter_assumed": 90,
+      "events": 3870,
+      "trim": 39,
+      "within_quarter_correlation": 0.05,
+      "adjacent_quarter_shared_shock_correlation": 0.0,
+      "effective_n_ignoring_adjacent_overlap": 710.0917,
+      "first_grid_point_reaching_gate_net_bp": 78,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 349,
+          "all_pass_rate": 0.011633333333333334,
+          "t_only_pass_rate": 0.011766666666666667
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 620,
+          "all_pass_rate": 0.020666666666666667,
+          "t_only_pass_rate": 0.021133333333333334
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 775,
+          "all_pass_rate": 0.025833333333333333,
+          "t_only_pass_rate": 0.0264
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 1065,
+          "all_pass_rate": 0.0355,
+          "t_only_pass_rate": 0.0361
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 1712,
+          "all_pass_rate": 0.05706666666666667,
+          "t_only_pass_rate": 0.05776666666666667
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 6342,
+          "all_pass_rate": 0.2114,
+          "t_only_pass_rate": 0.21433333333333332
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 13109,
+          "all_pass_rate": 0.43696666666666667,
+          "t_only_pass_rate": 0.44216666666666665
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 15869,
+          "all_pass_rate": 0.5289666666666667,
+          "t_only_pass_rate": 0.5348333333333334
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 19153,
+          "all_pass_rate": 0.6384333333333333,
+          "t_only_pass_rate": 0.6442666666666667
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 28052,
+          "all_pass_rate": 0.9350666666666667,
+          "t_only_pass_rate": 0.9375666666666667
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 29874,
+          "all_pass_rate": 0.9958,
+          "t_only_pass_rate": 0.9960333333333333
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 29997,
+          "all_pass_rate": 0.9999,
+          "t_only_pass_rate": 0.9999
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 30000,
+          "all_pass_rate": 1.0,
+          "t_only_pass_rate": 1.0
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 30000,
+          "all_pass_rate": 1.0,
+          "t_only_pass_rate": 1.0
+        }
+      ]
+    },
+    {
+      "entries_per_quarter_assumed": [
+        44,
+        44,
+        41,
+        41,
+        44,
+        46,
+        45,
+        47,
+        47,
+        48,
+        47,
+        47,
+        45,
+        46,
+        46,
+        50,
+        50,
+        49,
+        49,
+        49,
+        38,
+        38,
+        36,
+        31,
+        8,
+        8,
+        7,
+        7,
+        5,
+        5,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2
+      ],
+      "events": 1150,
+      "trim": 12,
+      "within_quarter_correlation": 0.5,
+      "adjacent_quarter_shared_shock_correlation": 0.0,
+      "effective_n_ignoring_adjacent_overlap": 53.2987,
+      "first_grid_point_reaching_gate_net_bp": 250,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 606,
+          "all_pass_rate": 0.0202,
+          "t_only_pass_rate": 0.0243
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 724,
+          "all_pass_rate": 0.024133333333333333,
+          "t_only_pass_rate": 0.028766666666666666
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 771,
+          "all_pass_rate": 0.0257,
+          "t_only_pass_rate": 0.030433333333333333
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 837,
+          "all_pass_rate": 0.0279,
+          "t_only_pass_rate": 0.0329
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 973,
+          "all_pass_rate": 0.032433333333333335,
+          "t_only_pass_rate": 0.037733333333333334
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 1502,
+          "all_pass_rate": 0.05006666666666667,
+          "t_only_pass_rate": 0.05653333333333333
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 2146,
+          "all_pass_rate": 0.07153333333333334,
+          "t_only_pass_rate": 0.0796
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 2434,
+          "all_pass_rate": 0.08113333333333334,
+          "t_only_pass_rate": 0.08996666666666667
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 2780,
+          "all_pass_rate": 0.09266666666666666,
+          "t_only_pass_rate": 0.10246666666666666
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 4781,
+          "all_pass_rate": 0.15936666666666666,
+          "t_only_pass_rate": 0.1705
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 7475,
+          "all_pass_rate": 0.24916666666666668,
+          "t_only_pass_rate": 0.26153333333333334
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 10843,
+          "all_pass_rate": 0.36143333333333333,
+          "t_only_pass_rate": 0.37296666666666667
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 14594,
+          "all_pass_rate": 0.48646666666666666,
+          "t_only_pass_rate": 0.4958666666666667
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 21803,
+          "all_pass_rate": 0.7267666666666667,
+          "t_only_pass_rate": 0.7315333333333334
+        }
+      ]
+    },
+    {
+      "entries_per_quarter_assumed": [
+        44,
+        44,
+        41,
+        41,
+        44,
+        46,
+        45,
+        47,
+        47,
+        48,
+        47,
+        47,
+        45,
+        46,
+        46,
+        50,
+        50,
+        49,
+        49,
+        49,
+        38,
+        38,
+        36,
+        31,
+        8,
+        8,
+        7,
+        7,
+        5,
+        5,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2
+      ],
+      "events": 1150,
+      "trim": 12,
+      "within_quarter_correlation": 0.25,
+      "adjacent_quarter_shared_shock_correlation": 0.0,
+      "effective_n_ignoring_adjacent_overlap": 101.8757,
+      "first_grid_point_reaching_gate_net_bp": 200,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 566,
+          "all_pass_rate": 0.018866666666666667,
+          "t_only_pass_rate": 0.0226
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 697,
+          "all_pass_rate": 0.023233333333333335,
+          "t_only_pass_rate": 0.027633333333333333
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 751,
+          "all_pass_rate": 0.025033333333333335,
+          "t_only_pass_rate": 0.029866666666666666
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 853,
+          "all_pass_rate": 0.028433333333333335,
+          "t_only_pass_rate": 0.0334
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 1022,
+          "all_pass_rate": 0.03406666666666667,
+          "t_only_pass_rate": 0.0392
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 1903,
+          "all_pass_rate": 0.06343333333333333,
+          "t_only_pass_rate": 0.0712
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 3019,
+          "all_pass_rate": 0.10063333333333334,
+          "t_only_pass_rate": 0.11096666666666667
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 3508,
+          "all_pass_rate": 0.11693333333333333,
+          "t_only_pass_rate": 0.12786666666666666
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 4216,
+          "all_pass_rate": 0.14053333333333334,
+          "t_only_pass_rate": 0.1513
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 7866,
+          "all_pass_rate": 0.2622,
+          "t_only_pass_rate": 0.27626666666666666
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 12697,
+          "all_pass_rate": 0.42323333333333335,
+          "t_only_pass_rate": 0.4367333333333333
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 17959,
+          "all_pass_rate": 0.5986333333333334,
+          "t_only_pass_rate": 0.6095333333333334
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 22633,
+          "all_pass_rate": 0.7544333333333333,
+          "t_only_pass_rate": 0.7613666666666666
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 28125,
+          "all_pass_rate": 0.9375,
+          "t_only_pass_rate": 0.9396
+        }
+      ]
+    },
+    {
+      "entries_per_quarter_assumed": [
+        44,
+        44,
+        41,
+        41,
+        44,
+        46,
+        45,
+        47,
+        47,
+        48,
+        47,
+        47,
+        45,
+        46,
+        46,
+        50,
+        50,
+        49,
+        49,
+        49,
+        38,
+        38,
+        36,
+        31,
+        8,
+        8,
+        7,
+        7,
+        5,
+        5,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2
+      ],
+      "events": 1150,
+      "trim": 12,
+      "within_quarter_correlation": 0.05,
+      "adjacent_quarter_shared_shock_correlation": 0.0,
+      "effective_n_ignoring_adjacent_overlap": 376.1056,
+      "first_grid_point_reaching_gate_net_bp": 100,
+      "grid": [
+        {
+          "planted_net_bp": -14,
+          "all_passes": 400,
+          "all_pass_rate": 0.013333333333333334,
+          "t_only_pass_rate": 0.016266666666666665
+        },
+        {
+          "planted_net_bp": -4,
+          "all_passes": 619,
+          "all_pass_rate": 0.020633333333333333,
+          "t_only_pass_rate": 0.024266666666666666
+        },
+        {
+          "planted_net_bp": 0,
+          "all_passes": 739,
+          "all_pass_rate": 0.024633333333333333,
+          "t_only_pass_rate": 0.028433333333333335
+        },
+        {
+          "planted_net_bp": 6,
+          "all_passes": 924,
+          "all_pass_rate": 0.0308,
+          "t_only_pass_rate": 0.0354
+        },
+        {
+          "planted_net_bp": 16,
+          "all_passes": 1321,
+          "all_pass_rate": 0.044033333333333334,
+          "t_only_pass_rate": 0.05006666666666667
+        },
+        {
+          "planted_net_bp": 50,
+          "all_passes": 3887,
+          "all_pass_rate": 0.12956666666666666,
+          "t_only_pass_rate": 0.14193333333333333
+        },
+        {
+          "planted_net_bp": 78,
+          "all_passes": 7650,
+          "all_pass_rate": 0.255,
+          "t_only_pass_rate": 0.2727333333333333
+        },
+        {
+          "planted_net_bp": 88,
+          "all_passes": 9320,
+          "all_pass_rate": 0.31066666666666665,
+          "t_only_pass_rate": 0.33063333333333333
+        },
+        {
+          "planted_net_bp": 100,
+          "all_passes": 11583,
+          "all_pass_rate": 0.3861,
+          "t_only_pass_rate": 0.4091666666666667
+        },
+        {
+          "planted_net_bp": 150,
+          "all_passes": 21171,
+          "all_pass_rate": 0.7057,
+          "t_only_pass_rate": 0.7261333333333333
+        },
+        {
+          "planted_net_bp": 200,
+          "all_passes": 27326,
+          "all_pass_rate": 0.9108666666666667,
+          "t_only_pass_rate": 0.9228666666666666
+        },
+        {
+          "planted_net_bp": 250,
+          "all_passes": 29519,
+          "all_pass_rate": 0.9839666666666667,
+          "t_only_pass_rate": 0.9879666666666667
+        },
+        {
+          "planted_net_bp": 300,
+          "all_passes": 29935,
+          "all_pass_rate": 0.9978333333333333,
+          "t_only_pass_rate": 0.9988333333333334
+        },
+        {
+          "planted_net_bp": 400,
+          "all_passes": 30000,
+          "all_pass_rate": 1.0,
+          "t_only_pass_rate": 1.0
+        }
+      ]
+    }
+  ]
+}
