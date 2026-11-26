@@ -220,8 +220,9 @@ class Quote:
     condition: tuple
     ordinal: int
 
-    def regular(self):
-        return self.condition == ("R",) and 0 < self.bid <= self.ask and self.bs > 0 and self.az > 0
+    def regular(self, *, r_only=False):
+        allowed = self.condition == ("R",) or (not r_only and self.condition == ("?",))
+        return allowed and 0 < self.bid <= self.ask and self.bs > 0 and self.az > 0
 
 
 def number(value):
@@ -311,13 +312,13 @@ def entry_size(ask):
     return low
 
 
-def select(entry, exit_):
+def select(entry, exit_, *, r_only=False):
     for x in entry:
-        if x.regular():
+        if x.regular(r_only=r_only):
             q = entry_size(x.ask)
             # No downsizing to displayed size or looking ahead at the exit.
             if 0 < q <= x.az:
-                return x, next((y for y in exit_ if y.regular() and y.bs >= q), None), q
+                return x, next((y for y in exit_ if y.regular(r_only=r_only) and y.bs >= q), None), q
     return None, None, 0
 
 
@@ -343,7 +344,13 @@ class Observation:
         return [] if self.exit is not None else ["exit"]
 
 
-def load_inputs(src, pin, pairs):
+def observe(d, s, qs, bs, *, r_only=False):
+    e, x, q = select(*qs, r_only=r_only)
+    return Observation(d, s, e, x, q, tuple(bs), tuple(map(len, qs)),
+                       any(y.regular(r_only=r_only) for y in qs[1]))
+
+
+def load_inputs(src, pin, pairs, *, r_only_out=None):
     private_dir(src)
     private_dir(src / "native")
     manifest = decode(read_file(src / "manifest.json", pin, private=True))
@@ -369,9 +376,9 @@ def load_inputs(src, pin, pairs):
                 except (Refused, KeyError, ValueError, TypeError, OSError, ArithmeticError) as exc:
                     errors.append(f"{d} {s} {c} {kind} " + (str(exc) if isinstance(exc, Refused) else "P33_BAD_NATIVE"))
         if len(qs) == len(bs) == 2:
-            e, x, q = select(*qs)
-            observations[d, s] = Observation(d, s, e, x, q, tuple(bs), tuple(map(len, qs)),
-                                             any(y.regular() for y in qs[1]))
+            observations[d, s] = observe(d, s, qs, bs)
+            if r_only_out is not None:
+                r_only_out[d, s] = observe(d, s, qs, bs, r_only=True)
     if not errors:
         need({f"native/{p.name}" for p in (src / "native").iterdir()} == used, "EXTRA_NATIVE")
     return observations, errors
@@ -496,7 +503,7 @@ def summary(pairs, observations, trades):
                                  for a, c, s in pairs if not (observations[a, s].placed and observations[c, s].placed)]}
 
 
-def outcome(job, pairs, observations, table, fomc):
+def outcome(job, pairs, observations, table, fomc, r_only_observations):
     base = {k: trade(o, table) for k, o in observations.items()}
     overall = summary(pairs, observations, base)
     by_year = {y: summary([p for p in pairs if p[0].year == y], observations, base) for y in YEARS}
@@ -541,6 +548,8 @@ def outcome(job, pairs, observations, table, fomc):
         sensitivities[f"adverse_{slip}bp_per_side_fixed_size"] = summary(pairs, observations, shown)
     shown = {k: trade(o, table, unwaived=True) for k, o in observations.items()}
     sensitivities["unwaived_actual_rate_SEC_and_TAF_unrounded"] = summary(pairs, observations, shown)
+    shown = {k: trade(o, table) for k, o in r_only_observations.items()}
+    sensitivities["regular_condition_R_only"] = summary(pairs, r_only_observations, shown)
     return {"job": job, "pass": all(flags.values()), "marks": flags, "overall": overall,
             "by_year": by_year, "by_maturity_etf": by_lane, "by_year_and_maturity_etf": by_year_and_lane,
             "trimmed_bps": trimmed, "after_2024_07_31_paper_sample": post,
@@ -549,6 +558,7 @@ def outcome(job, pairs, observations, table, fomc):
             "limitations": [
                 "Clock proxy for the paper's after-release window; no verified post-revision subset.",
                 "Shown liquidity is not an order execution or an odd-lot protection guarantee.",
+                "The vendor's ? condition is unknown, not verified regular; R-only is shown separately.",
                 "No exit quote is retrospective coverage, not something known at entry.",
                 "Dates are separate fixed-notional trades, not a compounded account path.",
                 "Current Robinhood customer exemptions/rounding applied historically, not broker receipts.",
@@ -658,7 +668,8 @@ def main():
             unused(RUN)
         pairs = plan_dates(blobs)
         table, fomc = fees_table(blobs["fees_33.csv"]), dates(blobs["fomc_dates_33.txt"])
-        obs, errors = load_inputs(INPUTS, ipin, pairs)
+        r_only = {} if args.go else None
+        obs, errors = load_inputs(INPUTS, ipin, pairs, r_only_out=r_only)
         if errors:
             for msg in errors:
                 print(msg, file=sys.stderr)
@@ -673,7 +684,7 @@ def main():
             return
         job = {"schema": 1, "ledger": 168, "approval_commit": args.approval_commit, "freeze_commit": freeze,
                "freeze_sha256": fpin, "input_sha256": ipin, "claimed_utc": datetime.now(timezone.utc).isoformat()}
-        claim(RUN, job, lambda: outcome(job, pairs, obs, table, fomc))
+        claim(RUN, job, lambda: outcome(job, pairs, obs, table, fomc, r_only))
     except Refused as exc:
         parser.exit(2, f"{exc}\n")
     except (OSError, ValueError, TypeError, KeyError, IndexError, StopIteration, ArithmeticError,
