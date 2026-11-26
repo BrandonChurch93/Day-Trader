@@ -1,6 +1,6 @@
 # Plan 60: special-dividend declarations with explicit execution rules
 
-Status DRAFT.
+Status FROZEN.
 
 Queue 99, ledger 199. This is a new plan, not another amendment or run of Plan 43. It was written after three Plan 43 validation stops whose refusal counts were known to the lead and auditor but no return was ever computed. Ledger 178 stopped at the all-or-nothing padded-tape gate; ledger 188 stopped at the relative intrabar basis gate; ledger 195 stopped with a raw-basis HOLD and tape refusals greater than its frozen cap. Plan 43 stays closed; its cap is not revised. The Plan 60 author did not open the adopted tape or use real counts to calibrate power.
 
