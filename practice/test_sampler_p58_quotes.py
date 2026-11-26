@@ -74,8 +74,14 @@ def main():
         gaps = [(b[0] - a[0]).total_seconds() for a, b in zip(calls, calls[1:])]
         check(min(gaps) >= 1.0 - 1e-9, "at most one request a second")
         check(any(r["status"] == "missed" for r in rows) and len(calls) < 84, "late points are missed, not caught up")
+        firsts = [r["contract"] for i, r in enumerate(rows) if i % 2 == 0 and r["status"] != "missed"]
+        check(len(set(firsts)) == 2, "the first contract alternates")
+        check(all(r["season"] == "standard" for r in rows) and all("receipt_late_s" in r for r in rows if r["status"] == "ok"), "season and receipt time kept")
         check(all("spread_bps" in r for r in rows if r["status"] == "ok"), "ok rows have a spread")
         check(oct((off / "samples.jsonl").stat().st_mode & 0o777) == "0o600" and oct(off.stat().st_mode & 0o777) == "0o700", "private files")
+        rl = S.sample_point(datetime(2026, 12, 2, 20, 56, tzinfo=UTC), "sample", lambda u: (429, b""), off, lambda: datetime(2026, 12, 2, 20, 56, tzinfo=UTC), S.Spacer(lambda: 0.0, lambda s: None))
+        check([r["reason"] for r in rl] == ["http_429", "rate_limited_tick_skipped"], "a 429 skips the rest of the tick")
+        check(S.season(datetime(2027, 7, 2, 21, 0, tzinfo=UTC)) == "daylight", "summer is daylight")
         try:
             S.sample_point(datetime(2026, 12, 2, 21, 0, tzinfo=UTC), "sample", lambda u: (401, b""), off, lambda: datetime(2026, 12, 2, 21, 0, tzinfo=UTC), S.Spacer(lambda: 0.0, lambda s: None))
             check(False, "stop")

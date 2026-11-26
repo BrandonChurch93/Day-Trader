@@ -1,4 +1,4 @@
-"""Plan 58, Measurement 59: forward quote-only sampler for two Coinbase US nano futures.
+"""Plan 58, Measurement 59 part B (research_rig/MEASURE_59_crypto_clock_costs.md at 77158ad): forward quote-only sampler for two Coinbase US nano futures.
 
 Prepared only. It makes no request unless it is given --approved with the ledger row, which the
 lead gives after the ledger and freeze are confirmed.
@@ -10,7 +10,8 @@ Commands:
                            21:05 and from 22:55 to 23:05 every day, until stopped.
   plan                     prints today's lattice and its labels, with no request.
 
-What is kept for each point and contract: the scheduled UTC time, how late the request was, the
+What is kept for each point and contract: the scheduled UTC time, the New York season, how late the
+request was and how late the answer came, the
 book's age (receive time minus pricebook.time), the contract code, ok or a refusal reason, and the
 relative spread in basis points, 10000*(ask-bid)/mid. No sizes, levels, mid, last, OHLC, account,
 key or order is kept. There is no catch-up: a point more than LATE_MAX_S late is logged as missed.
@@ -183,12 +184,25 @@ def catalog(get=http_get, off=OFF, now=lambda: datetime.now(UTC), sleep=time.sle
     return rows
 
 
+def season(t):
+    return "daylight" if t.astimezone(NY).dst() else "standard"
+
+
+def order(t):
+    """Alternate which contract goes first, tick by tick, so neither is always the later one."""
+    k = int(t.timestamp()) // STEP_S
+    return CONTRACTS if k % 2 == 0 else CONTRACTS[::-1]
+
+
 def sample_point(t, label, get, off, now, sp):
-    rows = []
-    for code in CONTRACTS:
-        base = dict(schedule_utc=iso(t), contract=code)
+    rows, limited = [], False
+    for code in order(t):
+        base = dict(schedule_utc=iso(t), contract=code, season=season(t))
         if label == "maintenance":
             rows.append(dict(base, status="maintenance", reason="friday_17_18_new_york"))
+            continue
+        if limited:
+            rows.append(dict(base, status="refused", reason="rate_limited_tick_skipped"))
             continue
         sp.wait()
         late = (now() - t).total_seconds()
@@ -197,13 +211,15 @@ def sample_point(t, label, get, off, now, sp):
             continue
         st, body = get(BOOK.format(code))
         recv = now()
+        base.update(late_s=round(late, 3), receipt_late_s=round((recv - t).total_seconds(), 3))
         try:
-            rows.append(dict(base, late_s=round(late, 3), **judge_book(code, st, body, recv)))
+            rows.append(dict(base, **judge_book(code, st, body, recv)))
         except Stop as e:
-            rows.append(dict(base, late_s=round(late, 3), status="stop", reason=str(e)))
+            rows.append(dict(base, status="stop", reason=str(e)))
             for r in rows:
                 write(off, "samples.jsonl", r)
             raise
+        limited = st == 429
     for r in rows:
         write(off, "samples.jsonl", r)
     return rows
@@ -220,7 +236,7 @@ def run(get=http_get, off=OFF, now=lambda: datetime.now(UTC), sleep=time.sleep, 
             if late > LATE_MAX_S:
                 if t >= began:
                     for code in CONTRACTS:
-                        write(off, "samples.jsonl", dict(schedule_utc=iso(t), contract=code, status="missed", reason="late_no_catch_up", late_s=round(late, 3)))
+                        write(off, "samples.jsonl", dict(schedule_utc=iso(t), contract=code, season=season(t), status="missed", reason="late_no_catch_up", late_s=round(late, 3)))
                 continue
             if late < 0:
                 sleep(-late)
