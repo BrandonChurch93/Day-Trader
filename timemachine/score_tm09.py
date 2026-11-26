@@ -1,16 +1,14 @@
 """TM09 registered week-level marks. The CLI refuses unapproved or repeat scoring."""
 import argparse
-from decimal import Decimal, localcontext
+from decimal import Decimal, InvalidOperation, localcontext
 from fractions import Fraction
 from hashlib import sha256
 import json
 from pathlib import Path
 
 from timemachine.tm09_desk import store_new, verify_seal
-from timemachine.tm09_fixture import arm_layout, mondays, read_private, settings
-from timemachine.tm09_orders import number
-
-DEPS = ('tm09_desk.py', 'tm09_fixture.py', 'tm09_orders.py')
+from timemachine.tm09_fixture import mondays, read_private, session_layout, settings
+DEPS = ('tm09_desk.py', 'tm09_fixture.py', 'tm09_orders.py', 'tm09_feed.py')
 
 
 def mean(values):
@@ -32,25 +30,42 @@ def decimal(x):
 
 
 def numeric(x):
-    return Fraction(number(x))
+    if type(x) not in (str, int, float) or len(str(x)) > 128:
+        raise ValueError('invalid sealed number')
+    try:
+        n = Decimal(str(x))
+    except InvalidOperation:
+        raise ValueError('invalid sealed number') from None
+    if not n.is_finite() or abs(n.as_tuple().exponent) > 1000:
+        raise ValueError('invalid sealed number')
+    return Fraction(n)
 
 
-def score(study, results):
+def score(study, results, mode=None):
     weeks = [m.isoformat() for m in mondays(study)]
     if set(results) != set(weeks):
         raise ValueError('one status row required for every scheduled week')
     models = study['boss_models']
-    controls_in_order, news_arm = arm_layout(study)
-    control_weights = [numeric(w) for w in study['scoring']['price_only_weights']]
+    layout = session_layout(study, mode)
+    if not layout.news:
+        raise ValueError('price-only Stage 1 cannot be scored')
+    control_weights = ([numeric(w) for w in study['scoring']['price_only_weights']] if mode != 'B'
+                       else [Fraction(-1, len(layout.price))] * len(layout.price))
     news_weight = numeric(study['scoring']['treatment_weight'])
     marks, failure = study['marks'], study['failures']
     lost = {model: [] for model in models}
-    missing, paired = [], []
+    missing, paired, feed_counts = [], [], {}
     admitted_total = delivered_total = 0
     for week in weeks:
         row = results[week]
-        if set(row) != {'eligible_wakes', 'note_wakes', 'models', 'benchmark'} or set(row['models']) != set(models):
+        if set(row) - {'benchmark_unavailable', 'feed_counts'} != {'eligible_wakes', 'note_wakes', 'models', 'benchmark'} or set(row['models']) != set(models):
             raise ValueError('invalid sealed week row')
+        if 'feed_counts' in row:
+            counts = row['feed_counts']
+            if (set(counts) != {'admitted_pairs', 'repeat_pairs', 'figure_check_undecided'}
+                    or any(type(n) is not int or n < 0 for n in counts.values()) or counts['repeat_pairs'] > counts['admitted_pairs']):
+                raise ValueError('invalid feed counts')
+            feed_counts[week] = counts
         admitted, delivered = row['eligible_wakes'], row['note_wakes']
         if type(admitted) is not int or type(delivered) is not int or not 0 <= delivered <= admitted:
             raise ValueError('invalid delivery counts')
@@ -60,21 +75,29 @@ def score(study, results):
         included = []
         for model in models:
             arms = row['models'][model]
-            if set(arms) != {*controls_in_order, news_arm}:
+            if set(arms) != set(layout.arms):
                 raise ValueError('all arms need statuses')
             if None in arms.values():
                 lost[model].append(week)
                 continue
-            p1, p2 = (numeric(arms[a]) for a in controls_in_order)
-            n = numeric(arms[news_arm])
+            p1, p2 = (numeric(arms[a]) for a in layout.placebo)
+            price_returns = [numeric(arms[a]) for a in layout.price]
+            n = mean([numeric(arms[a]) for a in layout.news])
             included.append(model)
-            diffs.append(news_weight * n + sum(w * r for w, r in zip(control_weights, (p1, p2))))
+            diffs.append(news_weight * n + sum(w * r for w, r in zip(control_weights, price_returns)))
             controls.append(p1 - p2)
             n_values.append(n)
         if diffs:
+            baseline = row['benchmark']
+            reason = row.get('benchmark_unavailable')
+            if (baseline is None and (not isinstance(reason, str) or not reason)
+                    or baseline is not None and reason is not None):
+                raise ValueError('invalid benchmark status')
             paired.append(dict(week=week, models=included, by_model=dict(zip(included, diffs)),
                                placebo_by_model=dict(zip(included, controls)), primary=mean(diffs),
-                               placebo=mean(controls), n=mean(n_values), benchmark=numeric(row['benchmark'])))
+                               placebo=mean(controls), n=mean(n_values),
+                               benchmark=numeric(baseline) if baseline is not None else None,
+                               benchmark_unavailable=reason))
         else:
             missing.append(week)
     primary, placebo = [x['primary'] for x in paired], [x['placebo'] for x in paired]
@@ -94,7 +117,9 @@ def score(study, results):
                   primary_mean=mean_primary is not None and mean_primary * 10000 >= numeric(marks['mean_weekly_bps_min']),
                   placebo=placebo_ok, delivery=delivered, coverage=complete)
     helps = all(scores.values())
-    n_mean, baseline = mean([x['n'] for x in paired]), mean([x['benchmark'] for x in paired])
+    unavailable = {x['week']: x['benchmark_unavailable'] for x in paired if x['benchmark'] is None}
+    n_mean = mean([x['n'] for x in paired])
+    baseline = None if unavailable else mean([x['benchmark'] for x in paired])
     reasons = []
     if not delivered:
         reasons.append('treatment not delivered')
@@ -111,13 +136,14 @@ def score(study, results):
             return decimal(squared).sqrt() * (-1 if avg < 0 else 1)
 
     return dict(marks=scores, labels=reasons or (['news helps'] if helps else ['news helps mark not met']),
-                news_helps=helps, worth_following_forward=helps and n_mean > baseline,
+                news_helps=helps, worth_following_forward=helps and baseline is not None and n_mean > baseline,
                 weeks_with_primary=len(paired), positive_weeks=positive_weeks, lost_weeks=lost, missing_weeks=missing,
                 eligible_wakes=admitted_total, note_wakes=delivered_total, delivery_fraction=delivery,
                 primary_t=shown_t(t2, mean_primary), primary_mean=mean_primary, primary_mean_without_best=trimmed,
                 placebo_t=shown_t(pt2, pm), placebo_sd=decimal(pvar).sqrt() if pvar is not None else None,
                 placebo_all_exact_zero=all_zero, placebo_mean=pm,
-                news_mean=n_mean, benchmark_mean=baseline, weekly=paired)
+                news_mean=n_mean, benchmark_mean=baseline, benchmark_unavailable=unavailable, weekly=paired,
+                feed_counts=feed_counts)
 
 
 def run_approved(root, approval, key_file, registration, config, sealed_results):
@@ -126,10 +152,13 @@ def run_approved(root, approval, key_file, registration, config, sealed_results)
     key = read_private(key_file).decode().strip()
     verify_seal(key, 'tm09-score-approval', decision, capsule['seal'])
     cfg, reg = read_private(config), read_private(registration)
+    study = settings(cfg)['study']
+    mode = decision.get('mode')
     running = Path(__file__).resolve()
     if (decision.get('scope') != 'ledger-222-score-once' or decision.get('root') != str(root)
             or decision.get('release') != str(running.parent.parent)
             or decision.get('scorer_sha256') != sha256(read_private(running)).hexdigest()
+            or ('amendment_1' in study and mode not in ('A', 'B'))
             or decision.get('dependency_sha256') != {name: sha256(read_private(running.parent / name)).hexdigest() for name in DEPS}
             or decision.get('registration_sha256') != sha256(reg).hexdigest()
             or decision.get('config_sha256') != sha256(cfg).hexdigest()
@@ -141,7 +170,7 @@ def run_approved(root, approval, key_file, registration, config, sealed_results)
     result_raw = read_private(sealed_results)
     if sha256(result_raw).hexdigest() != decision.get('results_sha256'):
         raise ValueError('sealed results changed')
-    result = score(settings(cfg)['study'], json.loads(result_raw))
+    result = score(study, json.loads(result_raw), mode)
     output = json.loads(json.dumps(result, default=lambda v: str(decimal(v) if isinstance(v, Fraction) else v)))
     store_new(root / 'scored.json', output)
     return output

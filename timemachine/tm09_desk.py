@@ -10,7 +10,8 @@ import secrets
 import sqlite3
 from zoneinfo import ZoneInfo
 
-from timemachine.tm09_fixture import arm_layout, encode, fingerprint as digest, project_headlines, read_private
+from timemachine.tm09_fixture import encode, fingerprint as digest, project_headlines, read_private, session_layout, week_pairs
+from timemachine.tm09_feed import figure_check
 from timemachine.tm09_orders import SPARSE_REASONS, Minutes, benchmark, fill, number, terminal, weights
 
 SID = re.compile(r'TM09-[A-Za-z0-9_-]{1,72}\Z')
@@ -66,6 +67,15 @@ def slot(week, role, boss=None, arm=None):
     raise ValueError('invalid desk role or arm')
 
 
+def role_fingerprint(fixture, role):
+    # Price input is identical across scout/boss stages even when the later seal adds news.
+    return digest(fixture if role == 'news_scout' else {k: v for k, v in fixture.items() if k != 'news_index'})
+
+
+def persist_options(options):
+    return {k: v for k, v in options.items() if k != 'mode'}
+
+
 def initialize(root, fixture, options, role, key, *, price=None, news=None, boss=None, arm=None, news_reader=None):
     """Operator ceremony only. O_EXCL and fixed slots prevent reruns."""
     sid = slot(fixture['week'], role, boss, arm)
@@ -78,21 +88,23 @@ def initialize(root, fixture, options, role, key, *, price=None, news=None, boss
     if (number(options['cash']) <= 0 or not 0 <= number(options['spread']) < 1 or not 0 < number(options['cap']) <= 1
             or not 0 <= number(options['commission']) < 1):
         raise ValueError('invalid approved sizing parameters')
-    controls, news_arm = arm_layout(options['study'])
-    if role == 'boss' and (boss not in options['study']['boss_models'] or arm not in (*controls, news_arm)):
+    layout = session_layout(options['study'], options.get('mode'))
+    if role == 'news_scout' and not layout.news:
+        raise ValueError('news scout unavailable in price-only stage')
+    if role == 'boss' and (boss not in options['study']['boss_models'] or arm not in layout.arms):
         raise ValueError('unregistered boss')
-    fpin = digest(fixture)
+    fpin = role_fingerprint(fixture, role)
     waking = [t for t, _ in fixture['wakes']]
     price_notes, news_notes = {}, {}
     if role == 'boss':
-        if price is None or (arm == news_arm) != (news is not None):
+        if price is None or (arm in layout.news) != (news is not None):
             raise ValueError('wrong scout streams for boss arm')
         price_notes = note_stream(key, price, fpin, 'price_scout', waking)
         if news is not None:
-            news_notes = note_stream(key, news, fpin, 'news_scout', waking)
+            news_notes = note_stream(key, news, role_fingerprint(fixture, 'news_scout'), 'news_scout', waking)
     elif price is not None or news is not None:
         raise ValueError('a scout cannot receive another worker stream')
-    bound = dict(public_id='TM09-' + secrets.token_hex(16), role=role, fixture=fpin, arm=arm, boss=boss, options=options,
+    bound = dict(public_id='TM09-' + secrets.token_hex(16), role=role, fixture=fpin, arm=arm, boss=boss, options=persist_options(options),
                  price=price_notes, news=news_notes)
     path = Path(root) / sid
     path.mkdir(mode=0o700)
@@ -120,9 +132,10 @@ class Desk:
         self.role, self.arm = self.spec['role'], self.spec['arm']
         self.public_id = self.spec['public_id']
         self.options = self.spec['options']
+        self.feed = self.options['study'].get('amendment_1', {}).get('feed')
         if (self.path.name != slot(fixture['week'], self.role, self.spec['boss'], self.arm)
-                or not PUBLIC_SID.fullmatch(self.public_id) or digest(fixture) != self.spec['fixture']
-                or approved_options is not None and self.options != approved_options):
+                or not PUBLIC_SID.fullmatch(self.public_id) or role_fingerprint(fixture, self.role) != self.spec['fixture']
+                or approved_options is not None and self.options != persist_options(approved_options)):
             raise ValueError('session fixture changed')
         self.wakes = fixture['wakes']
         self.minutes = Minutes(fixture['bars'])
@@ -146,13 +159,21 @@ class Desk:
             return []
         if self.role != 'news_scout' or self.news_reader is None:
             raise PermissionError('news source unavailable to this role')
-        return self._project(self.news_reader(), index)
+        raw = self.news_reader()
+        if self.feed:
+            items = week_pairs(self.fixture, self.feed, raw=raw, until=at)[at]
+            self._headline_bounds(items)
+            return items
+        return self._project(raw, index)
 
     def _project(self, raw, index):
         items = project_headlines(raw, index)
+        self._headline_bounds(items)
+        return items
+
+    def _headline_bounds(self, items):
         if len(items) > self.options['headline_rows'] or any(len(i['headline']) > self.options['headline_chars'] for i in items):
             raise ValueError('news input bounds exceeded; do not truncate')
-        return items
 
     def _packet(self, con, st, at):
         self._settle_pending(con, st)
@@ -177,14 +198,17 @@ class Desk:
 
     def _note(self, at, body):
         notes = body['notes']
-        if (not isinstance(notes, list) or len(notes) > self.options['notes']
-                or any(not isinstance(n, str) or not n.strip() or len(n) > self.options['note_chars'] for n in notes)):
+        if not isinstance(notes, list) or len(notes) > self.options['notes']:
+            raise ValueError('invalid note bounds')
+        if self.role == 'news_scout' and self.feed:
+            return self._amended_notes(at, notes)
+        if any(not isinstance(n, str) or not n.strip() or len(n) > self.options['note_chars'] for n in notes):
             raise ValueError('invalid note bounds')
         if self.role == 'news_scout':
             if notes and not self.fixture['news_index'][str(at)]:
                 raise ValueError('no admitted items at this wake')
             if not notes:
-                return notes
+                return notes, 0
             raw = self.news_reader()
             items = [item for wake, _ in self.wakes if wake <= at
                      for item in self._project(raw, self.fixture['news_index'][str(wake)])]
@@ -194,7 +218,41 @@ class Desk:
                 # Exact token sequence only; human privacy review still required.
                 if not clean or any(t and f' {t} ' in f' {clean} ' for t in source):
                     raise ValueError('headline copy refused')
-        return notes
+        return notes, 0
+
+    def _amended_notes(self, at, notes):
+        if not notes:
+            return notes, 0
+        raw = self.news_reader()
+        items = week_pairs(self.fixture, self.feed, raw=raw, until=at)
+        copies = [text_words(pair['headline']) for group in items.values() for pair in group]
+        seen, undecided = set(), 0
+        for note in notes:
+            if (not isinstance(note, dict) or set(note) != {'symbol', 'source_time', 'repeat', 'has_number', 'figures', 'paraphrase'}
+                    or not isinstance(note['symbol'], str) or type(note['source_time']) is not int
+                    or type(note['repeat']) is not bool or type(note['has_number']) is not bool
+                    or not isinstance(note['figures'], list) or note['has_number'] != bool(note['figures'])
+                    or any(not isinstance(f, str) for f in note['figures'])
+                    or not isinstance(note['paraphrase'], str) or len(encode(note)) > self.options['note_chars']):
+                raise ValueError('invalid structured news note')
+            clean = text_words(note['paraphrase'])
+            if not clean or any(t and f' {t} ' in f' {clean} ' for t in copies):
+                raise ValueError('headline copy refused')
+            matches = []
+            for i, pair in enumerate(items[at]):
+                if i in seen or any(note[k] != pair[k] for k in ('symbol', 'source_time', 'repeat')):
+                    continue
+                try:
+                    uncertainty = figure_check(pair['headline'], note['figures'])
+                except ValueError:
+                    continue
+                matches.append((uncertainty, i))
+            if not matches:
+                raise ValueError('news note lacks matching admitted item or literal figures')
+            uncertain, index = min(matches)
+            seen.add(index)
+            undecided += uncertain
+        return notes, undecided
 
     def handle(self, token, action, body=None):
         body = {} if body is None else body
@@ -240,8 +298,10 @@ class Desk:
                 answer = {'bars': self.minutes.visible(s, at, limit)}
                 self.log(con, at, 'look', {'symbol': s, 'rows': len(answer['bars'])})
             elif action == 'notes' and self.role in ROLES[:2] and set(body) == {'wake_key', 'notes'}:
-                notes = self._note(at, body)
+                notes, undecided = self._note(at, body)
                 self.log(con, at, 'notes', notes)
+                if undecided:
+                    self.log(con, at, 'figure_check_undecided', {'count': undecided})
                 answer = self._advance(st)
             elif action == 'pick' and self.role == 'boss' and set(body) == {'wake_key', 'weights'}:
                 if body['weights'] is not None:
@@ -322,7 +382,8 @@ class Desk:
             except ValueError:
                 status, net = 'missing terminal mark', None
             else:
-                status, net = 'sealed', str(end / number(self.options['cash']) - 1)
+                starting = number(self.options['cash'])
+                status, net = 'sealed', str((end - starting) / starting)
             con.execute('INSERT INTO settlement VALUES(?,?)', (status, net))
             self.log(con, self.wakes[-1][0], 'finish', {'status': status})
             return net
@@ -332,10 +393,23 @@ class Desk:
             return st['cursor'] == len(self.wakes)
 
     def delivery_wakes(self):
+        if self.role != 'boss':
+            raise ValueError('not a boss desk')
+        with self.tx() as (con, _):
+            return {wake for (wake,) in con.execute("SELECT DISTINCT wake FROM journal WHERE kind='presented_news'")}
+
+    def undecided_figures(self):
         if self.role != 'news_scout':
             raise ValueError('not a news scout')
         with self.tx() as (con, _):
-            return sum(bool(json.loads(n)) for (n,) in con.execute("SELECT data FROM journal WHERE kind='notes'"))
+            return sum(json.loads(raw)['count'] for (raw,) in con.execute("SELECT data FROM journal WHERE kind='figure_check_undecided'"))
+
+    def confirm_delivery(self, wake):
+        if self.role != 'boss' or not self.spec['news'].get(str(wake)):
+            raise ValueError('no eligible note to acknowledge')
+        with self.tx() as (con, _):
+            if not con.execute("SELECT 1 FROM journal WHERE wake=? AND kind='presented_news'", (wake,)).fetchone():
+                self.log(con, wake, 'presented_news', {})
 
     def sparse_counts(self):
         """Operator-only order counts (not share counts), from committed fill receipts."""

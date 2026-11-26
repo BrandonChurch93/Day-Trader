@@ -1,9 +1,10 @@
 """Made-up minutes, calendars, headlines, and returns only."""
 from copy import deepcopy
-from datetime import datetime
+from contextlib import redirect_stderr, redirect_stdout
+from datetime import datetime, timedelta
 from decimal import Decimal
 from hashlib import sha256
-from io import BytesIO
+from io import BytesIO, StringIO
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -12,16 +13,22 @@ from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 from timemachine.score_tm09 import DEPS, run_approved, score
+from timemachine import tm09_blind
 from timemachine.tm09_desk import Desk, PUBLIC_SID, initialize, seal, slot, store_new
-from timemachine.tm09_fixture import FILES, compile_export, compile_weeks, encode, mondays, read_private, settings
-from timemachine.tm09_operator import launch, review, worker_handler
+from timemachine.tm09_feed import figure_check
+from timemachine.tm09_fixture import FILES, compile_export, compile_weeks, encode, mondays, read_private, settings, stage1_weeks, week_pairs
+from timemachine.tm09_operator import benchmark_outcome, launch, review, stage1_contrasts, worker_handler
 from timemachine.tm09_orders import Minutes, benchmark, fill, terminal, weights
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / 'config/thresholds.yaml'
 KEY = 'made-up unittest-only signing material'
-HEADLINE = 'SYN opens moonlit widget factory'
+HEADLINE = 'SYN opens moonlit widget factory for $2 million'
 NOTE = 'SYN started a facility for making widgets.'
+
+
+def scout_note(source):
+    return dict(symbol='SYN', source_time=source, repeat=False, has_number=True, figures=['$2 million'], paraphrase=NOTE)
 
 
 def at(day, time):
@@ -66,13 +73,14 @@ class DeskTest(unittest.TestCase):
             news = n.handle(tn, 'next')
             self.assertEqual(news['wake'], wake)
             if i == 1:
-                self.assertEqual(news['items'], [{'headline': HEADLINE, 'source_time': self.news[0]['stated_time'], 'symbols': ['SYN']}])
+                self.assertEqual(news['items'], [{'headline': HEADLINE, 'source_time': self.news[0]['stated_time'], 'symbol': 'SYN', 'repeat': False}])
                 with self.assertRaises(ValueError):
-                    n.handle(tn, 'notes', {'wake_key': news['wake_key'], 'notes': [HEADLINE.upper() + '!']})
+                    note = scout_note(self.news[0]['stated_time']); note['paraphrase'] = HEADLINE.upper() + '!'
+                    n.handle(tn, 'notes', {'wake_key': news['wake_key'], 'notes': [note]})
             else:
                 self.assertEqual(news['items'], [])
             p.handle(tp, 'notes', {'wake_key': price['wake_key'], 'notes': [f'SYN price observation {i}']})
-            n.handle(tn, 'notes', {'wake_key': news['wake_key'], 'notes': [NOTE] if i == 1 else []})
+            n.handle(tn, 'notes', {'wake_key': news['wake_key'], 'notes': [scout_note(self.news[0]['stated_time'])] if i == 1 else []})
         return p.export_notes(), n.export_notes()
 
     def test_holiday_short_session_and_strict_news(self):
@@ -96,11 +104,16 @@ class DeskTest(unittest.TestCase):
             packets = [d.handle(t, 'next') for d, t in desks]
             self.assertTrue(all(x['price_notes'] == packets[0]['price_notes'] for x in packets))
             self.assertNotIn('news_notes', packets[0]); self.assertNotIn('news_notes', packets[1])
-            self.assertEqual(packets[2].get('news_notes'), [NOTE] if i == 1 else None)
+            self.assertEqual(packets[2].get('news_notes'), [scout_note(self.news[0]['stated_time'])] if i == 1 else None)
             for (d, t), packet in zip(desks, packets):
                 row = d.handle(t, 'look', {'wake_key': packet['wake_key'], 'symbol': 'SYN', 'rows': 20})
                 self.assertTrue(all(b[0] + 60 <= wake for b in row['bars']))
                 self.assertNotIn(HEADLINE, encode(packet))
+                if packet.get('news_notes'):
+                    self.assertEqual(d.delivery_wakes(), set())
+                    d.confirm_delivery(wake)
+                    d.confirm_delivery(wake)
+                    self.assertEqual(d.delivery_wakes(), {wake})
                 request = {'wake_key': packet['wake_key'], 'weights': {'SYN': 1} if i == 0 else None}
                 ack = d.handle(t, 'pick', request)
                 self.assertEqual(ack, {'accepted': True, 'done': i == len(self.f['wakes']) - 1})
@@ -112,6 +125,62 @@ class DeskTest(unittest.TestCase):
             self.assertNotIn(HEADLINE.encode(), (d.path / 'desk.sqlite').read_bytes())
             self.assertTrue(d.complete())
         self.assertTrue(all(HEADLINE.encode() not in p.read_bytes() for p in self.path.rglob('*') if p.is_file()))
+
+    def test_stage1_wont_open_news_and_preserves_shared_prices(self):
+        config = settings(read_private(CONFIG))
+        config['symbols'] = ['SYN']
+        days = [day + timedelta(days=1) for day in stage1_weeks(config['study'])]
+        sessions = [dict(date=d.isoformat(), open_utc=at(d.isoformat(), '09:30'), close_utc=at(d.isoformat(), '16:00')) for d in days]
+        bars = [dict(symbol='SYN', tf='1Min', t=at(d.isoformat(), '09:59'), o=10, h=10, l=10, c=10, v=53) for d in days]
+        pins = {}
+        for name, records in zip(FILES[:2], (sessions, bars)):
+            raw = '\n'.join(map(encode, records)).encode()
+            (self.path / name).write_bytes(raw)
+            pins[name] = sha256(raw).hexdigest()
+        f = compile_export(config, self.path, pins, stage1=True)
+        self.assertEqual(len(f), 5)
+        self.assertTrue(all(not items for week in f.values() for items in week['news_index'].values()))
+        stage = {**self.opts, 'mode': 'stage1'}
+        stage_fixture = deepcopy(self.f)
+        stage_fixture['news_index'] = {wake: [] for wake in self.f['news_index']}
+        s, t = initialize(self.path, stage_fixture, stage, 'price_scout', KEY)
+        for i, _ in enumerate(self.f['wakes']):
+            s.handle(t, 'notes', {'wake_key': s.handle(t, 'next')['wake_key'], 'notes': [str(i)]})
+        with self.assertRaises(ValueError):
+            initialize(self.path, self.f, stage, 'news_scout', KEY)
+        with self.assertRaises(ValueError):
+            initialize(self.path, self.f, stage, 'boss', KEY, boss=self.boss, arm='N', price=s.export_notes())
+        self.assertEqual(s.export_notes(), Desk(s.path, self.f, KEY, approved_options={**stage, 'mode':'B'}).export_notes())
+        self.assertEqual(stage1_contrasts(list(f), config, lambda w, b, a: '.0002' if a == 'P1' else '0'), ['2'] * 5)
+
+    def test_unfinished_news_scout_does_not_deliver(self):
+        desk, token = self.init('news_scout', news_reader=lambda: encode(self.news[0]).encode())
+        first = desk.handle(token, 'next')
+        desk.handle(token, 'notes', {'wake_key': first['wake_key'], 'notes': []})
+        second = desk.handle(token, 'next')
+        desk.handle(token, 'notes', {'wake_key': second['wake_key'], 'notes': [scout_note(self.news[0]['stated_time'])]})
+        with self.assertRaises(ValueError):
+            desk.export_notes()
+        with self.assertRaises(ValueError):
+            desk.delivery_wakes()
+
+    def test_figures_and_repeat_witness(self):
+        source = self.news[0]['stated_time']
+        other = [{**self.news[0], 'id': 'x0', 'headline': 'SYN opens a moonlit widget factory for $2 million'},
+                 {**self.news[0], 'id': 'x1', 'headline': 'SYN opens moonlit widget factory for $3 million'}]
+        fixture = compile_weeks(self.opts, self.sessions, self.bars, [*other, *self.news])['2026-09-07']
+        raw = '\n'.join(map(encode, [*other, *self.news])).encode()
+        feed = self.opts['study']['amendment_1']['feed']
+        when = self.f['wakes'][1][0]
+        items = week_pairs(fixture, feed, raw=raw)[when]
+        self.assertEqual([i['repeat'] for i in items], [False, True, False])
+        title = 'SYN issues −$4–6 million forecast on November 5, 2026, with a gain of 2%'
+        self.assertFalse(figure_check(title, ['−$4–6 million', 'November 5, 2026', '2%']))
+        self.assertTrue(figure_check('SYN hires eighty people', ['eighty']))
+        with self.assertRaises(ValueError):
+            figure_check(title, ['−$4–6', 'November 5, 2026', '2%'])
+        with self.assertRaises(ValueError):
+            figure_check(title, ['−$4–6 million', '2%', 'November 5, 2026'])
 
     def test_reject_wrong_and_tampered_stream_or_token(self):
         p, n = self.scouts()
@@ -197,7 +266,8 @@ class DeskTest(unittest.TestCase):
             (self.path / name).write_bytes(blob)
             pins[name] = sha256(blob).hexdigest()
         self.assertEqual(compile_export(self.opts, self.path, pins, counts)[self.f['week']], self.f)
-        self.assertEqual(counts, {'skipped_edited_or_changed_clock': 1})
+        self.assertEqual(counts, {'skipped_edited_or_changed_clock': 1,
+                                  'by_week': {self.f['week']: {'admitted_pairs': 1, 'repeat_pairs': 0}}})
         pins[FILES[2]] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'hash mismatch'):
             compile_export(self.opts, self.path, pins)
@@ -330,6 +400,25 @@ class ScoreTest(unittest.TestCase):
             row['benchmark'] = row['models'][self.models[0]]['N']
         self.assertFalse(score(self.study, self.data)['worth_following_forward'])
 
+    def test_sparse_unused_roster_stock_disables_only_forward_label(self):
+        options, sessions, bars, news = inputs()
+        options['symbols'].append('GAP')
+        for miss in ('entry', 'terminal'):
+            with self.subTest(missing=miss):
+                other = [{**bar, 'symbol': 'GAP'} for bar in bars
+                         if not (miss == 'entry' and at('2026-09-08', '10:00') < bar['t'] < at('2026-09-08', '16:00'))
+                         and not (miss == 'terminal' and bar['t'] == at('2026-09-09', '12:29'))]
+                fixture = compile_weeks(options, sessions, [*bars, *other], news)['2026-09-07']
+                row = self.data[self.weeks[0]]
+                row.update(benchmark_outcome(fixture, options, row['models']))
+                self.assertIsNone(row['benchmark'])
+                self.assertIn(miss, row['benchmark_unavailable'])
+                result = score(self.study, self.data)
+                self.assertEqual(result['weeks_with_primary'], 20)
+                self.assertTrue(result['news_helps'])
+                self.assertFalse(result['worth_following_forward'])
+                self.assertEqual(result['benchmark_unavailable'], {self.weeks[0]: row['benchmark_unavailable']})
+
     def test_missing_pairs_floor_and_model_lost_limit(self):
         for w in self.weeks[:3]:
             for m in self.models:
@@ -361,6 +450,28 @@ class ScoreTest(unittest.TestCase):
         self.assertIsNone(r['primary_t'])
         self.assertEqual(r['labels'], ['inconclusive'])
 
+    def test_sealed_tiny_net_from_one_share_is_accepted(self):
+        m = Minutes({'SYN': [[0, '1', '1', '1', '1', '1000'], [120, '.9995', '1', '.9995', '1', '1000'],
+                             [180, '1.0005000000000001', '1.0005000000000001', '1', '1.0005000000000001', '1000']]})
+        book = {'cash':'1000', 'shares':{}}
+        fill(book, {'SYN': Decimal('.001')}, m, 60, 240, Decimal('.0005'), Decimal('.1'))
+        net = (terminal(book, m, 240, Decimal('.0005')) - 1000) / 1000
+        self.assertEqual(net, Decimal('9.995E-20'))
+        self.data[self.weeks[0]]['models'][self.models[0]]['N'] = str(net)
+        self.assertEqual(score(self.study, self.data)['weeks_with_primary'], 20)
+
+    def test_design_b_complete_six_and_placebo_uses_only_two(self):
+        for row in self.data.values():
+            for arms in row['models'].values():
+                n = arms.pop('N')
+                arms.update(P3='0', N1=n, N2=n, N3=n)
+        self.assertTrue(score(self.study, self.data, 'B')['news_helps'])
+        arms = self.data[self.weeks[0]]['models'][self.models[0]]
+        arms['P3'] = None
+        result = score(self.study, self.data, 'B')
+        self.assertEqual(result['lost_weeks'][self.models[0]], [self.weeks[0]])
+        self.assertTrue(result['placebo_all_exact_zero'])
+
     def test_exact_primary_and_placebo_boundaries(self):
         for i, row in enumerate(self.data.values()):
             for arms in row['models'].values():
@@ -389,6 +500,7 @@ class ScoreTest(unittest.TestCase):
             key.write_text(KEY); reg.write_text('synthetic'); sealed.write_text(json.dumps(self.data))
             scorer = ROOT / 'timemachine/score_tm09.py'
             pins = dict(scope='ledger-222-score-once', root=tmp, approved_by='synthetic', results_path=str(sealed),
+                        mode='A',
                         release=str(ROOT), scorer_sha256=sha256(scorer.read_bytes()).hexdigest(),
                         dependency_sha256={name: sha256((scorer.parent / name).read_bytes()).hexdigest() for name in DEPS},
                         config_sha256=sha256(CONFIG.read_bytes()).hexdigest(), registration_sha256=sha256(reg.read_bytes()).hexdigest(),
@@ -397,6 +509,59 @@ class ScoreTest(unittest.TestCase):
             self.assertTrue(run_approved(root, approval, key, reg, CONFIG, sealed)['news_helps'])
             with self.assertRaises(FileExistsError):
                 run_approved(root, approval, key, reg, CONFIG, sealed)
+
+
+class BlindTest(unittest.TestCase):
+    def test_gate_routes_and_is_invariant_to_all_week_signs(self):
+        study = settings(read_private(CONFIG))['study']
+        for vals, expect in [([0,0,0,0,0], 'A'), ([-125,-60,0,60,125], 'B'), ([-250,-120,0,120,250], 'C')]:
+            result = tm09_blind.calculate(study, vals)
+            self.assertEqual(result['decision'], expect)
+            self.assertEqual(result, tm09_blind.calculate(study, [-x for x in vals]))
+
+    def test_blinded_cli_never_emits_arm_payload_and_claims_once(self):
+        allowed = {'placebo_sd_bps', 'primary_sd_a_bps', 'primary_sd_b_bps', 'edge_a_bps', 'edge_b_bps', 'decision'}
+        marker = 'PRIVATE_PER_ARM_RETURN_+919.213333'
+        with TemporaryDirectory() as test_root:
+            top = Path(test_root)
+            for reading in ('good', 'bad'):
+                root = top / reading
+                root.mkdir()
+                approval, key, reg = (root / n for n in ('approval', 'key', 'reg'))
+                contrasts = root / 'stage1-contrasts.json'
+                (root / 'armpayload-forbidden.json').write_text(marker)
+                key.write_text(KEY); reg.write_text('invented')
+                store_new(contrasts, ['-100', '-60', '0', '60', '100'] if reading == 'good' else {'arm_returns': [marker]})
+                module = Path(tm09_blind.__file__).resolve()
+                body = dict(scope='ledger-222-check-stage1-once', root=str(root), release=str(ROOT),
+                            checker_sha256=sha256(read_private(module)).hexdigest(),
+                            dependency_sha256={n: sha256(read_private(module.parent / n)).hexdigest() for n in tm09_blind.DEPS},
+                            config_sha256=sha256(read_private(CONFIG)).hexdigest(), registration_sha256=sha256(read_private(reg)).hexdigest(),
+                            contrasts_path=str(contrasts), contrasts_sha256=sha256(read_private(contrasts)).hexdigest(), approved_by='synthetic')
+                store_new(approval, {'body': body, 'seal': seal(KEY, 'tm09-stage1-check-approval', body)})
+                before = set(root.iterdir())
+                argv = ['check', '--root', str(root), '--approval', str(approval), '--key-file', str(key),
+                        '--registration', str(reg), '--config', str(CONFIG), '--contrasts', str(contrasts)]
+                stdout, stderr = StringIO(), StringIO()
+                with patch('sys.argv', argv), patch('timemachine.tm09_blind.read_private', wraps=read_private) as read:
+                    with redirect_stdout(stdout), redirect_stderr(stderr):
+                        if reading == 'good':
+                            tm09_blind.main()
+                        else:
+                            with self.assertRaises(SystemExit):
+                                tm09_blind.main()
+                    self.assertNotIn(root / 'armpayload-forbidden.json', [c.args[0] for c in read.call_args_list])
+                new = set(root.iterdir()) - before
+                self.assertNotIn(marker, stdout.getvalue() + stderr.getvalue() + ''.join(p.read_text() for p in new))
+                self.assertIn(root / 'stage1-check.claim.json', new)
+                if reading == 'good':
+                    self.assertEqual(set(json.loads(stdout.getvalue())), allowed)
+                    self.assertEqual(set(json.loads((root / 'stage1-checked.json').read_text())), allowed)
+                    with self.assertRaises(FileExistsError):
+                        tm09_blind.run_approved(root, approval, key, reg, CONFIG, contrasts)
+                else:
+                    self.assertFalse(stdout.getvalue())
+                    self.assertEqual(len(new), 1)
 
 
 if __name__ == '__main__':

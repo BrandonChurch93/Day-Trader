@@ -1,5 +1,6 @@
 """Operator-only fixture custody, creation, serving and export for TM09."""
 import argparse
+from decimal import Decimal, localcontext
 import fcntl
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -12,7 +13,9 @@ import stat
 from urllib.parse import parse_qs, urlsplit
 
 from timemachine.tm09_desk import Desk, PORTS, PUBLIC_SID, SID, initialize, seal, slot, store_new, verify_seal, weekly_benchmark
-from timemachine.tm09_fixture import arm_layout, compile_export, compile_weeks, encode, fingerprint, mondays, read_private, settings
+from timemachine.tm09_fixture import compile_export, compile_weeks, encode, fingerprint, mondays, read_private, session_layout, settings, stage1_weeks
+from timemachine.tm09_blind import exact
+from timemachine.tm09_orders import BenchmarkUnavailable
 
 READY = 'Registered desk ready; brief only this session\'s roles.'
 MAX_BODY = 65536
@@ -39,7 +42,8 @@ def approved(root, keyfile, approval, command, rehearsal=False):
     capsule = json.loads(read_private(approval))
     body = capsule['body']
     scope = ('ledger-222-rehearse-tm09' if rehearsal else 'ledger-222-build-fixtures' if command == 'build' else
-             'ledger-222-seal-results' if command == 'results' else 'ledger-222-run-tm09')
+             'ledger-222-seal-results' if command == 'results' else
+             'ledger-222-seal-stage1' if command == 'stage1-seal' else 'ledger-222-run-tm09')
     verify_seal(key, scope, body, capsule['seal'])
     release = Path(__file__).resolve().parent.parent
     if (body['root'] != str(root) or body['service_uid'] != os.geteuid() or body['release'] != str(release)
@@ -56,9 +60,9 @@ def approved(root, keyfile, approval, command, rehearsal=False):
         meta = directory.lstat()
         if not stat.S_ISDIR(meta.st_mode) or meta.st_uid != 0 or meta.st_mode & 0o022:
             raise PermissionError('release directories must be operator-owned and not service-writable')
-    files = ('timemachine/tm09_desk.py', 'timemachine/tm09_orders.py', 'timemachine/tm09_fixture.py',
+    files = ('timemachine/tm09_desk.py', 'timemachine/tm09_orders.py', 'timemachine/tm09_fixture.py', 'timemachine/tm09_feed.py',
              'timemachine/tm09_operator.py', 'timemachine/tm09_isolation_probe.py',
-             'timemachine/score_tm09.py', 'timemachine/test_tm09.py', 'timemachine/TM09_WORKER_BRIEFS.md')
+             'timemachine/score_tm09.py', 'timemachine/tm09_blind.py', 'timemachine/test_tm09.py', 'timemachine/TM09_WORKER_BRIEFS.md')
     for name in files:
         release_content(name, body['release_files'][name])
     config = release_content('config/thresholds.yaml', body['config_sha256'])
@@ -75,6 +79,17 @@ def approved(root, keyfile, approval, command, rehearsal=False):
         if not body['ports'] or any(type(p) is not int or p not in PORTS for p in body['ports']):
             raise ValueError('ports outside the TM09 allowlist')
         opts.update(body['limits'])
+    if 'amendment_1' in opts['study']:
+        mode = 'A' if rehearsal else body['mode']
+        if mode not in ('stage1', 'A', 'B'):
+            raise ValueError('TM09 cannot run without its amended branch')
+        if (command == 'results' and mode == 'stage1') or (command == 'stage1-seal' and mode != 'stage1'):
+            raise ValueError('release scope does not match the study stage')
+        if not rehearsal and mode in ('A', 'B'):
+            report = json.loads(content(root / 'stage1-checked.json', body['blind_report_sha256']))
+            if report['decision'] != mode:
+                raise ValueError('Stage 2 mode differs from blinded decision')
+        opts['mode'] = mode
     return key, body, config, opts
 
 
@@ -95,7 +110,8 @@ def worker_handler(desk):
             try:
                 self.wfile.write(blob)
             except OSError:
-                pass
+                return False
+            return True
 
         def route_meta(self):
             method = getattr(self, 'command', '')
@@ -141,7 +157,9 @@ def worker_handler(desk):
             except Exception:
                 self._reply(500, {'error': 'desk unavailable'})
             else:
-                self._reply(200, value)
+                sent = self._reply(200, value)
+                if sent and action == 'next' and value.get('news_notes'):
+                    desk.confirm_delivery(value['wake'])
 
         def do_GET(self):
             self._route(False)
@@ -164,6 +182,37 @@ def boundary_receipt(desk, key, path, stage):
 
 def signature_digest(value):
     return isinstance(value, str) and re.fullmatch(r'[a-f0-9]{64}', value) is not None
+
+
+def benchmark_outcome(fixture, options, models):
+    if not any(None not in arms.values() for arms in models.values()):
+        return {'benchmark': None}
+    try:
+        return {'benchmark': weekly_benchmark(fixture, options)}
+    except BenchmarkUnavailable as exc:
+        return {'benchmark': None, 'benchmark_unavailable': str(exc)}
+
+
+def stage1_contrasts(weeks, options, load_boss):
+    if list(weeks) != [d.isoformat() for d in stage1_weeks(options['study'])]:
+        raise ValueError('Stage 1 expected its original configured weeks in order')
+    layout = session_layout(options['study'], 'stage1')
+    values = []
+    for week in weeks:
+        gaps = []
+        for boss in options['study']['boss_models']:
+            p1, p2 = (load_boss(week, boss, arm) for arm in layout.placebo)
+            if p1 is None or p2 is None:
+                raise ValueError('Stage 1 requires both complete bosses at every scheduled week')
+            gaps.append(exact(p1) - exact(p2))
+        contrast = 10000 * sum(gaps) / len(gaps)
+        with localcontext() as ctx:
+            ctx.prec = 2200
+            shown = str(Decimal(contrast.numerator) / Decimal(contrast.denominator))
+        if exact(shown) != contrast:
+            raise ValueError('cannot encode unrounded Stage 1 contrast')
+        values.append(shown)
+    return values
 
 
 def stop_server(*_):
@@ -237,7 +286,8 @@ def review(desk, key, boundary, probe_path):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('command', choices=('build', 'create', 'launch', 'review', 'export-notes', 'successor', 'sparse-counts', 'results'))
+    p.add_argument('command', choices=('build', 'create', 'launch', 'review', 'export-notes', 'successor',
+                                      'sparse-counts', 'stage1-seal', 'results'))
     for name in ('root', 'key-file', 'approval'):
         p.add_argument('--' + name, required=True, type=Path)
     p.add_argument('--week')
@@ -256,8 +306,10 @@ def main():
         if a.rehearsal and a.command not in ('create', 'launch', 'review', 'export-notes', 'sparse-counts'):
             raise ValueError('unsupported invented rehearsal command')
         key, approval, config, options = approved(a.root, a.key_file, a.approval, a.command, a.rehearsal)
-        weeks = [m.isoformat() for m in mondays(options['study'])]
-        price_arms, news_arm = arm_layout(options['study'])
+        stage1 = options.get('mode') == 'stage1'
+        week_dates = stage1_weeks(options['study']) if stage1 else mondays(options['study'])
+        weeks = [m.isoformat() for m in week_dates]
+        layout = session_layout(options['study'], options.get('mode'))
         if a.rehearsal:
             from timemachine.test_tm09 import inputs
             synth, sessions, bars, news = inputs()
@@ -279,15 +331,15 @@ def main():
                 raise PermissionError('private export directory required')
             return d
 
+        fixture_dir = a.root / ('fixtures-stage1' if stage1 else 'fixtures')
         if a.command == 'build':
-            counts = {'skipped_edited_or_changed_clock': 0}
-            fixtures = compile_export(options, export_dir(), approval['export_sha256'], counts)
-            directory = a.root / 'fixtures'
-            directory.mkdir(mode=0o700)
+            counts = {} if stage1 else {'skipped_edited_or_changed_clock': 0}
+            fixtures = compile_export(options, export_dir(), approval['export_sha256'], counts, stage1=stage1)
+            fixture_dir.mkdir(mode=0o700)
             for week, fixture in fixtures.items():
-                store_new(directory / (week + '.json'), fixture)
-            store_new(a.root / 'fixture-pins.json', {w: fingerprint(f) for w, f in fixtures.items()})
-            store_new(a.root / 'fixture-counts.json', counts)
+                store_new(fixture_dir / (week + '.json'), fixture)
+            store_new(fixture_dir / 'fixture-pins.json', {w: fingerprint(f) for w, f in fixtures.items()})
+            store_new(fixture_dir / 'fixture-counts.json', counts)
             print('TM09 fixture count:', len(fixtures))
             print(encode(counts))
             return
@@ -297,31 +349,46 @@ def main():
                 raise ValueError('unregistered week')
             if a.rehearsal:
                 return invented[week]
-            fixture = json.loads(read_private(a.root / 'fixtures' / (week + '.json')))
+            fixture = json.loads(read_private(fixture_dir / (week + '.json')))
             if fingerprint(fixture) != approval['fixture_pins'][week]:
                 raise ValueError('approved week fixture changed')
             return fixture
 
+        if a.command == 'stage1-seal':
+            def load_boss(week, boss, arm):
+                path = a.root / slot(week, 'boss', boss, arm)
+                d = Desk(path, get_fixture(week), key, approved_options=options) if path.exists() else None
+                return d.export_boss() if d and d.complete() else None
+
+            values = stage1_contrasts(weeks, options, load_boss)
+            store_new(a.root / 'stage1-contrasts.json', values)
+            print('TM09 Stage 1 blinded handoff sealed; no values printed.')
+            return
         if a.command == 'results':
             results = {}
+            feed = json.loads(content(fixture_dir / 'fixture-counts.json', approval['fixture_counts_sha256']))['by_week']
             for week in weeks:
                 fixture = get_fixture(week)
-                models = {}
+                models, presented = {}, set()
                 for boss in options['study']['boss_models']:
                     arms = models[boss] = {}
-                    for arm in (*price_arms, news_arm):
+                    for arm in layout.arms:
                         path = a.root / slot(week, 'boss', boss, arm)
                         d = Desk(path, fixture, key, approved_options=options) if path.exists() else None
                         arms[arm] = d.export_boss() if d and d.complete() else None
-                path = a.root / slot(week, 'news_scout')
+                        if d and arm in layout.news:
+                            presented.update(d.delivery_wakes())
+                scout = a.root / slot(week, 'news_scout')
+                undecided = Desk(scout, fixture, key, approved_options=options).undecided_figures() if scout.exists() else 0
                 results[week] = dict(models=models, eligible_wakes=sum(map(bool, fixture['news_index'].values())),
-                                     note_wakes=Desk(path, fixture, key, approved_options=options).delivery_wakes() if path.exists() else 0,
-                                     benchmark=weekly_benchmark(fixture, options) if any(None not in x.values() for x in models.values()) else None)
+                                     note_wakes=len(presented),
+                                     feed_counts={**feed[week], 'figure_check_undecided': undecided},
+                                     **benchmark_outcome(fixture, options, models))
             store_new(a.root / 'sealed-results.json', results)
             print('TM09 result handoff sealed; no returns printed.')
             return
         fixture = get_fixture(a.week)
-        if a.arm is not None and a.arm not in (*price_arms, news_arm):
+        if (a.arm is not None and a.arm not in layout.arms) or (stage1 and a.role == 'news_scout'):
             raise ValueError('unregistered arm')
         sid = slot(a.week, a.role, a.boss, a.arm)
         if not SID.fullmatch(sid):
@@ -338,11 +405,12 @@ def main():
 
         if a.command == 'create':
             # Both scouts finish before any boss, but price arms don't load the news stream.
-            if a.role == 'boss' and not Desk(a.root / slot(a.week, 'news_scout'), fixture, key, approved_options=options).complete():
+            if (a.role == 'boss' and layout.news
+                    and not Desk(a.root / slot(a.week, 'news_scout'), fixture, key, approved_options=options).complete()):
                 raise ValueError('both scout streams must finish first')
             desk, token = initialize(a.root, fixture, options, a.role, key, boss=a.boss, arm=a.arm,
                                      price=stream('price_scout') if a.role == 'boss' else None,
-                                     news=stream('news_scout') if a.arm == news_arm else None)
+                                     news=stream('news_scout') if a.arm in layout.news else None)
             store_new(path / 'bearer.json', {'session': desk.public_id, 'token': token})
             print(desk.public_id)
             return

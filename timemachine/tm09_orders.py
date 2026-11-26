@@ -121,11 +121,19 @@ def terminal(book, minutes, close, half_spread):
     return value(book, {s: minutes.close(s, close) * (1 - half_spread) for s in book['shares']})
 
 
+class BenchmarkUnavailable(ValueError):
+    pass
+
+
 def benchmark(roster, minutes, wake, stop, close, half_spread):
     ratios = []
     for symbol in roster:
         row = minutes.next(symbol, wake, stop)
         if not row:
-            raise ValueError('benchmark required entry minute absent')
-        ratios.append(minutes.close(symbol, close) * (1 - half_spread) / (number(row[1]) * (1 + half_spread)))
+            raise BenchmarkUnavailable(f'{symbol}: required entry minute absent')
+        try:
+            final = minutes.close(symbol, close)
+        except ValueError:
+            raise BenchmarkUnavailable(f'{symbol}: exact terminal minute absent') from None
+        ratios.append(final * (1 - half_spread) / (number(row[1]) * (1 + half_spread)))
     return sum(ratios) / len(roster) - 1

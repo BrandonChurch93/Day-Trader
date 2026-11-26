@@ -1,5 +1,6 @@
 """Operator-only TM09 fixture compiler. Its output never contains headline text."""
 from bisect import bisect_right
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from hashlib import sha256
 import json
@@ -10,6 +11,7 @@ import stat
 from zoneinfo import ZoneInfo
 
 from timemachine.tm09_orders import number
+from timemachine.tm09_feed import annotate
 
 FILES = ('stock_sessions.jsonl', 'stock_bars.jsonl', 'stock_news.jsonl')
 
@@ -53,7 +55,7 @@ def rows(raw):
         yield row
 
 
-TOKEN = re.compile(r'\s*("(?:[^"\\]|\\.)*"|[{}\[\]:,]|[A-Za-z0-9_./+\-]+)')
+TOKEN = re.compile(r'''\s*("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[{}\[\]:,]|[A-Za-z0-9_./+\-]+)''')
 
 
 def flow(text):
@@ -88,6 +90,8 @@ def flow(text):
             return out
         if token in ('}', ']', ':', ','):
             raise ValueError('invalid TM09 config token')
+        if token.startswith("'"):
+            return token[1:-1].replace("''", "'")
         try:
             return json.loads(token)
         except ValueError:
@@ -112,9 +116,23 @@ def settings(config_raw):
             raise ValueError('unsupported TM09 config reference')
         section, = re.findall(r'^' + key + r':\n((?:[ \t][^\n]*\n)+)', text, re.M)
         if submap:
-            lines = re.findall(r'^    ([a-z][a-z0-9_]*): +([^\n]+)$', section, re.M)
-            result = {item: flow(raw.strip()) for item, raw in lines}
-            if len(result) != len(lines) or not re.search(r'^  value:$', section, re.M):
+            block, = re.findall(r'^  value:\n((?: {4}[^\n]+\n)+)', section, re.M)
+            result, level = {}, {4: None}
+            level[4] = result
+            for line in block.splitlines():
+                matched = re.fullmatch(r'( +)([a-z][a-z0-9_]*):(?: +(.*))?', line)
+                if not matched:
+                    raise ValueError('unsupported TM09 config block')
+                indent, item, raw = matched.groups()
+                indent = len(indent)
+                level = {k: v for k, v in level.items() if k <= indent}
+                if indent not in level or item in level[indent]:
+                    raise ValueError('invalid TM09 config nesting or duplicate')
+                entry = flow(raw.strip()) if raw else {}
+                level[indent][item] = entry
+                if not raw:
+                    level[indent + 2] = entry
+            if not result:
                 raise ValueError('unsupported TM09 config block')
             return result
         raw, = re.findall(r'^  value: +([^\n]+)$', section, re.M)
@@ -140,6 +158,43 @@ def arm_layout(study):
             or len(study['scoring']['price_only_weights']) != len(controls)):
         raise ValueError('unimplemented TM09 registration layout')
     return controls, news
+
+
+@dataclass(frozen=True)
+class Layout:
+    price: tuple
+    news: tuple
+    placebo: tuple
+
+    @property
+    def arms(self):
+        return self.price + self.news
+
+
+def session_layout(study, mode=None):
+    controls, news = arm_layout(study)
+    if mode in (None, 'A'):
+        return Layout(controls, (news,), controls)
+    amendment = study['amendment_1']
+    if mode == 'stage1':
+        return Layout(controls, (), controls)
+    if mode != 'B':
+        raise ValueError('unknown TM09 study mode')
+    design = amendment['design_b']
+    layout = Layout(tuple(design['price_only']), tuple(design['price_plus_news']), tuple(design['placebo']))
+    if (not layout.price or not layout.news or len(set(layout.arms)) != len(layout.arms)
+            or len(set(layout.placebo)) != 2 or not set(layout.placebo) <= set(layout.price)
+            or not set(controls) <= set(layout.price)):
+        raise ValueError('invalid amended arm layout')
+    return layout
+
+
+def stage1_weeks(study):
+    weeks = mondays(study)
+    take = study['amendment_1']['stage1_weeks']
+    if type(take) is not int or not 2 <= take < len(weeks):
+        raise ValueError('invalid Stage 1 window')
+    return weeks[:take]
 
 
 def mondays(study):
@@ -203,15 +258,17 @@ def assign_news(source_rows, wakes, config, counts=None):
         if ident in seen:
             raise ValueError('duplicate eligible news item')
         seen.add(ident)
-        result.setdefault(ticks[i], []).append({'id': ident, 'source_time': original, 'symbols': selected})
-    return result
+        row = {'id': ident, 'source_time': original, 'symbols': selected}
+        result.setdefault(ticks[i], []).append(((original, src, str(raw_id)), row))
+    return {wake: [row for _, row in sorted(items, key=lambda pair: pair[0])] for wake, items in result.items()}
 
 
-def compile_weeks(config, session_rows, bar_rows, news_rows, counts=None):
+def compile_weeks(config, session_rows, bar_rows, news_rows, counts=None, week_dates=None):
     sessions, waking = schedule(session_rows, config)
     news = assign_news(news_rows, waking, config, counts)
     weeks = {m.isoformat(): {'week': m.isoformat(), 'wakes': [], 'closes': [], 'news_index': {},
-                             'bars': {s: [] for s in config['symbols']}} for m in mondays(config['study'])}
+                             'bars': {s: [] for s in config['symbols']}}
+             for m in (mondays(config['study']) if week_dates is None else week_dates)}
     for tick, week, close in waking:
         if week in weeks:
             weeks[week]['wakes'].append([tick, close])
@@ -247,16 +304,28 @@ def compile_weeks(config, session_rows, bar_rows, news_rows, counts=None):
     return weeks
 
 
-def compile_export(config, directory, pins, counts=None):
+def compile_export(config, directory, pins, counts=None, *, stage1=False):
     """Operator input only; caller must authorize first. No raw data is emitted."""
-    if set(pins) != set(FILES):
+    required = FILES[:2] if stage1 else FILES
+    if set(pins) != set(required):
         raise ValueError('exact export pins required')
     def verified(name):
         blob = read_private(Path(directory) / name)
         if sha256(blob).hexdigest() != pins[name]:
             raise ValueError('frozen export hash mismatch')
-        return rows(blob)
-    return compile_weeks(config, verified(FILES[0]), verified(FILES[1]), verified(FILES[2]), counts)
+        return blob
+    raw = None if stage1 else verified(FILES[2])
+    weeks = compile_weeks(config, rows(verified(FILES[0])), rows(verified(FILES[1])), () if stage1 else rows(raw), counts,
+                          stage1_weeks(config['study']) if stage1 else None)
+    feed = config['study'].get('amendment_1', {}).get('feed')
+    if raw is not None and feed and counts is not None:
+        index = [item for fixture in weeks.values() for wake, _ in fixture['wakes']
+                 for item in fixture['news_index'][str(wake)]]
+        lookup = {i['id']: p for i, p in zip(index, project_headlines(raw, index))}
+        for week, fixture in weeks.items():
+            pairs = [pair for group in week_pairs(fixture, feed, lookup=lookup).values() for pair in group]
+            counts.setdefault('by_week', {})[week] = {'admitted_pairs': len(pairs), 'repeat_pairs': sum(p['repeat'] for p in pairs)}
+    return weeks
 
 
 def project_headlines(raw, index):
@@ -277,3 +346,11 @@ def project_headlines(raw, index):
     if set(found) != set(wanted):
         raise ValueError('admitted item absent from approved source')
     return [found[row['id']] for row in index]
+
+
+def week_pairs(fixture, feed, *, raw=None, until=None, lookup=None):
+    waking = [wake for wake, _ in fixture['wakes'] if until is None or wake <= until]
+    if lookup is None:
+        index = [item for wake in waking for item in fixture['news_index'][str(wake)]]
+        lookup = {i['id']: p for i, p in zip(index, project_headlines(raw, index))}
+    return annotate(((w, [lookup[i['id']] for i in fixture['news_index'][str(w)]]) for w in waking), feed)
