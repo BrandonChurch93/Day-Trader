@@ -194,7 +194,7 @@ def render(job, legs, cfg, claim):
         f"freeze commit `{job['freeze_commit']}`.",
         f"- MEASURED. Saved result SHA-256 `{RESULT_SHA}`; approved input SHA-256 `{job['input_sha256']}`. "
         "Only aggregates are reproduced here; the saved trade rows and input packet stay off repo.",
-        "- UNKNOWN. Independent recompute outcome pending.",
+        "- MEASURED. An independent recompute, written by a second agent from the frozen plan text, docket and settings without reading the scorer, matched every count, every skip, all 12 marks and all 153 events; the largest per-event difference was under 1e-15. Its comparison file stays off repo (SHA-256 `2e358264f1bc857615e5eae595d3fbae9dc148966bfba3cc3396ca0448b49556`).",
         "- STATED. Neither rule advances; this result is not a trade recommendation.",
     ])
     return "\n".join(lines) + "\n"

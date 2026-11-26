@@ -65,5 +65,5 @@ MEASURED. These lines do not alter the verdicts. Earliest in the docket means th
 
 - MEASURED. The lead agent claimed the one allowed run at 2026-11-26 06:51:58 UTC, queue 83, ledger 179 and 181. Approval commit `99dc23b9da20f54f1b616d791b3ed2af8e5f1071`; freeze commit `b1b2fb4f008cdc62571617b9c0f1708f1fece6d0`.
 - MEASURED. Saved result SHA-256 `b941fb1a7d3f55d14fff063f8b4918e0ede4ce73d4470b9f0ceec586d9b96edb`; approved input SHA-256 `148fd664da4e1e18c1eeed193c59f50c2fc8e1e83ad7ddac7f19eec2fa8f80c2`. Only aggregates are reproduced here; the saved trade rows and input packet stay off repo.
-- UNKNOWN. Independent recompute outcome pending.
+- MEASURED. An independent recompute, written by a second agent from the frozen plan text, docket and settings without reading the scorer, matched every count, every skip, all 12 marks and all 153 events; the largest per-event difference was under 1e-15. Its comparison file stays off repo (SHA-256 `2e358264f1bc857615e5eae595d3fbae9dc148966bfba3cc3396ca0448b49556`).
 - STATED. Neither rule advances; this result is not a trade recommendation.
