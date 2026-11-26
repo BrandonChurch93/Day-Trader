@@ -398,6 +398,8 @@ Working papers.
 | `practice/test_trader.py`, `practice/test_review.py`, `practice/test_market.py` | Checks with a pretend broker and no network. The timer runs them before every real run | CURRENT |
 | `practice/traders/E01_tlt_month_end_close.md` | E01, the forward log of Replay 25's TLT month-end window from December 2026: data only, no orders, a month counts only if written before the next month starts. A fixed rule, not an AI trader, and not in `practice/traders.json` | CURRENT |
 | `practice/forward_e01.py`, `practice/test_forward_e01.py` | The E01 recorder (`plan`, `record YYYY-MM`) through the saved data credential, and its checks with a pretend data source and no network. Full records stay off repo; the log in the repo holds no prices | CURRENT |
+| `practice/traders/E02_iwm_pre_holiday.md` | Manual, pretend-money IWM pre-holiday forward watch after Replay 39 did not pass; no orders or automation | CURRENT |
+| `practice/forward_e02.py` | E02 pinned dates and recorder for one completed event from a private manual packet. Prices stay off repo; the future summary log has no close prices | CURRENT |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 
