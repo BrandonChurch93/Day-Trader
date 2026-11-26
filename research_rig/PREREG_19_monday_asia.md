@@ -1,8 +1,21 @@
 # Plan 19. Monday Asia window on BTC and ETH perpetuals
 
-Status DRAFT.
+Status FROZEN.
 
-STATED. Queue 35, ledger 155. Approval is required before any real Plan 19 bars or funding are opened. This is a single all-viewed test, with no held-back BTC or ETH set and no document number assigned. The historical outcome is UNKNOWN.
+STATED. Queue 35, ledger 155. The lead agent approved the freeze before any real Plan 19 bars or funding were opened. This is a single all-viewed test, with no held-back BTC or ETH set and no document number assigned. The historical outcome at freeze is UNKNOWN. The local commit and ledger precede the replay. The public timestamp will follow it.
+
+MEASURED. Auditor A cleared the design at `7a89070bd10cf5c859541f20d9691b4ae251dff8` with zero blockers and zero should-fix findings. The off-repo report `rig/data/plan19_pass2_a.md` hashes to `f9a2b930a9a03cd768a4b6cf2568ba918e203bf9de54a3f39ea7dba9d5661635`. The auditor confirmed the synthetic checks and did not open outcome rows.
+
+| Reviewed file | Approved SHA-256 |
+|---|---|
+| Draft plan | `226090f98ca18d2489d0e7f52bac03402bec7242d94e6075a50c6f21e6c8e15b` |
+| Book accounting | `e72f0b731131f5e8e3f83a65fb039e280168b0dfc1e11973140ddc44a4a542d0` |
+| Scorer before path change | `da387dd2fd290f01b0f41e6d53406bde9fef292530bb0462ad03d2e5b3a9a32f` |
+| Synthetic tests | `4affd9110a73b3a0701a47b56b59596da9875020c19d4ef002dce649d6a682ab` |
+| Threshold config | `0d0fb86979102ba751ff08dd9120f2ade0f81cc862e1f4e6a9aee30f2966770b` |
+| Archive manifest | `994a81aa0cfee5d222e434c698ec431a860eb18a85d1e947e2b4fa9d4feb8b9f` |
+
+STATED. The lead agent separately authorized changing the scorer's plan path to the frozen filename. No scorer logic or config changed. The config's source field still names the original draft path as a historical label.
 
 ## What the sources actually say
 
@@ -18,7 +31,9 @@ STATED. BTCUSDT and ETHUSDT, Binance USD-M perpetuals. Start at 2020-01-01 00:00
 
 STATED. The lead agent fixed the October endpoint before opening any bars or funding because the November bulk funding archive was not yet published; no live venue route was used.
 
-STATED. Use hourly trade opens for path marking, fills and largest fall. Fees are charged on absolute transacted notional on entry and on exit. Positive funding is paid by longs and received by shorts. For a booked settlement use fixed quantity times that hour's archive mark open times the settled rate, with the correct sign. Read reported timestamp and interval, require the regular eight-hour clock and normalize only timestamp jitter within the configured tolerance to the nominal hour. Apply funding to the outgoing position at an exit boundary, not the incoming position at an entry boundary. It is an hourly approximation to the settlement notional and ordering. Missing, stale or malformed required rows invalidate the replay rather than becoming zero funding, skipped trades or held prices. Require positive-volume hourly trade bars in both coins over the sample, exact clocks and unique rows, and a mark open for every expected settlement. For both trade and mark candles, the candle's recorded close time, converted to integer milliseconds, must equal its open time plus one hour minus one millisecond. Missing, earlier or later timestamps refuse the file before the lock. No automatic network access. After approval, use a trusted off-repo inventory pinned by SHA-256, with a single chosen file per covered day and kind from the existing USD-M bulk archive family; use the public bulk archive only if missing files need separate staging. No snapshot, ZIP or raw bar in the repo.
+STATED. Use hourly trade opens for path marking, fills and largest fall. Fees are charged on absolute transacted notional on entry and on exit. Positive funding is paid by longs and received by shorts. For a booked settlement use fixed quantity times that hour's archive mark open times the settled rate, with the correct sign. Read reported timestamp and interval, require the regular eight-hour clock and normalize only timestamp jitter within the configured tolerance to the nominal hour. Apply funding to the outgoing position at an exit boundary, not the incoming position at an entry boundary. It is an hourly approximation to the settlement notional and ordering. Missing, stale or malformed required rows invalidate the replay rather than becoming zero funding, skipped trades or held prices. Require hourly trade bars in both coins over the sample, subject to the volume amendment below, exact clocks and unique rows, and a mark open for every expected settlement. For both trade and mark candles, the candle's recorded close time, converted to integer milliseconds, must equal its open time plus one hour minus one millisecond. Missing, earlier or later timestamps refuse the file before the lock. No automatic network access. After approval, use a trusted off-repo inventory pinned by SHA-256, with a single chosen file per covered day and kind from the existing USD-M bulk archive family; use the public bulk archive only if missing files need separate staging. No snapshot, ZIP or raw bar in the repo.
+
+Amendment approved by the lead agent on 2026-11-26 at 01:21 UTC, before any outcome was seen. The first one-shot invocation refused the BTC October 2024 file before the claim, so the attempt is unconsumed. A scan of clocks and validity categories, with no price value read out or retained, found one zero-volume trade candle per coin at 2024-10-28 20:00 UTC, and no other clock or trade and mark guard failures. This is Monday 16:00 in New York, inside a scheduled hold but not one of its judged signal or fill candles. Trade volume must be finite and nonnegative; open and close guards stay unchanged. Zero-volume trade candles may mark the path. If either coin has one at either judged signal candle or at a judged entry or exit candle, the loader refuses before the lock with the fixed code and affected path. Count these candles and list their UTC open timestamps per coin in the result. Placebos may use them. Report the number of shifted windows that touch one as a signal, entry or exit, counting each window once across coins and roles, and show the counts by role separately.
 
 ## Output and decision
 
