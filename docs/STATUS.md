@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 05:33 UTC
+Last updated: 2026-11-26 05:36 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- [Replay 41](research/92_replay_41_month_end_laggard_switch.md), run once 2026-11-26 05:33:58 UTC. MEASURED. Did not pass, 4 of 8 marks. The laggard rule averaged +0.2357% net over 130 windows (t 2.29), versus +0.2209% for always-TLT on the same clock and budget. The switch added +0.0148% a window (t 0.14), and the difference was negative from 2020 and without the best three windows. Rule not advanced.
 
 - [Replay 33](research/89_replay_33_treasury_auction_days.md), run once 2026-11-26 05:23:51 UTC. MEASURED. Did not pass, 3 of 11 marks, placement only. IEF and TLT averaged −1.457 bp net on 260 auction trades at the fixed 13:10–15:59 ET clocks (t −0.597); matched controls averaged +0.791 bp on 257 trades and the paired gap was −2.462 bp (t −0.868). Rule not advanced.
 
