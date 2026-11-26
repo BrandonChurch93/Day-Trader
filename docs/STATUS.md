@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 06:56 UTC
+Last updated: 2026-11-26 07:19 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- [Replay 48](research/103_replay_48_muni_cef_january.md), run once 2026-11-26 07:11:49 UTC. MEASURED. Passed, 7 of 7 marks. Over 10 yearly turns the worst 5 muni closed-end funds by price return to late December, bought at the last December close and sold at the last January close, averaged +1.39% net, against +0.09% for MUB and +0.59% for the equal-weight roster; above zero in 8 of 10 years and ahead of MUB in 8 of 10. Against the roster +0.80% with cash and +0.79% price only. On $500 once a year that is about $7. An independent recompute matched all 50 picks and all 7 marks. Ten data points, thin funds, and a year-end rally alone passed 20.65% of synthetic worlds, so this is a reason for the December 2026 forward watch (`practice/traders/E04_muni_cef_january_watch.md`), not clearance to trade. The scoreboard counts it from this line as a dated trading-replay pass (38 tests, 3 passes: Replay 20, Replay 25, Replay 48); it is the second pass a US $500 account can reach, after Replay 25.
 
 - [Replay 46 Leg A](research/101_replay_46_cftc_altcoin_futures.md), run once 2026-11-26 06:51:58 UTC. MEASURED. Did not pass, 3 of 6 marks. 43 events on 15 posting dates, -6.5393% mean net, +0.5643% paired versus BTC (t 0.174), -3.7069% paired without the best posting dates. Rule not advanced.
 
