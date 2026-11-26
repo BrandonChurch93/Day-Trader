@@ -1600,6 +1600,59 @@ replay_74_plan:
   note: Plan 74 draft settings set by the lead agent (rulings of 2026-11-26, revised before any price; month clusters, 0.5% floor, Card A 25 bp main, overshoot on both cards). Count need uses the third-version main table. Fourth-round offsets, comparison pool floor and Card B lower gap added. Card numbers are transcribed from Plan 74 and its incorporated Doc 169 lines 99-117. Not authorization to access data; the scorer has no held-back mode.
   source: research_rig/PREREG_74_swing_cards.md
 
+plan_76:
+  value:
+    ledger_row: 229
+    schema: 1
+    design: ["2020-01-01", "2024-01-01"]
+    heldback_start: "2024-01-01"
+    count_years: [2022, 2023]
+    count_each_year: 30
+    min_heldback_trades: 64
+    drops: {primary: 0.05, alternate: 0.035}
+    hold_hours: {primary: 24, shown: 12}
+    costs_bp: {main: 75, cheap: 15}
+    mean_floor: 0
+    trim_per_year: 1
+    control: {seed: 760229, draws: 999, max_attempts_per_draw: 20, beat_share: 0.90}
+    admissions:
+      AAVE: [["2020-12-22", null]]
+      ADA: [["2021-03-25", null]]
+      AVAX: [["2021-10-07", null]]
+      BCH: [["2020-01-01", null]]
+      BNB: [["2025-10-29", null]]
+      BTC: [["2020-01-01", null]]
+      DOGE: [["2021-06-04", null]]
+      DOT: []
+      ETH: [["2020-01-01", null]]
+      HBAR: [["2022-10-21", null]]
+      LINK: [["2020-01-01", null]]
+      LTC: [["2020-01-01", null]]
+      NEAR: [["2022-09-08", null]]
+      PEPE: [["2024-11-20", null]]
+      SHIB: [["2021-09-16", null]]
+      SOL: [["2021-06-24", null]]
+      SUI: [["2023-05-25", null]]
+      XLM: [["2020-01-01", null]]
+      XRP: [["2020-01-01", "2020-12-29"], ["2023-07-14", null]]
+      ZEC: [["2020-05-07", "2023-09-09"]]
+    all_closed_dates: ["2026-05-08"]
+    custody: {root: /home/user/workspace/rig/data/plan_76, max_hours: 40000, metadata_max_bytes: 16384, disk_floor_gib: 3}
+    power:
+      seed: 760076
+      worlds: 2000
+      trades: [64, 96, 144]
+      years: 3
+      edge_fractions: [0, 0.5, 1]
+      paper_gross: {primary: 0.03132, alternate: 0.02299}
+      residual_sd: [0.04, 0.05, 0.06]
+      year_sd: 0.006
+      residual_t_df: 5
+      residual_bound: 0.8
+  status: builder
+  note: Plan 76 ledger 229 and doc 172, price-free; controls and power assumptions frozen before input. No source approval and no go.
+  source: research_rig/PREREG_76_washout_rebound.md
+
 measure_132:
   value:
     private_roots: [/home/user/workspace/rig/data, /tmp]
