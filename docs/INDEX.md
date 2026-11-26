@@ -252,6 +252,9 @@ Working papers.
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
 | `research_rig/report_19.py` | Prints the Replay 19 result page from the saved JSON. Does not score or read market data | CURRENT |
 | `research_rig/PREREG_20_upbit_listing_short.md`, `research_rig/common_20.py`, `research_rig/score_20.py`, `research_rig/test_20.py`, `research_rig/stage_20.py` | Queue 29 source red-day Upbit short, ordinary-jump comparison, checksum-only staging, offline clock scan and made-up tests. Frozen, no real result | CURRENT |
+| `research_rig/PREREG_25_treasury_month_end.md` | Frozen Queue 41 Treasury ETF month-end window, ledger 162, nine marks. No data collected or result | CURRENT |
+| `research_rig/common_25.py`, `research_rig/fetch_25.py`, `research_rig/score_25.py`, `research_rig/test_25.py` | Replay 25 accounting, raw-only off-repo collector, pinned one-shot scorer, invented-input fixtures and calibration | CURRENT |
+| `research_rig/calendar_25.json`, `research_rig/PINNED.json` | Replay 25 session-date calendar and frozen code and plan hashes. No bars, issuer amounts or other vendor rows | CURRENT |
 | `research_rig/check_identity_levels_16_17.py`, `research_rig/diagnose_identity_daily_16_17.py` | Plans 16 and 17 identity check: does a Binance pair carry the coin on the saved list, by matching saved price levels; prints counts only, computes no return | DRAFT |
 | `research_rig/PREREG_16_hot_five_hedged.md` | Plan 16, frozen 2026-11-25: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Run once, not supported | CURRENT |
 | `research_rig/build_identity_asof_16_17.py` | Builds the shared dated identity policy for plans 16 and 17 and counts changes against the every-month check | CURRENT |
