@@ -99,10 +99,11 @@ def registered_world():
     pp = P.p_params(priced,cfg,funding=rates)
     pp.update(source={s:P.per(cfg["tm_fast_funding_venue"],s) for s in priced},
               funding_known_at={s:{t:t for t in rates[s]} for s in priced})
+    rows = [dict(marks=dict.fromkeys(priced,100),fills={s:[O.stamp(t),100] for s in priced}) for t in wakes]
     return dict(spec,symbols=symbols,watch=sorted(S.WATCH),wakes=wakes,end=T+7*86400,runner_id="toy-runner",
                 evidence=[[] for _ in wakes],vendor_proofs={},params=pp,
                 minutes=[(t,s,100,101,99,100) for t in wakes for s in priced],end_marks={s:100 for s in priced},
-                rows=[dict(marks={s:100 for s in priced}) for _ in wakes])
+                rows=rows,legacy_yardsticks=dict(table=dict(rows=rows,end_marks=dict.fromkeys(priced,100)),funding=rates))
 
 
 def synthetic_scores(reg,boss,draws=1000):
@@ -247,33 +248,59 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(exit["execution"]["phase"],"intrabar")
         self.assertEqual(exit["parent"]["evidence_ids"],[f"book:{T}"])
 
-    def test_reaudit_r1_full_costed_benchmarks_hold_every_leg(self):
-        for px in (90,110):
-            spec = world([(t,s,p,p,p,p) for t,p in ((T,100),(T+3600,px)) for s in (A,B,BTC)])
-            spec["end_marks"] = {s:px for s in (A,B,BTC)}
-            spec["params"]["funding"][A] = {T+3600:.001,T+7200:.002}
-            spec["params"]["funding"][B] = {T+3600:.002,T+7200:.001}
-            spec["params"]["funding"][BTC] = {T+3600:.0015,T+7200:.0015}
+    def test_pass3_m2_legacy_benchmarks_match_to_the_cent(self):
+        names = (A,B,"CCC/USD","DDD/USD","EEE/USD")
+        for px in (90,100,110):
+            spec = world([(t,s,p,p,p,p) for t,p in ((T,100),(T+3600,px)) for s in (*names,BTC)])
+            spec["symbols"] = list(names)
+            spec["end_marks"] = {s:px for s in (*names,BTC)}
+            spec["cfg"]["tm_perp_fallback_rate_per_day"] = 0
+            spec["params"] = P.p_params((*names,BTC),spec["cfg"],funding={})
+            for k,row in enumerate(spec["rows"]):
+                mark = 100 if k == 0 else px
+                row.update(marks={s:mark for s in (*names,BTC)},
+                           fills={s:[O.stamp(spec["wakes"][k]),mark] for s in (*names,BTC)})
             path = self.root/f"TM07-bench-{px}"
             D.create_desk(path,spec,"A",D.BOSSES[0],D.issue_role_tokens("A"),approval_key=SEAL_KEY,
                           vendor_signature=D.seal(SEAL_KEY,"vendor",spec["vendor_proofs"]))
             session = D.DeskSession(path)
-            for weights,sign in (({A:.5,B:.5},1),({B:.5,A:.5},1),({BTC:1},1),({BTC:-1},-1)):
+            legacy = []
+            for weights,sign in ((dict.fromkeys(names,.2),1),(dict.fromkeys(reversed(names),.2),1),({BTC:1},1),({BTC:-1},-1)):
                 got = S.buy_and_hold(session,weights,12)
-                notional = 1000/(1+.0004+.0012*(1+sign*.0004))
-                expected = notional+sign*notional*(px/100-1)-sign*notional*px/100*.003
+                expected = 1000+sign*1000*(px/100-1)-1000*(.0004+.0012*(1+sign*.0004))
                 self.assertAlmostEqual(got["value"],expected,places=8)
                 self.assertEqual(set(got["book"]["qty"]),set(weights))
-                self.assertAlmostEqual(got["book"]["traded_usd"],notional)
+                legacy.append(expected)
             for _ in range(2):
                 _,key = info(session)
                 session.handle("boss","pick",dict(wake_key=key,no_change=True,why="Baseline."))
             main = S.score_week(path)["main"]
-            baseline = (1000/(1+.0004+.0012*1.0004))*(px/100)*(1-.003)
-            self.assertAlmostEqual(main["equal"],100*(baseline/1000-1))
+            self.assertAlmostEqual(main["equal"],100*(legacy[0]/1000-1))
             self.assertAlmostEqual(main["benchmark"],main["equal"])
+            self.assertAlmostEqual(main["benchmark_short"],100*(legacy[-1]/1000-1))
             with self.assertRaisesRegex(S.UnsupportedWeek,"benchmark"):
                 S.buy_and_hold(session,{A:.5,"MISSING/USD":.5},12)
+
+    def test_pass3_m4_a_failed_display_never_invalidates_main(self):
+        session = self.create("A")
+        for _ in range(2):
+            _,key = info(session)
+            session.handle("boss","pick",dict(wake_key=key,no_change=True,why="Stay flat."))
+        run = S.replay
+        def broken(s,bundles,fee=None,multiple=1,**kwargs):
+            trial = run(s,bundles,fee,multiple,**kwargs)
+            return dict(trial,unsupported=[T]) if multiple == 2 else trial
+        bench = S.buy_and_hold
+        def unsupported(s,w,f,multiple=1):
+            if multiple == 3:
+                raise RuntimeError("made-up display replay failure")
+            return bench(s,w,f,multiple)
+        with patch.object(S,"replay",side_effect=broken),patch.object(S,"buy_and_hold",side_effect=unsupported):
+            score = S.score_week(session.path)
+        self.assertEqual(score["main"]["value"],1000)
+        for cell in ("2x/12","3x/12"):
+            self.assertEqual(score["by_fee_multiple"][cell]["status"],"not computed")
+            self.assertNotIn("value",score["by_fee_multiple"][cell])
 
     def test_reaudit_opr_r5_price_packet_rejects_unscreened_fields(self):
         spec = world()

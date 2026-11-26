@@ -263,10 +263,14 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
                 rejected[kind if kind in ("news","attention") else "other"] += 1
         dropped.append(dict(rejected))
         evidence.append(packet)
+    legacy_meta = dict(market="crypto",symbols=symbols,benchmark="BTC/USD",
+                       wakes=[P.iso(wall(t)) for t in wakes],end_utc=P.iso(wall(b)))
+    legacy = dict(table=P.W.price_table(tape,legacy_meta),
+                  funding=tm06.fast_funding(tape,priced,cfg,wall(a),wall(b))[0])
     return dict(wakes=wakes, end=b, symbols=symbols, watch=watch, benchmark="BTC/USD", opening={},
                 rows=rows, minutes=list(mins), end_marks=desk_marks(tape, priced, b),
                 evidence=evidence, evidence_drops=dropped, cfg=cfg, params=pp, vendor_proofs=vendor_proofs or {},
-                gross=float(cfg["tm06_plan"]["swing_max_gross"]),runner_id=runner_id)
+                gross=float(cfg["tm06_plan"]["swing_max_gross"]),runner_id=runner_id,legacy_yardsticks=legacy)
 
 
 def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, approval_key=None, vendor_signature=None,

@@ -180,6 +180,13 @@ class Registration:
             raise ValueError("registered twin coverage lacks marks or a common open")
         if not any(r[1] == "BTC/USD" and start <= r[0] < start+3600 for r in spec["minutes"]):
             raise ValueError("registered benchmark has no opening price")
+        legacy = spec.get("legacy_yardsticks",{})
+        table = legacy.get("table",{})
+        rows = table.get("rows",[])
+        if (len(rows) != len(spec["wakes"]) or not priced <= table.get("end_marks",{}).keys()
+                or not all(rows[0].get("fills",{}).get(s) for s in priced)
+                or not isinstance(legacy.get("funding"),dict)):
+            raise ValueError("freeze the legacy benchmark inputs before launch")
         return w
 
     def verify_gate(self,week,boss,arm,gates,key):
@@ -283,39 +290,32 @@ def replay(sess, bundles, fee=None, multiple=1, delay=0, journal=False):
 
 
 def buy_and_hold(sess, weights, fee, multiple=1):
-    """Fully fund every declared leg together after explicit fee and spread."""
+    """Run the unchanged TM06 opening-cash hold on its separately frozen inputs."""
     spec = sess.spec
+    frozen = spec.get("legacy_yardsticks")
+    table = frozen["table"] if frozen else {k:spec[k] for k in ("rows","end_marks")}
     pp = P.with_fee(sess.pp,fee)
-    book = P.new_book(spec["cfg"]["tm_account_start_usd"])
-    weights = {s:w*multiple for s,w in sorted(weights.items())}
+    if frozen:
+        pp.update(funding={s:settlement_map(v) for s,v in frozen["funding"].items()},hours=dict.fromkeys(pp["symbols"],1))
     required = set(weights)
-    if not required <= set(pp["symbols"]) or not required <= spec["end_marks"].keys():
-        raise UnsupportedWeek("benchmark lacks priced symbols or final marks")
-    at,end = spec["wakes"][0],spec["end"]
-    cutoff = min(at+3600,end)
-    gross = sum(abs(w) for w in weights.values())
-    cost = sum(abs(w)*(pp["hs"][s]+pp["fee"][s]*(1+pp["hs"][s]*(1 if w > 0 else -1)))
-               for s,w in weights.items())
-    entered = []
+    if (not required <= set(pp["symbols"]) or not required <= table["end_marks"].keys()
+            or not all(table["rows"][0].get("fills",{}).get(s) for s in required)):
+        raise UnsupportedWeek("benchmark lacks priced symbols, opening fills or final marks")
+    meta = dict(opening={},wakes=[P.iso(desk.wall(t)) for t in spec["wakes"]],end_utc=P.iso(desk.wall(spec["end"])))
+    answers = tm06.times(tm06.hold(len(spec["wakes"]),weights),multiple)
+    book, records, value = P.run_perp(meta,table,answers,pp,sess.minutes,spec["cfg"])
+    entered = records[0]["trades"]
+    if {t["symbol"] for t in entered} != required:
+        raise UnsupportedWeek("benchmark did not enter every declared leg")
+    return dict(value=value,book=book,entries=entered)
 
-    def enter(tick,opens,protected):
-        if entered or tick >= cutoff or not required <= opens.keys():
-            return
-        budget = book["cash"]/(1+cost)
-        need = sum(abs(w)*budget*pp["maint"][s] for s,w in weights.items())
-        if budget < need:
-            raise UnsupportedWeek("benchmark cannot meet maintenance at its first common open")
-        for s,w in weights.items():
-            entered.append(P.trade(book,s,w*budget/opens[s],opens[s],pp))
-        book["target"] = dict(weights)
-        return required
 
-    rows = P.scan_rows(sess.minutes,at,end,required)
-    O.Orders().advance(book,pp,rows,at,end,gross,on_open=enter,last=True)
-    if len(entered) != len(weights) or book.get("desk_liquidation"):
-        raise UnsupportedWeek("benchmark has no executable full-book open")
-    book["last_px"].update(spec["end_marks"])
-    return dict(value=max(0.0,P.value_at(book,spec["end_marks"])),book=book,entries=entered)
+def not_computed(action):
+    """Contain failures only at the reporting boundary, never in judged replay."""
+    try:
+        return action()
+    except Exception as exc:
+        return dict(status="not computed",reason=f"{type(exc).__name__}: {exc}")
 
 
 def usage_totals(rows, neutral=(), expected=None):
@@ -374,45 +374,58 @@ def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None)
         return emit(dict(ident, invalid=f"original has no common open: {check['unsupported']}"))
     hold = {s: spec["gross"]/len(spec["symbols"]) for s in spec["symbols"]}
     benchmark = spec["benchmark"]
-    by = {}
-    for mult in (1, *cfg["tm06_plan"]["carried_leverage"]):
-        for f in sorted(set(cfg["tm_perp_fee_levels_bps"]) | {fee}):
-            gain = lambda v: (v/start-1)*100
-            run = replay(sess, bundles, f, mult)
-            try:
-                equal, btc_long, btc_short = (gain(buy_and_hold(sess,w,f,mult)["value"])
-                                              for w in (hold,{benchmark:1.0},{benchmark:-1.0}))
-            except UnsupportedWeek as exc:
-                return emit(dict(ident,invalid=str(exc)))
-            entry = dict(value=run["value"], gain=gain(run["value"]), equal=equal,
-                         benchmark=btc_long, benchmark_short=btc_short,
-                         stats=P.p_stats(run["book"], run["value"], start), immediate=run["immediate"], standing=run["standing"])
-            if mult == 1 and f == fee or draw_sensitivities:
-                twin, activity = [], []
-                for i in range(draws):
-                    try:
-                        shuffled = shuffle_bundles(bundles, spec["rows"], spec["wakes"], spec["end"],
-                                                    random.Random(f'tm06_shuffle:{seed}:{sess.sid}:{i}'))
-                    except UnsupportedWeek as exc:
-                        return emit(dict(ident, invalid=str(exc), failed_draw=i))
-                    trial = replay(sess, shuffled, f, mult)
-                    if trial["unsupported"]:
-                        return emit(dict(ident, invalid=f"twin has no common open: {trial['unsupported']}", failed_draw=i))
-                    twin.append(gain(trial["value"]))
-                    activity.append(dict(immediate=trial["immediate"],standing=trial["standing"],triggered=trial["triggered"],
-                                         turnover_usd=trial["book"]["traded_usd"]))
-                entry.update(twin=twin,twin_activity=activity,twin_trigger_counts=[x["triggered"] for x in activity],
-                             twin_standing_fill_counts=[x["standing"] for x in activity],
-                             judge=SW.judge(twin, entry["gain"], cfg["tm_weights_pass_percentile"]))
-            by[f"{mult}x/{f:g}"] = entry
+    def supported(trial):
+        if trial["unsupported"]:
+            raise UnsupportedWeek(f"no common open: {trial['unsupported']}")
+        return trial
+
+    def cell(f,mult,with_twins):
+        gain = lambda v:(v/start-1)*100
+        run = supported(replay(sess,bundles,f,mult))
+        equal,btc_long = (gain(buy_and_hold(sess,w,f,mult)["value"]) for w in (hold,{benchmark:1.0}))
+        entry = dict(value=run["value"],gain=gain(run["value"]),equal=equal,benchmark=btc_long,
+                     benchmark_short=not_computed(lambda:gain(buy_and_hold(sess,{benchmark:-1.0},f,mult)["value"])),
+                     stats=P.p_stats(run["book"],run["value"],start),immediate=run["immediate"],standing=run["standing"])
+        if with_twins:
+            twin,activity = [],[]
+            for i in range(draws):
+                try:
+                    shuffled = shuffle_bundles(bundles,spec["rows"],spec["wakes"],spec["end"],
+                                               random.Random(f'tm06_shuffle:{seed}:{sess.sid}:{i}'))
+                    trial = supported(replay(sess,shuffled,f,mult))
+                except UnsupportedWeek as exc:
+                    error = UnsupportedWeek(f"twin {i}: {exc}")
+                    error.draw = i
+                    raise error from exc
+                twin.append(gain(trial["value"]))
+                activity.append(dict(immediate=trial["immediate"],standing=trial["standing"],triggered=trial["triggered"],
+                                     turnover_usd=trial["book"]["traded_usd"]))
+            entry.update(twin=twin,twin_activity=activity,twin_trigger_counts=[x["triggered"] for x in activity],
+                         twin_standing_fill_counts=[x["standing"] for x in activity],
+                         judge=SW.judge(twin,entry["gain"],cfg["tm_weights_pass_percentile"]))
+        return entry
+
+    main_key = f"1x/{fee:g}"
+    try:
+        main = cell(fee,1,True)
+    except UnsupportedWeek as exc:
+        fields = {"failed_draw":exc.draw} if hasattr(exc,"draw") else {}
+        return emit(dict(ident,invalid=str(exc),**fields))
+    by = {main_key:main}
+    for mult in (1,*cfg["tm06_plan"]["carried_leverage"]):
+        for f in sorted(set(cfg["tm_perp_fee_levels_bps"])|{fee}):
+            key = f"{mult}x/{f:g}"
+            if key != main_key:
+                by[key] = not_computed(lambda:cell(f,mult,draw_sensitivities))
     neutral = (sess.manifest["scout"] or {}).get("usage", [])
     expected = {"boss":spec["wakes"]}
     if sess.arm != "A":
         expected.update({role:spec["wakes"] for role in desk.SCOUTS})
-    return emit(dict(ident, main=by[f"1x/{fee:g}"],
+    return emit(dict(ident, main=main,
                 usage=usage_totals(log,neutral,expected), unique_boss_usage=usage_totals(log,expected={"boss":spec["wakes"]}),
                 neutral_scout_used=bool(neutral), by_fee_multiple=by,
-                delayed_value=replay(sess, bundles, fee, delay=60)["value"] if sess.arm == "C" else None))
+                delayed_value=not_computed(lambda:supported(replay(sess,bundles,fee,delay=60))["value"])
+                if sess.arm == "C" else None))
 
 
 def cents(value):
