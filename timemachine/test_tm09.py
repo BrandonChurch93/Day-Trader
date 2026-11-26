@@ -10,13 +10,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
+from urllib.error import URLError
 from zoneinfo import ZoneInfo
 
 from timemachine.score_tm09 import DEPS, run_approved, score
 from timemachine import tm09_blind
 from timemachine.tm09_desk import Desk, PUBLIC_SID, initialize, seal, slot, store_new
 from timemachine.tm09_feed import copied_run, extract_figures
-from timemachine.tm09_fixture import FILES, compile_export, compile_weeks, encode, mondays, read_private, settings, stage1_weeks, week_pairs
+from timemachine.tm09_fixture import FILES, compile_export, compile_weeks, encode, fingerprint, mondays, read_private, settings, stage1_weeks, week_pairs
+from timemachine.tm09_isolation_probe import probe
 from timemachine.tm09_operator import benchmark_outcome, launch, review, stage1_contrasts, worker_handler
 from timemachine.tm09_orders import Minutes, benchmark, fill, terminal, weights
 
@@ -490,7 +492,6 @@ class DeskTest(unittest.TestCase):
                 launch(d, 8801, KEY, allowed, canary)
             server.assert_called_once()
             self.assertEqual(server.call_args.args[0], ('127.0.0.1', 8801))
-        from timemachine.tm09_fixture import fingerprint
         control = json.loads(read_private(d.path / (body['nonce'] + '-control.json')))
         store_new(proof, {'phase': 'stopped', 'session': d.public_id, 'port': 8801, 'denied_count': 4})
         end = dict(session=d.public_id, nonce=body['nonce'], port=8801, control_sha256=fingerprint(control),
@@ -501,6 +502,55 @@ class DeskTest(unittest.TestCase):
             review(d, KEY, receipt, proof)
         reviewed = json.loads(read_private(d.path / (body['nonce'] + '-review.json')))['body']
         self.assertEqual(reviewed['routes'], [{'method': 'GET', 'path': '/desk/status', 'session': d.public_id, 'status': 200}])
+
+    def test_post_stop_review_requires_all_four_denials_for_each_role(self):
+        price, news = self.scouts()
+        desks = [Desk(self.path / slot(self.f['week'], role), self.f, KEY) for role in ('price_scout', 'news_scout')]
+        boss, _ = self.init('boss', boss=self.boss, arm='N', price=price, news=news)
+        for desk in [*desks, boss]:
+            nonce, port = 'c' * 32, 8801
+            control = dict(session=desk.public_id, nonce=nonce, port=port, journal_start_row=0)
+            sealed_control = {'body': control, 'seal': seal(KEY, 'tm09-control', control)}
+            store_new(desk.path / (nonce + '-control.json'), sealed_control)
+            stop = dict(control, journal_stop_row=0)
+            store_new(desk.path / (nonce + '-stop.json'), {'body': stop, 'seal': seal(KEY, 'tm09-stop', stop)})
+            reviewed = desk.path / (nonce + '-review.json')
+            for count in (0, 1, 2, 3, 5, True, 4.0, 4):
+                with self.subTest(role=desk.role, denied_count=repr(count)):
+                    proof = desk.path / f'invented-probe-{count}.json'
+                    receipt = desk.path / f'invented-review-{count}.json'
+                    store_new(proof, dict(phase='stopped', session=desk.public_id, port=port, denied_count=count))
+                    after = dict(session=desk.public_id, nonce=nonce, port=port, control_sha256=fingerprint(sealed_control),
+                                 sudo_allowlist_reviewed=True, raw_copies_denied=True, listener_stopped=True,
+                                 post_stop_probe_sha256=sha256(read_private(proof)).hexdigest(), sudo_review_sha256='a' * 64)
+                    store_new(receipt, {'body': after, 'seal': seal(KEY, 'ledger-222-tm09-review', after)})
+                    if type(count) is int and count == 4:
+                        with patch('builtins.print'):
+                            review(desk, KEY, receipt, proof)
+                        self.assertTrue(reviewed.exists())
+                    else:
+                        with self.assertRaisesRegex(ValueError, '^incomplete post-stop operator review$'):
+                            review(desk, KEY, receipt, proof)
+                        self.assertFalse(reviewed.exists())
+
+    def test_probe_requires_four_distinct_denied_targets(self):
+        paths = [self.path / label for label in ('tape', 'notes', 'key', 'results')]
+        args = (8801, 'TM09-' + 'a' * 32, 'TM09-' + 'b' * 32, 'x' * 48)
+        with (patch('timemachine.tm09_isolation_probe.os.geteuid', return_value=1000),
+              patch('timemachine.tm09_isolation_probe.cannot_open', return_value=True) as denied,
+              patch('timemachine.tm09_isolation_probe.request', side_effect=URLError(ConnectionRefusedError())) as request):
+            for short_or_duplicate in [*(paths[:n] for n in range(4)), [paths[0]] * 4, [*paths, self.path / 'extra']]:
+                with self.assertRaisesRegex(ValueError, '^raw-copy boundary not proven$'):
+                    probe(*args, short_or_duplicate, stopped=True)
+            denied.assert_not_called()
+            denied.side_effect = [True, True, True, False]
+            with self.assertRaisesRegex(ValueError, '^raw-copy boundary not proven$'):
+                probe(*args, paths, stopped=True)
+            request.assert_not_called()
+            denied.reset_mock(side_effect=True)
+            probe(*args, paths, stopped=True)
+            self.assertEqual([call.args[0] for call in denied.call_args_list], paths)
+            request.assert_called_once()
 
 
 class ScoreTest(unittest.TestCase):
