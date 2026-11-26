@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 09:45 UTC
+Last updated: 2026-11-26 10:09 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Queue 101, earnings-date advancements ([doc 125](research/125_count_101_earnings_date_advancers.md), ledger 202), closed on the tested free sources. MEASURED: 200-firm EDGAR pilot, 59 future earnings-release notices, zero qualifying advancements under the fixed history proxy. STATED: the conditional 1,500-firm projection is 0 with a 95% upper count of 75, below the 400 close line. Issuer-only public-time provenance, total eligible count and historical $500 orderability are UNKNOWN. No market inputs or score.
 
 - Replay 48 identity review ([review](../research_rig/REVIEW_48_identity.md), ledger 200) opened and closed 2026-11-26. MEASURED: the pass stands. One fund (MUI, listed as MUNUX) was absent from nine turns; on pre-entry bars it was eligible every turn and outside the worst five every turn (closest rank 42 of 124), so all 50 picks and all marks are unchanged. The eight funds merged away during a January holding month were not picked; the run did not remove any fund for lacking an exit bar. The shown-only equal-weight roster line omitted that one fund.
 
