@@ -47,3 +47,13 @@ A rule that passes the vault goes to a forward practice card. It does not go to 
 
 - UNKNOWN: whether anything clears the search bar. A sweep that closes with no finalist is a result, and it will be written up as one.
 - STATED: dates after 2022 have been read by earlier tests of single instruments (for example the long Treasury fund at month-end). The vault is clean for a rule only if that rule's family was not scored on those dates before, which is why scored families are left out of the grid.
+
+## Amendment 1, 2026-11-26 06:09 MT, by the lead agent, before any bar was read
+
+Raised by the plan 70 drafter. Nothing had been run.
+
+1. Drift is taken out, both sweeps. Every t value in the finalist bar and in the vault mark is worked out on the rule's net return minus a matched baseline: the plain average return of the same instrument over the same entry and exit clock prints on all dates in the same block, with no cost charged to the baseline. The plain net mean must also be above zero and meet the yearly line. Reason: a rule that is simply in a rising market often would otherwise clear the bar without knowing anything.
+2. Coin list. No dated public list of US two-way coins exists from before 2020, because the US route only opened in 2025. The plan 70 list is therefore the November 2026 list in doc 98, stated as a list chosen with hindsight. Coins on it are survivors, which flatters buying and hurts shorting. The matched baseline in point 1 removes the first-order part of that. The rest is UNKNOWN and is written next to any result.
+3. Funding on coins. The US futures route charges or pays funding every hour, so no holding time avoids it. The test charges a fixed adverse amount per hour held, set in the plan from a source before any return is worked out, never zero and never taken from an offshore venue. A coin finalist that passes the vault must then pass a check on real prints and funding of the same contract before it goes to a practice card.
+4. Vault years for coins. The coin vault is 2024-01-01 to 2026-10-31, which is not five years. For plan 70 the mark reads: positive in at least 4 of its 6 half-years (the last one ends 2026-10-31). The stock mark stays at 3 of 5 years.
+
