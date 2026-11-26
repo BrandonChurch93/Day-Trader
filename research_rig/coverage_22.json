@@ -1,0 +1,32 @@
+{
+ "absent_pair_days": {
+  "FTTUSDT": 7,
+  "HYPEUSDT": 635,
+  "KLAYUSDT": 89,
+  "MKRUSDT": 214,
+  "TONUSDT": 637,
+  "UMAUSDT": 26,
+  "WLFIUSDT": 25,
+  "XEMUSDT": 337,
+  "XMRUSDT": 822
+ },
+ "judged": {
+  "coin_wakes_listed": 51335,
+  "coin_wakes_no_pair_segment": 31,
+  "coin_wakes_not_confirmed": 7312,
+  "max_tradable": 26,
+  "median_tradable": 22.0,
+  "min_tradable": 19,
+  "wakes": 2282
+ },
+ "no_binance_pair": [],
+ "shown": {
+  "coin_wakes_listed": 4198,
+  "coin_wakes_no_pair_segment": 2,
+  "coin_wakes_not_confirmed": 745,
+  "max_tradable": 23,
+  "median_tradable": 20.0,
+  "min_tradable": 18,
+  "wakes": 208
+ }
+}

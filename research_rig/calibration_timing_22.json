@@ -1,0 +1,93 @@
+{
+ "config": {
+  "calibration_coins": 12,
+  "calibration_days": 2283,
+  "calibration_drift_hours": 72,
+  "calibration_edges_pct": [
+   0,
+   4,
+   8,
+   16
+  ],
+  "calibration_fade_days": 30,
+  "calibration_hl_spread": 0.002,
+  "calibration_seed": 22101,
+  "calibration_seeds": 20,
+  "calibration_sigma_hourly": 0.006,
+  "calibration_volume_boost": [
+   2.0,
+   4.0
+  ]
+ },
+ "edges_pct": {
+  "0": {
+   "max_unplaced_share": 0.07088709677419355,
+   "median_hold_final": 2.211842307797364,
+   "median_rule_final": 2.5110842706865713,
+   "median_trades": 157.0,
+   "median_twin_rank": 0.708,
+   "median_unplaced_share": 0.029301011148561058,
+   "pass_share": 0.05,
+   "seeds": 20,
+   "test_pass_share": {
+    "beats_hold": 0.55,
+    "drawdown": 0.55,
+    "sharpe": 0.1,
+    "twins": 0.05,
+    "years": 0.6
+   }
+  },
+  "16": {
+   "max_unplaced_share": 0.10965625,
+   "median_hold_final": 2.215340698859514,
+   "median_rule_final": 6.961757015672527,
+   "median_trades": 71.5,
+   "median_twin_rank": 0.873,
+   "median_unplaced_share": 0.06033505564387917,
+   "pass_share": 0.2,
+   "seeds": 20,
+   "test_pass_share": {
+    "beats_hold": 0.95,
+    "drawdown": 0.75,
+    "sharpe": 0.7,
+    "twins": 0.2,
+    "years": 0.85
+   }
+  },
+  "4": {
+   "max_unplaced_share": 0.07377272727272727,
+   "median_hold_final": 2.216645933638234,
+   "median_rule_final": 3.255980400258804,
+   "median_trades": 111.5,
+   "median_twin_rank": 0.851,
+   "median_unplaced_share": 0.05114922480620155,
+   "pass_share": 0.1,
+   "seeds": 20,
+   "test_pass_share": {
+    "beats_hold": 0.75,
+    "drawdown": 0.7,
+    "sharpe": 0.3,
+    "twins": 0.15,
+    "years": 0.7
+   }
+  },
+  "8": {
+   "max_unplaced_share": 0.09242424242424242,
+   "median_hold_final": 2.2140864864019614,
+   "median_rule_final": 4.511274104105525,
+   "median_trades": 100.5,
+   "median_twin_rank": 0.783,
+   "median_unplaced_share": 0.057966490299823634,
+   "pass_share": 0.1,
+   "seeds": 20,
+   "test_pass_share": {
+    "beats_hold": 0.95,
+    "drawdown": 0.7,
+    "sharpe": 0.45,
+    "twins": 0.1,
+    "years": 0.75
+   }
+  }
+ },
+ "timing_only": true
+}
