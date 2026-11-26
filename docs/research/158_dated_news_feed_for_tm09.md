@@ -58,6 +58,32 @@ MEASURED: The leading 15 source domains by retained coin-headlines were:
 
 MEASURED: I read all 55 available distinct titles from both weeks, drawn without replacement using seed 77. 20 were price or volume recaps and forecasts, 14 described concrete events relevant to the matched asset, and 21 were other, commentary, false matches, or unclear. These are title-only judgments, not verified events. Multiple titles can describe one event.
 
+## One-day publisher calibration
+
+MEASURED: Seed 77 picked 2026-07-12 UTC, a calendar day inside the first scored week. All 96 batches completed: 239,190,814 compressed bytes streamed and 56,280 records scanned. The counts are GDELT records by document URL host, not unique articles or a census of what each publisher wrote. Term tests are case-insensitive whole words in decoded titles and can overlap.
+
+| Source domain (including subdomains) | GKG records | PAGE_TITLE present | Bitcoin | Solana | Crypto |
+| --- | --- | --- | --- | --- | --- |
+| coindesk.com | 6 | 6 | 3 | 0 | 2 |
+| cointelegraph.com | 5 | 5 | 2 | 0 | 1 |
+| decrypt.co | 0 | 0 | 0 | 0 | 0 |
+| theblock.co | 0 | 0 | 0 | 0 | 0 |
+| cryptoslate.com | 0 | 0 | 0 | 0 | 0 |
+| beincrypto.com | 0 | 0 | 0 | 0 | 0 |
+| u.today | 0 | 0 | 0 | 0 | 0 |
+| dlnews.com | 0 | 0 | 0 | 0 | 0 |
+| blockworks.co | 0 | 0 | 0 | 0 | 0 |
+| cryptonews.com | 0 | 0 | 0 | 0 | 0 |
+| Total | 11 | 11 | 5 | 0 | 3 |
+
+MEASURED: Of 0 Solana-titled records from these publishers, the pilot kept 0; across all domains it kept 4 of 4. Replay of the pilot filters with the prior dedup state agrees with the original retained count. For the last UTC batch, the known-at clock puts it in week two, where SOL was outside the basket. Reasons below are mutually exclusive; unlisted filters rejected zero records.
+
+| Solana-title disposition | Ten publishers | All domains |
+| --- | --- | --- |
+| kept | 0 | 4 |
+
+STATED: On this day the limit was GDELT coverage, not the Solana matcher or a missing title field. Eight publishers had no records at all, the other two had titles on every record but none about Solana by name, and the matcher kept all four Solana titles that were present across the archive. UNKNOWN: One day cannot establish coverage for other days or other coin aliases. STATED: The next candidate is [Common Crawl News](https://commoncrawl.org/blog/news-dataset-available), subject to [Common Crawl's terms and publisher rights](https://commoncrawl.org/terms-of-use). Stream the gzip WARC files and read captured HTML titles in memory alongside the [WARC-Date capture time](https://commoncrawl.org/get-started); do not save the files or redistribute article content. The [Infini-News paper](https://arxiv.org/html/2605.18337) reports about 180 TB of input WARC files from August 2016 through partial April 2026, roughly 51 billion streamed bytes per day averaged over that span. UNKNOWN: The exact July 12 byte total was not available from public listing metadata. No WARC payload was requested.
+
 ## Decision
 
 STATED: This feed is too thin and noisy to justify the TM09 backfill as configured. All ten coin-weeks had at least one retained headline, but four had only one or two. Only about a quarter of the reviewed titles described a concrete event relevant to the matched coin; some name or ticker matches referred to another asset. Do not use this pilot as replay input.

@@ -10,6 +10,7 @@ from unittest.mock import patch
 from zipfile import ZipFile
 
 from research_rig.feeds import news_77 as news
+from research_rig.feeds import calibrate_news_77 as calibration
 from research_rig.feeds.build_doc158_news_77 import render
 
 
@@ -85,6 +86,39 @@ class News77Test(unittest.TestCase):
         self.assertEqual(news.week_visible([w2in], week2 + news.HOUR, after_utc=week2 + 300), [])
         with self.assertRaisesRegex(ValueError, "outside the two"):
             news.week_visible([], week2 + news.WEEK)
+
+    def test_calibration_counts_before_sol_filter_and_keeps_original_history(self):
+        day = news.utc("2026-07-12")
+        end = day + calibration.DAY - news.QUARTER
+        prior_url = "https://coindesk.com/prior"
+        kept = dict(first_seen_utc=day, matched_coin="SOL", source_domain="cointelegraph.com",
+                    title="SOLANA and Crypto", url="https://cointelegraph.com/new")
+        prior = dict(first_seen_utc=day - news.QUARTER, matched_coin="SOL",
+                     source_domain="coindesk.com", title="Previously seen", url=prior_url)
+        requests = []
+
+        def get(t):
+            requests.append(t)
+            if t == day:
+                return packet(t, record(t, "Solana — repeated URL", prior_url),
+                              record(t, kept["title"], kept["url"]),
+                              record(t, "Bitcoin launch and cryptocurrency", "https://cryptoslate.com/new"),
+                              record(t, "Solana", "https://unrelated.example/story", collection="6"),
+                              record(t, "", "https://decrypt.co/empty"))
+            return packet(t, record(t, "Solana rolls across weeks", "https://coindesk.com/late")) if t == end else packet(t)
+
+        with patch.object(news, "check_space"), patch.object(news, "read_file", return_value=[prior, kept]), \
+                patch.object(news, "Archive", return_value=SimpleNamespace(get=get)), patch.object(calibration.time, "sleep"):
+            c = calibration.scan_day()
+        self.assertEqual(requests, list(range(day, end + 1, news.QUARTER)))
+        self.assertEqual(c["publishers"]["decrypt.co"]["page_title"], 1)
+        self.assertEqual(c["publishers"]["cryptoslate.com"]["crypto"], 0)
+        self.assertEqual(c["publishers"]["cryptoslate.com"]["bitcoin"], 1)
+        self.assertEqual(c["publisher_solana"]["duplicate"], 1)
+        self.assertEqual(c["publisher_solana"]["outside_solana_basket"], 1)
+        self.assertEqual(c["publisher_solana"]["non_web_collection"], 0)
+        self.assertEqual(c["all_solana"]["non_web_collection"], 1)
+        self.assertEqual(c["all_solana"]["kept"], c["original_pilot_solana_kept"])
 
     def test_budget_checks_fail_before_a_write(self):
         with tempfile.TemporaryDirectory() as temp:
