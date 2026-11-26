@@ -1163,3 +1163,8 @@ replay_70_plan:
   status: builder
   note: Search-only draft for Queue 112, ledger 218. No authorization for real bars or vault. Costs are stated assumptions, not measured fills.
   source: research_rig/PREREG_70_coin_sweep.md
+replay_69_plan:
+  value: {"first":"2016-01-04","half2":"2019-01-01","last":"2021-12-31","vault_first":"2022-01-03","vault_last":"2026-10-30","years":6,"capital":500,"bar_minutes":5,"session_open":"09:30","session_minutes":390,"cost_window_minutes":30,"settle_change":"2017-09-05","settlement_delays":[3,2],"rule_limit":300,"cost_bps_per_side":{"broad":[0.342,0.209,0.176],"bond":[0.609,0.610,0.610],"sector":[0.888,0.587,0.587],"stocks":[3.787,1.591,1.074],"cautious":[10.055,3.832,2.440]},"marks":{"trades":200,"days":100,"half_days":40,"t":3.5,"half_t":1.5,"trim":0.01,"annual":0.12,"finalists":3,"duplicate_r":0.7,"duplicate_days":20,"duplicate_share":0.2},"jump_ratio":{"lower":0.55,"upper":1.9},"vault_marks":{"t":2.4,"positive_years":3,"years":5,"annual":0.08,"days":100,"carry_chance":0.33,"carry_mean_share":0.5},"synthetic":{"first_seed":690100,"worlds":100,"min_clean":95,"plant_seed":691000,"drift_seed":691001,"power_seed":690001,"power_draws":20000,"power_counts":[200,400,480],"power_sd":[0.005,0.01,0.02],"deployed_share":0.9}}
+  status: builder
+  note: Shared Plan 69 settings; immutable at the audit freeze. The checksummed rule grid supplies the individually written clock and signal variants and names. No change to doc 150 marks; this is not authorization to access data.
+  source: research_rig/PREREG_69_stock_sweep.md
