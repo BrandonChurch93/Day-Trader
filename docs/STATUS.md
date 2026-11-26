@@ -10,7 +10,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 - Plan 43 third attempt (special dividends, ledger 195) stopped at input validation 2026-11-26, not scored, no return computed. MEASURED: 35 of 442 events had a zero-volume or missing day in the trade window against a cap of 22 fixed before counting; the raw-versus-adjusted factor check held on 538 of 39,564 bar checks in 36 events, clustered on cash ex-dates. Cause of the factor mismatch is UNKNOWN; under diagnosis. Earlier attempts are ledger 178 and 188.
 
-- Plan 53 (taxable closed-end fund January rebound, ledger 187) stopped at input validation 2026-11-26, not scored, no return computed. MEASURED: the jump guard flagged 12 neighbouring-day close moves beyond a factor of 1.4 with no recorded split. 11 are one-session moves on 2020-03-18 and 2020-03-19, checked as real market moves. 1 is a ticker reuse: BTX before 2025-02-20 is another security. A second pre-run amendment (one pinned clearance per flagged pair) is being drafted.
+- [Replay 53](research/122_replay_53_taxable_fund_january_rebound.md), run once 2026-11-26 09:37:22 UTC (ledger 187). MEASURED. Did not pass, 5 of 7 marks. Over 10 taxable closed-end fund turns the portfolio averaged +2.74% net, versus +2.00% for PCEF and +1.83% for the eligible roster. It was positive in 6 of 10 and ahead of PCEF in 6 of 10; both counts missed. The fifth-session exit was shown only, not a pass. Independent recompute UNKNOWN.
 
 - Idea round 30 ([doc 119](research/119_round_30_high_count_crypto_power_screen.md)) closed 2026-11-26. STATED from published studies: 0 of 7 crypto idea families cleared the power screen after US retail spot fees. No data spent.
 
