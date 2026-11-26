@@ -1,12 +1,13 @@
 # Status
 
-Last updated: 2026-11-26 03:54 UTC
+Last updated: 2026-11-26 04:03 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
 
 - First counted trading-replay pass. MEASURED. Replay 25's unlevered TLT month-end rule met all nine frozen marks at 2 bps per side. It averaged +0.2562% net across 130 monthly windows with a t-statistic of 2.36. The last partial year lost, and higher assumed costs weakened the result. [Replay 25](research/69_replay_25_treasury_month_end.md) is a reason to test again on separate data, not clearance to trade.
+- Second counted trading-replay pass. MEASURED. Replay 20's unlevered Upbit listing short met all five frozen marks on viewed dates. It averaged +3.2088% net across 139 trades after 15 bps per side and funding, with a per-trade t-statistic of 2.839. 99 trades were in 2025–2026, and the worst loss was 28.8%. [Replay 20](research/71_replay_20_upbit_listing_short.md) uses Binance.com perpetuals, not US-executable fills.
 - Three machines exist or are being built: the rig (`research_rig/`, working), the practice desk (`practice/`, running), the time machine (`timemachine/`, working, running AI sessions on crypto since 2026-11-25).
 - The practice desk is running with pretend money since 2026-11-25 16:31 UTC, with the two fixed rules. GitHub's own schedule did not start a single run in its first two hours, MEASURED 2026-11-25 17:16 UTC, cause UNKNOWN. Since 17:20 UTC each run starts the next one itself about ten minutes later, and the research machine starts one if none has begun for 14 minutes. What it has done is on the owner's screen and in the summary file on the `practice-records` branch. This page does not repeat it.
 - No real-money account. No purchases. No real trades.
