@@ -1098,9 +1098,9 @@ replay_50_plan:
   source: research_rig/PREREG_50_cef_liquidations.md
 
 replay_53_plan:
-  value: {"base":"replay_48_plan","benchmark":"PCEF","roster_cutoff":"12-01","holdings_trust_cik":"0001378872","holdings_series":"S000027370","holdings_forms":["N-Q","N-Q/A","NPORT-P","NPORT-P/A","N-CSR","N-CSR/A","N-CSRS","N-CSRS/A"],"municipal_name_terms":["MUNI","MUNIS","MUNICIPAL","MUNICIPALS","MUNICIPALITY","MUNICIPALITIES","TAX FREE","TAX EXEMPT"],"split_query_tail_days":90,"roster_attestation":{"eligible_rows_by_turn":[136,139,136,129,122,120,119,108,109,106],"roster_sha256":"def20bcdf9f075134e2e813c496f56bbeb6f95c7368492a9f8763e28c7d023da","exclusions_sha256":"f5b5a49ac1446f643139453200c353dee76ec8de43ba27f58fa9771d2624f0a8"}}
+  value: {"base":"replay_48_plan","benchmark":"PCEF","roster_cutoff":"12-01","holdings_trust_cik":"0001378872","holdings_series":"S000027370","holdings_forms":["N-Q","N-Q/A","NPORT-P","NPORT-P/A","N-CSR","N-CSR/A","N-CSRS","N-CSRS/A"],"municipal_name_terms":["MUNI","MUNIS","MUNICIPAL","MUNICIPALS","MUNICIPALITY","MUNICIPALITIES","TAX FREE","TAX EXEMPT"],"split_query_tail_days":90,"roster_attestation":{"eligible_rows_by_turn":[136,139,136,129,122,120,119,108,109,106],"roster_sha256":"def20bcdf9f075134e2e813c496f56bbeb6f95c7368492a9f8763e28c7d023da","exclusions_sha256":"f5b5a49ac1446f643139453200c353dee76ec8de43ba27f58fa9771d2624f0a8"},"vendor_cash_gate":{"percentage_denominator":100,"minimum_primary_match_percent":98,"minimum_clean_window_percent":98,"amount_tolerance":"0.0001"}}
   status: builder
-  note: Plan 53 inherits the unchanged Plan 48 calendar, sizing, costs, marks, calibration assumptions and resource caps. This block holds only taxable scope changes. Not runtime overrides.
+  note: Plan 53 inherits the unchanged Plan 48 calendar, sizing, costs, marks, calibration assumptions and resource caps. This block holds taxable scope and the pre-run vendor cash gate. Not runtime overrides.
   source: research_rig/PREREG_53_taxable_cef_tax_loss.md
 
 replay_47_plan:

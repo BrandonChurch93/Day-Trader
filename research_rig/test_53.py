@@ -161,6 +161,36 @@ def bad_holdings_cases(roster, exclusions):
 
 
 class Unit(unittest.TestCase):
+    def test_vendor_gate_exact_boundary_and_none(self):
+        w = WINDOWS[0]
+        y = w["turn"]
+        names = [f"SYN{k}" for k in range(50)]
+        statuses = {(y, s): ("none" if i == 49 else "documented") for i, s in enumerate(names)}
+        ex = w["exit"]
+        pay = Fraction(1, 10)
+        primary = {y: ({s: {"cash": [(ex, pay)] * (2 if i == 0 else 1) if i < 49 else [], "splits": []}
+                        for i, s in enumerate(names)}, {"cash": [], "splits": []})}
+        vendor_row = {"id": "a", "ex_date": ex.isoformat(), "amount": Decimal("0.1001"), "currency": "",
+                      "source": "https://example.test/vendor"}
+        block = {s: {"complete": True, "events": [vendor_row]} for s in names}
+        raw = {"schema": 1, "turns": {str(y): block}}
+
+        def gate():
+            effective, stats = S.vendor_cash(raw, primary, statuses, [w], {y: names}, C, CFG)
+            self.assertEqual(effective, primary)
+            return stats
+
+        self.assertTrue(gate()["passed"])  # 49/50 both ways: one excess in a none window, one missed event
+        self.assertEqual(gate()["overlap"], {"fund_years": 50, "primary_events": 50,
+                                           "matched_events": 49, "clean_windows": 49})
+        block[names[0]]["events"] = [vendor_row | {"amount": Decimal("0.10010001")}]
+        self.assertFalse(gate()["passed"])  # just outside tolerance; no rounding or reuse
+        for s in names:
+            statuses[y, s] = "none"
+            primary[y][0][s]["cash"] = []
+            block[s]["events"] = []
+        self.assertFalse(gate()["passed"])  # complete clean windows, but no positive match denominator
+
     def test_roster_holdings_metadata_and_strict_cutoff(self):
         roster, exclusions = holdings_roster(["SYNA", "SYNB"], CFG)
         admitted, excluded = S.roster_metadata(roster, exclusions, WINDOWS, C, CFG)
@@ -367,6 +397,12 @@ class EndToEnd(unittest.TestCase):
     def test_cli_validate_go_and_consumed(self):
         self.check_scenario("valid")
 
+    def test_cli_vendor_gate_failure_uses_only_primary(self):
+        self.check_scenario("vendor_fail")
+
+    def test_cli_unproven_currency_state_uses_only_primary(self):
+        self.check_scenario("currency_fail")
+
     def test_cli_comparison_is_hidden_until_consuming_go(self):
         self.check_scenario("wrong_digest")
 
@@ -419,6 +455,7 @@ def evaluate(*args, **kwargs):
             cfg = S.read_config((root / S.CONFIG).read_bytes())
             (root / S.CALIBRATION).write_bytes(S.encode(C.calibrate(cfg)))
             (root / S.PLAN).write_text("# Synthetic plan 53\n\nStatus FROZEN.\n")
+            (root / S.AMENDMENT).write_text("# Synthetic cash amendment\n\nStatus FROZEN.\n")
             link = f"`{S.PLAN}`"
             (root / "research_rig/TRIAL_LEDGER.md").write_text(f"| {S.LEDGER_ROW} | {link} |\n")
             (root / "docs/QUEUE.md").write_text(f"| {S.QUEUE_ROW} | {link} |\n")
@@ -459,10 +496,30 @@ def evaluate(*args, **kwargs):
                     for row in b["cash"]:
                         row.update(source=b["source"], source_kind="issuer_site")
             coverage = ("\n".join(coverage) + "\n").encode()
+            vendor = {"schema": 1, "turns": {}}
+            for w in WINDOWS:
+                year = str(w["turn"])
+                rows = cash["turns"][year]["symbols"]
+                vendor["turns"][year] = {s: {"complete": True, "events": [
+                    {k: v for k, v in row.items() if k != "source_kind"} | {"currency": ""}
+                    for row in rows[s]["cash"]]} for s in names}
+            v1 = vendor["turns"][str(first_turn)]
+            v1["SYNA"]["events"][0]["amount"] = Decimal("100")  # same known date, must not supplement
+            v1["SYNA"]["events"].append({"id": "new-partial", "ex_date": first["exit"].isoformat(),
+                                        "amount": Decimal("0.01"), "source": "https://example.test/vendor",
+                                        "currency": "USD" if scenario == "currency_fail" else ""})
+            v1["SYNE"]["events"] = [{"id": "unresolved", "ex_date": first["exit"].isoformat(),
+                                     "amount": Decimal("0.01"), "source": "https://example.test/vendor", "currency": ""}]
+            v1["SYNB"]["events"][0]["amount"] += Decimal("0.0001")  # inclusive tolerance, keep primary amount
+            if scenario == "vendor_fail":
+                v1["SYNB"]["complete"] = False
+                v1["SYNB"]["events"] = []
+                v1["SYNC"]["events"].append({"id": "vendor-extra", "ex_date": first["exit"].isoformat(),
+                                             "amount": Decimal("0.01"), "source": "https://example.test/vendor", "currency": ""})
             comparison = [{"turn": y, "portfolio": Decimal(y - 2015) / 100} for y in bars]
             paired_rows = comparison if scenario != "wrong_year" else [
                 {"turn": first_turn - 1, "portfolio": comparison[0]["portfolio"]}, *comparison[1:]]
-            files = {"roster.csv": roster, S.EXCLUSIONS: exclusions, S.CASH_COVERAGE: coverage,
+            files = {"roster.csv": roster, S.EXCLUSIONS: exclusions, S.CASH_COVERAGE: coverage, S.VENDOR_CASH: dump(vendor),
                      S.COMPARISON: dump(paired_rows), "distributions.json": dump(cash), "split_evidence.json": dump(evidence),
                      "split_control.json": dump(control)}
             for y in bars:
@@ -474,11 +531,11 @@ def evaluate(*args, **kwargs):
             roster_pin, dist_pin = digest(roster), digest(files["distributions.json"])
 
             def write_manifest(coverage_blob, roster_blob=roster, exclusions_blob=exclusions, extra=None):
-                changed = {S.CASH_COVERAGE: coverage_blob, "roster.csv": roster_blob,
-                           S.EXCLUSIONS: exclusions_blob} | (extra or {"split_evidence.json": files["split_evidence.json"]})
+                changed = {S.CASH_COVERAGE: coverage_blob, "roster.csv": roster_blob, S.EXCLUSIONS: exclusions_blob,
+                           **{n: files[n] for n in (S.VENDOR_CASH, "split_evidence.json")}} | (extra or {})
                 for n, b in changed.items():
                     (inputs / n).write_bytes(b)
-                manifest = {"schema": 1, "mode": "plan53_raw_sip_v1", "feed": "sip", "adjustment": "raw",
+                manifest = {"schema": 1, "mode": S.INPUT_MODE, "feed": "sip", "adjustment": "raw",
                             "first_turn": 2016, "last_turn": 2025, "collected_utc": "2026-11-26T00:00:00Z",
                             "files": {n: digest(b) for n, b in (files | changed).items()}}
                 payload = S.encode(manifest)
@@ -579,6 +636,33 @@ def evaluate(*args, **kwargs):
                         input_pin = write_manifest(changed)
                         both_refuse(approve(), reason)
                         git("reset", "-q", "--hard", freeze)
+                for bad_block, reason in (
+                    ({s: v for s, v in v1.items() if s != "SYNA"}, "VENDOR_CASH_COVERAGE"),
+                    (v1 | {benchmark: {"complete": True, "events": []}}, "VENDOR_CASH_COVERAGE"),
+                    (v1 | {"SYNB": v1["SYNB"] | {"complete": False}}, "VENDOR_CASH_COVERAGE"),
+                    (v1 | {"SYNB": v1["SYNB"] | {"events": v1["SYNB"]["events"] * 2}}, "VENDOR_CASH_EVENT"),
+                    (v1 | {"SYNB": {"complete": True, "events": [v1["SYNB"]["events"][0] | {"currency": "CAD"}]}},
+                     "VENDOR_CASH_CURRENCY"),
+                ):
+                    turns = vendor["turns"] | {str(first_turn): bad_block}
+                    input_pin = write_manifest(coverage, extra={S.VENDOR_CASH: dump(vendor | {"turns": turns})})
+                    both_refuse(approve(), "P53_" + reason)
+                    git("reset", "-q", "--hard", freeze)
+                bad_events = (
+                    {"source": "https://user:password@example.test/actions"},
+                    {"source": "https://example.test/actions?token=secret"},
+                    {"source": "https://example.test/actions#token=secret"},
+                    {"ex_date": first["entry"].isoformat()},
+                    {"amount": Decimal("0")},
+                )
+                for bad in (vendor | {"schema": True}, *(
+                    vendor | {"turns": vendor["turns"] | {str(first_turn): v1 | {"SYNB": {
+                        "complete": True, "events": [v1["SYNB"]["events"][0] | change]}}}}
+                    for change in bad_events
+                )):
+                    input_pin = write_manifest(coverage, extra={S.VENDOR_CASH: dump(bad)})
+                    both_refuse(approve(), "P53_VENDOR_CASH_EVENT" if bad["schema"] is not True else "P53_VENDOR_CASH_SCHEMA")
+                    git("reset", "-q", "--hard", freeze)
                 input_pin = write_manifest(coverage)
 
             (root / "NOTE.md").write_text("intervening commit\n")
@@ -599,11 +683,13 @@ def evaluate(*args, **kwargs):
             self.assertIn("events_placed 50 clusters 10 symbols 9", v.stdout)
             self.assertIn("excluded_rows 10", v.stdout)
             self.assertIn("cash_gaps 20 eligible_cash_gaps 20", v.stdout)
+            passes = scenario not in {"vendor_fail", "currency_fail"}
+            self.assertIn(f"vendor_gate_passed {int(passes)}", v.stdout)
             self.assertTrue(all(re.fullmatch(r"[a-z_]+ \d+", " ".join(line)) for line in
                                 zip(v.stdout.split()[1::2], v.stdout.split()[2::2])))
             self.assertFalse(any(run.iterdir()))
             g = cli("--go")
-            if scenario != "valid":
+            if scenario in {"wrong_digest", "wrong_year"}:
                 reason = "P53_PIN" if scenario == "wrong_digest" else "P53_CORRELATION"
                 self.assertEqual((g.returncode, g.stdout, g.stderr.strip()), (2, "", reason))
                 self.assertEqual({p.name for p in run.iterdir()}, {"score_53.lock"})
@@ -615,14 +701,42 @@ def evaluate(*args, **kwargs):
             self.assertEqual((g.returncode, g.stdout.strip(), g.stderr), (0, "P53_RESULT_WRITTEN", ""))
             self.assertEqual({p.name for p in run.iterdir()}, {"score_53.lock", "results_53.json"})
             out = json.loads((run / "results_53.json").read_bytes())
+            shown = out["shown_only"]
+            gate = shown["vendor_cash_gate"]
+            self.assertEqual((gate["passed"], gate["admitted_source_kind"], gate["admitted_events"]),
+                             (passes, "vendor_crosschecked", 2 if passes else 0))
+            self.assertEqual(gate["overlap"], {"fund_years": 60, "primary_events": 60,
+                             "matched_events": 59 if scenario == "vendor_fail" else 60,
+                             "clean_windows": 58 if scenario == "vendor_fail" else 60})
+            base, zeroed, judged = shown["primary_only"], shown["cash_zeroed"], out["judged"]
+            for table in (base, zeroed):
+                self.assertFalse({"marks", "passed"} & set(table))
+            for p, z, j in zip(base["years"], zeroed["years"], judged["years"]):
+                self.assertEqual(p["benchmark"], j["benchmark"])
+                self.assertEqual((j["portfolio_price"], j["roster_ew_price"]), (z["portfolio"], z["roster_ew"]))
+                self.assertEqual(p["held"], j["held"])
+            self.assertEqual(gate["matched_currency_states"], [""])
+            self.assertEqual(gate["candidate_currency_states"], ["", "USD"] if scenario == "currency_fail" else [""])
+            if not passes:
+                self.assertEqual({k: v for k, v in judged.items() if k not in {"marks", "passed"}}, base)
+                self.assertEqual(cli("--go").stderr.strip(), "P53_CONSUMED_OR_NOT_EMPTY")
+                return
+            self.assertGreater(judged["years"][0]["portfolio"], base["years"][0]["portfolio"])
+            self.assertGreater(judged["years"][0]["roster_ew"], base["years"][0]["roster_ew"])
+            self.assertEqual(gate["by_turn_and_primary_status"][str(first_turn)]["partial"]["admitted_events"], 1)
+            self.assertEqual(gate["by_turn_and_primary_status"][str(first_turn)]["partial"]["primary_events"], 1)
+            self.assertEqual(gate["by_turn_and_primary_status"][str(first_turn)]["partial"]
+                             ["same_date_vendor_events_suppressed"], 1)
+            self.assertEqual(gate["by_turn_and_primary_status"][str(first_turn)]["unresolved"]["admitted_events"], 1)
             self.assertEqual(len(out["judged"]["years"]), 10)
             # SYNH's zero-volume pre-entry row makes it ineligible; SYND's zero-volume exit row is a missing exit.
             self.assertTrue(all(y["roster"] == 8 and y["eligible"] == 5 and y["held_missing_exit"] == 2
                                 and "SYNH" not in y["held"] for y in out["judged"]["years"]))
-            self.assertTrue(all((y["held_empty_cash"], y["eligible_empty_cash"]) == (1, 1)
-                                and y["portfolio_price"] < y["portfolio"] for y in out["judged"]["years"]))
+            self.assertTrue(all((y["held_empty_cash"], y["eligible_empty_cash"]) == ((0, 0) if i == 0 else (1, 1))
+                                and y["portfolio_price"] < y["portfolio"] for i, y in enumerate(out["judged"]["years"])))
             self.assertIn("mean_portfolio_minus_roster_ew_price_only", out["judged"])
-            self.assertEqual(set(out["shown_only"]), {"fifth_january_session_exit", "zero_cost", "replay48_correlation"})
+            self.assertEqual(set(shown), {"fifth_january_session_exit", "zero_cost", "replay48_correlation",
+                                          "primary_only", "cash_zeroed", "vendor_cash_gate"})
             self.assertTrue(all(y["held_cash_gaps"] == 2 for y in out["judged"]["years"]))
             self.assertTrue(all(y["held_quote_coverage_proxy_sides"] == 2 for y in out["judged"]["years"]))
             self.assertNotIn("held_proxy_sides", out["judged"]["years"][0])
@@ -634,6 +748,7 @@ def evaluate(*args, **kwargs):
                 dollars, shares, _ = C.sleeve(closes, {"cash": [], "splits": []},
                                              C.side_costs(benchmark_quotes, w, cfg), w, "exit", cfg["capital"])
                 no_cash_returns.append(float(dollars / cfg["capital"]))
+                self.assertAlmostEqual(zeroed["years"][len(no_cash_returns) - 1]["benchmark"], no_cash_returns[-1])
                 expected_cash = shares * Fraction(benchmark_payout) if y == first_turn else 0
                 self.assertAlmostEqual(row["benchmark"], float((dollars + expected_cash) / cfg["capital"]))
             self.assertGreater(sum(y["portfolio"] for y in out["judged"]["years"]) - sum(no_cash_returns), 0)

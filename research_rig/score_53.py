@@ -16,6 +16,7 @@ import statistics
 import subprocess
 import sys
 from types import ModuleType
+from urllib.parse import urlsplit
 from zoneinfo import reset_tzpath
 
 HERE = Path(__file__).resolve().parent
@@ -23,17 +24,20 @@ REPO = HERE.parent
 DATA = Path("/home/user/workspace/rig/data")
 INPUTS, RUN = DATA / "plan53_inputs", DATA / "replay_53"
 PLAN = "research_rig/PREREG_53_taxable_cef_tax_loss.md"
+AMENDMENT = "research_rig/AMENDMENT_53_CASH.md"
 PINS = "research_rig/PINNED_53.json"
 APPROVAL = "research_rig/APPROVAL_53.md"
 CALENDAR = "research_rig/calendar_25.json"
 ENGINE = "research_rig/common_48.py"
 CALIBRATION = "research_rig/CALIBRATION_53.json"
 CONFIG = "config/thresholds.yaml"
-PIN_NAMES = {PLAN, CALENDAR, ENGINE, CALIBRATION, CONFIG, "research_rig/score_53.py", "research_rig/test_53.py"}
+PIN_NAMES = {PLAN, AMENDMENT, CALENDAR, ENGINE, CALIBRATION, CONFIG, "research_rig/score_53.py", "research_rig/test_53.py"}
 ROSTER_PIN = "packet:roster.csv"  # off-repo point-in-time roster, pinned at freeze
 EXCLUSIONS = "roster_exclusions.csv"
 EXCLUSIONS_PIN = "packet:" + EXCLUSIONS
 CASH_COVERAGE = "cash_coverage.csv"
+VENDOR_CASH = "vendor_cash.json"
+INPUT_MODE = "plan53_raw_sip_v2"
 COMPARISON = "replay48_portfolio_turns.json"
 LEDGER_ROW, QUEUE_ROW = 187, 90
 CAP = 64 * 1024 * 1024
@@ -146,7 +150,8 @@ def authorize(approval, freeze_pin, input_pin, roster_pin, dist_pin):
     attested = read_config(blobs[CONFIG])["roster_attestation"]
     need((pins[ROSTER_PIN], pins[EXCLUSIONS_PIN]) == (attested["roster_sha256"], attested["exclusions_sha256"]),
          "FREEZE_ROSTER")
-    need([line for line in blobs[PLAN].splitlines() if line.startswith(b"Status ")] == [b"Status FROZEN."], "FREEZE")
+    need(all([line for line in blobs[name].splitlines() if line.startswith(b"Status ")] == [b"Status FROZEN."]
+             for name in (PLAN, AMENDMENT)), "FREEZE")
     link = b"`" + PLAN.encode() + b"`"
     for name, row, code in (("research_rig/TRIAL_LEDGER.md", LEDGER_ROW, "LEDGER"),
                             ("docs/QUEUE.md", QUEUE_ROW, "QUEUE")):
@@ -174,7 +179,7 @@ def read_config(blob):
     scope = block(b"replay_53_plan")
     need(type(scope) is dict and set(scope) == {"base", "benchmark", "roster_cutoff", "holdings_trust_cik", "holdings_series",
                                                "holdings_forms", "municipal_name_terms", "split_query_tail_days",
-                                               "roster_attestation"}
+                                               "roster_attestation", "vendor_cash_gate"}
          and scope["base"] == "replay_48_plan" and type(scope["benchmark"]) is str
          and re.fullmatch(r"\d{2}-\d{2}", scope["roster_cutoff"]) is not None
          and re.fullmatch(r"\d{10}", scope["holdings_trust_cik"]) is not None
@@ -197,6 +202,14 @@ def read_config(blob):
          and all(is_pin(attested[k]) for k in ("roster_sha256", "exclusions_sha256"))
          and type(attested["eligible_rows_by_turn"]) is list and len(attested["eligible_rows_by_turn"]) == cfg["turns"]
          and all(type(n) is int and n >= cfg["picks"] for n in attested["eligible_rows_by_turn"]), "CONFIG")
+    gate = scope["vendor_cash_gate"]
+    need(type(gate) is dict and set(gate) == {"percentage_denominator", "minimum_primary_match_percent",
+                                            "minimum_clean_window_percent", "amount_tolerance"}
+         and type(gate["percentage_denominator"]) is int and gate["percentage_denominator"] > 0
+         and all(type(gate[k]) is int and 0 < gate[k] <= gate["percentage_denominator"]
+                 for k in ("minimum_primary_match_percent", "minimum_clean_window_percent"))
+         and type(gate["amount_tolerance"]) is str and re.fullmatch(r"0\.\d+", gate["amount_tolerance"])
+         and Decimal(gate["amount_tolerance"]) > 0, "CONFIG")
     return cfg | {k: v for k, v in scope.items() if k != "base"}
 
 
@@ -206,7 +219,7 @@ def check_calibration(C, cfg, blob):
 
 def input_names(cfg):
     years = range(cfg["first_turn"], cfg["last_turn"] + 1)
-    return ({"roster.csv", EXCLUSIONS, "distributions.json", CASH_COVERAGE, COMPARISON, "split_evidence.json",
+    return ({"roster.csv", EXCLUSIONS, "distributions.json", CASH_COVERAGE, VENDOR_CASH, COMPARISON, "split_evidence.json",
              "split_control.json"} | {f"bars_{y}.json" for y in years}
             | {f"quotes_{y}.json" for y in years})
 
@@ -310,7 +323,111 @@ def actions_and_coverage(raw, coverage_blob, windows, roster, C, cfg):
                          and event["source_kind"] in {"issuer_site", "issuer_wire", "sec", "exchange"},
                          "ACTION_SOURCE")
                     del event["source"], event["source_kind"]
-    return C.distributions(raw, windows, roster, cfg), gaps, documented_events
+    return C.distributions(raw, windows, roster, cfg), gaps, documented_events, {k: v[0] for k, v in coverage.items()}
+
+
+def match_cash(primary, vendor, tolerance):
+    """Maximum one-to-one matching for exact dates and absolute amount tolerance."""
+    p, v = sorted(primary), sorted(vendor)
+    i = j = matches = 0
+    matched_states = set()
+    while i < len(p) and j < len(v):
+        a, b = p[i], v[j]
+        if a[0] == b[0] and abs(a[1] - b[1]) <= tolerance:
+            matches += 1
+            matched_states.add(b[2])
+            i += 1
+            j += 1
+        elif a < b[:2]:
+            i += 1
+        else:
+            j += 1
+    return matches, matched_states
+
+
+def vendor_reference(value):
+    if not https(value) or any(c in value for c in "?#\\"):
+        return False
+    try:
+        url = urlsplit(value)
+        return bool(url.hostname) and "@" not in url.netloc and "%" not in url.netloc
+    except ValueError:
+        return False
+
+
+def vendor_cash(raw, primary, statuses, windows, roster, C, cfg):
+    need(type(raw) is dict and set(raw) == {"schema", "turns"} and type(raw["schema"]) is int
+         and raw["schema"] == 1 and type(raw["turns"]) is dict
+         and set(raw["turns"]) == {str(y) for y in roster}, "VENDOR_CASH_SCHEMA")
+    gate = cfg["vendor_cash_gate"]
+    tolerance = C.exact(Decimal(gate["amount_tolerance"]))
+    detail, candidates, matched_states = {}, {}, set()
+    for w in windows:
+        y = w["turn"]
+        block = raw["turns"][str(y)]
+        need(type(block) is dict and set(block) == set(roster[y]), "VENDOR_CASH_COVERAGE")
+        by_status = {s: dict.fromkeys(("fund_years", "vendor_complete", "primary_events", "matched_events",
+                                      "clean_windows", "admitted_events", "admitted_fund_years",
+                                      "same_date_vendor_events_suppressed"), 0)
+                     for s in ("documented", "none", "partial", "unresolved")}
+        detail[y] = by_status
+        for s in roster[y]:
+            status = statuses[y, s]
+            stats = by_status[status]
+            stats["fund_years"] += 1
+            q = block[s]
+            need(type(q) is dict and set(q) == {"complete", "events"} and type(q["complete"]) is bool
+                 and type(q["events"]) is list and (q["complete"] or not q["events"]), "VENDOR_CASH_COVERAGE")
+            stats["vendor_complete"] += q["complete"]
+            events, seen, last = [], set(), None
+            for e in q["events"]:
+                need(type(e) is dict and set(e) == {"id", "ex_date", "amount", "source", "currency"}
+                     and type(e["id"]) is str and bool(e["id"]) and e["id"].strip() == e["id"]
+                     and e["id"] not in seen and vendor_reference(e["source"]) and C.positive_number(e["amount"]),
+                     "VENDOR_CASH_EVENT")
+                need(e["currency"] in ("", "USD"), "VENDOR_CASH_CURRENCY")
+                d = C.day(e["ex_date"])
+                item = (d, e["id"])
+                need(w["entry"] < d <= w["exit"] and d in w["sessions"]
+                     and (last is None or last < item), "VENDOR_CASH_EVENT")
+                seen.add(e["id"])
+                last = item
+                events.append((d, C.exact(e["amount"]), e["currency"]))
+            p = primary[y][0][s]["cash"]
+            stats["primary_events"] += len(p)
+            if status in {"documented", "none"}:
+                matched, states = match_cash(p, events, tolerance)
+                matched_states.update(states)
+                stats["matched_events"] += matched
+                stats["clean_windows"] += q["complete"] and matched == len(events)
+            elif q["complete"]:
+                # Every primary amount wins on its documented ex-date, even if vendor treatment differs.
+                primary_dates = {d for d, _ in p}
+                candidates[y, s] = [event for event in events if event[0] not in primary_dates]
+                stats["same_date_vendor_events_suppressed"] += len(events) - len(candidates[y, s])
+    totals = {key: sum(by[s][key] for by in detail.values() for s in ("documented", "none"))
+              for key in ("fund_years", "primary_events", "matched_events", "clean_windows")}
+    scale = gate["percentage_denominator"]
+    required_states = {state for events in candidates.values() for _, _, state in events}
+    passed = (totals["fund_years"] > 0 and totals["primary_events"] > 0
+              and required_states <= matched_states
+              and totals["matched_events"] * scale >= totals["primary_events"] * gate["minimum_primary_match_percent"]
+              and totals["clean_windows"] * scale >= totals["fund_years"] * gate["minimum_clean_window_percent"])
+    effective = {y: (dict(funds), bench) for y, (funds, bench) in primary.items()}
+    admitted = 0
+    if passed:
+        for (y, s), events in candidates.items():
+            if events:
+                fund = effective[y][0][s]
+                effective[y][0][s] = fund | {"cash": sorted(fund["cash"] + [(d, amt) for d, amt, _ in events])}
+                stats = detail[y][statuses[y, s]]
+                stats["admitted_events"] = len(events)
+                stats["admitted_fund_years"] = 1
+                admitted += len(events)
+    return effective, {"passed": passed, "admitted_source_kind": "vendor_crosschecked", "admitted_events": admitted,
+                       "overlap": totals, "matched_currency_states": sorted(matched_states),
+                       "candidate_currency_states": sorted(required_states),
+                       "by_turn_and_primary_status": {str(y): by for y, by in detail.items()}}
 
 
 def split_evidence(raw, windows, names, cash, C, cfg):
@@ -333,7 +450,7 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
     m = parse(pinned(input_dir / "manifest.json", input_pin, private=True))
     need(type(m) is dict and set(m) == {"schema", "mode", "feed", "adjustment", "first_turn", "last_turn",
                                        "collected_utc", "files"}
-         and type(m["schema"]) is int and m["schema"] == 1 and m["mode"] == "plan53_raw_sip_v1"
+         and type(m["schema"]) is int and m["schema"] == 1 and m["mode"] == INPUT_MODE
          and m["feed"] == "sip" and m["adjustment"] == "raw" and m["first_turn"] == cfg["first_turn"]
          and m["last_turn"] == cfg["last_turn"], "MANIFEST")
     ts = m["collected_utc"]
@@ -350,9 +467,12 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
                                                 windows, C, cfg)
     need([len(roster[w["turn"]]) for w in windows] == cfg["roster_attestation"]["eligible_rows_by_turn"],
          "ROSTER_COUNTS")
-    cash, gaps, cash_events = actions_and_coverage(parse(pinned(input_dir / "distributions.json", dist_pin, private=True)),
-                                                 pinned(input_dir / CASH_COVERAGE, m["files"][CASH_COVERAGE], private=True),
-                                                 windows, roster, C, cfg)
+    primary, gaps, cash_events, statuses = actions_and_coverage(
+        parse(pinned(input_dir / "distributions.json", dist_pin, private=True)),
+        pinned(input_dir / CASH_COVERAGE, m["files"][CASH_COVERAGE], private=True),
+        windows, roster, C, cfg)
+    cash, vendor_stats = vendor_cash(parse(pinned(input_dir / VENDOR_CASH, m["files"][VENDOR_CASH], private=True)),
+                                    primary, statuses, windows, roster, C, cfg)
     split_names = {y: (*members, cfg["benchmark"]) for y, members in roster.items()}
     split_cash = {y: (funds | {cfg["benchmark"]: bench}, bench) for y, (funds, bench) in cash.items()}
     split_evidence(parse(pinned(input_dir / "split_evidence.json", m["files"]["split_evidence.json"],
@@ -375,8 +495,17 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
         return funds, bench, quotes, cash[y]
 
     class StreamedPacket:
+        def __init__(self, variant="judged"):
+            self.variant = variant
+
         def __getitem__(self, turn):
-            return turn_packet(turn)
+            funds, bench, quotes, actions = turn_packet(turn)
+            if self.variant == "primary_only":
+                actions = primary[turn]
+            elif self.variant == "cash_zeroed":
+                fund_actions, bench_actions = actions
+                actions = ({s: v | {"cash": []} for s, v in fund_actions.items()}, bench_actions | {"cash": []})
+            return funds, bench, quotes, actions
 
     eligible = {}
     for w in windows:
@@ -399,8 +528,10 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, exclusions_pin, C, c
         "eligible_rows": sum(map(len, eligible.values())), "excluded_rows": exclusions_count,
         "cash_events": cash_events, "cash_gaps": sum(map(len, gaps.values())),
         "eligible_cash_gaps": sum(len(gaps[y] & eligible[y]) for y in roster),
+        "vendor_gate_passed": int(vendor_stats["passed"]), "vendor_admitted_events": vendor_stats["admitted_events"],
+        **{"vendor_" + key: n for key, n in vendor_stats["overlap"].items()},
     }
-    return windows, StreamedPacket(), eligible, gaps, stat_counts, m["files"][COMPARISON]
+    return windows, StreamedPacket, eligible, gaps, stat_counts, m["files"][COMPARISON], vendor_stats
 
 
 def correlation(blob, years):
@@ -503,7 +634,7 @@ def main():
                                  blobs[CALENDAR], cfg)
         except C.Refused as exc:
             raise Refused(str(exc).replace("P48_", "P53_", 1)) from None
-        windows, packet, eligible, gaps, counts, comparison_pin = inputs
+        windows, packet, eligible, gaps, counts, comparison_pin, vendor_stats = inputs
         if a.validate_inputs:
             print("P53_INPUTS_OK", " ".join(f"{k} {v}" for k, v in counts.items()))
             return
@@ -517,7 +648,10 @@ def main():
         def evaluate():
             # This callback runs only after the lock is durable. Validation never opens the comparison payload.
             comp = pinned(INPUTS / COMPARISON, comparison_pin, private=True)
-            result = C.evaluate(windows, packet, cfg)
+            result = C.evaluate(windows, packet(), cfg)
+            for variant in ("primary_only", "cash_zeroed"):
+                table = C.evaluate(windows, packet(variant), cfg)["judged"]
+                result["shown_only"][variant] = {k: v for k, v in table.items() if k not in {"marks", "passed"}}
             for table in (result["judged"], *result["shown_only"].values()):
                 for row in table["years"]:
                     y = row["turn"]
@@ -526,6 +660,7 @@ def main():
                     row["eligible_cash_gaps"] = len(gaps[y] & eligible[y])
                     row["held_cash_gaps"] = len(gaps[y] & set(row["held"]))
             result["shown_only"]["replay48_correlation"] = correlation(comp, result["judged"]["years"])
+            result["shown_only"]["vendor_cash_gate"] = vendor_stats
             result["input_counts"] = counts
             return result
 

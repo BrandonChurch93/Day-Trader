@@ -1,11 +1,12 @@
 {
-  "config/thresholds.yaml": "4a1b2beaaa186774f052097c80377e961ca00985b92d517e0b2a181aae5bc49f",
+  "config/thresholds.yaml": "553941513af3999e69c0424c2616e2e1ce811a1403fdbba0472d30b28fe63e8f",
   "packet:roster.csv": "def20bcdf9f075134e2e813c496f56bbeb6f95c7368492a9f8763e28c7d023da",
   "packet:roster_exclusions.csv": "f5b5a49ac1446f643139453200c353dee76ec8de43ba27f58fa9771d2624f0a8",
+  "research_rig/AMENDMENT_53_CASH.md": "1d2d58ea81c66cbcc6acd67b2cd6a56652c9166f578933f5fb54a900bcf1f865",
   "research_rig/CALIBRATION_53.json": "39244b49949c95726a8a9968661cffc7d582211b50657936935ee569f4b6ac65",
   "research_rig/PREREG_53_taxable_cef_tax_loss.md": "03d9d73edddc62191377193c57c4d2f45272abb063241deac21eef6637b6375d",
   "research_rig/calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
   "research_rig/common_48.py": "cbc6c975cee78048bce88e967af61a5b931271c70ee02ebb2d42c2c66558859e",
-  "research_rig/score_53.py": "2d89da6190838e66f66fe098df147e3460dbe4198bd310d1015c1f30ffd8c72f",
-  "research_rig/test_53.py": "5a5c16bead69489dabbfc4b898c5f57475c87a600a74037df4a819fdda985650"
+  "research_rig/score_53.py": "d5e23f10b0afd69a8783495684680b47dba95898e9189885c996af66a4640386",
+  "research_rig/test_53.py": "56a8e6f8d54fec384d1b049a3230b78cf45ba7aca6a9f5757f52fe0f5afef2d0"
 }
