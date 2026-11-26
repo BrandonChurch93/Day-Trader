@@ -6,7 +6,7 @@ A world has n signals; signal i enters on session floor(i * 1260 / n) and holds 
 uniform from 1 to the card's limit (40 for Card A, 10 for Card B). Its excess return over the market fund is
     mean + common part + own part.
 The common part is a weighted sum of calendar-month shocks over the months the hold spans, weight = share of
-hold sessions in that month, scaled so it carries the stated share of variance. Signals whose holds share a month
+hold sessions in that month, scaled so it carries the calibrated share of variance for that card and noise row (research_rig/CALIB_74.json). Signals whose holds share a month
 share that month's shock. All shocks are Student t with 3 degrees of freedom (fat tails).
 Every design-year mark is applied, with the t clustered by calendar month of entry: mean above zero and at least
 the floor, month-clustered t at least the t mark, positive in at least 4 of 5 entry years, positive after removing
@@ -23,7 +23,8 @@ def _plan():
 _P = _plan(); _M = _P["marks"]; _W = _P["power"]
 MARKS = dict(mean_floor=_M["mean_floor"], t=_M["min_t"], years_pos=_M["years_positive"], years=_M["years"],
              trim=_M["trim_top_share"], signals=_M["min_signals"], days=_M["min_entry_days"])
-DRAWS = _W["draws"]; SEED = _W["seed"]; SHARE = _W["common_share"]
+DRAWS = _W["draws"]; SEED = _W["seed"]
+CALIB = json.loads((pathlib.Path(__file__).resolve().parent / "CALIB_74.json").read_text())["shares"]
 YEAR_SESSIONS = _W["sessions_per_year"]; MONTH_SESSIONS = _W["sessions_per_month"]
 SESSIONS = YEAR_SESSIONS * MARKS["years"]; MONTHS = SESSIONS // MONTH_SESSIONS
 COUNTS = _W["counts"]; MEANS = _W["means"]; HOLD = _W["hold_limit"]; TARGET = _W["target"]
@@ -57,8 +58,7 @@ def passes(x, entry, month, year, floor=True):
     k = math.ceil(MARKS["trim"] * n)
     return np.sort(x)[:-k].mean() > 0
 
-def power(n, mu, sd, hold, rng, share=None):
-    share = SHARE if share is None else share
+def power(n, mu, sd, hold, rng, share):
     W, entry, month, year = layout(n, hold, rng)
     a = b = 0
     for _ in range(DRAWS):
@@ -68,16 +68,17 @@ def power(n, mu, sd, hold, rng, share=None):
 
 def main():
     rng = np.random.default_rng(SEED)
-    print("| Card | Hold limit, sessions | Noise SD per signal | True mean excess | Smallest count, 80% power, all marks | Smallest count, 80%, without the mean floor | Power at " + " / ".join(f"{n:,}" for n in SHOW) + " signals, all marks |")
-    print("|---|---:|---:|---:|---:|---:|---|")
+    print("| Card | Hold limit, sessions | Noise SD per signal | Common month share (calibrated) | True mean excess | Smallest count, 80% power, all marks | Smallest count, 80%, without the mean floor | Power at " + " / ".join(f"{n:,}" for n in SHOW) + " signals, all marks |")
+    print("|---|---:|---:|---:|---:|---:|---:|---|")
     for card, sd in CASES:
-        for mu in MEANS:
-            res = {n: power(n, mu, sd, HOLD[card], rng) for n in COUNTS}
+        for mu in MEANS[card]:
+            share = CALIB[card][f"{sd:.2f}"]
+            res = {n: power(n, mu, sd, HOLD[card], rng, share) for n in COUNTS}
             full = next((f"{n:,}" for n in COUNTS if res[n][0] >= TARGET), f"none up to {COUNTS[-1]:,} (best {max(r[0] for r in res.values()):.0%})")
             nofl = next((f"{n:,}" for n in COUNTS if res[n][1] >= TARGET), f"none up to {COUNTS[-1]:,}")
-            print(f"| {card} | {HOLD[card]} | {sd:.0%} | +{mu:.1%} | {full} | {nofl} | " + " / ".join(f"{res[n][0]:.0%}" for n in SHOW) + " |", flush=True)
-    print(f"\nMEASURED on made-up data: {DRAWS} worlds per cell, seed {SEED}, common month shock {SHARE:.0%} of variance, "
-          f"holds uniform 1 to the limit, t clustered by calendar month of entry ({MONTHS} months), Student t with 3 degrees of freedom, mean floor {MARKS['mean_floor']:.1%}.")
+            print(f"| {card} | {HOLD[card]} | {sd:.0%} | {share:.2%} | +{mu:.1%} | {full} | {nofl} | " + " / ".join(f"{res[n][0]:.0%}" for n in SHOW) + " |", flush=True)
+    print(f"\nMEASURED on made-up data: {DRAWS} worlds per cell, seed {SEED}, common month share calibrated per row from research_rig/CALIB_74.json, "
+          f"holds uniform 1 to the limit, t clustered by calendar month of entry ({MONTHS} months), Student t with 3 degrees of freedom, mean floor {MARKS['mean_floor']:.1%}, t mark {MARKS['t']}.")
 
 def sensitivity():
     rng = np.random.default_rng(SEED + 1)
@@ -87,7 +88,7 @@ def sensitivity():
     for card in ("A", "B"):
         sd = _W["noise_sd"][card][1]
         for share in _W["common_share_shown"]:
-            for mu in MEANS:
+            for mu in MEANS[card]:
                 res = {n: power(n, mu, sd, HOLD[card], rng, share)[0] for n in COUNTS}
                 full = next((f"{n:,}" for n in COUNTS if res[n] >= TARGET), f"none up to {COUNTS[-1]:,} (best {max(res.values()):.0%})")
                 print(f"| {card} | {sd:.0%} | {share:.0%} | +{mu:.1%} | {full} | " + " / ".join(f"{res[n]:.0%}" for n in SHOW) + " |", flush=True)

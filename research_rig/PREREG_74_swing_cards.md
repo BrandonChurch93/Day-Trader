@@ -27,6 +27,15 @@
 - STATED, ruling 12: accepted, no second signal on a symbol while an earlier one is held; the 8% stop arm drops the 3% refusal; a held name whose bars stop exits at its last close, with 0.5 times and zero shown, the count printed, and the 0.5 times line made binding if such cases exceed 1% of judged signals.
 - STATED: Probes P1 to P3 now state their pacing, re-send rule, caps and user agent.
 
+## Rulings of the third round
+
+- STATED: Made by the lead agent on 2026-11-26, before any price was read.
+- STATED, ruling 13, RULE CHANGE: the design-year mark is month-clustered t at least 2.0, not 3.0, with the reason written under "Pass marks". The other marks stay. A design pass alone supports no claim; the result line is "advance to held-back" or "closed".
+- STATED, ruling 14: the common month share is a power-model assumption, not a mark. It is calibrated from published Kenneth French data dated before 2017, not from our test data. See gate (b).
+- STATED, ruling 15: Card B gets a +4% mean row, and the plan says plainly what size of edge each card's test can and cannot find.
+- STATED, ruling 16: the count stage prints a raw upper bound and a lower bound per card and arm. The branch uses the lower bound.
+- STATED, ruling 17: one shown-only comparison at scoring against the equal-weighted same-days return of the screen-passing names without the trigger. Not a mark.
+
 ## Card A, primary
 
 - STATED: Rules are doc 169 lines 105 to 108, with the changes in ruling 2. The only changes are listed here. Everything else is as doc 169 writes it.
@@ -80,7 +89,9 @@
 - STATED, all on design-year signals, each card on its own. Every mark must hold.
 - STATED: mean net excess per signal above zero (key marks.mean_above) and at least 0.5% (key marks.mean_floor). RULE CHANGE, second round: was 1.0%.
 - STATED, said plainly: this test is sized to find a true edge of +2% a signal. It will usually miss a true +1%.
-- STATED: month-clustered t at least 3.0 (key marks.min_t). RULE CHANGE, second round: was day-clustered.
+- STATED: month-clustered t at least 2.0 (key marks.min_t). RULE CHANGE, third round: was 3.0. RULE CHANGE, second round: was day-clustered.
+- STATED, the reason written in by the lead agent: the plan is two-stage. A design pass must be confirmed once on the held-back years, same sign and month-clustered t at least 2.0. Two independent one-sided hurdles at about 2.5% each are a stricter joint bar (about 0.06%) than one hurdle at t 3.0 (about 0.13%). The single 3.0 hurdle cannot be reached at +2% with 60 month clusters whatever the count.
+- STATED, new mark, third round: no claim of any kind is made on a design pass alone. The plan's result line is "advance to held-back" or "closed" (key result_line). Only the held-back check can support a claim.
 - STATED: mean excess positive in at least 4 of the 5 design years by entry year (keys marks.years_positive, marks.years).
 - STATED: mean excess still positive with the top 1% of signals removed, that is the highest ceil(0.01 × n) excess returns (key marks.trim_top_share).
 - STATED: at least 150 signals on at least 100 entry days (keys marks.min_signals, marks.min_entry_days). Fewer is "too thin", not a fail of the idea and not a pass.
@@ -146,12 +157,94 @@
 
 ## Gate (b): power on made-up returns
 
-- STATED: research_rig/power_74.py reads its settings from `replay_74_plan` (key power) and opens no other file. Second version, as the second-round ruling asks. Five design years of 252 sessions and 60 calendar months of 21 sessions (keys power.sessions_per_year, power.sessions_per_month). Signal i of n enters on session floor(i × 1260 / n). Each hold is a made-up length, uniform from 1 to the card's limit, 40 sessions for Card A and 10 for Card B (key power.hold_limit).
-- STATED: An excess return is the mean plus a common part plus its own shock. The common part is a weighted sum of calendar-month shocks over the months the hold spans, weighted by the share of hold sessions in each month, and carries 10% of the variance (key power.common_share). Signals whose holds share a month share that shock, so overlapping holds are modeled. All shocks are Student t with 3 degrees of freedom.
-- STATED: Every pass mark is applied, with the t clustered by calendar month of entry and the 0.5% floor. Seed 740002 (key power.seed), 2,000 worlds per cell (key power.draws). The noise SDs per signal are 12%, 15% and 18% for Card A and 20%, 25% and 30% for Card B (key power.noise_sd). The middle one is the one the count branch uses.
-- INFERENCE: The noise SDs and the 10% common share are guesses, not measured from any price.
+- STATED: research_rig/power_74.py reads its settings from `replay_74_plan` (key power) and the calibration file research_rig/CALIB_74.json, and opens no other file. Third version. Five design years of 252 sessions and 60 calendar months of 21 sessions (keys power.sessions_per_year, power.sessions_per_month). Signal i of n enters on session floor(i × 1260 / n). Each hold is a made-up length, uniform from 1 to the card's limit, 40 sessions for Card A and 10 for Card B (key power.hold_limit).
+- STATED: An excess return is the mean plus a common part plus its own shock. The common part is a weighted sum of calendar-month shocks over the months the hold spans, weighted by the share of hold sessions in each month. Signals whose holds share a month share that shock, so overlapping holds are modeled. All shocks are Student t with 3 degrees of freedom.
+- STATED: Every pass mark is applied: month-clustered t at least 2.0, the 0.5% floor, 4 of 5 years, the top-1% trim, 150 signals on 100 days. Seed 740003 (key power.seed), 2,000 worlds per cell (key power.draws). Noise SDs per signal 12%, 15% and 18% for Card A, 20%, 25% and 30% for Card B (key power.noise_sd); the middle one is what the count branch uses. Means +1% and +2%, and +4% for Card B (key power.means).
+- INFERENCE: The noise SDs are guesses, not measured from any price.
 
-Main table, pasted as `python3 research_rig/power_74.py` printed it:
+### Calibration of the common month share
+
+- STATED, ruling 14: the common month share is a power-model assumption, not a mark. research_rig/calib_74.py calibrates it from Kenneth French library files we already hold off-repo, 10_Portfolios_Prior_12_2_Daily_CSV.zip and F-F_Research_Data_Factors_daily_CSV.zip (CRSP 202609 build). Only rows dated before 2017-01-01 are read into the arithmetic. No Alpaca bar or vendor price file is opened.
+- STATED: The files hold daily returns, not monthly, so the script compounds them to calendar months. The series is the top prior-return decile ("Hi PRIOR", returns from day −250 to −21) minus the market (Mkt-RF plus RF). That is the nearest held series to a long momentum book against the market.
+- STATED: The main series is the equal-weighted decile over 1963-07 to 2016-12 (key power.calibration.main). Equal weight was chosen before any calculation, as nearer to small and mid names than value weight. The others are shown only.
+- STATED: Share per noise row = monthly variance × average fraction of a month a hold spans / per-signal variance. The average fraction is the mean hold, (limit + 1) / 2, over 21 sessions.
+- INFERENCE: Card B's holds are not a momentum book (Gold and Revival buy names that fell). The same series is used for lack of a nearer one, and Card B's share is small mainly because its holds are short.
+
+Printed by `python3 research_rig/calib_74.py`:
+
+| Series | Months used | Months | Monthly SD of top decile minus market |
+|---|---|---:|---:|
+| Hi PRIOR equal-weighted minus market | 1963-07 to 2016-12 | 642 | 3.88% |
+| Hi PRIOR equal-weighted minus market | 1990-01 to 2016-12 | 324 | 4.11% |
+| Hi PRIOR value-weighted minus market | 1963-07 to 2016-12 | 642 | 3.41% |
+| Hi PRIOR value-weighted minus market | 1990-01 to 2016-12 | 324 | 3.65% |
+
+Main series equal_196307_201612, monthly common SD 3.88%, variance 0.001505.
+
+| Card | Hold limit | Average fraction of a month a hold spans | Noise SD per signal | Common month share |
+|---|---:|---:|---:|---:|
+| A | 40 | 0.9762 | 12% | 10.20% |
+| A | 40 | 0.9762 | 15% | 6.53% |
+| A | 40 | 0.9762 | 18% | 4.53% |
+| B | 10 | 0.2619 | 20% | 0.99% |
+| B | 10 | 0.2619 | 25% | 0.63% |
+| B | 10 | 0.2619 | 30% | 0.44% |
+
+### Main table, third version
+
+Pasted as `python3 research_rig/power_74.py` printed it:
+
+| Card | Hold limit, sessions | Noise SD per signal | Common month share (calibrated) | True mean excess | Smallest count, 80% power, all marks | Smallest count, 80%, without the mean floor | Power at 150 / 500 / 1,000 / 2,000 / 4,000 signals, all marks |
+|---|---:|---:|---:|---:|---:|---:|---|
+| A | 40 | 12% | 10.20% | +1.0% | none up to 16,000 (best 60%) | none up to 16,000 | 17% / 35% / 43% / 52% / 56% |
+| A | 40 | 12% | 10.20% | +2.0% | 600 | 600 | 50% / 80% / 88% / 91% / 95% |
+| A | 40 | 15% | 6.53% | +1.0% | none up to 16,000 (best 59%) | none up to 16,000 | 14% / 27% / 37% / 48% / 52% |
+| A | 40 | 15% | 6.53% | +2.0% | 1,000 | 1,000 | 38% / 68% / 83% / 90% / 93% |
+| A | 40 | 18% | 4.53% | +1.0% | none up to 16,000 (best 57%) | none up to 16,000 | 11% / 24% / 32% / 42% / 51% |
+| A | 40 | 18% | 4.53% | +2.0% | 1,250 | 1,250 | 29% / 59% / 76% / 87% / 91% |
+| B | 10 | 20% | 0.99% | +1.0% | none up to 16,000 (best 73%) | none up to 16,000 | 9% / 18% / 32% / 49% / 65% |
+| B | 10 | 20% | 0.99% | +2.0% | 1,000 | 1,000 | 24% / 59% / 82% / 96% / 99% |
+| B | 10 | 20% | 0.99% | +4.0% | 300 | 300 | 70% / 99% / 100% / 100% / 100% |
+| B | 10 | 25% | 0.63% | +1.0% | none up to 16,000 (best 50%) | none up to 16,000 | 7% / 13% / 24% / 37% / 46% |
+| B | 10 | 25% | 0.63% | +2.0% | 2,000 | 2,000 | 17% / 41% / 67% / 88% / 98% |
+| B | 10 | 25% | 0.63% | +4.0% | 400 | 400 | 52% / 92% / 99% / 100% / 100% |
+| B | 10 | 30% | 0.44% | +1.0% | none up to 16,000 (best 32%) | none up to 16,000 | 7% / 11% / 16% / 27% / 30% |
+| B | 10 | 30% | 0.44% | +2.0% | 2,500 | 2,500 | 13% / 32% / 53% / 78% / 92% |
+| B | 10 | 30% | 0.44% | +4.0% | 500 | 500 | 40% / 82% / 96% / 100% / 100% |
+
+MEASURED on made-up data: 2000 worlds per cell, seed 740003, common month share calibrated per row from research_rig/CALIB_74.json, holds uniform 1 to the limit, t clustered by calendar month of entry (60 months), Student t with 3 degrees of freedom, mean floor 0.5%, t mark 2.0.
+
+Shown only, fixed common month shares of 2%, 5% and 10% at the middle SD (key power.common_share_shown), pasted as `python3 research_rig/power_74.py --sensitivity` printed it:
+
+| Card | Noise SD | Common month share | True mean excess | Smallest count, 80% power, all marks | Power at 150 / 500 / 1,000 / 2,000 / 4,000 signals |
+|---|---:|---:|---:|---:|---|
+| A | 15% | 2% | +1.0% | 6,000 | 12% / 32% / 48% / 65% / 78% |
+| A | 15% | 2% | +2.0% | 600 | 39% / 78% / 94% / 99% / 100% |
+| A | 15% | 5% | +1.0% | none up to 16,000 (best 66%) | 13% / 27% / 40% / 50% / 60% |
+| A | 15% | 5% | +2.0% | 750 | 37% / 71% / 86% / 93% / 94% |
+| A | 15% | 10% | +1.0% | none up to 16,000 (best 48%) | 13% / 25% / 33% / 38% / 45% |
+| A | 15% | 10% | +2.0% | 2,000 | 36% / 63% / 74% / 82% / 86% |
+| B | 25% | 2% | +1.0% | none up to 16,000 (best 46%) | 7% / 13% / 19% / 32% / 38% |
+| B | 25% | 2% | +2.0% | 2,500 | 15% / 38% / 63% / 77% / 90% |
+| B | 25% | 2% | +4.0% | 400 | 51% / 90% / 98% / 100% / 100% |
+| B | 25% | 5% | +1.0% | none up to 16,000 (best 33%) | 7% / 15% / 17% / 23% / 29% |
+| B | 25% | 5% | +2.0% | 12,000 | 17% / 34% / 50% / 63% / 70% |
+| B | 25% | 5% | +4.0% | 400 | 49% / 85% / 95% / 98% / 99% |
+| B | 25% | 10% | +1.0% | none up to 16,000 (best 22%) | 7% / 11% / 14% / 17% / 20% |
+| B | 25% | 10% | +2.0% | none up to 16,000 (best 58%) | 14% / 30% / 41% / 45% / 54% |
+| B | 25% | 10% | +4.0% | 600 | 46% / 78% / 88% / 92% / 94% |
+
+### What each card's test can and cannot find
+
+- INFERENCE: With 60 month clusters the common month shock sets a floor on the error that more signals cannot remove, roughly the common SD over the square root of 60. A true +1% sits too close to that floor and the 0.5% mean floor, so it is found at most about 60% of the time for Card A and 73% for Card B at any count.
+- INFERENCE, Card A: the test can find a true edge of +2% a signal with about 1,000 signals at the middle SD (600 to 1,250 across the SD rows). It cannot reliably find +1% at any count. At the 150-signal floor it finds +2% only about 38% of the time at the middle SD.
+- INFERENCE, Card B: the test can find +4% a signal with about 400 signals at the middle SD (300 to 500), and +2% with about 2,000 (1,000 to 2,500). It cannot reliably find +1% at any count.
+- INFERENCE: The shown-only table moves these needs. For Card A at +2% the need runs from 600 at a 2% share to 2,000 at 10%. For Card B at +2% it runs from 2,500 at 2% to none at 10%, while +4% stays at 400 to 600. Only at a 2% share does Card A find +1%, at 6,000 signals.
+- INFERENCE: These counts need the lower-bound count from gate (c) to reach them. Doc 169 guesses a few to 25 funded starts a year per card in the $500 book, which is far below; raw symbol-day signals will be more, but the gate (c) count decides.
+
+### Second version, t 3.0 and a 10% common share
+
+- STATED: Kept for the record. It used the month-clustered t at least 3.0 and a 10% common share guessed for both cards, before the calibration and before ruling 13 (key power.second_version). Seed 740002.
 
 | Card | Hold limit, sessions | Noise SD per signal | True mean excess | Smallest count, 80% power, all marks | Smallest count, 80%, without the mean floor | Power at 150 / 500 / 1,000 / 2,000 / 4,000 signals, all marks |
 |---|---:|---:|---:|---:|---:|---|
@@ -169,26 +262,6 @@ Main table, pasted as `python3 research_rig/power_74.py` printed it:
 | B | 10 | 30% | +2.0% | none up to 16,000 (best 18%) | none up to 16,000 | 2% / 5% / 8% / 12% / 15% |
 
 MEASURED on made-up data: 2000 worlds per cell, seed 740002, common month shock 10% of variance, holds uniform 1 to the limit, t clustered by calendar month of entry (60 months), Student t with 3 degrees of freedom, mean floor 0.5%.
-
-Shown-only table, pasted as `python3 research_rig/power_74.py --sensitivity` printed it (key power.common_share_shown):
-
-| Card | Noise SD | Common month share | True mean excess | Smallest count, 80% power, all marks | Power at 150 / 500 / 1,000 / 2,000 / 4,000 signals |
-|---|---:|---:|---:|---:|---|
-| A | 15% | 2% | +1.0% | none up to 16,000 (best 77%) | 2% / 9% / 18% / 37% / 54% |
-| A | 15% | 2% | +2.0% | 1,250 | 12% / 48% / 78% / 94% / 98% |
-| A | 15% | 5% | +1.0% | none up to 16,000 (best 45%) | 3% / 9% / 17% / 25% / 34% |
-| A | 15% | 5% | +2.0% | 2,000 | 12% / 40% / 66% / 82% / 88% |
-| B | 25% | 2% | +1.0% | none up to 16,000 (best 28%) | 1% / 2% / 4% / 8% / 14% |
-| B | 25% | 2% | +2.0% | 6,000 | 3% / 12% / 26% / 49% / 72% |
-| B | 25% | 5% | +1.0% | none up to 16,000 (best 12%) | 1% / 2% / 4% / 6% / 8% |
-| B | 25% | 5% | +2.0% | none up to 16,000 (best 55%) | 3% / 10% / 19% / 31% / 45% |
-
-### What the tables say
-
-- INFERENCE: With 60 month clusters, the common month shock sets a floor on the error that more signals cannot remove. Roughly, the mean's error cannot fall below the common SD over the square root of 60. At a 10% common share and 15% noise, that floor is about 0.6%, so a true +2.0% gives a t of about 3.3 at best, and the 3.0 mark is passed only part of the time.
-- INFERENCE: Under the main assumptions, 80% power at +2.0% is reached only for Card A at 12% noise (2,000 signals). At the middle SD, no count up to 16,000 reaches it for either card.
-- INFERENCE: The answer turns on the common share. At 2% common share, Card A at the middle SD needs 1,250 signals and Card B needs 6,000. At 5%, Card A needs 2,000 and Card B reaches no count.
-- INFERENCE: As fixed, the count branch below uses the main table's middle-SD figure. That figure is "none", so both cards would close on count whatever the count. This is raised with the lead agent for a ruling before gate (c).
 
 ### First version, optimistic
 
@@ -210,17 +283,18 @@ MEASURED on made-up data: 2000 worlds per cell, seed 740001, 1.5 signals per ent
 ## Gate (c): count only, design only
 
 - STATED, lead agent's ruling before any price, the count branch (key count_branch), fixed now:
-- STATED: The need is the smallest count in the main table for 80% power at +2.0% with the middle noise SD of that card (15% for Card A, 25% for Card B).
+- STATED: The need is the smallest count in the main table for 80% power at +2.0% with the middle noise SD of that card (15% for Card A, 25% for Card B). With the third-version main table, the need is 1,000 lower-bound signals for Card A and 2,000 for Card B.
 - STATED: Card A: if the earnings version's design-year signal count is at or above the need, the earnings version is the judged rule. Otherwise the judged rule is the arm without the earnings requirement, and the earnings version is shown only. If that arm is also under the need, Card A closes on count with no return read.
 - STATED: Card B: if the pooled Gold and Revival design-year signal count is at or above the need, it is judged. Otherwise Card B closes on count with no return read.
-- STATED: A need of "none up to 16,000" means no count meets it.
-- STATED: The count script reads the custodied bars and filings and prints only the counts this branch needs: design-year signal counts and entry-day counts for the Card A earnings version, the Card A arm without the earnings requirement, and Card B pooled. Nothing else.
+- STATED: The count script reads the custodied bars and filings and prints only the counts this branch needs, for the Card A earnings version, the Card A arm without the earnings requirement, and Card B pooled. Nothing else.
+- STATED, ruling 16: for each of those it prints two design-year signal counts with their entry-day counts. The raw upper bound counts every qualifying symbol-day signal. The lower bound drops any signal on a symbol that comes within the card's time limit after an earlier counted signal on that symbol, 40 sessions for Card A and 10 for Card B (key count_branch.lower_bound_gap_sessions). The branch uses the lower bound (key count_branch.bound).
 - STATED: The code cannot compute a return. The gate functions get a view of each symbol's bars that ends at the signal close t. The script has no exit logic, no entry-open check and no benchmark series. Its output schema is integers only, and its test fails if any float leaves the script.
-- INFERENCE: Because the count stage has no exit logic, it cannot apply the "no second signal while held" rule or the next-open entry window. Its counts are therefore an upper bound on the judged count. Using the upper bound in the branch can only let a card through that later turns out thinner; gate (d) still applies the 150-signal and 100-day marks.
+- INFERENCE: The count stage has no exit logic and no next-open check. The lower bound treats every earlier signal as held for the full time limit, so it can drop signals the real rule would keep, but it cannot keep one the real rule would drop for a hold. Signals refused at the next open are not in either count, so gate (d) still applies the 150-signal and 100-day marks.
 
 ## Gate (d): one scoring run, design years
 
-- STATED: One run per card, once, on design years only. It prints the marks, the shown-only arms and the $500 book. It has no held-back mode.
+- STATED: One run per card, once, on design years only. It prints the marks, the shown-only arms and the $500 book. It has no held-back mode. Its result line is "advance to held-back" or "closed".
+- STATED, ruling 17, shown only, not a mark: each signal's return is also compared with the equal-weighted same-days return of all names that passed the screen that day without the trigger. For Card A that is the leader screen; for Card B, the price and volume scan (key compare_shown). Same entry and exit prints as the signal, no cost. This shows whether a gain comes from the trigger and the exits or only from owning leaders in a good year.
 - STATED: The held-back years are opened once per card, only after a design pass and a separate written go.
 
 ## Identity register and custody
