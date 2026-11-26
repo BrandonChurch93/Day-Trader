@@ -146,6 +146,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/60_us_venue_costs_checked.md` | What a small US account pays to go long or short crypto: venue fees, checked coin lists, and worked costs with limits | CURRENT |
 | `docs/research/62_round_7_outside_evidence.md` | Checked outside evidence on AI crypto traders, funding and basis, trading hours, and token unlocks. Reading only, no test | CURRENT |
 | `docs/research/63_round_8_outside_evidence.md` | Checked outside evidence on eight dated-event ideas. Keeps the fast-track IPO test and small-lot tender audit; reading only, no test | CURRENT |
+| `docs/research/64_replay_19_monday_asia.md` | Monday Asia stand-in on viewed dates. Run once, did not pass, one of five marks | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -239,7 +240,9 @@ Working papers.
 | `research_rig/common_17.py`, `research_rig/score_17.py`, `research_rig/test_17.py`, `research_rig/report_17.py` | Plan 17 rules, scorer (refuses until plans 16 and 17 are both frozen), self-tests on made-up prices, and the result page writer; not audited yet | DRAFT |
 | `research_rig/look_17_signal.py`, `research_rig/look_17_signal.json` | Viewed-only ledger 152 signal-look builder and aggregate measurements | CURRENT |
 | `research_rig/PREREG_18_funding_carry.md`, `research_rig/PLAN_18_rank_page_coverage.md`, `research_rig/common_18.py`, `research_rig/archive_18.py`, `research_rig/score_18.py`, `research_rig/test_18.py` | Frozen Queue 27 funding carry, rank-page mapping and exclusions, audited-clock proxy and shown US rosters. Sealed one-shot pending publication and lead agent execution; no result | CURRENT |
-| `research_rig/PREREG_19_monday_asia.md`, `research_rig/common_19.py`, `research_rig/score_19.py`, `research_rig/test_19.py` | Frozen Queue 35 Monday Asia trend proxy for BTC and ETH, shifted-hour placebos and synthetic-only tests. Local one-shot pending | CURRENT |
+| `research_rig/PREREG_19_monday_asia.md`, `research_rig/common_19.py`, `research_rig/score_19.py`, `research_rig/test_19.py` | Frozen Queue 35 Monday Asia trend proxy for BTC and ETH, shifted-hour placebos and synthetic-only tests. Local one-shot complete | CURRENT |
+| `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
+| `research_rig/report_19.py` | Prints the Replay 19 result page from the saved JSON. Does not score or read market data | CURRENT |
 | `research_rig/check_identity_levels_16_17.py`, `research_rig/diagnose_identity_daily_16_17.py` | Plans 16 and 17 identity check: does a Binance pair carry the coin on the saved list, by matching saved price levels; prints counts only, computes no return | DRAFT |
 | `research_rig/PREREG_16_hot_five_hedged.md` | Plan 16, frozen 2026-11-25: last week's five biggest risers long, a same-size futures short, weekly, judged on a held-back coin list. Run once, not supported | CURRENT |
 | `research_rig/build_identity_asof_16_17.py` | Builds the shared dated identity policy for plans 16 and 17 and counts changes against the every-month check | CURRENT |
