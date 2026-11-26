@@ -429,6 +429,8 @@ Working papers.
 | `research_rig/power_110.py`, `research_rig/POWER_110.json` | Ledger 216 synthetic-only power for the dip against breakout comparison and its saved output; no market data | RECORD |
 | `research_rig/POWER_ROWS_67_68_69.json` | Saved deterministic power figures for queue rows 67, 68 and 69; no market data | RECORD |
 | `research_rig/PREREG_68_earnings_drift_plain.md` | Queue 17 and ledger 213: price-blind later filing-clock earnings count, long-side evidence, and power screen; no market inputs or scored run | RECORD |
+| `research_rig/PREREG_70_coin_sweep.md`, `research_rig/GRID_70.json`, `research_rig/COVERAGE_70.json` | Plan 70, Queue 112 and ledger 218: search-only coin sweep design, frozen rules, timestamp roster and cost assumptions; no real run | CURRENT |
+| `research_rig/coverage_70.py`, `research_rig/build_grid_70.py`, `research_rig/sweep_70.py`, `research_rig/synthetic_70.py` | Plan 70 timestamp census, deterministic grid builder, guarded search and synthetic-only validation | CURRENT |
 | `research_rig/power_68.py`, `research_rig/POWER_68.json` | Plan 68 synthetic-only quarter-clustered power script and reproducible output | RECORD |
 | `research_rig/count_screen18.py`, `research_rig/COUNT_SCREEN18.json` | Queue 18 SEC 13F counts by acceptance quarter; aggregate output only, native files and event keys in private custody | RECORD |
 | `research_rig/power_screen18.py`, `research_rig/POWER_SCREEN18.json` | Queue 18 synthetic-only quarter-clustered power and all-mark outcomes; no price or scored output | RECORD |

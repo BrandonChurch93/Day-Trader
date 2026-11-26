@@ -1,0 +1,5 @@
+{
+  "coins": ["AAVE", "ADA", "AVAX", "BCH", "BNB", "BTC", "DOGE", "DOT", "ETH", "HBAR", "LINK", "LTC", "NEAR", "PEPE", "SHIB", "SOL", "SUI", "XLM", "XRP", "ZEC"],
+  "private_manifest_sha256": "042ac622f7d083f52c0f8341b30c09c515154936200bcb81153e7e8e54bfa320",
+  "grid_sha256": "ac16d46df925a3270b55563b82d5bf1a5d0bd4b4840b45f57a3ce8a286dc5842"
+}

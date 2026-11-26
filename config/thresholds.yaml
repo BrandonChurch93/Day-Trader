@@ -1150,3 +1150,16 @@ replay_65_plan:
   status: builder
   note: Draft only. Plan 65 rule settings from NBER w33554 section 4 and the lead's rulings; nothing fitted on our data.
   source: research_rig/PREREG_65_stock_bond_rebalance_spread.md
+
+replay_70_plan:
+  value:
+    search_marks: {min_trades: 200, min_days: 100, min_days_each_half: 40, full_t: 3.5, half_t: 1.5, trim_share: 0.01, annual_min: 0.12, finalist_cap: 3, duplicate_corr: 0.7}
+    vault_marks: {min_days: 100, min_pre_vault_power: 0.33, search_mean_haircut_multiplier: 0.50, full_t: 2.4, trim_share: 0.01, positive_half_years: 4, annual_min: 0.08, annualization_days: 365.25}
+    vault_power: {draws: 20000, seed_base: 702000, block_days: 7}
+    funding_adverse_bp_per_hour: 1
+    funding_stress_bp_per_hour: [0.25, 5]
+    spot_taker_round_trip_bp: 160
+    futures_round_trip_bp: {AAVE: 18.46, ADA: 43.54, AVAX: 85.08, BCH: 29.26, BNB: 17.14, BTC: 16.58, DOGE: 24.11, DOT: 85.09, ETH: 33.61, HBAR: 24.88, LINK: 18.66, LTC: 28.38, NEAR: 12.62, PEPE: 24.06, SHIB: 146.99, SOL: 21.27, SUI: 21.89, XLM: 16.21, XRP: 18.34, ZEC: 15.26}
+  status: builder
+  note: Search-only draft for Queue 112, ledger 218. No authorization for real bars or vault. Costs are stated assumptions, not measured fills.
+  source: research_rig/PREREG_70_coin_sweep.md
