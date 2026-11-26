@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 15:11 UTC
+Last updated: 2026-11-26 16:51 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -14,6 +14,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- Plan 69, the stock and fund discovery sweep ([result](research/161_plan_69_stock_sweep_search.md), [plan](../research_rig/PREREG_69_stock_sweep.md); ledger 217, queue 111), search run once 2026-11-26 09:51 MT on 2016 to 2021 only. MEASURED: no rule met the search marks. Of 188 scored rules, 53 had enough trades and the highest t among them was 1.25 against a bar of 3.5; 18 of those 53 lost clearly. 95 rules fired too rarely to count (the highest t of any rule, 2.35, came from one with 26 trades) and 40 could not be scored because an exit had no print. The best simple net a year on $500 was +4.83%, no better than holding the same fund over the same clock on any day. No finalist, so the vault from 2022 on was not opened and stays sealed. STATED: half the grid was too thin to judge, which is a limit of the grid; the families that could be judged (late-day leveraged fund moves, fund and index gaps, same half-hour repeats, pressure before the close) show nothing after costs.
 
 - TM09 redrafted as a stock desk with news ([draft](../timemachine/PLAN_TM09_stock_desk_with_news_DRAFT.md), 2026-11-26 08:38 MT). The coin headline sources already on the tape (CryptoPotato, NewsBTC, CryptoSlate) forbid copying in their terms, so they are out for new runs and a coin desk with news has no lawful free input. For stocks the input is there: MEASURED 7,429 Alpaca headlines and 285 SEC filings across 38 stocks in the 20 weeks from July 6, with 4.1% of stock-weeks empty. Limits: the tape cannot show later edits to a headline; the stock list was picked with hindsight; power UNKNOWN. Alpaca news use rests on the lead agent's reading of the published terms (personal, non-commercial use); written clearance UNKNOWN.
 - Forward headline logger (queue 120), 2026-11-26 08:30 MT: built and tested but not started. MEASURED by reading each site's terms: the main crypto news sites and the Coinbase and Kraken pages forbid automated collection or copying without written permission; only SEC, Federal Reserve and Bitcoin Optech feeds clear ([card](../research_rig/feeds/NEWS_FORWARD_README.md)). TM09 will use the dated headlines already on the tape, with CryptoSlate rows left out.
