@@ -24,22 +24,36 @@ from zoneinfo import ZoneInfo, reset_tzpath
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = Path("/home/user/workspace/rig/data")
-INPUT = DATA / "plan43_inputs"
-RUN = DATA / "replay_43"
+INPUT = DATA / "plan43_successor_inputs"
+RUN = DATA / "replay_43_successor"
 PLAN = "research_rig/PREREG_43_special_dividends.md"
+AMENDMENT = "research_rig/AMENDMENT_43_TAPE.md"
 PINS = "research_rig/PINNED_43.json"
-APPROVAL = "research_rig/APPROVAL_43.md"
+APPROVAL = "research_rig/APPROVAL_43_SUCCESSOR.md"
 ENGINE = "research_rig/common_21.py"
+PROVENANCE = "research_rig/provenance_43.py"
 CALENDARS = ("research_rig/calendar_36.json", "research_rig/calendar_25.json")
 CONFIG = "config/thresholds.yaml"
 CALIBRATION = "research_rig/CALIBRATION_43.json"
-ACQUISITION = "research_rig/ACQUISITION_43.md"
-GO = "research_rig/GO_43.md"
-SOURCES = {PLAN, ENGINE, *CALENDARS, CONFIG, CALIBRATION, "research_rig/score_43.py", "research_rig/test_43.py"}
+ACQUISITION = "research_rig/ACQUISITION_43_SUCCESSOR.md"
+GO = "research_rig/GO_43_SUCCESSOR.md"
+SOURCES = {PLAN, AMENDMENT, ENGINE,PROVENANCE,*CALENDARS, CONFIG, CALIBRATION,
+           "research_rig/score_43.py", "research_rig/test_43.py"}
+COLLECTOR = DATA / "plan43_provenance/fetch_plan43_bars_v2.py"
+COLLECTOR_SHA256 = "5c2ce9a3cbd34a7332bd988c15b62c4dc49ff11d874348703f2ee835ee62a447"
+LEDGER = 188
 SEC = "www.sec.gov"
 ENDPOINT = "https://data.alpaca.markets/v2/stocks/bars"
 PACKETS = ("identities.json", "bars.json", "actions.json")
+VIEWS = ("raw","all","filing_all")
+COVERAGE_BPS = 500
+COVERAGE_REASONS = ("missing_entry","zero_volume_entry","missing_exit","zero_volume_exit",
+                    "missing_hold","zero_volume_hold")
+EARLY_REASONS = ("missing_day1","zero_volume_day1")
+PADDING_FLAGS = ("missing_pre_padding","zero_volume_pre_padding",
+                 "missing_post_padding","zero_volume_post_padding")
 NONCASH_SKIP = "unmodeled_noncash_distribution"
+NONCASH_ACCESSION = "0001140361-22-046943"
 DOCKET = Path("/home/user/workspace/rig/plan43_draft/EVENT_DOCKET_V2.jsonl")
 reset_tzpath(("/usr/share/zoneinfo",))
 TZ_BYTES=Path("/usr/share/zoneinfo/America/New_York").read_bytes()
@@ -49,14 +63,16 @@ ET=ZoneInfo.from_file(BytesIO(TZ_BYTES),key="America/New_York")
 ZERO = Decimal(0)
 UUID=rb"([0-9a-f]{40})"
 SHA=rb"([0-9a-f]{64})"
-ACQUISITION_RE = (rb"Approved by the lead: plan 43, one custodian acquisition, freeze commit "+UUID
-                  +rb", freeze SHA-256 "+SHA+rb", docket SHA-256 "+SHA+rb"\.\n")
+ACQUISITION_RE = (rb"Approved by the lead: plan 43 successor ledger 188, one custodian acquisition, freeze commit "+UUID
+                  +rb", freeze SHA-256 "+SHA+rb", docket SHA-256 "+SHA+rb", collector SHA-256 "+SHA+rb"\.\n")
 APPROVAL_RE = (
-    rb"Approved by the lead: plan 43, validation only, acquisition commit "+UUID
+    rb"Approved by the lead: plan 43 successor ledger 188, validation only, acquisition commit "+UUID
     +rb", acquisition receipt SHA-256 "+SHA+rb", identities SHA-256 "+SHA
-    +rb", bars SHA-256 "+SHA+rb", actions SHA-256 "+SHA+rb"\.\n"
+    +rb", bars SHA-256 "+SHA+rb", actions SHA-256 "+SHA+rb", fetch-start SHA-256 "+SHA
+    +rb", native index SHA-256 "+SHA+rb", transport index SHA-256 "+SHA
+    +rb", offline rebuild SHA-256 "+SHA+rb"\.\n"
 )
-GO_RE = (rb"Approved by the lead: plan 43, one scored run, validation approval commit "+UUID
+GO_RE = (rb"Approved by the lead: plan 43 successor ledger 188, one scored run, validation approval commit "+UUID
          +rb", validation receipt SHA-256 "+SHA+rb"\.\n")
 
 
@@ -232,8 +248,9 @@ def actions_packet(p, keyed, days, c):
             need(z["identity"] == ids[leg]["identity"] and cites(z["coverage_sources"])
                  and z["start"] == e.start.isoformat()
                  and z["end"] == e.end.isoformat(), "ACTION_COVERAGE")
-            if leg=="stock" and z.get("status")=="blocked":
-                need(z.get("reason_code")==NONCASH_SKIP and cites(z.get("reason_sources")),"ACTION_COVERAGE")
+            if leg=="stock" and a==NONCASH_ACCESSION:
+                need(z.get("status")=="blocked" and z.get("reason_code")==NONCASH_SKIP
+                     and cites(z.get("reason_sources")),"ACTION_COVERAGE")
                 continue
             need(z.get("status")=="complete","ACTION_COVERAGE")
             aset = {}
@@ -321,26 +338,67 @@ def check_basis(raw,adjusted,filing,scope,seq):
     actions=defaultdict(list)
     for ex,kind,value,_,_ in seq:
         actions[ex].append((kind,exact(value)))
-    anchor=None
-    expected=None
+    anchor=expected=None
+    prior=None
+    unproved=[]
     for k,day in enumerate(scope):
-        base=ratio(adjusted[day],filing[day])
-        if anchor is None:
-            anchor=base
-        need(abs(base/anchor-1)<=eps,"ASOF_BASIS_CHANGE")
+        if positive(adjusted,day) and positive(filing,day):
+            base=ratio(adjusted[day],filing[day])
+            if anchor is None:
+                anchor=base
+            need(abs(base/anchor-1)<=eps,"ASOF_BASIS_CHANGE")
+        if not (positive(raw,day) and positive(adjusted,day)):
+            continue
         level=ratio(raw[day],adjusted[day])
-        if expected is None:
-            expected=level
-        else:
-            split=next((value for kind,value in actions[day] if kind=="split"),None)
-            cash=sum(value for kind,value in actions[day] if kind!="split")
+        unknown=False
+        for j in range(prior+1 if prior is not None else k+1,k+1):
+            transition=scope[j]
+            split=next((value for kind,value in actions[transition] if kind=="split"),None)
+            cash=sum(value for kind,value in actions[transition] if kind!="split")
             if split is not None:
                 expected/=split
             elif cash:
-                previous=exact(raw[scope[k-1]].c)
-                need(previous>cash,"DIVIDEND_BASIS")
-                expected*=1-cash/previous
+                if not positive(raw,scope[j-1]):
+                    unknown=True
+                    unproved.append(transition)
+                else:
+                    previous=exact(raw[scope[j-1]].c)
+                    need(previous>cash,"DIVIDEND_BASIS")
+                    expected*=1-cash/previous
+        if prior is None or unknown:
+            expected=level
+        else:
             need(abs(level/expected-1)<=eps,"RAW_BASIS_CHANGE")
+        prior=k
+    return unproved
+
+
+def positive(view,day):
+    return day in view and view[day].v>ZERO
+
+
+def issue(tapes, dates):
+    cells=[v.get(day) for v in tapes for day in dates]
+    if any(bar is None for bar in cells):
+        return "missing"
+    if any(bar.v==ZERO for bar in cells):
+        return "zero_volume"
+    return None
+
+
+class Prepared(dict):
+    def __init__(self):
+        super().__init__()
+        self.decisions={}
+
+
+def coverage_limit(n):
+    return n*COVERAGE_BPS//10000
+
+
+def enforce_coverage(rows):
+    applied=[r for r in rows.decisions.values() if not r.get("noncash")]
+    need(sum(r["refusal"] is not None for r in applied)<=coverage_limit(len(applied)),"COVERAGE_CAP")
 
 
 def canonical_class(e):
@@ -356,12 +414,9 @@ def canonical_class(e):
     return "voting-common" if "voting common" in label else "common"
 
 
-def prepared(event_rows, days, C, c, identity, bars, actions):
+def identity_actions(event_rows, days, c, identity, actions):
     need(identity["version"] == 1 and identity["custodian"] == c["custodian"]
          and set(identity["records"]) == {e.a for e in event_rows}, "IDENTITY")
-    need(bars["version"] == 1 and bars["custodian"] == c["custodian"] and bars["endpoint"] == ENDPOINT
-         and bars["feed"] == "sip" and bars["timeframe"] == "1Day"
-         and bars["adjustments"] == ["raw","all"], "BARS")
     keyed,mapping,subject_ids = {},{},{}
     controls = c["controls"]
     for e in event_rows:
@@ -385,29 +440,51 @@ def prepared(event_rows, days, C, c, identity, bars, actions):
     need(all(len({ids[s]["identity"] for _,ids in keyed.values()}) == 1 for s in controls), "CONTROL_IDENTITY")
     action = actions_packet(actions,keyed,set(days),c)
     modeled = {a for a in action if "stock" in action[a]}
+    need(keyed.keys()-modeled==({NONCASH_ACCESSION} if NONCASH_ACCESSION in keyed else set())
+         and (len(keyed)!=443 or len(modeled)==442),"ACTION_UNIVERSE")
+    return keyed,action,modeled
+
+
+def prepared(event_rows, days, C, c, identity, bars, actions):
+    need(bars["version"] == 1 and bars["custodian"] == c["custodian"] and bars["endpoint"] == ENDPOINT
+         and bars["feed"] == "sip" and bars["timeframe"] == "1Day"
+         and bars["adjustments"] == ["raw","all"], "BARS")
+    keyed,action,modeled=identity_actions(event_rows,days,c,identity,actions)
+    controls=c["controls"]
     need(modeled <= bars["records"].keys() <= keyed.keys(),"BARS")
-    complete, identities = {}, defaultdict(dict)
+    complete, identities = Prepared(), defaultdict(dict)
     reversed_fingerprints, alias_dates = defaultdict(set), defaultdict(set)
     for a,(e,ids) in keyed.items():
         if a not in modeled:
+            complete.decisions[a]=dict(year=e.year,noncash=NONCASH_SKIP)
             continue
         packet = bars["records"][a]
         need(set(packet) == set(ids), "BARS")
         complete[a] = {}
         scope = days[bisect_left(days,e.start):bisect_right(days,e.end)]
         allowed = set(scope)
+        per_leg={}
+        gaps={}
+        insufficient=[]
         for leg,ident in ids.items():
             r = packet[leg]
             need((r["ticker"],r["identity"]) == (ident["ticker"],ident["identity"])
                  and r["entry_asof"] == e.entry.isoformat() and r["filing_asof"] == e.at.date().isoformat()
                  and r["start"] == e.start.isoformat() and r["end"] == e.end.isoformat(), "BAR_SCOPE")
-            raw, adj, check = (tape(r[k],allowed,C) for k in ("raw","all","filing_all"))
-            need(all(set(x)==allowed and all(b.v>ZERO for b in x.values()) for x in (raw,adj,check)),"PADDED_TAPE")
-            bad = C.stale_dates(scope,adj,c["stale_run"])
-            need(C.same_tape(adj,check,scope), "BAR_IDENTITY")
+            need(all(k in r and type(r[k]) is list for k in VIEWS),"BAR_SCOPE")
+            raw, adj, check = (tape(r[k],allowed,C) for k in VIEWS)
+            per_leg[leg]=(raw,adj,check)
+            bad = C.stale_dates(scope,{day:b for day,b in adj.items() if b.v>ZERO},c["stale_run"])
+            pair_days=[day for day in scope if positive(adj,day) and positive(check,day)]
+            if len(pair_days)>=3:
+                need(C.same_tape(adj,check,pair_days),"BAR_IDENTITY")
+            else:
+                insufficient.append(leg)
             for day in (e.early,e.entry,e.exit):
                 need(day not in bad,"BAR_MISSING_STALE")
-            check_basis(raw,adj,check,scope,action[a][leg][0])
+            unproved=check_basis(raw,adj,check,scope,action[a][leg][0])
+            if unproved:
+                gaps[leg]=[day.isoformat() for day in unproved]
             key = ident["identity"]
             # Repeated same-identity raw bars must agree on all overlapping sessions.
             for day,b in raw.items():
@@ -417,6 +494,8 @@ def prepared(event_rows, days, C, c, identity, bars, actions):
             # overlapping request, without allowing another view to replace a fingerprint.
             for view in (raw,adj,check):
                 for day,b in view.items():
+                    if b.v<=ZERO:
+                        continue
                     owners=reversed_fingerprints[(day,b)]
                     for other in owners-{key}:
                         dates=alias_dates[tuple(sorted((key,other)))]
@@ -424,7 +503,35 @@ def prepared(event_rows, days, C, c, identity, bars, actions):
                         need(len(dates)<3,"BAR_ALIAS")
                     owners.add(key)
             complete[a][leg] = (raw,*action[a][leg])
-        for start,bps in ((e.early,c["cost"]["bps"]),(e.entry,c["cost"]["bps"]),(e.entry,c["cost"]["stress_bps"])):
+        views=[view for tapes in per_leg.values() for view in tapes]
+        refusal=None
+        for name,dates in (("entry",[e.entry]),("exit",[e.exit]),
+                           ("hold",[day for day in scope if e.entry<day<e.exit])):
+            flag=issue(views,dates)
+            if flag is not None:
+                refusal=f"{flag}_{name}"
+                break
+        early=issue(views,[e.early]) if refusal is None else None
+        flags=[]
+        for label,dates in (("pre",[day for day in scope if day<e.early]),
+                            ("post",[day for day in scope if day>e.exit])):
+            if any(day not in view for view in views for day in dates):
+                flags.append(f"missing_{label}_padding")
+            if any(day in view and view[day].v==ZERO for view in views for day in dates):
+                flags.append(f"zero_volume_{label}_padding")
+        complete.decisions[a]=dict(year=e.year,refusal=refusal,early=f"{early}_day1" if early else None,
+                                   padding=flags,unproved_cash_bridge=gaps,adjusted_insufficient=insufficient,
+                                   unavailable=[(leg,kind,day.isoformat(),"missing" if day not in view else "zero_volume")
+                                   for leg,tapes in per_leg.items() for kind,view in zip(VIEWS,tapes)
+                                   for day in scope if not positive(view,day)],
+                                   split_product=str(split_product(action[a]["stock"][0],e.entry,e.exit)))
+        if refusal:
+            del complete[a]
+            continue
+        starts=[(e.entry,c["cost"]["bps"]),(e.entry,c["cost"]["stress_bps"])]
+        if early is None:
+            starts.insert(0,(e.early,c["cost"]["bps"]))
+        for start,bps in starts:
             for leg,(raw,seq,_) in complete[a].items():
                 q = quantity(raw[start].o,c["capital"],bps,c)
                 if leg == "stock" and start == e.entry and bps == c["cost"]["bps"]:
@@ -438,6 +545,50 @@ def prepared(event_rows, days, C, c, identity, bars, actions):
                     sq = quantity(complete[a]["stock"][0][start].o,c["capital"],bps,c)
                     need(q > 0 or sq == 0, "CONTROL_UNAFFORDABLE")
     return complete
+
+
+def split_product(seq,start,end):
+    product=Fraction(1)
+    for ex,kind,value,_,_ in seq:
+        if start<ex<=end and kind=="split":
+            product*=exact(value)
+    return product
+
+
+def counts(rows):
+    summary=dict(filing_eligible=len(rows),noncash_skipped=0,coverage_refused=0,coverage_kept=0,
+                 refused_by_reason=dict.fromkeys(COVERAGE_REASONS,0),
+                 padding_flags=dict.fromkeys(PADDING_FLAGS,0),early_omissions=dict.fromkeys(EARLY_REASONS,0),
+                 unproved_cash_bridge_events=0,adjusted_insufficient_events=0)
+    for r in rows:
+        if r.get("noncash"):
+            summary["noncash_skipped"]+=1
+            continue
+        if r["refusal"]:
+            summary["coverage_refused"]+=1
+            summary["refused_by_reason"][r["refusal"]]+=1
+        else:
+            summary["coverage_kept"]+=1
+            if r["early"]:
+                summary["early_omissions"][r["early"]]+=1
+        for flag in r["padding"]:
+            summary["padding_flags"][flag]+=1
+        summary["unproved_cash_bridge_events"]+=bool(r["unproved_cash_bridge"])
+        summary["adjusted_insufficient_events"]+=bool(r["adjusted_insufficient"])
+    return summary
+
+
+def coverage_summary(complete,c):
+    rows=list(complete.decisions.values())
+    years=range(c["first_year"],c["last_year"]+1)
+    return counts(rows)|dict(by_acceptance_year={str(y):counts([r for r in rows if r["year"]==y]) for y in years},
+                             cap=coverage_limit(sum(not r.get("noncash") for r in rows)))
+
+
+def downside_floor(split,c):
+    capital,floor=exact(c["capital"]),exact(c["cost"]["floor"])
+    need(capital>0 and floor>0 and 0<=c["cost"]["bps"]<=10000,"BOUND_CONFIG")
+    return -1-floor*(capital//floor)*exact(split)/capital
 
 
 def fee(px,bps,c):
@@ -572,6 +723,8 @@ def report(event_rows, complete, days, c):
         bars=complete[e.a]
         stock=trade(e,bars["stock"],e.entry,cap,base,c)
         for key,entry,bps in (("entry_plus_one",e.early,base),("stress_cost",e.entry,stress)):
+            if key=="entry_plus_one" and complete.decisions[e.a]["early"]:
+                continue
             obj=trade(e,bars["stock"],entry,cap,bps,c)
             if obj:
                 shown[key].append(obj.economic)
@@ -591,9 +744,21 @@ def report(event_rows, complete, days, c):
         ratio=c["size_breaks"]
         band=sum(stock.yield_at_open>=exact(x) for x in ratio)
         shown[f"size_bucket_{band}"].append(stock.economic)
+    coverage=coverage_summary(complete,c)
+    placed=Counter(str(r.year) for r in out)
+    for y,s in coverage["by_acceptance_year"].items():
+        s.update(judged_placed=placed[y],unaffordable=no[y])
+    coverage.update(judged_placed=len(out),unaffordable=sum(no.values()))
+    lost=[downside_floor(Fraction(r["split_product"]),c) for r in complete.decisions.values() if r.get("refusal")]
+    full_denominator=len(modeled)+len(lost)
+    bound=(sum(r.stock for r in out)+sum(lost))/full_denominator if full_denominator else None
     return dict(judged=marks(out,c), no_trade_unaffordable=sum(no.values()), no_trade_by_year=dict(no),
-                eligible=len(event_rows),modeled=len(modeled),
-                skipped_by_reason={NONCASH_SKIP:len(event_rows)-len(modeled)},
+                eligible=len(event_rows),modeled=len(modeled),coverage=coverage,
+                skipped_by_reason={NONCASH_SKIP:coverage["noncash_skipped"]}|coverage["refused_by_reason"],
+                conservative_full_docket_stock_floor=bound,full_docket_floor_denominator=full_denominator,
+                limitation=("This result speaks only for events with complete positive-volume SIP views on every judged "
+                            "session that passed the tape checks and, for the judged marks, supported a placed stock and "
+                            "IWM pair. It does not establish a return for every eligible filing."),
                 idle_zero_mean=avg([r.stock for r in out]+[0]*sum(no.values())),
                 shown={k:dict(n=len(vals),mean=avg(vals)) for k,vals in sorted(shown.items())},
                 spy_unaffordable_cash=spy_cash,sleeves=sleeve_path(modeled,complete,days,c))
@@ -630,15 +795,22 @@ def calibrate(event_rows,c):
                 edges=[float(x) for x in cal["edges"]])
 
 
-def file_bytes(path, pin, cap, private=False):
-    need(path.resolve() == path and is_pin(pin),"FILE")
+def read_bytes(path,cap,private=False):
+    need(path.resolve()==path,"FILE")
     with os.fdopen(os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK),"rb") as f:
         s=os.fstat(f.fileno())
         need(stat.S_ISREG(s.st_mode) and s.st_size<=cap,"FILE")
         if private:
             need(s.st_uid==os.geteuid() and stat.S_IMODE(s.st_mode)==0o600,"PRIVATE")
         b=f.read(cap+1)
-    need(len(b)<=cap and sha256(b).hexdigest()==pin,"PIN")
+    need(len(b)<=cap,"FILE")
+    return b
+
+
+def file_bytes(path, pin, cap, private=False):
+    need(is_pin(pin),"FILE")
+    b=read_bytes(path,cap,private=private)
+    need(sha256(b).hexdigest()==pin,"PIN")
     return b
 
 
@@ -691,12 +863,14 @@ def authorize(commit,mode):
     elif mode=="validate":
         approval=commit
     if approval:
-        parent,(acq,acq_pin,ids,bars,actions)=approval_line(approval,APPROVAL,APPROVAL_RE)
+        parent,(acq,acq_pin,ids,bars,actions,fetch_pin,native_pin,transport_pin,rebuild_pin)=approval_line(
+            approval,APPROVAL,APPROVAL_RE)
         follows(acq,parent)
     else:
         acq=commit
-    parent,(freeze,freeze_pin,docket_pin)=approval_line(acq,ACQUISITION,ACQUISITION_RE)
+    parent,(freeze,freeze_pin,docket_pin,collector_pin)=approval_line(acq,ACQUISITION,ACQUISITION_RE)
     follows(freeze,parent)
+    need(collector_pin==COLLECTOR_SHA256,"COLLECTOR_PIN")
     for n in (ACQUISITION,APPROVAL,GO):
         need(git("cat-file","-e",f"{freeze}:{n}",allow=True).returncode!=0,"APPROVAL_FROZEN")
     refs=list(dict.fromkeys(r for r in (freeze,acq,approval,go) if r))
@@ -709,14 +883,18 @@ def authorize(commit,mode):
     need(set(pins)==SOURCES and all(map(is_pin,pins.values())),"FREEZE")
     blobs={n:file_bytes(ROOT/n,pins[n],2**20) for n in SOURCES}
     need(all(b==contents(rev,n) for n,b in blobs.items() for rev in refs),"FREEZE")
-    need([line for line in blobs[PLAN].splitlines() if line.startswith(b"Status ")]==[b"Status FROZEN."],"FREEZE")
-    for name,num in (("research_rig/TRIAL_LEDGER.md",178),("docs/QUEUE.md",74)):
+    need(all([line for line in blobs[n].splitlines() if line.startswith(b"Status ")]==[b"Status FROZEN."]
+             for n in (PLAN,AMENDMENT)),"FREEZE")
+    for name,num,doc in (("research_rig/TRIAL_LEDGER.md",LEDGER,AMENDMENT),("docs/QUEUE.md",74,PLAN)):
         prefix=f"| {num} |".encode()
         a,*checks=([line for line in contents(r,name).splitlines() if line.startswith(prefix)] for r in refs)
-        need(len(a)==1 and all(x==a for x in checks) and PLAN.encode() in a[0],"LEDGER_QUEUE")
-    job=dict(ledger=178,acquisition_commit=acq,freeze_commit=freeze,freeze_sha256=freeze_pin,docket_sha256=docket_pin)
+        need(len(a)==1 and all(x==a for x in checks) and doc.encode() in a[0],"LEDGER_QUEUE")
+    job=dict(ledger=LEDGER,acquisition_commit=acq,freeze_commit=freeze,freeze_sha256=freeze_pin,
+             docket_sha256=docket_pin,collector_sha256=collector_pin)
     if approval:
-        job|=dict(approval_commit=approval,acquisition_receipt_sha256=acq_pin,**dict(zip(PACKETS,(ids,bars,actions))))
+        job|=dict(approval_commit=approval,acquisition_receipt_sha256=acq_pin,fetch_start_sha256=fetch_pin,
+                  native_index_sha256=native_pin,transport_index_sha256=transport_pin,offline_rebuild_sha256=rebuild_pin,
+                  **dict(zip(PACKETS,(ids,bars,actions))))
     if go:
         job|=dict(go_commit=go,validation_receipt_sha256=validated)
     return job,blobs
@@ -770,14 +948,32 @@ def resources(c):
         os.nice(p["nice"]-nice)
 
 
-def acquired(job,c):
+def acquired(job,c,ids_pin,actions_pin):
     return dict(acquisition_commit=job["acquisition_commit"],freeze_commit=job["freeze_commit"],
-                freeze_sha256=job["freeze_sha256"],docket_sha256=job["docket_sha256"],custodian=c["custodian"])
+                freeze_sha256=job["freeze_sha256"],docket_sha256=job["docket_sha256"],custodian=c["custodian"],
+                ledger=LEDGER,input_dir=str(INPUT),collector_sha256=COLLECTOR_SHA256,
+                identities_sha256=ids_pin,actions_sha256=actions_pin)
+
+
+def check_native(blob,job,c,q,days,identity,ready,bars_blob):
+    proof=ModuleType("p43_verified_provenance")
+    exec(compile(blob,PROVENANCE,"exec"),proof.__dict__)
+    api=SimpleNamespace(need=need,file_bytes=file_bytes,private_dir=private_dir,parse=parse,ET=ET,
+                        money=money,VIEWS=VIEWS,ENDPOINT=ENDPOINT,COLLECTOR_SHA256=COLLECTOR_SHA256,LEDGER=LEDGER)
+    proof.verify(api,INPUT,job,c,q,days,identity,ready,bars_blob)
+
+
+def put_or_check(path,expected,cap):
+    try:
+        write_exclusive(path,expected)
+    except FileExistsError:
+        need(file_bytes(path,sha256(expected).hexdigest(),cap,private=True)==expected,"RECEIPT")
 
 
 def approved(commit,mode):
     job,blobs=authorize(commit,mode)
     resources(config(blobs[CONFIG]))
+    file_bytes(COLLECTOR,COLLECTOR_SHA256,2**20)
     q,days,c=local_schedule(blobs)
     proof=parse(blobs[CALIBRATION])
     need(job["docket_sha256"]==c["docket_sha256"]==proof["docket_sha256"]
@@ -788,28 +984,48 @@ def approved(commit,mode):
     private_dir(RUN)
     unused(RUN)
     receipt=INPUT/f'acquisition.{job["acquisition_commit"]}.lock'
-    expected=render(acquired(job,c))
-    if mode=="acquire":
+    if mode in ("acquire","custody"):
         need(not os.path.lexists(INPUT/"bars.json"),"BARS_ALREADY_STAGED")
-        write_exclusive(receipt,expected)
-        print("P43_ACQUISITION_CLAIMED")
+        native=INPUT/"native"
+        need(not any(INPUT.glob("fetch_start.*.lock")) and
+             (not os.path.lexists(native) or (native.is_dir() and not native.is_symlink() and
+              next(native.iterdir(),None) is None)),"CUSTODY_CONSUMED")
+        ids=read_bytes(INPUT/"identities.json",8*2**20,private=True)
+        acts=read_bytes(INPUT/"actions.json",32*2**20,private=True)
+        identity_actions(q,days,c,parse(ids),parse(acts))
+        expected=render(acquired(job,c,sha256(ids).hexdigest(),sha256(acts).hexdigest()))
+        if mode=="acquire":
+            write_exclusive(receipt,expected)
+            print("P43_ACQUISITION_CLAIMED")
+        else:
+            need(file_bytes(receipt,sha256(expected).hexdigest(),16384,private=True)==expected,"ACQUISITION_RECEIPT")
+            print("P43_CUSTODY_READY")
         return
+    expected=render(acquired(job,c,job["identities.json"],job["actions.json"]))
     need(file_bytes(receipt,job["acquisition_receipt_sha256"],16384,private=True)==expected,"ACQUISITION_RECEIPT")
     C=engine(blobs[ENGINE])
     cap=(8*2**20,96*2**20,32*2**20)
-    packets=[parse(file_bytes(INPUT/name,job[name],n,private=True)) for name,n in zip(PACKETS,cap)]
+    packet_blobs=[file_bytes(INPUT/name,job[name],n,private=True) for name,n in zip(PACKETS,cap)]
+    packets=list(map(parse,packet_blobs))
     ready=prepared(q,days,C,c,*packets)
-    del packets
+    check_native(blobs[PROVENANCE],job,c,q,days,packets[0],ready,packet_blobs[1])
+    del packets,packet_blobs
     unused(RUN)
     validated=RUN/f'validation.{job["approval_commit"]}.json'
-    expected=render(dict(status="validated_no_returns",**{k:v for k,v in job.items() if k not in
+    coverage=RUN/f'coverage.{job["approval_commit"]}.json'
+    coverage_bytes=render(dict(summary=coverage_summary(ready,c),decisions=ready.decisions))
+    coverage_pin=sha256(coverage_bytes).hexdigest()
+    if mode=="validate":
+        put_or_check(coverage,coverage_bytes,16*2**20)
+    else:
+        need(file_bytes(coverage,coverage_pin,16*2**20,private=True)==coverage_bytes,"COVERAGE_RECEIPT")
+    enforce_coverage(ready)
+    expected=render(dict(status="validated_no_returns",coverage_sha256=coverage_pin,
+                         rebuilt_bars_sha256=job["bars.json"],**{k:v for k,v in job.items() if k not in
                          ("go_commit","validation_receipt_sha256")}))
     validation_pin=sha256(expected).hexdigest()
     if mode=="validate":
-        try:
-            write_exclusive(validated,expected)
-        except FileExistsError:
-            need(file_bytes(validated,validation_pin,16384,private=True)==expected,"VALIDATION_RECEIPT")
+        put_or_check(validated,expected,16384)
         print("P43_VALIDATED")
         return
     need(job["validation_receipt_sha256"]==validation_pin and
@@ -825,11 +1041,11 @@ def approved(commit,mode):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     mode=parser.add_mutually_exclusive_group(required=True)
-    for flag in ("claim-acquisition","validate-inputs","go","calibrate","self-test"):
+    for flag in ("claim-acquisition","check-custody","validate-inputs","go","calibrate","self-test"):
         mode.add_argument("--"+flag,action="store_true")
     parser.add_argument("--approval-commit")
     a=parser.parse_args()
-    if bool(a.approval_commit)!=bool(a.go or a.validate_inputs or a.claim_acquisition):
+    if bool(a.approval_commit)!=bool(a.go or a.validate_inputs or a.claim_acquisition or a.check_custody):
         parser.error("real modes require --approval-commit; synthetic modes reject it")
     try:
         if a.self_test:
@@ -841,7 +1057,8 @@ def main():
             rows,_,c=local_schedule(blobs)
             sys.stdout.buffer.write(render(calibrate(rows,c)))
             return 0
-        approved(a.approval_commit,"go" if a.go else "validate" if a.validate_inputs else "acquire")
+        approved(a.approval_commit,"go" if a.go else "validate" if a.validate_inputs else
+                 "custody" if a.check_custody else "acquire")
     except Refused as exc:
         print(str(exc),file=sys.stderr)
         return 2
