@@ -52,6 +52,7 @@ Forward measurement watches (pretend money only, no AI model, no broker orders):
 | ID | Short name | Market | What it does | Card |
 |---|---|---|---|---|
 | E07 | etf_closure_payout_watch | US ETFs | Forward measurement of last-trading-day closing SIP ask and bid versus published primary cash liquidation payout on SEC 497/497K closures (stop at 40 completed funds or 2027-05-31) | `practice/traders/E07_etf_closure_payout_watch.md` (queue row 95) |
+| E09 | overextension_dip_buy | Coins on Coinbase | Forward log of plan 70 rule 70-102: after a bitcoin fall of 0.015 or more in log terms over two hours, buy the coin that fell more than twice as far, hold two hours. Judged at the spot ask and bid quoted as each wake fires; quotes 1, 5 and 15 minutes later, the US perpetual-style contract's quotes and rules 71-013 and 71-035 shown only. Search finalists not carried to the vault (70-102 at 20.67% against a 33% line), so a shown lead, not a pass; judged once at 150 judged trades or 2027-11-30 | `practice/traders/E09_overextension_dip_buy.md` (queue row 114) |
 
 What research could not support:
 

@@ -1,0 +1,51 @@
+{
+ "arms": {
+  "70-102": {
+   "signals": 0,
+   "trades_closed": 0,
+   "trades_complete": 0,
+   "trades_judged_ok": 0,
+   "trades_unresolved": 0
+  },
+  "71-013": {
+   "signals": 0,
+   "trades_closed": 0,
+   "trades_complete": 0,
+   "trades_judged_ok": 0,
+   "trades_unresolved": 0
+  },
+  "71-035": {
+   "signals": 0,
+   "trades_closed": 0,
+   "trades_complete": 0,
+   "trades_judged_ok": 0,
+   "trades_unresolved": 0
+  }
+ },
+ "card": "practice/traders/E09_overextension_dip_buy.md",
+ "first_quote_seconds_after_hour": {
+  "max": null,
+  "median": null,
+  "n": 0,
+  "over_120": 0
+ },
+ "first_wake": "2026-11-26T15:00:00Z",
+ "futures_half_spread_bp": {},
+ "futures_quotes_unknown": 0,
+ "header_line_sha256": "958d2e1dc37f6a27d99b8715e6c7bbae85a3ab53da365254aebb859cf6c7e307",
+ "last_made_utc": null,
+ "last_wake": "2027-11-30T23:00:00Z",
+ "quote_snapshots": {
+  "0": 0,
+  "300": 0,
+  "60": 0,
+  "900": 0
+ },
+ "recorded": 0,
+ "spot_half_spread_bp": {},
+ "started": true,
+ "void_logged": 0,
+ "void_not_yet_logged": 0,
+ "wakes_closed": 0,
+ "written_utc": "2026-11-26T14:20:05Z"
+}
