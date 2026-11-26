@@ -1,0 +1,3486 @@
+[
+  {
+    "id": "70-001",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-002",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-003",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-004",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-005",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-006",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-007",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-008",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-009",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-010",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-011",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-012",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-013",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-014",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-015",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-016",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 2,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-017",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-018",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-019",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-020",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-021",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-022",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-023",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-024",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-025",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-026",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-027",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-028",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-029",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-030",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-031",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-032",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 9,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-033",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-034",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-035",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-036",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-037",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-038",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-039",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-040",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-041",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-042",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-043",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-044",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-045",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-046",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-047",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-048",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 14,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-049",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-050",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-051",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-052",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekday",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-053",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-054",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-055",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-056",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekday",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-057",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-058",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-059",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-060",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekend",
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-061",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-062",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-063",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-064",
+    "family": "clock_after_move",
+    "mechanism": "Liquidity changes by session and weekday; a patient counterparty may be paid to absorb recent urgent flow.",
+    "source": "https://academic.oup.com/jfec/article-abstract/22/1/224/6759403",
+    "signal": "At the fixed UTC entry hour and day type, fade a signed lag-hour log close move of at least threshold.",
+    "parameters": {
+      "entry_hour": 18,
+      "day_type": "weekend",
+      "lag": 4,
+      "threshold": 0.006
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-065",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.015,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-066",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.015,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-067",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.015,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-068",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.015,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-069",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.025,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-070",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.025,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-071",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.025,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-072",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.025,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-073",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.04,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-074",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.04,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-075",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.04,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-076",
+    "family": "hourly_shock",
+    "mechanism": "Liquidated traders cannot choose when to trade; a patient buyer or seller may earn a concession after the burst.",
+    "source": "https://arxiv.org/html/2102.04591v1",
+    "signal": "Fade a signed one-hour log close move at least threshold, with last bar volume at least ratio times preceding volume_lookback mean; proxy, not verified liquidation.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.04,
+      "volume_lookback": 24,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-077",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.0075
+    },
+    "side": 1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-078",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.0075
+    },
+    "side": 1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-079",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.0075
+    },
+    "side": -1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-080",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.0075
+    },
+    "side": -1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-081",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.0125
+    },
+    "side": 1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-082",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.0125
+    },
+    "side": 1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-083",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.0125
+    },
+    "side": -1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-084",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.0125
+    },
+    "side": -1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-085",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.02
+    },
+    "side": 1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-086",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.02
+    },
+    "side": 1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-087",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.02
+    },
+    "side": -1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-088",
+    "family": "london_brr_fade",
+    "mechanism": "Settlement-linked desks have a reason to concentrate turnover during the fixed London benchmark window; the pressure may dissipate when the clock expires.",
+    "source": "https://www.cmegroup.com/trading/files/bitcoin-reference-rate-methodology.pdf",
+    "signal": "BTC only; at 16:00 Europe/London, fade the last completed bar's signed open-to-close log return if at least threshold; apply daylight saving.",
+    "parameters": {
+      "threshold": 0.02
+    },
+    "side": -1,
+    "universe": "btc_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-089",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.01,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-090",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.01,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-091",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.01,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-092",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.01,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-093",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.015,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-094",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.015,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-095",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.015,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-096",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.015,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-097",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.025,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-098",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.025,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-099",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.025,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-100",
+    "family": "midnight_stop_run",
+    "mechanism": "Trading activity clusters at round clocks. A liquidity taker crossing a visible daily boundary may pay a waiting counterparty after a stop sweep.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2306.17095",
+    "signal": "At 00:00 UTC, fade a signed one-hour log close move at least threshold, with preceding bar volume at least ratio times the prior volume_lookback mean and a break of the prior lag_range-hour extreme.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.025,
+      "volume_lookback": 24,
+      "ratio": 1.5,
+      "lag_range": 24
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-101",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.015,
+      "multiple": 2.0
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-102",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.015,
+      "multiple": 2.0
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-103",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.015,
+      "multiple": 2.0
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-104",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.015,
+      "multiple": 2.0
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-105",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.015,
+      "multiple": 2.5
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-106",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.015,
+      "multiple": 2.5
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-107",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.015,
+      "multiple": 2.5
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-108",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.015,
+      "multiple": 2.5
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-109",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.025,
+      "multiple": 2.0
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-110",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.025,
+      "multiple": 2.0
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-111",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.025,
+      "multiple": 2.0
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-112",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.025,
+      "multiple": 2.0
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-113",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.025,
+      "multiple": 2.5
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-114",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.025,
+      "multiple": 2.5
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-115",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.025,
+      "multiple": 2.5
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-116",
+    "family": "btc_overextension_fade",
+    "mechanism": "The documented common BTC and ETH price activity motivates a test that impatient orders in an alt overshoot during a common large move.",
+    "source": "https://arxiv.org/abs/2109.12142",
+    "signal": "Fade the alt excess over multiple times BTC's same-direction lag-hour log close move, requiring BTC's move in that direction to meet threshold.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.025,
+      "multiple": 2.5
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-117",
+    "family": "round_rejection",
+    "mechanism": "Orders bunch at conspicuous prices; an impatient sweep into a queue can pay the counterparty waiting for a rejection.",
+    "source": "https://pubsonline.informs.org/servlet/linkout?suffix=B76&dbid=16&doi=10.1287/mnsc.2023.4790&key=10.1016/j.econlet.2017.07.035",
+    "signal": "Anchor on nearest round multiple to the preceding close, with step multiple times 10**floor(log10(previous close)); last bar pierces it and closes back across by threshold log distance.",
+    "parameters": {
+      "multiple": 0.1,
+      "threshold": 0.0005
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-118",
+    "family": "round_rejection",
+    "mechanism": "Orders bunch at conspicuous prices; an impatient sweep into a queue can pay the counterparty waiting for a rejection.",
+    "source": "https://pubsonline.informs.org/servlet/linkout?suffix=B76&dbid=16&doi=10.1287/mnsc.2023.4790&key=10.1016/j.econlet.2017.07.035",
+    "signal": "Anchor on nearest round multiple to the preceding close, with step multiple times 10**floor(log10(previous close)); last bar pierces it and closes back across by threshold log distance.",
+    "parameters": {
+      "multiple": 0.1,
+      "threshold": 0.0005
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-119",
+    "family": "round_rejection",
+    "mechanism": "Orders bunch at conspicuous prices; an impatient sweep into a queue can pay the counterparty waiting for a rejection.",
+    "source": "https://pubsonline.informs.org/servlet/linkout?suffix=B76&dbid=16&doi=10.1287/mnsc.2023.4790&key=10.1016/j.econlet.2017.07.035",
+    "signal": "Anchor on nearest round multiple to the preceding close, with step multiple times 10**floor(log10(previous close)); last bar pierces it and closes back across by threshold log distance.",
+    "parameters": {
+      "multiple": 0.1,
+      "threshold": 0.001
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-120",
+    "family": "round_rejection",
+    "mechanism": "Orders bunch at conspicuous prices; an impatient sweep into a queue can pay the counterparty waiting for a rejection.",
+    "source": "https://pubsonline.informs.org/servlet/linkout?suffix=B76&dbid=16&doi=10.1287/mnsc.2023.4790&key=10.1016/j.econlet.2017.07.035",
+    "signal": "Anchor on nearest round multiple to the preceding close, with step multiple times 10**floor(log10(previous close)); last bar pierces it and closes back across by threshold log distance.",
+    "parameters": {
+      "multiple": 0.1,
+      "threshold": 0.001
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-121",
+    "family": "round_rejection",
+    "mechanism": "Orders bunch at conspicuous prices; an impatient sweep into a queue can pay the counterparty waiting for a rejection.",
+    "source": "https://pubsonline.informs.org/servlet/linkout?suffix=B76&dbid=16&doi=10.1287/mnsc.2023.4790&key=10.1016/j.econlet.2017.07.035",
+    "signal": "Anchor on nearest round multiple to the preceding close, with step multiple times 10**floor(log10(previous close)); last bar pierces it and closes back across by threshold log distance.",
+    "parameters": {
+      "multiple": 0.2,
+      "threshold": 0.0005
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-122",
+    "family": "round_rejection",
+    "mechanism": "Orders bunch at conspicuous prices; an impatient sweep into a queue can pay the counterparty waiting for a rejection.",
+    "source": "https://pubsonline.informs.org/servlet/linkout?suffix=B76&dbid=16&doi=10.1287/mnsc.2023.4790&key=10.1016/j.econlet.2017.07.035",
+    "signal": "Anchor on nearest round multiple to the preceding close, with step multiple times 10**floor(log10(previous close)); last bar pierces it and closes back across by threshold log distance.",
+    "parameters": {
+      "multiple": 0.2,
+      "threshold": 0.0005
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-123",
+    "family": "round_rejection",
+    "mechanism": "Orders bunch at conspicuous prices; an impatient sweep into a queue can pay the counterparty waiting for a rejection.",
+    "source": "https://pubsonline.informs.org/servlet/linkout?suffix=B76&dbid=16&doi=10.1287/mnsc.2023.4790&key=10.1016/j.econlet.2017.07.035",
+    "signal": "Anchor on nearest round multiple to the preceding close, with step multiple times 10**floor(log10(previous close)); last bar pierces it and closes back across by threshold log distance.",
+    "parameters": {
+      "multiple": 0.2,
+      "threshold": 0.001
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-124",
+    "family": "round_rejection",
+    "mechanism": "Orders bunch at conspicuous prices; an impatient sweep into a queue can pay the counterparty waiting for a rejection.",
+    "source": "https://pubsonline.informs.org/servlet/linkout?suffix=B76&dbid=16&doi=10.1287/mnsc.2023.4790&key=10.1016/j.econlet.2017.07.035",
+    "signal": "Anchor on nearest round multiple to the preceding close, with step multiple times 10**floor(log10(previous close)); last bar pierces it and closes back across by threshold log distance.",
+    "parameters": {
+      "multiple": 0.2,
+      "threshold": 0.001
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-125",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 8,
+      "threshold": 0.001
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-126",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 8,
+      "threshold": 0.001
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-127",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 8,
+      "threshold": 0.001
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-128",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 8,
+      "threshold": 0.001
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-129",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 8,
+      "threshold": 0.0025
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-130",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 8,
+      "threshold": 0.0025
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-131",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 8,
+      "threshold": 0.0025
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-132",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 8,
+      "threshold": 0.0025
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-133",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 36,
+      "threshold": 0.001
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-134",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 36,
+      "threshold": 0.001
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-135",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 36,
+      "threshold": 0.001
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-136",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 36,
+      "threshold": 0.001
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-137",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 36,
+      "threshold": 0.0025
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-138",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 36,
+      "threshold": 0.0025
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-139",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 36,
+      "threshold": 0.0025
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-140",
+    "family": "range_rejection",
+    "mechanism": "Stop and take-profit orders can cluster at visible levels; wait for a failed sweep instead of buying a breakout.",
+    "source": "https://www.newyorkfed.org/research/staff_reports/sr150.html",
+    "signal": "Compare last hourly bar with the prior lag-hour high/low, excluding the last bar; require a pierce and close back inside by threshold log distance.",
+    "parameters": {
+      "lag": 36,
+      "threshold": 0.0025
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false
+  },
+  {
+    "id": "70-141",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.0075,
+      "fraction": 0.25
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-142",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.0075,
+      "fraction": 0.25
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-143",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.0075,
+      "fraction": 0.5
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-144",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.0075,
+      "fraction": 0.5
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-145",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.0125,
+      "fraction": 0.25
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-146",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.0125,
+      "fraction": 0.25
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-147",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.0125,
+      "fraction": 0.5
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-148",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 1,
+      "threshold": 0.0125,
+      "fraction": 0.5
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-149",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 3,
+      "threshold": 0.0075,
+      "fraction": 0.25
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-150",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 3,
+      "threshold": 0.0075,
+      "fraction": 0.25
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-151",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 3,
+      "threshold": 0.0075,
+      "fraction": 0.5
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-152",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 3,
+      "threshold": 0.0075,
+      "fraction": 0.5
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-153",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 3,
+      "threshold": 0.0125,
+      "fraction": 0.25
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-154",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 3,
+      "threshold": 0.0125,
+      "fraction": 0.25
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-155",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 3,
+      "threshold": 0.0125,
+      "fraction": 0.5
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-156",
+    "family": "bitcoin_lead",
+    "mechanism": "Fragmented traders face costs moving information across books and can reprice slower books after a leading move.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Follow the signed BTC log close move if at least threshold and the same signed alt move is at most fraction times BTC's signed move.",
+    "parameters": {
+      "lag": 3,
+      "threshold": 0.0125,
+      "fraction": 0.5
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-157",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.005,
+      "ratio": 2.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-158",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.005,
+      "ratio": 2.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-159",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.005,
+      "ratio": 2.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-160",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.005,
+      "ratio": 2.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-161",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.01,
+      "ratio": 2.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-162",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.01,
+      "ratio": 2.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-163",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.01,
+      "ratio": 2.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-164",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.01,
+      "ratio": 2.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-165",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.005,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-166",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.005,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-167",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.005,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-168",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.005,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-169",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.01,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-170",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.01,
+      "ratio": 3.0
+    },
+    "side": 1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-171",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.01,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-172",
+    "family": "volume_shock",
+    "mechanism": "A large trader demanding immediate execution can pay to move through thin depth; wait for the burst to finish.",
+    "source": "https://ar5iv.labs.arxiv.org/html/2108.09750",
+    "signal": "Fade last hour's signed log close move at least threshold if its base volume divided by the previous 24-hour mean is at least ratio.",
+    "parameters": {
+      "lag": 1,
+      "volume_lookback": 24,
+      "threshold": 0.01,
+      "ratio": 3.0
+    },
+    "side": -1,
+    "universe": "all",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": false,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-173",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-174",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-175",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-176",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-177",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.008
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-178",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.008
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-179",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.008
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-180",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 2,
+      "threshold": 0.008
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-181",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 4,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-182",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 4,
+      "threshold": 0.004
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-183",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 4,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-184",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 4,
+      "threshold": 0.004
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-185",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 4,
+      "threshold": 0.008
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-186",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 4,
+      "threshold": 0.008
+    },
+    "side": 1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-187",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 4,
+      "threshold": 0.008
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 1,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  },
+  {
+    "id": "70-188",
+    "family": "hedged_relative",
+    "mechanism": "Gradual rebalancing may leave the strongest relative performer still being bought, or the weakest still being sold; hedge the common BTC move.",
+    "source": "https://www.nber.org/papers/w24877",
+    "signal": "Among altcoins, choose the greatest signed lag-hour log close move less BTC's same-clock move, requiring threshold; take opposite BTC at equal dollars.",
+    "parameters": {
+      "lag": 4,
+      "threshold": 0.008
+    },
+    "side": -1,
+    "universe": "alts_only",
+    "entry": "first subsequent hourly spot open, no signal data from entry bar",
+    "exit": "spot open exactly hold_hours after entry, no stop or target",
+    "hold_hours": 2,
+    "btc_hedge": true,
+    "prior_replay_note": "related to Replay 09 at a different horizon"
+  }
+]
