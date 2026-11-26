@@ -299,6 +299,8 @@ Working papers.
 | `research_rig/report_19.py` | Prints the Replay 19 result page from the saved JSON. Does not score or read market data | CURRENT |
 | `research_rig/PREREG_20_upbit_listing_short.md`, `research_rig/common_20.py`, `research_rig/score_20.py`, `research_rig/test_20.py`, `research_rig/stage_20.py` | Queue 29 red-day Upbit short, ordinary-jump comparison, checksum-only staging and offline clock scan. Scored once; see doc 71 | CURRENT |
 | `research_rig/PREREG_23_ipo_fast_track.md` | Frozen Queue 37 IPO fast-track index buying, ledger 160, eight marks. No bar collected or result | CURRENT |
+| `research_rig/PREREG_21_odd_lot_tenders.md`, `research_rig/PINNED_21.json` | Frozen Queue 38 issuer tender replay, ledger 158. Plan and strategy hashes; the reviewed filing rows, calendar and request inventory are off-repo | CURRENT |
+| `research_rig/common_21.py`, `research_rig/score_21.py`, `research_rig/test_21.py` | Plan 21 tender and one-account replay, separate custody and no-return validation, one-shot approval gate, and synthetic tests | CURRENT |
 | `research_rig/common_23.py`, `research_rig/fetch_23.py`, `research_rig/score_23.py`, `research_rig/report_23.py`, `research_rig/calibrate_23.py`, `research_rig/test_23.py` | Replay 23 engine and approval gate, off-repo bar collector and freeze, one-shot scorer, page writer, planted-path calibration, invented-input fixtures | CURRENT |
 | `research_rig/PINNED_23.json` | Replay 23 frozen plan, code and config-block hashes read by the approval gate. No bars, breakpoints or prices | CURRENT |
 | `research_rig/APPROVAL_23.md` | The lead agent's approval line for replay 23: one collection and one scored run, names the freeze commit. Read by the approval gate | CURRENT |

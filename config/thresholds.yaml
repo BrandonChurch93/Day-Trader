@@ -1026,3 +1026,37 @@ replay_41_plan:
   status: builder
   note: Single source for Plan 41 calendar, capital, costs and numeric marks. JSON flow value for isolated standard-library parsing. The scorer binds the file to the freeze; it is not a runtime override.
   source: research_rig/PREREG_41_pension_month_end.md
+
+replay_21_plan:
+  value:
+    start: "2016-01-01"
+    result_cutoff: "2026-10-31"
+    bar_end: "2026-11-24"
+    lag_minutes: 30
+    election_sessions_before: 3
+    election_sessions: 2
+    election_switch: "2024-05-28"
+    fallback_payment_sessions: 5
+    account_usd: 500
+    share_cap: 99
+    min_discount_bps: 150
+    market_bps: 10
+    market_min_cents: 5
+    judged_fee_usd: 0
+    sensitivity_fee_usd: 50
+    stale_run: 5
+    min_trades: 30
+    min_t: 2.0
+    remove_best: 3
+    min_year_trades: 3
+    min_positive_year_pct: 60
+    annual_days: 365
+    calibration_seed: 21001
+    calibration_seeds: 20
+    calibration_edges_pct: [0, 1, 2, 4]
+    calibration_trades: 54
+    calibration_trade_sigma: 0.06
+    calibration_year_sigma: 0.012
+    calibration_tail_chance: 0.08
+    calibration_tail_scale: 2.0
+  basis: "Plan 21, queue row 38, trial ledger row 158. No market acquisition authorized by the freeze."

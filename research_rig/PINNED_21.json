@@ -1,0 +1,7 @@
+{
+  "config/thresholds.yaml": "9d9296a5f7f2add3beb8263f832a20c55a6adf206d8452d9f1c1189064232d0b",
+  "research_rig/PREREG_21_odd_lot_tenders.md": "112f53ebc02ea6596a6302cedf16e04ed646eddb82a4b81d79ff477990df83c4",
+  "research_rig/common_21.py": "ade5650831a7f47dc175e7f1043e0cb4730a6634e96fa585fe51dd95b7c99fb1",
+  "research_rig/score_21.py": "af66eb62805807667f90875693b05f4ad2340d5d25569d78861ef649235cd95d",
+  "research_rig/test_21.py": "8ccb152b6fb4257400bdab83235950e8cf728f6a60a1fc88bc8aeea715d7378c"
+}
