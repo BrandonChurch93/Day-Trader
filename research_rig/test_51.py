@@ -1,6 +1,8 @@
 """Plan 51 synthetic units and isolated CLI fixture; no real packet is resolved."""
 from collections import defaultdict
 from datetime import timedelta
+from fractions import Fraction
+from itertools import combinations
 import io
 import json
 import os
@@ -26,6 +28,38 @@ HOUR = C.prior.HOUR
 
 
 class Engine(unittest.TestCase):
+    def test_uniform_gap_compositions(self):
+        class Fixed:
+            def __init__(self, picks):
+                self.picks = picks
+
+            def sample(self, population, k):
+                assert list(population) == list(range(4)) and k == 2
+                return self.picks
+
+        found = {tuple(S.K.uniform_gaps([2, 3], 3, Fixed(picks)))
+                 for picks in combinations(range(4), 2)}
+        expected = {(a, b, 3 - a - b) for a in range(3) for b in range(1, 4 - a)}
+        self.assertEqual(found, expected)
+        self.assertEqual(S.K.uniform_gaps([2, 3], 1, Fixed(None)), [0, 1, 0])
+        self.assertEqual(S.K.uniform_gaps([], 7, Fixed(None)), [7])
+
+    def test_calibration_release_uses_counts(self):
+        p = {"calibration_trials": 100, "calibration_target_bps": 20,
+             "calibration_target_days": 40, "calibration_power_floor": .5}
+        rows = {key: {"passes": 0, "trials": 100, "rate": 0.0, "upper95": S.K.upper95(0, 100)}
+                for key in ("iid_0bp", "volatility_blocks_0bp", "persistent_20bp_40d")}
+        self.assertFalse(S.K.release(rows, p, verify_counts=True)["unlocked"])
+        rows["persistent_20bp_40d"]["rate"] = 1.0
+        with self.assertRaises(ValueError):
+            S.K.release(rows, p, verify_counts=True)
+
+    def test_packed_close_keeps_native_precision(self):
+        bars = S.PackedSeries([0, HOUR], [1.0, 1.0],
+                              [1000000000000000001, 1000000000000000002], [-18, -18])
+        self.assertEqual(bars[0].c, bars[HOUR].c)
+        self.assertEqual(bars.exact_close(HOUR) - bars.exact_close(0), Fraction(1, 10**18))
+
     def test_spells_and_gaps_are_matched(self):
         for mask in ([0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0],
                      [1, 1, 0, 1, 0, 0], [0, 0, 1, 0, 1, 1],
@@ -60,6 +94,11 @@ class Engine(unittest.TestCase):
         self.assertFalse(gate.add(.1))
         self.assertTrue(gate.add(.1))
         self.assertFalse(gate.add(-.1))
+        exact_zero = C.Gate(3)
+        self.assertFalse(exact_zero.add(.1))
+        self.assertFalse(exact_zero.add(.2))
+        self.assertFalse(exact_zero.add(-.3))
+        self.assertTrue(exact_zero.add(.1000000000000001))
 
     def test_retained_sleeve_trades_only_once(self):
         a, b, c = [C.prior.Asset(i, x) for i, x in enumerate("ABC", 1)]
@@ -106,14 +145,18 @@ def fixture(repo, inputs):
         shutil.copyfile(S.ROOT / rel, out)
     (repo / ".synthetic-only").write_text("SYNTHETIC ONLY\n")
     plan = repo / S.PLAN
-    plan.write_text(plan.read_text().replace("Status: DRAFT", "Status: FROZEN"))
+    lines = ["Status: FROZEN" if line.startswith("Status: ") else line
+             for line in plan.read_text().splitlines()]
+    plan.write_text("\n".join(lines) + "\n")
     config = repo / S.CONFIG
     full = yaml.safe_load(config.read_text())
     p, p13 = (full[k]["value"] for k in ("replay_51_plan", "replay_13_plan"))
     p.update(years=[2020], judged_stop="2020-01-16", shown_stop="2020-01-21")
     config.write_text(yaml.safe_dump({"replay_51_plan": {"value": p}, "replay_13_plan": {"value": p13}}))
-    rows = {"iid_0bp": {"upper95": .03}, "volatility_blocks_0bp": {"upper95": .03},
-            "persistent_20bp_40d": {"rate": 1.0}}
+    rows = {key: {"passes": passes, "trials": 100, "rate": passes / 100,
+                  "upper95": S.K.upper95(passes, 100)}
+            for key, passes in (("iid_0bp", 0), ("volatility_blocks_0bp", 0),
+                                ("persistent_20bp_40d", 100))}
     (repo / S.CALIBRATION).write_text(json.dumps({"cli_fixture": True, "rows": rows, **S.K.release(rows, p)}))
     day = C.prior.utc(C.stamp("2019-12-01")).date()
     roster = [{"id": 100001 + i, "symbol": f"FIX{i}", "cmcRank": i + 2} for i in range(50)]

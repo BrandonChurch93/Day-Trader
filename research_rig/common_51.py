@@ -3,6 +3,7 @@ from bisect import bisect_left
 from collections import deque
 from dataclasses import dataclass
 from datetime import date
+from fractions import Fraction
 import heapq
 import math
 import random
@@ -26,11 +27,42 @@ class Day:
 class Gate:
     def __init__(self, n):
         self.history = deque(maxlen=n)
+        self.total = Fraction(0)
+        self.missing = 0
 
     def add(self, observation):
+        if len(self.history) == self.history.maxlen:
+            expired = self.history[0]
+            if expired is None:
+                self.missing -= 1
+            else:
+                self.total -= expired
+        if observation is None:
+            self.missing += 1
+        else:
+            if not isinstance(observation, Fraction):
+                observation = Fraction(str(observation))
+            self.total += observation
         self.history.append(observation)
         return (len(self.history) == self.history.maxlen
-                and None not in self.history and math.fsum(self.history) > 0)
+                and self.missing == 0 and self.total > 0)
+
+
+def exact_close(series, t):
+    if hasattr(series, "exact_close"):
+        return series.exact_close(t)
+    return Fraction(str(series.bars[t].c))
+
+
+def rank_at(snapshots, data, t, p):
+    listed, ranked, _ = prior.weekly_universe(snapshots, data, t, p)
+    latest = t - prior.HOUR
+    earlier = latest - p["rise_days"] * prior.DAY
+    # Membership and segmentation come from Replay 13; only exact tie handling
+    # changes. Native-close ratios do not use a binary float for ranking.
+    ranked.sort(key=lambda a: (-exact_close(data[a.pair], latest) /
+                               exact_close(data[a.pair], earlier), a.coin))
+    return listed, ranked
 
 
 def signal_return(data, ranked, start, end, k):
@@ -40,10 +72,11 @@ def signal_return(data, ranked, start, end, k):
         return None
     changes = []
     for asset in ranked:
-        bars = data[asset.pair].bars
+        series = data[asset.pair]
+        bars = series.bars
         if not (asset.begin <= a < b < asset.end and a in bars and b in bars):
             return None
-        changes.append(bars[b].c / bars[a].c - 1)
+        changes.append(exact_close(series, b) / exact_close(series, a) - 1)
     return mean(changes[:k]) - mean(changes)
 
 
@@ -52,7 +85,7 @@ def year_days(snapshots, data, start, end, p):
     gate = Gate(n)
     before = ()
     for t in range(start - n * prior.DAY, end, prior.DAY):
-        listed, ranked, _ = prior.weekly_universe(snapshots, data, t, p)
+        listed, ranked = rank_at(snapshots, data, t, p)
         on = gate.add(signal_return(data, before, t - prior.DAY, t, k))
         before = tuple(ranked)
         if t >= start:

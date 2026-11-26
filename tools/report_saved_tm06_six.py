@@ -177,6 +177,8 @@ def render(six, split, g):
           row("Month", *models), row("---", *["---:"] * len(models))]
     for x in months:
         L.append(row(MON[x], *(f"{pm[x][m]['pct']:.1f}" for m in models)))
+    L += ["", f"Why May happened, model by model: [doc 110](110_tm06_why_may.md). MEASURED: the six models bought coins already at the top of the screen; "
+          f"May was the month the plain top_7d_rise rule paid by far the most ({pm['2026-05']['y'][1]:+.1f}%). Verdict: screen-based for all six, memory not ruled out."]
 
     L += ["", "## Part P split: April to June against July to November", "",
           "STATED. Why this split, fixed before any result was read: when the Claude Fable 5.2 arm was added (2026-11-25, before any g session "

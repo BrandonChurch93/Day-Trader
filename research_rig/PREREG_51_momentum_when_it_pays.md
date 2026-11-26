@@ -1,8 +1,10 @@
 # Plan 51: Hold hot coins only when being hot has paid
 
-Status: DRAFT
+Status: CLOSED ON SYNTHETIC POWER
 
-STATED. Queue 95, ledger 185. Two conditions must hold before the lead agent freezes this plan. First, nobody has computed this regime rule on the Replay 13 data; the lead agent must attest that this remains true to the team's knowledge. Second, the parameters are conventions fixed blind: \(N=30\) calendar days, \(K=5\), and a seven-day rank. The last two come from [Replay 13's plan](PREREG_13_year_or_method.md); 30 is a plain one-month convention, not picked from TM06.
+STATED. Draft retained for the record only. [The close note](CLOSE_51_on_power.md) records the failed uniform-placement redesign. No freeze or approved score.
+
+STATED. Queue 96, ledger 185. Two conditions must hold before the lead agent freezes this plan. First, nobody has computed this regime rule on the Replay 13 data; the lead agent must attest that this remains true to the team's knowledge. Second, the parameters are conventions fixed blind: \(N=30\) calendar days, \(K=5\), and a seven-day rank. The last two come from [Replay 13's plan](PREREG_13_year_or_method.md); 30 is a plain one-month convention, not picked from TM06.
 
 MEASURED in prior work, not recomputed here. The TM06 autopsy found the six AI pickers chased momentum. In May 2026, the plain top-by-seven-day-rise rule led the 20-coin average next day by 1.29 percentage points per day; its lead in every other autopsy month ranged from -0.52 to +0.41 points. That experiment used a different perpetual-futures universe and clock. It suggested the question, but supplies neither settings nor judged evidence.
 
@@ -49,4 +51,4 @@ STATED. Synthetic only. Simulate two zero conditional-mean nulls with Gaussian i
 
 STATED. The lead agent attests the no-look record, appoints an independent reviewer to verify the original Replay 13 packet manifest and synthetic release, then freezes the settings, dependencies and test. An approval commit must sit directly on the freeze and add only the exact one-line approval naming that parent and the SHA-256 of the original Replay 13 manifest. The scorer silently verifies Git and packet hashes, manifest shape, native archival bytes, chronological hourly bars and schedule. Validation prints only judged days, in-market days, spells per year and distinct listed coins per year. Lead-only `--go` does the same validation silently, then exclusively writes the durable off-repo lock immediately before scoring. A second claim, pre-existing result, or existing lock refuses; a score failure after the claim does not allow a rerun. Raw bars, snapshots, private paths beyond the designated off-repo inputs, and credentials never enter the repo. No freeze, approval, real validation or real run is part of this draft. UNKNOWN: actual coverage, signal counts and results.
 
-STATED. One possible price-blind redesign, not adopted or run: keep the number and lengths of in-market spells and the total active-day count fixed, but draw their placement uniformly within each year conditional on their order and at least one cash day between spells, rather than fixing the observed gap lengths. Recalibrate against the same worlds and release thresholds before any historical use. It may not help: absolute net or annual breadth can fail regardless of the random comparison.
+MEASURED, synthetic only. The uniform-placement redesign kept the number, lengths and order of in-market spells and total active-day count fixed and randomized the gaps. It passed 1 of 100 at the target and was not adopted. Only 3 of 100 trials at the target passed every non-twin mark, so changing the comparison alone could not have reached 50% on these trials.

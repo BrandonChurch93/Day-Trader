@@ -90,6 +90,11 @@ if "--builders" in sys.argv:
         after = state()
         if after != before: bad.append(f"{b} changed a tracked file: the document was edited by hand or is stale"); before = after
         print("ran " + b)
+for f in tracked:   # a merge left half-done shows as conflict markers in a text file
+    if f.endswith((".md", ".py", ".yaml", ".yml", ".json", ".js", ".html", ".css", ".txt")) and os.path.isfile(f):
+        try: body = open(f, encoding="utf-8", errors="replace").read()
+        except OSError: continue
+        if re.search(r"^(<{7} |>{7} )", body, re.M): bad.append(f"{f}: has merge conflict markers")
 if bad:
     print("\n".join(sorted(bad))); print(f"\n{len(bad)} problem(s)"); sys.exit(1)
 print(f"repo map ok: {len(tracked)} tracked files, all listed; paths and config keys resolve")

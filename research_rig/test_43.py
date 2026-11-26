@@ -1,12 +1,16 @@
 """Executable synthetic controls for Plan 43. No vendor inputs are opened."""
 import copy
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import redirect_stdout
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
 from hashlib import sha256
 from io import StringIO
+import json
 from pathlib import Path
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
@@ -21,10 +25,11 @@ def cfg():
     return s.config((s.ROOT/s.CONFIG).read_bytes())
 
 
-def condition():
-    days=[date(2024,5,1)+timedelta(days=i) for i in range(120)
-          if (date(2024,5,1)+timedelta(days=i)).weekday()<5]
-    trade_days=s.Sessions(days,{day:datetime.combine(day,time(16),s.ET) for day in days})
+def condition(trade_days=None):
+    if trade_days is None:
+        days=[date(2024,5,1)+timedelta(days=i) for i in range(120)
+              if (date(2024,5,1)+timedelta(days=i)).weekday()<5]
+        trade_days=s.Sessions(days,{day:datetime.combine(day,time(16),s.ET) for day in days})
     c=cfg()
     at=datetime.fromisoformat("2024-06-07T08:55:00-04:00")
     e=SimpleNamespace(a="0000000001-24-000001",cik="0000000001",cl="Class A",at=at,declared=Decimal(1),
@@ -63,7 +68,380 @@ def condition():
     return [e],trade_days,C,c,ids,bars,acts
 
 
+def add_blocked(event_rows, ids, bars, acts):
+    event=event_rows[0]
+    blocked=SimpleNamespace(**(vars(event)|dict(a="0000000002-24-000001",cik="0000000002")))
+    event_rows.append(blocked)
+    for packet in (ids,acts):
+        packet["records"][blocked.a]=copy.deepcopy(packet["records"][event.a])
+        packet["records"][blocked.a]["stock"]["identity"]="SECL-BLOCKED"
+    ids["records"][blocked.a]["stock"].update(cik=blocked.cik,ticker="BLOCKED")
+    stock=acts["records"][blocked.a]["stock"]
+    stock.update(status="blocked",reason_code=s.NONCASH_SKIP,reason_sources=AUTH)
+    bars["records"][blocked.a]="Any attempt to evaluate this excluded event's tape must fail"
+    return blocked.a
+
+
+class SyntheticRepo:
+    """Real Git objects and CLI in a temporary tree; only absolute paths are redirected."""
+
+    BOOT = """
+import runpy, sys
+from pathlib import Path
+root, data = map(Path, sys.argv[1:3])
+g = runpy.run_path(str(root / "research_rig/score_43.py"))["main"].__globals__
+g.update(ROOT=root, DATA=data, INPUT=data/"plan43_inputs", RUN=data/"replay_43", DOCKET=data/"docket.jsonl")
+sys.argv = ["score_43.py", *sys.argv[3:]]
+raise SystemExit(g["main"]())
+"""
+
+    def __init__(self, base, with_blocked=False):
+        self.root=base/"repo"
+        self.data=base/"data"
+        self.root.mkdir()
+        self.data.mkdir(mode=0o700)
+        self.inp=self.data/"plan43_inputs"
+        self.run=self.data/"replay_43"
+        self.inp.mkdir(mode=0o700)
+        self.run.mkdir(mode=0o700)
+        self.git("init","-q","-b","main")
+        self.git("config","user.name","Synthetic Fixture")
+        self.git("config","user.email","fixture@example.invalid")
+        self.git("config","commit.gpgsign","false")
+        ds=s.calendar([(s.ROOT/n).read_bytes() for n in s.CALENDARS])
+        events,_,_,c,*self.packets=condition(ds)
+        self.blocked=add_blocked(events,*self.packets) if with_blocked else None
+        docket=b"".join((json.dumps(dict(accession=event.a,cik=event.cik,share_class=event.cl,
+                                disposition="eligible", acceptance=event.at.isoformat(), venue="NYSE",
+                                words_used="synthetic",first_time="UNKNOWN",per_share_usd="1",
+                                url=f"https://{s.SEC}/Archives/fixture"))+"\n").encode() for event in events)
+        self.dp=sha256(docket).hexdigest()
+        s.write_exclusive(self.data/"docket.jsonl",docket)
+        c.update(docket_sha256=self.dp,frame_rows=len(events),eligible=len(events))
+        c["marks"]["placed"]=1
+        # Keep OS guards and their real implementation in the test with small fixture floors.
+        c["resources"].update(minimum_free_mib=1,disk_floor_mib=1)
+        config=b"replay_43_plan:\n  value: "+json.dumps(c,default=float).encode()+b"\n"
+        proof=s.render(dict(docket_sha256=self.dp,trials=c["calibration"]["trials"],eligible=len(events),
+                            edges=c["calibration"]["edges"],shares=[0]))
+        custom={s.CONFIG:config,s.CALIBRATION:proof}
+        for name in s.SOURCES:
+            blob=custom[name] if name in custom else (s.ROOT/name).read_bytes()
+            if name==s.PLAN:
+                blob=blob.replace(b"Status DRAFT.",b"Status FROZEN.")
+            self.put(name,blob)
+        for name,num in (("research_rig/TRIAL_LEDGER.md",178),("docs/QUEUE.md",74)):
+            self.put(name,f"| {num} | `{s.PLAN}` | synthetic selection |\n".encode())
+        self.repin()
+        self.freeze=self.commit()
+
+    def git(self,*args):
+        env={"PATH":"/usr/bin:/bin","LC_ALL":"C","GIT_CONFIG_NOSYSTEM":"1","GIT_CONFIG_GLOBAL":"/dev/null"}
+        return subprocess.run(["/usr/bin/git","-C",str(self.root),*args],env=env,capture_output=True,check=True,
+                              text=True,timeout=30).stdout.strip()
+
+    def put(self,name,content):
+        where=self.root/name
+        where.parent.mkdir(parents=True,exist_ok=True)
+        where.write_bytes(content)
+
+    def repin(self):
+        pins={k:sha256((self.root/k).read_bytes()).hexdigest() for k in s.SOURCES}
+        blob=s.render(pins)
+        self.put(s.PINS,blob)
+        self.fp=sha256(blob).hexdigest()
+
+    def commit(self,name=None,content=None):
+        if name is not None:
+            self.put(name,content)
+        self.git("add","-A")
+        self.git("commit","-qm","Synthetic fixture")
+        return self.git("rev-parse","HEAD")
+
+    def checkout(self,ref):
+        self.git("checkout","-q","--detach",ref)
+
+    def acquisition(self,freeze=None):
+        freeze=freeze or self.freeze
+        return (f"Approved by the lead: plan 43, one custodian acquisition, freeze commit {freeze}, "
+                f"freeze SHA-256 {self.fp}, docket SHA-256 {self.dp}.\n").encode()
+
+    def validation(self,acq,bars_pin=None):
+        receipt=self.inp/f"acquisition.{acq}.lock"
+        ap=sha256(receipt.read_bytes()).hexdigest()
+        ids,bars,actions=(sha256((self.inp/n).read_bytes()).hexdigest() for n in s.PACKETS)
+        return (f"Approved by the lead: plan 43, validation only, acquisition commit {acq}, "
+                f"acquisition receipt SHA-256 {ap}, identities SHA-256 {ids}, bars SHA-256 {bars_pin or bars}, "
+                f"actions SHA-256 {actions}.\n").encode()
+
+    def release(self,val,pin):
+        return (f"Approved by the lead: plan 43, one scored run, validation approval commit {val}, "
+                f"validation receipt SHA-256 {pin}.\n").encode()
+
+    def process(self,flag,ref=None,*,isolated=True):
+        flags=("-I","-B") if isolated else ("-B",)
+        args=[] if ref is None else ["--approval-commit",ref]
+        return subprocess.run([sys.executable,*flags,"-c",self.BOOT,str(self.root),str(self.data),
+                               "--"+flag,*args],capture_output=True,text=True,timeout=120)
+
+    def cli(self,test,flag,ref,expected,*,isolated=True):
+        proc=self.process(flag,ref,isolated=isolated)
+        ok=expected in ("P43_ACQUISITION_CLAIMED","P43_VALIDATED","P43_SCORED_ONCE")
+        test.assertEqual(proc.returncode,0 if ok else 2,proc.stderr)
+        test.assertEqual((proc.stdout,proc.stderr),((expected+"\n","") if ok else ("",expected+"\n")))
+
+    def stage_packets(self):
+        for name,p in zip(s.PACKETS,self.packets):
+            s.write_exclusive(self.inp/name,s.render(p))
+
+
 class Plan43(unittest.TestCase):
+    def test_real_cli_transport_history_and_three_release_stages(self):
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d),with_blocked=True)
+            first=f.commit(s.ACQUISITION,f.acquisition())
+            (f.root/s.ACQUISITION).unlink()
+            removed=f.commit()
+            f.checkout(f.freeze)
+            f.put("transport-note","synthetic byte grammar refreeze".encode())
+            f.freeze=f.commit()
+            f.checkout(removed)
+            f.git("merge","-q","--no-ff",f.freeze,"-m","Merge synthetic refreeze")
+            acq=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,"claim-acquisition",first,"P43_DIRTY")
+            f.cli(self,"claim-acquisition",acq,"P43_ISOLATION",isolated=False)
+            staged=f.inp/"bars.json"
+            s.write_exclusive(staged,b"{}")
+            f.cli(self,"claim-acquisition",acq,"P43_BARS_ALREADY_STAGED")
+            staged.unlink()
+            f.cli(self,"claim-acquisition",acq,"P43_ACQUISITION_CLAIMED")
+            f.cli(self,"claim-acquisition",acq,"P43_REFUSED")
+            receipt=f.inp/f"acquisition.{acq}.lock"
+            self.assertEqual(s.parse(receipt.read_bytes())["acquisition_commit"],acq)
+            f.stage_packets()
+            actions_file=f.inp/"actions.json"
+            original_actions=actions_file.read_bytes()
+            for case in ("missing_code","wrong_code","non_independent","blocked_comparator"):
+                with self.subTest(case=case):
+                    altered=s.parse(original_actions)
+                    legs=altered["records"][f.blocked]
+                    if case=="missing_code":
+                        del legs["stock"]["reason_code"]
+                    elif case=="wrong_code":
+                        legs["stock"]["reason_code"]="unsupported"
+                    elif case=="non_independent":
+                        legs["stock"]["reason_sources"]=[AUTH[0],AUTH[0]]
+                    else:
+                        legs["IWM"].update(status="blocked",reason_code=s.NONCASH_SKIP,reason_sources=AUTH)
+                    actions_file.write_bytes(s.render(altered))
+                    bad=f.commit(s.APPROVAL,f.validation(acq))
+                    f.cli(self,"validate-inputs",bad,"P43_ACTION_COVERAGE")
+                    f.checkout(acq)
+            actions_file.write_bytes(original_actions)
+
+            (f.root/s.ACQUISITION).write_bytes(f.acquisition()+b"changed")
+            f.commit()
+            amended=f.commit(s.APPROVAL,f.validation(acq))
+            f.cli(self,"validate-inputs",amended,"P43_ACQUISITION_PIN")
+            f.checkout(acq)
+            bad=f.commit(s.APPROVAL,b"not a validation approval\n")
+            f.cli(self,"validate-inputs",bad,"P43_APPROVAL")
+            f.checkout(acq)
+            bad=f.commit(s.APPROVAL,f.validation(acq,"1"*64))
+            f.cli(self,"validate-inputs",bad,"P43_PIN")
+            f.checkout(acq)
+            packet=f.inp/"bars.json"
+            original=packet.read_bytes()
+            packet.write_bytes(b'{"version":0}\n')
+            bad=f.commit(s.APPROVAL,f.validation(acq))
+            f.cli(self,"validate-inputs",bad,"P43_BARS")
+            packet.write_bytes(original)
+            f.checkout(acq)
+            val=f.commit(s.APPROVAL,f.validation(acq))
+            buf=receipt.read_bytes()
+            receipt.unlink()
+            f.cli(self,"validate-inputs",val,"P43_REFUSED")
+            s.write_exclusive(receipt,b"wrong")
+            f.cli(self,"validate-inputs",val,"P43_PIN")
+            receipt.unlink()
+            s.write_exclusive(receipt,b"wrong-but-pinned")
+            f.checkout(acq)
+            wrong_receipt=f.commit(s.APPROVAL,f.validation(acq))
+            f.cli(self,"validate-inputs",wrong_receipt,"P43_ACQUISITION_RECEIPT")
+            receipt.unlink()
+            s.write_exclusive(receipt,buf)
+            f.checkout(val)
+            f.cli(self,"validate-inputs",val,"P43_VALIDATED")
+            f.cli(self,"validate-inputs",val,"P43_VALIDATED")
+            self.assertFalse((f.run/"score.lock").exists())
+            self.assertFalse((f.run/"result.json").exists())
+            proof=f.run/f"validation.{val}.json"
+            good=proof.read_bytes()
+            pin=sha256(good).hexdigest()
+            proof.write_bytes(b"wrong")
+            f.cli(self,"validate-inputs",val,"P43_PIN")
+            proof.write_bytes(good)
+
+            (f.root/s.APPROVAL).write_bytes(b"rewritten validation approval")
+            f.commit()
+            rewritten=f.commit(s.GO,f.release(val,pin))
+            f.cli(self,"go",rewritten,"P43_VALIDATION_PIN")
+            f.checkout(val)
+            malformed=f.commit(s.GO,f.release(val,pin).rstrip())
+            f.cli(self,"go",malformed,"P43_APPROVAL")
+            f.checkout(val)
+            wrong=f.commit(s.GO,f.release(val,"b"*64))
+            f.cli(self,"go",wrong,"P43_VALIDATION_RECEIPT")
+            f.checkout(val)
+            go=f.commit(s.GO,f.release(val,pin))
+            proof.unlink()
+            f.cli(self,"go",go,"P43_REFUSED")
+            self.assertFalse((f.run/"score.lock").exists())
+            s.write_exclusive(proof,good)
+            f.cli(self,"go",go,"P43_SCORED_ONCE")
+            out=s.parse((f.run/"result.json").read_bytes())
+            self.assertEqual(out["job"]["go_commit"],go)
+            result=out["outcome"]
+            self.assertEqual(result["eligible"],2)
+            self.assertEqual(result["modeled"],1)
+            self.assertEqual(result["skipped_by_reason"],{s.NONCASH_SKIP:1})
+            self.assertEqual(result["judged"]["absolute"]["n"],1)
+            self.assertEqual(result["sleeves"]["placed"],1)
+            self.assertEqual(result["no_trade_unaffordable"],0)
+            self.assertEqual(result["idle_zero_mean"],result["judged"]["absolute"]["mean"])
+            f.cli(self,"go",go,"P43_CONSUMED")
+
+    def test_real_cli_acquisition_git_refusals(self):
+        flag="claim-acquisition"
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d))
+            needle=f.acquisition()
+            for mode,ref in (("claim-acquisition",None),("validate-inputs",None),("go",None),("self-test",f.freeze)):
+                rejection=f.process(mode,ref)
+                self.assertEqual(rejection.returncode,2)
+                self.assertIn("real modes require --approval-commit; synthetic modes reject it",rejection.stderr)
+            f.cli(self,flag,"invalid","P43_APPROVAL")
+            f.cli(self,flag,f.freeze,"P43_APPROVAL")
+            bad=f.commit(s.ACQUISITION,needle+b"\n")
+            f.cli(self,flag,bad,"P43_APPROVAL")
+            f.checkout(f.freeze)
+            f.put("extra",b"not a sole-file add")
+            bad=f.commit(s.ACQUISITION,needle)
+            f.cli(self,flag,bad,"P43_APPROVAL_SCOPE")
+            f.checkout(f.freeze)
+            side=f.commit("side",b"synthetic second parent")
+            f.checkout(f.freeze)
+            f.git("merge","-q","--no-ff","--no-commit",side)
+            bad=f.commit(s.ACQUISITION,needle)
+            f.cli(self,flag,bad,"P43_APPROVAL")
+            f.checkout(f.freeze)
+            bad=f.commit(s.ACQUISITION,f.acquisition(freeze=side))
+            f.cli(self,flag,bad,"P43_ANCESTOR")
+            f.checkout(f.freeze)
+            for path,content,expected in (
+                (s.CALIBRATION,b"{}", "P43_PIN"),
+                ("docs/QUEUE.md",b"| 74 | changed |\n","P43_LEDGER_QUEUE"),
+                ("research_rig/TRIAL_LEDGER.md",b"| 178 | changed |\n","P43_LEDGER_QUEUE"),
+            ):
+                with self.subTest(path=path):
+                    f.commit(path,content)
+                    bad=f.commit(s.ACQUISITION,needle)
+                    f.cli(self,flag,bad,expected)
+                    f.checkout(f.freeze)
+            f.commit(s.APPROVAL,b"stale approval at freeze")
+            historical=f.git("rev-parse","HEAD")
+            bad=f.commit(s.ACQUISITION,f.acquisition(freeze=historical))
+            f.cli(self,flag,bad,"P43_APPROVAL_FROZEN")
+            f.checkout(f.freeze)
+            start=f.freeze
+            f.put(s.PLAN,(f.root/s.PLAN).read_bytes().replace(b"Status FROZEN.",b"Status DRAFT."))
+            f.repin()
+            f.freeze=f.commit()
+            draft=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,flag,draft,"P43_FREEZE")
+            f.checkout(start)
+            f.freeze=start
+            f.repin()
+            valid=f.commit(s.ACQUISITION,needle)
+            f.put("untracked",b"dirty tree")
+            f.cli(self,flag,valid,"P43_DIRTY")
+            (f.root/"untracked").unlink()
+            f.run.chmod(0o755)
+            f.cli(self,flag,valid,"P43_PRIVATE")
+            f.run.chmod(0o700)
+            docket=f.data/"docket.jsonl"
+            docket.write_bytes(b"not pinned")
+            f.cli(self,flag,valid,"P43_PIN")
+            self.assertFalse((f.inp/f"acquisition.{valid}.lock").exists())
+
+    def test_real_cli_proof_mismatch_and_pinned_malformed_docket(self):
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d))
+            start=f.freeze
+            proof=f.root/s.CALIBRATION
+            altered=s.parse(proof.read_bytes())|{"shares":[1]}
+            f.put(s.CALIBRATION,s.render(altered))
+            f.repin()
+            f.commit()
+            bad=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,"claim-acquisition",bad,"P43_FREEZE")
+            f.checkout(start)
+            f.put(s.CALIBRATION,s.render(altered))
+            f.repin()
+            f.freeze=f.commit()
+            bad=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,"claim-acquisition",bad,"P43_CALIBRATION")
+            f.checkout(start)
+            cfg_path=f.root/s.CONFIG
+            c=s.config(cfg_path.read_bytes())
+            c["resources"]["disk_floor_mib"]=10**12
+            f.put(s.CONFIG,b"replay_43_plan:\n  value: "+json.dumps(c,default=float).encode()+b"\n")
+            f.repin()
+            f.freeze=f.commit()
+            bad=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,"claim-acquisition",bad,"P43_RESOURCES")
+            f.checkout(start)
+            docket=f.data/"docket.jsonl"
+            stub=b'{"accession":"not-a-filing"}\n'
+            docket.write_bytes(stub)
+            old=f.dp
+            f.dp=sha256(stub).hexdigest()
+            f.put(s.CONFIG,(f.root/s.CONFIG).read_bytes().replace(old.encode(),f.dp.encode()))
+            f.repin()
+            f.freeze=f.commit()
+            bad=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,"claim-acquisition",bad,"P43_DOCKET")
+
+    def test_packet_file_size_mode_and_symlink_guards(self):
+        with TemporaryDirectory() as d:
+            root=Path(d)
+            packet=root/"synthetic"
+            pin=sha256(b"synthetic").hexdigest()
+            s.write_exclusive(packet,b"synthetic")
+            with self.assertRaisesRegex(s.Refused,"FILE"):
+                s.file_bytes(packet,pin,8,private=True)
+            packet.chmod(0o644)
+            with self.assertRaisesRegex(s.Refused,"PRIVATE"):
+                s.file_bytes(packet,pin,32,private=True)
+            link=root/"link"
+            link.symlink_to(packet)
+            with self.assertRaisesRegex(s.Refused,"FILE"):
+                s.file_bytes(link,pin,32,private=True)
+
+    def test_concurrent_exclusive_gate_file(self):
+        with TemporaryDirectory() as d, ThreadPoolExecutor(max_workers=2) as pool:
+            lock=Path(d)/"lock"
+            def claimant(n):
+                try:
+                    s.write_exclusive(lock,str(n).encode())
+                except FileExistsError:
+                    return None
+                return n
+            outcomes=list(pool.map(claimant,(1,2)))
+            winners=[n for n in outcomes if n is not None]
+            self.assertEqual(len(winners),1)
+            self.assertEqual(lock.read_text(),str(winners[0]))
+
     def test_cutoff_preopen_and_weekend(self):
         q,days,_,c,*_=condition()
         w=lambda x:s.window(datetime.fromisoformat(x),days,c)
@@ -95,6 +473,15 @@ class Plan43(unittest.TestCase):
             a=condition()
             ready=s.prepared(*a)
         self.assertEqual(set(ready[a[0][0].a]),{"stock","IWM","SPY"})
+
+    def test_blocked_stock_never_needs_bars_but_other_coverage_remains_required(self):
+        p=condition()
+        blocked=add_blocked(p[0],*p[4:])
+        del p[5]["records"][blocked]
+        self.assertEqual(set(s.prepared(*p)),{p[0][0].a})
+        p[6]["records"][blocked]["SPY"]["status"]="incomplete"
+        with self.assertRaisesRegex(s.Refused,"ACTION_COVERAGE"):
+            s.prepared(*p)
 
     def test_approval_receipts_and_recheck(self):
         ordered,days,_,c,*_=condition()

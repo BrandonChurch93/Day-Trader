@@ -4,6 +4,8 @@ from array import array
 from bisect import bisect_left
 from collections import defaultdict
 from datetime import date, timedelta
+from decimal import Decimal
+from fractions import Fraction
 from hashlib import sha256
 import json
 import math
@@ -90,7 +92,10 @@ def authorize(fixture):
     replay13 = cfg["replay_13_plan"]["value"]
     calibration = json.loads(files[CALIBRATION])
     require(bool(calibration.get("cli_fixture")) == fixture, "CALIBRATION_MODE")
-    release = K.release(calibration["rows"], p)
+    try:
+        release = K.release(calibration["rows"], p, verify_counts=True)
+    except (KeyError, TypeError, ValueError):
+        raise Refused("P51_CALIBRATION") from None
     require(release["unlocked"] and all(calibration[k] == v for k, v in release.items()), "CALIBRATION")
     require(all(p[key] == replay13[key] for key in
                 ("universe_top_n", "rise_days", "hot_n", "cost_bps_per_side", "max_missing_hours",
@@ -99,8 +104,9 @@ def authorize(fixture):
 
 
 class PackedSeries:
-    def __init__(self, times, opens, closes):
-        self.times, self.opens, self.closes = times, opens, closes
+    def __init__(self, times, opens, coefficients, exponents):
+        self.times, self.opens = times, opens
+        self.coefficients, self.exponents = coefficients, exponents
         self.bars = self
 
     def __contains__(self, t):
@@ -111,7 +117,18 @@ class PackedSeries:
         i = bisect_left(self.times, t)
         if i == len(self.times) or self.times[i] != t:
             raise KeyError(t)
-        return C.prior.Bar(self.opens[i], 0, self.closes[i])
+        return C.prior.Bar(self.opens[i], 0, float(self._exact_at(i)))
+
+    def exact_close(self, t):
+        i = bisect_left(self.times, t)
+        if i == len(self.times) or self.times[i] != t:
+            raise KeyError(t)
+        return self._exact_at(i)
+
+    def _exact_at(self, i):
+        exp = self.exponents[i]
+        coeff = self.coefficients[i]
+        return Fraction(coeff * 10**exp) if exp >= 0 else Fraction(coeff, 10**(-exp))
 
     def open_at_or_after(self, t, end):
         i = bisect_left(self.times, t)
@@ -164,7 +181,8 @@ def load(root, manifest_hash, p13, fixture, space):
     data = {}
     for pair, group in sorted(groups.items()):
         require(shutil.disk_usage(space).free >= (3 << 29), "LOW_DISK")
-        times, opens, closes = array("q"), array("d"), array("d")
+        times, opens = array("q"), array("d")
+        coefficients, exponents = array("q"), array("b")
         for _, rel, meta in sorted(group):
             blob = private_read(root, "archives/" + rel)
             require(sha(blob) == meta["sha256"], "ARCHIVE_HASH")
@@ -175,12 +193,19 @@ def load(root, manifest_hash, p13, fixture, space):
                 require(t % F.HOUR == 0 and (not times or t > times[-1])
                         and all(math.isfinite(v) and v > 0 for v in (o, low, c))
                         and low <= min(o, c), "BAR_SHAPE")
+                _, digits, exponent = Decimal(row[4]).as_tuple()
+                digits = "".join(map(str, digits))
+                significant = digits.rstrip("0")
+                exponent += len(digits) - len(significant)
+                coefficient = int(significant)
+                require(-128 <= exponent <= 127 and 0 < coefficient < 2**63, "BAR_PRECISION")
                 times.append(t)
                 opens.append(o)
-                closes.append(c)
+                coefficients.append(coefficient)
+                exponents.append(exponent)
                 n += 1
             require(n == meta["n"], "ARCHIVE_ROWS")
-        data[pair] = PackedSeries(times, opens, closes)
+        data[pair] = PackedSeries(times, opens, coefficients, exponents)
     return snapshots, data
 
 
@@ -207,7 +232,8 @@ def main():
     args = parser.parse_args()
     try:
         root, run = resolve(args.synthetic_fixture)
-        head, freeze, manifest, p, p13 = authorize(args.synthetic_fixture)
+        authorization = authorize(args.synthetic_fixture)
+        head, freeze, manifest, p, p13 = authorization
         require(run.resolve() == run and not run.is_relative_to(ROOT), "RUN_PATH")
         require(run.is_dir(), "RUN_DIRECTORY")
         lock, result = run / "score_51.lock", run / "results_51.json"
@@ -219,6 +245,8 @@ def main():
             print(json.dumps(C.counts(panels), sort_keys=True))
             return 0
         require(shutil.disk_usage(run).free >= (3 << 29), "LOW_DISK")
+        require(sha(private_read(root, "manifest.json")) == manifest, "MANIFEST_CHANGED")
+        require(authorize(args.synthetic_fixture) == authorization, "APPROVAL_CHANGED")
         try:
             exclusive(lock, {"approval": head, "freeze": freeze, "manifest_sha256": manifest})
         except FileExistsError:

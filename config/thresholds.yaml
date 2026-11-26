@@ -1080,9 +1080,9 @@ replay_48_plan:
   source: research_rig/PREREG_48_muni_cef_tax_loss.md
 
 replay_51_plan:
-  value: {years: [2020, 2021, 2022, 2023, 2024, 2025, 2026], judged_stop: "2026-04-01", shown_stop: "2026-11-23", universe_top_n: 50, lookback_days: 30, hot_n: 5, rise_days: 7, max_missing_hours: 6, cost_bps_per_side: 15, judged_leverage: 1, twin_draws: 1000, twin_seed: 51001, twin_p_max: 0.011111111111111112, min_positive_years: 4, calibration_trials: 100, calibration_seed: 51100, calibration_edges_bps: [20, 40, 80], calibration_block_days: [20, 40, 80], calibration_target_bps: 20, calibration_target_days: 40, calibration_power_floor: 0.5, calibration_relative_sigma: 0.01, calibration_market_sigma: 0.015}
+  value: {years: [2020, 2021, 2022, 2023, 2024, 2025, 2026], judged_stop: "2026-04-01", shown_stop: "2026-11-23", universe_top_n: 50, lookback_days: 30, hot_n: 5, rise_days: 7, max_missing_hours: 6, cost_bps_per_side: 15, judged_leverage: 1, twin_draws: 1000, twin_seed: 51001, twin_p_max: 0.011111111111111112, min_positive_years: 4, calibration_trials: 100, calibration_seed: 51100, calibration_edges_bps: [20, 40, 80], calibration_block_days: [20, 40, 80], calibration_target_bps: 20, calibration_target_days: 40, calibration_power_floor: 0.5, calibration_redesign_null_ceiling: 0.05, calibration_relative_sigma: 0.01, calibration_market_sigma: 0.015}
   status: builder
-  note: Price-blind draft. Queue 95 and ledger 185. One reused-years regime score, shown-only TM06 months, and a separate forward watch. Settings do not authorize market access.
+  note: Closed before market access. Queue 96 and ledger 185. Original and uniform-placement redesign failed synthetic power. Settings retained for audit only and do not authorize market access.
   source: research_rig/PREREG_51_momentum_when_it_pays.md
 
 replay_47_plan:
