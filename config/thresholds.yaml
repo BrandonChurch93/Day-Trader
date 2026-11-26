@@ -1584,3 +1584,26 @@ replay_74_plan:
   status: builder
   note: Plan 74 draft settings set by the lead agent (rulings of 2026-11-26, revised before any price; month clusters, 0.5% floor, Card A 25 bp main, overshoot on both cards). Count need uses the third-version main table. Fourth-round offsets, comparison pool floor and Card B lower gap added. Card numbers are transcribed from Plan 74 and its incorporated Doc 169 lines 99-117. Not authorization to access data; the scorer has no held-back mode.
   source: research_rig/PREREG_74_swing_cards.md
+
+measure_132:
+  value:
+    private_roots: [/home/user/workspace/rig/data, /tmp]
+    days: 30
+    sizes_usd: [25, 250]
+    decision: {max_cost_bp: 25, min_coins: 15, min_midnights: 25, fallback_cost_bp: 75}
+    btc_drop_reference: research_rig/GRID_70.json:70-102:parameters:threshold
+    taker:
+      Binance.US:
+        status: STATED
+        default_bp: 2
+        BNB-USD_bp: 1
+        source: https://www.binance.us/fees
+        checked: "2026-11-26"
+      Coinbase:
+        status: STATED
+        reference: replay_47_plan.value.coinbase_fee_bps
+        source: https://help.coinbase.com/en/exchange/trading-and-funding/exchange-fees
+        checked: "2026-11-26"
+  status: STATED
+  note: Ledger 227 and published lowest-volume-tier taker fees per side. No fee discount assumed. Coinbase Exchange, not Coinbase Advanced. Fee sources and dates are from doc 180, with doc 60 for the Coinbase Exchange link.
+  source: docs/research/182_measurement_132_venue_cost.md
