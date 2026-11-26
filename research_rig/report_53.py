@@ -2,7 +2,8 @@
 
 Run: python3 research_rig/report_53.py PATH/TO/results_53.json
 The report uses frozen plan settings, the stored synthetic calibration, and
-lead-reported custody facts explicitly labelled STATED. It writes only stdout.
+the recorded independent comparison. Custody facts are labelled STATED.
+It writes only stdout.
 """
 import argparse
 from datetime import datetime
@@ -15,6 +16,13 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULT_SHA = "2f8e2160d53659c08634a6878e7ceb0f805bc04d922c6444c36cdf1af3d1365a"
+# Recorded from the independent off-repo comparison, not recomputed here.
+RECOMPUTE = {
+    "turn_max_diff": 0, "mean_max_diff": 3.5e-18,
+    "script_sha": "fe7044ac60270c470ae6283204ad22fdbd6f94f34b385645b805ca32a35b07c9",
+    "output_sha": "b01fc3e35fc581aed288f6c8a3e9238eb2dd9b4c48fad7a010fc62dd46868a11",
+}
+RECOMPUTE_DIR = "/home/user/workspace/rig/data/replay_53_notes/recompute"
 STATED = {
     "ticker_changes": 6, "roster_typos": 1,
     "split_ratio": "1-for-2", "split_session": "2024-06-24", "split_accession": "0001398344-25-012578",
@@ -190,10 +198,12 @@ def render(data, base, scope, calib):
             f"${g['amount_tolerance']}. {incomplete} vendor rows were incomplete. The reliable aggregate admitted "
             f"{gate['admitted_events']} events as `{gate['admitted_source_kind']}`. STATED: blank native currency was treated as USD, "
             "and blank-currency candidates were checked against matching blank-currency proof events. The overlap is not a random sample.",
-            "- MEASURED from the frozen source. The shown-only by-turn/status counts of admitted vendor events and fund-turns "
-            "overwrite rather than add when more than one fund qualifies in a bucket. Do not add those fields to infer coverage. "
-            "The change from the cash amendment to the final freeze did not fix this bug. It does not affect the gate totals, "
-            "overall admitted event count, cash credited, returns, or marks.",
+            f"- MEASURED from the frozen source. The defect remains in `{job['freeze_commit'][:7]}:research_rig/score_53.py:441-442`. "
+            "For a turn/status bucket with two or more admitted fund-years, the breakdown retains the last processed qualifying "
+            "fund-year's event count and reports one admitted fund-year, so both subtotals undercount. A bucket with zero or one "
+            "admitted fund-year, and gate-fail zeroes, are correct. Only the two shown-only `by_turn_and_primary_status` admission "
+            "subtotals are affected; the gate, admitted cash and total event count, judged returns and marks, and other diagnostics "
+            "are unaffected. Whether a real bucket was affected was not checked.",
             "- STATED by the lead. Two brief custody exposures: NAV text in one SEC exhibit, and a helper output that printed "
             "post-exit reinvestment prices for one fund. No such numbers are reproduced here.",
             f"- STATED by the lead. The {b} {u['benchmark_amount_window']} distribution amount did not have a distinct second "
@@ -223,7 +233,24 @@ def render(data, base, scope, calib):
         "- STATED, lead agent's reading. Treat this as related evidence for a January rebound, not a second independent pass.\n"
         "- STATED, lead agent's reading. The taxable last-January-close rule does not advance on this result.",
         "## Independent recompute",
-        "UNKNOWN. Independent recompute in progress; outcome to be filled by the lead.",
+        f"STATED by the lead. The independent helper rebuilt the run from the plan text at `{job['freeze_commit'][:7]}` "
+        "and the sealed packet without opening `score_53.py`, `common_48.py` or `score_48.py`. The helper wrote its "
+        "numbers before opening the saved results.",
+        f"MEASURED. The same {picks} funds matched in the same rank order in all {n} turns. Eligible counts matched in turn order: "
+        + ", ".join(str(y["eligible"]) for y in years)
+        + f". The largest per-turn return difference was {RECOMPUTE['turn_max_diff']}. Mean differences were from floating-point "
+        f"rounding only (largest {RECOMPUTE['mean_max_diff']:.2g}). All {len(marks)} marks agreed. The vendor cash gate also "
+        f"agreed: {overlap['matched_events']} of {overlap['primary_events']} primary events matched, and "
+        f"{overlap['clean_windows']} of {overlap['fund_years']} windows had no extras.",
+        f"MEASURED. The off-repo script `{RECOMPUTE_DIR}/recompute_53.py` has SHA-256 `{RECOMPUTE['script_sha']}`. "
+        f"The off-repo output `{RECOMPUTE_DIR}/recompute_53.json` has SHA-256 `{RECOMPUTE['output_sha']}`.",
+        "STATED by the helper. Tighten these choices in the next plan. None changed a number in this comparison:",
+        "\n".join([
+            "- Take the duration-weighted median at the first spread where cumulative valid quote time reaches half.",
+            "- Apply a split on a cash ex-date before crediting that cash.",
+            f"- Use the floor of `${sleeve} / (entry close × (1 + entry cost))` for whole shares.",
+            "- Leave an unaffordable fund out of both the ranking and the roster mean.",
+        ]),
         "## Run record",
         f"MEASURED. The saved result records a claim at {claim} for queue {job['queue']} and ledger {job['ledger']}. "
         "STATED. The lead reports one successful scored run; this page reads that saved result without reopening market data or the scorer.",
