@@ -349,8 +349,10 @@ class PublicPages:
                                     else (parsedate_to_datetime(hint) - now_utc()).total_seconds())
                     except (TypeError, ValueError, OverflowError):
                         raise Failure("http_429_bad_retry_after") from None
-                if delay > 8 or (self.deadline and now_utc() + timedelta(seconds=delay) >= self.deadline):
-                    raise Failure("http_429_retry_after_window") from None
+                if delay > 8:
+                    raise Failure("http_429_retry_after_over_limit") from None
+                if self.deadline and now_utc() + timedelta(seconds=delay) >= self.deadline:
+                    raise Failure("wake_window_elapsed") from None
                 self.sleep(delay)
             except urllib.error.URLError as exc:
                 reason = self.timeout_status(exc.reason) if isinstance(exc.reason, TimeoutError) else "network_failure"

@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 import urllib.error
 
 import measure_132 as m
@@ -218,6 +219,45 @@ class Logger(unittest.TestCase):
         self.assertEqual(out["wake_counts"]["partial"], 1)
         self.assertEqual(out["book_counts"]["Binance.US"]["wake_window_elapsed"], 1)
         self.assertNotIn("timeout", out["book_counts"]["Binance.US"])
+
+    def test_last_book_429_distinguishes_wake_cutoff_from_retry_policy(self):
+        fixture = self.pages
+
+        class Opener:
+            def __init__(self, wait):
+                self.wait = wait
+                self.calls = []
+
+            def open(self, req, timeout):
+                self.calls.append(req.full_url)
+                raise urllib.error.HTTPError(req.full_url, 429, "invented", {"Retry-After": self.wait}, None)
+
+        class LastBookRateLimited(m.PublicPages):
+            def candles(self, wake):
+                return fixture.candles(wake)
+
+            def book(self, venue, coin):
+                if (venue, coin) == ("Binance.US", m.COINS[-1]):
+                    self.deadline = m.now_utc() + timedelta(milliseconds=250)
+                    return super().book(venue, coin)
+                return fixture.book(venue, coin)
+
+        for i, (wait, status) in enumerate((("9", "http_429_retry_after_over_limit"),
+                                           ("1", "wake_window_elapsed"))):
+            with self.subTest(wait=wait):
+                self.now = self.first + i * m.HOUR
+                opener = Opener(wait)
+                sleeps = []
+                with patch.object(m, "now_utc", self.clock):
+                    m.record(self.off, LastBookRateLimited(opener, sleeps.append), self.clock)
+                self.assertEqual(len(opener.calls), 1)
+                self.assertFalse(any(sleeps))
+                row = m.read_log(self.off)[-1]
+                book = row["books"]["Binance.US"][m.COINS[-1]]
+                self.assertEqual(book["status"], status)
+                self.assertNotIn("sizes", book)
+                out = m.report(self.off, "alive", self.clock)
+                self.assertEqual(out["wake_counts"].get("partial", 0), i)
 
     def test_read_before_end_and_public_only_aggregate(self):
         self.now = self.first + m.HOUR
