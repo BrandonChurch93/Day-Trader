@@ -1,6 +1,8 @@
 # Replay 20: short after an Upbit won listing
 
-Status DRAFT. Queue 29, ledger 157. No real score is authorized. All dates have already been viewed. This is a per-trade comparison, not a simulated portfolio.
+Status FROZEN.
+
+Queue 29, ledger 157. The one-shot run requires separate lead authorization after publication. All dates have already been viewed. This is a per-trade comparison, not a simulated portfolio.
 
 ## What the source says
 
@@ -50,11 +52,16 @@ STATED. The write-up reports +2.8% a trade at 15 bps a side with funding. Its âˆ
 - The v2 notice map SHA-256 is `888517afd7da535f48053258cf86b4ad68728522e90831b953be44c2decce61b`. The v2 notice identity and lifetime sidecar digests are `6c91e59758359fbce0ffb572973061116ae97c80ac7a29bb66741b9f6624c10a` and `6f1123653083270389c2c2f815a87e88e39dfd5eb6e7954cdbc802691721e921`. The v2 supplement manifest SHA-256 is `6b4625cff91a82fb000c5d2b37f92c9ad369328b73837427d640850c27f43059`. It pins 270 additional ZIPs and declares the supplement-only control spans.
 - MEASURED from roster metadata. The corrected map flags 158 of 271 KRW rows as trading at publication, 56 as launched later, 3 as ended before, and 54 as never listed. These are raw row counts, before first-asset and study-date restrictions; they are not trade counts.
 - Stage needed hourly trade, mark and settlement archives by official public bulk path and named checksum only. Do not unpack the files while staging. The later authorized clock scan reads timestamps, intervals, and byte-level field categories, without numerically converting prices or rates or calculating a return. No venue live service is used. Missing official coverage remains a blocker.
-- MEASURED. Among 156 first notices on dated active contracts, every possible signal and entry clock and every observed potential settlement's mark clock were present. Forty interval changes align with the published time grids; nine could touch a possible hold. One expected clock is absent, REUSDT at 04:00 UTC on June 24, 2026, between two observations both labeled four hours. Its mark clock exists. UNKNOWN. Whether an actual hold crosses that clock, or what its rate would have been. The draft does not reconstruct any rate.
-- Provision the canonical private off-repo run directory at freeze. For a separately authorized run, verify the clean approved commit and all pins. Silently load and validate the listing and ordinary books before any claim. Refusals show only fixed codes and affected paths. Claim the exclusive one-shot lock immediately before scoring. Read the same pinned bytes again in small batches to stay within the memory cap. This draft cannot claim or score.
+- MEASURED. Among 156 first notices on dated active contracts, every possible signal and entry clock and every observed potential settlement's mark clock were present. Forty interval changes align with the published time grids; nine could touch a possible hold. One expected clock is absent, REUSDT at 04:00 UTC on June 24, 2026, between two observations both labeled four hours. Its mark clock exists. UNKNOWN. Whether an actual hold crosses that clock, or what its rate would have been. The plan does not reconstruct any rate.
+- MEASURED from clocks and the pinned dated lifetimes. The only unlabelled span in the whole inventory is in LITUSDT, between a June 19, 2025 observation after the old contract ended and a December 23, 2025 observation in the new contract. It cannot touch a hold in either dated lifetime. The pre-lock refusal for an unlabelled gap that touches a hold still applies.
+- The canonical private off-repo run directory was provisioned at freeze. For a separately authorized run, verify the clean, pushed approved commit and all pins. Silently load and validate the listing and ordinary books before any claim. Refusals show only fixed codes and affected paths. Claim the exclusive one-shot lock immediately before scoring. Read the same pinned bytes again in small batches to stay within the memory cap.
 
 ## Made-up checks
 
 MEASURED on invented returns. With unchanged seeds and noise, the tightened five marks cleared 0, 3, 5 and 17 of 20 seeds at planted net means of 0%, 1%, 2% and 4% a trade. The original four-mark version cleared 3 of 20 at zero; the revised placebo percentile and t-statistic were fixed before prices were read. The simulation uses 60 synthetic trades per seed with shared year noise and heavier-tailed trade noise. It checks the marks, not real power or false-positive rates.
+
+## Limits
+
+STATED. The adverse funding and absent-bar rules stress trades in both arms. They do not necessarily make the placebo margin harder to clear, because they can lower the control cutoff by more than they lower the listing mean.
 
 UNKNOWN. The real returns, US fills, and whether the edge would survive on unviewed dates. One publication, known sample choices, restricted controls and hourly approximations do not establish a live result.
