@@ -9,7 +9,7 @@ import stat
 from count_63 import EVENTS, EVENTS_SHA, schedule
 from placebo_native_63 import scan_page
 from placebo_run_63 import (
-    PACKET, approved_project, approved_scope, check_remediated_capture, check_transport_embargo,
+    PACKET, approved_project, approved_scope, check_active_transport, check_remediated_capture, check_transport_embargo,
     decode, exact, file_in, hashed, money,
     need, read_projection, stamp, valid_pin,
 )
@@ -56,10 +56,10 @@ def read_captured(page, partition, load_archive):
     return hashed(body, page["body_sha256"])
 
 
-def chain_leaves(transport, manifest, approved, retained, sessions, successor_marks, deny, purged, load_archive):
-    """Generate all close locators from verified native page chain(s)."""
+def chain_plan(transport, manifest, approved, retained, sessions, successor_marks, deny, purged):
+    """Validate the entire compact transport without opening any native archive."""
     check_transport_embargo(transport, retained, sessions, successor_marks, deny, purged)
-    wanted, stream_keys, paths, bodies, out, covered = {}, set(), set(), {}, {}, set()
+    wanted, stream_keys, paths, covered, plan = {}, set(), set(), set(), []
     aliases = {x["subject_key"]: x for x in manifest["identity_map"]}
     for (subject, start, end), m in approved.items():
         for side, d in (("entry", start), ("exit", end)):
@@ -67,7 +67,6 @@ def chain_leaves(transport, manifest, approved, retained, sessions, successor_ma
             if alias is not None:
                 wanted.setdefault((subject, alias), set()).add((alias, d))
 
-    sizes = 0
     for stream in transport["streams"]:
         exact(stream, "partition subject_key stable_security_id alias first last feed view pages")
         key = stream["subject_key"]
@@ -88,28 +87,45 @@ def chain_leaves(transport, manifest, approved, retained, sessions, successor_ma
         covered.update((key, sym, d) for sym, d in needs)
         cursor, seen = None, set()
         for i, page in enumerate(stream["pages"]):
-            body = read_captured(page, partition, load_archive)
-            digest = page["body_sha256"]
+            exact(page, "file file_sha256 body_sha256 page_token next_page_token")
+            need(type(page["file"]) is str and valid_pin(page["file_sha256"]) and
+                 valid_pin(page["body_sha256"]), "NATIVE_INDEX")
+            path = PurePosixPath(page["file"])
+            need(str(path) == page["file"] and len(path.parts) == 4 and
+                 path.parts[:3] == (partition, "native", "bars_raw") and
+                 re.fullmatch(r"[\w.-]+\.json\.gz", path.name), "NATIVE_PATH")
+            following = page["next_page_token"]
             need(page["file"] not in paths and page["page_token"] == cursor and
+                 (following is None or (type(following) is str and following)) and
                  (i == 0 or cursor is not None) and cursor not in seen, "NATIVE_PAGE_CHAIN")
-            picked, following = scan_page(body, needs, (symbol, a, b))
-            need(following == page["next_page_token"] and (following is None or type(following) is str),
-                 "NATIVE_PAGE_CHAIN")
             paths.add(page["file"])
             seen.add(cursor)
             cursor = following
-            if digest in bodies:
-                need(bodies[digest] == body, "NATIVE_BODY")
-            else:
-                bodies[digest] = body
-                sizes += len(body)
-                need(sizes <= MAX_UNCOMPRESSED_TOTAL, "NATIVE_BODY_BUDGET")
-            for (sym, d), leaf in picked.items():
-                scoped = key, sym, d
-                need(scoped not in out, "NATIVE_DUPLICATE_BAR")
-                out[scoped] = leaf
+            plan.append((dict(page), partition, key, needs, (symbol, a, b)))
         need(cursor is None, "NATIVE_PAGE_CHAIN")
     need(covered == {(key, sym, d) for (key, _), xs in wanted.items() for sym, d in xs}, "NATIVE_COVERAGE")
+    return plan
+
+
+def chain_leaves(plan, load_archive):
+    """Generate close locators only after all transport authorization passes."""
+    bodies, out, sizes = {}, {}, 0
+    for page, partition, key, needs, span in plan:
+        body = read_captured(page, partition, load_archive)
+        digest = page["body_sha256"]
+        picked, following = scan_page(body, needs, span)
+        need(following == page["next_page_token"] and (following is None or type(following) is str),
+             "NATIVE_PAGE_CHAIN")
+        if digest in bodies:
+            need(bodies[digest] == body, "NATIVE_BODY")
+        else:
+            bodies[digest] = body
+            sizes += len(body)
+            need(sizes <= MAX_UNCOMPRESSED_TOTAL, "NATIVE_BODY_BUDGET")
+        for (sym, d), leaf in picked.items():
+            scoped = key, sym, d
+            need(scoped not in out, "NATIVE_DUPLICATE_BAR")
+            out[scoped] = leaf
     return out, bodies
 
 
@@ -126,7 +142,7 @@ def single_token(ref, bodies):
 
 
 def project(manifest, census, sessions, proofs, field_index, transport, preflight, *,
-            placebo_exclusions=None, project_commit=None, load_archive=custodian_archive):
+            placebo_exclusions=None, active_capture=None, project_commit=None, load_archive=custodian_archive):
     """Preflight, transport, field index and evidence require exact audited pins.
 
     Generate an independent index from verified native raw pages then compare
@@ -134,9 +150,9 @@ def project(manifest, census, sessions, proofs, field_index, transport, prefligh
     Action amounts come only from exact typed, reconciled proof bytes.
     """
     if load_archive is custodian_archive:
-        need(type(project_commit) is str and placebo_exclusions is None, "PROJECT_APPROVAL")
+        need(type(project_commit) is str and placebo_exclusions is None and active_capture is None, "PROJECT_APPROVAL")
         auth = approved_project(project_commit)
-        check_remediated_capture(auth)
+        active_capture = check_remediated_capture(auth)
         need(census == decode(hashed(EVENTS.read_bytes(), EVENTS_SHA)) and sessions == schedule(), "PROJECT_CENSUS")
         folder = os.open(PACKET, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         try:
@@ -147,10 +163,11 @@ def project(manifest, census, sessions, proofs, field_index, transport, prefligh
         finally:
             os.close(folder)
     else:
-        need(placebo_exclusions is not None, "PROJECT_INPUT")
+        need(placebo_exclusions is not None and type(active_capture) is dict, "PROJECT_INPUT")
     approved, successors, retained, deny = approved_scope(manifest, census, sessions, proofs, preflight, placebo_exclusions)
-    scan, bodies = chain_leaves(transport, manifest, approved, retained, sessions, successors, deny,
-                              placebo_exclusions, load_archive)
+    plan = chain_plan(transport, manifest, approved, retained, sessions, successors, deny, placebo_exclusions)
+    check_active_transport(transport, active_capture)
+    scan, bodies = chain_leaves(plan, load_archive)
     wanted = {s for s, meta in approved.items() if meta["status"] == "present"}
     exact(field_index, "schema legs")
     need(field_index["schema"] == "plan63-placebo-leaf-index-v1" and type(field_index["legs"]) is list,

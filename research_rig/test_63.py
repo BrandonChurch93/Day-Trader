@@ -19,10 +19,10 @@ from placebo_63 import Leg, admissible, leg_return, measure
 from placebo_native_63 import approved_bar_leaves
 from placebo_project_63 import project
 from placebo_run_63 import (
-    APPROVAL, OUTPUT_PINS, Proofs, approved, approved_scope, check_projection_receipt,
-    check_transport_embargo, decode, exclusive, read_projection,
+    APPROVAL, OUTPUT_PINS, REMEDIATION, Proofs, approved, approved_scope, check_projection_receipt,
+    check_remediated_capture, check_transport_embargo, decode, exclusive, read_projection,
 )
-from preflight_63 import parse_placebo_exclusions, request_calendar
+from preflight_63 import PLACEBO_EXCLUSIONS_NAME, parse_placebo_exclusions, request_calendar
 from power_63 import power
 from score_63 import (
     BLIND_FLAGS, BlindFacts, Facts, PairOutcome, Stop, filer_days, fund_rates, judged_and_shown_only, load_blind_facts,
@@ -168,10 +168,11 @@ class Plan63(unittest.TestCase):
     def test_projection_canonical_aliases_authentic_bytes_and_exact_fields(self):
         sessions = schedule()
         raw = []
+        subject_keys = ("0000000001", "0000000002")
         for i, day in enumerate((date(2022, 7, 15), date(2022, 7, 18))):
             at = sessions[day].astimezone(NY) - timedelta(hours=2)
             raw.append({"acceptanceDateTime": at.isoformat(), "et_date": str(day),
-                        "is_cef_subject": True, "is_preferred": False, "cef_cik": f"test{i}",
+                        "is_cef_subject": True, "is_preferred": False, "cef_cik": subject_keys[i],
                         "filer_group": SABA if i else "fictitious other", "accession": str(i)})
         evidence = []
 
@@ -195,8 +196,8 @@ class Plan63(unittest.TestCase):
 
         identity = {}
         exceptions = []
-        for i, key in enumerate(("test0", "test1", "PCEF")):
-            issue, alias = "issue-" + key, "alias-" + key
+        for i, key in enumerate((*subject_keys, "PCEF")):
+            issue, alias = "issue-" + key, "PCEF" if key == "PCEF" else "alias-" + key
             cusips = [] if i == 0 else [f"QA{i:07d}"]
             identity[key] = {"subject_key": key, "stable_security_id": issue,
                              "identity_sha256": seal("identity", key, issue),
@@ -216,6 +217,7 @@ class Plan63(unittest.TestCase):
         indices = {"schema": "plan63-placebo-leaf-index-v1", "legs": []}
         native = {"schema": "plan63-placebo-bar-transport-v1", "streams": []}
         tokens, archives, denied_offsets = {}, {}, {}
+        capture_rows = {"placebo": [], "benchmark": []}
         for key, a, b in scope:
             issue, alias = identity[key]["stable_security_id"], identity[key]["dated_aliases"][0]["alias"]
             attrs = {"subject_key": key, "start": str(a), "end": str(b), "stable_security_id": issue}
@@ -243,14 +245,68 @@ class Plan63(unittest.TestCase):
                         "feed": "sip", "view": "raw", "pages": [{"file": path,
                         "file_sha256": sha256(packed).hexdigest(), "body_sha256": digest,
                         "page_token": None, "next_page_token": None}]})
+                    capture_rows[partition].append({
+                        "file": f"{digest}.json.gz", "cik": "0001378872" if key == "PCEF" else key,
+                        "ticker": alias, "scope": f"{partition}_raw", "span_start": str(d), "span_end": str(d),
+                        "fetched_utc": "2026-11-26T00:00:00Z", "bytes": len(packed), "sha256":
+                        sha256(packed).hexdigest(), "body_bytes": len(body), "body_sha256": digest,
+                        "page": 0, "attempt": 1, "status": 200, "page_token": None, "next_page_token": None,
+                        "params": {"symbols": alias, "timeframe": "1Day", "start": str(d), "end": str(d),
+                                   "adjustment": "raw", "feed": "sip", "asof": "-", "sort": "asc", "limit": "10000"}})
                 ix[side] = tokens[field]
             indices["legs"].append(ix)
 
-        def build(ix, v):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            preflight_pin, exclusion_pin = "a" * 64, "b" * 64
+            exclusion_name = f"placebo/{PLACEBO_EXCLUSIONS_NAME}"
+            sealed = {exclusion_name: {"bytes": 119, "sha256": exclusion_pin}}
+
+            def write_metadata(p, obj):
+                b = json.dumps(obj).encode("ascii")
+                p.write_bytes(b)
+                p.chmod(0o600)
+                return {"bytes": len(b), "sha256": sha256(b).hexdigest()}
+
+            for partition, entries in capture_rows.items():
+                part = root / partition
+                part.mkdir(mode=0o700)
+                index = {"ledger": 206, "stage": "plan63_stage_a", "approved_preflight_sha256": preflight_pin,
+                         "entries": entries, "total_pages": len(entries)}
+                if partition == "placebo":
+                    index.update(excluded_ciks_file=exclusion_name, excluded_ciks_sha256=exclusion_pin)
+                sealed[f"{partition}/transport_index.json"] = write_metadata(part / "transport_index.json", index)
+            pin = write_metadata(root / REMEDIATION, {"decoded_values_present": False,
+                "target_directory_present": False, "approved_stage_a_preflight_sha256": preflight_pin,
+                "sealed_files": sealed})
+            auth = {"custodian_uid": os.geteuid(), "remediated_capture_sha256": pin["sha256"],
+                    "placebo_exclusions_sha256": exclusion_pin}
+            with patch("placebo_run_63.PACKET", root / "placebo"):
+                active = check_remediated_capture(auth)
+                (root / "placebo" / "transport_index.json").write_bytes(b"{}")
+                with self.assertRaisesRegex(Stop, "PIN"):
+                    check_remediated_capture(auth)
+
+        def build(ix, v, loader=archives.__getitem__):
             return project(manifest, raw, sessions, Proofs(evidence), ix, v, preflight,
-                           placebo_exclusions=(), load_archive=archives.__getitem__)
+                           placebo_exclusions=(), active_capture=active, load_archive=loader)
 
         blob = build(indices, native)
+        with patch("placebo_project_63.read_captured", side_effect=AssertionError("premature archive open")) as spy:
+            # Valid streams precede both false relabels. Neither may open any archive.
+            unsurfaced = deepcopy(native)
+            stream = [s for s in unsurfaced["streams"] if s["partition"] == "placebo"][-1]
+            path = f"{stream['partition']}/native/bars_raw/unsurfaced.json.gz"
+            archives[path] = archives[stream["pages"][0]["file"]]
+            stream["pages"][0]["file"] = path
+            with self.assertRaisesRegex(Stop, "NATIVE_ACTIVE_CAPTURE"):
+                build(indices, unsurfaced)
+            relabeled = deepcopy(native)
+            a, b = [s for s in relabeled["streams"] if s["partition"] == "placebo"][-2:]
+            a["pages"], b["pages"] = b["pages"], a["pages"]
+            with self.assertRaisesRegex(Stop, "NATIVE_ACTIVE_CAPTURE"):
+                build(indices, relabeled)
+            spy.assert_not_called()
         with patch("placebo_project_63.single_token", side_effect=AssertionError("premature price read")) as spy:
             spy.reset_mock()
             extra_scope = deepcopy(indices)
@@ -279,7 +335,7 @@ class Plan63(unittest.TestCase):
                                                     entry["start"], entry["end"])
             with self.assertRaisesRegex(Stop, "NATIVE_MISSING_STATUS"):
                 project(false_missing, raw, sessions, Proofs(evidence), indices, native, preflight,
-                        placebo_exclusions=(), load_archive=archives.__getitem__)
+                        placebo_exclusions=(), active_capture=active, load_archive=archives.__getitem__)
             evidence.pop()  # remove the manufactured false status attestation
             spy.assert_not_called()
         malformed = deepcopy(blob)
@@ -289,7 +345,7 @@ class Plan63(unittest.TestCase):
         with self.assertRaises(Stop):
             read_projection(malformed, allowed, p)
         alias_collision = deepcopy(manifest)
-        alias_collision["identity_map"][1]["stable_security_id"] = identity["test0"]["stable_security_id"]
+        alias_collision["identity_map"][1]["stable_security_id"] = identity[subject_keys[0]]["stable_security_id"]
         with self.assertRaises(Stop):
             approved_scope(alias_collision, raw, sessions, Proofs(evidence), preflight)
         successor_missing = {**preflight, "successor_marks": [{}]}

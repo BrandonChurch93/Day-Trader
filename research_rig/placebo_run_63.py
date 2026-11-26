@@ -5,7 +5,7 @@ from fractions import Fraction
 from hashlib import sha256
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import stat
 import subprocess
@@ -151,14 +151,114 @@ def file_in(folder, name):
         return blob
 
 
-def check_remediated_capture(auth):
-    folder = os.open(PACKET.parent, os.O_DIRECTORY | os.O_RDONLY | os.O_NOFOLLOW)
+def capture_directory(name, owner, parent=None):
+    fd = os.open(name, os.O_DIRECTORY | os.O_RDONLY | os.O_NOFOLLOW, dir_fd=parent)
     try:
-        s = os.fstat(folder)
-        need(stat.S_IMODE(s.st_mode) == 0o700 and s.st_uid == auth["custodian_uid"], "FILE_POLICY")
-        hashed(file_in(folder, REMEDIATION), auth["remediated_capture_sha256"])
+        s = os.fstat(fd)
+        need(stat.S_IMODE(s.st_mode) == 0o700 and s.st_uid == owner, "FILE_POLICY")
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def sealed_member(folder, name, manifest_pin):
+    exact(manifest_pin, "bytes sha256")
+    raw = hashed(file_in(folder, name), manifest_pin["sha256"])
+    need(type(manifest_pin["bytes"]) is int and len(raw) == manifest_pin["bytes"], "CAPTURE_INDEX")
+    return raw
+
+
+def capture_index(raw, partition, preflight_pin, exclusion_pin):
+    """Reduce sealed capture metadata to the exact active raw pages, without opening bodies."""
+    index = decode(raw)
+    need(type(index) is dict and index.get("ledger") == 206 and index.get("stage") == "plan63_stage_a" and
+         index.get("approved_preflight_sha256") == preflight_pin and
+         type(index.get("entries")) is list and type(index.get("total_pages")) is int and
+         index["total_pages"] == len(index["entries"]), "CAPTURE_INDEX")
+    if partition == "placebo":
+        need(index.get("excluded_ciks_file") == f"placebo/{PLACEBO_EXCLUSIONS_NAME}" and
+             index.get("excluded_ciks_sha256") == exclusion_pin, "CAPTURE_INDEX")
+    pages = {}
+    for row in index["entries"]:
+        exact(row, "cik ticker scope span_start span_end fetched_utc file bytes sha256 body_bytes body_sha256 "
+              "page attempt status page_token next_page_token params")
+        need(row["scope"] in (f"{partition}_raw", f"{partition}_split"), "CAPTURE_INDEX")
+        if row["scope"] != f"{partition}_raw":
+            continue
+        params = row["params"]
+        need(type(row["page"]) is int and row["page"] >= 0, "CAPTURE_INDEX")
+        want_params = {"symbols": row["ticker"], "timeframe": "1Day", "start": row["span_start"],
+                       "end": row["span_end"], "adjustment": "raw", "feed": "sip", "asof": "-",
+                       "sort": "asc", "limit": "10000"}
+        if row["page"]:
+            need(type(row["page_token"]) is str and row["page_token"], "CAPTURE_INDEX")
+            want_params["page_token"] = row["page_token"]
+        else:
+            need(row["page_token"] is None, "CAPTURE_INDEX")
+        need(params == want_params and stamp(row["span_start"]) <= stamp(row["span_end"]) and
+             type(row["file"]) is str and re.fullmatch(r"[\w.-]+\.json\.gz", row["file"]) and
+             valid_pin(row["sha256"]) and valid_pin(row["body_sha256"]) and
+             row["status"] == 200 and
+             all(t is None or (type(t) is str and t) for t in (row["page_token"], row["next_page_token"])),
+             "CAPTURE_INDEX")
+        path = f"{partition}/native/bars_raw/{row['file']}"
+        need(path not in pages, "CAPTURE_INDEX")
+        subject = row["cik"] if partition == "placebo" else "PCEF"
+        need(type(row["cik"]) is str and re.fullmatch(r"[0-9]{10}", row["cik"]) and
+             type(row["ticker"]) is str and row["ticker"] and
+             (partition != "benchmark" or (row["ticker"], row["cik"]) == ("PCEF", "0001378872")),
+             "CAPTURE_INDEX")
+        pages[path] = (partition, subject, row["ticker"], row["span_start"], row["span_end"],
+                       params["feed"], params["adjustment"], row["sha256"], row["body_sha256"],
+                       row["page"], row["page_token"], row["next_page_token"])
+    return pages
+
+
+def check_remediated_capture(auth):
+    """Load only manifest-pinned active index files and return their raw-page bindings."""
+    folder = capture_directory(PACKET.parent, auth["custodian_uid"])
+    try:
+        manifest = decode(hashed(file_in(folder, REMEDIATION), auth["remediated_capture_sha256"]))
+        need(type(manifest) is dict and manifest.get("decoded_values_present") is False and
+             manifest.get("target_directory_present") is False and type(manifest.get("sealed_files")) is dict and
+             valid_pin(manifest.get("approved_stage_a_preflight_sha256")), "CAPTURE_MANIFEST")
+        sealed = manifest["sealed_files"]
+        exclusion = sealed.get(f"placebo/{PLACEBO_EXCLUSIONS_NAME}")
+        exact(exclusion, "bytes sha256")
+        need(exclusion["sha256"] == auth["placebo_exclusions_sha256"] and exclusion["bytes"] == 119,
+             "CAPTURE_MANIFEST")
+        active = {}
+        for partition in ("placebo", "benchmark"):
+            part = capture_directory(partition, auth["custodian_uid"], folder)
+            try:
+                raw = sealed_member(part, "transport_index.json", sealed.get(f"{partition}/transport_index.json"))
+                active.update(capture_index(raw, partition, manifest["approved_stage_a_preflight_sha256"],
+                                            exclusion["sha256"]))
+            finally:
+                os.close(part)
+        return active
     finally:
         os.close(folder)
+
+
+def check_active_transport(transport, active):
+    """Authorize every compact raw page against its exact sealed capture record."""
+    exact(transport, "schema streams")
+    need(transport["schema"] == "plan63-placebo-bar-transport-v1" and type(transport["streams"]) is list,
+         "NATIVE_INDEX")
+    seen = set()
+    for stream in transport["streams"]:
+        exact(stream, "partition subject_key stable_security_id alias first last feed view pages")
+        need(type(stream["pages"]) is list and stream["pages"], "NATIVE_INDEX")
+        labels = tuple(stream[k] for k in ("partition", "subject_key", "alias", "first", "last", "feed", "view"))
+        for i, page in enumerate(stream["pages"]):
+            exact(page, "file file_sha256 body_sha256 page_token next_page_token")
+            path = page["file"]
+            need(type(path) is str and path not in seen and str(PurePosixPath(path)) == path, "NATIVE_PATH")
+            want = (*labels, page["file_sha256"], page["body_sha256"], i, page["page_token"], page["next_page_token"])
+            need(active.get(path) == want, "NATIVE_ACTIVE_CAPTURE")
+            seen.add(path)
 
 
 def exclusive(folder, name, blob):
@@ -473,7 +573,7 @@ def run(commit):
                 pass
             else:
                 raise Stop("ALREADY_PUBLISHED")
-        check_remediated_capture(auth)
+        active = check_remediated_capture(auth)
         check_projection_receipt(file_in(folder, PROJECTION_RECEIPT), auth)
         manifest = decode(hashed(file_in(folder, WINDOWS), auth["scope_sha256"]))
         preflight = decode(hashed(file_in(folder, PREFLIGHT), auth["preflight_sha256"]))
@@ -483,6 +583,7 @@ def run(commit):
         purged = parse_placebo_exclusions(file_in(folder, PLACEBO_EXCLUSIONS_NAME), auth["placebo_exclusions_sha256"])
         allowed, successors, retained, deny = approved_scope(manifest, census, sessions, evidence, preflight, purged)
         check_transport_embargo(transport, retained, sessions, successors, deny, purged)
+        check_active_transport(transport, active)
         # Persistently reserve the sole attempt before opening the price slice.
         # No retry after any failure past this point. Never publish a partial report.
         exclusive(folder, CLAIM, (commit + "\n").encode("ascii"))
