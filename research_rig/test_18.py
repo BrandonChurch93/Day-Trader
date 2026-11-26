@@ -71,9 +71,9 @@ def blob(rows):
     return buf.getvalue()
 
 
-def archive_fixture(root,pair,kind,rows):
+def archive_fixture(root,pair,kind,rows,month="2022-01"):
     stem = f"{pair}-fundingRate" if kind=="fundingRate" else "1h/"+pair+"-1h"
-    name = f"data/futures/um/monthly/{kind}/{pair}/{stem}-2022-01.zip"
+    name = f"data/futures/um/monthly/{kind}/{pair}/{stem}-{month}.zip"
     path = root/name
     path.parent.mkdir(parents=True,exist_ok=True)
     data = blob(rows)
@@ -652,6 +652,84 @@ class FundingCarryTests(unittest.TestCase):
                 self.assertGreater(judged["max_drawdown"],uncharged["max_drawdown"])
                 self.assertIsNone(uncharged["ftt_stress"])
                 del overrides["ftt",when]
+
+    def test_ftt_fast_schedule_missing_settlement_does_not_bridge(self):
+        pivot = A.FTT_FAST_FUNDING
+        c = C.Contract(4195,0,"ftt",pivot-24,pivot+48)
+        p = C.P|dict(start=pivot-4,end=pivot+72)
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rows = [[h*C.H,2,0.001] for h in (pivot-4,pivot,pivot+2,pivot+6)]
+            name,m = archive_fixture(root,"FTTUSDT","fundingRate",rows,"2022-11")
+            ready = dict(archives={name:dict(where="plan18_ftt",sha256=m["sha256"])},errors={})
+            tape = A.Tape(root,[ready],{"ftt":"FTTUSDT"},set(),p,contracts=(c,),supplemental_dir=root)
+            for h in (pivot-3,pivot-2,pivot-1,pivot+1):
+                self.assertEqual(tape.funding(c.key,h),(True,None))
+            for h in (pivot+3,pivot+4,pivot+5):
+                self.assertEqual(tape.funding(c.key,h),(False,None))
+
+    def test_ftt_unexpected_or_invalid_protected_settlement_charges(self):
+        start,end = (A.day_hour(d) for d in ("2022-10-20","2022-11-20"))
+        p = C.P|dict(start=start,end=end)
+        c = C.Contract(4195,0,"ftt",start,A.day_hour("2022-11-14")+4)
+        snaps = (C.Snapshot((start-1)*C.H,(c,),((4,4195),)),)
+        extra = A.FTT_FAST_FUNDING+1
+
+        class ClockTape:
+            ftt_invalid_funding_hours = set()
+
+            def raw_at(self,*args):
+                return 100.
+
+            def funding_event(self,key,h):
+                due = A.scheduled_funding("FTTUSDT",h,p)
+                return True,0.001 if due or h==extra else None,0
+
+        tape = ClockTape()
+        result = A.ftt_coverage(tape,snaps,c,p)
+        self.assertEqual(result["branch"],"judged_one_long_leg_written_to_zero")
+        self.assertEqual(result["unexpected_funding_hours"],[extra])
+        self.assertEqual(result["counts"]["funding_settlements"]["missing_protected_hours"],[])
+        tape.ftt_invalid_funding_hours = {extra+1}
+        result = A.ftt_coverage(tape,snaps,c,p)
+        self.assertEqual(result["invalid_funding_hours"],[extra+1])
+
+    def test_ftt_midnight_charge_lands_in_the_daily_close(self):
+        start,end = (A.day_hour(d) for d in ("2022-12-29","2023-01-07"))
+        cutover = A.day_hour("2023-01-01")
+        p = C.P|dict(start=start,end=end)
+        snaps = (C.Snapshot((start-1)*C.H,()),)
+        result = C.run_book(Fake(),snaps,start,end,p=p,ftt_charge_decision=cutover)
+        self.assertAlmostEqual(result.years[2022],-1/6)
+        self.assertAlmostEqual(result.years[2023],0)
+        class Nonflat(Fake):
+            def price(self,key,h):
+                return 180. if key=="1" and h>=cutover-2 else 100.
+        snaps = snapshots(start,end)
+        exact = C.run_book(Nonflat(),snaps,start,end,p=p,ftt_charge_decision=cutover)
+        offset = C.run_book(Nonflat(),snaps,start,end,p=p,ftt_charge_decision=cutover+1)
+        self.assertAlmostEqual(exact.ftt_stress["loss"],offset.ftt_stress["loss"])
+        self.assertAlmostEqual(exact.final,offset.final)
+        self.assertNotAlmostEqual(exact.sharpe,offset.sharpe)
+
+    def test_ftt_bad_timestamp_rate_and_duplicate_are_not_realized(self):
+        pivot = A.FTT_FAST_FUNDING
+        start,end = (A.day_hour(d) for d in ("2022-10-20","2022-11-20"))
+        p = C.P|dict(start=start,end=end)
+        c = C.Contract(4195,0,"ftt",pivot-24,pivot+48)
+        bad = {pivot+2,pivot+4,pivot+8}
+        rows = [[pivot*C.H+3,2,0.001],[(pivot+2)*C.H,2,"invalid"],
+                [(pivot+4)*C.H,2,0.001],[(pivot+4)*C.H,2,0.002],
+                [(pivot+6)*C.H,2,0.001],[(pivot+8)*C.H+1800-1,2,0.002]]
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            name,m = archive_fixture(root,"FTTUSDT","fundingRate",rows,"2022-11")
+            ready = dict(archives={name:dict(where="plan18_ftt",sha256=m["sha256"])},errors={})
+            tape = A.Tape(root,[ready],{"ftt":"FTTUSDT"},set(),p,contracts=(c,),supplemental_dir=root)
+            self.assertEqual(tape.ftt_invalid_funding_hours,bad)
+            self.assertEqual(tape.funding_event(c.key,pivot),(True,0.001,3_000_000))
+            for h in bad:
+                self.assertEqual(tape.funding(c.key,h),(False,None))
 
     def test_terminal_checks_same_coin_successor_evidence(self):
         t = self.t

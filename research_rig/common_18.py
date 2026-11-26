@@ -250,7 +250,9 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
             cash -= loss
             ftt_stress = dict(decision_hour=h,equity_before=equity,loss=loss,
                               equity_after=equity-loss)
-            value(h,equity-loss,save_day=False)
+            value(h,equity,save_day=False)
+            return equity-loss
+        return equity
 
     def retarget(h,picks,opens):
         nonlocal cash,price_pnl,fees
@@ -387,8 +389,7 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
                 if at_fence:
                     unrealized -= q*(closes[key]-basis)
                     force(key,h,"dated_accounting_fence")
-            value(h, cash+unrealized)
-            ftt_charge(h,cash+unrealized)
+            value(h,ftt_charge(h,cash+unrealized))
             # Positive offsets are after the UTC close; at a rebalance they
             # are processed by post_fill against the incoming quantities.
             if h!=e:

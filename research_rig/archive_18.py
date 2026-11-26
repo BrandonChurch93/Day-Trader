@@ -248,6 +248,17 @@ def scheduled_funding(pair,h,p):
     return h%interval==0
 
 
+def funding_bracket(pair,left,right,p):
+    if pair=="FTTUSDT":
+        if not (scheduled_funding(pair,left,p) and scheduled_funding(pair,right,p)):
+            return False
+        if right==FTT_FAST_FUNDING and left==right-4:
+            return True  # 00:00 and 04:00 were consecutive at the transition.
+        return (left>=FTT_FAST_FUNDING and right-left==2 if right>=FTT_FAST_FUNDING
+                else right-left==p["funding_interval_hours"])
+    return right-left<=p["funding_interval_hours"]
+
+
 class Tape:
     def __init__(self, archive_dir, manifests, symbols, notices, p, *, contracts=(),
                  supplemental_dir=None, check=lambda:None):
@@ -264,6 +275,7 @@ class Tape:
         for c in contracts:
             self.by_coin[c.coin_id].append(c)
         self.store = {}
+        self.ftt_invalid_funding_hours = set()
         groups = defaultdict(dict)
         wanted = set(symbols.values())
         for manifest in manifests:
@@ -306,18 +318,33 @@ class Tape:
                     in_period = lo<=h<hi
                     if kind=="fundingRate":
                         in_period = in_period or lo*hour_us<=stamp<hi*hour_us
-                    if abs(err)>(p["funding_jitter_seconds"]*10**6 if kind=="fundingRate" else 0) or not in_period:
-                        raise C.Incomplete("archive event timestamp out of its permitted hour or file")
                     if is_ftt:
                         if not any(c.begin*hour_us<=stamp<c.end*hour_us for c in by_pair[pair]):
                             continue
+                    if not in_period:
+                        raise C.Incomplete("archive event timestamp out of its permitted hour or file")
+                    i = h-self.lo
+                    if abs(err)>(p["funding_jitter_seconds"]*10**6 if kind=="fundingRate" else 0):
+                        if not (is_ftt and kind=="fundingRate"):
+                            raise C.Incomplete("archive event timestamp out of its permitted hour or file")
+                        self.ftt_invalid_funding_hours.add(h)
+                        if self.lo<=h<=self.hi:
+                            rates[i] = NAN
+                        continue
                     if not self.lo<=h<=self.hi:
                         continue
-                    i = h-self.lo
                     if kind=="fundingRate":
-                        v = float(row[2])
+                        try:
+                            v = float(row[2])
+                        except (ValueError,IndexError):
+                            v = NAN
                         if not math.isfinite(v) or not math.isnan(rates[i]):
-                            raise C.Incomplete("duplicate or malformed settlement")
+                            if not is_ftt:
+                                raise C.Incomplete("duplicate or malformed settlement")
+                            self.ftt_invalid_funding_hours.add(h)
+                            rates[i] = NAN
+                        if is_ftt and h in self.ftt_invalid_funding_hours:
+                            continue
                         rates[i],times[i] = v,err
                     else:
                         op,tr = float(row[1]),float(row[4])
@@ -344,9 +371,11 @@ class Tape:
                     previous = last_owner = None
                     continue
                 coverage[i] = 1
-                if previous is not None and owner==last_owner and i-previous<=p["funding_interval_hours"]:
+                if (previous is not None and owner==last_owner
+                    and funding_bracket(pair,self.lo+previous,self.lo+i,p)):
                     for j in range(previous+1,i):
-                        coverage[j] = 2 if scheduled_funding(pair,self.lo+j,p) else 1
+                        bad = pair=="FTTUSDT" and self.lo+j in self.ftt_invalid_funding_hours
+                        coverage[j] = 2 if bad or scheduled_funding(pair,self.lo+j,p) else 1
                 previous,last_owner = i,owner
             last = next((self.lo+i for i in range(len(closes)-1,-1,-1) if closes[i]>0),None)
             self.store[pair] = opens,closes,marks,rates,times,coverage,last
@@ -393,7 +422,8 @@ class Tape:
         return True,rate,offset_us
 
     def funding_gap_reason(self,key,h):
-        return ("expected_settlement_missing" if self.get(key,h,5)==2 else
+        due_ftt = self.symbols[key]=="FTTUSDT" and self.expects_settlement(key,h)
+        return ("expected_settlement_missing" if due_ftt or self.get(key,h,5)==2 else
                 "funding_uncovered_or_unavailable")
 
     def rank_funding(self,key,h,decision_seconds):
@@ -830,10 +860,17 @@ def ftt_coverage(tape,snaps,c,p):
     # exchange-announced pause exemptions in this packet.
     counts = {k:dict(expected=0,observed=0,protected_expected=0,protected_observed=0,missing_protected_hours=[])
               for k in ("trade_bars","mark_bars","funding_settlements")}
+    invalid = {h for h in getattr(tape,"ftt_invalid_funding_hours",()) if c.begin<=h<c.end}
+    unexpected = set()
     for h in range(c.begin,c.end):
         seen = [("trade_bars",tape.raw_at(c.key,h,1)),("mark_bars",tape.raw_at(c.key,h,2))]
+        rate = tape.funding_event(c.key,h)[1]
+        if rate is not None and not math.isfinite(rate):
+            invalid.add(h)
         if scheduled_funding("FTTUSDT",h,p):
-            seen.append(("funding_settlements",tape.funding_event(c.key,h)[1]))
+            seen.append(("funding_settlements",rate if h not in invalid else None))
+        elif rate is not None and h not in invalid:
+            unexpected.add(h)
         for kind,observation in seen:
             row = counts[kind]
             row["expected"] += 1
@@ -845,8 +882,11 @@ def ftt_coverage(tape,snaps,c,p):
                 row["protected_observed"] += present
                 if not present:
                     row["missing_protected_hours"].append(h)
-    gap = any(v["missing_protected_hours"] for v in counts.values())
-    return dict(counts=counts,complete=all(v["expected"]==v["observed"] for v in counts.values()),
+    gap = bool((invalid|unexpected)&protected) or any(v["missing_protected_hours"] for v in counts.values())
+    return dict(counts=counts,complete=not (invalid or unexpected) and all(v["expected"]==v["observed"] for v in counts.values()),
+                unexpected_funding_hours=sorted(unexpected),invalid_funding_hours=sorted(invalid),
+                protected_unexpected_funding_hours=sorted(unexpected&protected),
+                protected_invalid_funding_hours=sorted(invalid&protected),
                 announced_pauses=[],protected_clock_hours=len(protected),
                 branch="judged_one_long_leg_written_to_zero" if gap else "normal",
                 charge_decision_hour=charge_at if gap else None)
