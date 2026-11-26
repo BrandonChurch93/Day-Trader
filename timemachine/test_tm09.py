@@ -497,7 +497,7 @@ class DeskTest(unittest.TestCase):
         control = json.loads(read_private(d.path / (body['nonce'] + '-control.json')))
         store_new(proof, {'phase': 'stopped', 'session': d.public_id, 'port': 8801, 'denied_count': 4})
         end = dict(session=d.public_id, nonce=body['nonce'], port=8801, control_sha256=fingerprint(control),
-                   sudo_allowlist_reviewed=True, raw_copies_denied=True, listener_stopped=True,
+                   sudo_allowlist_reviewed=True, raw_copies_denied=True, listener_stopped=True, void=False,
                    post_stop_probe_sha256=sha256(read_private(proof)).hexdigest(), sudo_review_sha256='c' * 64)
         store_new(receipt, {'body': end, 'seal': seal(KEY, 'ledger-222-tm09-review', end)})
         with patch('builtins.print'):
@@ -523,7 +523,7 @@ class DeskTest(unittest.TestCase):
                     receipt = desk.path / f'invented-review-{count}.json'
                     store_new(proof, dict(phase='stopped', session=desk.public_id, port=port, denied_count=count))
                     after = dict(session=desk.public_id, nonce=nonce, port=port, control_sha256=fingerprint(sealed_control),
-                                 sudo_allowlist_reviewed=True, raw_copies_denied=True, listener_stopped=True,
+                                 sudo_allowlist_reviewed=True, raw_copies_denied=True, listener_stopped=True, void=False,
                                  post_stop_probe_sha256=sha256(read_private(proof)).hexdigest(), sudo_review_sha256='a' * 64)
                     store_new(receipt, {'body': after, 'seal': seal(KEY, 'ledger-222-tm09-review', after)})
                     if type(count) is int and count == 4:
@@ -553,6 +553,158 @@ class DeskTest(unittest.TestCase):
             probe(*args, paths, stopped=True)
             self.assertEqual([call.args[0] for call in denied.call_args_list], paths)
             request.assert_called_once()
+
+    def launch_review_evidence(self, desk, nonce, start, end, *, label='clean', void=False):
+        control_path = desk.path / (nonce + '-control.json')
+        if not control_path.exists():
+            control = dict(session=desk.public_id, nonce=nonce, port=8801, journal_start_row=start)
+            store_new(control_path, {'body': control, 'seal': seal(KEY, 'tm09-control', control)})
+            stop = dict(control, journal_stop_row=end)
+            store_new(desk.path / (nonce + '-stop.json'), {'body': stop, 'seal': seal(KEY, 'tm09-stop', stop)})
+        control = json.loads(read_private(control_path))
+        probe_path = desk.path / (nonce + '-' + label + '-probe.json')
+        receipt_path = desk.path / (nonce + '-' + label + '-boundary.json')
+        store_new(probe_path, dict(phase='stopped', session=desk.public_id, port=8801, denied_count=4))
+        boundary = dict(session=desk.public_id, nonce=nonce, port=8801, control_sha256=fingerprint(control),
+                        sudo_allowlist_reviewed=True, raw_copies_denied=True, listener_stopped=True, void=void,
+                        post_stop_probe_sha256=sha256(read_private(probe_path)).hexdigest(), sudo_review_sha256='a' * 64)
+        store_new(receipt_path, {'body': boundary, 'seal': seal(KEY, 'ledger-222-tm09-review', boundary)})
+        return receipt_path, probe_path
+
+    def test_void_scout_refuses_export_and_create_even_with_old_stream(self):
+        price, news = self.scouts()
+        week = self.f['week']
+        (self.path / 'fixtures').mkdir()
+        store_new(self.path / 'fixtures' / (week + '.json'), self.f)
+        approval = {'fixture_pins': {week: fingerprint(self.f)}}
+
+        def cli_refuses(*command):
+            argv = ['tm09_operator', *command, '--root', str(self.path), '--key-file', '/unused', '--approval', '/unused', '--week', week]
+            with (patch('sys.argv', argv), patch.object(tm09_operator.os, 'umask'),
+                  patch.object(tm09_operator, 'approved', return_value=(KEY, approval, b'', dict(self.opts, mode='A'))),
+                  redirect_stderr(StringIO()), self.assertRaises(SystemExit) as refused):
+                tm09_operator.main()
+            self.assertEqual(refused.exception.code, 1)
+
+        for role, old_stream in (('price_scout', price), ('news_scout', news)):
+            with self.subTest(role=role):
+                desk = Desk(self.path / slot(self.f['week'], role), self.f, KEY)
+                nonce = 'a' * 32
+                boundary, probe_path = self.launch_review_evidence(desk, nonce, 0, desk.access_checkpoint(), label='void', void=True)
+                with self.assertRaisesRegex(ValueError, 'incomplete post-stop operator review'):
+                    review(desk, KEY, boundary, probe_path)
+                self.assertFalse((desk.path / (nonce + '-review.json')).exists())
+                with self.assertRaises(FileNotFoundError):
+                    tm09_operator.reviewed_notes(desk, KEY)
+                stream_path = desk.path / 'scout-export.json'
+                cli_refuses('export-notes', '--role', role)
+                self.assertFalse(stream_path.exists())
+                store_new(stream_path, old_stream)
+                with self.assertRaises(FileNotFoundError):
+                    tm09_operator.reviewed_stream(desk, KEY)
+                arm = 'P1' if role == 'price_scout' else 'N'
+                cli_refuses('create', '--role', 'boss', '--arm', arm, '--boss', self.boss)
+                self.assertFalse((self.path / slot(week, 'boss', self.boss, arm)).exists())
+                boundary, probe_path = self.launch_review_evidence(desk, nonce, 0, desk.access_checkpoint())
+                with patch('builtins.print'):
+                    review(desk, KEY, boundary, probe_path)
+                with self.assertRaisesRegex(ValueError, 'does not match reviewed launches'):
+                    tm09_operator.reviewed_stream(desk, KEY)
+                stream_path.unlink()
+                store_new(stream_path, tm09_operator.reviewed_notes(desk, KEY))
+
+    def test_successor_stream_requires_both_matching_reviews_and_covered_work(self):
+        desk, tok = self.init('price_scout')
+        first = 'a' * 32
+        packet = desk.handle(tok, 'next')
+        desk.handle(tok, 'notes', {'wake_key': packet['wake_key'], 'notes': ['Invented price note']})
+        first_end = desk.access_checkpoint()
+        boundary, proof = self.launch_review_evidence(desk, first, 0, first_end)
+        with patch('builtins.print'):
+            review(desk, KEY, boundary, proof)
+        tok, _ = desk.successor()
+        start = desk.access_checkpoint()
+        for _ in self.f['wakes'][1:]:
+            packet = desk.handle(tok, 'next')
+            desk.handle(tok, 'notes', {'wake_key': packet['wake_key'], 'notes': []})
+        with self.assertRaisesRegex(ValueError, 'work is not covered'):
+            tm09_operator.reviewed_notes(desk, KEY)
+        second = 'b' * 32
+        boundary, proof = self.launch_review_evidence(desk, second, start, desk.access_checkpoint())
+        first_path = desk.path / (first + '-review.json')
+        second_path = desk.path / (second + '-review.json')
+        store_new(second_path, json.loads(read_private(first_path)))
+        with self.assertRaisesRegex(ValueError, 'matching clean review'):
+            tm09_operator.reviewed_notes(desk, KEY)
+        second_path.unlink()
+        with patch('builtins.print'):
+            review(desk, KEY, boundary, proof)
+        stream = tm09_operator.reviewed_notes(desk, KEY)
+        self.assertEqual(stream['body']['session'], desk.public_id)
+        self.assertEqual(stream['body']['reviews'], [
+            {'nonce': nonce, 'review_sha256': fingerprint(json.loads(read_private(path)))}
+            for nonce, path in ((first, first_path), (second, second_path))])
+        store_new(desk.path / 'scout-export.json', stream)
+        self.assertEqual(tm09_operator.reviewed_stream(desk, KEY), stream)
+
+    def test_void_boss_has_no_outcome_until_a_clean_launch_chain_exists(self):
+        price, news = self.scouts()
+        desk, tok = self.init('boss', boss=self.boss, arm='N', price=price, news=news)
+        for _ in self.f['wakes']:
+            packet = desk.handle(tok, 'next')
+            desk.handle(tok, 'pick', {'wake_key': packet['wake_key'], 'weights': None})
+        self.assertTrue(desk.complete())
+        nonce = 'a' * 32
+        boundary, probe_path = self.launch_review_evidence(desk, nonce, 0, desk.access_checkpoint(), label='void', void=True)
+        with self.assertRaisesRegex(ValueError, 'incomplete post-stop operator review'):
+            review(desk, KEY, boundary, probe_path)
+        self.assertIsNone(tm09_operator.reviewed_boss(desk, KEY))
+        boundary, probe_path = self.launch_review_evidence(desk, nonce, 0, desk.access_checkpoint())
+        with patch('builtins.print'):
+            review(desk, KEY, boundary, probe_path)
+        self.assertEqual(tm09_operator.reviewed_boss(desk, KEY).export_boss(), '0')
+
+    def test_sealing_commands_exclude_void_boss_and_its_delivery(self):
+        price, news = self.scouts()
+        week = self.f['week']
+        for arm in ('P1', 'P2', 'N'):
+            desk, tok = self.init('boss', boss=self.boss, arm=arm, price=price, news=news if arm == 'N' else None)
+            for _ in self.f['wakes']:
+                packet = desk.handle(tok, 'next')
+                if packet.get('news_notes'):
+                    desk.confirm_delivery(packet['wake'])
+                desk.handle(tok, 'pick', {'wake_key': packet['wake_key'], 'weights': None})
+            void = arm != 'P2'
+            evidence = self.launch_review_evidence(desk, 'a' * 32, 0, desk.access_checkpoint(), void=void)
+            with patch('builtins.print'):
+                if void:
+                    with self.assertRaisesRegex(ValueError, 'incomplete post-stop operator review'):
+                        review(desk, KEY, *evidence)
+                else:
+                    review(desk, KEY, *evidence)
+        for dirname in ('fixtures', 'fixtures-stage1'):
+            directory = self.path / dirname
+            directory.mkdir()
+            store_new(directory / (week + '.json'), self.f)
+        counts = self.path / 'fixtures/fixture-counts.json'
+        store_new(counts, {'by_week': {week: {}}})
+        approval = dict(fixture_pins={week: fingerprint(self.f)}, fixture_counts_sha256=sha256(read_private(counts)).hexdigest())
+        for command, mode in (('stage1-seal', 'stage1'), ('results', 'A')):
+            argv = ['tm09_operator', command, '--root', str(self.path), '--key-file', '/unused', '--approval', '/unused']
+            with (patch('sys.argv', argv), patch.object(tm09_operator.os, 'umask'),
+                  patch.object(tm09_operator, 'stage1_weeks', return_value=[datetime.fromisoformat(week).date()]),
+                  patch.object(tm09_operator, 'approved', return_value=(KEY, approval, b'', dict(self.opts, mode=mode))),
+                  redirect_stderr(StringIO()), redirect_stdout(StringIO())):
+                if mode == 'stage1':
+                    with self.assertRaises(SystemExit) as refused:
+                        tm09_operator.main()
+                    self.assertEqual(refused.exception.code, 1)
+                    self.assertFalse((self.path / 'stage1-contrasts.json').exists())
+                else:
+                    tm09_operator.main()
+        row = json.loads(read_private(self.path / 'sealed-results.json'))[week]
+        self.assertEqual(row['models'][self.boss], {'P1': None, 'P2': '0', 'N': None})
+        self.assertEqual(row['note_wakes'], 0)
 
 
 class OperatorGoTest(unittest.TestCase):

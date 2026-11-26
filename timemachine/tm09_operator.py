@@ -277,27 +277,88 @@ def launch(desk, port, key, boundary, canary_path):
         os.close(fd)
 
 
-def review(desk, key, boundary, probe_path):
-    after = boundary_receipt(desk, key, boundary, 'review')
-    nonce = after['nonce']
+def launch_receipts(desk, key, nonce):
     control = json.loads(read_private(desk.path / (nonce + '-control.json')))
     stop = json.loads(read_private(desk.path / (nonce + '-stop.json')))
     verify_seal(key, 'tm09-control', control['body'], control['seal'])
     verify_seal(key, 'tm09-stop', stop['body'], stop['seal'])
+    body = control['body']
+    start, end = body['journal_start_row'], stop['body']['journal_stop_row']
+    if (body['session'] != desk.public_id or body['nonce'] != nonce or body['port'] not in PORTS
+            or type(start) is not int or type(end) is not int or not 0 <= start <= end <= desk.access_checkpoint()
+            or {k: stop['body'][k] for k in body} != body):
+        raise ValueError('invalid launch receipt chain')
+    return control, stop
+
+
+def review(desk, key, boundary, probe_path):
+    after = boundary_receipt(desk, key, boundary, 'review')
+    nonce = after['nonce']
+    control, stop = launch_receipts(desk, key, nonce)
     evidence = json.loads(content(probe_path, after['post_stop_probe_sha256']))
     if (after['control_sha256'] != fingerprint(control) or after['port'] != control['body']['port']
+            or after.get('void') is not False
             or after['sudo_allowlist_reviewed'] is not True
             or after['raw_copies_denied'] is not True or after['listener_stopped'] is not True
             or not signature_digest(after['post_stop_probe_sha256']) or not signature_digest(after['sudo_review_sha256'])
             or evidence.get('phase') != 'stopped' or evidence.get('session') != desk.public_id
             or evidence.get('port') != after['port'] or type(evidence.get('denied_count')) is not int
-            or evidence['denied_count'] != len(required_canary_targets(desk.role))
-            or {k: stop['body'][k] for k in control['body']} != control['body']):
+            or evidence['denied_count'] != len(required_canary_targets(desk.role))):
         raise ValueError('incomplete post-stop operator review')
     routes = desk.access_records(control['body']['journal_start_row'], stop['body']['journal_stop_row'])
-    record = {'session': desk.public_id, 'nonce': nonce, 'post_stop_receipt_sha256': fingerprint(after), 'routes': routes}
+    record = {'session': desk.public_id, 'nonce': nonce, 'void': after['void'], 'control_sha256': fingerprint(control),
+              'stop_sha256': fingerprint(stop), 'post_stop_receipt_sha256': fingerprint(after), 'routes': routes}
     store_new(desk.path / (nonce + '-review.json'), {'body': record, 'seal': seal(key, 'tm09-review', record)})
     print('TM09 review saved; redacted route records:', len(routes))
+
+
+def reviewed_launches(desk, key):
+    if not desk.complete():
+        raise ValueError('desk incomplete')
+    launches = []
+    for path in desk.path.glob('*-control.json'):
+        nonce = path.name.removesuffix('-control.json')
+        if not re.fullmatch(r'[a-f0-9]{32}', nonce):
+            raise ValueError('invalid launch nonce')
+        control, stop = launch_receipts(desk, key, nonce)
+        capsule = json.loads(read_private(desk.path / (nonce + '-review.json')))
+        record = capsule['body']
+        verify_seal(key, 'tm09-review', record, capsule['seal'])
+        if (record['session'] != desk.public_id or record['nonce'] != nonce or record.get('void') is not False
+                or record['control_sha256'] != fingerprint(control) or record['stop_sha256'] != fingerprint(stop)
+                or not signature_digest(record['post_stop_receipt_sha256'])):
+            raise ValueError('launch lacks a matching clean review')
+        launches.append((control['body']['journal_start_row'], stop['body']['journal_stop_row'], nonce, fingerprint(capsule)))
+    launches.sort()
+    work_rows = desk.work_rows()
+    if (not launches or any(prev[1] > after[0] for prev, after in zip(launches, launches[1:]))
+            or len(work_rows) != len(desk.wakes)
+            or not all(any(start < row <= end for start, end, _, _ in launches) for row in work_rows)):
+        raise ValueError('desk work is not covered by reviewed launches')
+    return [{'nonce': nonce, 'review_sha256': pin} for _, _, nonce, pin in launches]
+
+
+def reviewed_notes(desk, key):
+    reviews = reviewed_launches(desk, key)
+    body = dict(desk.export_notes()['body'], session=desk.public_id, reviews=reviews)
+    return {'body': body, 'seal': seal(key, 'tm09-note-stream', body)}
+
+
+def reviewed_stream(desk, key):
+    expected = reviewed_notes(desk, key)
+    stream = json.loads(read_private(desk.path / 'scout-export.json'))
+    if stream != expected:
+        raise ValueError('scout stream does not match reviewed launches')
+    return stream
+
+
+def reviewed_boss(desk, key):
+    if desk is not None:
+        try:
+            reviewed_launches(desk, key)
+        except (ValueError, KeyError, TypeError, OSError):
+            return None
+    return desk
 
 
 def main():
@@ -374,7 +435,8 @@ def main():
             def load_boss(week, boss, arm):
                 path = a.root / slot(week, 'boss', boss, arm)
                 d = Desk(path, get_fixture(week), key, approved_options=options) if path.exists() else None
-                return d.export_boss() if d and d.complete() else None
+                d = reviewed_boss(d, key)
+                return d.export_boss() if d else None
 
             values = stage1_contrasts(weeks, options, load_boss)
             store_new(a.root / 'stage1-contrasts.json', values)
@@ -393,7 +455,8 @@ def main():
                     for arm in layout.arms:
                         path = a.root / slot(week, 'boss', boss, arm)
                         d = Desk(path, fixture, key, approved_options=options) if path.exists() else None
-                        arms[arm] = d.export_boss() if d and d.complete() else None
+                        d = reviewed_boss(d, key)
+                        arms[arm] = d.export_boss() if d else None
                         if d and arm in layout.news:
                             presented.update(d.delivery_wakes())
                 results[week] = dict(models=models, eligible_wakes=sum(map(bool, fixture['news_index'].values())),
@@ -412,7 +475,8 @@ def main():
         path = a.root / sid
 
         def stream(role):
-            return json.loads(read_private(a.root / slot(a.week, role) / 'scout-export.json'))
+            scout = Desk(a.root / slot(a.week, role), fixture, key, approved_options=options)
+            return reviewed_stream(scout, key)
 
         def news_reader():
             if a.rehearsal:
@@ -432,7 +496,7 @@ def main():
             return
         desk = Desk(path, fixture, key, news_reader=news_reader if a.role == 'news_scout' else None, approved_options=options)
         if a.command == 'export-notes':
-            store_new(path / 'scout-export.json', desk.export_notes())
+            store_new(path / 'scout-export.json', reviewed_notes(desk, key))
         elif a.command == 'sparse-counts':
             print(encode(desk.sparse_counts()))
         elif a.command == 'successor':
