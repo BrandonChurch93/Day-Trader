@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 05:01 UTC
+Last updated: 2026-11-26 05:15 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Plan 42 (queue 59) closed 2026-11-26, dropped at feasibility without a trial; ledger 177 stays unused. MEASURED: On 40 sampled EDGAR 424B filings (14 underwritten SEOs), final pricing supplements were accepted 1 to 2 business days after pricing in 12 of 14 and pricing times were readable in 0 of 14; later post-offer evidence is negative ([Huang and Qian 2024](https://campus.kennesaw.edu/colleges-departments/coles/research/docs/fall-2024/fall-24-04.pdf)).
 
 - Plan 40 (queue 66) held 2026-11-26 without a trial; ledger 175 stays unused. MEASURED: 9 of 9 sampled common shares that later delisted had positive-volume SIP bars on every trading session in their sampled December. That does not establish a point-in-time list of small common shares for each December. Costs of small losers are UNKNOWN, and there are only ten turns. Reopen only if a lawful free point-in-time universe is found.
 
