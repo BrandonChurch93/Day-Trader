@@ -58,6 +58,18 @@ def note_stream(key, stream, fixture, role, wakes):
     return body['wakes']
 
 
+def check_news_paraphrase_digits(paraphrase):
+    if any(char.isdigit() for char in paraphrase):
+        raise ValueError('digits in news paraphrase refused')
+
+
+def check_news_stream_digits(wakes):
+    # Also refuse any pre-amendment sealed stream carrying digits in scout prose.
+    for notes in wakes.values():
+        for note in notes:
+            check_news_paraphrase_digits(note['paraphrase'])
+
+
 def slot(week, role, boss=None, arm=None):
     prefix = 'TM09-' + week
     if role == 'boss' and arm and boss:
@@ -102,6 +114,8 @@ def initialize(root, fixture, options, role, key, *, price=None, news=None, boss
         price_notes = note_stream(key, price, fpin, 'price_scout', waking)
         if news is not None:
             news_notes = note_stream(key, news, role_fingerprint(fixture, 'news_scout'), 'news_scout', waking)
+            if options['study'].get('amendment_1', {}).get('feed'):
+                check_news_stream_digits(news_notes)
     elif price is not None or news is not None:
         raise ValueError('a scout cannot receive another worker stream')
     bound = dict(public_id='TM09-' + secrets.token_hex(16), role=role, fixture=fpin, arm=arm, boss=boss, options=persist_options(options),
@@ -137,6 +151,8 @@ class Desk:
                 or not PUBLIC_SID.fullmatch(self.public_id) or role_fingerprint(fixture, self.role) != self.spec['fixture']
                 or approved_options is not None and self.options != persist_options(approved_options)):
             raise ValueError('session fixture changed')
+        if self.feed:
+            check_news_stream_digits(self.spec['news'])
         self.wakes = fixture['wakes']
         self.minutes = Minutes(fixture['bars'])
 
@@ -233,6 +249,7 @@ class Desk:
                     or type(note['repeat']) is not bool
                     or not isinstance(note['paraphrase'], str) or len(encode(note)) > self.options['note_chars']):
                 raise ValueError('invalid structured news note')
+            check_news_paraphrase_digits(note['paraphrase'])
             clean = text_words(note['paraphrase'])
             if not clean or copied_run(note['paraphrase'], headlines, self.feed):
                 raise ValueError('headline copy refused')

@@ -63,11 +63,11 @@ def score(study, results, mode=None):
         if 'feed_counts' in row:
             counts = row['feed_counts']
             if (set(counts) != {'admitted_pairs', 'repeat_pairs', 'items_with_extracted_figure',
-                                'items_without_extracted_figure', 'possible_figure_missed'}
+                                'items_without_extracted_figure', 'possible_figure_missed', 'items_with_figure_collision'}
                     or any(type(n) is not int or n < 0 for n in counts.values()) or counts['repeat_pairs'] > counts['admitted_pairs']):
                 raise ValueError('invalid feed counts')
             total_items = counts['items_with_extracted_figure'] + counts['items_without_extracted_figure']
-            if counts['possible_figure_missed'] > total_items or total_items > counts['admitted_pairs']:
+            if max(counts['possible_figure_missed'], counts['items_with_figure_collision']) > total_items or total_items > counts['admitted_pairs']:
                 raise ValueError('inconsistent feed counts')
             feed_counts[week] = counts
         admitted, delivered = row['eligible_wakes'], row['note_wakes']

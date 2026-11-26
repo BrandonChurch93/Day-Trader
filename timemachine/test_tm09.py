@@ -237,12 +237,18 @@ class DeskTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [
                 {**note, 'has_number': True, 'figures': ['$20', '5%', '20 million', '2%', '10']}]})
-        desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [note]})
+        for numeral in ('$20', '٢', '２', '²'):
+            with self.subTest(numeral=numeral), self.assertRaisesRegex(ValueError, '^digits in news paraphrase refused$'):
+                desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [
+                    {**note, 'paraphrase': f'The estimate was {numeral} overall.'}]})
+        prose = 'The issuer described two changes to the program.'
+        desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [{**note, 'paraphrase': prose}]})
         for _ in self.f['wakes'][2:]:
             desk.handle(token, 'notes', {'wake_key': desk.handle(token, 'next')['wake_key'], 'notes': []})
         sealed, = desk.export_notes()['body']['wakes'][str(packet['wake'])]
         self.assertTrue(sealed['has_number'])
         self.assertEqual(sealed['figures'], list(forms))
+        self.assertEqual(sealed['paraphrase'], prose)  # Written-out numbers are not checked.
         self.assertEqual(extract_figures(headline, feed), (list(forms), False))
         for figure in sealed['figures']:
             offset = raw.index(figure.encode())
@@ -257,6 +263,12 @@ class DeskTest(unittest.TestCase):
         bad = deepcopy(n); bad['body']['wakes'][str(self.f['wakes'][0][0])] = [NOTE]
         with self.assertRaises(ValueError):
             self.init('boss', boss=self.boss, arm='N', price=p, news=bad)
+        old = deepcopy(n)
+        nonempty_wakes = [notes for notes in old['body']['wakes'].values() if notes]
+        nonempty_wakes[0][0]['paraphrase'] = 'The estimate was $20 overall.'
+        old['seal'] = seal(KEY, 'tm09-note-stream', old['body'])
+        with self.assertRaisesRegex(ValueError, '^digits in news paraphrase refused$'):
+            self.init('boss', boss=self.boss, arm='N', price=p, news=old)
         p1, t1 = self.init('boss', boss=self.boss, arm='P1', price=p)
         p2, t2 = self.init('boss', boss=self.boss, arm='P2', price=p)
         with self.assertRaises(PermissionError):
@@ -338,7 +350,8 @@ class DeskTest(unittest.TestCase):
                                   'by_week': {self.f['week']: {'admitted_pairs': 1, 'repeat_pairs': 0,
                                                               'items_with_extracted_figure': 1,
                                                               'items_without_extracted_figure': 0,
-                                                              'possible_figure_missed': 0}}})
+                                                              'possible_figure_missed': 0,
+                                                              'items_with_figure_collision': 0}}})
         pins[FILES[2]] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'hash mismatch'):
             compile_export(self.opts, self.path, pins)
@@ -348,7 +361,10 @@ class DeskTest(unittest.TestCase):
         base = self.news[0]
         news = [{**base, 'symbols': ['SYN', 'XYZ'], 'headline': 'Fictional firm reports $20M and two deals'},
                 {**base, 'id': 'two', 'headline': 'Fictional firm reports 25zorp'},
-                {**base, 'id': 'three', 'headline': 'Fictional firm announces deal'}]
+                {**base, 'id': 'three', 'symbols': ['XYZ'], 'headline': 'Fictional firm announces deal'},
+                {**base, 'id': 'four', 'stated_time': base['stated_time'] + 1,
+                 'updated_time': base['updated_time'] + 1, 'headline': 'Fictional firm confirms operations'},
+                {**base, 'id': 'repeat', 'symbols': ['SYN', 'XYZ'], 'headline': 'Fictional firm reports $20M and two deals'}]
         counts, pins = {'skipped_edited_or_changed_clock': 0}, {}
         bars = self.bars + [dict(bar, symbol='XYZ') for bar in self.bars]
         for name, records in zip(FILES, (self.sessions, bars, news)):
@@ -357,11 +373,23 @@ class DeskTest(unittest.TestCase):
             pins[name] = sha256(blob).hexdigest()
         fixture = compile_export(self.opts, self.path, pins, counts)
         self.assertEqual(counts['by_week'][self.f['week']], {
-            'admitted_pairs': 4, 'repeat_pairs': 0, 'items_with_extracted_figure': 1,
-            'items_without_extracted_figure': 2, 'possible_figure_missed': 2,
+            'admitted_pairs': 7, 'repeat_pairs': 2, 'items_with_extracted_figure': 2,
+            'items_without_extracted_figure': 3, 'possible_figure_missed': 3,
+            'items_with_figure_collision': 3,
         })
         self.assertNotIn('$20M', encode(fixture))
         self.assertNotIn('$20M', encode(counts))
+        desk, token = initialize(self.path, fixture[self.f['week']], self.opts, 'news_scout', KEY,
+                                 news_reader=lambda: '\n'.join(map(encode, news)).encode())
+        packet = desk.handle(token, 'next')
+        desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': []})
+        packet = desk.handle(token, 'next')
+        note = scout_note(base['stated_time'])
+        for symbol in ('SYN', 'XYZ'):
+            with self.assertRaisesRegex(ValueError, '^news note lacks an unambiguous admitted item$'):
+                desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [{**note, 'symbol': symbol}]})
+        self.assertTrue(desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [
+            {**note, 'repeat': True}, {**note, 'source_time': note['source_time'] + 1}]})['accepted'])
 
     def test_missing_sizing_print_is_countable_cancel(self):
         wake = self.f['wakes'][0][0]
@@ -490,6 +518,21 @@ class ScoreTest(unittest.TestCase):
         for w, row in self.data.items():
             row['benchmark'] = row['models'][self.models[0]]['N']
         self.assertFalse(score(self.study, self.data)['worth_following_forward'])
+
+    def test_figure_collision_count_is_reported_without_affecting_score(self):
+        expected = score(self.study, self.data)
+        counts = {'admitted_pairs': 4, 'repeat_pairs': 0, 'items_with_extracted_figure': 2,
+                  'items_without_extracted_figure': 1, 'possible_figure_missed': 1,
+                  'items_with_figure_collision': 3}
+        week = self.weeks[0]
+        self.data[week]['feed_counts'] = counts
+        result = score(self.study, self.data)
+        self.assertEqual(result.pop('feed_counts'), {week: counts})
+        expected.pop('feed_counts')
+        self.assertEqual(result, expected)
+        counts['items_with_figure_collision'] = 4
+        with self.assertRaisesRegex(ValueError, 'inconsistent feed counts'):
+            score(self.study, self.data)
 
     def test_sparse_unused_roster_stock_disables_only_forward_label(self):
         options, sessions, bars, news = inputs()
