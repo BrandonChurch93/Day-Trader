@@ -364,6 +364,37 @@ class DeskTest(unittest.TestCase):
             self.assertEqual(score["by_fee_multiple"][cell]["status"],"not computed")
             self.assertNotIn("value",score["by_fee_multiple"][cell])
 
+    def test_pass4_btc_display_failure_cannot_veto_registered_judge(self):
+        session = self.create("A")
+        for _ in range(2):
+            _,key = info(session)
+            session.handle("boss","pick",dict(wake_key=key,no_change=True,why="Stay flat."))
+        original = S.buy_and_hold
+        def absent_btc(s,w,f,multiple=1):
+            if BTC in w:
+                raise S.UnsupportedWeek("toy BTC is unavailable")
+            return original(s,w,f,multiple)
+        with patch.object(S,"buy_and_hold",side_effect=absent_btc):
+            score = S.score_week(session.path)
+        self.assertNotIn("invalid",score)
+        self.assertEqual(score["main"]["value"],1000)
+        self.assertEqual(len(score["main"]["twin"]),4)
+        for field in ("benchmark","benchmark_short"):
+            self.assertEqual(score["main"][field]["status"],"not computed")
+
+        spec = registered_world()
+        self.assertNotIn(BTC,spec["symbols"])
+        spec["minutes"] = [r for r in spec["minutes"] if r[1] != BTC]
+        for table in (spec,spec["legacy_yardsticks"]["table"]):
+            table["end_marks"].pop(BTC,None)
+            for row in table["rows"]:
+                row["marks"].pop(BTC,None)
+                row["fills"].pop(BTC,None)
+        reg = registered_fixture(self.root,spec)
+        envelope = dict(body=reg.body,seal=D.seal(SEAL_KEY,"registration",reg.body))
+        D.create_desk(self.root/"TM07-no-btc",spec,"A",D.BOSSES[0],D.issue_role_tokens("A"),
+                      approval_key=SEAL_KEY,registration=envelope,model_build=D.BOSSES[0]+"-toy")
+
     def test_pass3_m1_complete_cap_targets_are_scaled_as_one_basket(self):
         spec = world()
         marks = {A:100,B:100}

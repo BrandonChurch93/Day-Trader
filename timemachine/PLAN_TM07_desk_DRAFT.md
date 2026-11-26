@@ -37,7 +37,7 @@ These are the 17 fixed Monday starts for extension. The last week ends November 
 ## Marks
 
 - Open the extension only for a boss and desk arm that beats fresh A to the cent in all three screen weeks. A tie is not a win. A missing or invalid week is not a win. Do not replace a week. An incomplete comparison cannot pass. Different bosses on the same week are not two independent weeks.
-- Keep both TM06 one-model marks. Chain the net weekly gains. Beat the five coins held equally and the 90th percentile of the 1,000 shuffled timing twins. Compute equal hold and BTC hold with the unchanged pre-TM07 replay on separately frozen legacy inputs. Do not apply the TM07 target sizing rule to those yardsticks. Run optional displays separately and report unsupported cells as `not computed`; they cannot invalidate the judged week. Shuffle full answers within each week. Keep exit distances and condition distances relative to the new wake price. Preserve time to live. A shuffled keep with no active match does nothing. Show twin fills and turnover. Do not claim the realized trigger count stays fixed.
+- Keep both TM06 one-model marks. Chain the net weekly gains. Beat the five coins held equally and the 90th percentile of the 1,000 shuffled timing twins. Those are the only mandatory judge lines. Compute equal hold and BTC holds with the unchanged pre-TM07 replay on separately frozen legacy inputs. Do not apply the TM07 target sizing rule to those yardsticks. BTC long, BTC short and other optional displays report failures as `not computed`; missing BTC display coverage cannot block registration unless BTC is itself a required trading coin. Shuffle full answers within each week. Keep exit distances and condition distances relative to the new wake price. Preserve time to live. A shuffled keep with no active match does nothing. Show twin fills and turnover. Do not claim the realized trigger count stays fixed.
 - The one-sided per-claim cap is 1.25%. There are four claims, B/A and C/A for each of two bosses. The limit is 16 wins out of all 20 weeks, including the three used for the gate. The table uses the unconditional binomial tail. Requiring the screen gate can only make the combined rule stricter under that null. Display the weekly lift and the two TM06 marks separately. C/B is descriptive only.
 
 | Weeks | Wins | One-sided fair-coin tail |
@@ -72,6 +72,7 @@ MEASURED by exact arithmetic, not market results. The test assumes independent w
 
 - Sol B1 / Opr P4-B1: Use the whole post-cost solve below, at and above the nominal cap. A near-cap long, short or two-name basket no longer loses legs because costs consume the remaining cushion. This supersedes the exact-cap-only path.
 - Sol B2: Sort by net gross change, not by side or ticker, and apply reductions first, including net-reducing reversals. MEASURED: the nine-unit reversal and 165 other synthetic baskets have the same book under three label permutations, stay within gross and keep target proportions.
+- Opr P4-B2: BTC long and short are independently optional in the score. MEASURED: a missing BTC-only price passes registered preflight, and a BTC-only score failure leaves a valid equal hold and the timing twins.
 
 ### Third pass at `be0a560`
 

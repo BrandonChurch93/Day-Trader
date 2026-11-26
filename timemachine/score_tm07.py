@@ -148,12 +148,13 @@ class Registration:
                 or cfg["tm_weights_twin_draws"] != DRAW_COUNT or cfg["tm_weights_pass_percentile"] != PERCENTILE
                 or cfg["tm_weights_twin_seed"] != SEED or any(f != .0012 for f in pp["fee"].values())):
             raise ValueError("registration requires fixed costs, 1,000 twins and 90th percentile")
-        priced = set(item["symbols"])|{"BTC/USD"}
+        required = set(item["symbols"])
+        priced = required|{"BTC/USD"}
         expected = effective_costs(self.cost_cfg,priced)
         if (effective_costs(cfg,priced) != expected or any(pp.get(k) != v for k,v in expected.items() if k != "venue")
                 or pp.get("source") != expected["venue"] or sorted(pp.get("symbols",[])) != sorted(priced)
-                or spec.get("benchmark") != "BTC/USD" or set(spec["end_marks"]) != priced
-                or not all(O.number(v) and v > 0 for v in spec["end_marks"].values())):
+                or spec.get("benchmark") != "BTC/USD" or not required <= spec["end_marks"].keys()
+                or not all(O.number(spec["end_marks"][s]) and spec["end_marks"][s] > 0 for s in required)):
             raise ValueError("fixture cost parameters or priced-symbol coverage differ from registered TM06")
         rates, clock = pp.get("funding",{}),pp.get("funding_known_at",{})
         if set(rates) != priced or set(clock) != priced:
@@ -178,13 +179,11 @@ class Registration:
                 if set(spec["symbols"]) <= {r[1] for r in rows}}
         if not set(spec["wakes"]) <= good or any(not set(spec["symbols"]) <= r["marks"].keys() for r in spec["rows"]):
             raise ValueError("registered twin coverage lacks marks or a common open")
-        if not any(r[1] == "BTC/USD" and start <= r[0] < start+3600 for r in spec["minutes"]):
-            raise ValueError("registered benchmark has no opening price")
         legacy = spec.get("legacy_yardsticks",{})
         table = legacy.get("table",{})
         rows = table.get("rows",[])
-        if (len(rows) != len(spec["wakes"]) or not priced <= table.get("end_marks",{}).keys()
-                or not all(rows[0].get("fills",{}).get(s) for s in priced)
+        if (len(rows) != len(spec["wakes"]) or not required <= table.get("end_marks",{}).keys()
+                or not all(rows[0].get("fills",{}).get(s) for s in required)
                 or not isinstance(legacy.get("funding"),dict)):
             raise ValueError("freeze the legacy benchmark inputs before launch")
         return w
@@ -380,10 +379,12 @@ def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None)
     def cell(f,mult,with_twins):
         gain = lambda v:(v/start-1)*100
         run = supported(replay(sess,bundles,f,mult))
-        equal,btc_long = (gain(buy_and_hold(sess,w,f,mult)["value"]) for w in (hold,{benchmark:1.0}))
-        entry = dict(value=run["value"],gain=gain(run["value"]),equal=equal,benchmark=btc_long,
+        equal = gain(buy_and_hold(sess,hold,f,mult)["value"])
+        entry = dict(value=run["value"],gain=gain(run["value"]),equal=equal,
+                     benchmark=not_computed(lambda:gain(buy_and_hold(sess,{benchmark:1.0},f,mult)["value"])),
                      benchmark_short=not_computed(lambda:gain(buy_and_hold(sess,{benchmark:-1.0},f,mult)["value"])),
-                     stats=P.p_stats(run["book"],run["value"],start),immediate=run["immediate"],standing=run["standing"])
+                     stats=not_computed(lambda:P.p_stats(run["book"],run["value"],start)),
+                     immediate=run["immediate"],standing=run["standing"])
         if with_twins:
             twin,activity = [],[]
             for i in range(draws):
@@ -420,7 +421,8 @@ def score_week(path, draws=None, draw_sensitivities=False, *, approval_key=None)
     if sess.arm != "A":
         expected.update({role:spec["wakes"] for role in desk.SCOUTS})
     return emit(dict(ident, main=main,
-                usage=usage_totals(log,neutral,expected), unique_boss_usage=usage_totals(log,expected={"boss":spec["wakes"]}),
+                usage=not_computed(lambda:usage_totals(log,neutral,expected)),
+                unique_boss_usage=not_computed(lambda:usage_totals(log,expected={"boss":spec["wakes"]})),
                 neutral_scout_used=bool(neutral), by_fee_multiple=by,
                 delayed_value=not_computed(lambda:supported(replay(sess,bundles,fee,delay=60))["value"])
                 if sess.arm == "C" else None))
