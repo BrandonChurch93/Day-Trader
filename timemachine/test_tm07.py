@@ -1606,6 +1606,7 @@ class DeskTest(unittest.TestCase):
         self.assertFalse(probe.sudo_review([listed],op)["void"])
         self.assertTrue(probe.sudo_review([listed,other],op)["void"])
         self.assertTrue(probe.sudo_review([listed,listed],op)["void"])
+        self.assertTrue(probe.sudo_review([listed+" /var/lib/tm07/raw"],op)["void"])
         self.assertFalse(probe.sudo_review([],[])["void"])
         with self.assertRaises(ValueError):
             probe.sudo_review([listed],[dict(time="",command="/usr/bin/ls")])

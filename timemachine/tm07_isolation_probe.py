@@ -121,7 +121,7 @@ def sudo_review(entries,operator):
     unused = list(operator)
     unlisted = []
     for line in entries:
-        hit = next((o for o in unused if o["time"] in line and ("COMMAND="+o["command"]) in line),None)
+        hit = next((o for o in unused if o["time"] in line and line.rstrip().endswith("COMMAND="+o["command"])),None)
         if hit is None:
             unlisted.append(line)
         else:
@@ -517,6 +517,8 @@ def main():
         if "sudo_entries" not in after:
             raise ValueError("after-audit has no sudo entries; the session cannot be reviewed")
         result = sudo_review(after["sudo_entries"],json.loads(args.operator_sudo.read_text()))
+        if after.get("outcome") not in ("stopped","operator-stop") or after.get("raw_denied_after") is not True:
+            result.update(void=True,after_problem=dict(outcome=after.get("outcome"),raw_denied_after=after.get("raw_denied_after")))
         put(args.out,dict(result,after=str(args.after),manual_checks_pending=[
             "server log: no route other than the session's own desk routes",
             "worker command and address list: no direct read of a listed price copy, no outside price lookup"]))
