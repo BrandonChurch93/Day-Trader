@@ -1,4 +1,4 @@
-"""Test cards for Replays 48, 52 and 53 on the owner's screen, read from their published result pages.
+"""Test cards for Replays 48, 52, 53 and 60, read from their published result pages.
 
 The saved results for these replays are kept outside the repo. Each card therefore reads its figures, at export
 time, from the result page in docs/research/ (and, for Replay 48, from research_rig/REVIEW_48_identity.md). Only
@@ -12,6 +12,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 P48 = "docs/research/103_replay_48_muni_cef_january.md"
 P52 = "docs/research/113_replay_52_quarter_end_corporate_bond_funds.md"
 P53 = "docs/research/122_replay_53_taxable_fund_january_rebound.md"
+P60 = "docs/research/126_replay_60_special_dividends.md"
 R48 = "research_rig/REVIEW_48_identity.md"
 
 
@@ -141,5 +142,31 @@ def card_53(gh):
                 [["Replay 53", gh + P53], ["Plan", gh + "research_rig/PREREG_53_taxable_cef_tax_loss.md"], ["Replay 48", gh + P48]])
 
 
+def card_60(gh):
+    text = read(P60)
+    judged = {r["Line"]: r for r in table(section(text, "Judged block", P60), P60)}
+    stock, iwm, paired = (judged[k] for k in ("Stock", "Matched IWM", "Stock minus IWM"))
+    events = need(r"^MEASURED\. The (\d+) filing events", section(text, "Decisions and refusal reasons", P60), P60, re.M)[1]
+    basis = need(r"^\| Refused: stock or IWM vendor basis \| (\d+) \|", text, P60, re.M)[1]
+    shown = section(text, "Shown only", P60)
+    need(r"None of these figures can count toward a mark", shown, P60)
+    spy = need(r"^\| Stock minus SPY \| (\d+) \| ([+-][\d.]+%) \|", shown, P60, re.M).groups()
+    capital, pnl, gain = need(r"Starting with (\$[\d,]+) in .*? made ([+-]\$[\d,]+\.\d{2}) total net, "
+                              r"or ([+-][\d.]+%) of starting cash",
+                              section(text, "Settled sleeves on starting cash", P60), P60).groups()
+    return card("replay60", "Special-dividend declarations", P60,
+                f"Buys whole shares after special-dividend declarations and compares with IWM on the same clocks. "
+                f"{stock['Pairs']} matched pairs from {events} filing events.",
+                [f"The stock mean was positive, but the lead over IWM was too small relative to its variation. "
+                 f"Vendor basis checks refused {basis} events.",
+                 "The SPY check and the settled sleeves are shown only and cannot count toward a mark.",
+                 "The rule does not advance."],
+                [["Mean net: stock, matched IWM, stock minus IWM",
+                  ", ".join(minus(r["Mean net"]) for r in (stock, iwm, paired))],
+                 ["Stock minus SPY, shown only", f"{minus(spy[1])} on {spy[0]} pairs"],
+                 [f"Settled sleeves on {capital}, shown only", f"{money(pnl)} net, {minus(gain)} of starting cash"]],
+                [["Replay 60", gh + P60], ["Plan", gh + "research_rig/PREREG_60_special_dividends.md"]])
+
+
 def cards(gh):
-    return [card_48(gh), card_52(gh), card_53(gh)]
+    return [card_48(gh), card_52(gh), card_53(gh), card_60(gh)]

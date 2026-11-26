@@ -231,6 +231,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/23_replay_04_coin_basket.md` | Replay 04: trend rules on a wide basket of coins | CURRENT |
 | `docs/research/24_order_book_costs.md` | What it cost to trade small sizes on two venues, sampled on 2026-11-25 | CURRENT |
 | `docs/research/122_replay_53_taxable_fund_january_rebound.md` | Replay 53 saved result: taxable closed-end fund tax-loss losers did not pass; judged marks, yearly turns, costs, diagnostics and gaps | CURRENT |
+| `docs/research/126_replay_60_special_dividends.md` | Replay 60 saved result: the special-dividend rule did not pass; judged marks, yearly means, refusal counts, shown checks and gaps | CURRENT |
 
 Working papers.
 
@@ -388,6 +389,7 @@ Working papers.
 | `research_rig/PINNED_52.json`, `research_rig/CALIBRATION_52.json` | Replay 52 draft hashes and synthetic null and planted-edge check, no market data | CURRENT |
 | `research_rig/report_48.py` | Prints the Replay 48 result page from the pinned saved result and the pinned recompute note. Does not open market inputs or score | CURRENT |
 | `research_rig/report_53.py` | Prints the Replay 53 result page from the pinned saved result and frozen settings. Does not open market inputs or score | CURRENT |
+| `research_rig/report_60.py` | Writes the Replay 60 result page from the pinned saved aggregate result, validation output and optional independent aggregate note. Does not open market inputs or score | CURRENT |
 | `research_rig/PREREG_51_momentum_when_it_pays.md`, `research_rig/CALIBRATION_51.json`, `research_rig/CALIBRATION_51_UNIFORM.json`, `research_rig/CLOSE_51_on_power.md` | Queue 96 and ledger 185. Original and uniform-placement synthetic power checks; closed before any prices | RECORD |
 | `research_rig/common_51.py`, `research_rig/score_51.py`, `research_rig/test_51.py`, `research_rig/calibrate_51.py` | Retained engine and gates for a plan closed before any prices; disposable synthetic Git fixture only | RECORD |
 | `research_rig/PREREG_53_taxable_cef_tax_loss.md`, `research_rig/PINNED_53.json` | Queue 90 and ledger 187. Frozen PCEF holdings-derived taxable closed-end fund replay and roster attestations; no market data or result | CURRENT |
@@ -474,7 +476,7 @@ Working papers.
 | `research_rig/export_dashboard.py` | Builds the data file for the owner's screen | CURRENT |
 | `research_rig/dashboard_status.py` | Reads status findings and builds the research scoreboard from recorded results | CURRENT |
 | `research_rig/test_dashboard_status.py` | Checks status parsing, missed replay entries and scoreboard totals | CURRENT |
-| `research_rig/replay_cards.py` | Builds the Replay 48, 52 and 53 cards on the owner's screen from their result pages and the Replay 48 identity review. No scoring or market-data reads | CURRENT |
+| `research_rig/replay_cards.py` | Builds the Replay 48, 52, 53 and 60 cards on the owner's screen from their result pages and the Replay 48 identity review. No scoring or market-data reads | CURRENT |
 | `research_rig/test_replay_cards.py` | Checks those cards: verdicts, tones, the required plain lines, and that each figure shown is on its source page | CURRENT |
 
 ## practice/ (the practice desk: pretend money, live prices)
