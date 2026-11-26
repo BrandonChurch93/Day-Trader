@@ -1,0 +1,10 @@
+{
+  "config/thresholds.yaml": "d989ae2b0fd8c7a4ac4151ad8d07580eb89aa0cfa98d81540e23436b1e8b7fed",
+  "research_rig/CALIBRATION_52.json": "92ffa4b9767a61542a9e8081744dfe7b9d9e98b483c16069e435d0b1d0dc8f0b",
+  "research_rig/PREREG_52_quarter_end_dealer_rebound.md": "f7ed9941ee67b4e2710665595d37fe8fcf75f80a0aab0994229c98c05f6a2da3",
+  "research_rig/calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
+  "research_rig/calendar_26.json": "1c9dc4516c0f0635225ca29be66713bda08f840634ab127948da3cb9cca77a55",
+  "research_rig/common_52.py": "91e81ef846c8d85f3af16ad7fdd5a71726b2d43ba352fa659d3d5e718578f22c",
+  "research_rig/score_52.py": "3be7371acee04f2066123fad957f0bd6c4f80baadf75ea50262d4c92fdb4a8b8",
+  "research_rig/test_52.py": "4213bda1ca0a75869fcc07cd4594a05386c2e60dfb60d71e3c7ee65dd3815eee"
+}

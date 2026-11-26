@@ -1,0 +1,84 @@
+{
+  "assumptions": {
+    "credit_daily_sd_bps": 35,
+    "edge_bps": [
+      0,
+      10,
+      20,
+      30
+    ],
+    "proxy_daily_sd_bps": 25,
+    "seed": 52,
+    "worlds": 5000,
+    "year_sd_bps": 15
+  },
+  "observations": {
+    "controls": 88,
+    "non_december": 33,
+    "quarters": 44,
+    "shown": 3
+  },
+  "scenarios": [
+    {
+      "all_marks_pass_count": 35,
+      "all_marks_pass_rate": 0.007,
+      "mark_pass_counts": {
+        "above_non_quarter_month_ends": 2483,
+        "mean_net": 1875,
+        "mean_proxy_net": 1762,
+        "non_december_net": 1959,
+        "positive_quarters": 292,
+        "t_net": 88,
+        "t_proxy_net": 78,
+        "trimmed_net": 600
+      },
+      "planted_gross_edge_bps": 0
+    },
+    {
+      "all_marks_pass_count": 256,
+      "all_marks_pass_rate": 0.0512,
+      "mark_pass_counts": {
+        "above_non_quarter_month_ends": 3827,
+        "mean_net": 3502,
+        "mean_proxy_net": 3607,
+        "non_december_net": 3356,
+        "positive_quarters": 901,
+        "t_net": 421,
+        "t_proxy_net": 572,
+        "trimmed_net": 1846
+      },
+      "planted_gross_edge_bps": 10
+    },
+    {
+      "all_marks_pass_count": 1092,
+      "all_marks_pass_rate": 0.2184,
+      "mark_pass_counts": {
+        "above_non_quarter_month_ends": 4653,
+        "mean_net": 4534,
+        "mean_proxy_net": 4708,
+        "non_december_net": 4387,
+        "positive_quarters": 2100,
+        "t_net": 1482,
+        "t_proxy_net": 2033,
+        "trimmed_net": 3430
+      },
+      "planted_gross_edge_bps": 20
+    },
+    {
+      "all_marks_pass_count": 2611,
+      "all_marks_pass_rate": 0.5222,
+      "mark_pass_counts": {
+        "above_non_quarter_month_ends": 4935,
+        "mean_net": 4911,
+        "mean_proxy_net": 4973,
+        "non_december_net": 4857,
+        "positive_quarters": 3334,
+        "t_net": 3022,
+        "t_proxy_net": 3813,
+        "trimmed_net": 4499
+      },
+      "planted_gross_edge_bps": 30
+    }
+  ],
+  "synthetic_only": true
+}
