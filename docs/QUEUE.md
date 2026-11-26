@@ -2,9 +2,11 @@
 
 The work list for the builder and its helpers. Take the top item that is not blocked, write its ledger row (`research_rig/TRIAL_LEDGER.md`), run it, put the result in `docs/STATUS.md`, then move the item to "Done" with one line saying what happened. Add new ideas at the bottom of "Ideas" with where the idea came from. Anyone may add an idea. Nothing here needs the owner's yes.
 
-Last changed: 2026-11-26 05:17 UTC
+Last changed: 2026-11-26 05:25 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
+
+Skip list from Round 19 (`docs/research/90_round_19_intraday_forced_flows.md`, 0 of 8 queued): future rounds skip intraday forced flows in broad liquid US ETFs (`SPY`, `QQQ`, `IWM`, `TLT`) for last-half-hour momentum (Gao et al. 2018 and Baltussen et al. 2021; already failed Replay 07 `N3`/`N8`), leveraged-ETF end-of-day rebalancing on large-move days, option dealer gamma and 0DTE hedging, 15:50 ET MOC imbalance publication, overnight gap and first-30-minute continuation or fade, broad-ETF VWAP and closing-auction index-rebalance flows, pre-FOMC announcement drift (Lucca and Moench 2015), and first trading day of the month / turn-of-the-month.
 
 ## Running now
 
