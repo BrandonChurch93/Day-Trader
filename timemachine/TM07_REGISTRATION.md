@@ -51,7 +51,7 @@ MEASURED from the snapshot by the registered rule, with no return read. The rule
 | 2026-11-09 | Extension | DOGE, HBAR, LINK, SOL, ZEC | no TM06 basket; all five by rank | 16 of 20 | 20 of 20 |
 | 2026-11-16 | Extension | AVAX, HBAR, HYPE, LTC, XLM | no TM06 basket; all five by rank | 16 of 20 | 20 of 20 |
 
-MEASURED, and a decision for the lead before the seal. The 90% minute rule, written before any of these bars were fetched, removes four of the 15 TM06 screen names: PEPE in July, BNB in August, and AAVE and BNB in October. So the three screen weeks are no longer exactly the TM06 swing baskets. Coinbase spot has no candle for a minute without a trade, which is why only 8 to 18 of the 20 watch coins reach 90% in a given week. The table applies the rule as written. Any change to the rule now would be made after seeing coverage counts, though before any return. It would need its own line in this package.
+MEASURED, and accepted by the lead on 2026-11-26. The 90% minute rule, written before any of these bars were fetched, removes four of the 15 TM06 screen names: PEPE in July, BNB in August, and AAVE and BNB in October. The lead accepted the rule as written and the replaced names by rank (XRP for PEPE on 2026-07-20, AVAX for BNB on 2026-08-31, AVAX and LINK for AAVE and BNB on 2026-10-05). So the three TM07 screen baskets differ from the TM06 swing baskets for the same weeks. TM07 screen results are not a rerun of the TM06 swing weeks and must not be read as one. Coinbase spot has no candle for a minute without a trade, which is why only 8 to 18 of the 20 watch coins reach 90% in a given week. The rule was not changed after the coverage counts were seen.
 
 The scored set is the three screen weeks plus the 17 extension weeks: 20 weeks. May 11 is diagnostic only and is never scored.
 
@@ -109,6 +109,35 @@ MEASURED by exact arithmetic (`tools/tm07_power.py`), with no market data. Weeks
 
 Under the null, the chance that any of the four claims passes is at most 1.22%. STATED: the design is powered only for an arm that wins about 85% or more of its weeks against fresh A; at 70% it fails most of the time. Under the queue screen ([doc 117](../docs/research/117_power_screen_before_data.md)), it is a weakly powered test of a modest edge. It can still catch a large one.
 
+## Power of the alternative weekly mark
+
+MEASURED by simulation (`tools/tm07_power_alt.py`, fixed seed), using TM06 results for the noise only. No TM07 bar was read and no TM07 return was computed. The alternative mark the lead asked about, for comparison with 16 of 20: a one-sided paired t of at least 2 on the 20 weekly net differences (arm minus fresh A), at least 12 of 20 winning weeks, and a positive mean after dropping the best week. The registered mark is the 3 of 3 screen gate plus 16 of 20. The alternative is shown alone and with the same screen gate.
+
+The noise is the TM06 week-to-week spread of weekly net differences between two arms on the same week. TM06 has no paired scout and no-scout arms, so every pair of the seven TM06 swing models on the same four weeks (including the May diagnostic week, at 1x and 12 bp) stands in for it. Each pair is centred on its own mean, so a steady gap between two models is not counted as noise. The normal rows use the pooled spread; the resampled rows draw the centred values themselves, which keeps their heavier tails. Weeks are independent draws and the chained-gain lines are not modelled, so these are upper bounds like the table above.
+
+Noise: pooled standard deviation of the weekly net difference between two TM06 swing arms on the same week, 2.79 percentage points, from 84 centred pair-week values (7 arms, 21 pairs, 4 weeks, 1x, 12 bp). 100,000 simulated 20-week sets per cell, seed 1.
+
+| Noise model | True weekly edge (pp) | Registered: 3 of 3 screen and 16 of 20 | Alternative: t at least 2, 12 of 20, mean without best week above 0 | Alternative with the 3 of 3 screen gate |
+|---|---:|---:|---:|---:|
+| normal | 0.0 (null) | 0.28% | 2.87% | 0.97% |
+| normal | 0.5 | 1.55% | 13.03% | 4.69% |
+| normal | 1.0 | 5.46% | 35.58% | 13.62% |
+| normal | 2.0 | 27.73% | 87.68% | 41.37% |
+| normal | 3.0 | 58.11% | 99.60% | 63.10% |
+| resampled | 0.0 (null) | 0.21% | 2.77% | 0.90% |
+| resampled | 0.5 | 2.52% | 13.77% | 5.29% |
+| resampled | 1.0 | 13.90% | 37.70% | 17.81% |
+| resampled | 2.0 | 45.59% | 87.46% | 51.11% |
+| resampled | 3.0 | 72.81% | 99.48% | 74.00% |
+
+STATED, reading the table:
+
+- At the same true edge, the alternative mark alone has much more power than the registered mark, most clearly at 1 and 2 points.
+- Its null false-pass rate alone is above the 1.25% one-sided per-claim cap. A t of 2 with 19 degrees of freedom is about a 3% one-sided test, and the two extra conditions remove little under the null. A cutoff of about 2.43 would match 1.25% on the t alone under normal noise (from the t distribution; not simulated here).
+- With the 3 of 3 screen gate added, the null rate falls under the cap per claim, but most of the power gain is lost, because the gate alone fails often for a modest edge.
+- The noise proxy has only four weeks per pair and uses different models, not the same boss with and without scouts. The true spread for TM07 arm pairs could be smaller or larger. UNKNOWN.
+- The registered mark is unchanged by this section. Any switch is the lead's ruling and needs its own line before the seal.
+
 ## Isolation design
 
 What each role sees at wake k (hour t). It comes from `desk.py` at `bdc5f6a`:
@@ -154,8 +183,8 @@ These are operator steps under the service account, after approval and before an
 
 Ledger row 198 (`research_rig/TRIAL_LEDGER.md`), as added in this commit:
 
-> 198 | 2026-11-26 MT | `timemachine/TM07_REGISTRATION.md` | Queue 33, TM07 desk. Two bosses (`claude_fable_5_2`, `claude_opus_5_5`), arms A, B and C, two `gemini_neon` scouts, price-only, hourly, 1x, 12 bp per side plus TM06 half spreads and Kraken funding proxy, on Coinbase spot minute bars, snapshot `6346be0d…`. 20 scored weeks fixed by the registered coverage and Sunday-close rule (3 screen, 17 extension), May 11 diagnostic. Four claims B/A and C/A per boss: 3 of 3 screen gate, then 16 of 20 weekly wins and both TM06 one-model marks. R1, R2, R3 shown only. | DRAFT registration. No session, no replay and no return. MEASURED synthetic upper-bound power 13.33% at a 0.70 weekly win chance and 55.35% at 0.85; null at most 1.22% across four claims. Extension blocked until every raw copy is unreadable by uid 2000. Isolation review pending.
+> 198 | 2026-11-26 MT | `timemachine/TM07_REGISTRATION.md` | Queue 33, TM07 desk. Two bosses (`claude_fable_5_2`, `claude_opus_5_5`), arms A, B and C, two `gemini_neon` scouts, price-only, hourly, 1x, 12 bp per side plus TM06 half spreads and Kraken funding proxy, on Coinbase spot minute bars, snapshot `6346be0d…`. 20 scored weeks fixed by the registered coverage and Sunday-close rule (3 screen, 17 extension; screen baskets differ from TM06 by the accepted minute rule), May 11 diagnostic. Four claims B/A and C/A per boss: 3 of 3 screen gate, then 16 of 20 weekly wins and both TM06 one-model marks. R1, R2, R3 shown only. | DRAFT registration. No session, no replay and no return. MEASURED synthetic upper-bound power 13.33% at a 0.70 weekly win chance and 55.35% at 0.85; null at most 1.22% across four claims. Alternative mark (t of at least 2, 12 of 20, mean without best week) simulated for comparison only; not adopted. Extension blocked until every raw copy is unreadable by uid 2000. Isolation review pending.
 
 Queue row 33, last column (`docs/QUEUE.md`):
 
-> Registration package drafted (ledger 198, `timemachine/TM07_REGISTRATION.md`): 20 weeks and coins fixed from snapshot `6346be0d…`, costs and marks fixed, synthetic power stated. Waiting on the lead's ruling on the four screen names displaced by the minute rule, the isolation review, operator sealing, and protected raw copies for the extension. Engine branch `tm07` not merged.
+> Registration package drafted (ledger 198, `timemachine/TM07_REGISTRATION.md`): 20 weeks and coins fixed from snapshot `6346be0d…`, costs and marks fixed, synthetic power stated. The lead accepted the 90% minute rule and the four replaced screen names (screen baskets differ from TM06). Waiting on the isolation review, operator sealing, and protected raw copies for the extension. Engine branch `tm07` not merged.
