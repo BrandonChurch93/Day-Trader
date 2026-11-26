@@ -1,6 +1,8 @@
 # Plan 53: taxable closed-end fund year-end tax-loss rebound
 
-Status DRAFT. Queue 90, ledger 187. Before any price pull, the lead replaced the issuer-by-issuer roster with public PCEF holdings. A roster freeze is not approval to collect prices, validate inputs, or score. The lead gives collection authority separately and issues the single-file validation and score approval only for the completed packet.
+Status FROZEN.
+
+Queue 90, ledger 187. Before any price pull, the lead replaced the issuer-by-issuer roster with public PCEF holdings. A roster freeze is not approval to collect prices, validate inputs, or score. The lead gives collection authority separately and issues the single-file validation and score approval only for the completed packet.
 
 STATED: [Brauer and Chang (1990)](https://academic.oup.com/rfs/article-abstract/3/2/255/1595700) find a January seasonal in closed-end fund shares but not their net asset values, and a negative relation between turn-of-year share returns and prior returns. Plan 53 takes that direction and applies Replay 48's rule to taxable closed-end funds drawn from PCEF's disclosed holdings. It is not a replication of their regressions.
 
