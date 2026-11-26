@@ -232,6 +232,21 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(closeout["utc"],O.stamp(T+60))
         self.assertEqual({r["symbol"]:r["open"] for r in closeout["trades"]},{A:170,B:120})
 
+    def test_reaudit_r02_exit_observation_does_not_take_next_open_citation(self):
+        second = T+3600
+        bars = [(T,A,100,101,99,100),(second,A,100,101,90,100),
+                (second+60,A,100,101,99,100),(second+60,B,100,101,99,100)]
+        session = self.create("A",spec=world(bars))
+        for at,weights,exits in ((T,{A:.25},{A:{"stop":95}}),(second,{A:.25,B:.25},{})):
+            _,key = info(session)
+            session.handle("boss","pick",dict(wake_key=key,why="Named toy wake",weights=weights,exits=exits,
+                                citations={s:{"evidence_ids":[f"book:{at}"]} for s in weights}))
+        _,log = S.load_session(session.path)
+        exit, = (data for _,kind,data in log if kind == "protective_exit")
+        self.assertEqual(exit["execution"]["utc"],O.stamp(second+60))
+        self.assertEqual(exit["execution"]["phase"],"intrabar")
+        self.assertEqual(exit["parent"]["evidence_ids"],[f"book:{T}"])
+
     def test_reaudit_r1_full_costed_benchmarks_hold_every_leg(self):
         for px in (90,110):
             spec = world([(t,s,p,p,p,p) for t,p in ((T,100),(T+3600,px)) for s in (A,B,BTC)])

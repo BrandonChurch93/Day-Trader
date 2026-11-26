@@ -623,7 +623,10 @@ class DeskSession:
         if rec["scan"]["closeout"]:
             e = rec["scan"]["closeout"]
             timeline.append((epoch(e["utc"]), 3, "", e))
-        for tick, kind, s, data in sorted(timeline, key=lambda item: item[:3]):
+        # A completed bar may be observed at the same instant as the
+        # following open. Close the old lineage before attaching a new one.
+        phase_rank = {2:0, 3:1, 0:2, 1:3}
+        for tick, kind, s, data in sorted(timeline, key=lambda item:(item[0],phase_rank[item[1]],item[2])):
             if kind < 2:
                 if data:
                     # A retried immediate move can have no new citation. Keep
