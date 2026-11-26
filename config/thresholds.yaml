@@ -982,6 +982,12 @@ measure_34_plan:
   note: Mirrors the byte-pinned, independently audited Measurement 34 plan and scorer. Not a new trial or a runtime override. The fixed and half-spread-only cost lines are shown.
   source: research_rig/MEASURE_34_tmf_month_end.md
 
+replay_35_plan:
+  value: research_rig/config_35.json
+  status: builder
+  note: Points to the exact pinned machine-readable settings for queue 57 and ledger 170. No duplicated parameter values or runtime override.
+  source: research_rig/PREREG_35_ibit_cme_expiry.md
+
 tm_server_day_bars_cache_max:
   value: 400
   status: builder

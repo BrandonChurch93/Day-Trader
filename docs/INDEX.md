@@ -270,6 +270,8 @@ Working papers.
 | `research_rig/MEASURE_34_tmf_month_end.md` | Frozen Measurement 34, queue 56 and ledger 169: TMF instrument tracking, cost and drawdown on Replay 25's windows, with UBT shown only | CURRENT |
 | `research_rig/measure_34.py`, `research_rig/test_34.py` | Measurement 34: offline no-return input validation, an exclusive one-run lock and synthetic tests. Bar and quote inputs and run results stay off repo | CURRENT |
 | `research_rig/FREEZE.json` | Measurement 34 freeze manifest: pins the approved plan, code, tests and reused Replay 25 calendar and common code. No market inputs | CURRENT |
+| `research_rig/PREREG_35_ibit_cme_expiry.md`, `research_rig/config_35.json`, `research_rig/PINNED_35.json` | Frozen Plan 35 IBIT expiry window, queue 57 and ledger 170. Exact settings and audited byte pins; no market inputs | CURRENT |
+| `research_rig/score_35.py`, `research_rig/test_35.py` | Plan 35 no-return input validator, approved one-shot runner and synthetic-only tests. Private independently staged inputs and results stay off repo | CURRENT |
 | `research_rig/measure_15_summary.json` | Measurement 15 aggregates only (counts, medians, means, 90th percentiles, outlier check). No trade, quote, price, time or symbol; the per-stock-day output stays off repo | CURRENT |
 | `research_rig/report_15.py` | Writes the Measurement 15 summary from the off-repo output, and prints doc 66 from the summary only. No rule run and no market-data reads | CURRENT |
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
