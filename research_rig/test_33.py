@@ -147,6 +147,27 @@ class Inputs(unittest.TestCase):
         self.assertEqual(p.coverage(list(obs.values()))["missing_trade_bars"], 4)
         self.assertEqual(p.coverage(list(obs.values()))["placed"], 0)
 
+    def test_mixed_condition_windows_reselect_for_shown_r_only(self):
+        def update(w):
+            if w["date"] != str(DAY):
+                return
+            (self.root / w["quotes"][0]["path"]).unlink()
+            rows = ([native(cond=["?"], ask=80, bid=79), native(ask=100)]
+                    if w["clock"] == "13:10" else
+                    [native(EXIT, cond=["?"], bid=109, ask=110, bid_n=3),
+                     native(EXIT, bid=105, ask=106, bid_n=2)])
+            w["quotes"] = [self.page(rows)]
+        pairs = [(DAY, OTHER, "IEF")]
+        strict = {}
+        obs, errors = p.load_inputs(self.root, self.manifest(update), pairs, r_only_out=strict)
+        self.assertEqual(errors, [])
+        base, shown = obs[DAY, "IEF"], strict[DAY, "IEF"]
+        self.assertEqual((base.entry.ask, base.exit.bid, base.size), (80, 109, 3))
+        self.assertEqual((shown.entry.ask, shown.exit.bid, shown.size), (100, 105, 2))
+        self.assertEqual((base.entry.ordinal, shown.entry.ordinal), (1, 2))
+        self.assertEqual(p.outcome({}, pairs, obs, current_fees(), set(), strict)
+                         ["shown_only"]["regular_condition_R_only"]["auctions"]["net_bps"]["mean"], 500)
+
     def test_absent_bar_does_not_block_fill(self):
         def update(w):
             if w["date"] == str(DAY):
@@ -181,6 +202,15 @@ class Inputs(unittest.TestCase):
 
 
 class Rules(unittest.TestCase):
+    def test_unknown_is_usable_only_as_the_sole_condition(self):
+        row = qt(cond=["?"])
+        self.assertTrue(row.regular())
+        self.assertFalse(row.regular(r_only=True))
+        self.assertFalse(qt(cond=["?", "R"]).regular())
+        self.assertFalse(qt(cond=["?"], bid=101).regular())
+        self.assertFalse(qt(cond=["?"], ask_n=0).regular())
+        self.assertFalse(qt(cond=["?"], bid_n=0).regular())
+
     def test_quote_filters_lock_and_all_shares(self):
         lane = [qt(bid=101), qt(cond=["R", "N"]), qt(ask_n=1), qt(ask=251),
                 qt(bid=100, ask=100), qt(ask=90, bid=89)]
@@ -264,14 +294,14 @@ class Rules(unittest.TestCase):
             for d, sell in ((a, 101 + i % 3), (c, 99)):
                 obs[d, s] = p.Observation(d, s, qt(), qt(EXIT, bid=sell, ask=sell+1), 2,
                                           (False, True), (1, 1), True)
-        res = p.outcome({}, pairs, obs, fee, meetings)
+        res = p.outcome({}, pairs, obs, fee, meetings, obs)
         self.assertTrue(res["pass"])
         self.assertEqual(len(res["marks"]), 11)
         self.assertEqual(res["after_2024_07_31_paper_sample"]["auctions"]["coverage"]["placed"], 54)
         self.assertEqual(res["shown_only"]["exclude_either_fomc_statement_date"]["paired_diff_bps"]["n"], 237)
         for _, c, s in pairs[:14]:
             obs[c, s] = p.Observation(c, s, None, None, 0, (True, True), (0, 0), False)
-        res = p.outcome({}, pairs, obs, fee, meetings)
+        res = p.outcome({}, pairs, obs, fee, meetings, obs)
         self.assertFalse(res["pass"])
         self.assertTrue(res["marks"]["placed_95_percent"])
         self.assertFalse(res["marks"]["pairs_95_percent"])
