@@ -95,7 +95,7 @@ MEASURED. On $500 once a year the mean net result was +$13.68, versus +$10.00 fo
 - STATED by the lead. SABA had a 1-for-2 reverse split effective on the first split-basis session 2024-06-24 (SEC accession 0001398344-25-012578). For turn 2023, the later split left different vendor adjusted bases across GIM and SABA. The control copy was aligned to the judged exit basis without changing raw bars, using counts only (21 of 21 SABA rows); 2 auditors returned CLEAR.
 - STATED by the lead. Primary cash including the benchmark: 279 documented, 92 none, 18 partial and 845 unresolved. MEASURED: the roster-only proof had 269 documented and 92 none. Some primary gaps remain even with vendor cash; 15 of 50 held fund-turns had an empty final cash list, which can also mean no payout.
 - MEASURED. The vendor gate passed: 269 of 269 primary events matched and 361 of 361 proof windows had no extras, versus fixed floors of 98% and 98%. Match required exact ex-date and an absolute amount difference no more than $0.0001. 3 vendor rows were incomplete. The reliable aggregate admitted 579 events as `vendor_crosschecked`. STATED: blank native currency was treated as USD, and blank-currency candidates were checked against matching blank-currency proof events. The overlap is not a random sample.
-- MEASURED from the frozen source. The shown-only by-turn/status counts of admitted vendor events and fund-turns overwrite rather than add when more than one fund qualifies in a bucket. Do not add those fields to infer coverage. The change from the cash amendment to the final freeze did not fix this bug. It does not affect the gate totals, overall admitted event count, cash credited, returns, or marks.
+- MEASURED from the frozen source. The defect remains in `8eb2fc0:research_rig/score_53.py:441-442`. For a turn/status bucket with two or more admitted fund-years, the breakdown retains the last processed qualifying fund-year's event count and reports one admitted fund-year, so both subtotals undercount. A bucket with zero or one admitted fund-year, and gate-fail zeroes, are correct. Only the two shown-only `by_turn_and_primary_status` admission subtotals are affected; the gate, admitted cash and total event count, judged returns and marks, and other diagnostics are unaffected. Whether a real bucket was affected was not checked.
 - STATED by the lead. Two brief custody exposures: NAV text in one SEC exhibit, and a helper output that printed post-exit reinvestment prices for one fund. No such numbers are reproduced here.
 - STATED by the lead. The PCEF January 2026 distribution amount did not have a distinct second source. The vendor tier did not supplement the benchmark.
 - STATED. The roster comes from public holdings snapshots, which can be stale; the index screen also limits coverage. The benchmark and roster are linked by construction and have different weights. Thin funds may not fill at the modeled close. The turns share calendar shocks and are not independent draws.
@@ -116,23 +116,18 @@ MEASURED. On $500 once a year the mean net result was +$13.68, versus +$10.00 fo
 
 ## Independent recompute
 
-MEASURED, 2026-11-26. The recompute agrees with the scored run on every turn, every mean and every mark.
+STATED by the lead. The independent helper rebuilt the run from the plan text at `8eb2fc0` and the sealed packet without opening `score_53.py`, `common_48.py` or `score_48.py`. The helper wrote its numbers before opening the saved results.
 
-- A helper who did not open `score_53.py`, `common_48.py` or `score_48.py` rebuilt the run from the plan text at commit `8eb2fc0` and the sealed input packet, and wrote its numbers to disk before opening the results file.
-- Held funds: the same five funds in the same rank order in all ten turns.
-- Eligible counts: the same in all ten turns.
-- Largest difference in any per-turn return (portfolio, PCEF, roster, and the cash-zeroed portfolio and roster): 0.
-- Differences in the means: float rounding only, largest 3.5e-18.
-- All seven marks agree: five met, positive years and years against PCEF missed.
-- Vendor cash gate: same outcome.
-- Recompute script SHA-256 `fe7044ac60270c470ae6283204ad22fdbd6f94f34b385645b805ca32a35b07c9`, output SHA-256 `b01fc3e35fc581aed288f6c8a3e9238eb2dd9b4c48fad7a010fc62dd46868a11`, both kept off the repo.
+MEASURED. The same 5 funds matched in the same rank order in all 10 turns. Eligible counts matched in turn order: 129, 138, 136, 128, 122, 116, 112, 108, 107, 106. The largest per-turn return difference was 0. Mean differences were from floating-point rounding only (largest 3.5e-18). All 7 marks agreed. The vendor cash gate also agreed: 269 of 269 primary events matched, and 361 of 361 windows had no extras.
 
-Four places where the helper had to choose a reading of the plan text. None changed a number here, and the next plan of this kind should state each one:
+MEASURED. The off-repo script `/home/user/workspace/rig/data/replay_53_notes/recompute/recompute_53.py` has SHA-256 `fe7044ac60270c470ae6283204ad22fdbd6f94f34b385645b805ca32a35b07c9`. The off-repo output `/home/user/workspace/rig/data/replay_53_notes/recompute/recompute_53.json` has SHA-256 `b01fc3e35fc581aed288f6c8a3e9238eb2dd9b4c48fad7a010fc62dd46868a11`.
 
-- The duration-weighted median spread was taken as the first spread where cumulative valid time reaches half the total.
-- A split on a cash ex-date is applied before that cash.
-- Shares bought are the floor of $100 over the entry close times one plus the entry cost.
-- A fund too expensive to buy one share of is left out of both the ranking and the roster mean.
+STATED by the helper. Tighten these choices in the next plan. None changed a number in this comparison:
+
+- Take the duration-weighted median at the first spread where cumulative valid quote time reaches half.
+- Apply a split on a cash ex-date before crediting that cash.
+- Use the floor of `$100 / (entry close × (1 + entry cost))` for whole shares.
+- Leave an unaffordable fund out of both the ranking and the roster mean.
 
 ## Run record
 
