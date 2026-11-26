@@ -171,18 +171,85 @@ class Tests(unittest.TestCase):
                 self.assertEqual(e.resting(self.v, "ETH", b, self.cfg)["status"], "UNKNOWN")
             with patch.object(self.v, "agg", return_value=a[:1]):
                 self.assertEqual(e.resting(self.v, "ETH", b, self.cfg)["status"], "NOT_FILLED")
+            short_before_end = [{"a": 10, "T": t + 3, "p": "99"}]
+            with patch.object(self.v, "agg", side_effect=[a, short_before_end]) as pages:
+                self.assertEqual(e.resting(self.v, "ETH", b, self.cfg)["status"], "UNKNOWN")
+                self.assertEqual(pages.call_args_list[1].kwargs["from_id"], 10)
 
-    def test_candle_failure_voids_signal_wake_but_other_coins_checked(self):
+    def test_candle_failure_voids_only_entries_and_prices_due_exit(self):
+        opened = self.record()
+        self.assertEqual({r["coin"] for r in opened["entries"]}, {"ETH"})
+        exit_wake = T + 2 * e.HOUR
+        clock = Clock(exit_wake + timedelta(seconds=5))
         candles = self.v.candles
         def partial(coin, wake):
             if coin == "ETH":
+                clock.sleep(130)
                 raise e.Failure("timeout")
             return candles(coin, wake)
+        self.v.candle_calls.clear()
+        self.v.depth_calls.clear()
         with patch.object(self.v, "candles", side_effect=partial):
-            w = self.record()
-        self.assertEqual(w["kind"], "void")
-        self.assertEqual(w["failures"], {"ETH": "timeout"})
+            w = e.record(clock(), self.v, self.off, clock, clock.sleep)
+        self.assertEqual(w["kind"], "wake")
+        self.assertTrue(w["entries_void"])
+        self.assertEqual(w["entries"], [])
+        self.assertEqual(w["candle_failures"], {"ETH": "timeout"})
         self.assertIn("ZEC", self.v.candle_calls)
+        self.assertIn(e.e09.JUDGED, w["exits"])
+        self.assertEqual(w["books"]["ETH"]["status"], "ok")
+        self.assertEqual(w["books"]["ETH"]["taken_s"], 5)
+        self.assertEqual(self.v.depth_calls, ["ETH"] * 4)
+        public = e.alive(self.off)
+        self.assertEqual(public["entry_void_wakes"], 1)
+        self.assertEqual(public["judged_trades"], 1)
+        self.assertEqual(public["judged_void_reasons"], {})
+
+    def test_candles_at_and_after_decision_hour_dropped(self):
+        candles = self.v.candles
+        n = int(T.timestamp())
+        def poisoned(coin, wake):
+            return candles(coin, wake) + [[stamp, "999999", "999999", "999999", "999999", "1"]
+                                          for stamp in (n, n + e.e09.HOUR)]
+        with patch.object(self.v, "candles", side_effect=poisoned):
+            w = self.record()
+        self.assertEqual(len(w["signal_bars"]), len(e.e09.COINS))
+        self.assertTrue(all(len(bars) == 3 and max(bars) < n for bars in w["signal_bars"].values()))
+        self.assertNotIn("999999", json.dumps(w["signal_bars"]))
+
+    def test_bnb_taker_fee_end_to_end_in_public_costs_and_shown_score(self):
+        entry = {"arm": e.e09.JUDGED, "coin": "BNB", "wake": e.iso(T),
+                 "due": e.iso(T + 2 * e.HOUR), "strength": 0.123}
+        with (patch.object(self.v, "pairs", return_value={"BNB": "TRADING"}),
+              patch.object(e, "picks", side_effect=[[entry], []])):
+            self.record()
+            self.record(T + 2 * e.HOUR)
+        public = e.alive(self.off)
+        self.assertEqual(public["judged_trades"], 1)
+        costs = public["cost_per_side_bp"]["BNB"]
+        for size in ("25", "250"):
+            self.assertAlmostEqual(costs[size]["buy"]["median"], 101.01)
+            self.assertAlmostEqual(costs[size]["sell"]["median"], 100.99)
+        result = e.score(e.parse(self.cfg["last_wake_utc"]) + timedelta(seconds=e.e09.WINDOW_S), self.off)
+        shown = result["shown"][e.e09.JUDGED]
+        expected = (99 / 101) * .9999 - 1.0001
+        self.assertAlmostEqual(shown["taker_lines_usd_size_and_offset_s"]["25:0"]["net_mean"], expected)
+        self.assertAlmostEqual(shown["resting_signals"][0]["taker_line_if_not_filled"]["net"], expected)
+
+    def test_public_costs_exclude_late_entries_and_exits(self):
+        w0, w1 = e.iso(T), e.iso(T + 2 * e.HOUR)
+        entry = {"arm": e.e09.JUDGED, "coin": "ETH", "wake": w0, "due": w1}
+        timely = fake_book(depth(), taken=120)
+        late = fake_book(depth(), taken=120.000001)
+        def summary(a, b):
+            start = {"kind": "wake", "wake": w0, "books": {"ETH": a}, "entries": [entry], "exits": []}
+            end = {"kind": "wake", "wake": w1, "books": {"ETH": b}, "entries": [], "exits": [e.e09.JUDGED]}
+            return e.summary([start, end], self.cfg, self.fees)
+        self.assertFalse(summary(late, timely)["cost_per_side_bp"])
+        cost = summary(timely, late)["cost_per_side_bp"]["ETH"]["250"]
+        self.assertEqual((cost["buy"]["n"], cost["sell"]["n"]), (1, 0))
+        cost = summary(timely, timely)["cost_per_side_bp"]["ETH"]["250"]
+        self.assertEqual((cost["buy"]["n"], cost["sell"]["n"]), (1, 1))
 
     def test_one_coin_depth_failure_does_not_abort_other_coin(self):
         real_depth = self.v.depth
@@ -273,6 +340,20 @@ class Tests(unittest.TestCase):
 
     def test_default_public_file_empty_and_price_free(self):
         self.assertEqual(json.loads(e.PUBLIC.read_text()), e.summary([], self.cfg, self.fees))
+
+    def test_judge_pass_and_drop_best_only_failure(self):
+        def decide_groups(groups):
+            valid = [{"entry": {"wake": e.iso(T + timedelta(days=i, minutes=j))},
+                      "lines": {"250:0": {"net": n}}}
+                     for i, group in enumerate(groups) for j, n in enumerate(group)]
+            return e.judge(valid, self.cfg)
+        passed = decide_groups([[.001] * 30, [.0012] * 30])
+        self.assertEqual(passed["verdict"], "pass")
+        self.assertTrue(all(passed["marks"].values()))
+        failed = decide_groups([[-.001] * 29 + [.040], [-.001] * 29 + [.038]])
+        self.assertEqual(failed["verdict"], "did not pass")
+        self.assertEqual([k for k, v in failed["marks"].items() if not v],
+                         ["mean_above_zero_without_e09_best"])
 
     def test_reaching_judging_count_does_not_open_or_fetch_another_wake(self):
         cfg = self.cfg | {"judging_count": 1, "judging_floor": 1}

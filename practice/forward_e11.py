@@ -337,31 +337,31 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx):
     free = [a for a in e09.ARMS if a not in opens or a in due]
     live_until = wake + timedelta(seconds=e09.WINDOW_S)
     last = parse(cfg["last_wake_utc"])
-    can_enter = any(wake + timedelta(hours=rules[a]["hold_hours"]) <= last for a in free)
-    bars, failed = {}, {}
-    if can_enter:
-        pages.deadline = live_until
-        bars, failed = collect_candles(pages, wake)
-    if failed:
-        m132.append(path, rows, kind="void", wake=w, reason="candle page failure",
-                    failures=failed, entries=[], exits=due)
-        return rows[-1]
-    proposed = picks(wake, bars, free, rules, last) if can_enter else []
     coins_due = {opens[arm]["coin"] for arm in due}
-    all_coins = coins_due | {x["coin"] for x in proposed}
-    pair_states, first = {}, {}
-    if all_coins:
-        pages.deadline = live_until
+    first = {}
+    pair_states = None
+    pages.deadline = live_until
+
+    def read_pairs():
         try:
-            pair_states = pages.pairs()
-            if not isinstance(pair_states, dict):
+            states = pages.pairs()
+            if not isinstance(states, dict):
                 raise ValueError
+            return states
         except Blocked:
             raise
         except (Failure, OSError, ValueError, TypeError, KeyError):
-            pair_states = {k: "pair page unavailable" for k in all_coins}
+            return dict.fromkeys(e09.COINS, "pair page unavailable")
+
+    # Exits have no candle dependency. Sample their books before a slow or
+    # failing signal-panel request can consume their first-book window.
+    if coins_due:
+        pair_states = read_pairs()
         for coin in sorted(coins_due):
             first[coin] = book_now(pages, pair_states, coin, wake, clock)
+    can_enter = any(wake + timedelta(hours=rules[a]["hold_hours"]) <= last for a in free)
+    bars, failed = collect_candles(pages, wake) if can_enter else ({}, {})
+    proposed = picks(wake, bars, free, rules, last) if can_enter and not failed else []
     if any(a == e09.JUDGED for a in due):
         judged_due = opens[e09.JUDGED]
         b0, b1 = prior_books.get((judged_due["wake"], judged_due["coin"], 0)), first[judged_due["coin"]]
@@ -369,9 +369,13 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx):
                                      limit=cfg["first_book_limit_s"])
         if counts_now and len(judged_trades(evaluate(closed, prior_books, cfg, fees), cfg)) + 1 >= cfg["judging_count"]:
             proposed = []
+    if proposed and pair_states is None:
+        pair_states = read_pairs()
     for coin in sorted({e["coin"] for e in proposed} - first.keys()):
         first[coin] = book_now(pages, pair_states, coin, wake, clock)
+    pair_states = pair_states or {}
     m132.append(path, rows, kind="wake", wake=w, entries=proposed, exits=due, books=first,
+                entries_void=bool(failed), candle_failures=failed,
                 busy=[a for a in e09.ARMS if a not in free], pair_states={c: pair_states.get(c, "NO_USD_PAIR") for c in first},
                 closed_bar_sha256=m132.digest(m132.enc(bars).encode()), signal_bars=bars if proposed else {})
     wake_row = rows[-1]
@@ -484,7 +488,7 @@ def summary(rows, cfg, fees):
     for e in entries:
         resting_counts[e["arm"]][rest_for(rests, e)["status"]] += 1
         first = books.get((e["wake"], e["coin"], 0))
-        if not usable(first):
+        if leg_reason(first, cfg["first_book_limit_s"]):
             continue
         for size in cfg["sizes_usd"].values():
             walked = walk(first["asks"], size, buy=True)
@@ -504,6 +508,7 @@ def summary(rows, cfg, fees):
             "block": {k: stop[k] for k in ("host", "http_status")} if stop else None,
             "wakes": sum(r["kind"] == "wake" for r in visits.values()),
             "void_wakes": sum(r["kind"] == "void" for r in visits.values()),
+            "entry_void_wakes": sum(bool(r.get("entries_void")) for r in visits.values()),
             "claimed_unresolved_wakes": len(claims - visits.keys()),
             "late_wakes": len({w for (w, _, offset), b in books.items() if not offset and usable(b)
                                and b["taken_s"] > cfg["first_book_limit_s"]}),

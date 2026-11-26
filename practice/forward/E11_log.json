@@ -5,6 +5,7 @@
   "claimed_unresolved_wakes": 0,
   "closed_by_arm": {"70-102": 0, "71-013": 0, "71-035": 0},
   "cost_per_side_bp": {},
+  "entry_void_wakes": 0,
   "judged_trades": 0,
   "judged_void_reasons": {},
   "late_wakes": 0,
