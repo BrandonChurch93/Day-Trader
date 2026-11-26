@@ -145,6 +145,7 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 | A trader that only sizes and exits, on top of a fixed entry rule that already has evidence | builder, 2026-11-25 |
 | Many versions of one trader with different exit rules, to learn which exits matter | builder, 2026-11-25 |
 | Watch only (round 52, second-checked): buy an earnings gap up on high volume in a stock that had been flat, hold 20 to 60 sessions. The one after-cost test found by the scout lost; no count stage until a source shows a matching after-cost edge. It would share Plan 74's filing and bar set | [doc 175](research/175_idea_round_52_swing_events.md) |
+| Watch only (round 53, second-checked): year-end tax-loss rebound in single small stocks, Dec 31 to Jan 15. About ten usable year-turns, so no historical test; an optional pretend-money watch this year-end, labeled untested | [doc 176](research/176_idea_round_53_forced_flows.md) |
 | Watch only (round 51, second-checked): company insiders' open-market purchases in stocks already rising, and clusters of insider buying with an upbeat outlook. Both rest on unreviewed sources; no count stage on those sources | [doc 174](research/174_idea_round_51_larger_swing_edges.md) |
 
 ## Looked at and dropped before testing
