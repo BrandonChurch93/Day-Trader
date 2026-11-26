@@ -317,7 +317,7 @@ Working papers.
 
 | Folder | What it is | State |
 |---|---|---|
-| `docs/research/09_raw/` | Agent reports and claim checks behind document 09. `docs/research/09_raw/orderbook_sampler.py` and `docs/research/09_raw/orderbook_snapshots.jsonl` are an earlier, separate sample. They are not the overnight sample behind `docs/research/24_order_book_costs.md` | RAW |
+| `docs/research/09_raw/` | Agent reports and claim checks behind document 09. `docs/research/09_raw/orderbook_sampler.py` made an earlier, separate sample; its 427 raw quote rows were taken out of the repo on 2026-11-26 under the data terms rule in AGENTS.md and are kept privately. They are not the overnight sample behind `docs/research/24_order_book_costs.md` | RAW |
 | `docs/research/10_raw/` | Behind document 10 | RAW |
 | `docs/research/11_raw/` | Behind document 11 | RAW |
 | `docs/research/13_raw/` | Behind document 13 | RAW |

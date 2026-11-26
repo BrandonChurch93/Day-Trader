@@ -175,7 +175,7 @@ Coinbase was measured in the same window and its book was among the deepest of t
 
 A second, separate measurement by the practice-environment researcher the same evening agrees: under about 2 basis points per side for $1,000 to $10,000 on these venues, and about 4 to 5 basis points per side on Alpaca's own crypto book before its fee (`docs/research/10_raw/practice_environments.md`).
 
-What it shows: at the sizes this project would trade, the book costs a few basis points at most on every venue. Binance.US has the thinnest book of the four, but the gap is small beside the fee gap. Fees, not spreads, separate these venues for a small account. Raw samples, without the Coinbase rows, are in `09_raw/orderbook_snapshots.jsonl`.
+What it shows: at the sizes this project would trade, the book costs a few basis points at most on every venue. Binance.US has the thinnest book of the four, but the gap is small beside the fee gap. Fees, not spreads, separate these venues for a small account. The raw sample rows were taken out of the repo on 2026-11-26 under the data terms rule in AGENTS.md and are kept privately.
 
 ## Which are best to use with AI
 
