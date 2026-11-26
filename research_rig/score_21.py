@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from time import sleep
 import unittest
 from urllib.parse import urlencode, urlsplit
 
@@ -301,17 +302,34 @@ def reviewed_events(data, cal, p):
                                                   not e.row["known_terminal_by_cutoff"] for e in candidates))
 
 
-def fetch(handle, symbol, asof, start, end, adjusted):
+def fetch(handle, symbol, asof, start, end, adjusted, transport):
     """Only used in approved post-freeze acquisition. Never print HTTP response or handle."""
     q = dict(symbols=symbol, asof=asof.isoformat(), start=start.isoformat() + "T00:00:00Z",
              end=end.isoformat() + "T23:59:59Z",
              timeframe="1Day", feed="sip", adjustment=adjusted, limit=10000)
     rows, tokens = [], set()
     for _ in range(12):
-        proc = subprocess.run(["pplx", "credentials", "run", handle, "--", "curl", "--fail",
-                               "--silent", "--max-time", "120", ENDPOINT + "?" + urlencode(q)],
-                              capture_output=True, check=True)
-        data = json.loads(proc.stdout)
+        url = ENDPOINT + "?" + urlencode(q)
+        for attempt in range(5):
+            if transport["requests"]:
+                sleep(0.5)
+            transport["requests"] += 1
+            transport["retries"] += int(attempt > 0)
+            try:
+                proc = subprocess.run(["pplx", "credentials", "run", handle, "--", "curl",
+                                       "--silent", "--max-time", "120", "--write-out", "\n%{http_code}", url],
+                                      capture_output=True, check=False, timeout=135)
+            except subprocess.TimeoutExpired:
+                retryable = True
+            else:
+                body, _, status = proc.stdout.rpartition(b"\n")
+                if proc.returncode == 0 and status == b"200":
+                    data = json.loads(body)
+                    break
+                retryable = status == b"429" or (proc.returncode == 28 and status in {b"", b"000", b"200"})
+            if not retryable or attempt == 4:
+                raise C.Incomplete("acquisition transport refused")
+            sleep(min(60, 5 * 2**attempt))
         packed = data["bars"] or {}
         if set(packed) - {symbol}:
             raise C.Incomplete("response symbol mismatch")
@@ -348,8 +366,9 @@ def request_scope(events, cal, p):
 def acquire(events, cal, p, handle):
     if not re.fullmatch(r"custom-cred:[A-Za-z0-9-]+@data\.alpaca\.markets", handle or ""):
         raise Refused("P21_ACQUIRE_REFUSED", BARS)
+    transport = dict(requests=0, retries=0)
     bundle = dict(version=1, feed="sip", endpoint=ENDPOINT, adjustments=["raw", "all"],
-                  through=p["bar_end"], data={})
+                  through=p["bar_end"], data={}, transport=transport)
     for e in events:
         if not e.required:
             continue
@@ -358,9 +377,9 @@ def acquire(events, cal, p, handle):
         bundle["data"][e.accession] = {
             "ticker": symbol, "identity": e.row["identity"], "start": start.isoformat(), "end": end.isoformat(),
             "entry_asof": e.entry.isoformat(), "filing_asof": filed.isoformat(),
-            "raw": fetch(handle, symbol, e.entry, start, end, "raw"),
-            "all": fetch(handle, symbol, e.entry, start, end, "all"),
-            "filing_all": fetch(handle, symbol, filed, start, end, "all"),
+            "raw": fetch(handle, symbol, e.entry, start, end, "raw", transport),
+            "all": fetch(handle, symbol, e.entry, start, end, "all", transport),
+            "filing_all": fetch(handle, symbol, filed, start, end, "all", transport),
         }
     return bundle
 
