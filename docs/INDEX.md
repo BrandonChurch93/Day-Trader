@@ -159,6 +159,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/71_replay_20_upbit_listing_short.md` | Upbit listing short after a red UTC day. Second counted trading-replay pass, 5 of 5 on viewed dates; US availability and concentration limits | CURRENT |
 | `docs/research/72_replay_23_ipo_fast_track.md` | Early index buying after large US listings. Run once, did not pass, 7 of 8 marks; worked on paper 2017 to 2021, not since 2022 | CURRENT |
 | `docs/research/73_replay_26_blocked_at_source_check.md` | Earlier Treasury month-end replication blocked at the frozen SIP source check. Aggregate discrepancies only; no score and no lock claim | CURRENT |
+| `docs/research/74_round_10_forced_flow_ideas.md` | Round 10 forced-flow and known-clock scouting for a $500 US retail account (13 candidates: 2 KEEP, 4 KEEP WITH CHANGES, 7 DROP; top three named) | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
