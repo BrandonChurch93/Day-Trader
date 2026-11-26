@@ -26,6 +26,7 @@ ENGINE = "research_rig/common_48.py"
 CALIBRATION = "research_rig/CALIBRATION_48.json"
 CONFIG = "config/thresholds.yaml"
 PIN_NAMES = {PLAN, CALENDAR, ENGINE, CALIBRATION, CONFIG, "research_rig/score_48.py", "research_rig/test_48.py"}
+ROSTER_PIN = "packet:roster.csv"  # off-repo point-in-time roster, pinned at freeze
 LEDGER_ROW, QUEUE_ROW = 182, 86
 CAP = 64 * 1024 * 1024
 CONFIG_KEYS = {"first_turn", "last_turn", "turns", "capital", "sleeve_usd", "picks", "formation_from_end",
@@ -130,8 +131,9 @@ def authorize(approval, freeze_pin, input_pin, roster_pin, dist_pin):
     manifest = pinned(REPO / PINS, freeze_pin)
     need(manifest == contents(freeze, PINS) == contents(approval, PINS), "FREEZE")
     pins = parse(manifest)
-    need(type(pins) is dict and set(pins) == PIN_NAMES and all(map(is_pin, pins.values())), "FREEZE")
-    blobs = {name: pinned(REPO / name, pins[name]) for name in pins}
+    need(type(pins) is dict and set(pins) == PIN_NAMES | {ROSTER_PIN} and all(map(is_pin, pins.values()))
+         and pins[ROSTER_PIN] == roster_pin, "FREEZE")
+    blobs = {name: pinned(REPO / name, pins[name]) for name in PIN_NAMES}
     need(all(b == contents(freeze, name) == contents(approval, name) for name, b in blobs.items()), "FREEZE")
     need([line for line in blobs[PLAN].splitlines() if line.startswith(b"Status ")] == [b"Status FROZEN."], "FREEZE")
     link = b"`" + PLAN.encode() + b"`"

@@ -231,7 +231,8 @@ class EndToEnd(unittest.TestCase):
             link = f"`{S.PLAN}`"
             (root / "research_rig/TRIAL_LEDGER.md").write_text(f"| {S.LEDGER_ROW} | {link} |\n")
             (root / "docs/QUEUE.md").write_text(f"| {S.QUEUE_ROW} | {link} |\n")
-            pins = {n: digest((root / n).read_bytes()) for n in sorted(S.PIN_NAMES)}
+            names, bars, quotes, cash, roster = synthetic_packet()
+            pins = {n: digest((root / n).read_bytes()) for n in sorted(S.PIN_NAMES)} | {S.ROSTER_PIN: digest(roster)}
             (root / S.PINS).write_bytes(S.encode(pins))
             freeze_pin = digest((root / S.PINS).read_bytes())
 
@@ -240,7 +241,6 @@ class EndToEnd(unittest.TestCase):
             run.mkdir()
             os.chmod(inputs, 0o700)
             os.chmod(run, 0o700)
-            names, bars, quotes, cash, roster = synthetic_packet()
             files = {"roster.csv": roster, "distributions.json": dump(cash)}
             for y in bars:
                 files[f"bars_{y}.json"] = dump(bars[y])
@@ -312,6 +312,12 @@ class EndToEnd(unittest.TestCase):
             os.chmod(inputs / "roster.csv", 0o600)
             bad = cli("--validate-inputs")
             self.assertEqual((bad.returncode, bad.stderr.strip()), (2, "P48_PIN"))
+            other = subprocess.run(
+                [sys.executable, "-I", "-B", str(root / "research_rig/score_48.py"), "--validate-inputs",
+                 "--approval-commit", head, "--freeze-sha256", freeze_pin, "--input-sha256", input_pin,
+                 "--roster-sha256", digest(roster + b"2016,SYNZ\n"), "--distributions-sha256", dist_pin],
+                capture_output=True, text=True, env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"}, timeout=600)
+            self.assertEqual(other.stderr.strip(), "P48_APPROVAL")
 
 
 if __name__ == "__main__":

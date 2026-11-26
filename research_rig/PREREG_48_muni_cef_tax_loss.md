@@ -1,6 +1,6 @@
 # Plan 48: year-end tax-loss selling and the January rebound in municipal closed-end funds
 
-Status DRAFT.
+Status FROZEN.
 
 Queue 86, ledger 182. One window, one rule, ten yearly turns. All numeric controls are in `replay_48_plan` in `config/thresholds.yaml`. Validation is not permission to score; only the lead agent may authorize and run the score. No price, bar or quote has been read for this plan.
 
@@ -101,7 +101,7 @@ No return, ranking or payout before the lock. `research_rig/score_48.py --valida
 
     Approved by the lead: plan 48, validation and one scored run, freeze commit <sha>, freeze SHA-256 <digest>, input SHA-256 <digest>, roster SHA-256 <digest>, distributions SHA-256 <digest>.
 
-The freeze pins this plan, `research_rig/common_48.py`, `research_rig/score_48.py`, `research_rig/test_48.py`, `config/thresholds.yaml`, `research_rig/calendar_25.json` and `research_rig/CALIBRATION_48.json` in `research_rig/PINNED_48.json`; ledger row 182 and queue row 86 must link this plan in both commits. The scorer reruns the calibration and refuses if it does not match the pinned file. Because `config/thresholds.yaml` is pinned whole, every real mode runs from that freeze-plus-approval lineage, never from a later tip of branch work; a later change to any pinned file on work does not reach the scored run. The lead creates an empty owner-only /home/user/workspace/rig/data/replay_48 and runs `python3 -I -B research_rig/score_48.py --validate-inputs` with the five pin flags, then `--go` once. The go claims `score_48.lock` before any return and writes `results_48.json`; a second go refuses, and a failure after the lock consumes the run. Runs use nice 10 and a 480 MiB address cap.
+The freeze pins this plan, `research_rig/common_48.py`, `research_rig/score_48.py`, `research_rig/test_48.py`, `config/thresholds.yaml`, `research_rig/calendar_25.json` and `research_rig/CALIBRATION_48.json` in `research_rig/PINNED_48.json`, which also pins the off-repo roster's SHA-256 under `packet:roster.csv`; the roster digest named in the approval must equal it; ledger row 182 and queue row 86 must link this plan in both commits. The scorer reruns the calibration and refuses if it does not match the pinned file. Because `config/thresholds.yaml` is pinned whole, every real mode runs from that freeze-plus-approval lineage, never from a later tip of branch work; a later change to any pinned file on work does not reach the scored run. The lead creates an empty owner-only /home/user/workspace/rig/data/replay_48 and runs `python3 -I -B research_rig/score_48.py --validate-inputs` with the five pin flags, then `--go` once. The go claims `score_48.lock` before any return and writes `results_48.json`; a second go refuses, and a failure after the lock consumes the run. Runs use nice 10 and a 480 MiB address cap.
 
 `research_rig/test_48.py` runs every real-mode path as a subprocess in a temporary Git repository: validation, go and a refused second go, plus an approval not sitting directly on the freeze refused and a changed roster refused on its pin. It copies the real scorer, engine, test, calendar and config; only the scorer's data path line and the calibration trial count are rewritten, and the plan, ledger and queue rows there are stubs. All numbers in it are synthetic.
 
