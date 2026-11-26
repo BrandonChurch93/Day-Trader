@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 11:33 UTC
+Last updated: 2026-11-26 11:37 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Replay 65 (plan 65, ledger 208, queue 106): the stock-bond rebalancing rule from NBER w33554, SPY against IEF, scored once 2026-11-26 11:37 UTC. MEASURED over 2,614 judged sessions, 2016-07 to 2026-11, after costs and borrow: did not pass, 3 of 5 marks. Mean net return +1.01 bp a session (met); t clustered by week 1.04 against 2 needed (not met); mean without the best 1% of sessions (27 dropped) -1.76 bp (not met); 7 of 11 years positive (met); session count met. Net yearly Sharpe 0.35, 0.61 before costs. Shown only: without March 2020 the mean is -0.07 bp; from April 2023 on, outside the paper's sample, +0.04 bp (t 0.03); Threshold half +0.98 bp (t 1.44), Calendar half -0.01 bp; the $500 cash-account version with SH -0.73 bp; a one-day-late signal -1.66 bp. Reading fixed before the run: not shown, not refuted; the lead agent starts no forward log. Results page and independent recompute pending.
 
 - Idea round 39 ([doc 138](138_idea_round_39.md)), finished 2026-11-26 11:33 UTC: nine setups of the shape "trades away from a value it must reach on a known date" checked (fund term dates and conversions, rights offerings, SPAC trust floors, crypto trusts, cash deals, token migrations, target-maturity bond funds, called preferreds, called notes). Nothing queued: five were already dropped or closed in earlier rounds, and the four new ones show no gap left after costs or fewer than one event a year (STATED by the sources cited there).
 
