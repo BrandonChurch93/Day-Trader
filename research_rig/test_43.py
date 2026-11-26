@@ -116,6 +116,7 @@ root, data = map(Path, sys.argv[1:3])
 g = runpy.run_path(str(root / "research_rig/score_43.py"))["main"].__globals__
 collector = data/"collector.py"
 g.update(ROOT=root, DATA=data, INPUT=data/"plan43_successor_inputs", RUN=data/"replay_43_successor",
+         RUN3=data/"replay_43_attempt3",
          DOCKET=data/"docket.jsonl",COLLECTOR=collector,COLLECTOR_SHA256=sha256(collector.read_bytes()).hexdigest())
 sys.argv = ["score_43.py", *sys.argv[3:]]
 raise SystemExit(g["main"]())
@@ -177,11 +178,32 @@ raise SystemExit(g["main"]())
         where.parent.mkdir(parents=True,exist_ok=True)
         where.write_bytes(content)
 
-    def repin(self):
-        pins={k:sha256((self.root/k).read_bytes()).hexdigest() for k in s.SOURCES}
+    def repin(self,third=False):
+        names=s.SOURCES|({s.BASIS,s.BASIS_AMENDMENT} if third else set())
+        pins={k:sha256((self.root/k).read_bytes()).hexdigest() for k in names}
         blob=s.render(pins)
         self.put(s.PINS,blob)
         self.fp=sha256(blob).hexdigest()
+
+    def basis_attempt(self,previous):
+        self.run3=self.data/"replay_43_attempt3"
+        self.run3.mkdir(mode=0o700)
+        prev_pin=sha256((self.root/s.APPROVAL).read_bytes()).hexdigest()
+        for n in (s.BASIS,s.BASIS_AMENDMENT):
+            self.put(n,(s.ROOT/n).read_bytes().replace(b"Status DRAFT.",b"Status FROZEN."))
+        scorer="research_rig/score_43.py"
+        self.put(scorer,(self.root/scorer).read_bytes().replace(s.PREVIOUS_VALIDATION.encode(),previous.encode()))
+        log="research_rig/TRIAL_LEDGER.md"
+        self.put(log,(self.root/log).read_bytes()+f"| {s.ATTEMPT3} | `{s.BASIS_AMENDMENT}` | synthetic |\n".encode())
+        self.repin(third=True)
+        freeze3=self.commit()
+        adopt=(f"Approved by the lead: plan 43 attempt 3 ledger 195, adopt sealed packet from refused validation commit "
+               f"{previous}, prior approval SHA-256 {prev_pin}, freeze commit {freeze3}, freeze SHA-256 {self.fp}, "
+               f"no new vendor calls.\n").encode()
+        adoption=self.commit(s.ADOPTION,adopt)
+        approval=(f"Approved by the lead: plan 43 attempt 3 ledger 195, validation only, adoption commit {adoption}, "
+                  f"adoption approval SHA-256 {sha256(adopt).hexdigest()}.\n").encode()
+        return adoption,self.commit(s.VALIDATION3,approval)
 
     def commit(self,name=None,content=None):
         if name is not None:
@@ -541,6 +563,110 @@ class Plan43(unittest.TestCase):
             val=f.commit(s.APPROVAL,f.validation(acq))
             f.cli(self,"validate-inputs",val,"P43_VALIDATED")
             self.assertFalse((f.run/"score.lock").exists())
+
+    def third_fixture(self,f,mutate=None,omitted=0):
+        if mutate is not None:
+            mutate(f.packets[1]["records"])
+        acq=f.commit(s.ACQUISITION,f.acquisition())
+        f.cli(self,"claim-acquisition",acq,"P43_ACQUISITION_CLAIMED")
+        f.stage_packets(acq,core_missing=omitted)
+        previous=f.commit(s.APPROVAL,f.validation(acq))
+        return f.basis_attempt(previous)
+
+    def third_validate(self,f,val,expected=None):
+        p=f.process("validate-inputs",val)
+        output=p.stdout.splitlines()
+        self.assertTrue(output,p.stderr)
+        diag=json.loads(output[0])
+        self.assertEqual((diag["plan"],diag["attempt"],diag["ledger"]),(43,3,195))
+        if expected is None:
+            self.assertEqual((p.returncode,output[1:],p.stderr),(0,["P43_VALIDATED"],""))
+        else:
+            self.assertEqual((p.returncode,output[1:],p.stderr),(2,[],expected+"\n"))
+        return diag
+
+    def test_attempt3_cli_quantized_low_price_and_one_go(self):
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d))
+            def rounded(records):
+                legs=next(iter(records.values()))
+                for view in s.VIEWS:
+                    for row in legs["SPY"][view]:
+                        for key in "ohlc":
+                            px=Decimal(row[key])*Decimal(".0173")
+                            row[key]=px if view=="raw" else px.quantize(Decimal(".01"))
+                for view in ("all","filing_all"):
+                    for i,row in enumerate(legs["stock"][view]):
+                        for key in "ohlc":
+                            row[key]=Decimal(row[key]).quantize(Decimal(1).scaleb(-(2+i%3)))
+            adoption,val=self.third_fixture(f,rounded)
+            diag=self.third_validate(f,val)
+            self.assertEqual(diag["gates"]["ohlc_shape"]["status"],"PARTIAL")
+            self.assertEqual(diag["gates"]["ohlc_shape"]["failed"],0)
+            self.assertEqual(diag["gates"]["raw_factor"]["status"],"PASS")
+            self.assertEqual(diag["gates"]["native_provenance"]["status"],"PASS")
+            self.assertEqual(diag["coverage"]["coverage_refused"],0)
+            f.cli(self,"claim-acquisition",val,"P43_ATTEMPT3_NO_VENDOR")
+            receipt=f.run3/f"validation.{val}.json"
+            line=lambda pin:(f"Approved by the lead: plan 43 attempt 3 ledger 195, one scored run, "
+                             f"validation approval commit {val}, validation receipt SHA-256 {pin}.\n").encode()
+            bad=f.commit(s.GO3,line("a"*64))
+            f.cli(self,"go",bad,"P43_VALIDATION_RECEIPT")
+            self.assertFalse((f.run3/"score.lock").exists())
+            f.checkout(val)
+            pin=sha256(receipt.read_bytes()).hexdigest()
+            go=f.commit(s.GO3,line(pin))
+            f.cli(self,"go",go,"P43_SCORED_ONCE")
+            f.cli(self,"go",go,"P43_CONSUMED")
+            result=s.parse((f.run3/"result.json").read_bytes())["outcome"]
+            self.assertEqual((result["attempt"],result["ledger"],set(result["prior_stops"])),(3,195,{"178","188"}))
+
+    def test_attempt3_cli_wrong_factor_and_shape_are_reported_together(self):
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d),modeled_count=2)
+            def faults(records):
+                first,second=list(records.values())
+                for view in ("all","filing_all"):
+                    for key in "ohlc":
+                        second["stock"][view][9][key]*=Decimal("1.05")
+                    first["stock"][view][8]["h"]+=1
+            _,val=self.third_fixture(f,faults)
+            diag=self.third_validate(f,val,"P43_RAW_BASIS_CHANGE")
+            self.assertEqual(diag["gates"]["raw_factor"]["status"],"HOLD")
+            self.assertEqual(diag["gates"]["ohlc_shape"]["status"],"REFUSAL")
+            self.assertEqual(diag["gates"]["mixed_cap"]["status"],"HOLD")
+            self.assertEqual(diag["gates"]["native_provenance"]["status"],"PASS")
+            self.assertFalse((f.run3/f"validation.{val}.json").exists())
+            self.assertFalse((f.run3/"score.lock").exists())
+
+    def test_attempt3_exact_cent_envelope_boundary(self):
+        b=runpy.run_path(str(s.ROOT/s.BASIS))
+        interval,err=b["interval"],b["ERROR"]
+        mk=lambda xs:SimpleNamespace(flat_key=xs)
+        raw=mk([1,1,1,1])
+        within=mk([1,1+err,1-err,1])
+        outside=mk([1,1+err+Fraction(1,10**10),1-err,1])
+        self.assertEqual(interval(raw,within),(1,1))
+        self.assertIsNone(interval(raw,outside))
+        low=mk([Fraction(1,1000)]*4)
+        self.assertEqual(interval(low,low,err),(0,None))
+
+    def test_attempt3_cli_mixed_cap_exact_boundary(self):
+        for union,expected in ((22,None),(23,"P43_COVERAGE_CAP")):
+            with self.subTest(union=union), TemporaryDirectory() as d:
+                f=SyntheticRepo(Path(d),with_blocked=True,modeled_count=442)
+                def faults(records):
+                    for i,legs in enumerate(records.values()):
+                        if i==0 or 11<=i<union:
+                            for view in ("all","filing_all"):
+                                legs["stock"][view][8]["h"]+=1
+                _,val=self.third_fixture(f,faults,omitted=11)
+                summary=self.third_validate(f,val,expected)["coverage"]
+                self.assertEqual((summary["tape_refused"],summary["ohlc_shape_events"],
+                                  summary["tape_and_shape"],summary["coverage_refused"]),(11,union-10,1,union))
+                self.assertEqual(summary["refused_by_reason"]["ohlc_tick_shape"],union-11)
+                self.assertEqual((f.run3/f"validation.{val}.json").exists(),union==22)
+                self.assertFalse((f.run3/"score.lock").exists())
 
     def test_real_cli_native_lock_journal_and_attestation_refusals(self):
         with TemporaryDirectory() as d:
