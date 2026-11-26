@@ -14,11 +14,10 @@ import os
 from pathlib import Path
 import re
 import stat
+import subprocess
 import sys
 import time as sleep_clock
-from urllib.error import HTTPError
 from urllib.parse import urlencode
-from urllib.request import HTTPRedirectHandler, Request, build_opener
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -215,9 +214,33 @@ def read_identity(grid, identity_raw):
     return spans, splits, actions
 
 
-class NoRedirect(HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
+def bars_transport():
+    env = {k: os.environ[k] for k in ('HTTPS_PROXY', 'CURL_CA_BUNDLE', 'SSL_CERT_FILE') if k in os.environ}
+    if not env.get('HTTPS_PROXY'):
+        raise ValueError('Alpaca collection requires the credential HTTPS proxy')
+    argv = ['/usr/bin/curl', '--disable', '--silent', '--show-error', '--compressed', '--proto', '=https',
+            '--connect-timeout', '20', '--max-time', '60', '--write-out', '\n%{http_code}', '--config', '-']
+
+    def get(query):
+        # urlencode escapes curl-config metacharacters; the fixed URL is never in argv.
+        stdin = f'url = "{ENDPOINT}?{urlencode(query)}"\n'.encode('ascii')
+        for delay in (0, 2, 4, 8, 16):
+            if delay:
+                sleep_clock.sleep(delay)
+            response = subprocess.run(argv, input=stdin, capture_output=True, env=env, check=False)
+            body, separator, status = response.stdout.rpartition(b'\n')
+            if not separator or len(status) != 3 or not status.isdigit() or status == b'000':
+                raise ValueError('Alpaca bars transport failed; no response body logged')
+            code = int(status)
+            if code == 200:
+                if response.returncode:
+                    raise ValueError('Alpaca bars transport failed; no response body logged')
+                return json.loads(body)
+            if code not in (429, 500, 502, 503, 504) or delay == 16:
+                raise ValueError(f'Alpaca bars HTTP {code}; no response body logged')
+        raise AssertionError('unreachable')
+
+    return get
 
 
 def bars_pages(ticker, start, end, get):
@@ -278,21 +301,7 @@ def collect(grid, start, end, root_fd, bufs, pins):
         except FileNotFoundError:
             continue
         raise ValueError('Existing search data, receipt or partial collection; do not overwrite')
-    opener = build_opener(NoRedirect())
-    headers = {'APCA-API-KEY-ID': os.environ['APCA_API_KEY_ID'],
-               'APCA-API-SECRET-KEY': os.environ['APCA_API_SECRET_KEY']}
-
-    def get(query):
-        for delay in (0, 2, 4, 8, 16):
-            if delay:
-                sleep_clock.sleep(delay)
-            try:
-                with opener.open(Request(ENDPOINT + '?' + urlencode(query), headers=headers), timeout=60) as r:
-                    return json.load(r)
-            except HTTPError as err:
-                if err.code not in (429, 500, 502, 503, 504) or delay == 16:
-                    raise ValueError(f'Alpaca bars HTTP {err.code}; no response body logged') from None
-        raise AssertionError('unreachable')
+    get = bars_transport()
 
     count = 0
     with new_private(root_fd, temp) as file:

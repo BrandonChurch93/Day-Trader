@@ -425,6 +425,7 @@ Working papers.
 | `research_rig/PREREG_69_stock_sweep.md` | Plan 69, queue 111 and ledger 217: dated no-price roster, cash assumptions and fixed marks for the stock/ETF discovery search; the vault stays sealed | DRAFT |
 | `research_rig/GRID_69.json` | Plan 69 rule grid frozen before prices: 11 sourced families, exact signals, clocks and pools; shared settings in the config | DRAFT |
 | `research_rig/sweep_69.py` | Plan 69 search-only SIP collector, counts-only validator and scorer with a date fence, hash-bound file custody, separate independent approvals and made-up-data checks | DRAFT |
+| `research_rig/test_69_transport.py` | Plan 69 collection transport tests with fake curl responses and no network access | DRAFT |
 | `research_rig/count_62.py`, `research_rig/test_count_62.py` | Ledger 205: price-blind count of the vendor-ex-missing-only cohort, with synthetic checks and aggregate-only output. No trade or score |CURRENT |
 | `research_rig/COUNT_APPROVAL_62.md`, `research_rig/COUNT_62.json` | One spent lead approval and its aggregate same-date vendor cash count. No returns | RECORD |
 | `research_rig/PREREG_62_special_dividend_ex_day_v2.md`, `research_rig/score_62.py`, `research_rig/test_62.py`, `research_rig/PINNED_62.json` | Queue 105 and ledger 205: same traded clock and marks as Plan 61 with a narrow Class A vendor cash exception, separate custody and synthetic checks. Scored once; see doc 130 | CURRENT |
