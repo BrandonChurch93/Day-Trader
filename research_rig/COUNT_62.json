@@ -1,0 +1,15 @@
+{
+  "classes": {
+    "A": 86,
+    "B": 2,
+    "C": 0,
+    "D": 0,
+    "E": 0,
+    "F": 0
+  },
+  "vendor_ex_missing_only": 88,
+  "verified_action_ex_date_provenance": {
+    "no_structured_ex_date_provenance": 88,
+    "unrecognized_extra_fields": 0
+  }
+}
