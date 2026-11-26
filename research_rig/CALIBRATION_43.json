@@ -1,0 +1,24 @@
+{
+  "all_mark_passes": [
+    10,
+    138,
+    528,
+    985
+  ],
+  "data": "synthetic only, real filing schedule",
+  "docket_sha256": "2ab8c47c5bc666ae05eabb808237c7ef347e8d0a30a15e38e117541b1658c5e7",
+  "edges": [
+    0.0,
+    0.005,
+    0.01,
+    0.02
+  ],
+  "eligible": 443,
+  "shares": [
+    0.01,
+    0.138,
+    0.528,
+    0.985
+  ],
+  "trials": 1000
+}
