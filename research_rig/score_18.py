@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import resource
 import subprocess
+from tempfile import NamedTemporaryFile
 import unittest
 
 from . import archive_18 as A, common_18 as C
@@ -103,7 +104,7 @@ def verify(expected):
 
 
 def require_staged_ftt(seal):
-    """Check only filenames and sizes before the lock; verify ZIP digests after it."""
+    """Check staged filenames and sizes before either reading mode."""
     u = json.loads(A.read_pinned(PATHS["universe"],seal["inputs"]["universe"]))
     contracts,symbols,_ = A.catalogue(u)
     supplement = A.ftt_manifest(u,contracts,symbols)
@@ -129,11 +130,14 @@ def write_json(stream,record):
     os.fsync(stream.fileno())
 
 
-def one_shot(lock,output,authorize,score):
-    """authorize reads seal/repo metadata; score is the first scoring-data callback."""
+def one_shot(lock,output,authorize,score,*,prepare=lambda binding:binding):
+    """Authorize and validate before acquiring the persistent scoring claim."""
     if os.path.lexists(lock) or os.path.lexists(output):
         raise C.Incomplete("the Plan 18 one-shot is consumed")
     binding = authorize()
+    prepared = prepare(binding)
+    if os.path.lexists(output):
+        raise C.Incomplete("output appeared during validation")
     try:
         fd = os.open(lock,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
     except FileExistsError as exc:
@@ -145,7 +149,7 @@ def one_shot(lock,output,authorize,score):
         try:
             if os.path.lexists(output):
                 raise C.Incomplete("output appeared after the claim")
-            result = score(binding)
+            result = score(prepared)
             with output.open("x") as stream:
                 write_json(stream,result)
             sync_directory(output.parent)
@@ -173,16 +177,80 @@ def real_resources():
         os.nice(10-current)
 
 
-def score(binding):
+def preflight_receipt_path(expected):
+    return RUN/f"preflight_{expected}.json"
+
+
+def verify_preflight(expected,seal):
+    try:
+        path = preflight_receipt_path(expected)
+        if path.is_symlink() or path.stat().st_uid!=os.geteuid() or path.stat().st_mode&0o022:
+            raise C.Incomplete("preflight receipt is not owner-controlled")
+        receipt = json.loads(path.read_bytes())
+    except (OSError,ValueError) as exc:
+        raise C.Incomplete("matching Plan 18 preflight receipt required") from exc
+    if not isinstance(receipt,dict):
+        raise C.Incomplete("preflight receipt is not an object")
+    counts = receipt.get("counts")
+    if (receipt.get("version")!=1 or receipt.get("seal_sha256")!=expected
+        or receipt.get("commit")!=seal["commit"] or not isinstance(counts,dict)
+        or set(counts)!={"trade_bars","mark_bars","funding_settlements","ftt_funding_stamp_anomalies"}
+        or type(counts["ftt_funding_stamp_anomalies"]) is not int
+        or counts["ftt_funding_stamp_anomalies"]<0):
+        raise C.Incomplete("preflight receipt does not match the sealed inputs")
+    for name in ("trade_bars","mark_bars","funding_settlements"):
+        row = counts[name]
+        if (not isinstance(row,dict) or set(row)!={"files","rows"}
+            or type(row["files"]) is not int or row["files"]<=0
+            or type(row["rows"]) is not int or row["rows"]<=0):
+            raise C.Incomplete("preflight receipt has invalid clock counts")
+
+
+def preflight(expected):
+    if os.path.lexists(RUN/"score_18.lock") or os.path.lexists(ROOT/OUTPUT):
+        raise C.Incomplete("the Plan 18 one-shot is consumed")
+    seal,p = verify(expected)
+    contracts,symbols,_,_,_,_,manifests,_ = A.inspect_universe(
+        PATHS,seal["inputs"],p,evidence_dir=RUN/"evidence",inventory_pin=seal["evidence_inventory_sha256"])
+    counts = A.inspect_archive_clocks(DATA/"replay_16/archives",manifests,symbols,contracts,p,
+                                     supplemental_dir=RUN/"ftt_archives",check=memory_check)
+    receipt = dict(version=1,seal_sha256=expected,commit=seal["commit"],counts=counts)
+    tmp = None
+    try:
+        with NamedTemporaryFile(mode="w",encoding="utf-8",dir=RUN,prefix=".preflight-",delete=False) as f:
+            tmp = f.name
+            write_json(f,receipt)
+        os.replace(tmp,preflight_receipt_path(expected))
+        sync_directory(RUN)
+    finally:
+        if tmp is not None and os.path.lexists(tmp):
+            os.unlink(tmp)
+    return counts
+
+
+def authorize_run(expected):
+    seal,p = verify(expected)
+    verify_preflight(expected,seal)
+    return seal,p
+
+
+def prepare_score(binding):
     seal,p = binding
-    tape,snaps,rosters,coverage = A.load(PATHS,seal["inputs"],DATA/"replay_16/archives",p,
+    loaded = A.load(PATHS,seal["inputs"],DATA/"replay_16/archives",p,
                                         evidence_dir=RUN/"evidence",
                                         supplemental_dir=RUN/"ftt_archives",
                                         inventory_pin=seal["evidence_inventory_sha256"],check=memory_check)
+    memory_check()
+    return seal,p,loaded
+
+
+def score(prepared):
+    seal,p,(tape,snaps,rosters,coverage) = prepared
     pool = {}
 
-    def measure(bps=None,roster=None,gross=False,ftt_charge_decision=None):
-        memory_check()
+    def measure(bps=None,roster=None,gross=False,ftt_charge_decision=None,*,first=False):
+        if not first:
+            memory_check()
         try:
             return C.run_book(tape,snaps,p["start"],p["end"],bps,roster=roster,p=p,
                               pools=pool if roster is None else None,gross_reopen=gross,
@@ -197,7 +265,7 @@ def score(binding):
         return dict(result=result,refusal=refusal)
 
     ftt_charge_at = coverage.get("ftt_coverage",{}).get("charge_decision_hour")
-    ranks = measure(ftt_charge_decision=ftt_charge_at)
+    ranks = measure(ftt_charge_decision=ftt_charge_at,first=True)
     uncharged = pack(measure()) if ftt_charge_at is not None else None
     draws = C.random_books(tape,snaps,p["start"],p["end"],p=p,pools=pool,check=memory_check)
     costs = (*p["shown_cost_bps"],p["judged_cost_bps"])
@@ -214,6 +282,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     actions = parser.add_mutually_exclusive_group(required=True)
     actions.add_argument("--selftest",action="store_true")
+    actions.add_argument("--preflight",action="store_true")
     actions.add_argument("--run",action="store_true")
     parser.add_argument("--seal-sha256")
     args = parser.parse_args()
@@ -230,7 +299,11 @@ def main():
             parser.error("the owner must supply the trusted full seal digest")
         try:
             real_resources()
-            one_shot(RUN/"score_18.lock",ROOT/OUTPUT,lambda:verify(args.seal_sha256),score)
+            if args.preflight:
+                print(json.dumps(preflight(args.seal_sha256),sort_keys=True))
+            else:
+                one_shot(RUN/"score_18.lock",ROOT/OUTPUT,lambda:authorize_run(args.seal_sha256),score,
+                         prepare=prepare_score)
         except (C.Incomplete,OSError,ValueError,KeyError,subprocess.CalledProcessError) as exc:
             parser.exit(1,f"Plan 18 refused: {exc}\n")
     return 0

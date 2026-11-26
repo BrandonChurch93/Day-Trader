@@ -22,6 +22,7 @@ ROSTER_HASHES = dict(zip(VENUES,(
     "36f4307cd753211de9b1a7363190fb02ef1ccf0a5dbef41bb0992a9d26bdcade",
     "0971651ed4ace539e88de36a5516c75a00e3ef7f0c4c2f401843af1215938d29")))
 BULK = re.compile(r"data/futures/um/(daily|monthly)/(klines|markPriceKlines|fundingRate)/([A-Z0-9]+)/(?:1h/)?([A-Za-z0-9-]+)\.zip")
+BULK_SCOPE = re.compile(r"data/futures/um/(?:daily|monthly)/(?:klines|markPriceKlines|fundingRate)/([^/]+)/")
 SHA = re.compile(r"[0-9a-f]{64}")
 NAN = float("nan")
 MEMORY_CAP = 300_000_000
@@ -225,14 +226,16 @@ def check_memory_budget(groups,count):
     return size
 
 
-def zip_rows(raw,*,allow_empty=False):
+def zip_rows(raw,*,allow_empty=False,stamps_only=False):
     with zipfile.ZipFile(io.BytesIO(raw)) as z:
         members = [name for name in z.namelist() if name.endswith(".csv")]
         if allow_empty and not members:
             return
         member, = members
         with z.open(member) as stream:
-            for i,row in enumerate(csv.reader(io.TextIOWrapper(stream,encoding="utf-8-sig"))):
+            lines = io.TextIOWrapper(stream,encoding="utf-8-sig")
+            rows = ((line.partition(",")[0].strip().strip('"'),) for line in lines) if stamps_only else csv.reader(lines)
+            for i,row in enumerate(rows):
                 if row and row[0].isdigit():
                     yield row
                 elif i>0:
@@ -259,6 +262,93 @@ def funding_bracket(pair,left,right,p):
     return right-left<=p["funding_interval_hours"]
 
 
+def archive_groups(manifests,wanted):
+    groups = defaultdict(dict)
+    for manifest in manifests:
+        if manifest["errors"]:
+            raise C.Incomplete("archive manifest has reported errors")
+        for name,m in manifest["archives"].items():
+            scope = BULK_SCOPE.match(name)
+            if scope is not None and scope[1] not in wanted:
+                continue
+            match = BULK.fullmatch(name)
+            if match is None:
+                raise C.Incomplete("archive manifest contains an unsupported in-scope path")
+            pair = match[3]
+            if name in groups[pair] and groups[pair][name][1]!=m:
+                raise C.Incomplete("conflicting archive manifests")
+            groups[pair][name] = match,m
+    return groups
+
+
+def archive_input(archive_dir,supplemental_dir,name,match,m):
+    is_ftt = m["where"]=="plan18_ftt"
+    if m["where"]!="replay_16" and not (is_ftt and supplemental_dir is not None and match[3]=="FTTUSDT"):
+        raise C.Incomplete("venue input is not in a pinned bulk store")
+    path = (supplemental_dir if is_ftt else archive_dir)/name
+    if not 0<path.stat().st_size<=MAX_ZIP_BYTES:
+        raise C.Incomplete("archive ZIP has invalid size or exceeds the per-file limit")
+    return path,is_ftt
+
+
+def archive_rows(path,match,m,segments,p,*,stamps_only=False,count=None):
+    lo,hi = archive_span(match)
+    is_ftt,kind = m["where"]=="plan18_ftt",match[2]
+    hour_us = C.H*10**6
+    n = 0
+    for row in zip_rows(read_pinned(path,m["sha256"]),allow_empty=is_ftt,stamps_only=stamps_only):
+        n += 1
+        stamp = clock_us(row[0])
+        h = (stamp+hour_us//2)//hour_us
+        err = stamp-h*hour_us
+        if is_ftt and not any(c.begin*hour_us<=stamp<c.end*hour_us for c in segments):
+            continue
+        if not (lo<=h<hi or kind=="fundingRate" and lo*hour_us<=stamp<hi*hour_us):
+            raise C.Incomplete("archive event timestamp out of its permitted file")
+        jitter = abs(err)>(p["funding_jitter_seconds"]*10**6 if kind=="fundingRate" else 0)
+        if jitter and not (is_ftt and kind=="fundingRate"):
+            raise C.Incomplete("archive event timestamp out of its permitted hour")
+        yield h,err,jitter,row
+    if not is_ftt and n!=m["n"]:
+        raise C.Incomplete("unexpected archive row count")
+    if count is not None:
+        count["rows"] += n
+
+
+def inspect_archive_clocks(archive_dir,manifests,symbols,contracts,p,*,supplemental_dir,check):
+    """Verify wanted files with the same path and clock rules, without decoding values."""
+    lo = p["start"]-p["lookback_hours"]-p["funding_interval_hours"]*p["funding_lag_intervals"]
+    hi = p["end"]
+    groups = archive_groups(manifests,set(symbols.values()))
+    check_memory_budget(groups,hi-lo+1)
+    segments = defaultdict(list)
+    for c in contracts:
+        segments[symbols[c.key]].append(c)
+    summary = {k:dict(files=0,rows=0) for k in ("trade_bars","mark_bars","funding_settlements")}
+    types = {"klines":"trade_bars","markPriceKlines":"mark_bars","fundingRate":"funding_settlements"}
+    ftt_stamp_anomalies = 0
+    for pair,items in groups.items():
+        seen = defaultdict(set)
+        for name,(match,m) in sorted(items.items()):
+            a,b = archive_span(match)
+            if b<=lo or a>hi:
+                continue
+            check()
+            path,is_ftt = archive_input(archive_dir,supplemental_dir,name,match,m)
+            kind = match[2]
+            count = summary[types[kind]]
+            count["files"] += 1
+            for h,_,jitter,_ in archive_rows(path,match,m,segments[pair],p,stamps_only=True,count=count):
+                if not lo<=h<=hi:
+                    continue
+                if is_ftt and kind=="fundingRate":
+                    ftt_stamp_anomalies += jitter or h in seen[kind] or not scheduled_funding(pair,h,p)
+                elif h in seen[kind]:
+                    raise C.Incomplete("duplicate archive hour")
+                seen[kind].add(h)
+    return dict(summary,ftt_funding_stamp_anomalies=ftt_stamp_anomalies)
+
+
 class Tape:
     def __init__(self, archive_dir, manifests, symbols, notices, p, *, contracts=(),
                  supplemental_dir=None, check=lambda:None):
@@ -276,20 +366,7 @@ class Tape:
             self.by_coin[c.coin_id].append(c)
         self.store = {}
         self.ftt_invalid_funding_hours = set()
-        groups = defaultdict(dict)
-        wanted = set(symbols.values())
-        for manifest in manifests:
-            if manifest["errors"]:
-                raise C.Incomplete("archive manifest has reported errors")
-            for name,m in manifest["archives"].items():
-                match = BULK.fullmatch(name)
-                if match is None:
-                    raise C.Incomplete("archive manifest contains an unsupported path")
-                if match[3] not in wanted:
-                    continue
-                if name in groups[match[3]] and groups[match[3]][name][1]!=m:
-                    raise C.Incomplete("conflicting archive manifests")
-                groups[match[3]][name] = match,m
+        groups = archive_groups(manifests,set(symbols.values()))
         count = self.hi-self.lo+1
         self.budget_bytes = check_memory_budget(groups,count)
         for pair,items in groups.items():
@@ -301,32 +378,12 @@ class Tape:
                 lo,hi = archive_span(match)
                 if hi<=self.lo or lo>self.hi:
                     continue
-                is_ftt = m["where"]=="plan18_ftt"
-                if m["where"]!="replay_16" and not (is_ftt and supplemental_dir is not None and pair=="FTTUSDT"):
-                    raise C.Incomplete("venue input is not in a pinned bulk store")
-                path = (supplemental_dir if is_ftt else archive_dir)/name
+                check()
                 kind = match[2]
-                n = 0
-                if path.stat().st_size>MAX_ZIP_BYTES:
-                    raise C.Incomplete("archive ZIP exceeds the preflight per-file limit")
-                for row in zip_rows(read_pinned(path,m["sha256"]),allow_empty=is_ftt):
-                    n += 1
-                    stamp = clock_us(row[0])
-                    hour_us = C.H*10**6
-                    h = (stamp+hour_us//2)//hour_us
-                    err = stamp-h*hour_us
-                    in_period = lo<=h<hi
-                    if kind=="fundingRate":
-                        in_period = in_period or lo*hour_us<=stamp<hi*hour_us
-                    if is_ftt:
-                        if not any(c.begin*hour_us<=stamp<c.end*hour_us for c in by_pair[pair]):
-                            continue
-                    if not in_period:
-                        raise C.Incomplete("archive event timestamp out of its permitted hour or file")
+                path,is_ftt = archive_input(archive_dir,supplemental_dir,name,match,m)
+                for h,err,jitter,row in archive_rows(path,match,m,by_pair[pair],p):
                     i = h-self.lo
-                    if abs(err)>(p["funding_jitter_seconds"]*10**6 if kind=="fundingRate" else 0):
-                        if not (is_ftt and kind=="fundingRate"):
-                            raise C.Incomplete("archive event timestamp out of its permitted hour or file")
+                    if jitter:
                         self.ftt_invalid_funding_hours.add(h)
                         if self.lo<=h<=self.hi:
                             rates[i] = NAN
@@ -357,8 +414,6 @@ class Tape:
                         dest[i] = tr if vol>0 else -1.
                         if kind=="klines" and vol>0:
                             opens[i] = op
-                if not is_ftt and n!=m["n"]:
-                    raise C.Incomplete("unexpected archive row count")
             previous = None
             last_owner = None
             for i,v in enumerate(rates):

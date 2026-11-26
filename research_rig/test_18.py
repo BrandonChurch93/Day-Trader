@@ -612,7 +612,7 @@ class FundingCarryTests(unittest.TestCase):
         self.assertIsNone(complete["charge_decision_hour"])
         with (patch.object(S.A,"load",return_value=(tape,snaps,{},{"ftt_coverage":complete})),
               patch.object(S,"memory_check")):
-            result = S.score(({"commit":"fake","inputs":{},"evidence_inventory_sha256":"fake"},p))
+            result = S.score(S.prepare_score(({"commit":"fake","inputs":{},"evidence_inventory_sha256":"fake"},p)))
         self.assertIsNone(result["shown_uncharged_ftt"])
         self.assertIsNone(result["judged"]["result"]["ftt_stress"])
         self.assertEqual(complete["counts"]["funding_settlements"]["expected"],
@@ -638,7 +638,7 @@ class FundingCarryTests(unittest.TestCase):
                 self.assertEqual(gap["charge_decision_hour"],charge_at)
                 with (patch.object(S.A,"load",return_value=(tape,snaps,{},{"ftt_coverage":gap})),
                       patch.object(S,"memory_check")):
-                    result = S.score(({"commit":"fake","inputs":{},"evidence_inventory_sha256":"fake"},p))
+                    result = S.score(S.prepare_score(({"commit":"fake","inputs":{},"evidence_inventory_sha256":"fake"},p)))
                 judged,uncharged = (result[k]["result"] for k in ("judged","shown_uncharged_ftt"))
                 self.assertEqual(result["scope"]["ftt_coverage"],gap)
                 loss = judged["ftt_stress"]
@@ -839,6 +839,101 @@ class FundingCarryTests(unittest.TestCase):
             self.assertFalse(out.exists())
             with self.assertRaises(C.Incomplete):
                 S.one_shot(lock,out,lambda:self.fail("authorized twice"),fail)
+
+    def test_archive_skips_out_of_scope_unicode_and_rejects_unknown_wanted_format(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            t = self.t
+            p = C.P|dict(end=t+24)
+            cs = (C.Contract(1,1,"key",t-100,t+25),)
+            pairs = {"key":"FAKEUSDT"}
+            name,m = archive_fixture(root,"FAKEUSDT","fundingRate",[[t*C.H,8,0.001]])
+            outscope = name.replace("FAKEUSDT","币安人生USDT")
+            manifest = dict(archives={name:m,outscope:m},errors={})
+            args = (root,[manifest],pairs,set(),p)
+            self.assertEqual(A.Tape(*args,contracts=cs).funding("key",t),(True,0.001))
+            manifest["archives"][name.replace(".zip",".tar.gz")] = m
+            with self.assertRaisesRegex(C.Incomplete,"unsupported in-scope"):
+                A.Tape(*args,contracts=cs)
+
+    def test_preflight_loads_only_stamps_and_requires_matching_receipt(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archives = root/"replay_16/archives"
+            t = self.t
+            p = C.P|dict(end=t+24)
+            cs = (C.Contract(1,1,"key",t-100,t+25),)
+            pairs = {"key":"FAKEUSDT"}
+            bad = "DO_NOT_DECODE_VALUE"
+            files = dict(archive_fixture(archives,"FAKEUSDT",kind,rows) for kind,rows in (
+                ("klines",[[t*C.H,bad,bad,bad,bad,bad]]),
+                ("markPriceKlines",[[t*C.H,bad,bad,bad,bad]]),
+                ("fundingRate",[[t*C.H,8,bad]])))
+            manifest = dict(archives=files,errors={})
+            seal = dict(commit="frozen",inputs={},evidence_inventory_sha256="fake")
+            expected = "a"*64
+            lock = root/"score_18.lock"
+            with (patch.object(S,"RUN",root),patch.object(S,"DATA",root),
+                  patch.object(S,"verify",return_value=(seal,p)),
+                  patch.object(S.A,"inspect_universe",return_value=(cs,pairs,None,None,None,None,[manifest],None)),
+                  patch.object(S.A,"load",side_effect=AssertionError("values loaded in preflight")),
+                  patch.object(S,"one_shot",side_effect=AssertionError("preflight touched lock"))):
+                with self.assertRaisesRegex(C.Incomplete,"preflight receipt required"):
+                    S.authorize_run(expected)
+                got = S.preflight(expected)
+                self.assertEqual(got,{k:{"files":1,"rows":1} for k in
+                    ("trade_bars","mark_bars","funding_settlements")}|{"ftt_funding_stamp_anomalies":0})
+                with (patch.object(S,"real_resources"),patch("builtins.print") as emitted,
+                      patch("sys.argv",["score_18","--preflight","--seal-sha256",expected])):
+                    self.assertEqual(S.main(),0)
+                    emitted.assert_called_once()
+                    self.assertEqual(json.loads(emitted.call_args.args[0]),got)
+                receipt = S.preflight_receipt_path(expected)
+                self.assertNotIn(bad,receipt.read_text())
+                self.assertFalse(lock.exists())
+                self.assertEqual(S.authorize_run(expected),(seal,p))
+                with self.assertRaisesRegex(C.Incomplete,"preflight receipt required"):
+                    S.authorize_run("b"*64)
+                with self.assertRaisesRegex(C.Incomplete,"does not match"):
+                    S.verify_preflight(expected,{"commit":"not-the-frozen-commit"})
+                badfile = next(name for name in files if "/fundingRate/" in name)
+                files[badfile]["n"] += 1
+                second = "c"*64
+                with self.assertRaisesRegex(C.Incomplete,"row count"):
+                    S.preflight(second)
+                self.assertFalse(S.preflight_receipt_path(second).exists())
+                files[badfile]["n"] -= 1
+                files[badfile]["sha256"] = "0"*64
+                with self.assertRaises(C.Incomplete):
+                    S.preflight(second)
+                self.assertFalse(S.preflight_receipt_path(second).exists())
+                name,meta = archive_fixture(archives,"FAKEUSDT","fundingRate",[[(t+8)*C.H+120,8,bad]])
+                files[name] = meta
+                with self.assertRaisesRegex(C.Incomplete,"timestamp"):
+                    S.preflight(second)
+                self.assertFalse(S.preflight_receipt_path(second).exists())
+
+    def test_prepare_failure_does_not_consume_the_scoring_claim(self):
+        with TemporaryDirectory() as tmp:
+            lock,out = (Path(tmp)/name for name in ("lock","result"))
+            def authorize():
+                self.assertFalse(lock.exists())
+                return {"test":"yes"},C.P
+            def load_fails(binding):
+                self.assertFalse(lock.exists())
+                raise C.Incomplete("validation failed before computing")
+            with self.assertRaisesRegex(C.Incomplete,"validation failed"):
+                S.one_shot(lock,out,authorize,lambda _:self.fail("scored before validation"),prepare=load_fails)
+            self.assertFalse(lock.exists())
+            self.assertFalse(out.exists())
+            def load(binding):
+                self.assertFalse(lock.exists())
+                return "loaded"
+            def score(loaded):
+                self.assertTrue(lock.exists())
+                self.assertEqual(loaded,"loaded")
+                return {"valid":True}
+            self.assertEqual(S.one_shot(lock,out,authorize,score,prepare=load),{"valid":True})
 
     def test_lock_race_and_no_scoring_before_authorization(self):
         with TemporaryDirectory() as tmp:
