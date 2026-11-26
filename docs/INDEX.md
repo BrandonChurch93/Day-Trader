@@ -234,6 +234,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/24_order_book_costs.md` | What it cost to trade small sizes on two venues, sampled on 2026-11-25 | CURRENT |
 | `docs/research/122_replay_53_taxable_fund_january_rebound.md` | Replay 53 saved result: taxable closed-end fund tax-loss losers did not pass; judged marks, yearly turns, costs, diagnostics and gaps | CURRENT |
 | `docs/research/126_replay_60_special_dividends.md` | Replay 60 saved result: the special-dividend rule did not pass; judged marks, yearly means, refusal counts, shown checks and gaps | CURRENT |
+| `docs/research/128_row104_equity_cef_distribution_count.md` | Row 104 count, price-blind: equity closed-end fund non-monthly and special distributions 2016 to 2026 (472 fund-days on 241 ex-dates, pass line met; declaration lead time unknown) | CURRENT |
 
 Working papers.
 
