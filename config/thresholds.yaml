@@ -1079,6 +1079,12 @@ replay_48_plan:
   note: Only numeric and scope source for Plan 48 calendar, sizing, cost, marks, synthetic calibration and resource caps. JSON flow value for isolated standard-library parsing. The scorer binds the file to the freeze; it is not a runtime override. Calibration spreads are stated assumptions, not measured.
   source: research_rig/PREREG_48_muni_cef_tax_loss.md
 
+replay_51_plan:
+  value: {years: [2020, 2021, 2022, 2023, 2024, 2025, 2026], judged_stop: "2026-04-01", shown_stop: "2026-11-23", universe_top_n: 50, lookback_days: 30, hot_n: 5, rise_days: 7, max_missing_hours: 6, cost_bps_per_side: 15, judged_leverage: 1, twin_draws: 1000, twin_seed: 51001, twin_p_max: 0.011111111111111112, min_positive_years: 4, calibration_trials: 100, calibration_seed: 51100, calibration_edges_bps: [20, 40, 80], calibration_block_days: [20, 40, 80], calibration_target_bps: 20, calibration_target_days: 40, calibration_power_floor: 0.5, calibration_relative_sigma: 0.01, calibration_market_sigma: 0.015}
+  status: builder
+  note: Price-blind draft. Queue 95 and ledger 185. One reused-years regime score, shown-only TM06 months, and a separate forward watch. Settings do not authorize market access.
+  source: research_rig/PREREG_51_momentum_when_it_pays.md
+
 replay_47_plan:
   value: {"first":"2025-01-01","last":"2026-11-25","lag_min":30,"bar_min":1,"hold_h":24,"shown_h":[1,72],"coinbase_fee_bps":60,"kraken_fee_bps":80,"coinbase_sensitivity_bps":120,"halfspread_bps":15,"min_events":30,"min_t":2,"drop_best":3,"coin_cap":3,"excluded_asset":"SOL","max_news_hours":24,"cal_seed":47001,"cal_reps":2000,"cal_n":[30,40],"cal_plant_pct":[0,1,2,3,4,6],"cal_idio_pct":5,"cal_day_pct":2,"cal_btc_pct":3,"cal_tail_pct":10,"cal_rare_probability_pct":8}
   status: builder

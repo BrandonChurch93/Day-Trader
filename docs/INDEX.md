@@ -354,6 +354,8 @@ Working papers.
 | `research_rig/PREREG_48_muni_cef_tax_loss.md`, `research_rig/PINNED_48.json`, `research_rig/CALIBRATION_48.json` | Queue 86 and ledger 182. Frozen muni closed-end fund tax-loss and January rebound rule, cost, seven marks and synthetic null calibration. No market data or result | CURRENT |
 | `research_rig/common_48.py`, `research_rig/score_48.py`, `research_rig/test_48.py` | Replay 48 calendar, packet checks, spread cost and post-lock engine; pinned no-return validator, approval and one-shot lock; unit tests and synthetic end-to-end CLI test in a temporary Git repo | CURRENT |
 | `research_rig/report_48.py` | Prints the Replay 48 result page from the pinned saved result and the pinned recompute note. Does not open market inputs or score | CURRENT |
+| `research_rig/PREREG_51_momentum_when_it_pays.md`, `research_rig/CALIBRATION_51.json` | Queue 95 and ledger 185. Fixed hot-five gate, reused-year scope, shown-only TM06 months, and synthetic false-pass and power checks | DRAFT |
+| `research_rig/common_51.py`, `research_rig/score_51.py`, `research_rig/test_51.py`, `research_rig/calibrate_51.py` | Hot-five engine, approval-bound counts and one-shot score, disposable synthetic Git fixture, and synthetic calibration | DRAFT |
 | `research_rig/PREREG_47_edgar_altcoin_treasuries.md`, `research_rig/PINNED_47.json`, `research_rig/CLOSE_47_on_count.md` | Queue 82, ledger 180. Plan protocol, retained draft hashes, and price-blind closure on count. No freeze, approved manifest, market data or score | RECORD |
 | `research_rig/DOCKET_47_preprice.md` | Audited SEC scout and independent dispositions, exact acceptance clocks, and dated venue evidence. Retained as a forward list | RECORD |
 | `research_rig/common_47.py`, `research_rig/score_47.py`, `research_rig/test_47.py` | Unapproved reusable Plan 47 clock, offline validation, count and maturity gates, synthetic calibration, and isolated CLI tests | RECORD |
@@ -447,6 +449,7 @@ Working papers.
 | `practice/forward_e02.py` | E02 pinned dates and recorder for one completed event from a private manual packet. Prices stay off repo; the future summary log has no close prices | CURRENT |
 | `practice/traders/E03_odd_lot_tender_watch.md` | Approved manual pretend-money watch for listed-common cash tenders after Replay 21 did not pass; filing discovery, eligibility confirmation, unchanged entry and exit rules, and record packets | CURRENT |
 | `practice/traders/E04_muni_cef_january_watch.md` | Manual pretend-money forward watch of the December 2026 muni closed-end fund turn under the unchanged Plan 48 rule | CURRENT |
+| `practice/traders/E05_momentum_regime_watch.md` | Manual forward watch for Plan 51 from the strategy freeze; record archive timing before returns and read only at fixed times | DRAFT |
 | `practice/forward_e03.py`, `practice/test_forward_e03.py` | E03 SEC filing inbox, Plan 21 entry clock and pretend-trade recorder, price-free hash-chain summaries and synthetic checks | CURRENT |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
