@@ -72,7 +72,7 @@ def synthetic_packet():
                 "SYNG": ("8", "-0.005", None, w["sessions"][40], None),
                 "SYNH": ("7", "-0.006", None, None, w["sessions"][60])}
         bars[y] = {"turn": y, "symbols": {s: bars_for(w, *spec[s]) for s in names},
-                   "benchmark": bars_for(w, "100", "0.001")}
+                   "benchmark": bars_for(w, "100", "-0.08")}
         quotes[y] = {"turn": y, "sessions": {k: w[k].isoformat() for k in C.CLOCKS},
                      "symbols": {s: quotes_for(w, "10", empty=(s == "SYND")) for s in names},
                      "benchmark": quotes_for(w, "100", "0.01")}
@@ -302,16 +302,19 @@ class Unit(unittest.TestCase):
 
 class EndToEnd(unittest.TestCase):
     """Runs every real-mode CLI path (validate, go, refused second go) as a subprocess in a temporary Git repo.
-    The real scorer, engine, test, calendar and config are copied; only the DATA line and the calibration trial
-    count are rewritten; the plan, ledger and queue are synthetic stubs."""
+    The scorer, engine, test, calendar and config are copied. The DATA line and calibration trial count
+    are rewritten, and the engine gains a tripwire; the plan, ledger and queue are synthetic stubs."""
 
     def test_cli_validate_go_and_consumed(self):
-        self.check_scenario(corrupt=False)
+        self.check_scenario("valid")
 
     def test_cli_comparison_is_hidden_until_consuming_go(self):
-        self.check_scenario(corrupt=True)
+        self.check_scenario("wrong_digest")
 
-    def check_scenario(self, corrupt):
+    def test_cli_correctly_pinned_bad_comparison_consumes_go(self):
+        self.check_scenario("wrong_year")
+
+    def check_scenario(self, scenario):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             root, data = tmp / "repo", tmp / "data"
@@ -324,6 +327,20 @@ class EndToEnd(unittest.TestCase):
             (root / "research_rig/score_53.py").write_text(src.replace(line, f'DATA = Path("{data}")\n'))
             for name in ("common_48.py", "test_53.py", "calendar_25.json"):
                 (root / "research_rig" / name).write_bytes((HERE / name).read_bytes())
+            # A validate invocation entering the real evaluator would fail even if it produced no outputs.
+            # Go may enter it only after proving that the lock already exists.
+            with (root / S.ENGINE).open("a") as stream:
+                stream.write(f"""
+import sys as _test_sys
+from pathlib import Path as _TestPath
+_real_evaluate = evaluate
+def evaluate(*args, **kwargs):
+    if "--validate-inputs" in _test_sys.argv:
+        raise SystemExit("SYNTHETIC_VALIDATE_ENTERED_EVALUATOR")
+    if not _TestPath({str(data / 'replay_53' / 'score_53.lock')!r}).is_file():
+        raise SystemExit("SYNTHETIC_EVALUATOR_ENTERED_BEFORE_LOCK")
+    return _real_evaluate(*args, **kwargs)
+""")
             conf = (HERE.parent / S.CONFIG).read_text()
             block = [b for b in conf.split("\n") if b.startswith("  value: {\"first_turn\":2016")]
             self.assertEqual(len(block), 1)
@@ -365,6 +382,13 @@ class EndToEnd(unittest.TestCase):
                                           for s in names} | {"PCEF": {"matched": len(bars[y]["benchmark"]),
                                                                      "one_sided": 0, "steps": 0}} for y in bars}}
             coverage = ["turn_year,ticker,status,source"]
+            first, second = WINDOWS[:2]
+            first_turn, second_turn = first["turn"], second["turn"]
+            benchmark = cfg["benchmark"]
+            benchmark_payout = Decimal("30")
+            cash["turns"][str(first_turn)]["benchmark"]["cash"] = [
+                {"id": "benchmark-special", "ex_date": cash["turns"][str(first_turn)]["symbols"]["SYNA"]["cash"][0]["ex_date"],
+                 "amount": benchmark_payout}]
             for y in bars:
                 block = cash["turns"][str(y)]
                 for s, b in (block["symbols"] | {cfg["benchmark"]: block["benchmark"]}).items():
@@ -374,26 +398,31 @@ class EndToEnd(unittest.TestCase):
                     for row in b["cash"]:
                         row.update(source=b["source"], source_kind="issuer_site")
             coverage = ("\n".join(coverage) + "\n").encode()
-            bad_coverage = coverage.replace(b",PCEF,none,", b",PCEF,unresolved,")
-            with self.assertRaisesRegex(S.Refused, "P53_BENCHMARK_CASH"):
-                S.actions_and_coverage(S.parse(dump(cash)), bad_coverage, WINDOWS,
-                                       {y: names for y in bars}, C, cfg)
             comparison = [{"turn": y, "portfolio": Decimal(y - 2015) / 100} for y in bars]
+            paired_rows = comparison if scenario != "wrong_year" else [
+                {"turn": first_turn - 1, "portfolio": comparison[0]["portfolio"]}, *comparison[1:]]
             files = {"roster.csv": roster, S.EXCLUSIONS: exclusions, S.CASH_COVERAGE: coverage,
-                     S.COMPARISON: dump(comparison), "distributions.json": dump(cash), "split_evidence.json": dump(evidence),
+                     S.COMPARISON: dump(paired_rows), "distributions.json": dump(cash), "split_evidence.json": dump(evidence),
                      "split_control.json": dump(control)}
             for y in bars:
                 files[f"bars_{y}.json"] = dump(bars[y])
                 files[f"quotes_{y}.json"] = dump(quotes[y])
-            manifest = {"schema": 1, "mode": "plan53_raw_sip_v1", "feed": "sip", "adjustment": "raw",
-                        "first_turn": 2016, "last_turn": 2025, "collected_utc": "2026-11-26T00:00:00Z",
-                        "files": {n: digest(b) for n, b in files.items()}}
-            files["manifest.json"] = S.encode(manifest)
             for n, b in files.items():
                 (inputs / n).write_bytes(b)
                 os.chmod(inputs / n, 0o600)
-            input_pin, roster_pin, dist_pin = (digest(files[n]) for n in
-                                               ("manifest.json", "roster.csv", "distributions.json"))
+            roster_pin, dist_pin = digest(roster), digest(files["distributions.json"])
+
+            def write_manifest(coverage_blob):
+                (inputs / S.CASH_COVERAGE).write_bytes(coverage_blob)
+                manifest = {"schema": 1, "mode": "plan53_raw_sip_v1", "feed": "sip", "adjustment": "raw",
+                            "first_turn": 2016, "last_turn": 2025, "collected_utc": "2026-11-26T00:00:00Z",
+                            "files": {n: digest(b) for n, b in (files | {S.CASH_COVERAGE: coverage_blob}).items()}}
+                payload = S.encode(manifest)
+                (inputs / "manifest.json").write_bytes(payload)
+                os.chmod(inputs / "manifest.json", 0o600)
+                return digest(payload)
+
+            input_pin = write_manifest(coverage)
 
             genv = {"PATH": "/usr/bin:/bin", "HOME": str(tmp), "GIT_CONFIG_GLOBAL": "/dev/null",
                     "GIT_CONFIG_NOSYSTEM": "1", "GIT_AUTHOR_NAME": "Synthetic", "GIT_AUTHOR_EMAIL": "s@example.test",
@@ -414,30 +443,54 @@ class EndToEnd(unittest.TestCase):
             git("add", ".")
             git("commit", "-qm", "synthetic freeze")
             freeze = git("rev-parse", "HEAD")
-            approval_text = (
-                f"Approved by the lead: plan 53, validation and one scored run, freeze commit {freeze}, "
-                f"freeze SHA-256 {freeze_pin}, input SHA-256 {input_pin}, roster SHA-256 {roster_pin}, "
-                f"distributions SHA-256 {dist_pin}.\n")
+            def approve(*extra):
+                (root / S.APPROVAL).write_text(
+                    f"Approved by the lead: plan 53, validation and one scored run, freeze commit {freeze}, "
+                    f"freeze SHA-256 {freeze_pin}, input SHA-256 {input_pin}, roster SHA-256 {roster_pin}, "
+                    f"distributions SHA-256 {dist_pin}.\n")
+                git("add", S.APPROVAL, *extra)
+                git("commit", "-qm", "synthetic approval")
+                return git("rev-parse", "HEAD")
+
+            def both_refuse(head, reason):
+                for mode in ("--validate-inputs", "--go"):
+                    out = cli_at(head, mode)
+                    self.assertEqual((out.returncode, out.stdout, out.stderr.strip()), (2, "", reason))
+                    self.assertFalse(any(run.iterdir()))
+
+            if scenario == "valid":
+                (root / "NOTE.md").write_text("extra file in the approval\n")
+                both_refuse(approve("NOTE.md"), "P53_APPROVAL")
+                git("reset", "-q", "--hard", freeze)
+                documented = f"{first_turn},{benchmark},documented,".encode()
+                none = f"{second_turn},{benchmark},none,".encode()
+                cases = (
+                    ("missing", b"\n".join(line for line in coverage.split(b"\n") if not line.startswith(none)),
+                     "P53_CASH_COVERAGE"),
+                    ("partial", coverage.replace(documented, documented.replace(b",documented,", b",partial,"), 1),
+                     "P53_BENCHMARK_CASH"),
+                    ("unresolved", coverage.replace(none, none.replace(b",none,", b",unresolved,"), 1),
+                     "P53_BENCHMARK_CASH"),
+                )
+                for label, changed, reason in cases:
+                    with self.subTest(bad_benchmark_cash=label):
+                        self.assertNotEqual(changed, coverage)
+                        input_pin = write_manifest(changed)
+                        both_refuse(approve(), reason)
+                        git("reset", "-q", "--hard", freeze)
+                input_pin = write_manifest(coverage)
+
             (root / "NOTE.md").write_text("intervening commit\n")
             git("add", "NOTE.md")
             git("commit", "-qm", "intervening")
-            (root / S.APPROVAL).write_text(approval_text)
-            git("add", S.APPROVAL)
-            git("commit", "-qm", "approval not on the freeze")
-            head = git("rev-parse", "HEAD")
-            self.assertEqual(cli_at(head, "--validate-inputs").stderr.strip(), "P53_APPROVAL")
-            self.assertEqual(cli_at(head, "--go").stderr.strip(), "P53_APPROVAL")
-            self.assertFalse(any(run.iterdir()))
+            both_refuse(approve(), "P53_APPROVAL")
             git("reset", "-q", "--hard", freeze)
-            (root / S.APPROVAL).write_text(approval_text)
-            git("add", S.APPROVAL)
-            git("commit", "-qm", "synthetic approval")
-            head = git("rev-parse", "HEAD")
+            head = approve()
 
             def cli(mode):
                 return cli_at(head, mode)
 
-            if corrupt:
+            if scenario == "wrong_digest":
                 (inputs / S.COMPARISON).write_bytes(b"not the approved bytes")
             v = cli("--validate-inputs")
             self.assertEqual((v.returncode, v.stderr), (0, ""))
@@ -448,11 +501,14 @@ class EndToEnd(unittest.TestCase):
                                 zip(v.stdout.split()[1::2], v.stdout.split()[2::2])))
             self.assertFalse(any(run.iterdir()))
             g = cli("--go")
-            if corrupt:
-                self.assertEqual((g.returncode, g.stdout, g.stderr.strip()), (2, "", "P53_PIN"))
+            if scenario != "valid":
+                reason = "P53_PIN" if scenario == "wrong_digest" else "P53_CORRELATION"
+                self.assertEqual((g.returncode, g.stdout, g.stderr.strip()), (2, "", reason))
                 self.assertEqual({p.name for p in run.iterdir()}, {"score_53.lock"})
-                (inputs / S.COMPARISON).write_bytes(files[S.COMPARISON])
+                lock_before = (run / "score_53.lock").read_bytes()
+                (inputs / S.COMPARISON).write_bytes(dump(comparison))
                 self.assertEqual(cli("--go").stderr.strip(), "P53_CONSUMED_OR_NOT_EMPTY")
+                self.assertEqual({p.name: p.read_bytes() for p in run.iterdir()}, {"score_53.lock": lock_before})
                 return
             self.assertEqual((g.returncode, g.stdout.strip(), g.stderr), (0, "P53_RESULT_WRITTEN", ""))
             self.assertEqual({p.name for p in run.iterdir()}, {"score_53.lock", "results_53.json"})
@@ -466,12 +522,28 @@ class EndToEnd(unittest.TestCase):
             self.assertIn("mean_portfolio_minus_roster_ew_price_only", out["judged"])
             self.assertEqual(set(out["shown_only"]), {"fifth_january_session_exit", "zero_cost", "replay48_correlation"})
             self.assertTrue(all(y["held_cash_gaps"] == 2 for y in out["judged"]["years"]))
+            self.assertTrue(all(y["held_quote_coverage_proxy_sides"] == 2 for y in out["judged"]["years"]))
+            self.assertNotIn("held_proxy_sides", out["judged"]["years"][0])
+            no_cash_returns = []
+            for w, row in zip(WINDOWS, out["judged"]["years"]):
+                y = w["turn"]
+                _, closes = C.bars_file(bars[y], w, names, cfg)
+                _, benchmark_quotes = C.quotes_file(quotes[y], w, names, cfg)
+                dollars, shares, _ = C.sleeve(closes, {"cash": [], "splits": []},
+                                             C.side_costs(benchmark_quotes, w, cfg), w, "exit", cfg["capital"])
+                no_cash_returns.append(float(dollars / cfg["capital"]))
+                expected_cash = shares * Fraction(benchmark_payout) if y == first_turn else 0
+                self.assertAlmostEqual(row["benchmark"], float((dollars + expected_cash) / cfg["capital"]))
+            self.assertGreater(sum(y["portfolio"] for y in out["judged"]["years"]) - sum(no_cash_returns), 0)
+            self.assertFalse(out["judged"]["marks"]["beats_benchmark_mean"])
             corr = out["shown_only"]["replay48_correlation"]
             self.assertEqual((corr["status"], corr["observations"]), ("MEASURED", 10))
             self.assertEqual([x["muni"] for x in corr["pairs"]], [float(x["portfolio"]) for x in comparison])
             self.assertEqual(out["job"]["freeze_commit"], freeze)
+            before = {p.name: p.read_bytes() for p in run.iterdir()}
             again = cli("--go")
             self.assertEqual((again.returncode, again.stderr.strip()), (2, "P53_CONSUMED_OR_NOT_EMPTY"))
+            self.assertEqual({p.name: p.read_bytes() for p in run.iterdir()}, before)
             (inputs / "roster.csv").write_bytes(roster + b"2016,SYNZ\n")
             os.chmod(inputs / "roster.csv", 0o600)
             bad = cli("--validate-inputs")

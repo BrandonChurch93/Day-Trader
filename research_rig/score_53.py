@@ -479,6 +479,7 @@ def main():
             for table in (result["judged"], *result["shown_only"].values()):
                 for row in table["years"]:
                     y = row["turn"]
+                    row["held_quote_coverage_proxy_sides"] = row.pop("held_proxy_sides")
                     row["roster_cash_gaps"] = len(gaps[y])
                     row["eligible_cash_gaps"] = len(gaps[y] & eligible[y])
                     row["held_cash_gaps"] = len(gaps[y] & set(row["held"]))
