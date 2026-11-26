@@ -606,8 +606,17 @@ class Plan43(unittest.TestCase):
             self.assertEqual(diag["gates"]["raw_factor"]["status"],"PASS")
             self.assertEqual(diag["gates"]["native_provenance"]["status"],"PASS")
             self.assertEqual(diag["coverage"]["coverage_refused"],0)
+            self.assertEqual(diag["gates"]["validation_receipt"]["status"],"PASS")
             f.cli(self,"claim-acquisition",val,"P43_ATTEMPT3_NO_VENDOR")
             receipt=f.run3/f"validation.{val}.json"
+            diagfile=f.run3/f"diagnostics.{val}.json"
+            original=diagfile.read_bytes()
+            diagfile.write_bytes(b'{"malformed":"diagnostic"}')
+            sealed=self.third_validate(f,val,"P43_PIN")
+            self.assertEqual(sealed["gates"]["coverage_sidecar"]["status"],"PASS")
+            self.assertEqual(sealed["gates"]["diagnostic_sidecar"]["status"],"HOLD")
+            self.assertEqual(sealed["gates"]["validation_receipt"]["status"],"NOT_EVALUATED")
+            diagfile.write_bytes(original)
             line=lambda pin:(f"Approved by the lead: plan 43 attempt 3 ledger 195, one scored run, "
                              f"validation approval commit {val}, validation receipt SHA-256 {pin}.\n").encode()
             bad=f.commit(s.GO3,line("a"*64))
@@ -650,6 +659,37 @@ class Plan43(unittest.TestCase):
         self.assertIsNone(interval(raw,outside))
         low=mk([Fraction(1,1000)]*4)
         self.assertEqual(interval(low,low,err),(0,None))
+
+    def test_attempt3_cli_same_row_fault_before_first_factor_anchor(self):
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d))
+            def fault(records):
+                stock=next(iter(records.values()))["stock"]
+                for view in ("all","filing_all"):
+                    row=stock[view][0]
+                    for key in "ohlc":
+                        row[key]*=2
+                    row["h"]+=1
+            _,val=self.third_fixture(f,fault)
+            diag=self.third_validate(f,val,"P43_RAW_BASIS_CHANGE")
+            self.assertEqual(diag["gates"]["raw_factor"]["status"],"HOLD")
+            self.assertEqual(diag["gates"]["ohlc_shape"]["status"],"REFUSAL")
+            self.assertFalse((f.run3/f"validation.{val}.json").exists())
+
+    def test_attempt3_cli_digest_bound_bad_header_and_prior_receipt(self):
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d))
+            f.packets[1]["endpoint"]="synthetic malformed metadata"
+            _,val=self.third_fixture(f)
+            diag=self.third_validate(f,val,"P43_NATIVE_REBUILD")
+            self.assertEqual(diag["gates"]["packet_shape"]["status"],"HOLD")
+            self.assertEqual(diag["gates"]["native_provenance"]["status"],"HOLD")
+            self.assertEqual(diag["gates"]["core_tape"]["status"],"PASS")
+            self.assertFalse((f.run3/f"validation.{val}.json").exists())
+            s.write_exclusive(f.run/f'validation.{"a"*40}.json',b"{}")
+            blocked=self.third_validate(f,val,"P43_PREVIOUS_RECEIPT")
+            self.assertEqual(blocked["gates"]["previous_stop"]["status"],"HOLD")
+            self.assertEqual(blocked["gates"]["bars_hash"]["status"],"NOT_EVALUATED")
 
     def test_attempt3_cli_mixed_cap_exact_boundary(self):
         for union,expected in ((22,None),(23,"P43_COVERAGE_CAP")):

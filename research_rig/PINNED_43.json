@@ -1,14 +1,14 @@
 {
   "config/thresholds.yaml": "987fae20c6c9b3c61d6974c095cda2c11416d714fbedca9c63f20ea3a522f861",
-  "research_rig/AMENDMENT_43_BASIS.md": "b7204b7c5c5ab67c2821742657dae453abd713137c9aec989ed88d76082d7394",
+  "research_rig/AMENDMENT_43_BASIS.md": "0eac9bd89e4290de47b222f960ea4414e3c5899e1dbb582101892f16edda1648",
   "research_rig/AMENDMENT_43_TAPE.md": "e6deccf9eb26122bf6b1cbea3de99f78eae696035b94b94a53687a3d75202779",
   "research_rig/CALIBRATION_43.json": "2faf36b867056f0a32cb7c43c40fa318037fdeca6cc115a2ae1d9dbfcdb46ea0",
   "research_rig/PREREG_43_special_dividends.md": "5a020d341efdb4fabf7a5a3653bac22f9242c40d873f5fdc4a835b32bc5ea5da",
-  "research_rig/basis_43.py": "803cb9fe53a37bdec548ba1ddbaf5fd705914d7def0882ddb451a8b64ccebef1",
+  "research_rig/basis_43.py": "ed4bb95d8b1b718b24c4c970650885b5a34770d4e111b0247195d2b51cdca5fb",
   "research_rig/calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
   "research_rig/calendar_36.json": "87f3ad09eed18c33cd27693f450cd099dd7b61896d747698a4d9bf1d9a836aaf",
   "research_rig/common_21.py": "ade5650831a7f47dc175e7f1043e0cb4730a6634e96fa585fe51dd95b7c99fb1",
   "research_rig/provenance_43.py": "bfe847b9a8fe63096ff798d78ca9717bd975d334d4b45de57cbda6baebae8f33",
-  "research_rig/score_43.py": "fffac08bb16adb48ea7c2bf8e7adb045a83783a60537ebb8674e66cfb98e15a9",
-  "research_rig/test_43.py": "892ebddedaa4a2996e4fed93a3955ba58fef0b6c78cc1e840f8cb3979370c82f"
+  "research_rig/score_43.py": "ce1ec2e09458c21d50c4f1cafd433508b6639225c070dadb703b523c92c3b059",
+  "research_rig/test_43.py": "fa5cb9cd28b535eea663dbe97cde83257f29a7a43e41870b46e754cf0e716fc2"
 }

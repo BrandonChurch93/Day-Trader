@@ -15,16 +15,24 @@ def intersect(a,b):
     return (lo,hi) if hi is None or (hi>=lo and hi>0) else None
 
 
-def interval(source,target,source_error=0):
-    """Feasible positive target/source factors for all four latent prices."""
-    result=(Fraction(0),None)
+def fields(source,target,source_error):
     for src,dst in zip(map(Fraction,source.flat_key),map(Fraction,target.flat_key)):
-        bound=(max(Fraction(0),dst-ERROR)/(src+source_error),
+        yield (max(Fraction(0),dst-ERROR)/(src+source_error),
                (dst+ERROR)/(src-source_error) if src>source_error else None)
+
+
+def combine(bounds):
+    result=(Fraction(0),None)
+    for bound in bounds:
         result=intersect(result,bound)
         if result is None:
             break
     return result
+
+
+def interval(source,target,source_error=0):
+    """Feasible positive target/source factors for all four latent prices."""
+    return combine(fields(source,target,source_error))
 
 
 def constrain(anchor,observed,change=Fraction(1)):
@@ -41,6 +49,16 @@ def volume_agrees(a,b,dates):
     return len(ratios)>=3 and 100*sum(abs(y/x-1)<Fraction(1,100) for x,y in zip(ratios,ratios[1:]))>=98*(len(ratios)-1)
 
 
+def same_side(anchor,bounds,change):
+    """Even on a bad shape, all four fields may independently certify a bad factor."""
+    if anchor is None:
+        return False
+    lower=anchor[0]*change*(1-FACTOR_EPS)
+    upper=anchor[1]*change*(1+FACTOR_EPS) if anchor[1] is not None else None
+    return (all(hi is not None and hi<lower for _,hi in bounds) or
+            (upper is not None and all(lo>upper for lo,_ in bounds)))
+
+
 def diagnose(raw,entry,filing,scope,seq,positive,note,skip=lambda key:None):
     """Check independently available view pairs and retain all shape/factor evidence."""
     actions=defaultdict(list)
@@ -54,11 +72,21 @@ def diagnose(raw,entry,filing,scope,seq,positive,note,skip=lambda key:None):
         prior=None
         anchor=None
         change=Fraction(1)
+        deferred=[]
+        factor_gate="raw_factor" if uses_actions else "asof_factor"
+        factor_error="RAW_BASIS_CHANGE" if uses_actions else "ASOF_BASIS_CHANGE"
+        def flush():
+            for bounds,then_change in deferred:
+                if same_side(anchor,bounds,then_change):
+                    note(factor_gate,False,factor_error)
+                else:
+                    skip(factor_gate)
+            deferred.clear()
         for i,day in enumerate(scope):
             if not (positive(source,day) and positive(dest,day)):
                 skip("ohlc_shape")
                 if name!="raw_filing":
-                    skip("raw_factor" if uses_actions else "asof_factor")
+                    skip(factor_gate)
                 continue
             if uses_actions and prior is not None:
                 unknown=False
@@ -80,18 +108,20 @@ def diagnose(raw,entry,filing,scope,seq,positive,note,skip=lambda key:None):
                             else:
                                 unknown=True
                 if unknown:
+                    flush()
                     anchor,change=None,Fraction(1)
             prior=i
-            feasible=interval(source[day],dest[day],source_error)
+            bounds=tuple(fields(source[day],dest[day],source_error))
+            feasible=combine(bounds)
             if not note("ohlc_shape",feasible is not None,"OHLC_TICK"):
                 shaped.append((name,day.isoformat()))
                 if name!="raw_filing":
-                    skip("raw_factor" if uses_actions else "asof_factor")
+                    deferred.append((bounds,change))
                 continue
             if name=="raw_filing":
                 continue  # The two frozen time-series anchors remain raw/entry and entry/filing.
             merged=constrain(anchor,feasible,change)
-            factor="RAW_BASIS_CHANGE" if uses_actions else "ASOF_BASIS_CHANGE"
-            if note("raw_factor" if uses_actions else "asof_factor",merged is not None,factor):
+            if note(factor_gate,merged is not None,factor_error):
                 anchor=merged
+        flush()
     return shaped,sorted(gaps)

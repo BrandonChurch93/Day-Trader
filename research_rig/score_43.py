@@ -412,8 +412,10 @@ class GateAudit:
            "acquisition_receipt","identities_hash","bars_hash","actions_hash","native_provenance",
            "identity_actions","packet_shape","bar_scope","bar_rows","overlap","alias",
            "adjusted_volume","stale","ohlc_shape","raw_factor","asof_factor","cash_factor",
-           "core_tape","day1_tape","split_lots","control_affordability","mixed_cap")
+           "core_tape","day1_tape","split_lots","control_affordability","mixed_cap",
+           "coverage_sidecar","diagnostic_sidecar","validation_receipt")
     NON_HOLD={"ohlc_shape","core_tape","day1_tape"}
+    SEAL={"coverage_sidecar","diagnostic_sidecar","validation_receipt"}
 
     def __init__(self):
         self.rows={k:dict(passed=0,failed=0,skipped=0,codes=Counter()) for k in self.NAMES}
@@ -444,9 +446,11 @@ class GateAudit:
             return True,result
         return False,None
 
-    def snapshot(self):
+    def snapshot(self,sealing=True):
         out={}
         for k,row in self.rows.items():
+            if not sealing and k in self.SEAL:
+                continue
             status=("HOLD" if k not in self.NON_HOLD else
                     "OMISSION" if k=="day1_tape" else "REFUSAL") if row["failed"] else (
                     "NOT_EVALUATED" if not row["passed"] else "PARTIAL" if row["skipped"] else "PASS")
@@ -517,9 +521,9 @@ def prepared(event_rows, days, C, c, identity, bars, actions,audit=None,basis=No
     if audit is not None and not note("packet_shape",isinstance(bars,dict) and
                                      isinstance(bars.get("records"),dict),"BARS"):
         return None
-    need(bars["version"] == 1 and bars["custodian"] == c["custodian"] and bars["endpoint"] == ENDPOINT
-         and bars["feed"] == "sip" and bars["timeframe"] == "1Day"
-         and bars["adjustments"] == ["raw","all"], "BARS")
+    note("packet_shape",bars.get("version")==1 and bars.get("custodian")==c["custodian"]
+         and bars.get("endpoint")==ENDPOINT and bars.get("feed")=="sip" and bars.get("timeframe")=="1Day"
+         and bars.get("adjustments")==["raw","all"],"BARS")
     keyed,action,modeled=verified or identity_actions(event_rows,days,c,identity,actions)
     controls=c["controls"]
     note("packet_shape",modeled <= bars["records"].keys() <= keyed.keys(),"BARS")
@@ -1237,7 +1241,7 @@ def approved3(commit,mode):
         custody_ok,_=audit.run("custody",custody,"PRIVATE")
         def prev():
             unused(RUN)
-            need(not os.path.lexists(RUN/f'validation.{job["prior_validation_commit"]}.json'),"PREVIOUS_RECEIPT")
+            need(not any(RUN.glob("validation.*.json")),"PREVIOUS_RECEIPT")
         prior_ok,_=audit.run("previous_stop",prev,"PREVIOUS_STOP")
         if schedule_ok:
             q,days,c=schedule
@@ -1297,7 +1301,7 @@ def approved3(commit,mode):
         need(audit.first is None,audit.first)
         need(ready is not None and summary is not None,"DIAGNOSTIC_INCOMPLETE")
         report_bytes=render(dict(plan=43,attempt=3,ledger=ATTEMPT3,
-                                 gates=audit.snapshot(),coverage=summary))
+                                 gates=audit.snapshot(sealing=False),coverage=summary))
         coverage_bytes=render(dict(summary=summary,decisions=ready.decisions))
         coverage_pin=sha256(coverage_bytes).hexdigest()
         diagnostic_pin=sha256(report_bytes).hexdigest()
@@ -1309,15 +1313,24 @@ def approved3(commit,mode):
                              **{k:v for k,v in job.items() if k not in ("go_commit","validation_receipt_sha256")}))
         unused(RUN3)
         if mode=="validate":
-            put_or_check(coverage,coverage_bytes,16*2**20)
-            put_or_check(diagnostic,report_bytes,2**20)
-            put_or_check(validated,expected,16384)
+            cover,_=audit.run("coverage_sidecar",lambda:put_or_check(coverage,coverage_bytes,16*2**20),"COVERAGE_RECEIPT")
+            diag,_=audit.run("diagnostic_sidecar",lambda:put_or_check(diagnostic,report_bytes,2**20),"DIAGNOSTIC_RECEIPT")
+            if cover and diag:
+                audit.run("validation_receipt",lambda:put_or_check(validated,expected,16384),"VALIDATION_RECEIPT")
+            else:
+                audit.skip("validation_receipt")
+            need(audit.first is None,audit.first)
         else:
-            need(file_bytes(coverage,coverage_pin,16*2**20,private=True)==coverage_bytes and
-                 file_bytes(diagnostic,diagnostic_pin,2**20,private=True)==report_bytes,"VALIDATION_SIDECAR")
+            def sidecar(path,pin,cap,expected):
+                need(file_bytes(path,pin,cap,private=True)==expected,"VALIDATION_SIDECAR")
+            audit.run("coverage_sidecar",lambda:sidecar(coverage,coverage_pin,16*2**20,coverage_bytes),"VALIDATION_SIDECAR")
+            audit.run("diagnostic_sidecar",lambda:sidecar(diagnostic,diagnostic_pin,2**20,report_bytes),"VALIDATION_SIDECAR")
             pin=sha256(expected).hexdigest()
-            need(job["validation_receipt_sha256"]==pin and
-                 file_bytes(validated,pin,16384,private=True)==expected,"VALIDATION_RECEIPT")
+            def check_receipt():
+                need(job["validation_receipt_sha256"]==pin and
+                     file_bytes(validated,pin,16384,private=True)==expected,"VALIDATION_RECEIPT")
+            audit.run("validation_receipt",check_receipt,"VALIDATION_RECEIPT")
+            need(audit.first is None,audit.first)
             again,rechecked=authorize3(commit,"go")
             need(again==job and rechecked==blobs,"APPROVAL_CHANGED")
             job.update(started_utc=datetime.now(timezone.utc).isoformat())
