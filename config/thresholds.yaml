@@ -1060,3 +1060,9 @@ replay_21_plan:
     calibration_tail_chance: 0.08
     calibration_tail_scale: 2.0
   basis: "Plan 21, queue row 38, trial ledger row 158. No market acquisition authorized by the freeze."
+
+replay_47_plan:
+  value: {"first":"2025-01-01","last":"2026-11-25","lag_min":30,"bar_min":1,"hold_h":24,"shown_h":[1,72],"coinbase_fee_bps":60,"kraken_fee_bps":80,"coinbase_sensitivity_bps":120,"halfspread_bps":15,"min_events":30,"min_t":2,"drop_best":3,"coin_cap":3,"excluded_asset":"SOL","max_news_hours":24,"cal_seed":47001,"cal_reps":2000,"cal_n":[30,40],"cal_plant_pct":[0,1,2,3,4,6],"cal_idio_pct":5,"cal_day_pct":2,"cal_btc_pct":3,"cal_tail_pct":10,"cal_rare_probability_pct":8}
+  status: builder
+  note: Plan 47 closed on count with no price read. Retained draft scalars are not authorization or a runtime override. Coinbase Advanced retail fee is unknown, with published Exchange proxy and shown-only higher-fee check.
+  source: research_rig/PREREG_47_edgar_altcoin_treasuries.md
