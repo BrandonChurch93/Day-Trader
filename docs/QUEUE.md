@@ -26,6 +26,8 @@ Skip list from Round 28 (`docs/research/115_round_28_us_reachable_crypto_forced_
 
 Standing chore at every wake-up (lead agent, 2026-11-26): the E06 forward log (`practice/traders/E06_forward_hot_coin_rules.md`) runs as a detached loop from the frozen worktree `/home/user/workspace/wt-e05`. Check it with `cd /home/user/workspace/wt-e05 && (pgrep -f "forward_e06.py loop" >/dev/null || python3 practice/forward_e06.py record)`. If the loop is dead, restart it from that folder. A missed wake is void and is never back-filled; never run `start` again; do not check out or edit in that worktree.
 
+Standing chore at every wake-up (lead agent, 2026-11-26): the E07 forward log (`practice/traders/E07_etf_closure_payout_watch.md`) runs only from the frozen worktree `/home/user/workspace/wt-e07`. Run `cd /home/user/workspace/wt-e07 && umask 077 && flock -n /home/user/workspace/rig/data/forward_e07/.wake.lock python3 practice/forward_e07.py record-quote`. It prints `nothing due` unless a fund's last trading day is today in New York and the closing window has passed (first due: HFSP, Monday 2026-11-30, any wake-up from 2:00 p.m. to 9:59 p.m. Mountain Time). Each fund gets one try and a missed day is never filled in. After a run that prints a ticker, copy `practice/forward/E07_log.json` from `wt-e07` into a commit on `work` (always that direction). Payouts are added with `record-payout` when an issuer publishes them, with a dated primary source link.
+
 As of 2026-11-25 21:12 UTC. Plans TM01 to TM04 are finished and are in Done or in `docs/STATUS.md`.
 
 | # | What | Plan | Started |
