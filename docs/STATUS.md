@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 01:28 UTC
+Last updated: 2026-11-26 03:53 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -13,7 +13,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 ## Every test so far
 
-The Result column is written by `tools/status_table.py` from the output files. Do not edit it by hand.
+The Result column is written by `tools/status_table.py` from the output files or, for Replay 24, its generated result page. Do not edit it by hand.
 
 - "Pass" in the table means a rule cleared the five pass marks in that run (`research_rig/README.md` lists them). No pass from 2026-11-25 is counted. Each came from a run where the pass mark or the costs changed after results had been seen, or where the ledger row was late. Under "Honest testing" in `AGENTS.md` that makes it a new attempt, not a result. Fails stand.
 - Where the table says "question 18b" or "the morning list", it points at `archive/decisions/morning_list_2026-11-25.md`, which is history. The builder settled it as written in the line above.
@@ -28,6 +28,7 @@ The Result column is written by `tools/status_table.py` from the output files. D
 | Replay 04 | Trend rules on a wide basket of coins, dead coins kept | 0 of 25 rule and venue combinations pass. Highest deflated Sharpe 0.933 (K4 at Binance.US) against a bar of 0.95 when it was run (`replay_min_deflated_sharpe`). Held-back years at Binance.US cost: the top 10 coin rule K1 grew +2.7% a year, holding bitcoin grew +43.5%. An independent audit rebuilt the result and found faults that do not change it. | `docs/research/23_replay_04_coin_basket.md` |
 | Replay 05, first run and corrected run | Eight slow trend rules on the US stock market index from 1927, three cost levels | First run: none at 2 bps; none at 5 bps; T1, T5, V1, I1 at 10 bps. Corrected run, after an audit found one rule did not match the plan: T1, T2, T4, T5, V1, I1, I2 at 2 bps; T1, T5, V1, I1, I2 at 5 bps; T1, T5, V1, I1, I2 at 10 bps. Pass in both runs at every cost: none. Not credited as passes in either run: the first run's ledger row was late and the corrected run was made before asking the owner (question 18b in the morning list). Fails stand. Held-back years at 5 bps, the same in both runs: the ten-month rule T1 grew +9.1% a year with a largest drop of -21.9%, holding the market grew +11.5% with -54.6%. | `docs/research/22_replay_05_stock_trend.md` |
 | Replay 09 | New timing, rank, lead and risk rules on Alpaca crypto bars | 0 of 7 pass at 35 bps per side (`practice_crypto_fee_bps_added` plus `tm_crypto_half_spread_bps`). Held back 2026-07-01 to 2026-11-24: best rule CAP grew +2.1%; holding bitcoin grew +1.7%. | `docs/research/28_replay_09_crypto_methods.md` |
+| Replay 24 | Buy spot and short its own perpetual on lagged funding, viewed dates only | **did not pass**, meeting **1 of 5 marks**. Only the drawdown mark was met. The $500 account ended at $500.88, or +0.036% a year after the judged Robinhood fee model. Daily Sharpe was 0.038; the largest fall was 6.75%. Only 174 of 500 random twins matched, so the twin mark was not computed and not met. | `docs/research/68_replay_24_same_coin_carry.md` |
 | Replay 07 | Eight day trading rules on SPY and QQQ one-minute bars, judged at 2 and 5 bps per side | SPY: 0 of 8 rules pass all five marks at both 2 bps and 5 bps per side; QQQ: 0 of 8 rules pass all five marks at both 2 bps and 5 bps per side. Highest break-even cost against holding, round trip, whole sample: 1.8 bps (N2 on QQQ). Prices from the workspace's own price lookup, dividend adjustment UNKNOWN, days that failed the bar check not used. | `docs/research/27_replay_07_intraday_spy_qqq.md` |
 | Replay 06 | Six slow trend and allocation rules on nine funds that can be bought, daily bars with dividends | 0 of 6 pass at 5 bps per side. Held back 2023-01-03 to 2026-11-24, run once: best rule G5 grew +15.4% a year and passed 1 of 5 marks. Holding SPY grew +18.9% a year; the best rule's own yardstick grew +14.1%. | `docs/research/35_replay_06_fund_trend.md` |
 | Order-book samples | What it cost to trade a small size at once, sampled on two venues on one day | 254 rounds from 2026-11-25 07:28:03 to 2026-11-25 16:27:34 UTC. Bitcoin, middle cost of one order, fees not included: $1,000 cost 0.0 bps on Kraken and 0.8 bps on Binance.US; $10,000 cost 0.5 and 1.6 bps. Replay 04 assumed 5 bps for this on bitcoin and ether (read from its output). The rerun of replays 01 and 03 used the same figure, set in `research_rig/rig2.py` and not stored in its output. One sample of 9.0 hours only. The sampler was set to stop by itself at about 16:30 UTC on 2026-11-25, so a last time here before that means this is an interim summary. | `docs/research/24_order_book_costs.md` |

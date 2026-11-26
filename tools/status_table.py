@@ -83,6 +83,16 @@ def fund_trend():
             f"{passes} of {len(R)} pass at {r['costs_bps_per_side']['base']} bps per side. Held back {d[0]} to {d[1]}, run once: "
             f"best rule {best} grew {pc(y(H['rules'][best]))} a year and passed {marks} of 5 marks.{spy}", "`docs/research/35_replay_06_fund_trend.md`")
 ROWS = [crypto_trend, crypto_intraday, pilot, basket, stocks, books, smaller, count_check]
+REPLAY24 = "docs/research/68_replay_24_same_coin_carry.md"
+def same_coin_carry():
+    # The detail page is generated from the one-shot data kept off repo.
+    with open(REPLAY24) as f:
+        summary = next(line.removeprefix("MEASURED. Replay 24 ").strip() for line in f
+                       if line.startswith("MEASURED. Replay 24 "))
+    return ("Replay 24", "Buy spot and short its own perpetual on lagged funding, viewed dates only",
+            summary,f"`{REPLAY24}`")
+if os.path.exists(REPLAY24):
+    ROWS.insert(ROWS.index(books), same_coin_carry)
 if os.path.exists(RR + "results_09.json"):
     ROWS.insert(5, crypto_methods)
 if os.path.exists(RR + "results_07.json"):

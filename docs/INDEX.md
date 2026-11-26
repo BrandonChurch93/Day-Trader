@@ -46,7 +46,7 @@ Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEU
 | `.gitignore` | Keeps price files, logs and private data out of the repo | CURRENT |
 | `config/thresholds.yaml` | Every threshold and every owner number, once. Documents name the key and never repeat the value | CURRENT |
 | `tools/check_repo.py` | Checks this index, paths named in the map, playbook and research pages, config keys named in documents, the results table in the status page, the coverage tables in `docs/research/10_historical_data_and_practice.md`, and stored outputs against `research_rig/provenance.json`. With `--builders` it also runs the document builders and fails if a built page changes | CURRENT |
-| `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from the output files | CURRENT |
+| `tools/status_table.py` | Writes the results table in `docs/STATUS.md` from output files and the generated Replay 24 result page | CURRENT |
 | `tools/bars_coverage.py` | With `--write`, writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from `research_rig/platform_bars_coverage.json` and `research_rig/platform_bars_crosscheck.json`, so no figure there is typed. With `--summarise`, on a machine that has the price files, rebuilds the first of those two files from the gap check's output | CURRENT |
 
 ## docs/
@@ -150,6 +150,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/65_replay_18_funding_carry.md` | Funding carry on the reconstructed ranked subset. Did not pass, one of three marks; four US rosters shown only | CURRENT |
 | `docs/research/66_measure_15_breakout_fills.md` | Measurement 15: what a breakout order on stocks in play really paid. Entry plus stop-exit slippage 0.2089 of the stop distance against a limit of 0.05; idea dropped | CURRENT |
 | `docs/research/67_round_9_outside_evidence.md` | Checked outside evidence on dated and forced flows, with two test candidates, a broker and issuer audit, and a fill calibration | CURRENT |
+| `docs/research/68_replay_24_same_coin_carry.md` | Same-coin funding carry on viewed dates. Run once, did not pass, one of five marks | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -260,6 +261,7 @@ Working papers.
 | `research_rig/common_24.py` | Replay 24 spot and perpetual event accounting, fees and matched controls | CURRENT |
 | `research_rig/score_24.py` | Replay 24 owner-gated no-claim input validator, one-shot scorer and result renderer | CURRENT |
 | `research_rig/test_24.py` | Replay 24 invented-input fixtures and planted calibration | CURRENT |
+| `research_rig/report_24.py` | Generates doc 68 from the off-repo saved result and owner run records without reading market data | CURRENT |
 | `research_rig/common_25.py`, `research_rig/fetch_25.py`, `research_rig/score_25.py`, `research_rig/test_25.py` | Replay 25 accounting, raw-only off-repo collector, pinned one-shot scorer, invented-input fixtures and calibration | CURRENT |
 | `research_rig/calendar_25.json`, `research_rig/PINNED.json` | Replay 25 session-date calendar and frozen code and plan hashes. No bars, issuer amounts or other vendor rows | CURRENT |
 | `research_rig/check_identity_levels_16_17.py`, `research_rig/diagnose_identity_daily_16_17.py` | Plans 16 and 17 identity check: does a Binance pair carry the coin on the saved list, by matching saved price levels; prints counts only, computes no return | DRAFT |
