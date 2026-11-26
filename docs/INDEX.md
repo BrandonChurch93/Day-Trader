@@ -456,6 +456,8 @@ Working papers.
 | `practice/traders/E03_odd_lot_tender_watch.md` | Approved manual pretend-money watch for listed-common cash tenders after Replay 21 did not pass; filing discovery, eligibility confirmation, unchanged entry and exit rules, and record packets | CURRENT |
 | `practice/traders/E04_muni_cef_january_watch.md` | Manual pretend-money forward watch of the December 2026 muni closed-end fund turn under the unchanged Plan 48 rule | CURRENT |
 | `practice/traders/E05_momentum_regime_watch.md` | Proposed Plan 51 manual watch, never started; Plan 51 closed before market access | RECORD |
+| `practice/traders/E06_forward_hot_coin_rules.md` | E06, the frozen 20-week forward watch of the TM06 hot-coin rules R1, R2 and R3 on public Coinbase candles: pretend money, no AI, no account; judged claims fixed before the first wake, scored once at the end | CURRENT |
+| `practice/forward_e06.py`, `practice/test_forward_e06.py` | The E06 logger (`plan`, `start`, `record`, `loop`, `alive`, `score`) reusing the TM06 rule code, with an off-repo hash-chained log, and its checks with a pretend candle source and no network | CURRENT |
 | `practice/forward_e03.py`, `practice/test_forward_e03.py` | E03 SEC filing inbox, Plan 21 entry clock and pretend-trade recorder, price-free hash-chain summaries and synthetic checks | CURRENT |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
