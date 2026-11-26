@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 11:24 UTC
+Last updated: 2026-11-26 11:25 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Idea round 38 ([doc 135](135_idea_round_38.md)), finished 2026-11-26 11:25 UTC: seven independent 2025 to 2026 replication libraries read (STATED by them: over 2,600 tested rules). Nothing new queued. The only rule several of them kept was the RSI(2) pullback, already closed on power as plan 67; none kept a crypto rule.
 
 - Queue 109, plan 67 (RSI(2) pullback in SPLG, QQQ, IWM, DIA; ledger 211): closed before prices 2026-11-26 11:24 UTC. MEASURED on made-up data only, no bar read: the chance of passing all marks at the assumed +16.8 bp excess is 19.29% (9,645 of 50,000 runs), under the 33% line fixed in this row; 59.8% at +33.6 bp, 7.6% at +8.4 bp, 2.3% with no edge. Assumptions: 180 entry dates in ten years, 158 weeks, within-week correlation 0.25, noise 194 bp a trade from the published index yearly swing scaled to 3.4 sessions.
 
