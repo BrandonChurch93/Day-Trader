@@ -1,4 +1,4 @@
-"""Test cards for Replays 48, 52, 53 and 60, read from their published result pages.
+"""Test cards for Replays 48, 52, 53, 60 and 62, read from their result pages.
 
 The saved results for these replays are kept outside the repo. Each card therefore reads its figures, at export
 time, from the result page in docs/research/ (and, for Replay 48, from research_rig/REVIEW_48_identity.md). Only
@@ -13,6 +13,7 @@ P48 = "docs/research/103_replay_48_muni_cef_january.md"
 P52 = "docs/research/113_replay_52_quarter_end_corporate_bond_funds.md"
 P53 = "docs/research/122_replay_53_taxable_fund_january_rebound.md"
 P60 = "docs/research/126_replay_60_special_dividends.md"
+P62 = "docs/research/130_replay_62_special_dividend_ex_day.md"
 R48 = "research_rig/REVIEW_48_identity.md"
 
 
@@ -168,5 +169,26 @@ def card_60(gh):
                 [["Replay 60", gh + P60], ["Plan", gh + "research_rig/PREREG_60_special_dividends.md"]])
 
 
+def card_62(gh):
+    text = read(P62)
+    pairs, events = need(r"(\d+) matched pairs from (\d+) filing events", section(text, "Did it pass?", P62), P62).groups()
+    shown = section(text, "Shown only", P62)
+    need(r"These comparisons cannot count toward a mark", shown, P62)
+    labels = ("Earlier entry", "Vendor exact match", "Vendor Class A")
+    extra = []
+    for label in labels:
+        value = need(rf"^- {re.escape(label)}(?: \([^\n]*\))?: (.+)\.$", shown, P62, re.M)[1]
+        extra.append([f"{label}, shown only", minus(value)])
+    need(r"the row closes\.", section(text, "What it means", P62), P62)
+    return card("replay62", "Special-dividend ex-day", P62,
+                f"Buys whole shares at the close before the verified ex-date and sells at the ex-date close, "
+                f"matched to IWM. {pairs} matched pairs from {events} filing events.",
+                ["Earlier entry and the vendor subsets are shown only and cannot count toward a mark.",
+                 "The row closes."],
+                extra, [["Replay 62", gh + P62],
+                        ["Plan", gh + "research_rig/PREREG_62_special_dividend_ex_day_v2.md"],
+                        ["Replay 60", gh + P60]])
+
+
 def cards(gh):
-    return [card_48(gh), card_52(gh), card_53(gh), card_60(gh)]
+    return [card_48(gh), card_52(gh), card_53(gh), card_60(gh), card_62(gh)]
