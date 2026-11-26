@@ -1,0 +1,10 @@
+{
+  "config/thresholds.yaml": "4335e0e5f168e19f94bf4ff555b798590689ca7d1981e8efbca45fdb26e34765",
+  "research_rig/AUDIT_46_cftc_docket.md": "f6e85060a588298f46cb2cd2976cf2f420d54da7e3af67f50d1f941d564d059d",
+  "research_rig/PREREG_46_cftc_altcoin_futures.md": "2fd5271dec63dfab5ae2c2b958802745b6c931b179520ab515f932f59b94b27b",
+  "research_rig/calibrate_46.py": "98f20efa18e218d463d012d1aea9a8be0f1f10180034846e0f7c5b96a56e339e",
+  "research_rig/common_46.py": "819fd09959088fd33037e95b82a0ac9e1bc8736a5266a796eb49160e1765594f",
+  "research_rig/docket_46.json": "5001a13e8d40b000e98fdddc33af43588b47dc3b3dfe458b6feaeaff79c766d1",
+  "research_rig/score_46.py": "44c69745680ae76f934463f765a0d1164e1468c0cd9ab49f5fc00f3031426a5a",
+  "research_rig/test_46.py": "a601ff1665d178c63ab16cb6e2c51f5139c3fec5d97e09eb6faa0e9e71226c3b"
+}

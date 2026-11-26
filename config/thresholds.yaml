@@ -1060,3 +1060,9 @@ replay_21_plan:
     calibration_tail_chance: 0.08
     calibration_tail_scale: 2.0
   basis: "Plan 21, queue row 38, trial ledger row 158. No market acquisition authorized by the freeze."
+
+replay_46_plan:
+  value: {"first_post":"2024-03-07","asof":"2026-11-26","source":"coinbase_exchange_utc_daily","rows":122,"entry_lag_days":2,"a_min_hold_days":5,"b_start_days":1,"b_hold_days":7,"min_events":30,"min_dates":{"A":12,"B":25},"min_t":2.0,"trim_dates":3,"a_fee_bps":60,"a_sensitivity_fee_bps":120,"a_half_spread_bps":25,"spot_btc_half_spread_bps":2,"b_fee_bps":12,"b_half_spread_bps":15,"perp_btc_half_spread_bps":2,"b_funding_bps_per_day":3,"queue":83,"ledger":{"A":179,"B":181}}
+  status: builder
+  note: Plan 46 fixed rule settings. The scorer binds the config to the approved Git freeze and never downloads prices.
+  source: research_rig/PREREG_46_cftc_altcoin_futures.md
