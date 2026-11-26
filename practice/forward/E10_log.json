@@ -1,0 +1,50 @@
+{
+  "binance_us": {
+    "all_in_cost_by_side": {
+      "buy": {"median_bp": null, "median_minus_flat_bp": null, "n": 0, "p90_bp": null, "p90_minus_flat_bp": null},
+      "sell": {"median_bp": null, "median_minus_flat_bp": null, "n": 0, "p90_bp": null, "p90_minus_flat_bp": null}
+    },
+    "block_reason": null,
+    "coin_candle_page_failures": 0,
+    "coin_quote_page_failures": 0,
+    "flat_reference_bp": 75.0,
+    "follow_observations": 0,
+    "half_spread_by_coin": {},
+    "label": "second book, cheaper venue, quotes only, no account",
+    "late_wakes": 0,
+    "missed_wakes": 0,
+    "placeability": {
+      "main": {"delayed_sells": 0, "fills": 0, "minimum_unknown": 0, "orders": 0, "pair_unavailable": 0, "queued_sells": 0, "quote_missing": 0, "under": 0, "venue_unavailable": 0, "void_buys": 0},
+      "shown": {"delayed_sells": 0, "fills": 0, "minimum_unknown": 0, "orders": 0, "pair_unavailable": 0, "queued_sells": 0, "quote_missing": 0, "under": 0, "venue_unavailable": 0, "void_buys": 0}
+    },
+    "status": "NOT_STARTED",
+    "unavailable_observations": 0,
+    "void_wakes": 0,
+    "wakes": 0
+  },
+  "card": "E10",
+  "coinbase": {
+    "all_in_cost_by_side": {
+      "buy": {"median_bp": null, "median_minus_flat_bp": null, "n": 0, "p90_bp": null, "p90_minus_flat_bp": null},
+      "sell": {"median_bp": null, "median_minus_flat_bp": null, "n": 0, "p90_bp": null, "p90_minus_flat_bp": null}
+    },
+    "block_reason": null,
+    "coin_candle_page_failures": 0,
+    "coin_quote_page_failures": 0,
+    "flat_reference_bp": 75.0,
+    "follow_observations": 0,
+    "half_spread_by_coin": {},
+    "label": "main book, Coinbase quotes",
+    "late_wakes": 0,
+    "missed_wakes": 0,
+    "placeability": {
+      "main": {"delayed_sells": 0, "fills": 0, "minimum_unknown": 0, "orders": 0, "pair_unavailable": 0, "queued_sells": 0, "quote_missing": 0, "under": 0, "venue_unavailable": 0, "void_buys": 0},
+      "shown": {"delayed_sells": 0, "fills": 0, "minimum_unknown": 0, "orders": 0, "pair_unavailable": 0, "queued_sells": 0, "quote_missing": 0, "under": 0, "venue_unavailable": 0, "void_buys": 0}
+    },
+    "status": "NOT_STARTED",
+    "unavailable_observations": 0,
+    "void_wakes": 0,
+    "wakes": 0
+  },
+  "coinbase_vs_second_feed": "NOT_MEASURED"
+}

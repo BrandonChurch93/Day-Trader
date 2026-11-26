@@ -1190,6 +1190,35 @@ replay_22_plan:
   note: Plan 22 for queue 40, ledger 159. Rule A of the Fable 5.2 autopsy, one fixed version, judged 2020-01 to 2026-03 at 12 bps a side against the equal-weight hold and 500 random twins on end value. Rule C and the April to October 2026 source months are shown only. No scoring authorized by this entry; that needs the lead's approval commit.
   source: research_rig/PREREG_22_fable_rule_a.md
 
+forward_e10:
+  value:
+    rule_key: replay_75_plan
+    spot_taker: [replay_47_plan, coinbase_fee_bps]
+    bankroll_usd: {main: 500, shown: 5000}
+    day_s: 86400
+    wake_delay_s: 10
+    quote_offsets_s: [60, 300, 900]
+    score_days: 365
+    request_gap_s: 0.4
+    timeout_s: 15
+    request_attempts: 4
+    candle_page_days: 299
+    rate_backoff_s: 5
+    rate_backoff_cap_s: 40
+    reference_coin: BTC
+    held_back_sharpe_context: 0.36
+    second_fee_key: forward_e10_binance_us
+  status: builder
+  note: E10 Coinbase USD practice log only; rule and flat costs inherited; separate audit and start.
+  source: practice/traders/E10_coin_trend_ratchet.md
+
+forward_e10_binance_us:
+  value: {default_taker_bp: 2, taker_overrides_bp: {BNB: 1}}
+  status: stated
+  checked: "2026-11-26"
+  source: https://www.binance.us/fees
+  note: Doc 180 spot USD schedule, no maker fills, discount, account or trading assumed.
+
 replay_75_plan:
   value:
     repeat: ["2020-01-01", "2024-01-01"]
