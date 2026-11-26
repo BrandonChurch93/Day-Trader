@@ -1,7 +1,7 @@
 """Pure hourly Monday Asia calculations. No file access."""
 from bisect import bisect_right
-from collections import defaultdict
-from dataclasses import dataclass
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import math
 from statistics import mean, stdev
@@ -30,6 +30,7 @@ class Tape:
     closes: dict
     marks: dict
     rates: dict
+    zero_trade: set = field(default_factory=set)
 
 
 def utc(hour):
@@ -107,6 +108,11 @@ def direction(tape, h, p, variant):
     value = tape.closes[h - 1]
     prior = tape.opens[h - 1] if variant == "one_candle" else tape.closes[h - p["hold_hours"] - 1]
     return int(value > prior) - int(value < prior)
+
+
+def trade_candle_roles(entry, p):
+    return {"signal": (entry - 1, entry - p["hold_hours"] - 1),
+            "entry": (entry,), "exit": (entry + p["hold_hours"],)}
 
 
 def sharpe(returns, annual_days):
@@ -231,9 +237,19 @@ def measure(tapes, p, check=lambda: None):
     base = grid(bps)
     placebo = {}
     failed = []
+    zero_hours = set().union(*(tape.zero_trade for tape in tapes.values()))
+    zero_windows = 0
+    zero_roles = Counter()
     for shift in range(1, WEEK):
         check()
-        b = book(books["pair"], starts(p, shift), bps, sharpe_only=True)
+        entries = starts(p, shift)
+        if zero_hours:
+            for entry in entries:
+                touched = [role for role, hours in trade_candle_roles(entry, p).items()
+                           if zero_hours.intersection(hours)]
+                zero_windows += bool(touched)
+                zero_roles.update(touched)
+        b = book(books["pair"], entries, bps, sharpe_only=True)
         key = str(shift)
         if "refusal" in b:
             failed.append(key)
@@ -255,5 +271,11 @@ def measure(tapes, p, check=lambda: None):
     return dict(main=base, marks=marks, passes=all(marks.values()),
                 shown_costs={str(c): grid(c) for c in p["shown_bps"]},
                 shown_signals={key: grid(bps, key) for key in ("one_candle", "long")},
+                zero_volume_trade_candles={s: dict(count=len(t.zero_trade),
+                                                  utc_open_stamps=[utc(h).isoformat() for h in sorted(t.zero_trade)])
+                                           for s, t in tapes.items()},
                 placebo=dict(sharpes=placebo, percentile=threshold, percentile_status=rank,
-                             failed=failed, undefined=undefined, defined=len(defined)))
+                             failed=failed, undefined=undefined, defined=len(defined),
+                             zero_volume_touched_windows=zero_windows,
+                             zero_volume_touched_by_role={role: zero_roles[role]
+                                                          for role in ("signal", "entry", "exit")}))

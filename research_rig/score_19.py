@@ -131,11 +131,15 @@ def add_row(tape, kind, a, b, row, p):
     else:
         dst, value = tape.opens, float(row[1])
         close, volume = float(row[4]), float(row[5])
-        valid = all(isfinite(x) and x > 0 for x in (value, close, volume))
-        tape.closes[h] = close
+        valid = (all(isfinite(x) and x > 0 for x in (value, close)) and
+                 isfinite(volume) and volume >= 0)
     if h in dst or not valid:
         raise C.Incomplete("duplicate or invalid archive row")
     dst[h] = value
+    if kind == "klines":
+        tape.closes[h] = close
+        if volume == 0:
+            tape.zero_trade.add(h)
 
 
 def validate_tapes(tapes, p):
@@ -148,6 +152,14 @@ def validate_tapes(tapes, p):
                     yield symbol, "markPriceKlines", h
                 if h not in tape.rates:
                     yield symbol, "fundingRate", h
+    zero_trade = {symbol: tape.zero_trade for symbol, tape in tapes.items() if tape.zero_trade}
+    if zero_trade:
+        for entry in C.starts(p, 0):
+            for candles in C.trade_candle_roles(entry, p).values():
+                for h in candles:
+                    for symbol, hours in zero_trade.items():
+                        if h in hours:
+                            yield symbol, "klines", h
 
 
 def verify_inventory(archives, p):

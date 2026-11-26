@@ -1,6 +1,6 @@
 """Synthetic Plan 19 tests. No real bars, manifests or canonical lock."""
 from contextlib import redirect_stderr, redirect_stdout
-from io import StringIO
+from io import BytesIO, StringIO
 import json
 from math import expm1, log1p
 from pathlib import Path
@@ -8,6 +8,7 @@ from random import Random
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
+import zipfile
 
 from . import common_19 as C, score_19 as S
 
@@ -35,6 +36,29 @@ def fixtures(p, planted):
             opens[h] -= 3. + i % 5
     return {s: C.Tape(opens.copy(), closes.copy(), dict.fromkeys(settlements, 100.),
                       settlements.copy()) for s in C.SYMBOLS}
+
+
+def tiny_archive_set(p, volume_hour, volume):
+    """One invented ZIP per coin and series, with full coverage of a short sample."""
+    records, blobs = [], {}
+    for symbol in C.SYMBOLS:
+        for kind in sorted(S.FOLDERS):
+            lines = []
+            for hour in range(p["start"], p["end"]):
+                ms = hour * C.HOUR * 1000
+                if kind == "fundingRate":
+                    if hour % p["funding_hours"] == 0:
+                        lines.append(f"{ms},{p['funding_hours']},0\n")
+                else:
+                    qty = volume if symbol == "ETHUSDT" and hour == volume_hour and kind == "klines" else 1
+                    lines.append(f"{ms},100,101,99,100,{qty},{ms + C.HOUR * 1000 - 1}\n")
+            buffer = BytesIO()
+            with zipfile.ZipFile(buffer, "w") as archive:
+                archive.writestr("synthetic.csv", "".join(lines))
+            path = Path(f"/synthetic/{symbol}/{kind}.zip")
+            blobs[path] = buffer.getvalue()
+            records.append((path, S.digest(blobs[path]), symbol, kind, p["start"], p["end"]))
+    return records, blobs
 
 
 def noisy(p, seed, edge_bps):
@@ -170,6 +194,58 @@ class Plan19(unittest.TestCase):
         self.assertEqual(C.direction(tape, start, p, "momentum"), 1)
         with self.assertRaises(C.Incomplete):
             S.add_row(tape, "markPriceKlines", h, h + 1, prefix + [str(close_ms + 1)], p)
+
+    def test_zero_volume_midwindow_candle_loads_for_path_marking(self):
+        p = setup(first_date="2023-02-03", last_date="2023-02-07", cme_cut="2023-02-04T00:00Z")
+        entry, = C.starts(p, 0)
+        h = entry + 2
+        records, blobs = tiny_archive_set(p, h, 0)
+        with patch.object(S.A, "read_pinned", side_effect=lambda path, _: blobs[path]):
+            tapes = S.load(records, p)
+        self.assertEqual(tapes["ETHUSDT"].zero_trade, {h})
+        self.assertEqual(tapes["BTCUSDT"].zero_trade, set())
+        self.assertIn(h, tapes["ETHUSDT"].opens)
+        self.assertIsNone(next(S.validate_tapes(tapes, p), None))
+
+    def test_zero_volume_judged_entry_signal_or_exit_refuse_before_claim(self):
+        p = setup(first_date="2023-02-03", last_date="2023-02-07", cme_cut="2023-02-04T00:00Z")
+        entry, = C.starts(p, 0)
+        candles = C.trade_candle_roles(entry, p)
+        for h in (*candles["entry"], *candles["signal"], *candles["exit"]):
+            with self.subTest(hour=h), TemporaryDirectory() as d:
+                records, blobs = tiny_archive_set(p, h, 0)
+                lock, result = Path(d) / "lock", Path(d) / "result"
+                with (patch.object(S.A, "read_pinned", side_effect=lambda path, _: blobs[path]),
+                      self.assertRaises(S.Refused) as refusal):
+                    S.claim(lock, result, {}, lambda: S.load(records, p),
+                            lambda _: self.fail("refused load reached scoring"))
+                self.assertEqual(refusal.exception.code, "P19_LOAD_REFUSED")
+                self.assertEqual(refusal.exception.path, Path("/synthetic/ETHUSDT/klines.zip"))
+                self.assertFalse(lock.exists())
+                self.assertFalse(result.exists())
+
+    def test_negative_volume_midwindow_still_refuses(self):
+        p = setup(first_date="2023-02-03", last_date="2023-02-07", cme_cut="2023-02-04T00:00Z")
+        entry, = C.starts(p, 0)
+        records, blobs = tiny_archive_set(p, entry + 2, -1)
+        with (patch.object(S.A, "read_pinned", side_effect=lambda path, _: blobs[path]),
+              self.assertRaises(S.Refused) as refusal):
+            S.load(records, p)
+        self.assertEqual(refusal.exception.code, "P19_LOAD_REFUSED")
+        self.assertEqual(refusal.exception.path, Path("/synthetic/ETHUSDT/klines.zip"))
+
+    def test_placebo_and_per_coin_zero_volume_report(self):
+        p = setup()
+        h = C.starts(p, 0)[1] + 2
+        tapes = fixtures(p, True)
+        for tape in tapes.values():
+            tape.zero_trade.add(h)
+        r = C.measure(tapes, p)
+        for stats in r["zero_volume_trade_candles"].values():
+            self.assertEqual(stats, dict(count=1, utc_open_stamps=[C.utc(h).isoformat()]))
+        self.assertEqual(r["placebo"]["zero_volume_touched_windows"], 4)
+        self.assertEqual(r["placebo"]["zero_volume_touched_by_role"],
+                         {"signal": 2, "entry": 1, "exit": 1})
 
     def test_shown_only_bankruptcy_does_not_discard_judged_marks(self):
         p = setup()
