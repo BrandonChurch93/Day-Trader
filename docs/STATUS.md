@@ -6,6 +6,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 ## Where things stand
 
+- Plan 37 (queue 61) closed as Blocked without a replay; ledger 172 unused. MEASURED: The official DoD archive index returned HTTP 403 to automated reading. STATED: The published gross move is about 30 bps; spreads in the filtered names are UNKNOWN.
+
 - Plan 32 (queue 51) is blocked on data: the free sources did not establish a point-in-time market-wide dividend pay-date series. No replay was built or run, and ledger 167 stays unused.
 
 - Russell 2000 additions (queue 42) stopped at the source check. STATED: exact point-in-time membership changes are in [FTSE Russell's client files](https://research.ftserussell.com/products/index-notices/home/getnotice?id=2611754), and the [public list terms](https://www.lseg.com/content/dam/ftse-russell/en_us/documents/other/ru3000-additions-20261113.pdf) require a licence for data use and written permission for storage. No data were staged and no replay ran.
