@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 12:14 UTC
+Last updated: 2026-11-26 12:17 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -14,6 +14,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- [Queue 18](research/144_screen_queue_18_manager_new_holdings.md) (new holdings of well-known managers; ledger 214): closed before prices 2026-11-26 05:17 MT. MEASURED without prices: 203 new positions since 2016 for the five managers fixed first (Berkshire, Icahn, Scion, Pershing Square, Trian), under the 300 line; at most 285 if every unresolved row counted. MEASURED on made-up data: 19.08% chance to pass all marks at 63 sessions at +160 bp (STATED, the study's delayed-entry figure, gross and rebalanced daily, not our clock), 17.57% at higher cost, under the 33% line. Shown only: the study's wider 24-manager list gives 1,505 signals and 30.81%, also under the line, so no new row was opened. The edge on our exact clock against SPY is UNKNOWN.
 
 - [Queue 11, 12 and 13](research/145_screen_queue_11_12_13.md) (supplier before its report, earnings-call answers, large contracts; ledger 215): all three closed before prices 2026-11-26 05:14 MT. Row 11: MEASURED on made-up data, no price read: 23.59% chance to pass all marks at a favorable +142 bp (STATED, a monthly long-side figure from a 1978 to 2018 sample, not the trade's own window), under the 33% line. The free dated map of who sells to whom covers only 2025 and 2026 filings (281 links, 108 customers); the 842-event figure is a projection, the real count is UNKNOWN. A 2005 to 2024 replication of the related rule found +9.2 bp a month, t 0.34 (STATED). Row 12: No lawful free dated source of full call text across years: the one free licensed set is 482 US calls in one quarter (2025 Q4), which cannot meet year breadth; 0% chance to pass as held, 16.29% if the same count were spread over the years (MEASURED on made-up data, no price read). The broad transcript sets are paid. Row 13: MEASURED without prices: 252 candidate days at ten issuers on a loose dollar test, under the 300 line, and not yet checked against sales or first funding. Chance to pass 0% at that count and 13.16% even at a vendor's 1,006-event count, at +30 bp gross (STATED, a vendor's own study).
 
