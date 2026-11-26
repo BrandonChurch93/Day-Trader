@@ -215,6 +215,7 @@ def read_identity(grid, identity_raw):
 
 
 def bars_transport():
+    REQUEST_PAUSE_SECONDS = 0.25
     env = {k: os.environ[k] for k in ('HTTPS_PROXY', 'CURL_CA_BUNDLE', 'SSL_CERT_FILE') if k in os.environ}
     if not env.get('HTTPS_PROXY'):
         raise ValueError('Alpaca collection requires the credential HTTPS proxy')
@@ -227,18 +228,24 @@ def bars_transport():
         for delay in (0, 2, 4, 8, 16):
             if delay:
                 sleep_clock.sleep(delay)
+            sleep_clock.sleep(REQUEST_PAUSE_SECONDS)
             response = subprocess.run(argv, input=stdin, capture_output=True, env=env, check=False)
             body, separator, status = response.stdout.rpartition(b'\n')
             if not separator or len(status) != 3 or not status.isdigit() or status == b'000':
-                raise ValueError('Alpaca bars transport failed; no response body logged')
+                continue
             code = int(status)
-            if code == 200:
-                if response.returncode:
-                    raise ValueError('Alpaca bars transport failed; no response body logged')
-                return json.loads(body)
-            if code not in (429, 500, 502, 503, 504) or delay == 16:
+            if code != 200 and code not in (429, 500, 502, 503, 504):
                 raise ValueError(f'Alpaca bars HTTP {code}; no response body logged')
-        raise AssertionError('unreachable')
+            if response.returncode:
+                continue
+            if code == 200:
+                try:
+                    return json.loads(body)
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    continue
+            if delay == 16:
+                raise ValueError(f'Alpaca bars HTTP {code}; no response body logged')
+        raise ValueError('Alpaca bars transport failed; no response body logged')
 
     return get
 
