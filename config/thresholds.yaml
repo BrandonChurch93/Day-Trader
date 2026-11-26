@@ -1020,3 +1020,9 @@ tm_server_day_bars_cache_max:
   status: builder
   note: timemachine/server.py only. Day-bar cache entries (one symbol, one day of one-minute bars) a tape may hold in the server before all its caches are dropped and filled again on use. Memory only; the caches save reads and change no answer. Added 2026-11-25 after the 8768 server reached 2 GB.
   source: timemachine/server.py
+
+replay_41_plan:
+  value: {"first":"2016-01-04","last":"2026-10-30","sessions":2723,"months":130,"years":11,"capital":500,"signal_offset":5,"entry_offset":4,"costs":{"judged":2,"shown":[5,10]},"fixed_spy_weight":0.5,"marks":{"minimum_months":100,"minimum_t":2.0,"drop_best":3,"minimum_positive_years":7,"recent_from":"2020-01-01","positive_cutoff":0}}
+  status: builder
+  note: Single source for Plan 41 calendar, capital, costs and numeric marks. JSON flow value for isolated standard-library parsing. The scorer binds the file to the freeze; it is not a runtime override.
+  source: research_rig/PREREG_41_pension_month_end.md

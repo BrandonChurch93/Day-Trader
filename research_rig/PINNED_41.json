@@ -1,0 +1,8 @@
+{
+  "config/thresholds.yaml": "cc4d629a817ea3a0ef60e24774e78f525037fd06ded3ef1d18509e10457eb396",
+  "research_rig/PREREG_41_pension_month_end.md": "d5de64ef1ca56dc71cbabaa72d9bbf28b936bc5a36c5fd088871c2746dfdc63a",
+  "research_rig/calendar_25.json": "e8f8a4322f988fcec6f937a19cfbfd0162a28f9b70813f305065c9e10ccb7c6b",
+  "research_rig/common_41.py": "60980c13fab63c2fb602086a6aef31284dcb53b7ea37f95e60b25816af2ffb0c",
+  "research_rig/score_41.py": "8bf117e4c5e1df4975996746a97b0e830fc011fb6b1a472c002a13939b2af4d5",
+  "research_rig/test_41.py": "c0d55822a25ddbcf280b3d4133f520f6a3b3bfe45ce8fb87420cd08b1cdccde8"
+}
