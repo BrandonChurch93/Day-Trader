@@ -692,7 +692,7 @@ class DeskSession:
         kept = {resting[i] for i in keep}
         if len(kept | new.keys()) > self.opts["max_conditions"]:
             raise ValueError("too many live conditions")
-        bundle = dict(weights=weights, exits=bare.get("exits"), conditions=new, keep=keep,
+        bundle = dict(weights=asked, exits=bare.get("exits"), conditions=new, keep=keep,
                       decision_id=decision_id, citations=cites, why=bare["why"])
         nxt = self.spec["wakes"][k+1] if k+1 < len(self.spec["wakes"]) else end
         rec, active, events = orders.step(st["book"], bundle, row, self.pp, self.minutes, at, nxt, nxt == end,

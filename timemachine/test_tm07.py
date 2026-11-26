@@ -533,6 +533,28 @@ class DeskTest(unittest.TestCase):
             outcomes.append(P.value_at(book,{up:110,down:90}))
         self.assertEqual(outcomes,[outcomes[0]]*4)
 
+    def test_pass5_stop_cancels_pending_reentry_with_or_without_common_open(self):
+        pp = world()["params"]
+        pp["fallback_per_day"] = 0
+        outcomes = []
+        for missing,opening,weights in ((False,90,{A:.4,B:.6}),(True,90,{A:.4,B:.6}),
+                                        (True,100,{A:.8,B:.8})):
+            book = P.new_book(1000)
+            book.update(cash=500,qty={A:5},target={A:.5},exits={A:{"stop":95}},last_px={A:100,B:100})
+            times = [(T,A,opening,100,90,90)]
+            times.append((T+60 if missing else T,B,100,100,100,100))
+            # If A is absent when the surviving leg can fill, nobody waits for A.
+            rec,_,_ = O.step(book,dict(weights=weights),dict(marks={A:100,B:100}),pp,
+                             P.Minutes(sorted(times)),T,T+120,True,{},1)
+            self.assertEqual({t["symbol"] for t in rec["trades"]},{B})
+            self.assertEqual(set(book["qty"]),{B})
+            self.assertEqual(book["target"],{B:weights[B]})
+            self.assertIn(dict(symbol=A,why="protective_exit"),rec["skipped"])
+            self.assertEqual(rec["scan"]["cancelled_target_legs"],[A])
+            if opening == 90:
+                outcomes.append((book["cash"],book["qty"],book["fee_usd"]))
+        self.assertEqual(outcomes[0],outcomes[1])
+
     def test_reaudit_opr_r5_price_packet_rejects_unscreened_fields(self):
         spec = world()
         price, other = spec["evidence"][0][:2]

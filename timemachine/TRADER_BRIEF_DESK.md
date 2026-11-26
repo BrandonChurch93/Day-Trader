@@ -16,6 +16,8 @@ Send a full vector of signed weights. Unlisted names go to zero. The order progr
 
 A new or updated stop or target is not live on the bar where it is installed. It first applies on the next recorded minute bar for that coin. On a complete bar that can hit both levels, the stop is taken. If the bar opens beyond the selected level, the exit uses that open.
 
+A protective exit cancels any unfilled target leg for that coin that you already submitted. The remaining legs can fill together whether their first common open is that minute or a later one. A stopped leg does not re-enter from the old request; a later wake can submit a new target.
+
 ```json
 {"wake_key":"...","weights":{"SOL/USD":0.25},"why":"The note describes the fact I used.","citations":{"SOL/USD":{"note_ids":["note-id"],"evidence_ids":[]}}}
 ```

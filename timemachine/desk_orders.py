@@ -275,7 +275,7 @@ class Orders:
                 order["observed"] = t
                 self.event("triggered", order, t, bar_start=start, high=high, low=low)
 
-    def advance(self, book, pp, rows, start, end, gross, on_open=None, last=False, end_marks=None):
+    def advance(self, book, pp, rows, start, end, gross, on_open=None, last=False, end_marks=None, on_exit=None):
         """Apply the same pessimistic one-bar maintenance proxy to every arm."""
         total = dict(exits=[], closeout=None, funding_usd=0.0, fallback_hours=0, held_seconds=0,settlements=[])
         book.setdefault("held_seconds",0)
@@ -356,6 +356,11 @@ class Orders:
             total["exits"].append(event)
             if s in self.active:
                 self.remove(s,"cancelled",tick,reason="protective_exit")
+            pending = self.pending.pop(s,None)
+            if pending and pending["order"]:
+                self.event("cancelled",pending["order"],tick,reason="protective_exit")
+            if on_exit:
+                on_exit(s)
 
         groups = iter((t,list(bars)) for t,bars in groupby(rows,key=lambda r:r[0]))
         group = next(groups,None)
@@ -391,7 +396,7 @@ class Orders:
             prior_qty = dict(book["qty"])
             immediate_symbols = set()
             if on_open and not blocked and bars:
-                immediate_symbols = on_open(tick, opens, protected) or set()
+                immediate_symbols = on_open(tick, opens) or set()
                 for s in sorted(immediate_symbols):
                     live = self.active.get(s)
                     if live and "observed" in live:
@@ -438,27 +443,34 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     orders = Orders(active,delay,book.pop("desk_order_updates",None))
     orders.submit(bundle, book, at)
     weights, exits = bundle.get("weights"), bundle.get("exits")
-    effective = priced_target(book["target"] if weights is None else weights,gross)
+    requested = P.norm(book["target"] if weights is None else weights)
+    effective = priced_target(requested,gross)
     needs_open = bool(book["qty"] or effective)
     changed = needs_open and (first or book.get("pending") or effective != P.norm(book["target"]))
     update_exits = bool(book["qty"] and weights is not None and (exits or {}) != book["exits"])
     book["last_px"].update(row["marks"])
     record = None
+    cancelled = []
 
-    def immediate(tick, opens, protected):
+    def on_exit(symbol):
+        if record is None and symbol in requested:
+            requested.pop(symbol)
+            cancelled.append(dict(symbol=symbol,why="protective_exit"))
+
+    def immediate(tick, opens):
         nonlocal record
         if record is not None:
             return
-        touched = set(book["qty"]) | effective.keys()
+        target = priced_target(requested,gross)
+        touched = set(book["qty"]) | target.keys()
         if (changed or update_exits) and not touched <= opens.keys():
             return
         value = P.value_at(book,opens)
         record = dict(target=dict(book["target"]),exits=dict(book["exits"]),changed=changed,retry=book["pending"],
                       value_before=value,value_after=value,weights_after=P.weights_at(book,opens),
-                      trades=[],skipped=[],fill_utc=None)
-        target = {s:w for s,w in effective.items() if s not in protected}
+                      trades=[],skipped=cancelled.copy(),fill_utc=None)
         if changed and touched:
-            trades,reason = apply_basket(book,{s:target.get(s,0) for s in touched-protected},opens,pp,gross)
+            trades,reason = apply_basket(book,{s:target.get(s,0) for s in touched},opens,pp,gross)
             if reason and reason != "small_change":
                 record["skipped"].append(dict(why=reason))
                 return
@@ -470,13 +482,18 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         return {tr["symbol"] for tr in record["trades"]}
 
     if not (changed or update_exits):
-        immediate(at, {}, set())
+        immediate(at, {})
     symbols = set(pp["symbols"]) if changed else set(book["qty"])
     active_rows = P.scan_rows(minutes,at,end,symbols,watched=orders.active.keys()|orders.pending.keys())
-    scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate, last=last,end_marks=end_marks)
+    scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate, last=last,
+                          end_marks=end_marks,on_exit=on_exit)
+    if record is None and cancelled and not (requested or book["qty"]):
+        immediate(end,{})
     if record is None:
         record = dict(target=dict(book["target"]), trades=[],
-                      skipped=[{"why":"maintenance" if scan["closeout"] else "no_common_open"}], changed=False)
+                      skipped=[*cancelled,{"why":"maintenance" if scan["closeout"] else "no_common_open"}], changed=False)
+    if cancelled:
+        scan["cancelled_target_legs"] = [entry["symbol"] for entry in cancelled]
     record["scan"] = scan
     if last:
         orders.expire(end)
