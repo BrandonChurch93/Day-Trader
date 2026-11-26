@@ -36,13 +36,14 @@ def quote_stamps(session, step=30):
             for i in range(360 // step)]
 
 
-def bars_for(w, base, drift, stop=None, skip=None):
+def bars_for(w, base, drift, stop=None, skip=None, idle=None):
     rows = []
     for i, d in enumerate(w["sessions"]):
         if (stop and d > stop) or d == skip:
             continue
         c = (Decimal(base) + Decimal(drift) * i).quantize(Decimal("0.01"))
-        rows.append({"t": stamp(d), "o": c, "h": c + Decimal("0.05"), "l": c - Decimal("0.05"), "c": c, "v": 1000})
+        rows.append({"t": stamp(d), "o": c, "h": c + Decimal("0.05"), "l": c - Decimal("0.05"), "c": c,
+                     "v": 0 if d == idle else 1000})
     return rows
 
 
@@ -56,17 +57,19 @@ def quotes_for(w, mid, half="0.02", empty=False):
 
 
 def synthetic_packet():
-    """Seven synthetic funds per turn: a cheap loser set, one too dear for a share, one with a pre-entry gap,
-    one that stops trading in January, one with no quotes (proxy)."""
-    names = ["SYNA", "SYNB", "SYNC", "SYND", "SYNE", "SYNF", "SYNG"]
+    """Eight synthetic funds per turn: a cheap loser set, one too dear for a share, one with a pre-entry gap,
+    one with a zero-volume row before entry (ineligible), one that stops trading in January, one with no
+    quotes (proxy) and a zero-volume row on the exit session (valued at its last traded close)."""
+    names = ["SYNA", "SYNB", "SYNC", "SYND", "SYNE", "SYNF", "SYNG", "SYNH"]
     bars, quotes, cash = {}, {}, {"schema": 1, "turns": {}}
     for w in WINDOWS:
         y = w["turn"]
         mid_jan = [d for d in w["sessions"] if d.year == y + 1][6]
-        spec = {"SYNA": ("10", "-0.004", None, None), "SYNB": ("12", "-0.003", None, None),
-                "SYNC": ("14", "-0.002", mid_jan, None), "SYND": ("9", "-0.001", None, None),
-                "SYNE": ("11", "0.001", None, None), "SYNF": ("150", "0", None, None),
-                "SYNG": ("8", "-0.005", None, w["sessions"][40])}
+        spec = {"SYNA": ("10", "-0.004", None, None, None), "SYNB": ("12", "-0.003", None, None, None),
+                "SYNC": ("14", "-0.002", mid_jan, None, None), "SYND": ("9", "-0.001", None, None, w["exit"]),
+                "SYNE": ("11", "0.001", None, None, None), "SYNF": ("150", "0", None, None, None),
+                "SYNG": ("8", "-0.005", None, w["sessions"][40], None),
+                "SYNH": ("7", "-0.006", None, None, w["sessions"][60])}
         bars[y] = {"turn": y, "symbols": {s: bars_for(w, *spec[s]) for s in names},
                    "benchmark": bars_for(w, "100", "0.001")}
         quotes[y] = {"turn": y, "sessions": {k: w[k].isoformat() for k in C.CLOCKS},
@@ -75,7 +78,8 @@ def synthetic_packet():
         ex = [d for d in w["sessions"] if d > w["entry"]][3].isoformat()
         cash["turns"][str(y)] = {
             "symbols": {s: {"source": "https://example.test/notice", "cash": [
-                {"id": f"{s}-{y}", "ex_date": ex, "amount": Decimal("0.03")}], "splits": []} for s in names},
+                {"id": f"{s}-{y}", "ex_date": ex, "amount": Decimal("0.03")}] if s != "SYNE" else [],
+                "splits": []} for s in names},
             "benchmark": {"source": "https://example.test/etf", "cash": [], "splits": []}}
     roster = "turn_year,ticker\n" + "".join(f"{w['turn']},{s}\n" for w in WINDOWS for s in names)
     return names, bars, quotes, cash, roster.encode()
@@ -90,6 +94,17 @@ def dump(obj):
     if isinstance(obj, list):
         return b"[" + b",".join(dump(v) for v in obj) + b"]"
     return json.dumps(obj).encode()
+
+
+def evidence_for(names, reported):
+    """Synthetic split evidence in the vendor's native page shape; split arrays omitted when empty."""
+    queries = []
+    for w in WINDOWS:
+        recs = reported.get(w["turn"], [])
+        page = {"corporate_actions": ({"forward_splits": recs} if recs else {}), "next_page_token": None}
+        queries.append({"turn": w["turn"], "symbols": list(names[w["turn"]]), "start": w["anchor"].isoformat(),
+                        "end": w["exit"].isoformat(), "queried_utc": "2026-11-26T00:00:00Z", "pages": [page]})
+    return {"schema": 1, "vendor": "synthetic", "queries": queries}
 
 
 def parsed(blob):
@@ -151,6 +166,75 @@ class Unit(unittest.TestCase):
         with self.assertRaises(C.Refused):
             C.check_jumps(closes, [], CFG)
 
+    def test_zero_volume_row_is_no_bar(self):
+        w = WINDOWS[0]
+        rows = parsed(dump(bars_for(w, "10", "0", idle=w["entry"])))
+        closes = C.bar_rows(rows, w, w["entry"])
+        self.assertNotIn(w["entry"], closes)
+        self.assertEqual(len(closes), len(w["sessions"]) - 1)
+        self.assertFalse(C.complete_through(closes, w, w["entry"]))
+        negative = bars_for(w, "10", "0")
+        negative[0]["v"] = -1
+        with self.assertRaises(C.Refused):
+            C.bar_rows(parsed(dump(negative)), w, w["entry"])
+        bench = bars_for(w, "100", "0", idle=w["exit"])
+        raw = {"turn": w["turn"], "symbols": {}, "benchmark": bench}
+        with self.assertRaises(C.Refused):
+            C.bars_file(parsed(dump(raw)), w, (), CFG)
+
+    def test_split_evidence_coverage_and_binding(self):
+        names = {w["turn"]: ("SYNA", "SYNB") for w in WINDOWS}
+        none = {"cash": [], "splits": []}
+        w0 = WINDOWS[0]
+        split_day = w0["sessions"][100]
+        cash = {w["turn"]: ({"SYNA": none, "SYNB": none}, none) for w in WINDOWS}
+        cash[w0["turn"]] = ({"SYNA": {"cash": [], "splits": [(split_day, Fraction(2))]}, "SYNB": none}, none)
+        good = evidence_for(names, {w0["turn"]: [{"symbol": "SYNA", "ex_date": split_day.isoformat(),
+                                                  "new_rate": 2, "old_rate": 1}]})
+        C.split_evidence(good, WINDOWS, names, cash)
+        unrecorded = {w["turn"]: ({"SYNA": none, "SYNB": none}, none) for w in WINDOWS}
+        with self.assertRaises(C.Refused):
+            C.split_evidence(good, WINDOWS, names, unrecorded)
+        truncated = json.loads(json.dumps(good))
+        truncated["queries"][3]["pages"][-1]["next_page_token"] = "more"
+        with self.assertRaises(C.Refused):
+            C.split_evidence(truncated, WINDOWS, names, cash)
+        short = evidence_for({w["turn"]: ("SYNA",) for w in WINDOWS}, {})
+        with self.assertRaises(C.Refused):
+            C.split_evidence(short, WINDOWS, names, cash)
+
+    def test_split_control(self):
+        names, bars, quotes, cash, roster = synthetic_packet()
+        w = WINDOWS[0]
+        y = w["turn"]
+        nm = {x["turn"]: tuple(sorted(names)) for x in WINDOWS}
+        acts = C.distributions(parsed(dump(cash)), WINDOWS, nm, CFG)
+        block = {s: {"matched": len(bars[y]["symbols"][s]), "one_sided": 0, "steps": 0} for s in names}
+        block["MUB"] = {"matched": len(bars[y]["benchmark"]), "one_sided": 0, "steps": 0}
+        raw = {"schema": 1, "vendor": "synthetic", "queried_utc": "2026-11-26T00:00:00Z",
+               "turns": {str(x["turn"]): block for x in WINDOWS}}
+        ctl = C.split_control(raw, WINDOWS, nm, CFG)
+        C.check_control(ctl[y], parsed(dump(bars[y])), acts[y], CFG)
+        for key, bad in (("steps", 1), ("one_sided", 1), ("matched", 0)):
+            broken = {s: dict(v) for s, v in block.items()}
+            broken["SYNA"][key] = bad
+            with self.assertRaises(C.Refused):
+                C.check_control(broken, parsed(dump(bars[y])), acts[y], CFG)
+        broken = {s: dict(v) for s, v in block.items()}
+        broken["MUB"]["steps"] = 1
+        with self.assertRaises(C.Refused):
+            C.check_control(broken, parsed(dump(bars[y])), acts[y], CFG)
+
+    def test_loser_mark_needs_price_only_leg(self):
+        base = {"portfolio": Fraction(1, 10), "benchmark": Fraction(0), "roster_ew": Fraction(0)}
+        rows = [dict(base, portfolio_price=Fraction(1, 10), roster_ew_price=Fraction(0)) for _ in range(10)]
+        marks, ok = C.assess(rows, CFG)
+        self.assertTrue(ok and marks["beats_roster_mean"])
+        tilted = [dict(r, portfolio_price=Fraction(0), roster_ew_price=Fraction(1, 100)) for r in rows]
+        marks, ok = C.assess(tilted, CFG)
+        self.assertFalse(marks["beats_roster_mean"])
+        self.assertFalse(ok)
+
     def test_marks_zero_not_positive(self):
         rows = [{"portfolio": Fraction(0), "benchmark": Fraction(0), "roster_ew": Fraction(0)}] * 10
         marks, ok = C.assess(rows, CFG)
@@ -165,8 +249,11 @@ class Unit(unittest.TestCase):
         q = C.quotes_file(parsed(dump(quotes[w["turn"]])), w, tuple(sorted(names)), CFG)
         cl = C.distributions(parsed(dump(cash)), WINDOWS, {x["turn"]: tuple(sorted(names)) for x in WINDOWS}, CFG)
         r = C.turn_result(w, funds, bench, q, cl[w["turn"]], CFG)
-        self.assertEqual((r["roster"], r["eligible"], r["picks"]), (7, 5, 5))
-        self.assertEqual(r["held_missing_exit"], 1)
+        self.assertEqual((r["roster"], r["eligible"], r["picks"]), (8, 5, 5))
+        self.assertNotIn("SYNH", r["held"])
+        self.assertEqual(r["held_missing_exit"], 2)
+        self.assertEqual((r["held_empty_cash"], r["eligible_empty_cash"]), (1, 1))
+        self.assertLess(r["portfolio_price"], r["portfolio"])
         self.assertEqual(r["held_proxy_sides"], 2)
         tie = {"SYNB": dict(funds["SYNA"]), "SYNA": dict(funds["SYNA"])}
         q2 = ({"SYNA": q[0]["SYNA"], "SYNB": q[0]["SYNA"]}, q[1])
@@ -241,7 +328,14 @@ class EndToEnd(unittest.TestCase):
             run.mkdir()
             os.chmod(inputs, 0o700)
             os.chmod(run, 0o700)
-            files = {"roster.csv": roster, "distributions.json": dump(cash)}
+            evidence = evidence_for({w["turn"]: names for w in WINDOWS},
+                                    {2016: [{"symbol": "OTHER", "ex_date": "2016-06-01", "new_rate": 2}]})
+            control = {"schema": 1, "vendor": "synthetic", "queried_utc": "2026-11-26T00:00:00Z",
+                       "turns": {str(y): {s: {"matched": len(bars[y]["symbols"][s]), "one_sided": 0, "steps": 0}
+                                          for s in names} | {"MUB": {"matched": len(bars[y]["benchmark"]),
+                                                                     "one_sided": 0, "steps": 0}} for y in bars}}
+            files = {"roster.csv": roster, "distributions.json": dump(cash), "split_evidence.json": dump(evidence),
+                     "split_control.json": dump(control)}
             for y in bars:
                 files[f"bars_{y}.json"] = dump(bars[y])
                 files[f"quotes_{y}.json"] = dump(quotes[y])
@@ -297,13 +391,19 @@ class EndToEnd(unittest.TestCase):
 
             v = cli("--validate-inputs")
             self.assertEqual((v.returncode, v.stderr), (0, ""))
-            self.assertTrue(v.stdout.startswith("P48_INPUTS_OK turns 10 roster_rows 70"))
+            self.assertTrue(v.stdout.startswith("P48_INPUTS_OK turns 10 roster_rows 80"))
             self.assertFalse(any(run.iterdir()))
             g = cli("--go")
             self.assertEqual((g.returncode, g.stdout.strip(), g.stderr), (0, "P48_RESULT_WRITTEN", ""))
             self.assertEqual({p.name for p in run.iterdir()}, {"score_48.lock", "results_48.json"})
             out = json.loads((run / "results_48.json").read_bytes())
             self.assertEqual(len(out["judged"]["years"]), 10)
+            # SYNH's zero-volume pre-entry row makes it ineligible; SYND's zero-volume exit row is a missing exit.
+            self.assertTrue(all(y["roster"] == 8 and y["eligible"] == 5 and y["held_missing_exit"] == 2
+                                and "SYNH" not in y["held"] for y in out["judged"]["years"]))
+            self.assertTrue(all((y["held_empty_cash"], y["eligible_empty_cash"]) == (1, 1)
+                                and y["portfolio_price"] < y["portfolio"] for y in out["judged"]["years"]))
+            self.assertIn("mean_portfolio_minus_roster_ew_price_only", out["judged"])
             self.assertEqual(set(out["shown_only"]), {"fifth_january_session_exit", "zero_cost"})
             self.assertEqual(out["job"]["freeze_commit"], freeze)
             again = cli("--go")

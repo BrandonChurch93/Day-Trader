@@ -96,8 +96,9 @@ def roster(blob, cfg):
 
 
 def bar_rows(raw, window, required_through):
-    """Validated raw daily bars for one symbol; returns {session: close}. Rows may stop early (delisting),
-    but none may be missing between the anchor and `required_through` when the caller requires it."""
+    """Validated raw daily bars for one symbol; returns {session: close}. Rows may stop early (delisting).
+    Transport ruling before any price was read: a vendor row with zero volume is kept in the packet but is
+    treated exactly as a session with no bar (no trade, so no close to rank on or fill at)."""
     need(type(raw) is list, "BARS")
     allowed = set(window["sessions"])
     closes, previous = {}, None
@@ -110,10 +111,11 @@ def bar_rows(raw, window, required_through):
         need((local.hour, local.minute, local.second) == (0, 0, 0) and d in allowed
              and (previous is None or d > previous), "BAR_TIME")
         px = tuple(row[k] for k in ("o", "h", "l", "c"))
-        need(all(map(positive_number, px)) and type(row["v"]) is int and row["v"] > 0, "BAR_VALUES")
+        need(all(map(positive_number, px)) and type(row["v"]) is int and row["v"] >= 0, "BAR_VALUES")
         o, h, low, c = px
         need(low <= min(o, c) <= max(o, c) <= h, "BAR_VALUES")
-        closes[d] = exact(c)
+        if row["v"] > 0:
+            closes[d] = exact(c)
         previous = d
     return closes
 
@@ -217,6 +219,71 @@ def distributions(raw, windows, names_by_turn, cfg):
     return out
 
 
+def split_evidence(raw, windows, names_by_turn, cash):
+    """Native vendor corporate-actions pages, kept as evidence that every roster ticker was queried for forward
+    and reverse splits over exactly its turn window. Each page is stored as returned. Every split record the
+    vendor reports for a roster ticker must appear (same ex-date) in distributions.json after review."""
+    need(type(raw) is dict and set(raw) == {"schema", "vendor", "queries"} and type(raw["schema"]) is int
+         and raw["schema"] == 1 and type(raw["vendor"]) is str and raw["vendor"] and type(raw["queries"]) is list,
+         "SPLIT_EVIDENCE")
+    by_turn = {w["turn"]: w for w in windows}
+    queried = {y: set() for y in by_turn}
+    for q in raw["queries"]:
+        need(type(q) is dict and set(q) == {"turn", "symbols", "start", "end", "queried_utc", "pages"}
+             and type(q["turn"]) is int and q["turn"] in by_turn and type(q["symbols"]) is list
+             and all(type(x) is str for x in q["symbols"]) and type(q["pages"]) is list and q["pages"]
+             and type(q["queried_utc"]) is str
+             and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", q["queried_utc"]) is not None, "SPLIT_EVIDENCE")
+        w = by_turn[q["turn"]]
+        need(day(q["start"]) == w["anchor"] and day(q["end"]) == w["exit"], "SPLIT_EVIDENCE_WINDOW")
+        need(type(q["pages"][-1]) is dict and q["pages"][-1].get("next_page_token") is None, "SPLIT_EVIDENCE_PAGES")
+        queried[q["turn"]] |= set(q["symbols"])
+        for page in q["pages"]:
+            need(type(page) is dict and set(page) <= {"corporate_actions", "next_page_token"}
+                 and type(page.get("corporate_actions", {})) is dict, "SPLIT_EVIDENCE")
+            for kind in ("forward_splits", "reverse_splits"):
+                records = page.get("corporate_actions", {}).get(kind, [])
+                need(type(records) is list, "SPLIT_EVIDENCE")
+                for r in records:
+                    need(type(r) is dict and type(r.get("symbol")) is str, "SPLIT_EVIDENCE")
+                    s = r["symbol"]
+                    if s in names_by_turn[q["turn"]]:
+                        d = day(r.get("ex_date"))
+                        if w["anchor"] < d <= w["exit"]:
+                            need(d in {x for x, _ in cash[q["turn"]][0][s]["splits"]}, "VENDOR_SPLIT_NOT_RECORDED")
+    need(all(set(names_by_turn[y]) <= queried[y] for y in by_turn), "SPLIT_EVIDENCE_COVERAGE")
+
+
+def split_control(raw, windows, names_by_turn, cfg):
+    """Vendor raw versus split-adjusted daily close comparison, counts only, per fund-turn and for MUB."""
+    need(type(raw) is dict and set(raw) == {"schema", "vendor", "queried_utc", "turns"} and type(raw["schema"]) is int
+         and raw["schema"] == 1 and type(raw["vendor"]) is str and raw["vendor"] and type(raw["queried_utc"]) is str
+         and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", raw["queried_utc"]) is not None
+         and type(raw["turns"]) is dict and set(raw["turns"]) == {str(w["turn"]) for w in windows}, "SPLIT_CONTROL")
+    out = {}
+    for w in windows:
+        block = raw["turns"][str(w["turn"])]
+        need(type(block) is dict and set(block) == set(names_by_turn[w["turn"]]) | {cfg["benchmark"]}, "SPLIT_CONTROL")
+        for v in block.values():
+            need(type(v) is dict and set(v) == {"matched", "one_sided", "steps"}
+                 and all(type(v[k]) is int and v[k] >= 0 for k in v), "SPLIT_CONTROL")
+        out[w["turn"]] = block
+    return out
+
+
+def check_control(block, raw_bars, cash, cfg):
+    """Every raw bar row has a matched adjusted close, none is one-sided, and the vendor's in-window adjustment
+    steps equal the reviewer-recorded splits (zero for MUB). A fund-turn with no bars must show zero matched."""
+    fund_actions, _ = cash
+    for s, rows in raw_bars["symbols"].items():
+        c = block[s]
+        need(c["matched"] == len(rows) and c["one_sided"] == 0
+             and c["steps"] == len(fund_actions[s]["splits"]), "SPLIT_CONTROL_MISMATCH")
+    c = block[cfg["benchmark"]]
+    need(c["matched"] == len(raw_bars["benchmark"]) and c["one_sided"] == 0 and c["steps"] == 0,
+         "SPLIT_CONTROL_MISMATCH")
+
+
 def check_jumps(closes, splits, cfg):
     """Refuse a packet whose consecutive raw closes move by more than the configured factor on a session with
     no recorded split: an unrecorded split, not a filter. Prints nothing and returns nothing."""
@@ -307,17 +374,25 @@ def turn_result(window, funds, bench, quotes, cash, cfg, exit_key="exit", zero_c
         dollars, shares, missing = sleeve(closes, fund_cash[s], costs, window, exit_key, sleeve_usd, zero_cost)
         if shares < 1:
             continue
+        price_only = {"cash": [], "splits": fund_cash[s]["splits"]}
+        dollars_price, _, _ = sleeve(closes, price_only, costs, window, exit_key, sleeve_usd, zero_cost)
         rank = closes[window["formation"]] / closes[window["anchor"]]
-        eligible.append({"symbol": s, "rank": rank, "dollars": dollars, "missing": missing,
-                         "proxied": costs["proxied"]})
+        eligible.append({"symbol": s, "rank": rank, "dollars": dollars, "dollars_price": dollars_price,
+                         "missing": missing, "proxied": costs["proxied"], "no_cash": not fund_cash[s]["cash"]})
     need(len(eligible) >= cfg["picks"], "TOO_FEW_ELIGIBLE")
     picks = sorted(eligible, key=lambda r: (r["rank"], r["symbol"]))[:cfg["picks"]]
     portfolio = sum((r["dollars"] for r in picks), Fraction(0)) / capital
     roster_ew = sum((r["dollars"] for r in eligible), Fraction(0)) / sleeve_usd / len(eligible)
+    # Price-only leg of the loser mark: cash set to zero for every fund on both sides.
+    portfolio_price = sum((r["dollars_price"] for r in picks), Fraction(0)) / capital
+    roster_ew_price = sum((r["dollars_price"] for r in eligible), Fraction(0)) / sleeve_usd / len(eligible)
     bcosts = side_costs(bench_quotes, window, cfg)
     bdollars, bshares, bmissing = sleeve(bench, bench_cash, bcosts, window, exit_key, capital, zero_cost)
     need(bshares >= 1 and not bmissing, "BENCHMARK")
     return {"turn": window["turn"], "portfolio": portfolio, "benchmark": bdollars / capital, "roster_ew": roster_ew,
+            "portfolio_price": portfolio_price, "roster_ew_price": roster_ew_price,
+            "held_empty_cash": sum(r["no_cash"] for r in picks),
+            "eligible_empty_cash": sum(r["no_cash"] for r in eligible),
             "held": [r["symbol"] for r in picks], "picks": len(picks), "eligible": len(eligible), "roster": len(funds),
             "held_missing_exit": sum(r["missing"] for r in picks),
             "eligible_missing_exit": sum(r["missing"] for r in eligible),
@@ -333,6 +408,8 @@ def assess(rows, cfg):
     p = [r["portfolio"] for r in rows]
     vs_b = [r["portfolio"] - r["benchmark"] for r in rows]
     vs_ew = [r["portfolio"] - r["roster_ew"] for r in rows]
+    # The calibration rows carry no cash, so there the price-only leg equals the documented leg.
+    vs_ew_price = [r.get("portfolio_price", r["portfolio"]) - r.get("roster_ew_price", r["roster_ew"]) for r in rows]
     trimmed = sorted(p, reverse=True)[m["drop_best"]:]
     marks = {
         "all_turns": len(rows) == cfg["turns"],
@@ -341,7 +418,7 @@ def assess(rows, cfg):
         "beats_benchmark_mean": positive(vs_b),
         "beats_benchmark_years": sum(v > 0 for v in vs_b) >= m["min_years_ahead_of_benchmark"],
         "positive_without_best": positive(trimmed),
-        "beats_roster_mean": positive(vs_ew),
+        "beats_roster_mean": positive(vs_ew) and positive(vs_ew_price),
     }
     return marks, all(marks.values())
 
@@ -365,6 +442,8 @@ def evaluate(windows, packet, cfg):
                 "mean_roster_ew": mean(r["roster_ew"] for r in rows),
                 "mean_portfolio_minus_benchmark": mean(r["portfolio"] - r["benchmark"] for r in rows),
                 "mean_portfolio_minus_roster_ew": mean(r["portfolio"] - r["roster_ew"] for r in rows),
+                "mean_portfolio_minus_roster_ew_price_only": mean(r["portfolio_price"] - r["roster_ew_price"]
+                                                                  for r in rows),
                 "positive_years": sum(r["portfolio"] > 0 for r in rows),
                 "years_ahead_of_benchmark": sum(r["portfolio"] > r["benchmark"] for r in rows),
                 "mean_without_best": mean(sorted((r["portfolio"] for r in rows), reverse=True)

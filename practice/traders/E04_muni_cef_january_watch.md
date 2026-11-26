@@ -22,7 +22,7 @@ All dates are subject to the [official NYSE holiday calendar](https://ir.theice.
 
 ## Formation, Wed 2026-12-30, after the close
 
-1. For each frozen ticker read raw SIP daily bars from 2026-01-02 through 2026-12-30. A fund missing any session, or with a split whose ex-date is after 2026-01-02 and on or before 2026-12-31, is not eligible. Check splits from issuer, exchange or SEC records.
+1. For each frozen ticker read raw SIP daily bars from 2026-01-02 through 2026-12-30. A fund missing any session, or with a split whose ex-date is after 2026-01-02 and on or before 2026-12-31, is not eligible. A zero-volume bar counts as a missing session. Check splits as Plan 48 does: the vendor's corporate actions and raw versus split-adjusted closes, with any split found confirmed from issuer or SEC records.
 2. Price return = close on 2026-12-30 over close on 2026-01-02. Rank lowest first; ties by ticker.
 3. Write the ranked list privately, with its SHA-256 in the log, before the entry session opens.
 
@@ -40,7 +40,7 @@ Record every distribution with an ex-date after 2026-12-31 and on or before the 
 ## Exits
 
 1. Fri 2027-01-08 close: shown-only result, priced the same way.
-2. Fri 2027-01-29 close: judged result. Exit cost per side is the larger of the entry and exit half-spread plus 5 bp. A fund with no bar that day is valued at its last close, charged the larger of its entry half-spread and 50 bp plus 5 bp, and kept.
+2. Fri 2027-01-29 close: judged result. Exit cost per side is the larger of the entry and exit half-spread plus 5 bp. A fund with no bar, or a zero-volume bar, that day is valued at its last traded close, charged the larger of its entry half-spread and 50 bp plus 5 bp, and kept.
 3. Report the five-fund net return on $500, MUB on $500, and the equal-weight mean of all eligible funds, each labeled MEASURED, in the log.
 
 ## Log
