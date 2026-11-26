@@ -1,6 +1,5 @@
 """Plan 53: synthetic calibration, silent validation, or one locked score from an approved, pinned packet."""
 import argparse
-from calendar import monthrange
 import csv
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -170,10 +169,15 @@ def read_config(blob):
         return parse(blocks[0])
 
     scope = block(b"replay_53_plan")
-    need(type(scope) is dict and set(scope) == {"base", "benchmark", "term_exclusion_months", "roster_cutoff"}
+    need(type(scope) is dict and set(scope) == {"base", "benchmark", "roster_cutoff", "holdings_trust_cik", "holdings_series",
+                                               "holdings_forms", "municipal_name_terms"}
          and scope["base"] == "replay_48_plan" and type(scope["benchmark"]) is str
-         and type(scope["term_exclusion_months"]) is int and scope["term_exclusion_months"] > 0
-         and re.fullmatch(r"\d\d-\d\d", scope["roster_cutoff"]) is not None, "CONFIG")
+         and re.fullmatch(r"\d{2}-\d{2}", scope["roster_cutoff"]) is not None
+         and re.fullmatch(r"\d{10}", scope["holdings_trust_cik"]) is not None
+         and re.fullmatch(r"S\d{9}", scope["holdings_series"]) is not None
+         and all(type(scope[k]) is list and scope[k]
+                 and all(type(v) is str and v for v in scope[k])
+                 and len(set(scope[k])) == len(scope[k]) for k in ("holdings_forms", "municipal_name_terms")), "CONFIG")
     cfg = block(b"replay_48_plan")
     need(type(cfg) is dict and set(cfg) == CONFIG_KEYS, "CONFIG")
     need(set(cfg["cost"]) == {"extra_bps", "proxy_half_bps", "window_start", "measure_start", "measure_end",
@@ -183,7 +187,7 @@ def read_config(blob):
                                          "group_residual_sd", "beta_only_premium", "loser_residual_sd",
                                          "null_ceiling"}
          and set(cfg["resources"]) == {"minimum_free_mib", "process_cap_mib", "nice"}, "CONFIG")
-    return cfg | {k: scope[k] for k in ("benchmark", "term_exclusion_months", "roster_cutoff")}
+    return cfg | {k: v for k, v in scope.items() if k != "base"}
 
 
 def check_calibration(C, cfg, blob):
@@ -201,48 +205,60 @@ def https(value):
     return type(value) is str and re.fullmatch(r"https://[^/\s]+/\S*", value) is not None
 
 
-def csv_rows(blob, required, code):
+def csv_rows(blob, required, code, exact=False):
     rows = csv.DictReader(io.StringIO(blob.decode("utf-8"), newline=""), strict=True)
     fields = rows.fieldnames
-    need(fields and len(fields) == len(set(fields)) and required <= set(fields), code)
+    need(fields and len(fields) == len(set(fields)) and (required == set(fields) if exact else required <= set(fields)), code)
     out = list(rows)
     need(all(None not in row and all(v is not None for v in row.values()) for row in out), code)
     return out
 
 
+def municipal_name(value, cfg):
+    normalized = " " + " ".join(re.findall(r"[A-Z0-9]+", value.upper())) + " "
+    return any(f" {term} " in normalized for term in cfg["municipal_name_terms"])
+
+
 def roster_metadata(roster_blob, exclusions_blob, windows, C, cfg):
     base = C.roster(roster_blob, cfg)
-    by_year = {w["turn"]: w for w in windows}
-    fields = {"turn_year", "ticker", "cik", "fund_name", "listing_exchange", "listing_source_url", "mandate_asof",
-              "mandate_source_url", "classification", "term_end", "term_source_url", "sec_roster_url"}
+    by_year = {str(w["turn"]): w for w in windows}
+    snapshot_keys = ("series", "report_period", "public_date", "form", "filing_url")
+    common = {"turn_year", "holding_id", "ticker", "cik", "holding_name", "identity_url"} | set(snapshot_keys)
+    rows = csv_rows(roster_blob, common, "ROSTER_METADATA", exact=True)
+    excluded = csv_rows(exclusions_blob, common | {"reason"}, "ROSTER_EXCLUSIONS", exact=True)
+    ids = {y: set() for y in by_year}
+    snapshots = {}
     admitted = set()
-    for r in csv_rows(roster_blob, fields, "ROSTER_METADATA"):
-        y = int(r["turn_year"])
-        need(y in by_year and re.fullmatch(r"\d{10}", r["cik"]) is not None and bool(r["fund_name"].strip())
-             and bool(r["listing_exchange"].strip()) and r["classification"] == "taxable"
-             and all(https(r[k]) for k in ("listing_source_url", "mandate_source_url", "sec_roster_url")),
-             "ROSTER_METADATA")
-        cutoff = date.fromisoformat(f"{y}-{cfg['roster_cutoff']}")
-        need(C.day(r["mandate_asof"]) <= cutoff, "ROSTER_METADATA")
-        if r["term_end"]:
-            entry = by_year[y]["entry"]
-            limit_y, month = divmod(entry.year * 12 + entry.month - 1 + cfg["term_exclusion_months"], 12)
-            month += 1
-            limit = date(limit_y, month, min(entry.day, monthrange(limit_y, month)[1]))
-            need(https(r["term_source_url"]) and C.day(r["term_end"]) > limit, "ROSTER_TERM")
-        else:
-            need(https(r["term_source_url"]), "ROSTER_TERM")
-        admitted.add((y, r["cik"], r["ticker"]))
-    ex_fields = {"turn_year", "cik", "ticker", "reason", "evidence_asof", "source_url"}
-    ex_rows = csv_rows(exclusions_blob, ex_fields, "ROSTER_EXCLUSIONS")
-    for r in ex_rows:
-        need(r["turn_year"] in {str(y) for y in by_year} and bool(r["reason"].strip())
-             and (not r["cik"] or re.fullmatch(r"\d{10}", r["cik"]) is not None)
-             and (not r["source_url"] or https(r["source_url"]))
-             and (int(r["turn_year"]), r["cik"], r["ticker"]) not in admitted, "ROSTER_EXCLUSIONS")
-        if r["evidence_asof"]:
-            C.day(r["evidence_asof"])
-    return base, len(ex_rows)
+    trust = str(int(cfg["holdings_trust_cik"]))
+    index_url = re.compile(rf"https://www\.sec\.gov/Archives/edgar/data/0*{trust}/"
+                           r"([0-9]{10})([0-9]{2})([0-9]{6})/\1-\2-\3-index\.html?")
+    for included, batch in ((True, rows), (False, excluded)):
+        for r in batch:
+            y = r["turn_year"]
+            need(y in by_year and re.fullmatch(r"[1-9][0-9]*", r["holding_id"]) is not None
+                 and r["holding_id"] not in ids[y] and bool(r["holding_name"].strip()), "ROSTER_METADATA")
+            ids[y].add(r["holding_id"])
+            snap = tuple(r[key] for key in snapshot_keys)
+            need(snapshots.setdefault(y, snap) == snap and r["series"] == cfg["holdings_series"]
+                 and r["form"] in cfg["holdings_forms"] and index_url.fullmatch(r["filing_url"]) is not None,
+                 "ROSTER_SNAPSHOT")
+            cutoff = C.day(f"{y}-{cfg['roster_cutoff']}")
+            need(C.day(r["report_period"]) <= C.day(r["public_date"]) < cutoff, "ROSTER_CLOCK")
+            named_muni = municipal_name(r["holding_name"], cfg)
+            if included:
+                need(not named_muni and re.fullmatch(r"\d{10}", r["cik"]) is not None
+                     and https(r["identity_url"]) and (y, r["cik"]) not in admitted, "ROSTER_METADATA")
+                admitted.add((y, r["cik"]))
+            else:
+                need(r["reason"] in {"municipal_name", "replay48_overlap", "not_listed_cef_common",
+                                     "unresolved_identity", "duplicate_common"}
+                     and (r["reason"] == "municipal_name") == named_muni
+                     and (not r["cik"] or re.fullmatch(r"\d{10}", r["cik"]) is not None)
+                     and (not r["ticker"] or C.TICKER.fullmatch(r["ticker"]) is not None)
+                     and (not r["identity_url"] or https(r["identity_url"])), "ROSTER_EXCLUSIONS")
+    need(all(positions == {str(i) for i in range(1, len(positions) + 1)} for positions in ids.values()),
+         "ROSTER_HOLDINGS_IDS")
+    return base, len(excluded)
 
 
 def actions_and_coverage(raw, coverage_blob, windows, roster, C, cfg):

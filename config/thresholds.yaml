@@ -1080,7 +1080,7 @@ replay_48_plan:
   source: research_rig/PREREG_48_muni_cef_tax_loss.md
 
 replay_53_plan:
-  value: {"base":"replay_48_plan","benchmark":"PCEF","term_exclusion_months":12,"roster_cutoff":"12-01"}
+  value: {"base":"replay_48_plan","benchmark":"PCEF","roster_cutoff":"12-01","holdings_trust_cik":"0001378872","holdings_series":"S000027370","holdings_forms":["N-Q","N-Q/A","NPORT-P","NPORT-P/A","N-CSR","N-CSR/A","N-CSRS","N-CSRS/A"],"municipal_name_terms":["MUNI","MUNIS","MUNICIPAL","MUNICIPALS","MUNICIPALITY","MUNICIPALITIES","TAX FREE","TAX EXEMPT"]}
   status: builder
   note: Plan 53 inherits the unchanged Plan 48 calendar, sizing, costs, marks, calibration assumptions and resource caps. This block holds only taxable scope changes. Not runtime overrides.
   source: research_rig/PREREG_53_taxable_cef_tax_loss.md

@@ -112,7 +112,47 @@ def parsed(blob):
     return S.parse(blob)
 
 
+def holdings_roster(names, cfg):
+    """Synthetic PCEF filings and one excluded municipal line per turn."""
+    proof = "https://example.test/proof"
+    header = ("turn_year,holding_id,ticker,cik,holding_name,identity_url,series,"
+              "report_period,public_date,form,filing_url")
+    roster, exclusions = [header], [header + ",reason"]
+    for w in WINDOWS:
+        y = w["turn"]
+        form = cfg["holdings_forms"][(y - cfg["first_turn"]) % len(cfg["holdings_forms"])]
+        accession = f"0000000099-{y % 100:02d}-999999"
+        url = (f"https://www.sec.gov/Archives/edgar/data/{int(cfg['holdings_trust_cik'])}/"
+               f"{accession.replace('-', '')}/{accession}-index.htm")
+        snap = f"{cfg['holdings_series']},{y}-08-31,{y}-10-20,{form},{url}"
+        roster.extend(f"{y},{i},{s},{i:010d},{s} Fund,{proof},{snap}" for i, s in enumerate(names, 1))
+        exclusions.append(f"{y},{len(names) + 1},SYNZ,0000000099,SYNZ Tax-Free Trust,{proof},{snap},municipal_name")
+    return tuple(("\n".join(rows) + "\n").encode() for rows in (roster, exclusions))
+
+
 class Unit(unittest.TestCase):
+    def test_roster_holdings_metadata_and_strict_cutoff(self):
+        roster, exclusions = holdings_roster(["SYNA", "SYNB"], CFG)
+        admitted, excluded = S.roster_metadata(roster, exclusions, WINDOWS, C, CFG)
+        self.assertEqual(admitted[WINDOWS[0]["turn"]], ("SYNA", "SYNB"))
+        self.assertEqual(excluded, len(WINDOWS))
+        cases = (
+            (roster.replace(b"2016-10-20", b"2016-12-01"), exclusions, "ROSTER_CLOCK"),
+            (roster.replace(b"2016-08-31,2016-10-20", b"2016-12-01,2016-12-02"), exclusions, "ROSTER_CLOCK"),
+            (roster.replace(b"2016-10-20", b"2016-11-01", 1), exclusions, "ROSTER_SNAPSHOT"),
+            (roster.replace(b"N-Q,", b"13F-HR,", 1), exclusions, "ROSTER_SNAPSHOT"),
+            (roster.replace(b"S000027370", b"S999999999", 1), exclusions, "ROSTER_SNAPSHOT"),
+            (roster.replace(b"SYNA Fund", b"SYNA Tax-Exempt Fund", 1), exclusions, "ROSTER_METADATA"),
+            (roster, exclusions.replace(b",3,SYNZ,", b",4,SYNZ,", 1), "ROSTER_HOLDINGS_IDS"),
+            (roster, exclusions.replace(b",3,SYNZ,", b",2,SYNZ,", 1), "ROSTER_METADATA"),
+            (roster, exclusions.replace(b"municipal_name", b"replay48_overlap", 1), "ROSTER_EXCLUSIONS"),
+        )
+        for included, removed, error in cases:
+            with self.subTest(error=error), self.assertRaisesRegex(S.Refused, "P53_" + error):
+                S.roster_metadata(included, removed, WINDOWS, C, CFG)
+        self.assertFalse(S.municipal_name("Municipally Fund", CFG))
+        self.assertTrue(S.municipal_name("A muni. fund", CFG))
+
     def test_calendar(self):
         self.assertEqual(len(WINDOWS), 10)
         first, last = WINDOWS[0], WINDOWS[-1]
@@ -355,16 +395,7 @@ def evaluate(*args, **kwargs):
             (root / "research_rig/TRIAL_LEDGER.md").write_text(f"| {S.LEDGER_ROW} | {link} |\n")
             (root / "docs/QUEUE.md").write_text(f"| {S.QUEUE_ROW} | {link} |\n")
             names, bars, quotes, cash, _ = synthetic_packet()
-            proof = "https://example.test/proof"
-            roster = ("turn_year,ticker,cik,fund_name,listing_exchange,listing_source_url,mandate_asof,"
-                      "mandate_source_url,classification,term_end,term_source_url,sec_roster_url\n" +
-                      "".join(f"{y},{s},{i:010d},{s} Fund,NYSE,{proof},{y}-11-30,{proof},taxable,,{proof},{proof}\n"
-                              for y in bars for i, s in enumerate(names, 1))).encode()
-            exclusions = ("turn_year,cik,ticker,reason,evidence_asof,source_url\n"
-                          f"2016,0000000099,SYNZ,unknown mandate,2016-10-15,{proof}\n").encode()
-            with self.assertRaisesRegex(S.Refused, "P53_ROSTER_TERM"):
-                S.roster_metadata(roster.replace(b"taxable,,", b"taxable,2017-01-10,", 1),
-                                  exclusions, WINDOWS, C, cfg)
+            roster, exclusions = holdings_roster(names, cfg)
             pins = {n: digest((root / n).read_bytes()) for n in sorted(S.PIN_NAMES)} | {
                 S.ROSTER_PIN: digest(roster), S.EXCLUSIONS_PIN: digest(exclusions)}
             (root / S.PINS).write_bytes(S.encode(pins))
@@ -496,6 +527,7 @@ def evaluate(*args, **kwargs):
             self.assertEqual((v.returncode, v.stderr), (0, ""))
             self.assertTrue(v.stdout.startswith("P53_INPUTS_OK turns 10 roster_rows 80"))
             self.assertIn("events_placed 50 clusters 10 symbols 9", v.stdout)
+            self.assertIn("excluded_rows 10", v.stdout)
             self.assertIn("cash_gaps 20 eligible_cash_gaps 20", v.stdout)
             self.assertTrue(all(re.fullmatch(r"[a-z_]+ \d+", " ".join(line)) for line in
                                 zip(v.stdout.split()[1::2], v.stdout.split()[2::2])))
