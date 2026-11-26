@@ -1,0 +1,33 @@
+{
+  "sources": {
+    "BCH": "2017-12-20",
+    "BTC": "2017-01-01",
+    "ETH": "2017-01-01",
+    "LINK": "2019-06-27",
+    "LTC": "2017-01-01",
+    "XLM": "2019-03-02",
+    "XRP": "2019-02-26"
+  },
+  "outage_utc_dates": [
+    "2020-04-25", "2020-05-10", "2020-06-28", "2020-11-30", "2020-12-21",
+    "2021-04-20", "2021-04-25", "2021-05-19", "2021-08-13", "2021-09-29",
+    "2022-05-12", "2023-03-24"
+  ],
+  "minutes": {"judged": 1, "shown_late": [5, 15], "fallback_minutes": 5, "max_actual_overlap_share": 0.05},
+  "proposed_marks": {
+    "matched_t": 2.0,
+    "trim_share": 0.01,
+    "positive_years": 2,
+    "min_tickets": 100,
+    "min_days": 60
+  },
+  "power": {
+    "min_probability": 0.33,
+    "mean_multiplier": 0.5,
+    "seed": 72013,
+    "draws": 2048,
+    "day_noise_bp": 45,
+    "ticket_noise_bp": 65
+  },
+  "request_delay_seconds": 0.55
+}
