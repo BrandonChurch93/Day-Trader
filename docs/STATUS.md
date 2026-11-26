@@ -1,16 +1,18 @@
 # Status
 
-Last updated: 2026-11-26 10:10 UTC
+Last updated: 2026-11-26 10:25 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
 
+- Queue 101, earnings-date advancements ([doc 125](research/125_count_101_earnings_date_advancers.md), ledger 202), closed on the tested free sources. MEASURED: 200-firm EDGAR pilot, 59 future earnings-release notices, zero qualifying advancements under the fixed history proxy. STATED: the conditional 1,500-firm projection is 0 with a 95% upper count of 75, below the 400 close line. Issuer-only public-time provenance, total eligible count and historical $500 orderability are UNKNOWN. No market inputs or score.
+
 - [Replay 60](research/126_replay_60_special_dividends.md), run once 2026-11-26 09:59:20 UTC (queue 99, ledger 199). MEASURED. Did not pass, 6 of 7 marks. Buying special-dividend declarations at the open two sessions after the filing and selling 20 sessions later placed 339 of 443 events and averaged +1.96% net (clustered t 2.38), positive in 9 of 11 years. The missed mark: against IWM on the same days the gap was +0.96% with clustered t 1.23 against a mark of 2. Shown only, cannot count: declared yield under 1% averaged +3.56% on 75 events, 3% and above +0.86% on 166. Gaps: 24 events refused on vendor price basis, 9 because one share cost more than $500. Independent recompute by a helper who did not read the scorer: agrees on all 443 decisions, every judged figure and all seven marks.
 
 - TM07, the desk test (queue 33, ledger 198): engine `058a543` and package `e1673b6` merged; not started. The operator stopped before week 1 because the registration seal lacked the model list and session start steps. The lead agent ruled on both on 2026-11-26; the 20 week fixtures are being built. Host change for this test: `sudo` on the work machine now logs every call to `/var/log/tm07-sudo.log`.
 
-- Idea round 32 ([doc 121](121_idea_round_32.md)) merged 2026-11-26 and opened two count-first checks: queue 101, firms that move their earnings date forward, and queue 102, activist filings in closed-end funds. Both are counting events only; no price read.
+- Idea round 32 ([doc 121](121_idea_round_32.md)) merged 2026-11-26 and opened two count-first checks: queue 101, firms that move their earnings date forward (now closed on count, see above), and queue 102, activist filings in closed-end funds (still counting; no price read).
 
 - Plan 58, Bitcoin 21:00–23:00 UTC window (queue 98, ledgers 196 and 197), closed on costs before any replay price was read. MEASURED: IBIT paired quote coverage passed at 690/716, but the mean paired spread plus the fee allowance was 8.127517 bp against a strict limit of 3.50 bp. BIP fixed fees alone failed the limit at the dated reference. No freeze, lock, return or replay. [Measurement and closure](research/123_measure_59_bitcoin_evening_window_costs.md)
 
