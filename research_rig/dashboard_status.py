@@ -11,7 +11,7 @@ BULLET = re.compile(r"^ {0,3}[-*+]\s+(.+)")
 STAMP = re.compile(r"\b(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}(?::\d{2})?) UTC\b")
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 RUN = re.compile(r"\brun once\b", re.I)
-REPLAY = re.compile(r"\bReplay\s+(\d+)\b", re.I)
+REPLAY = re.compile(r"\bReplay\s+(\d+)\b(?:\s+(Leg|Rule)\s+([A-Z])\b)?", re.I)
 MARKDOWN_LINK = re.compile(r"\[([^\]]+)\]\(([^()\s]+(?:\([^()]*\)[^()\s]*)*)\)")
 CODE_PATH = re.compile(r"(?<!\w)\x60((?:docs/|research/)[^\x60\s]+\.md(?:#[\w-]+)?)\x60")
 SCORECARD_PATH = "docs/research/95_where_we_stand_after_32_tests.md"
@@ -125,12 +125,16 @@ def scoreboard(markdown, findings, gh):
     if total != (len(base), sum(row["passed"] for row in base)):
         raise ValueError("Dashboard scoreboard: test inventory and family totals disagree")
 
+    def key(match):
+        return int(match[1]), (f"{match[2].title()} {match[3].upper()}" if match[2] else "")
+
     # A previously reported design result does not use up a later held-back verdict.
-    recorded = {int(match[1]): row for row in base if (match := REPLAY.match(row["label"]))
+    recorded = {key(match): row for row in base if (match := REPLAY.match(row["label"]))
                 and not row["verdict"].lower().startswith("design only")}
+    recorded_numbers = {number for number, _ in recorded}
     latest_baseline = max(
         (item["date"] for item in findings
-         if (m := REPLAY.search(item["lead"])) and int(m[1]) in recorded and RUN.search(item["raw"])),
+         if (m := REPLAY.search(item["lead"])) and int(m[1]) in recorded_numbers and RUN.search(item["raw"])),
         default="",
     )
     matched, later = set(), set()
@@ -139,26 +143,27 @@ def scoreboard(markdown, findings, gh):
         replay = REPLAY.search(item["lead"])
         if not (replay and item["utc"] and RUN.search(item["raw"])):
             continue
-        number = int(replay[1])
-        if number in recorded:
-            if number not in matched:
-                dated.append(recorded[number])
-                matched.add(number)
+        trial = key(replay)
+        number, variant = trial
+        if trial in recorded:
+            if trial not in matched:
+                dated.append(recorded[trial])
+                matched.add(trial)
             continue
-        if number in later or item["date"] <= latest_baseline:
+        if (not variant and number in recorded_numbers) or trial in later or item["date"] <= latest_baseline:
             continue
         verdict = re.search(r"(?<![\w-])(?:did not pass|failed|passed|met all)\b(?:[, ]+(\d+\s+of\s+\d+\s+marks))?",
                             item["raw"], re.I)
         if not verdict:
             raise ValueError(f"Dashboard scoreboard: cannot read the verdict for {item['lead']!r}")
         passed = verdict[0].lower().startswith(("passed", "met all"))
-        label = f"Replay {number:02}"
+        label = f"Replay {number:02}" + (f" {variant}" if variant else "")
         report = next((href for text, href in item["links"] if text == item["lead"]), item["links"][0][1])
         outcome = "Passed" if passed else "Did not pass"
         if verdict[1]:
             outcome += f" ({verdict[1]})"
         dated.append(dict(label=label, name="", verdict=outcome, passed=passed, url=report, scope=""))
-        later.add(number)
+        later.add(trial)
 
     passes = [row for row in base if row["passed"]] + [row for row in dated if row["passed"] and row not in base]
     tests = total[0] + len(later)

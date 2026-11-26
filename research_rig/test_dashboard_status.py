@@ -64,3 +64,17 @@ class DashboardStatusTests(unittest.TestCase):
     def test_inconsistent_inventory_fails(self):
         with self.assertRaisesRegex(ValueError, "family totals disagree"):
             scoreboard(INVENTORY.replace("| Total | 2", "| Total | 9"), [], GH)
+
+    def test_distinct_legs_share_the_run_clock_and_report_without_double_counting(self):
+        extra = """- [Replay 46 Leg A](research/101_two_legs.md), run once 2026-11-26 06:51:58 UTC. Did not pass, 3 of 6 marks.
+- [Replay 46 Leg B](research/101_two_legs.md), run once 2026-11-26 06:51:58 UTC. Did not pass, 5 of 6 marks.
+- [Replay 46 Leg B](research/101_two_legs.md), run once 2026-11-26 06:51:58 UTC. Did not pass, 5 of 6 marks.
+"""
+        status = STATUS.replace("## Where things stand\n", "## Where things stand\n" + extra)
+        findings = parse_status(status, GH)
+        validate_status_runs(status, findings)
+        score = scoreboard(INVENTORY, findings, GH)
+        self.assertEqual((score["tests"], score["passed"], score["did_not_pass"]), (5, 1, 4))
+        self.assertEqual([row["label"] for row in score["latest"][:2]], ["Replay 46 Leg A", "Replay 46 Leg B"])
+        self.assertEqual([row["verdict"] for row in score["latest"][:2]],
+                         ["Did not pass (3 of 6 marks)", "Did not pass (5 of 6 marks)"])

@@ -190,6 +190,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/98_kraken_and_coinbase_short_access.md` | STATED / MEASURED / UNKNOWN: Kraken US perps and Bitnomial spot margin, Coinbase Financial Markets perpetual-style futures, and what a small Idaho account can short by API | CURRENT |
 | `docs/research/99_round_24_forced_flow_and_shortable_coins.md` | Round 24: dated forced-flow events for a $500 US account (next 60 days priority; queues rows 86 and 87) and events on the 29 US-shortable non-BTC/ETH coins (0 new rows) | CURRENT |
 | `docs/research/100_round_25_too_small_for_big_money.md` | Round 25: edges too small for big money ($300 to $500 US account); 6 candidates counted from SEC EDGAR 2016 to 2026 (queues rows 88 and 89 count-first; drops 4 to skip list) | CURRENT |
+| `docs/research/101_replay_46_cftc_altcoin_futures.md` | Replay 46 saved results: pre-launch spot long and post-launch short proxy both failed; marks, costs, coverage gaps, and shown-only checks | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -337,6 +338,7 @@ Working papers.
 | `research_rig/APPROVAL_46.md` | The lead agent's approval line for plan 46 legs A and B: validation and one scored run, names the freeze commit, the freeze manifest hash and the input manifest hash. Read by the approval gate | CURRENT |
 | `research_rig/AUDIT_46_cftc_docket.md`, `research_rig/docket_46.json` | Public CFTC filing docket, exact-product attachments, independent 25-row clock check, corrected dates and exclusions | CURRENT |
 | `research_rig/common_46.py`, `research_rig/score_46.py`, `research_rig/test_46.py`, `research_rig/calibrate_46.py` | Calendar engine, separate pinned validation and once-only scoring, temporary synthetic Git fixtures, and count-only power calibration | CURRENT |
+| `research_rig/report_46.py` | Renders Replay 46's aggregate report from the pinned saved result and frozen settings; no scoring or market-data access | CURRENT |
 | `research_rig/PREREG_48_muni_cef_tax_loss.md`, `research_rig/PINNED_48.json`, `research_rig/CALIBRATION_48.json` | Queue 86 and ledger 182. Frozen muni closed-end fund tax-loss and January rebound rule, cost, seven marks and synthetic null calibration. No market data or result | CURRENT |
 | `research_rig/common_48.py`, `research_rig/score_48.py`, `research_rig/test_48.py` | Replay 48 calendar, packet checks, spread cost and post-lock engine; pinned no-return validator, approval and one-shot lock; unit tests and synthetic end-to-end CLI test in a temporary Git repo | CURRENT |
 | `research_rig/PREREG_47_edgar_altcoin_treasuries.md`, `research_rig/PINNED_47.json`, `research_rig/CLOSE_47_on_count.md` | Queue 82, ledger 180. Plan protocol, retained draft hashes, and price-blind closure on count. No freeze, approved manifest, market data or score | RECORD |
