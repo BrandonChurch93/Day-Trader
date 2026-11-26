@@ -140,6 +140,20 @@ class DesignTests(unittest.TestCase):
 
 
 class GateTests(unittest.TestCase):
+    def test_frozen_manifest_roundtrips_through_scorer(self):
+        # Index equals the committed tree in the clean operator worktree; using it
+        # also checks the exact candidate during the precommit test.
+        index_blob = S.git("show", f":research_rig/{S.PINS}").stdout
+        manifest_blob = S.pinned(HERE / S.PINS, sha256(index_blob).hexdigest())
+        self.assertEqual(manifest_blob, index_blob)
+        pins = S.parse(manifest_blob)
+        self.assertIs(type(pins), dict)
+        self.assertEqual(set(pins), S.PIN_NAMES)
+        for name, pin in pins.items():
+            self.assertTrue(S.is_pin(pin))
+            self.assertEqual(S.pinned(HERE / name, pin),
+                             S.git("show", f":research_rig/{name}").stdout)
+
     def test_fixed_codes_only_on_bad_argument(self):
         stderr = StringIO()
         with patch.object(sys, "stderr", stderr), patch.object(sys, "argv", ["score_31.py", "--unknown-secret"]):
