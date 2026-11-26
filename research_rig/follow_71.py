@@ -17,23 +17,56 @@ APPROVAL = "sweep_70/vault71_approval.json"
 COLUMNS = ["non_btc_legs", "entry_utc_seconds", "exit_utc_seconds", "plain_net", "reference", "matched_net"]
 
 
+def prior_t(root):
+    raw = custody.pinned(root, custody.SEARCH_REL, custody.SEARCH_SHA)
+    rows = [json.loads(line) for line in raw.splitlines()[1:]]
+    chosen = [r for r in rows if r["finalist_rank"] is not None]
+    if (len(chosen) != 1 or chosen[0]["rule"] != new.ANCHOR
+            or type(chosen[0]["finalist_rank"]) is not int or chosen[0]["finalist_rank"] != 1
+            or chosen[0]["meets_search_marks"] is not True or chosen[0]["duplicate_of"] is not None
+            or type(chosen[0]["paired_day_t"]) not in (int, float)
+            or not math.isfinite(chosen[0]["paired_day_t"])):
+        raise ValueError("reserved Plan 70 anchor differs from the accepted search summary")
+    return chosen[0]["paired_day_t"]
+
+
 def accepted_search(root, args, config, grid):
     raw = custody.pinned(root, new.SEARCH_REL, args.search71_sha256)
     head, *rows = map(json.loads, raw.splitlines())
-    if (set(head) != {"input_counts", "reserved_places", "sweep_finalists"}
+    if (not isinstance(head, dict) or set(head) != {"input_counts", "reserved_places", "sweep_finalists"}
             or [r["rule"] for r in rows] != [r["id"] for r in grid]
-            or set(head["reserved_places"]) != {new.ANCHOR}):
+            or not isinstance(head["reserved_places"], dict) or set(head["reserved_places"]) != {new.ANCHOR}):
         raise ValueError("not the pin's exact Plan 71 search grid and reservation")
+    for r in rows:
+        stat = r["paired_day_t"]
+        if (stat is not None and (type(stat) not in (int, float) or not math.isfinite(stat))
+                or type(r["meets_search_marks"]) is not bool
+                or (r["finalist_rank"] is None and "sweep_finalist_rank" in r)
+                or (r["finalist_rank"] is not None and (type(r["finalist_rank"]) is not int
+                                                       or type(r.get("sweep_finalist_rank")) is not int
+                                                       or stat is None))):
+            raise ValueError("invalid Plan 71 statistic or rank type")
     chosen = sorted((r for r in rows if r["finalist_rank"] is not None), key=lambda r: r["finalist_rank"])
     final_ids = head["sweep_finalists"]
-    if (not 1 <= len(final_ids) <= config["search_marks"]["finalist_cap"]
-            or head["reserved_places"][new.ANCHOR] not in final_ids
+    owner = head["reserved_places"][new.ANCHOR]
+    if (not isinstance(final_ids, list) or any(type(rid) is not str for rid in final_ids)
+            or not 1 <= len(final_ids) <= config["search_marks"]["finalist_cap"]
+            or type(owner) is not str or owner not in final_ids
+            or (new.ANCHOR in final_ids) != (owner == new.ANCHOR)
             or len(set(final_ids)) != len(final_ids)
             or [r["finalist_rank"] for r in chosen] != list(range(1, len(chosen) + 1))
             or [r["rule"] for r in chosen] != [rid for rid in final_ids if rid != new.ANCHOR]
-            or any(not r["meets_search_marks"] or r["duplicate_of"] is not None
+            or any(r["meets_search_marks"] is not True or r["duplicate_of"] is not None
+                   or r["paired_day_t"] < config["search_marks"]["full_t"]
                    or final_ids.index(r["rule"]) + 1 != r["sweep_finalist_rank"] for r in chosen)):
         raise ValueError("Plan 71 finalist list does not respect sweep places")
+    anchor_t = prior_t(root)
+    stats = {r["rule"]: r["paired_day_t"] for r in chosen}
+    if owner != new.ANCHOR and stats[owner] <= anchor_t:
+        raise ValueError("Plan 71 replacement does not beat the reserved matched t")
+    stats[new.ANCHOR] = anchor_t
+    if final_ids != sorted(final_ids, key=lambda rid: (-stats[rid], rid)):
+        raise ValueError("Plan 71 sweep places are not ranked by matched t then stable ID")
     return head["input_counts"], chosen
 
 

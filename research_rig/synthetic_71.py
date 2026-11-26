@@ -135,15 +135,16 @@ def approved_vault_fixture(cfg):
         root = Path(temp)
         (root / "sweep_70").mkdir()
         rule = {"id": "71-001", "hold_hours": 2, "top_coins": 2}
-        row = {**make_row("71-001", 3.7), "finalist_rank": 1, "sweep_finalist_rank": 2,
+        row = {**make_row("71-001", 3.7), "finalist_rank": 1, "sweep_finalist_rank": 1,
                "trades": 1, "active_days": 1}
         summary = old.rows_bytes([{"input_counts": {}, "reserved_places": {"70-102": "70-102"},
-                                  "sweep_finalists": ["70-102", "71-001"]}, row])
+                                  "sweep_finalists": ["71-001", "70-102"]}, row])
+        prior = old.rows_bytes([{"input_counts": {}}, {**make_row("70-102", 3.51), "finalist_rank": 1}])
         vectors = old.rows_bytes([{"columns": post.COLUMNS, "rules": [{"rule": "71-001", "tickets": [
             [["ADA", "ETH"], old.START, old.START + 2 * old.HOUR, .01, .005, .005]]}]}])
         man = old.rows_bytes([{}])
         args = SimpleNamespace(freeze_commit="test", grid_sha256=custody.GRID_SHA, grid71_sha256="new",
-                               settings_sha256=custody.SETTINGS_SHA, search_summary_sha256=custody.SEARCH_SHA,
+                               settings_sha256=custody.SETTINGS_SHA, search_summary_sha256=custody.digest(prior),
                                search71_sha256=custody.digest(summary), vault_manifest_sha256=custody.digest(man),
                                validate_vault_inputs=True)
         fixed = {**post.input_pins(args), "vectors_sha256": custody.digest(vectors), "carried_ids": ["71-001"]}
@@ -154,7 +155,7 @@ def approved_vault_fixture(cfg):
                                     "vault_manifest_sha256": args.vault_manifest_sha256,
                                     "lead_authorizes_single_use": True}])
         args.approval71_sha256 = custody.digest(approval)
-        for rel, data in ((new.SEARCH_REL, summary), (post.RECEIPT, receipt), (post.VECTORS, vectors),
+        for rel, data in ((new.SEARCH_REL, summary), (custody.SEARCH_REL, prior), (post.RECEIPT, receipt), (post.VECTORS, vectors),
                           (post.APPROVAL, approval), (new.sealed.MANIFEST, man)):
             custody.create_private(root, rel, data)
 
@@ -163,6 +164,7 @@ def approved_vault_fixture(cfg):
             return None, {"kept": 1}
 
         with (patch.object(new.sealed, "VAULT_MANIFEST_SHA", args.vault_manifest_sha256),
+              patch.object(custody, "SEARCH_SHA", args.search_summary_sha256),
               patch.object(new.sealed, "check_manifest"),
               patch.object(new.sealed, "load", side_effect=fake_load) as load,
               patch.object(old, "Tape", side_effect=RuntimeError("score stopped")) as price):
@@ -185,6 +187,45 @@ def approved_vault_fixture(cfg):
             assert load.call_count == 2
 
 
+def summary_rank_fixture(cfg):
+    with tempfile.TemporaryDirectory() as temp:
+        root = Path(temp)
+        (root / "sweep_70").mkdir()
+        rules = [{"id": "71-001"}, {"id": "71-002"}]
+        first = {**make_row("71-001", 4.0), "finalist_rank": 1, "sweep_finalist_rank": 1}
+        second = {**make_row("71-002", 3.50), "finalist_rank": 2, "sweep_finalist_rank": 3}
+        prior = old.rows_bytes([{"input_counts": {}}, {**make_row("70-102", 3.51), "finalist_rank": 1}])
+        (root / custody.SEARCH_REL).write_bytes(prior)
+
+        def run(owner, ids, rows):
+            raw = old.rows_bytes([{"input_counts": {}, "reserved_places": {"70-102": owner},
+                                   "sweep_finalists": ids}, *rows])
+            path = root / new.SEARCH_REL
+            path.write_bytes(raw)
+            args = SimpleNamespace(search71_sha256=custody.digest(raw))
+            return post.accepted_search(root, args, cfg, rules)
+
+        with patch.object(custody, "SEARCH_SHA", custody.digest(prior)):
+            assert len(run("70-102", ["71-001", "70-102", "71-002"], [first, second])[1]) == 2
+            assert len(run("71-001", ["71-001", "71-002"],
+                           [first, {**second, "sweep_finalist_rank": 2}])[1]) == 2
+            for spec in (
+                ("71-001", ["71-001", "70-102", "71-002"], [first, second]),
+                ("70-102", ["70-102", "71-001", "71-002"], [{**first, "sweep_finalist_rank": 2}, second]),
+                ("71-001", ["71-001", "71-002"],
+                 [{**first, "paired_day_t": 3.51}, {**second, "sweep_finalist_rank": 2}]),
+                ("70-102", ["71-001", "70-102"], [first, {**second, "finalist_rank": None}]),
+                ("70-102", ["71-001", "70-102", "71-002"], [{**first, "finalist_rank": True}, second]),
+                ("70-102", ["71-001", "70-102", "71-002"], [{**first, "paired_day_t": True}, second]),
+            ):
+                try:
+                    run(*spec)
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError("impossible finalist/rank handoff accepted")
+
+
 def synthetic_main():
     root = old.HERE.parent
     legacy_bytes = (root / old.GRID_PATH).read_bytes()
@@ -200,6 +241,7 @@ def synthetic_main():
     execution_fixture(cfg, grid)
     guard_fixture(cfg)
     approved_vault_fixture(cfg)
+    summary_rank_fixture(cfg)
     costs = new.cost_vector(cfg, COINS)
     panel = fake_panel(70001, plant=True)
     fenced = wire_panel(panel, [f"{old.STOP*1000},poison,do,not,decode,price\n".encode()])
