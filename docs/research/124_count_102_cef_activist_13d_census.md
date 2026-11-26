@@ -2,9 +2,11 @@
 
 Ledger 201, queue row 102. Written 2026-11-26 MT. Plan and pass line locked before any SEC count in `research_rig/COUNT_102_cef_13d_census.md`. Source idea: `docs/121_idea_round_32.md`; power screen: `docs/research/117_power_screen_before_data.md`.
 
+Erratum (2026-11-26 MT): Corrected two prose transcription errors against unchanged events_102.json and census_summary.json (163 -> 229 unique listed CEF CIKs; 36 -> 38 normalized filer groups, "All other 27 filers" -> "All other 29 filers"); no other count moved.
+
 ## Verdict
 
-MEASURED (zero price access): Between 2016-01-01 and 2026-11-25, SEC EDGAR records contain **437 qualifying common-stock activist Schedule 13D events** on US-listed closed-end funds across **337 primary independent event clusters** (same normalized filer group on the same Eastern-time filing date), spanning 163 unique listed CEF CIKs and 36 filer groups.
+MEASURED (zero price access): Between 2016-01-01 and 2026-11-25, SEC EDGAR records contain **437 qualifying common-stock activist Schedule 13D events** on US-listed closed-end funds across **337 primary independent event clusters** (same normalized filer group on the same Eastern-time filing date), spanning 229 unique listed CEF CIKs and 38 filer groups.
 
 STATED (pass line fixed before counting): The idea advances to a pre-registration only if primary independent event clusters number at least 100, closes if fewer than 60, and defers to the lead agent between 60 and 100.
 
@@ -71,7 +73,7 @@ MEASURED (execution-clock implication): Nearly three-fifths of clusters (198 of 
 
 ## Top Filers and Same-Day Clustering
 
-MEASURED (filer concentration across 36 normalized filer groups):
+MEASURED (filer concentration across 38 normalized filer groups):
 
 | Filer Group | Qualifying Events | Event Share | Primary Clusters | Cluster Share | 5-Day-Wave Clusters |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -84,7 +86,7 @@ MEASURED (filer concentration across 36 normalized filer groups):
 | Ohio PERS (OPERS) | 8 | 1.8% | 5 | 1.5% | 5 |
 | Ancora Advisors | 4 | 0.9% | 4 | 1.2% | 4 |
 | Relative Value Partners | 3 | 0.7% | 3 | 0.9% | 3 |
-| All other 27 filers combined | 37 | 8.5% | 37 | 11.0% | 37 |
+| All other 29 filers combined | 37 | 8.5% | 37 | 11.0% | 37 |
 | Total | 437 | 100.0% | 337 | 100.0% | 293 |
 
 MEASURED (single-actor and multi-fund wave risk):
