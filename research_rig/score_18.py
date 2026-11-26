@@ -8,7 +8,6 @@ from pathlib import Path
 import re
 import resource
 import subprocess
-from tempfile import NamedTemporaryFile
 import unittest
 
 from . import archive_18 as A, common_18 as C
@@ -112,7 +111,7 @@ def require_staged_ftt(seal):
         for name in supplement["archives"]:
             path = RUN/"ftt_archives"/name
             if path.is_symlink() or not path.is_file() or not 0<path.stat().st_size<=A.MAX_ZIP_BYTES:
-                raise C.Incomplete(f"stage the pinned FTT ZIP without opening the rows: {name}")
+                raise A.ArchivePathError(path,"stage the pinned FTT ZIP without opening the rows")
 
 
 def sync_directory(path):
@@ -177,70 +176,59 @@ def real_resources():
         os.nice(10-current)
 
 
-def preflight_receipt_path(expected):
-    return RUN/f"preflight_{expected}.json"
+class ActionRefused(C.Incomplete):
+    """The CLI emits only an approved code and the affected path."""
+    def __init__(self,code,path):
+        super().__init__(code)
+        self.code,self.path = code,path
 
 
-def verify_preflight(expected,seal):
+def affected_path(exc,fallback):
+    if isinstance(exc,A.ArchivePathError):
+        return exc.path
+    return exc.filename if isinstance(exc,OSError) and exc.filename else fallback
+
+
+def verify_sealed_inputs(expected):
     try:
-        path = preflight_receipt_path(expected)
-        if path.is_symlink() or path.stat().st_uid!=os.geteuid() or path.stat().st_mode&0o022:
-            raise C.Incomplete("preflight receipt is not owner-controlled")
-        receipt = json.loads(path.read_bytes())
-    except (OSError,ValueError) as exc:
-        raise C.Incomplete("matching Plan 18 preflight receipt required") from exc
-    if not isinstance(receipt,dict):
-        raise C.Incomplete("preflight receipt is not an object")
-    counts = receipt.get("counts")
-    if (receipt.get("version")!=1 or receipt.get("seal_sha256")!=expected
-        or receipt.get("commit")!=seal["commit"] or not isinstance(counts,dict)
-        or set(counts)!={"trade_bars","mark_bars","funding_settlements","ftt_funding_stamp_anomalies"}
-        or type(counts["ftt_funding_stamp_anomalies"]) is not int
-        or counts["ftt_funding_stamp_anomalies"]<0):
-        raise C.Incomplete("preflight receipt does not match the sealed inputs")
-    for name in ("trade_bars","mark_bars","funding_settlements"):
-        row = counts[name]
-        if (not isinstance(row,dict) or set(row)!={"files","rows"}
-            or type(row["files"]) is not int or row["files"]<=0
-            or type(row["rows"]) is not int or row["rows"]<=0):
-            raise C.Incomplete("preflight receipt has invalid clock counts")
+        return verify(expected)
+    except (Exception,KeyboardInterrupt) as exc:
+        raise ActionRefused("P18_SEAL_REFUSED",affected_path(exc,RUN/"freeze_18.json")) from exc
+
+
+def sealed_clock_preflight(binding):
+    seal,p = binding
+    try:
+        contracts,symbols,_,_,_,_,manifests,_ = A.inspect_universe(
+            PATHS,seal["inputs"],p,evidence_dir=RUN/"evidence",inventory_pin=seal["evidence_inventory_sha256"])
+        return A.inspect_archive_clocks(DATA/"replay_16/archives",manifests,symbols,contracts,p,
+                                        supplemental_dir=RUN/"ftt_archives",check=memory_check)
+    except (Exception,KeyboardInterrupt) as exc:
+        raise ActionRefused("P18_PREFLIGHT_FAILED",affected_path(exc,RUN/"universe_18.json")) from exc
 
 
 def preflight(expected):
-    if os.path.lexists(RUN/"score_18.lock") or os.path.lexists(ROOT/OUTPUT):
-        raise C.Incomplete("the Plan 18 one-shot is consumed")
-    seal,p = verify(expected)
-    contracts,symbols,_,_,_,_,manifests,_ = A.inspect_universe(
-        PATHS,seal["inputs"],p,evidence_dir=RUN/"evidence",inventory_pin=seal["evidence_inventory_sha256"])
-    counts = A.inspect_archive_clocks(DATA/"replay_16/archives",manifests,symbols,contracts,p,
-                                     supplemental_dir=RUN/"ftt_archives",check=memory_check)
-    receipt = dict(version=1,seal_sha256=expected,commit=seal["commit"],counts=counts)
-    tmp = None
-    try:
-        with NamedTemporaryFile(mode="w",encoding="utf-8",dir=RUN,prefix=".preflight-",delete=False) as f:
-            tmp = f.name
-            write_json(f,receipt)
-        os.replace(tmp,preflight_receipt_path(expected))
-        sync_directory(RUN)
-    finally:
-        if tmp is not None and os.path.lexists(tmp):
-            os.unlink(tmp)
-    return counts
+    for path in (RUN/"score_18.lock",ROOT/OUTPUT):
+        if os.path.lexists(path):
+            raise ActionRefused("P18_CONSUMED",path)
+    return sealed_clock_preflight(verify_sealed_inputs(expected))
 
 
 def authorize_run(expected):
-    seal,p = verify(expected)
-    verify_preflight(expected,seal)
-    return seal,p
+    binding = verify_sealed_inputs(expected)
+    sealed_clock_preflight(binding)  # Revalidate inside this process; no receipt is trusted.
+    return binding
 
 
 def prepare_score(binding):
     seal,p = binding
-    loaded = A.load(PATHS,seal["inputs"],DATA/"replay_16/archives",p,
-                                        evidence_dir=RUN/"evidence",
-                                        supplemental_dir=RUN/"ftt_archives",
-                                        inventory_pin=seal["evidence_inventory_sha256"],check=memory_check)
-    memory_check()
+    try:
+        loaded = A.load(PATHS,seal["inputs"],DATA/"replay_16/archives",p,
+                        evidence_dir=RUN/"evidence",supplemental_dir=RUN/"ftt_archives",
+                        inventory_pin=seal["evidence_inventory_sha256"],check=memory_check)
+        memory_check()
+    except (Exception,KeyboardInterrupt) as exc:
+        raise ActionRefused("P18_LOAD_FAILED",affected_path(exc,RUN/"universe_18.json")) from exc
     return seal,p,loaded
 
 
@@ -297,15 +285,23 @@ def main():
     else:
         if not args.seal_sha256 or not A.SHA.fullmatch(args.seal_sha256):
             parser.error("the owner must supply the trusted full seal digest")
+        def refuse(code,path):
+            safe_path = str(path).encode("unicode_escape").decode("ascii")
+            parser.exit(1,f"{code} {safe_path}\n")
         try:
             real_resources()
+        except (Exception,KeyboardInterrupt):
+            refuse("P18_RESOURCE_REFUSED","/proc/meminfo")
+        try:
             if args.preflight:
                 print(json.dumps(preflight(args.seal_sha256),sort_keys=True))
             else:
                 one_shot(RUN/"score_18.lock",ROOT/OUTPUT,lambda:authorize_run(args.seal_sha256),score,
                          prepare=prepare_score)
-        except (C.Incomplete,OSError,ValueError,KeyError,subprocess.CalledProcessError) as exc:
-            parser.exit(1,f"Plan 18 refused: {exc}\n")
+        except ActionRefused as exc:
+            refuse(exc.code,exc.path)
+        except (Exception,KeyboardInterrupt):
+            refuse("P18_RUN_REFUSED",RUN/"score_18.lock")
     return 0
 
 

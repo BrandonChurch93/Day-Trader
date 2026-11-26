@@ -30,6 +30,13 @@ WORK_RESERVE = 130_000_000
 MAX_ZIP_BYTES = 8_000_000
 
 
+class ArchivePathError(C.Incomplete):
+    """Retain the input location independently of any private diagnostic detail."""
+    def __init__(self,path,detail):
+        super().__init__(detail)
+        self.path = path
+
+
 def digest(blob):
     return sha256(blob).hexdigest()
 
@@ -226,6 +233,17 @@ def check_memory_budget(groups,count):
     return size
 
 
+def stamp_cells(stream):
+    for i,line in enumerate(stream):
+        end = line.find(b",")
+        token = line[:end] if end>=0 else line.rstrip(b"\r\n")
+        if i==0:
+            token = token.removeprefix(b"\xef\xbb\xbf")
+        if len(token)>=2 and token.startswith(b'"') and token.endswith(b'"'):
+            token = token[1:-1]
+        yield (token,)
+
+
 def zip_rows(raw,*,allow_empty=False,stamps_only=False):
     with zipfile.ZipFile(io.BytesIO(raw)) as z:
         members = [name for name in z.namelist() if name.endswith(".csv")]
@@ -233,8 +251,7 @@ def zip_rows(raw,*,allow_empty=False,stamps_only=False):
             return
         member, = members
         with z.open(member) as stream:
-            lines = io.TextIOWrapper(stream,encoding="utf-8-sig")
-            rows = ((line.partition(",")[0].strip().strip('"'),) for line in lines) if stamps_only else csv.reader(lines)
+            rows = stamp_cells(stream) if stamps_only else csv.reader(io.TextIOWrapper(stream,encoding="utf-8-sig"))
             for i,row in enumerate(rows):
                 if row and row[0].isdigit():
                     yield row
@@ -269,14 +286,17 @@ def archive_groups(manifests,wanted):
             raise C.Incomplete("archive manifest has reported errors")
         for name,m in manifest["archives"].items():
             scope = BULK_SCOPE.match(name)
-            if scope is not None and scope[1] not in wanted:
+            stem_symbol = re.split(r"[-_.]",name.rsplit("/",1)[-1],maxsplit=1)[0]
+            if scope is not None and scope[1] not in wanted and stem_symbol not in wanted:
                 continue
             match = BULK.fullmatch(name)
             if match is None:
-                raise C.Incomplete("archive manifest contains an unsupported in-scope path")
+                raise ArchivePathError(name,"archive manifest contains an unsupported in-scope path")
             pair = match[3]
+            if pair not in wanted or pair!=stem_symbol:
+                raise ArchivePathError(name,"wanted archive directory and basename disagree")
             if name in groups[pair] and groups[pair][name][1]!=m:
-                raise C.Incomplete("conflicting archive manifests")
+                raise ArchivePathError(name,"conflicting archive manifests")
             groups[pair][name] = match,m
     return groups
 
@@ -284,14 +304,25 @@ def archive_groups(manifests,wanted):
 def archive_input(archive_dir,supplemental_dir,name,match,m):
     is_ftt = m["where"]=="plan18_ftt"
     if m["where"]!="replay_16" and not (is_ftt and supplemental_dir is not None and match[3]=="FTTUSDT"):
-        raise C.Incomplete("venue input is not in a pinned bulk store")
+        raise ArchivePathError(name,"venue input is not in a pinned bulk store")
     path = (supplemental_dir if is_ftt else archive_dir)/name
-    if not 0<path.stat().st_size<=MAX_ZIP_BYTES:
-        raise C.Incomplete("archive ZIP has invalid size or exceeds the per-file limit")
+    try:
+        size = path.stat().st_size
+    except OSError as exc:
+        raise ArchivePathError(path,"archive ZIP is missing or unreadable") from exc
+    if not 0<size<=MAX_ZIP_BYTES:
+        raise ArchivePathError(path,"archive ZIP has invalid size or exceeds the per-file limit")
     return path,is_ftt
 
 
 def archive_rows(path,match,m,segments,p,*,stamps_only=False,count=None):
+    try:
+        yield from _archive_rows(path,match,m,segments,p,stamps_only=stamps_only,count=count)
+    except Exception as exc:
+        raise ArchivePathError(path,str(exc)) from exc
+
+
+def _archive_rows(path,match,m,segments,p,*,stamps_only,count):
     lo,hi = archive_span(match)
     is_ftt,kind = m["where"]=="plan18_ftt",match[2]
     hour_us = C.H*10**6
@@ -344,7 +375,7 @@ def inspect_archive_clocks(archive_dir,manifests,symbols,contracts,p,*,supplemen
                 if is_ftt and kind=="fundingRate":
                     ftt_stamp_anomalies += jitter or h in seen[kind] or not scheduled_funding(pair,h,p)
                 elif h in seen[kind]:
-                    raise C.Incomplete("duplicate archive hour")
+                    raise ArchivePathError(path,"duplicate archive hour")
                 seen[kind].add(h)
     return dict(summary,ftt_funding_stamp_anomalies=ftt_stamp_anomalies)
 
@@ -397,20 +428,23 @@ class Tape:
                             v = NAN
                         if not math.isfinite(v) or not math.isnan(rates[i]):
                             if not is_ftt:
-                                raise C.Incomplete("duplicate or malformed settlement")
+                                raise ArchivePathError(path,"duplicate or malformed settlement")
                             self.ftt_invalid_funding_hours.add(h)
                             rates[i] = NAN
                         if is_ftt and h in self.ftt_invalid_funding_hours:
                             continue
                         rates[i],times[i] = v,err
                     else:
-                        op,tr = float(row[1]),float(row[4])
-                        vol = float(row[5]) if kind=="klines" else 1.
+                        try:
+                            op,tr = float(row[1]),float(row[4])
+                            vol = float(row[5]) if kind=="klines" else 1.
+                        except (ValueError,IndexError) as exc:
+                            raise ArchivePathError(path,"malformed trade or mark bar") from exc
                         if not C.valid(op) or not C.valid(tr) or not math.isfinite(vol) or vol<0:
-                            raise C.Incomplete("malformed trade or mark bar")
+                            raise ArchivePathError(path,"malformed trade or mark bar")
                         dest = closes if kind=="klines" else marks
                         if not math.isnan(dest[i]):
-                            raise C.Incomplete("duplicate hourly bar")
+                            raise ArchivePathError(path,"duplicate hourly bar")
                         dest[i] = tr if vol>0 else -1.
                         if kind=="klines" and vol>0:
                             opens[i] = op

@@ -1,5 +1,6 @@
 """Only invented inputs, including temporary ZIPs, lock races, and calibration tapes."""
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import redirect_stderr, redirect_stdout
 import csv
 from dataclasses import replace
 import gzip
@@ -852,11 +853,34 @@ class FundingCarryTests(unittest.TestCase):
             manifest = dict(archives={name:m,outscope:m},errors={})
             args = (root,[manifest],pairs,set(),p)
             self.assertEqual(A.Tape(*args,contracts=cs).funding("key",t),(True,0.001))
-            manifest["archives"][name.replace(".zip",".tar.gz")] = m
-            with self.assertRaisesRegex(C.Incomplete,"unsupported in-scope"):
+            for intruder,error in (
+                (name.replace(".zip",".tar.gz"),"unsupported in-scope"),
+                (name.replace("/FAKEUSDT/","/OTHERUSDT/"),"directory and basename disagree"),
+                (name.replace("/FAKEUSDT/","/币安人生USDT/"),"unsupported in-scope"),
+                (name.replace("FAKEUSDT-fundingRate","OTHERUSDT-fundingRate"),"directory and basename disagree"),
+            ):
+                with self.subTest(path=intruder):
+                    manifest["archives"][intruder] = m
+                    with self.assertRaisesRegex(C.Incomplete,error):
+                        A.Tape(*args,contracts=cs)
+                    del manifest["archives"][intruder]
+            (root/name).unlink()
+            with self.assertRaisesRegex(A.ArchivePathError,"missing or unreadable"):
                 A.Tape(*args,contracts=cs)
+            with self.assertRaisesRegex(A.ArchivePathError,"missing or unreadable"):
+                A.inspect_archive_clocks(root,[manifest],pairs,cs,p,supplemental_dir=None,check=lambda:None)
 
-    def test_preflight_loads_only_stamps_and_requires_matching_receipt(self):
+    def test_clock_rehearsal_never_decodes_invalid_utf8_value_columns(self):
+        t = self.t
+        b = io.BytesIO()
+        with ZipFile(b,"w") as z:
+            z.writestr("fixture.csv",b"\xef\xbb\xbftime,value\n"+str(t*C.H).encode()+b",\xff\xff\n")
+        actual = list(A.zip_rows(b.getvalue(),stamps_only=True))
+        self.assertEqual(actual,[(str(t*C.H).encode(),)])
+        with self.assertRaises(UnicodeDecodeError):
+            list(A.zip_rows(b.getvalue()))
+
+    def test_preflight_loads_only_stamps_and_run_rechecks_even_with_fake_receipt(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             archives = root/"replay_16/archives"
@@ -874,44 +898,75 @@ class FundingCarryTests(unittest.TestCase):
             expected = "a"*64
             lock = root/"score_18.lock"
             with (patch.object(S,"RUN",root),patch.object(S,"DATA",root),
+                  patch.object(S,"ROOT",root),
                   patch.object(S,"verify",return_value=(seal,p)),
                   patch.object(S.A,"inspect_universe",return_value=(cs,pairs,None,None,None,None,[manifest],None)),
-                  patch.object(S.A,"load",side_effect=AssertionError("values loaded in preflight")),
-                  patch.object(S,"one_shot",side_effect=AssertionError("preflight touched lock"))):
-                with self.assertRaisesRegex(C.Incomplete,"preflight receipt required"):
-                    S.authorize_run(expected)
+                  patch.object(S.A,"load",side_effect=AssertionError("values loaded in preflight"))):
                 got = S.preflight(expected)
                 self.assertEqual(got,{k:{"files":1,"rows":1} for k in
                     ("trade_bars","mark_bars","funding_settlements")}|{"ftt_funding_stamp_anomalies":0})
                 with (patch.object(S,"real_resources"),patch("builtins.print") as emitted,
+                      patch.object(S,"one_shot",side_effect=AssertionError("preflight touched lock")),
                       patch("sys.argv",["score_18","--preflight","--seal-sha256",expected])):
                     self.assertEqual(S.main(),0)
                     emitted.assert_called_once()
                     self.assertEqual(json.loads(emitted.call_args.args[0]),got)
-                receipt = S.preflight_receipt_path(expected)
-                self.assertNotIn(bad,receipt.read_text())
                 self.assertFalse(lock.exists())
+                receipt = root/f"preflight_{expected}.json"
+                self.assertFalse(receipt.exists())
                 self.assertEqual(S.authorize_run(expected),(seal,p))
-                with self.assertRaisesRegex(C.Incomplete,"preflight receipt required"):
-                    S.authorize_run("b"*64)
-                with self.assertRaisesRegex(C.Incomplete,"does not match"):
-                    S.verify_preflight(expected,{"commit":"not-the-frozen-commit"})
+                receipt.write_text(json.dumps(dict(version=1,seal_sha256=expected,commit="frozen",counts=got)))
                 badfile = next(name for name in files if "/fundingRate/" in name)
                 files[badfile]["n"] += 1
-                second = "c"*64
-                with self.assertRaisesRegex(C.Incomplete,"row count"):
-                    S.preflight(second)
-                self.assertFalse(S.preflight_receipt_path(second).exists())
+                with self.assertRaisesRegex(S.ActionRefused,"P18_PREFLIGHT_FAILED"):
+                    S.authorize_run(expected)
+                err = io.StringIO()
+                with (patch.object(S,"real_resources"),redirect_stderr(err),
+                      patch("sys.argv",["score_18","--run","--seal-sha256",expected])):
+                    with self.assertRaises(SystemExit) as refused:
+                        S.main()
+                self.assertEqual(refused.exception.code,1)
+                self.assertEqual(err.getvalue(),f"P18_PREFLIGHT_FAILED {archives/badfile}\n")
+                self.assertFalse(lock.exists())
                 files[badfile]["n"] -= 1
                 files[badfile]["sha256"] = "0"*64
-                with self.assertRaises(C.Incomplete):
-                    S.preflight(second)
-                self.assertFalse(S.preflight_receipt_path(second).exists())
+                with self.assertRaisesRegex(S.ActionRefused,"P18_PREFLIGHT_FAILED"):
+                    S.authorize_run(expected)
                 name,meta = archive_fixture(archives,"FAKEUSDT","fundingRate",[[(t+8)*C.H+120,8,bad]])
                 files[name] = meta
-                with self.assertRaisesRegex(C.Incomplete,"timestamp"):
-                    S.preflight(second)
-                self.assertFalse(S.preflight_receipt_path(second).exists())
+                with self.assertRaisesRegex(S.ActionRefused,"P18_PREFLIGHT_FAILED"):
+                    S.preflight(expected)
+                self.assertFalse(lock.exists())
+
+    def test_run_prelock_bad_price_is_only_fixed_code_and_archive_path(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archives = root/"replay_16/archives"
+            t = self.t
+            p = C.P|dict(end=t+24)
+            cs = (C.Contract(1,1,"key",t-100,t+25),)
+            pairs = {"key":"FAKEUSDT"}
+            hidden = "PRIVATE_VALUE_813593"
+            name,m = archive_fixture(archives,"FAKEUSDT","klines",[[t*C.H,hidden,1,1,1,1]])
+            manifests = [dict(archives={name:m},errors={})]
+            seal = dict(commit="frozen",inputs={},evidence_inventory_sha256="fake")
+            stdout,stderr = io.StringIO(),io.StringIO()
+            def load_values(*args,**kwargs):
+                return A.Tape(archives,manifests,pairs,set(),p,contracts=cs)
+            with (patch.object(S,"ROOT",root),patch.object(S,"RUN",root),patch.object(S,"DATA",root),
+                  patch.object(S,"real_resources"),patch.object(S,"verify",return_value=(seal,p)),
+                  patch.object(S.A,"inspect_universe",return_value=(cs,pairs,None,None,None,None,manifests,None)),
+                  patch.object(S.A,"load",side_effect=load_values),
+                  patch.object(S,"score",side_effect=AssertionError("score before lock")),
+                  redirect_stdout(stdout),redirect_stderr(stderr),
+                  patch("sys.argv",["score_18","--run","--seal-sha256","a"*64])):
+                with self.assertRaises(SystemExit) as refused:
+                    S.main()
+            self.assertEqual(refused.exception.code,1)
+            self.assertEqual(stdout.getvalue(),"")
+            self.assertEqual(stderr.getvalue(),f"P18_LOAD_FAILED {archives/name}\n")
+            self.assertFalse((root/"score_18.lock").exists())
+            self.assertFalse((root/S.OUTPUT).exists())
 
     def test_prepare_failure_does_not_consume_the_scoring_claim(self):
         with TemporaryDirectory() as tmp:
