@@ -101,6 +101,23 @@
   }
 
   // ---------- what we believe now ----------
+  function renderScoreboard(d) {
+    var score = d.scoreboard;
+    var body = $('scoreboard-body');
+    if (!score) { body.innerHTML = '<p class="meta">Export a new snapshot to see the scoreboard.</p>'; return; }
+    function report(row, label) {
+      return '<a href="' + esc(row.url) + '" target="_blank" rel="noopener">' + esc(label) + '</a>';
+    }
+    body.innerHTML =
+      '<p><strong>' + int(score.tests) + '</strong> tests run · <strong>' + int(score.passed) + '</strong> passed · <strong>' + int(score.did_not_pass) + '</strong> did not pass</p>' +
+      '<p><strong>Passes:</strong> ' + (score.passes.map(function (row) {
+        return report(row, row.label) + (row.name ? ': ' + esc(row.name) : '') + (row.scope ? ' (' + esc(row.scope) + ')' : '');
+      }).join('; ') || 'None') + '</p>' +
+      '<p><strong>Latest five results:</strong> ' + score.latest.map(function (row) {
+        return report(row, row.label) + ': ' + esc(row.verdict);
+      }).join('; ') + '</p>';
+  }
+
   var BELIEVED_FIRST = 6;
   function believedLink(l) {
     var m = /^(\d+)_/.exec(l[0]);
@@ -115,7 +132,7 @@
       var lead = String(b.lead || '');
       var stop = /[.?:]$/.test(lead) ? '' : '.';
       return '<li class="believed-item"' + (i >= BELIEVED_FIRST ? ' hidden' : '') + '><span class="believed-lead">' + esc(lead + stop) + '</span>' +
-        (b.body ? ' ' + esc(b.body).replace(/\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2} UTC)?/g, '<span class="believed-date">$&</span>') : '') +
+        (b.body ? ' ' + esc(b.body).replace(/\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2}(?::\d{2})? UTC)?/g, '<span class="believed-date">$&</span>') : '') +
         ((b.links || []).length ? ' <span class="believed-links">' + b.links.map(believedLink).join(', ') + '</span>' : '') + '</li>';
     }).join('') + '</ul>';
     if (list.length > BELIEVED_FIRST) {
@@ -1124,6 +1141,7 @@
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (d) {
         state.data = d;
+        renderScoreboard(d);
         initPractice(d);
         try { renderBelieved(d); } catch (e) { $('believed-body').innerHTML = '<p class="meta">The findings could not be shown.</p>'; }
         renderStatus(d);
