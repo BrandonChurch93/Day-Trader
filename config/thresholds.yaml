@@ -802,6 +802,11 @@ tm07_screen:
   note: TM07 draft only. Dates are first positive-volume UTC daily candles in the opened public windows, not minute listing clocks. The judged fee still comes from tm06_plan.main_fee_bps. Sensitivities are display only.
   source: docs/research/98_kraken_and_coinbase_short_access.md
 
+screen_122_124:
+  value: {weekly_repeat_gap_bp: 91.4, weeks: [7, 14, 20], worlds: 120000, seed: 122123124, batch: 3000, edge_bp: [0, 20, 50, 100], noise_interval: 0.90, tilt_gap_ratio: 0.50, weekly_wake_gap_ratio: 0.75, illustrative_family_correlations: [0.85, 0.38], queue_comparator_wakes: 5, full_week_trading_days: 5}
+  status: research
+  why: "Doc 168 synthetic screen only. The stock repeat-gap proxy is inferred in doc 163; the effects and correlations are scenarios, not fitted parameters or authority to start a replay."
+
 tm09:
   value:
     window: {first_monday: "2026-07-06", last_monday: "2026-11-16", weeks: 20}
