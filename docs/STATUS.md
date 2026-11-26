@@ -1,19 +1,21 @@
 # Status
 
-Last updated: 2026-11-26 11:50 UTC
+Last updated: 2026-11-26 11:57 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
 
 - Passed: [44 scored tests, three counted passes](research/95_where_we_stand_after_32_tests.md). [Replay 25, TLT at month-end](research/69_replay_25_treasury_month_end.md) and [Replay 48, muni fund January rebound](research/103_replay_48_muni_cef_january.md) are reachable with a US $500 account. [Replay 20, Upbit listing short](research/71_replay_20_upbit_listing_short.md) is not. None clears a real-money trade.
-- In work: queue 55 is counting closed-end fund rights offerings without prices (ledger 212); queue 17 is screening plain earnings drift (ledger 213). Rows 67, 68 and 69 are being screened before prices. The practice desk and forward logs are pretend only. See [Running now](QUEUE.md#running-now) for assignments and [Next, in order](QUEUE.md#next-in-order) for unclaimed work.
-- Gated work: Plan 63 has approval for placebo projection only, not measurement or target access. Plan 64 is at the draft stage. Replay 11's held-back score waits on exit prices. TM07 has not started; see [its registration](../timemachine/TM07_REGISTRATION.md).
+- In work: queue 55 is counting closed-end fund rights offerings without prices (ledger 212); queue 17 is screening plain earnings drift (ledger 213). The practice desk and forward logs are pretend only. See [Running now](QUEUE.md#running-now) for assignments and [Next, in order](QUEUE.md#next-in-order) for unclaimed work.
+- Gated work: Plan 63 stopped before opening prices and needs a fresh placebo projection approval. Plan 64's placebo preflight is under review; it has no approval to pull prices. Replay 11's held-back score waits on exit prices. TM07 has not started; see [its registration](../timemachine/TM07_REGISTRATION.md).
 - Owner: [nothing in current work waits on him](#waiting-on-the-owner). No real-money account, purchases or real trades.
 
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- [Queue 67, 68 and 69](research/142_power_screen_rows_67_68_69.md) closed on synthetic power before prices at 04:56 MT. None was scored.
 
 - [Stock trading costs](research/136_measured_stock_trading_costs.md), queue 9f: finished at 04:43 MT. The report gives the saved spread results and compares them with frozen replay costs.
 
@@ -43,7 +45,7 @@ These entries keep the recorded figures. Entries without exact times keep their 
 
 - Queue 102, US-listed closed-end fund activist Schedule 13D census ([doc 124](research/124_count_102_cef_activist_13d_census.md), `research_rig/COUNT_102_cef_13d_census.md`, ledger 201), completed 2026-11-26 with zero price access. MEASURED: 437 qualifying common-stock activist events across 337 primary same-day clusters (293 5-day waves; 256 initial-13D-only clusters; 147 non-Saba clusters), clearing the 100-cluster pass line and advancing to pre-registration eligibility. 44.2% of events arrived during market hours, 41.2% after close, and 14.6% pre-market; Saba Capital Management accounts for 56.4% of clusters; 60-trading-day common-stock listing survival is 97.9% (97.4% raw Form 25-NSE). Post-filing tradable return is UNKNOWN.
 
-- Queue 104 count ([doc 128](research/128_row104_equity_cef_distribution_count.md), ledger 204) done 2026-11-26, price-blind. MEASURED: 472 distinct fund-days on 241 distinct ex-dates for equity closed-end funds that do not pay monthly, 2016 to October 2026, above the line of 150 fixed before counting. Thinning by year (58 in 2016, 24 in 2025) as funds move to monthly payouts; four Nuveen option funds are 164 of 454. A second count on year-end, special and irregular payouts across all SEC-classified equity closed-end funds also passed: MEASURED 461 fund-days on 261 ex-dates across 89 funds. Of 60 sampled events, 36 were public at least 3 sessions before the ex-date, 1 was not and 23 could not be dated. Plan 64 (ledger 207) is being drafted on these events; no price read.
+- Queue 104 count ([doc 128](research/128_row104_equity_cef_distribution_count.md), ledger 204) done 2026-11-26, price-blind. MEASURED: 472 distinct fund-days on 241 distinct ex-dates for equity closed-end funds that do not pay monthly, 2016 to October 2026, above the line of 150 fixed before counting. Thinning by year (58 in 2016, 24 in 2025) as funds move to monthly payouts; four Nuveen option funds are 164 of 454. A second count on year-end, special and irregular payouts across all SEC-classified equity closed-end funds also passed: MEASURED 461 fund-days on 261 ex-dates across 89 funds. Of 60 sampled events, 36 were public at least 3 sessions before the ex-date, 1 was not and 23 could not be dated. Plan 64 (ledger 207) uses these events. Its placebo preflight is built and under review; no price was read.
 
 - Idea round 37 ([doc 134](134_idea_round_37.md)) merged 2026-11-26: rules that fire often in very liquid funds. 9 of 10 dropped because nobody measures them as working after costs and after publication; 1 queued (row 109, short dip in an uptrend across four index funds, plan 67, ledger 211).
 

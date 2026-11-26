@@ -107,7 +107,7 @@ Dollar size of Replay 20 (Upbit listing short, NOT US-executable, unlevered Bina
 - E05, hot-five cash switch: STATED, proposed only, not started. If approved, it would report on-time coverage and compare the unchanged rule with the hold and random yardsticks after 26 complete weeks; results UNKNOWN (`practice/traders/E05_momentum_regime_watch.md`).
 - E06, hot-coin forward rules: STATED, each of the two candidate rules must beat the fixed comparison in at least 16 of 20 weeks; a tie or missed week is not a win (`practice/traders/E06_forward_hot_coin_rules.md`).
 - E07, ETF closure payouts: STATED, needs a mean payout over the closing ask above 0.25%, a positive median, at least 60% positive cases, and subgroup means above 0.15% where the card has enough cases, with at least 20 completed funds if stopped by date (`practice/traders/E07_etf_closure_payout_watch.md`).
-- Queue 102, activist filings in listed closed-end funds: STATED, the original screen could clear at 150 events under its assumptions. The census passed, and Plan 63 has approval for placebo projection only. Exact post-filing return is UNKNOWN (`docs/QUEUE.md`, `docs/121_idea_round_32.md`).
+- Queue 102, activist filings in listed closed-end funds: STATED, the original screen could clear at 150 events under its assumptions. The census passed, and Plan 63's first projection approval was superseded unused after input preparation stopped. No measurement or target access is approved. Exact post-filing return is UNKNOWN (`docs/QUEUE.md`, `docs/121_idea_round_32.md`).
 
 ### Work closed since the original list
 

@@ -2,7 +2,7 @@
 
 What this page is: the map of the repository. Every tracked file has its path in the first column of a table on this page, or sits under a folder that has its own row there with a trailing slash. `tools/check_repo.py` fails if that stops being true. A new file needs its own row unless it sits under a folder that has one. A folder named in passing, outside the first column, does not cover it.
 
-Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEUE.md` for what's next.
+Read the [agent guide](../AGENTS.md) first, then the [top of Status](STATUS.md#where-things-stand) for the current picture and [Next in the queue](QUEUE.md#next-in-order) for unclaimed work.
 
 ## How to use this page
 
@@ -85,7 +85,7 @@ Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEU
 
 ## docs/playbook/ (short pages written before the tests)
 
-Written 2026-11-24 from reading, before the project ran any test of its own. Where a playbook line and `docs/STATUS.md` disagree, the status page stands, because it reports our own tests. Every page opens with a dated note that says so. CURRENT here means no later playbook page replaces it. Its statements about what works are reading, not results. Where a page says something "is finished in v1", it describes the planned product. Nothing is built.
+Written 2026-11-24 from reading, before the project ran any test of its own. Where a playbook line and `docs/STATUS.md` disagree, the status page stands, because it reports our own tests. Every page opens with a dated note that says so. CURRENT here means no later playbook page replaces it. Its statements about what works are reading, not results. Where a page says something "is finished in v1", it describes the product as planned then, not what has shipped.
 
 | File | What it is | State |
 |---|---|---|
@@ -247,6 +247,8 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/136_measured_stock_trading_costs.md` | Queue row 9f: saved half-spreads for 56 stocks and funds by time and symbol group, $500 order arithmetic, and comparison with frozen replay costs | CURRENT |
 | `docs/research/137_replay_22_fable_rule_a.md` | Replay 22 result: Fable rule A run as a fixed rule with no AI on the monthly top 30 coins did not pass, 1 of 5 marks; the row closes | CURRENT |
 | `docs/research/139_replay_65_stock_bond_rebalancing.md` | Replay 65 result: the NBER w33554 stock-bond rebalancing rule on SPY against IEF did not pass, 3 of 5 marks; not shown, not refuted, and the row closes | CURRENT |
+| `docs/research/140_false_pass_audit.md` | False-pass audit: no-edge pass rate of each of the 44 scored tests, expected passes by luck against the 3 counted, trust in each pass, ideas closed before a return | CURRENT |
+| `docs/research/142_power_screen_rows_67_68_69.md` | Queue 67, 68 and 69: published ETF-window evidence and calendar-only synthetic power screens; all close before prices | CURRENT |
 | `docs/research/132_count_107_dividend_month_coverage.md` | Count 107 closure before prices: dated roster and regular dividend-month counts below the fixed line; source check | RECORD |
 | `docs/research/128_row104_equity_cef_distribution_count.md` | Row 104 count, price-blind: equity closed-end fund non-monthly and special distributions 2016 to 2026 (472 fund-days on 241 ex-dates, pass line met; declaration lead time unknown). Addendum: second count over all SEC-classified equity closed-end funds, year-end and special distributions (461 fund-days on 261 ex-dates, passes; 36 of 60 sampled public at least 3 sessions before ex, 1 not, 23 undatable) | CURRENT |
 
@@ -391,7 +393,7 @@ Working papers.
 | `research_rig/PREREG_63_cef_activist_13d.md`, `research_rig/count_63.py`, `research_rig/count_exclusions_63.py`, `research_rig/preflight_63.py`, `research_rig/DATA_REQUEST_63.md` | Queue 102 and ledger 206: draft closed-end fund activist 13D replay, price-blind overlap and identity-exclusion counts, whole-window preflight planner, and staged sealed-input request. No scored returns | DRAFT |
 | `research_rig/placebo_63.py`, `research_rig/placebo_native_63.py`, `research_rig/placebo_project_63.py`, `research_rig/placebo_run_63.py`, `research_rig/score_63.py`, `research_rig/power_63.py`, `research_rig/test_63.py`, `research_rig/PLACEBO_CUSTODY_63.md` | Plan 63 draft: scoped dispersion math, isolated projection and once-only custodian runner, price-free placement gates, clustered evidence and power sensitivity; no authorized run | DRAFT |
 | `research_rig/PLACEBO_FREEZE_63.json`, `research_rig/PLACEBO_AUDIT_63.md`, `research_rig/ACQUISITION_APPROVE_63.md` | Plan 63 pre-hold freeze pins, source/capture clearance, and prior Stage A acquisition approval. Does not authorize projection or measurement | RECORD |
-| `research_rig/PLACEBO_PROJECT_APPROVE_63.json` | Plan 63: the lead agent's projection-only approval (sole-file commit e58290f on the pre-hold freeze e8f0a2b). Lets the custodian build the placebo projection files; does not allow measurement, stage B or target access | RECORD |
+| `research_rig/PLACEBO_PROJECT_APPROVE_63.json` | Plan 63: the lead agent's projection-only approval (sole-file commit e58290f on the pre-hold freeze e8f0a2b). Allowed projection only. Superseded unused after input preparation stopped; see ledger 206 | RECORD |
 | `research_rig/ADOPTION_43_ATTEMPT3.md`, `research_rig/APPROVAL_43_ATTEMPT3.md` | Ledger 195: third attempt's packet adoption and validation-only approval; validation refused, no score | RECORD |
 | `research_rig/AMENDMENT_43_BASIS.md`, `research_rig/basis_43.py` | Queue 74 third attempt, ledger 195: quantization, no-return gate diagnostics, sealed adoption; no vendor data | RECORD. Third attempt stopped at validation |
 | `research_rig/PREREG_60_special_dividends.md`, `research_rig/CALIBRATION_60.json`, `research_rig/PINNED_60.json` | Queue 99 / ledger 199: execution-first special dividend design, filing-only calibration and frozen source pins. Scored once; see doc 126 | CURRENT |
@@ -411,6 +413,8 @@ Working papers.
 | `research_rig/PREREG_62_special_dividend_ex_day_v2.md`, `research_rig/score_62.py`, `research_rig/test_62.py`, `research_rig/PINNED_62.json` | Queue 105 and ledger 205: same traded clock and marks as Plan 61 with a narrow Class A vendor cash exception, separate custody and synthetic checks. Scored once; see doc 130 | CURRENT |
 | `research_rig/PREREG_67_rsi2_pullback.md` | Queue 109 and ledger 211: next-open RSI pullback draft, source audit, and closure before prices on all-mark synthetic power | RECORD |
 | `research_rig/power_67.py`, `research_rig/POWER_67.json` | Plan 67 synthetic-only calibration and saved output; no market inputs, scorer, or run | RECORD |
+| `research_rig/power_rows_67_68_69.py` | Queue rows 67, 68 and 69 synthetic five-mark power script; date-only calendars | RECORD |
+| `research_rig/POWER_ROWS_67_68_69.json` | Saved deterministic power figures for queue rows 67, 68 and 69; no market data | RECORD |
 | `research_rig/ADOPTION_62.md`, `research_rig/APPROVAL_62.md` | The lead agent's one-line approvals for plan 62: adoption of the plan 61 lineage and sealed inputs with no new prices, then the no-return input validation | RECORD |
 | `research_rig/GO_62.md` | The lead agent's approval for the one scored run of plan 62, naming the validation approval commit and the validation receipt hash | RECORD |
 | `research_rig/RECOMPUTE_62.json` | Replay 62 independent recompute, aggregate note only: who did it, what was re-derived, fields compared, differences and rule-text ambiguities. No per-event rows | RECORD |
@@ -514,6 +518,7 @@ Working papers.
 | `research_rig/results_09.json` | Replay 09 results, input fingerprints and coverage snapshot | CURRENT |
 | `research_rig/PREREG_10_negative_funding.md` | Fixed plan for a spot rule using negative perpetual funding. Not run: too few events in the design years | RECORD |
 | `research_rig/count_10_design.py`, `research_rig/design_counts_10.json` | Funding coverage audit and design-only entry counts for replay 10. No price returns or held-back signals | CURRENT |
+| `research_rig/build_doc140_false_pass_audit.py` | Builds doc 140 from repo files only: reads each plan's no-edge rate or mark, sums luck passes, counts ideas closed before a return | CURRENT |
 | `research_rig/run_v2.py`, `research_rig/compare_v1_v2.py`, `research_rig/noise_pbo.py`, `research_rig/build_doc16.py`, `research_rig/results_v2.json`, `research_rig/compare_v1_v2.json`, `research_rig/noise_pbo.json`, `research_rig/venue_price_gap.json` | The rerun after the audits and its outputs | CURRENT |
 | `research_rig/run_04.py`, `research_rig/results_04.json`, `research_rig/build_doc23.py`, `research_rig/NOTES_04_builder.md` | Replay 04 | CURRENT |
 | `research_rig/run_05.py`, `research_rig/AMENDMENT_05_I2_equal_thirds.md`, `research_rig/results_05.json`, `research_rig/results_05b.json`, `research_rig/build_doc22.py`, `research_rig/i2_2020_note.py`, `research_rig/i2_2020_note.json`, `research_rig/data_notes_french.md` | Replay 05: script, the correction to rule I2, first-run output, corrected-run output | CURRENT |
