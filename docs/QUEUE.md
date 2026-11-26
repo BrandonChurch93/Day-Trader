@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 23:31 UTC
+Last changed: 2026-11-26 23:33 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -138,6 +138,7 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 
 | Idea | From |
 |---|---|
+| Watch only (round 63, second-checked): machine reading. Filing wording changes stay under rows 10 and 63 (best after-cost replication t 1.31); reading one company through its linked companies waits on a US-only after-cost replication; forecasting bots wait on an audited multi-period live book. Dropped: companies with no analysts (no free dated coverage feed), a wide book of small news signals (paid feeds, the paper's text and tables disagree), buying on filings read after the close. Future rounds skip these unless a new after-cost result appears. | `docs/research/189_round_63_where_a_machine_reader_beats_people.md` |
 | Count first, no prices (round 65, second-checked): Lido withdrawal queue. Count how often and for how long the queue wait and the stETH discount data are both available with honest time stamps; a data-coverage count only, not a trade and not a claim of par in dollars. Crypto, so in line with the owner's 2026-11-26 direction. | `docs/research/191_round_65_small_and_tedious.md` |
 | Watch only (round 65, second-checked): bank and broker sign-up offers are personal, need the owner's own identity checks and are not a desk trade; mutual-bank conversions, contingent value rights, appraisal, liquidating trusts, airdrop farming, Sky and WBTC redemption and bankruptcy claims are dropped. Future rounds skip them unless access or data changes. | `docs/research/191_round_65_small_and_tedious.md` |
 | From survey 187, count first, no prices: first-time Schedule 13D filings on operating companies by activist funds since 2024-02-05 (the 5-business-day deadline), entered no earlier than the session after the SEC acceptance time. The published gain sits mostly before and on the filing day, so the count and the after-filing evidence are checked before any price is opened. Not the closed-end fund census of queue 102 | `docs/research/187_data_sources_for_an_ai_desk.md`, `docs/research/187c_event_text.md` |
