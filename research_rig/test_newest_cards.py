@@ -145,3 +145,49 @@ def test_running_now_strip(monkeypatch):
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-q"]))
+
+
+# ---- Plan 75, the sealed years: two pinned aggregate files off repo
+HAVE75 = os.path.isfile(NC.P75_RUN) and os.path.isfile(NC.P75_RECOMPUTE)
+need75 = pytest.mark.skipif(not HAVE75, reason="the Plan 75 aggregate files are kept off the repo")
+
+
+@need75
+def test_plan75_card_figures():
+    c = NC.plan75_card("GH/")
+    assert c["id"] == "plan75" and c["verdict"] == "Passed, thinly" and c["tone"] == "mixed"
+    assert c["title"] == "Plan 75: coin trend rule, the sealed years"
+    n = dict(c["numbers"])
+    assert n["Net after costs (75 hundredths of a percent a side)"] == "+9.04%"
+    assert n["Bitcoin held at the same risk, after costs"] == "+6.40%"
+    assert n["Largest fall from a high"] == "19.27%"
+    assert n["Since the paper's sample ended (2025-03-19)"] == "\u22124.35%"
+    assert n["Median hold"] == "8 days" and n["Fills (buys and sells)"] == "2,283"
+    assert n["Second version, built blind from the plan: net"] == "+10.11%"
+    assert c["bars"]["unit"] == "%"
+    assert c["bars"]["rows"] == [["2024", 18.8], ["2025", -4.6], ["2026, to October", -3.8], ["Whole stretch, harsher cost", -3.9]]
+    for words in ("20 large coins", "10, 20 or 30 day high", "only moves up", "8 days", "2024-01-01 to 2026-10-31",
+                  "all four marks", "All the gain came in 2024", "145 hundredths", "pretend-money forward card (E10), not real money"):
+        assert words in c["summary"]
+    assert c["links"] == [["Plan 75 result", "GH/docs/research/181_plan_75_heldback_result.md"]]
+    assert "plan_75_vault_run.out" in c["basis"] and "VAULT_RESULT.json" in c["basis"] and "kept off the repo" in c["basis"]
+    assert "-" not in "".join(v for _, v in c["numbers"])
+
+
+@need75
+@pytest.mark.parametrize("which", ["run", "recompute"])
+def test_plan75_refuses_a_changed_pinned_copy(tmp_path, which):
+    run, rec = tmp_path / "plan_75_vault_run.out", tmp_path / "VAULT_RESULT.json"
+    shutil.copy(NC.P75_RUN, run)
+    shutil.copy(NC.P75_RECOMPUTE, rec)
+    assert NC.plan75_card("GH/", run, rec)["numbers"]
+    target = run if which == "run" else rec
+    target.write_text(target.read_text().replace("PASS", "FAIL", 1))
+    with pytest.raises(ValueError, match="pinned file differs"):
+        NC.plan75_card("GH/", run, rec)
+
+
+def test_plan75_missing_files_fall_back_quietly(tmp_path):
+    c = NC.plan75_card("GH/", tmp_path / "nope.out", tmp_path / "nope.json")
+    assert c["id"] == "plan75" and c["verdict"] == "Figures not on this computer" and c["numbers"] == [] and "bars" not in c
+    assert NC.cards("GH/")[0]["id"] == "plan75"

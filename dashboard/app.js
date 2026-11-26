@@ -150,6 +150,9 @@
 
   // ---------- section 2 ----------
   var TONE_MARK = { fail: '\u00d7', mixed: '~', unknown: '?', info: 'i' };
+  // Keep a date such as 2024-01-01 on one line, so a narrow screen does not split it at a hyphen.
+  function keepDates(html) { return html.replace(/\b(\d{4}-\d{2}-\d{2})\b/g, '<span class="nowrap">$1</span>'); }
+
   // A small bar chart drawn in plain HTML, so it reads on a phone. Each bar has its value written beside it.
   function barsHtml(b) {
     var rows = b.rows || [];
@@ -157,7 +160,7 @@
     return '<figure class="hbars" aria-label="' + esc(b.label) + '"><figcaption class="meta">' + esc(b.label) + '</figcaption>' +
       rows.map(function (r) {
         var v = r[1], w = (Math.abs(v) / top * 50).toFixed(1);
-        var txt = (v < 0 ? '\u2212' : '+') + Math.abs(v).toFixed(1) + ' ' + esc(b.unit);
+        var txt = (v < 0 ? '\u2212' : '+') + Math.abs(v).toFixed(1) + (b.unit === '%' ? '' : ' ') + esc(b.unit);
         return '<div class="hbar"><span class="hbar-label">' + esc(r[0]) + '</span>' +
           '<span class="hbar-track"><span class="hbar-zero" aria-hidden="true"></span><span class="hbar-fill ' + (v < 0 ? 'neg' : 'pos') + '" style="' +
           (v < 0 ? 'right:50%' : 'left:50%') + ';width:' + w + '%"></span></span>' +
@@ -182,7 +185,7 @@
       var tone = t.tone || 'unknown';
       var nums = (t.numbers || []).length
         ? '<dl class="numlist">' + t.numbers.map(function (n) {
-            return '<div><dt>' + esc(n[0]) + '</dt><dd>' + esc(n[1]) + '</dd></div>';
+            return '<div><dt>' + keepDates(esc(n[0])) + '</dt><dd>' + esc(n[1]) + '</dd></div>';
           }).join('') + '</dl>'
         : '';
       var links = (t.links || []).length
@@ -205,7 +208,7 @@
         '<div class="test-head"><h3 class="test-title">' + esc(t.title) + '</h3>' +
         '<span class="badge badge-' + esc(tone) + '"><span class="mark" aria-hidden="true">' + (TONE_MARK[tone] || '?') + '</span>' + esc(t.verdict) + '</span></div>' +
         (t.date ? '<p class="meta">Run ' + esc(t.date) + '</p>' : '') +
-        '<p class="test-summary">' + esc(t.summary) + '</p>' +
+        '<p class="test-summary">' + keepDates(esc(t.summary)) + '</p>' +
         nums + (t.bars ? barsHtml(t.bars) : '') + table + links +
         (t.basis ? '<p class="test-basis">' + esc(t.basis) + '</p>' : '') +
         '</article>';
