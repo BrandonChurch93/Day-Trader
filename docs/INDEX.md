@@ -278,6 +278,7 @@ Working papers.
 | `research_rig/PREREG_26_treasury_month_end_early.md` | Earlier Treasury ETF month-end replication, queue 45 and ledger 163. Nine marks and a separate no-return vendor overlap check | CURRENT |
 | `research_rig/calendar_26.json`, `research_rig/source_26.json`, `research_rig/PINNED_26.json` | Replay 26 exchange calendar, private-source provenance pins and freeze manifest. No price data | CURRENT |
 | `research_rig/APPROVAL_26.md` | The lead agent's approval line for replay 26: validation and one scored run, names the freeze commit. Read by the approval gate | CURRENT |
+| `research_rig/APPROVAL_31.md` | The lead agent's approval line for replay 31: validation and one scored run, names the freeze commit and the three pinned hashes. Read by the approval gate | CURRENT |
 | `research_rig/common_26.py`, `research_rig/score_26.py`, `research_rig/test_26.py` | Replay 26 schedule, offline input validator, one-shot gate and synthetic tests. Reuses Replay 25 numerical helpers | CURRENT |
 | `research_rig/PREREG_31_bond_etf_month_end.md`, `research_rig/PINNED_31.json` | Queue 50 and ledger 166. Frozen bond ETF month-end test against Treasury and equity factors. No input bars or payouts | CURRENT |
 | `research_rig/common_31.py`, `research_rig/score_31.py`, `research_rig/test_31.py` | Replay 31 pooled residual math, offline no-return validation, one-shot approval gate and synthetic tests | CURRENT |
