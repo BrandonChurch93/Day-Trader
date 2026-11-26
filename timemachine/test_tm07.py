@@ -187,7 +187,7 @@ class DeskTest(unittest.TestCase):
     def test_reaudit_sol_r07_detection_is_not_a_fill(self):
         spec = world()
         session = self.create("A",spec=spec)
-        orders = condition(T,weight=1)
+        orders = condition(T,weight=.001)
         trial = S.replay(session,[{"conditions":orders},{}],journal=True)
         self.assertIn("refused",[e["kind"] for e in trial["events"]])
         self.assertEqual(trial["triggered"],1)
@@ -302,6 +302,29 @@ class DeskTest(unittest.TestCase):
             self.assertEqual(score["by_fee_multiple"][cell]["status"],"not computed")
             self.assertNotIn("value",score["by_fee_multiple"][cell])
 
+    def test_pass3_m1_complete_cap_targets_are_scaled_as_one_basket(self):
+        spec = world()
+        marks = {A:100,B:100}
+        pp = spec["params"]
+        for weights,existing in (({A:1},False),({A:-1},False),({A:.5,B:.5},False),({A:.5,B:-.5},True)):
+            book = P.new_book(1000)
+            if existing:
+                book.update(cash=800,qty={A:2},target={A:.2},last_px=marks.copy())
+            rec,_,_ = O.step(book,dict(weights=weights),spec["rows"][0],pp,P.Minutes(spec["minutes"]),
+                             T,T+60,True,{},1,first=not existing)
+            self.assertEqual({u["symbol"] for u in rec["trades"]},set(weights))
+            actual = P.weights_at(book,marks)
+            self.assertLessEqual(sum(abs(w) for w in actual.values()),1)
+            for s,w in weights.items():
+                self.assertAlmostEqual(actual[s],w,places=8)
+        book = P.new_book(1000)
+        active = condition(T-3600,weight=1)
+        active[A]["observed"] = T
+        engine = O.Orders(active)
+        engine.execute_open(book,pp,T,marks,1)
+        self.assertEqual(engine.events[-1]["kind"],"filled")
+        self.assertAlmostEqual(P.weights_at(book,marks)[A],1,places=8)
+
     def test_reaudit_opr_r5_price_packet_rejects_unscreened_fields(self):
         spec = world()
         price, other = spec["evidence"][0][:2]
@@ -392,7 +415,8 @@ class DeskTest(unittest.TestCase):
         book = P.new_book(1000)
         rec,_,_ = O.step(book,{"weights":{A:1}},spec["rows"][0],spec["params"],
                         P.Minutes(spec["minutes"]),T,T+60,True,{},1,first=True)
-        self.assertEqual(rec["skipped"][0]["why"],"gross_limit")
+        self.assertEqual(len(rec["trades"]),1)
+        self.assertAlmostEqual(P.weights_at(book,{A:100})[A],1,places=8)
         self.assertLessEqual(P.gross_at(book,{A:100}),P.value_at(book,{A:100}))
 
     def test_b08_twin_cannot_drop_a_condition_or_ignore_unfillable_wake(self):

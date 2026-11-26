@@ -36,6 +36,39 @@ def reducing(book, symbol, dq):
     return q*(q+dq) >= 0 and abs(q+dq) < abs(q)
 
 
+def cap_deltas(book,desired,opens,pp,gross):
+    """Find one feasible scale for every requested position, net of delta costs."""
+    current = book["qty"]
+    value = P.value_at(book,opens)
+    other = sum(abs(q)*opens[s] for s,q in current.items() if s not in desired)
+    planned = sum(abs(q)*opens[s] for s,q in desired.items())
+
+    def deltas(scale):
+        return {s:scale*q-current.get(s,0) for s,q in desired.items()}
+
+    def fits(scale):
+        cost = 0
+        for s,dq in deltas(scale).items():
+            spread = pp["hs"][s]
+            fee = pp["fee"][s]*(1+spread*(1 if dq > 0 else -1))
+            cost += abs(dq)*opens[s]*(spread+fee)
+        budget = gross*(value-cost)
+        return other+scale*planned <= budget-8*math.ulp(max(1,abs(budget)))
+
+    if fits(1):
+        return deltas(1)
+    if not fits(0):
+        return None
+    lo,hi = 0.,1.
+    for _ in range(44):
+        scale = (lo+hi)/2
+        if fits(scale):
+            lo = scale
+        else:
+            hi = scale
+    return deltas(lo)
+
+
 def stamp(tick):
     return P.iso(P.dt.datetime.fromtimestamp(tick, P.UTC))
 
@@ -155,7 +188,11 @@ class Orders:
             elif abs(dq)*mark < 1e-9 or (abs(w-current) < pp["min_change"] and w != 0 and quantity*w >= 0):
                 trade, reason = None, "small_change"
             else:
-                trade, reason = guarded_trade(book, sym, dq, opens, pp, gross)
+                # Do not use a scaler to excuse a genuinely over-cap book.
+                fitted = cap_deltas(book,{sym:w*value/mark},opens,pp,gross) if target_gross <= gross+1e-10 and w else None
+                if fitted is not None:
+                    dq = fitted[sym]
+                trade, reason = guarded_trade(book,sym,dq,opens,pp,gross) if abs(dq)*mark >= 1e-9 else (None,"small_change")
             if reason:
                 self.remove(sym, "refused", at, reason=reason, open=mark,
                             gross_wanted=target_gross,saved_target_gross=saved_target_gross)
@@ -351,9 +388,24 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
         target, old_exits = dict(planned["target"]), book["exits"]
         slots = [(tr["symbol"], tr["qty"]*(1 if tr["side"] == "buy" else -1)) for tr in record["trades"]]
         record["trades"] = []
-        book["pending"] = planned["pending"]
-        for s, dq in sorted(slots, key=lambda item:(not reducing(book,*item), item[0])):
-            tr, reason = (None, "protective_exit") if s in protected else guarded_trade(book,s,dq,opens,pp,gross)
+        at_cap = changed and abs(sum(abs(w) for w in target.values())-gross) <= 1e-10
+        applied = book
+        if at_cap:
+            value = P.value_at(book,opens)
+            desired = {s:target.get(s,0)*value/opens[s] for s in sorted(touched-protected)}
+            fitted = cap_deltas(book,desired,opens,pp,gross)
+            if fitted is not None:
+                slots = [(s,dq) for s,dq in fitted.items() if abs(dq)*opens[s] >= 1e-9]
+            applied = deepcopy(book)
+        applied["pending"] = planned["pending"]
+        for s,dq in sorted(slots,key=lambda item:(not reducing(book,*item),item[0])):
+            tr,reason = ((None,"protective_exit") if s in protected else
+                         guarded_trade(applied,s,dq,opens,pp,gross))
+            if at_cap and reason and reason != "protective_exit":
+                record.update(target=dict(book["target"]),exits=dict(old_exits),trades=[],fill_utc=None,
+                              skipped=[dict(symbol=s,why=reason)],value_after=P.value_at(book,opens),
+                              weights_after=P.weights_at(book,opens))
+                return
             if reason:
                 record["skipped"].append(dict(symbol=s,why=reason))
                 if s in book["target"]:
@@ -366,6 +418,10 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
                     planned["exits"].pop(s,None)
             else:
                 record["trades"].append(dict(tr,fill_utc=stamp(tick)))
+        if at_cap:
+            for s in protected:
+                target.pop(s,None)
+            book.update(applied)
         book.update(target=target, exits={s:e for s,e in planned["exits"].items() if s in target})
         record.update(target=dict(target), exits=dict(book["exits"]), value_after=P.value_at(book,opens),
                       weights_after=P.weights_at(book,opens), fill_utc=stamp(tick) if record["trades"] else None)
