@@ -1,0 +1,803 @@
+{
+ "schema": 1,
+ "name": "plan66_monthly_am_spx_expirations",
+ "rule": "third Friday of the month; if not an NYSE session, the preceding NYSE session",
+ "sessions_source": "research_rig/calendar_25.json (XNYS 4.13.3)",
+ "sources": {
+  "occ_infomemo_53701": "https://infomemo.theocc.com/infomemos?number=53701",
+  "occ_infomemo_55737": "https://infomemo.theocc.com/infomemos?number=55737",
+  "occ_infomemo_57897": "https://infomemo.theocc.com/infomemos?number=57897",
+  "cboe_2021_calendar": "https://cdn.cboe.com/resources/options/Cboe2021OPTIONSCalendar.pdf",
+  "cboe_2022_calendar": "https://cdn.cboe.com/resources/options/Cboe2022OPTIONSCalendar.pdf",
+  "cboe_2023_calendar": "https://cdn.cboe.com/resources/options/Cboe2023OPTIONSCalendar.pdf",
+  "rule_only": "2016-2020: exchange PDF not readable here; date from the rule and the XNYS session list"
+ },
+ "expirations": [
+  {
+   "expiration": "2016-01-15",
+   "entry_session": "2016-01-14",
+   "third_friday": "2016-01-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-02-19",
+   "entry_session": "2016-02-18",
+   "third_friday": "2016-02-19",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-03-18",
+   "entry_session": "2016-03-17",
+   "third_friday": "2016-03-18",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-04-15",
+   "entry_session": "2016-04-14",
+   "third_friday": "2016-04-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-05-20",
+   "entry_session": "2016-05-19",
+   "third_friday": "2016-05-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-06-17",
+   "entry_session": "2016-06-16",
+   "third_friday": "2016-06-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-07-15",
+   "entry_session": "2016-07-14",
+   "third_friday": "2016-07-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-08-19",
+   "entry_session": "2016-08-18",
+   "third_friday": "2016-08-19",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-09-16",
+   "entry_session": "2016-09-15",
+   "third_friday": "2016-09-16",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-10-21",
+   "entry_session": "2016-10-20",
+   "third_friday": "2016-10-21",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-11-18",
+   "entry_session": "2016-11-17",
+   "third_friday": "2016-11-18",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2016-12-16",
+   "entry_session": "2016-12-15",
+   "third_friday": "2016-12-16",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-01-20",
+   "entry_session": "2017-01-19",
+   "third_friday": "2017-01-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-02-17",
+   "entry_session": "2017-02-16",
+   "third_friday": "2017-02-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-03-17",
+   "entry_session": "2017-03-16",
+   "third_friday": "2017-03-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-04-21",
+   "entry_session": "2017-04-20",
+   "third_friday": "2017-04-21",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-05-19",
+   "entry_session": "2017-05-18",
+   "third_friday": "2017-05-19",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-06-16",
+   "entry_session": "2017-06-15",
+   "third_friday": "2017-06-16",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-07-21",
+   "entry_session": "2017-07-20",
+   "third_friday": "2017-07-21",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-08-18",
+   "entry_session": "2017-08-17",
+   "third_friday": "2017-08-18",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-09-15",
+   "entry_session": "2017-09-14",
+   "third_friday": "2017-09-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-10-20",
+   "entry_session": "2017-10-19",
+   "third_friday": "2017-10-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-11-17",
+   "entry_session": "2017-11-16",
+   "third_friday": "2017-11-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2017-12-15",
+   "entry_session": "2017-12-14",
+   "third_friday": "2017-12-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-01-19",
+   "entry_session": "2018-01-18",
+   "third_friday": "2018-01-19",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-02-16",
+   "entry_session": "2018-02-15",
+   "third_friday": "2018-02-16",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-03-16",
+   "entry_session": "2018-03-15",
+   "third_friday": "2018-03-16",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-04-20",
+   "entry_session": "2018-04-19",
+   "third_friday": "2018-04-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-05-18",
+   "entry_session": "2018-05-17",
+   "third_friday": "2018-05-18",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-06-15",
+   "entry_session": "2018-06-14",
+   "third_friday": "2018-06-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-07-20",
+   "entry_session": "2018-07-19",
+   "third_friday": "2018-07-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-08-17",
+   "entry_session": "2018-08-16",
+   "third_friday": "2018-08-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-09-21",
+   "entry_session": "2018-09-20",
+   "third_friday": "2018-09-21",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-10-19",
+   "entry_session": "2018-10-18",
+   "third_friday": "2018-10-19",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-11-16",
+   "entry_session": "2018-11-15",
+   "third_friday": "2018-11-16",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2018-12-21",
+   "entry_session": "2018-12-20",
+   "third_friday": "2018-12-21",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-01-18",
+   "entry_session": "2019-01-17",
+   "third_friday": "2019-01-18",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-02-15",
+   "entry_session": "2019-02-14",
+   "third_friday": "2019-02-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-03-15",
+   "entry_session": "2019-03-14",
+   "third_friday": "2019-03-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-04-18",
+   "entry_session": "2019-04-17",
+   "third_friday": "2019-04-19",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-05-17",
+   "entry_session": "2019-05-16",
+   "third_friday": "2019-05-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-06-21",
+   "entry_session": "2019-06-20",
+   "third_friday": "2019-06-21",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-07-19",
+   "entry_session": "2019-07-18",
+   "third_friday": "2019-07-19",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-08-16",
+   "entry_session": "2019-08-15",
+   "third_friday": "2019-08-16",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-09-20",
+   "entry_session": "2019-09-19",
+   "third_friday": "2019-09-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-10-18",
+   "entry_session": "2019-10-17",
+   "third_friday": "2019-10-18",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-11-15",
+   "entry_session": "2019-11-14",
+   "third_friday": "2019-11-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2019-12-20",
+   "entry_session": "2019-12-19",
+   "third_friday": "2019-12-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-01-17",
+   "entry_session": "2020-01-16",
+   "third_friday": "2020-01-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-02-21",
+   "entry_session": "2020-02-20",
+   "third_friday": "2020-02-21",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-03-20",
+   "entry_session": "2020-03-19",
+   "third_friday": "2020-03-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-04-17",
+   "entry_session": "2020-04-16",
+   "third_friday": "2020-04-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-05-15",
+   "entry_session": "2020-05-14",
+   "third_friday": "2020-05-15",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-06-19",
+   "entry_session": "2020-06-18",
+   "third_friday": "2020-06-19",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-07-17",
+   "entry_session": "2020-07-16",
+   "third_friday": "2020-07-17",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-08-21",
+   "entry_session": "2020-08-20",
+   "third_friday": "2020-08-21",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-09-18",
+   "entry_session": "2020-09-17",
+   "third_friday": "2020-09-18",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-10-16",
+   "entry_session": "2020-10-15",
+   "third_friday": "2020-10-16",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-11-20",
+   "entry_session": "2020-11-19",
+   "third_friday": "2020-11-20",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2020-12-18",
+   "entry_session": "2020-12-17",
+   "third_friday": "2020-12-18",
+   "source": "rule_only"
+  },
+  {
+   "expiration": "2021-01-15",
+   "entry_session": "2021-01-14",
+   "third_friday": "2021-01-15",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-02-19",
+   "entry_session": "2021-02-18",
+   "third_friday": "2021-02-19",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-03-19",
+   "entry_session": "2021-03-18",
+   "third_friday": "2021-03-19",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-04-16",
+   "entry_session": "2021-04-15",
+   "third_friday": "2021-04-16",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-05-21",
+   "entry_session": "2021-05-20",
+   "third_friday": "2021-05-21",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-06-18",
+   "entry_session": "2021-06-17",
+   "third_friday": "2021-06-18",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-07-16",
+   "entry_session": "2021-07-15",
+   "third_friday": "2021-07-16",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-08-20",
+   "entry_session": "2021-08-19",
+   "third_friday": "2021-08-20",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-09-17",
+   "entry_session": "2021-09-16",
+   "third_friday": "2021-09-17",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-10-15",
+   "entry_session": "2021-10-14",
+   "third_friday": "2021-10-15",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-11-19",
+   "entry_session": "2021-11-18",
+   "third_friday": "2021-11-19",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2021-12-17",
+   "entry_session": "2021-12-16",
+   "third_friday": "2021-12-17",
+   "source": "cboe_2021_calendar"
+  },
+  {
+   "expiration": "2022-01-21",
+   "entry_session": "2022-01-20",
+   "third_friday": "2022-01-21",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-02-18",
+   "entry_session": "2022-02-17",
+   "third_friday": "2022-02-18",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-03-18",
+   "entry_session": "2022-03-17",
+   "third_friday": "2022-03-18",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-04-14",
+   "entry_session": "2022-04-13",
+   "third_friday": "2022-04-15",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-05-20",
+   "entry_session": "2022-05-19",
+   "third_friday": "2022-05-20",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-06-17",
+   "entry_session": "2022-06-16",
+   "third_friday": "2022-06-17",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-07-15",
+   "entry_session": "2022-07-14",
+   "third_friday": "2022-07-15",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-08-19",
+   "entry_session": "2022-08-18",
+   "third_friday": "2022-08-19",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-09-16",
+   "entry_session": "2022-09-15",
+   "third_friday": "2022-09-16",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-10-21",
+   "entry_session": "2022-10-20",
+   "third_friday": "2022-10-21",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-11-18",
+   "entry_session": "2022-11-17",
+   "third_friday": "2022-11-18",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2022-12-16",
+   "entry_session": "2022-12-15",
+   "third_friday": "2022-12-16",
+   "source": "cboe_2022_calendar"
+  },
+  {
+   "expiration": "2023-01-20",
+   "entry_session": "2023-01-19",
+   "third_friday": "2023-01-20",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-02-17",
+   "entry_session": "2023-02-16",
+   "third_friday": "2023-02-17",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-03-17",
+   "entry_session": "2023-03-16",
+   "third_friday": "2023-03-17",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-04-21",
+   "entry_session": "2023-04-20",
+   "third_friday": "2023-04-21",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-05-19",
+   "entry_session": "2023-05-18",
+   "third_friday": "2023-05-19",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-06-16",
+   "entry_session": "2023-06-15",
+   "third_friday": "2023-06-16",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-07-21",
+   "entry_session": "2023-07-20",
+   "third_friday": "2023-07-21",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-08-18",
+   "entry_session": "2023-08-17",
+   "third_friday": "2023-08-18",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-09-15",
+   "entry_session": "2023-09-14",
+   "third_friday": "2023-09-15",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-10-20",
+   "entry_session": "2023-10-19",
+   "third_friday": "2023-10-20",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-11-17",
+   "entry_session": "2023-11-16",
+   "third_friday": "2023-11-17",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2023-12-15",
+   "entry_session": "2023-12-14",
+   "third_friday": "2023-12-15",
+   "source": "cboe_2023_calendar"
+  },
+  {
+   "expiration": "2024-01-19",
+   "entry_session": "2024-01-18",
+   "third_friday": "2024-01-19",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-02-16",
+   "entry_session": "2024-02-15",
+   "third_friday": "2024-02-16",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-03-15",
+   "entry_session": "2024-03-14",
+   "third_friday": "2024-03-15",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-04-19",
+   "entry_session": "2024-04-18",
+   "third_friday": "2024-04-19",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-05-17",
+   "entry_session": "2024-05-16",
+   "third_friday": "2024-05-17",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-06-21",
+   "entry_session": "2024-06-20",
+   "third_friday": "2024-06-21",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-07-19",
+   "entry_session": "2024-07-18",
+   "third_friday": "2024-07-19",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-08-16",
+   "entry_session": "2024-08-15",
+   "third_friday": "2024-08-16",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-09-20",
+   "entry_session": "2024-09-19",
+   "third_friday": "2024-09-20",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-10-18",
+   "entry_session": "2024-10-17",
+   "third_friday": "2024-10-18",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-11-15",
+   "entry_session": "2024-11-14",
+   "third_friday": "2024-11-15",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2024-12-20",
+   "entry_session": "2024-12-19",
+   "third_friday": "2024-12-20",
+   "source": "occ_infomemo_53701"
+  },
+  {
+   "expiration": "2025-01-17",
+   "entry_session": "2025-01-16",
+   "third_friday": "2025-01-17",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-02-21",
+   "entry_session": "2025-02-20",
+   "third_friday": "2025-02-21",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-03-21",
+   "entry_session": "2025-03-20",
+   "third_friday": "2025-03-21",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-04-17",
+   "entry_session": "2025-04-16",
+   "third_friday": "2025-04-18",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-05-16",
+   "entry_session": "2025-05-15",
+   "third_friday": "2025-05-16",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-06-20",
+   "entry_session": "2025-06-18",
+   "third_friday": "2025-06-20",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-07-18",
+   "entry_session": "2025-07-17",
+   "third_friday": "2025-07-18",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-08-15",
+   "entry_session": "2025-08-14",
+   "third_friday": "2025-08-15",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-09-19",
+   "entry_session": "2025-09-18",
+   "third_friday": "2025-09-19",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-10-17",
+   "entry_session": "2025-10-16",
+   "third_friday": "2025-10-17",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-11-21",
+   "entry_session": "2025-11-20",
+   "third_friday": "2025-11-21",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2025-12-19",
+   "entry_session": "2025-12-18",
+   "third_friday": "2025-12-19",
+   "source": "occ_infomemo_55737"
+  },
+  {
+   "expiration": "2026-01-16",
+   "entry_session": "2026-01-15",
+   "third_friday": "2026-01-16",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-02-20",
+   "entry_session": "2026-02-19",
+   "third_friday": "2026-02-20",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-03-20",
+   "entry_session": "2026-03-19",
+   "third_friday": "2026-03-20",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-04-17",
+   "entry_session": "2026-04-16",
+   "third_friday": "2026-04-17",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-05-15",
+   "entry_session": "2026-05-14",
+   "third_friday": "2026-05-15",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-06-18",
+   "entry_session": "2026-06-17",
+   "third_friday": "2026-06-19",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-07-17",
+   "entry_session": "2026-07-16",
+   "third_friday": "2026-07-17",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-08-21",
+   "entry_session": "2026-08-20",
+   "third_friday": "2026-08-21",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-09-18",
+   "entry_session": "2026-09-17",
+   "third_friday": "2026-09-18",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-10-16",
+   "entry_session": "2026-10-15",
+   "third_friday": "2026-10-16",
+   "source": "occ_infomemo_57897"
+  },
+  {
+   "expiration": "2026-11-20",
+   "entry_session": "2026-11-19",
+   "third_friday": "2026-11-20",
+   "source": "occ_infomemo_57897"
+  }
+ ]
+}
