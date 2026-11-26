@@ -13,91 +13,88 @@ def number(value):
     return type(value) in (int, float) and abs(value) <= 1e100 and math.isfinite(value)
 
 
-def guarded_trade(book, symbol, dq, opens, pp, gross):
-    """Only accept a costed fill within the cap, or a provable risk reduction."""
-    price = opens[symbol]
-    v, g = P.value_at(book, opens), P.gross_at(book, opens)
-    q = book["qty"].get(symbol, 0)
-    estimate = deepcopy(book)
-    P.trade(estimate, symbol, dq, price, pp)
-    v2, g2 = P.value_at(estimate, opens), P.gross_at(estimate, opens)
-    if v <= 0 or v2 <= 0:
-        return None, "zero_equity"
-    if g2 > gross*v2 + 1e-8 and not (abs(q+dq) < abs(q) and g2*v < g*v2):
-        return None, "gross_limit"
-    need = sum(pp["maint"][s]*abs(qty)*opens[s] for s, qty in estimate["qty"].items())
-    if v2 < need:
-        return None, "maintenance"
-    return P.trade(book, symbol, dq, price, pp), None
-
-
 def priced_target(weights, gross):
     target = P.norm(weights)
     total = math.fsum(abs(w) for w in target.values())
     return {s:w*(gross/total) for s,w in target.items()} if total > gross else target
 
 
-def cap_deltas(book,desired,opens,pp,gross):
-    """Find one feasible scale for every requested position, net of delta costs."""
-    current = book["qty"]
-    value = math.fsum([book["cash"],*(q*opens[s] for s,q in current.items())])
-    other = math.fsum(abs(q)*opens[s] for s,q in current.items() if s not in desired)
-    planned = math.fsum(abs(q)*opens[s] for s,q in desired.items())
-
-    def deltas(scale):
-        return {s:scale*q-current.get(s,0) for s,q in desired.items()}
-
-    def fits(scale):
-        costs = []
-        for s,dq in deltas(scale).items():
-            spread = pp["hs"][s]
-            fee = pp["fee"][s]*(1+spread*(1 if dq > 0 else -1))
-            costs.append(abs(dq)*opens[s]*(spread+fee))
-        budget = gross*(value-math.fsum(costs))
-        return other+scale*planned <= budget-8*math.ulp(max(1,abs(budget)))
-
-    if fits(1):
-        return deltas(1)
-    if not fits(0):
-        return None
-    lo,hi = 0.,1.
-    for _ in range(44):
-        scale = (lo+hi)/2
-        if fits(scale):
-            lo = scale
+def basket_quote(book, desired, opens, pp, penalty=0):
+    """Price the deltas without making any intermediate book."""
+    qty = dict(book["qty"])
+    charges = [book["cash"]]
+    spreads,fees,penalties,notionals,trades = [],[],[],[],[]
+    for s,want in desired.items():
+        dq, mark = want-qty.get(s,0),opens[s]
+        if abs(dq)*mark < 1e-9:
+            continue
+        hs = pp["hs"][s]
+        price = mark*(1+hs if dq > 0 else 1-hs)
+        notional = abs(dq)*mark
+        fee,pen = abs(dq)*price*pp["fee"][s], abs(dq)*price*penalty
+        charges.append(-(dq*price+fee+pen))
+        fees.append(fee)
+        spreads.append(notional*hs)
+        penalties.append(pen)
+        notionals.append(notional)
+        if abs(want*mark) < 1e-9:
+            qty.pop(s,None)
         else:
-            hi = scale
-    return deltas(lo)
+            qty[s] = want
+        trades.append(dict(symbol=s,side="buy" if dq > 0 else "sell",qty=abs(dq),open=mark,
+                           price=price,fee_usd=fee,penalty_usd=pen))
+    totals = dict(cash=math.fsum(charges),qty=qty,fee_usd=math.fsum([book["fee_usd"],*fees]),
+                  spread_usd=math.fsum([book["spread_usd"],*spreads]),traded_usd=math.fsum([book["traded_usd"],*notionals]),
+                  penalty_usd=math.fsum([book["penalty_usd"],*penalties]))
+    return totals,trades
+
+
+def final_risk(snapshot, opens, pp, gross):
+    qty = snapshot["qty"]
+    equity = math.fsum([snapshot["cash"],*(q*opens[s] for s,q in qty.items())])
+    cap = gross*equity
+    # Leave room for the roundoff of reported gross and equity.
+    room = 8*math.ulp(max(1,abs(cap),abs(equity)))
+    if equity <= 0:
+        return "zero_equity"
+    if math.fsum(abs(q)*opens[s] for s,q in qty.items()) > cap-room:
+        return "gross_limit"
+    if math.fsum(pp["maint"][s]*abs(q)*opens[s] for s,q in qty.items()) > equity-room:
+        return "maintenance"
+    return None
 
 
 def apply_basket(book, target, opens, pp, gross):
-    """Fit and commit all eligible target legs at one common open, or none."""
+    """Commit only the fitted final book; the legs fill at the same open."""
     value = math.fsum([book["cash"],*(q*opens[s] for s,q in book["qty"].items())])
     if value <= 0:
         return [],"zero_equity"
     desired = {s:w*value/opens[s] for s,w in target.items()}
-    fitted = cap_deltas(book,desired,opens,pp,gross)
-    if fitted is None:
-        return [],"gross_limit"
-    slots = [(s,dq) for s,dq in fitted.items() if abs(dq)*opens[s] >= 1e-9]
-    if not any(abs(dq)*opens[s] >= pp["min_change"]*value or not target[s]
-               or book["qty"].get(s,0)*target[s] < 0 for s,dq in slots):
+
+    def candidate(scale):
+        snapshot,trades = basket_quote(book,{s:q*scale for s,q in desired.items()},opens,pp)
+        return snapshot,trades,final_risk(snapshot,opens,pp,gross)
+
+    fitted,trades,reason = candidate(1)
+    if reason:
+        fitted,trades,unavoidable = candidate(0)
+        if unavoidable:
+            return [],unavoidable
+        lo,hi = 0.,1.
+        for _ in range(44):
+            trial = (lo+hi)/2
+            snapshot,legs,reason = candidate(trial)
+            if reason:
+                hi = trial
+            else:
+                lo = trial
+                fitted,trades = snapshot,legs
+
+    if not any(tr["qty"]*tr["open"] >= pp["min_change"]*value or not target[tr["symbol"]]
+               or book["qty"].get(tr["symbol"],0)*target[tr["symbol"]] < 0 for tr in trades):
         return [],"small_change"
-
-    def priority(item):
-        s,dq = item
-        q,p = book["qty"].get(s,0),opens[s]
-        return ((abs(q+dq)-abs(q))*p, dq*p, p, pp["hs"][s], pp["fee"][s], pp["maint"][s])
-
-    applied = deepcopy(book)
-    trades = []
-    for s,dq in sorted(slots,key=priority):
-        trade,reason = guarded_trade(applied,s,dq,opens,pp,gross)
-        if reason:
-            return [],reason
-        trades.append(trade)
-    book.update(applied)
-    return trades,None
+    book.update(fitted)
+    return sorted(trades,key=lambda tr:tr["symbol"]),None
 
 
 def stamp(tick):
@@ -234,10 +231,7 @@ class Orders:
             other_saved = math.fsum(abs(w) for s,w in book["target"].items() if s not in weights)
             saved_gross = other_saved+math.fsum(abs(w) for w in weights.values())
             target_gross = math.fsum(abs(w) for s,w in previous.items() if s not in weights)+math.fsum(map(abs,weights.values()))
-            if len(weights) == 1 and saved_gross > gross+1e-10:
-                trades,reason = [],"target_gross_limit"
-            else:
-                trades,reason = apply_basket(book,weights,opens,pp,gross)
+            trades,reason = apply_basket(book,weights,opens,pp,gross)
             if reason:
                 for s in weights:
                     self.remove(s,"refused",at,reason=reason,open=opens[s],
@@ -340,8 +334,8 @@ class Orders:
             note_drawdown(eq)
             if eq >= need:
                 return False
-            trades = [P.trade(book,s,-q,prices[s],pp,penalty=pp["penalty"])
-                      for s,q in sorted(book["qty"].items())]
+            snapshot,trades = basket_quote(book,dict.fromkeys(sorted(book["qty"]),0),prices,pp,pp["penalty"])
+            book.update(snapshot)
             short = max(0.0, -book["cash"])
             book["shortfall_usd"] += short
             book["cash"] = max(0.0, book["cash"])

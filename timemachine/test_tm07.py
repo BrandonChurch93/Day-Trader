@@ -538,10 +538,10 @@ class DeskTest(unittest.TestCase):
         pp = world()["params"]
         pp["fallback_per_day"] = 0
         outcomes = []
-        for missing,opening,weights in ((False,90,{A:.4,B:.6}),(True,90,{A:.4,B:.6}),
-                                        (True,100,{A:.8,B:.8})):
+        for missing,opening,weights,held in ((False,90,{A:.4,B:.6},5),(True,90,{A:.4,B:.6},5),
+                                             (True,100,{A:.8,B:.8},5),(False,90,{A:.5,B:.5},3)):
             book = P.new_book(1000)
-            book.update(cash=500,qty={A:5},target={A:.5},exits={A:{"stop":95}},last_px={A:100,B:100})
+            book.update(cash=1000-100*held,qty={A:held},target={A:held/10},exits={A:{"stop":95}},last_px={A:100,B:100})
             times = [(T,A,opening,100,90,90)]
             times.append((T+60 if missing else T,B,100,100,100,100))
             # If A is absent when the surviving leg can fill, nobody waits for A.
@@ -552,7 +552,7 @@ class DeskTest(unittest.TestCase):
             self.assertEqual(book["target"],{B:weights[B]})
             self.assertIn(dict(symbol=A,why="protective_exit"),rec["skipped"])
             self.assertEqual(rec["scan"]["cancelled_target_legs"],[A])
-            if opening == 90:
+            if weights[B] == .6:
                 outcomes.append((book["cash"],book["qty"],book["fee_usd"]))
         self.assertEqual(outcomes[0],outcomes[1])
 
@@ -582,6 +582,57 @@ class DeskTest(unittest.TestCase):
                             self.assertEqual(scan["closeout"]["utc"],O.stamp(T+offset))
                         else:
                             self.assertAlmostEqual(book["cash"],cash-scan["funding_usd"])
+                            if q1 == q2 == -10:
+                                self.assertEqual(P.value_at(book,marks),2000)
+
+    def test_pass5_atomic_final_book_handles_feasible_reversals_and_scales(self):
+        C = "CCC/USD"
+        names = (A,B,C)
+        rng = random.Random(147)
+        # The two audit witnesses: a zero-cash reversal and an ordinary
+        # two-wake book marked at a new pair of unequal opens.
+        first = P.new_book(1000)
+        pp = P.p_params(names,world()["cfg"])
+        self.assertIsNone(O.apply_basket(first,{A:.55,B:.45},{A:52.51,B:101.23},pp,1)[1])
+        cases = [(0,(5,5,0),(100,100,100),(-.5,.5,0),1),
+                 (first["cash"],(first["qty"][A],first["qty"][B],0),(52.12,101.05,100),(-.5486,.4514,0),1)]
+        for i in range(108):
+            prices = tuple(rng.uniform(30,240) for _ in names)
+            prior = tuple(rng.uniform(-200,430)/p for p in prices)
+            raw = tuple(rng.choice((-1,1))*rng.uniform(.1,1) for _ in names)
+            scale = (.65,1,1.4)[i%3]/sum(map(abs,raw))
+            target = tuple(w*scale for w in raw)
+            cases.append((1000-sum(q*p for q,p in zip(prior,prices)),prior,prices,target,1))
+        cases.append((1000,(0,0,0),(100,170,83),(.9,-.9,0),2))
+        for cash,prior,prices,target,cap in cases:
+            compared = None
+            for labels in (names,names[::-1],(B,C,A)):
+                pp = P.p_params(names,world()["cfg"])
+                pp["maint"] = dict.fromkeys(names,.8 if cap == 2 else .05)
+                opens = dict(zip(labels,prices))
+                book = P.new_book(1000)
+                book.update(cash=cash,qty={s:q for s,q in zip(labels,prior) if q})
+                value = P.value_at(book,opens)
+                trades,reason = O.apply_basket(book,dict(reversed(list(zip(labels,target)))),opens,pp,cap)
+                self.assertIsNone(reason,(prior,target,labels))
+                self.assertEqual(len({tr["symbol"] for tr in trades}),len(trades))
+                eq = P.value_at(book,opens)
+                actual = tuple(book["qty"].get(s,0) for s in labels)
+                gross = P.gross_at(book,opens)
+                self.assertLessEqual(gross,cap*eq)
+                self.assertLessEqual(sum(abs(q)*p*pp["maint"][s] for q,p,s in zip(actual,prices,labels)),eq)
+                scales = [q*p/(w*value) for q,p,w in zip(actual,prices,target) if w]
+                self.assertGreater(min(scales),0)
+                self.assertAlmostEqual(min(scales),max(scales),places=11)
+                if sum(map(abs,target)) < .7:
+                    self.assertAlmostEqual(scales[0],1,places=12)
+                else:
+                    self.assertLess(scales[0],1)
+                econ = actual+(book["cash"],book["fee_usd"],book["spread_usd"],book["traded_usd"])
+                if compared is None:
+                    compared = econ
+                else:
+                    self.assertEqual(econ,compared)
 
     def test_reaudit_opr_r5_price_packet_rejects_unscreened_fields(self):
         spec = world()
@@ -977,8 +1028,9 @@ class DeskTest(unittest.TestCase):
         engine = O.Orders(condition(T,B,weight=.15))
         engine.observe_close((T,B,100,106,99,105))
         engine.execute_open(book,spec["params"],T+60,{A:60.,B:105.},1)
-        self.assertEqual(engine.events[-1].get("reason"),"target_gross_limit")
+        self.assertEqual(engine.events[-1]["kind"],"filled")
         self.assertLessEqual(sum(abs(w) for w in book["target"].values()),1)
+        self.assertLessEqual(P.gross_at(book,{A:60.,B:105.}),P.value_at(book,{A:60.,B:105.}))
 
     def test_opus_r1_open_coverage_is_not_in_the_pick_reply(self):
         def arm(gappy):
