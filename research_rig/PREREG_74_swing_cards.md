@@ -1,20 +1,31 @@
 # Plan 74: swing cards A and B, judged per signal
 
-- STATED: Queue rows 126 and 127. Drafted 2026-11-26 12:12 MST on main 93aa70c. Status DRAFT. This is a historical test with pretend cash. It sends no orders.
+- STATED: Queue rows 126 and 127. Drafted 2026-11-26 12:12 MST on main 93aa70c, revised 2026-11-26 12:27 MST with main 0a2f64c merged in. Status DRAFT. This is a historical test with pretend cash. It sends no orders.
 - STATED: The cards come from [doc 169](../docs/research/169_what_successful_small_account_traders_look_for.md), Card A and Card B. The owner's direction ([DECISIONS](../docs/DECISIONS.md), 2026-11-26): holds of a day to a couple of months; "quick" is a few weeks.
 - STATED: No market data endpoint was called for this draft. No price, bar, return or vendor file was opened. The power table below uses made-up numbers only.
 - STATED: All dates, costs and marks live in one block, `replay_74_plan`, in config/thresholds.yaml. A number in this plan names its key in that block, written as "key marks.min_t" and so on.
+- STATED: Revised the same day, before any price, by the lead agent's second set of rulings (see "Rulings of the second round"). Where they change earlier text, the line says RULE CHANGE.
 - STATED: The work has four gates, (a) to (d). Each is a hard gate. Nothing in a later gate starts until the lead agent signs the earlier one. This draft delivers gate (a) as a written check and gate (b) as a run on made-up data. Gates (c) and (d) are designs only.
 
 ## The lead agent's rulings, written in
 
-- STATED, ruling 1: The judged unit is the signal, not the $500 book. Every qualifying symbol-day signal is entered at the next regular open and exited by its card's own exit rules. Its net return is compared with the same-days return of IWM (key benchmark, both cards), and the t statistic clusters by entry day (key cluster). The four-name $500 whole-share book from doc 169 is computed and shown only. It cannot pass or fail the card.
+- STATED, ruling 1: The judged unit is the signal, not the $500 book. Every qualifying symbol-day signal is entered at the next regular open and exited by its card's own exit rules. Its net return is compared with the same-days return of IWM (key benchmark, both cards), and the t statistic clusters by calendar month of entry (key cluster; RULE CHANGE, second round, was entry day). The four-name $500 whole-share book from doc 169 is computed and shown only. It cannot pass or fail the card.
 - STATED, ruling 2: Card A primary is leader near high, tight range, breakout on volume, a dated earnings release, the market switch, the initial stop at the signal-day low, the 10-session EMA exit and the 40-session limit, with no add. The 20% revenue-growth parse is not in the primary. Shown only: without the market switch; without the earnings requirement; with the one add; and, added later by the lead agent, the 52-week-high arm below. Card B primary is Gold and Revival pooled, as written in doc 169. Shown only: Gold alone; Revival alone.
 - STATED, ruling 3: Design years 2017-01-03 to 2021-12-31 (keys design_first, design_last), warm-up from 2016-01-04 (key warmup_first). Held-back years 2022-01-03 to 2025-12-31 (keys heldback_first, heldback_last), opened once per card and only if the card passes on the design years. The scorer has no held-back mode until the lead agent writes a separate go. 2026 is untouched (key untouched_year).
 - STATED, ruling 4: Costs are fixed now. See "Costs" below.
 - STATED, ruling 5: Pass marks are fixed now. See "Pass marks" below.
 - STATED, ruling 6: Order of work (a) data feasibility, (b) power on made-up data, (c) count only, (d) one scoring run on the design years.
 - STATED, ruling 7: No trader sees the future. Every input is as known at the signal close. No vendor back-adjusted price is used for the $1, $5 or other price gates. Ticker reuse is handled by a permanent ID. A delisted holding is never dropped.
+
+## Rulings of the second round
+
+- STATED: Made by the lead agent on 2026-11-26, before any price was read, in answer to the first draft's five questions.
+- STATED, ruling 8, RULE CHANGE: the mean floor is 0.5%, not 1.0%. The test is sized to find a true edge of +2% a signal and will usually miss a true +1%.
+- STATED, ruling 9, RULE CHANGE: the mark's t uses calendar-month clusters of entry dates, 60 in the design years. Day and week clustering are shown only. The power script was redone with overlapping holds and the month-clustered t.
+- STATED, ruling 10: the Card A and Card B count branch in gate (c).
+- STATED, ruling 11, RULE CHANGE: Card A main cost 25 bp a side, shown only at 10 and 50. Card B main 50, shown only 100. The doc 66 stop overshoot is in the main line on stop exits for both cards, as an assumption.
+- STATED, ruling 12: accepted, no second signal on a symbol while an earlier one is held; the 8% stop arm drops the 3% refusal; a held name whose bars stop exits at its last close, with 0.5 times and zero shown, the count printed, and the 0.5 times line made binding if such cases exceed 1% of judged signals.
+- STATED: Probes P1 to P3 now state their pacing, re-send rule, caps and user agent.
 
 ## Card A, primary
 
@@ -30,12 +41,12 @@
 
 ## Card A, the 52-week-high arm (shown only)
 
-- STATED: Added 2026-11-26 by the lead agent from doc 171, docs/research/171_idea_round_50_swing_horizon.md on main 0a2f64c, family 3 and its Second check, which ranks "52-week high and relative strength with a market filter and a hard stop" second. That family is Card A without the earnings requirement, which is already the ruled shown-only arm "without the earnings requirement".
+- STATED: Added 2026-11-26 by the lead agent from [doc 171](../docs/research/171_idea_round_50_swing_horizon.md) (main 0a2f64c, merged into this draft), family 3 and its Second check, which ranks "52-week high and relative strength with a market filter and a hard stop" second. That family is Card A without the earnings requirement, which is already the ruled shown-only arm "without the earnings requirement".
 - STATED: One more shown-only arm: the same Card A entry without the earnings requirement, with two changes only. The market filter is SPY's close above its 200-session simple average at t, in place of the QQQ and IWM switch; if it is off, no new signal and every open signal exits at the next open. The stop is fixed at 8% below the actual entry open (key arm_52w.stop_share), in place of the signal-day low. Everything else, including the 10-session EMA exit, the 40-session limit, the IWM comparison, the costs and the overshoot, is unchanged.
-- INFERENCE, flagged: The 3% refusal rule (worst open more than 3% above the stop) is tied to the signal-day-low stop. With a fixed 8% stop it would refuse every signal, so this arm drops that refusal and keeps the entry window. This is the drafter's reading, not a ruling.
+- STATED, accepted by the lead agent (ruling 12): The 3% refusal rule (worst open more than 3% above the stop) is tied to the signal-day-low stop. With a fixed 8% stop it would refuse every signal, so this arm drops that refusal and keeps the entry window. 
 - STATED: The outside result for this family, AlpaTrade +30.4% a year from 2022 to 2026 as doc 171 line 214 reports it, ran on today's index members, so it has survivorship bias. It is not evidence for this plan. That is why gate (a), on dead names, decides whether this plan can run at all.
 - STATED: This arm is shown only. It cannot pass or fail Card A, and it has no held-back opening of its own.
-- INFERENCE: The drafter's own rule, flagged for the lead: a symbol that signals again while an earlier signal on it is still held does not start a second signal. Without this, one stock in a run could count many times and the signals would not be independent.
+- STATED, accepted by the lead agent (ruling 12): a symbol that signals again while an earlier signal on it is still held does not start a second signal. Without this, one stock in a run could count many times and the signals would not be independent.
 
 ## Card B, primary
 
@@ -52,27 +63,29 @@
 - STATED: Net return: buy at entry price times (1 + cost), sell at exit price times (1 − cost), with the card's cost per side (key costs_bp_per_side). On a stop exit filled intraday at the stop level, the exit price is first lowered by the stop overshoot (key stop_overshoot_share_of_risk) times (entry − stop). A stop that fills at a gapped open takes the open, with no extra overshoot.
 - STATED: Market fund return, no cost: IWM from the same entry open to the same exit print. For an open exit that is IWM's open on the exit day. For an intraday stop exit, the exit print for IWM is its close on the stop day. This is an approximation, stated so it is not chosen later.
 - STATED: Excess return = net return of the signal minus the IWM return over the same days.
-- STATED: A delisted holding is never dropped. If the bars of a held signal end, it exits at its last regular close (key delisted_last_close_share, primary 1.0). Shown only: half of that close (shown 0.5). A cash merger with a stated price in the corporate actions feed, if one exists, is shown as a third line. Count such exits separately.
-- STATED: Clustered t: on design-year signals, demean the excess returns, sum them within each entry day, square and add the day totals, multiply by G/(G−1) where G is the number of entry days, take the square root and divide by the signal count. t is the mean excess over that error. A zero or undefined error does not pass. Shown only, the same t clustered by entry week and by entry month (key cluster_shown).
+- STATED, lead agent's ruling before any price: A delisted holding is never dropped. If the bars of a held signal end, the main line exits at its last regular close (key delisted_last_close_share, primary 1.0). Shown-only lines: 0.5 times that close and zero (shown 0.5 and 0.0). The count of such cases is printed. RULE CHANGE: if they exceed 1% of judged signals (key delisted_last_close_share.share_trigger), every pass mark must also hold on the 0.5 times line (trigger_line 0.5).
+- STATED: Clustered t: on design-year signals, demean the excess returns, sum them within each calendar month of entry, square and add the month totals, multiply by G/(G−1) where G is the number of entry months (60 in the design years), take the square root and divide by the signal count. t is the mean excess over that error. A zero or undefined error does not pass. RULE CHANGE, second round: was clustered by entry day. Shown only, the same t clustered by entry day and by entry week (key cluster_shown).
 
 ## Costs
 
-- STATED, Card A 10 bp a side (key costs_bp_per_side.A). [Doc 136](../docs/research/136_measured_stock_trading_costs.md) line 14: pooled 90th percentile half-spread, first 30 minutes, 10.055 bp. Line 20: the 38 single stocks, first 30 minutes, median 3.787 bp. 10 bp is about the pooled p90 for an opening fill.
-- STATED, Card A stop overshoot 0.1332 of the stop distance (key stop_overshoot_share_of_risk.A). [Doc 66](../docs/research/66_measure_15_breakout_fills.md) line 7: "mean stop-exit slippage 0.1332 (n 840), odd lots left out". Shown only: 0.2134 with odd lots counted, doc 66 line 13 (key stop_overshoot_shown.A_odd_lots_in).
+- STATED, RULE CHANGE, second round: Card A main line 25 bp a side (key costs_bp_per_side.A). Shown-only lines at 10 and 50 bp a side (key cost_shown_bp_per_side.A). The first draft had 10 bp main.
+- STATED: For reference, [doc 136](../docs/research/136_measured_stock_trading_costs.md) line 14: pooled 90th percentile half-spread, first 30 minutes, 10.055 bp. Line 20: the 38 single stocks, first 30 minutes, median 3.787 bp. Those were large names, so 25 bp is an assumption for $5 to $75 names at the open, not a measurement.
+- STATED, RULE CHANGE, second round: the stop overshoot of 0.1332 of the stop distance is in the main line on stop exits for both cards (key stop_overshoot_share_of_risk, A and B). [Doc 66](../docs/research/66_measure_15_breakout_fills.md) line 7: "mean stop-exit slippage 0.1332 (n 840), odd lots left out". Doc 66 measured it on intraday breakout fills of liquid stocks in play over 60 days, not on these cards' names or daily-bar stops, so here it is an assumption. Shown only: 0.2134 with odd lots counted, doc 66 line 13 (key stop_overshoot_shown.A_odd_lots_in).
 - STATED, Card B 50 bp a side (key costs_bp_per_side.B). Doc 136 has no figure for names under $10. Its 38 single stocks are large names (line 20). So 50 bp is an assumption, not a measurement. Shown only: 100 bp a side (key cost_shown_bp_per_side.B).
 - STATED: Doc 66's price group $5 to $10 had entry mean 11.42 bp (n 62) and stop-exit mean 16.52 bp (n 52). The group under $5 had n 2 (stop exit mean 136.13 bp), too thin to use. These are intraday breakout fills on stocks in play, not opening fills on sub-$10 names.
-- INFERENCE: Card B as written has no stop overshoot. A shown-only line applies doc 66's 0.1332 to Card B stop exits too (key stop_overshoot_shown.B).
+- STATED: Card B as written in doc 169 has no stop overshoot. By the second-round ruling it now carries 0.1332 in the main line, as above.
 
 ## Pass marks
 
 - STATED, all on design-year signals, each card on its own. Every mark must hold.
-- STATED: mean net excess per signal above zero (key marks.mean_above) and at least 1.0% (key marks.mean_floor).
-- STATED: day-clustered t at least 3.0 (key marks.min_t).
+- STATED: mean net excess per signal above zero (key marks.mean_above) and at least 0.5% (key marks.mean_floor). RULE CHANGE, second round: was 1.0%.
+- STATED, said plainly: this test is sized to find a true edge of +2% a signal. It will usually miss a true +1%.
+- STATED: month-clustered t at least 3.0 (key marks.min_t). RULE CHANGE, second round: was day-clustered.
 - STATED: mean excess positive in at least 4 of the 5 design years by entry year (keys marks.years_positive, marks.years).
 - STATED: mean excess still positive with the top 1% of signals removed, that is the highest ceil(0.01 × n) excess returns (key marks.trim_top_share).
 - STATED: at least 150 signals on at least 100 entry days (keys marks.min_signals, marks.min_entry_days). Fewer is "too thin", not a fail of the idea and not a pass.
-- STATED, held-back mark, used only after a separate go: same sign as the design mean and day-clustered t at least 2.0 (keys heldback_marks.same_sign, heldback_marks.min_t).
-- STATED: Shown-only arms, the $500 book and the week and month t never change a verdict.
+- STATED, held-back mark, used only after a separate go: same sign as the design mean and month-clustered t at least 2.0 (keys heldback_marks.same_sign, heldback_marks.min_t).
+- STATED: Shown-only arms, the $500 book and the day and week t never change a verdict, except the 0.5 times delisting line when its trigger is met.
 
 ## Gate (a): data feasibility, no prices
 
@@ -126,17 +139,60 @@
 
 ### Named probes for the custodian
 
-- STATED: Probe P1, delisted coverage. Take the delisted CIKs from Form 25 filings in 2016 to 2021. For each, request daily bars for its last listed month with `asof` set inside its listing interval. Print counts only: names asked, names with any bar, names with bars on every session. No prices, no volumes are returned or saved. The names used are not chosen by any price.
-- STATED: Probe P2, ticker mapping. For a fixed list of CIKs, the first 200 by CIK number that filed a 10-K in 2017, print counts only: CIKs with a ticker from the cover tag, from the file name, both agreeing, and none.
-- STATED: Probe P3, share counts. For the same 200 CIKs, count how many have a dated cover-page share count in each design year.
+- STATED: Probe P1, delisted coverage. Take the delisted CIKs from Form 25 filings in 2016 to 2021. For each, request daily bars for its last listed month with `asof` set inside its listing interval. Print counts only: names asked, names with any bar, names with bars on every session. No prices, no volumes are returned or saved. The names used are not chosen by any price. Pacing: at least 0.4 s between requests (key probes.alpaca_spacing_s); on HTTP 429, at most 3 re-sends after 2, 4 and 8 s waits (keys probes.resend_429_max, probes.resend_wait_s), then stop. A hard cap of 2,000 requests (key probes.P1_request_cap); reaching it stops the probe. On any stop the probe records the HTTP status code and the count of requests sent.
+- STATED: Probe P2, ticker mapping. For a fixed list of CIKs, the first 200 by CIK number that filed a 10-K in 2017, print counts only: CIKs with a ticker from the cover tag, from the file name, both agreeing, and none. SEC pacing: 4 requests a second or fewer, at least 0.25 s apart (key probes.sec_spacing_s), with the declared User-Agent the repo already uses, "Brandon Church research modernsoftworks@gmail.com" (key probes.sec_user_agent), the same bounded re-send on 429 and the status code recorded on any stop. Hard cap 1,000 requests (key probes.P2_request_cap). EDGAR full-text search is not used.
+- STATED: Probe P3, share counts. For the same 200 CIKs, count how many have a dated cover-page share count in each design year. Same SEC pacing, User-Agent and re-send rule as P2. Hard cap 400 requests (key probes.P3_request_cap).
+- STATED: All three probes return counts only.
 
 ## Gate (b): power on made-up returns
 
-- STATED: research_rig/power_74.py reads its settings from `replay_74_plan` (key power) and opens no other file. Each made-up world spreads n signals over five years at 1.5 signals per entry day (key power.signals_per_day). An excess return is the mean plus a day shock carrying 10% of the variance (key power.day_share) plus its own shock; both are Student t with 3 degrees of freedom. Every pass mark above is applied. Seed 740001 (key power.seed), 2,000 worlds per cell (key power.draws).
-- INFERENCE: The noise SDs per signal (key power.noise_sd) are guesses: 12% and 18% for a Card A hold of up to 40 sessions, 20% and 30% for Card B's sub-$10 names over up to 10 sessions. They are not measured from any price.
-- INFERENCE: The model treats signals on different days as independent. Real 40-session holds overlap, so real power is lower than shown.
+- STATED: research_rig/power_74.py reads its settings from `replay_74_plan` (key power) and opens no other file. Second version, as the second-round ruling asks. Five design years of 252 sessions and 60 calendar months of 21 sessions (keys power.sessions_per_year, power.sessions_per_month). Signal i of n enters on session floor(i × 1260 / n). Each hold is a made-up length, uniform from 1 to the card's limit, 40 sessions for Card A and 10 for Card B (key power.hold_limit).
+- STATED: An excess return is the mean plus a common part plus its own shock. The common part is a weighted sum of calendar-month shocks over the months the hold spans, weighted by the share of hold sessions in each month, and carries 10% of the variance (key power.common_share). Signals whose holds share a month share that shock, so overlapping holds are modeled. All shocks are Student t with 3 degrees of freedom.
+- STATED: Every pass mark is applied, with the t clustered by calendar month of entry and the 0.5% floor. Seed 740002 (key power.seed), 2,000 worlds per cell (key power.draws). The noise SDs per signal are 12%, 15% and 18% for Card A and 20%, 25% and 30% for Card B (key power.noise_sd). The middle one is the one the count branch uses.
+- INFERENCE: The noise SDs and the 10% common share are guesses, not measured from any price.
 
-Printed table, pasted as the script printed it:
+Main table, pasted as `python3 research_rig/power_74.py` printed it:
+
+| Card | Hold limit, sessions | Noise SD per signal | True mean excess | Smallest count, 80% power, all marks | Smallest count, 80%, without the mean floor | Power at 150 / 500 / 1,000 / 2,000 / 4,000 signals, all marks |
+|---|---:|---:|---:|---:|---:|---|
+| A | 40 | 12% | +1.0% | none up to 16,000 (best 40%) | none up to 16,000 | 4% / 12% / 21% / 28% / 34% |
+| A | 40 | 12% | +2.0% | 2,000 | 2,000 | 21% / 55% / 73% / 82% / 86% |
+| A | 40 | 15% | +1.0% | none up to 16,000 (best 26%) | none up to 16,000 | 2% / 8% / 15% / 18% / 26% |
+| A | 40 | 15% | +2.0% | none up to 16,000 (best 76%) | none up to 16,000 | 11% / 37% / 50% / 62% / 72% |
+| A | 40 | 18% | +1.0% | none up to 16,000 (best 21%) | none up to 16,000 | 2% / 7% / 9% / 13% / 17% |
+| A | 40 | 18% | +2.0% | none up to 16,000 (best 61%) | none up to 16,000 | 8% / 22% / 37% / 46% / 55% |
+| B | 10 | 20% | +1.0% | none up to 16,000 (best 9%) | none up to 16,000 | 1% / 3% / 4% / 6% / 8% |
+| B | 10 | 20% | +2.0% | none up to 16,000 (best 47%) | none up to 16,000 | 5% / 14% / 22% / 32% / 40% |
+| B | 10 | 25% | +1.0% | none up to 16,000 (best 6%) | none up to 16,000 | 1% / 2% / 2% / 3% / 4% |
+| B | 10 | 25% | +2.0% | none up to 16,000 (best 29%) | none up to 16,000 | 2% / 9% / 14% / 19% / 24% |
+| B | 10 | 30% | +1.0% | none up to 16,000 (best 4%) | none up to 16,000 | 0% / 1% / 2% / 2% / 4% |
+| B | 10 | 30% | +2.0% | none up to 16,000 (best 18%) | none up to 16,000 | 2% / 5% / 8% / 12% / 15% |
+
+MEASURED on made-up data: 2000 worlds per cell, seed 740002, common month shock 10% of variance, holds uniform 1 to the limit, t clustered by calendar month of entry (60 months), Student t with 3 degrees of freedom, mean floor 0.5%.
+
+Shown-only table, pasted as `python3 research_rig/power_74.py --sensitivity` printed it (key power.common_share_shown):
+
+| Card | Noise SD | Common month share | True mean excess | Smallest count, 80% power, all marks | Power at 150 / 500 / 1,000 / 2,000 / 4,000 signals |
+|---|---:|---:|---:|---:|---|
+| A | 15% | 2% | +1.0% | none up to 16,000 (best 77%) | 2% / 9% / 18% / 37% / 54% |
+| A | 15% | 2% | +2.0% | 1,250 | 12% / 48% / 78% / 94% / 98% |
+| A | 15% | 5% | +1.0% | none up to 16,000 (best 45%) | 3% / 9% / 17% / 25% / 34% |
+| A | 15% | 5% | +2.0% | 2,000 | 12% / 40% / 66% / 82% / 88% |
+| B | 25% | 2% | +1.0% | none up to 16,000 (best 28%) | 1% / 2% / 4% / 8% / 14% |
+| B | 25% | 2% | +2.0% | 6,000 | 3% / 12% / 26% / 49% / 72% |
+| B | 25% | 5% | +1.0% | none up to 16,000 (best 12%) | 1% / 2% / 4% / 6% / 8% |
+| B | 25% | 5% | +2.0% | none up to 16,000 (best 55%) | 3% / 10% / 19% / 31% / 45% |
+
+### What the tables say
+
+- INFERENCE: With 60 month clusters, the common month shock sets a floor on the error that more signals cannot remove. Roughly, the mean's error cannot fall below the common SD over the square root of 60. At a 10% common share and 15% noise, that floor is about 0.6%, so a true +2.0% gives a t of about 3.3 at best, and the 3.0 mark is passed only part of the time.
+- INFERENCE: Under the main assumptions, 80% power at +2.0% is reached only for Card A at 12% noise (2,000 signals). At the middle SD, no count up to 16,000 reaches it for either card.
+- INFERENCE: The answer turns on the common share. At 2% common share, Card A at the middle SD needs 1,250 signals and Card B needs 6,000. At 5%, Card A needs 2,000 and Card B reaches no count.
+- INFERENCE: As fixed, the count branch below uses the main table's middle-SD figure. That figure is "none", so both cards would close on count whatever the count. This is raised with the lead agent for a ruling before gate (c).
+
+### First version, optimistic
+
+- STATED: Kept for the record. Why it is optimistic: it treated signals on different days as independent apart from a one-day shock, and clustered by entry day, so overlapping 40-session holds were counted as separate evidence. It also used the old 1.0% floor. Seed 740001, 1.5 signals per entry day, day shock 10% of variance (key power.first_version).
 
 | Card | Noise SD per signal | True mean excess | Doc 117 count, 80% at t 2 | Smallest count, 80% power, all marks | Smallest count, 80%, without the 1.0% floor | Power at 150 / 500 / 1,000 / 2,000 / 4,000 signals, all marks |
 |---|---:|---:|---:|---:|---:|---|
@@ -151,18 +207,16 @@ Printed table, pasted as the script printed it:
 
 MEASURED on made-up data: 2000 worlds per cell, seed 740001, 1.5 signals per entry day, day shock 10% of variance, Student t with 3 degrees of freedom.
 
-### What the table says
-
-- INFERENCE: With the 1.0% floor, a card whose true mean excess is +1.0% passes about half the time at most, at any count. The floor caps power at a true +1.0% near 50%.
-- INFERENCE: At a true +2.0%, 80% power needs about 750 to 1,500 Card A signals and about 2,000 to 4,000 Card B signals.
-- INFERENCE: Doc 169 guesses 3 to 25 funded starts a year for Card A and 5 to 25 for Card B in the $500 book. Raw signals will be more, but the gate (c) count decides. At the 150-signal floor, power is 20% or less in every cell.
-
 ## Gate (c): count only, design only
 
-- STATED: A count script reads the custodied bars and filings and prints only counts: signals per design year and per gate, per card and per shown-only arm, plus refused and skipped entries, delisted-in-hold flags and entry days. Nothing else.
+- STATED, lead agent's ruling before any price, the count branch (key count_branch), fixed now:
+- STATED: The need is the smallest count in the main table for 80% power at +2.0% with the middle noise SD of that card (15% for Card A, 25% for Card B).
+- STATED: Card A: if the earnings version's design-year signal count is at or above the need, the earnings version is the judged rule. Otherwise the judged rule is the arm without the earnings requirement, and the earnings version is shown only. If that arm is also under the need, Card A closes on count with no return read.
+- STATED: Card B: if the pooled Gold and Revival design-year signal count is at or above the need, it is judged. Otherwise Card B closes on count with no return read.
+- STATED: A need of "none up to 16,000" means no count meets it.
+- STATED: The count script reads the custodied bars and filings and prints only the counts this branch needs: design-year signal counts and entry-day counts for the Card A earnings version, the Card A arm without the earnings requirement, and Card B pooled. Nothing else.
 - STATED: The code cannot compute a return. The gate functions get a view of each symbol's bars that ends at the signal close t. The script has no exit logic, no entry-open check and no benchmark series. Its output schema is integers only, and its test fails if any float leaves the script.
-- STATED: The entry-window check uses the next open, which is a price after t. So refused and skipped counts are not printed at gate (c); they wait for gate (d).
-- STATED: If either card has fewer than the power need from gate (b) at +2.0%, the lead agent decides whether to stop that card before gate (d).
+- INFERENCE: Because the count stage has no exit logic, it cannot apply the "no second signal while held" rule or the next-open entry window. Its counts are therefore an upper bound on the judged count. Using the upper bound in the branch can only let a card through that later turns out thinner; gate (d) still applies the 150-signal and 100-day marks.
 
 ## Gate (d): one scoring run, design years
 
