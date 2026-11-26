@@ -5,12 +5,11 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
 
 import numpy as np
 
 import sweep_70 as search
-from coverage_70 import read_snapshot
+from coverage_70 import exact_parent, read_snapshot
 from vault_gate_70 import bootstrap
 
 SEARCH_FREEZE = "96a0efdac14c57f0447f38fedac4f18d20aaae3f"
@@ -21,6 +20,7 @@ SETTINGS_SHA = "91ec26101a503e196e9aad47168ba7ceaa9a0c9268a78418287897a821a6c1c2
 MANIFEST_SHA = "042ac622f7d083f52c0f8341b30c09c515154936200bcb81153e7e8e54bfa320"
 CARRY_REL = "sweep_70/carry_results.json"
 VECTORS_REL = "sweep_70/carry_tickets.json"
+VECTOR_COLUMNS = ["coin", "entry_utc_seconds", "exit_utc_seconds", "plain_net", "reference", "matched_net"]
 EXTRA = tuple("research_rig/" + s for s in ("carry_70.py", "vault_70.py", "vault_gate_70.py", "vault_census_70.py"))
 
 
@@ -28,10 +28,10 @@ def digest(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
-def pinned(root, rel, sha):
+def pinned(root, rel, sha, *, mode=None):
     if not re.fullmatch(r"[0-9a-f]{64}", sha or ""):
         raise ValueError(f"full independent SHA-256 required for {rel}")
-    raw = read_snapshot(root, rel)
+    raw = read_snapshot(root, rel) if mode is None else read_snapshot(root, rel, mode=mode)
     if digest(raw) != sha:
         raise ValueError(f"changed pinned input: {rel}")
     return raw
@@ -68,28 +68,20 @@ def finalists(raw, rules, cap):
     return rows[0]["input_counts"], chosen
 
 
+def create_at(parent, name, raw):
+    fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=parent)
+    with os.fdopen(fd, "wb") as wire:
+        os.fchmod(wire.fileno(), 0o600)
+        wire.write(raw)
+        wire.flush()
+        os.fsync(wire.fileno())
+    os.fsync(parent)
+
+
 def create_private(root, rel, raw):
     """Durable, exclusive mode-0600 output; no symlinks or alternate lock."""
-    rel = Path(rel)
-    if root.anchor != "/" or rel.is_absolute() or not rel.parts or ".." in (*root.parts, *rel.parts):
-        raise ValueError("not a canonical custody path")
-    path = root / rel
-    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
-    parent = os.open("/", flags)
-    try:
-        for part in path.parts[1:-1]:
-            child = os.open(part, flags, dir_fd=parent)
-            os.close(parent)
-            parent = child
-        fd = os.open(path.name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=parent)
-        with os.fdopen(fd, "wb") as wire:
-            os.fchmod(wire.fileno(), 0o600)
-            wire.write(raw)
-            wire.flush()
-            os.fsync(wire.fileno())
-        os.fsync(parent)
-    finally:
-        os.close(parent)
+    with exact_parent(root, rel) as (parent, name):
+        create_at(parent, name, raw)
 
 
 def reconcile(tape, rule, costs, config, frozen):
@@ -128,8 +120,7 @@ def run(root, config, rules, summary, freeze_commit):
                 [coins[j], int(tape.hours[i]), int(tape.hours[i]) + rule["hold_hours"] * search.HOUR,
                  float(n), float(r), float(p)] for j, i, n, r, p in zip(js, ix, net, reference, paired)]})
             forecasts.append(bootstrap(rule["id"], net, paired, day, config))
-    details = search.rows_bytes([{"columns": ["coin", "entry_utc_seconds", "exit_utc_seconds",
-                                               "plain_net", "reference", "matched_net"], "rules": vectors}])
+    details = search.rows_bytes([{"columns": VECTOR_COLUMNS, "rules": vectors}])
     receipt = {"search_freeze_commit": SEARCH_FREEZE, "runner_freeze_commit": freeze_commit,
                "search_summary_sha256": digest(summary), "search_manifest_sha256": MANIFEST_SHA,
                "grid_sha256": GRID_SHA, "settings_sha256": SETTINGS_SHA,

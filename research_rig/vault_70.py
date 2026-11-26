@@ -1,6 +1,9 @@
 """Lead-only Plan 70 vault, with a durable single-use scoring lock."""
 import argparse
+import fcntl
 import json
+import math
+import os
 import re
 import sys
 from io import BytesIO
@@ -10,7 +13,7 @@ import numpy as np
 
 import carry_70 as carry
 import sweep_70 as search
-from coverage_70 import WRONG_CLOSE_CLOCK, read_snapshot
+from coverage_70 import WRONG_CLOSE_CLOCK, exact_parent
 from vault_census_70 import MANIFEST, MONTHS, archive_info, month_info
 from vault_gate_70 import VAULT_HOURS, VAULT_START, VAULT_STOP, marks
 
@@ -124,6 +127,37 @@ def commitment(args, config, rules, summary, receipt, approval):
     return {**record, "approval_sha256": args.approval_sha256}
 
 
+def check_vectors(raw, rules, chosen):
+    """Check the authenticated private handoff's structure, not forecast it again."""
+    obj = json.loads(raw)
+    if (not isinstance(obj, dict) or set(obj) != {"columns", "rules"}
+            or obj["columns"] != carry.VECTOR_COLUMNS or not isinstance(obj["rules"], list)
+            or len(obj["rules"]) != len(chosen)):
+        raise ValueError("invalid carry ticket handoff")
+    grid = {r["id"]: r for r in rules}
+    for vector, row in zip(obj["rules"], chosen):
+        if (not isinstance(vector, dict) or set(vector) != {"rule", "tickets"}
+                or vector["rule"] != row["rule"] or not isinstance(vector["tickets"], list)
+                or len(vector["tickets"]) != row["trades"] or not vector["tickets"]):
+            raise ValueError("carry tickets do not enumerate the exact finalists and counts")
+        rule = grid[row["rule"]]
+        seen_days = set()
+        next_open = search.START
+        for ticket in vector["tickets"]:
+            if not isinstance(ticket, list) or len(ticket) != len(carry.VECTOR_COLUMNS):
+                raise ValueError("invalid carry ticket shape")
+            sym, entry, exit, *values = ticket
+            if (sym not in search.ALLOWED or type(entry) is not int or type(exit) is not int
+                    or entry < next_open or exit >= search.STOP or entry % search.HOUR
+                    or exit - entry != rule["hold_hours"] * search.HOUR
+                    or any(type(value) is not float or not math.isfinite(value) for value in values)):
+                raise ValueError("invalid carry ticket contents")
+            next_open = exit
+            seen_days.add(entry // 86400)
+        if len(seen_days) != row["active_days"]:
+            raise ValueError("carry ticket entry dates do not reconcile")
+
+
 def score(panel, config, rules, ids):
     coins = config["coins"]
     tape = search.Tape(coins, panel, hours=VAULT_HOURS, split=None)
@@ -139,20 +173,31 @@ def score(panel, config, rules, ids):
 
 
 def dispatch(root, args, config, rules):
-    summary = carry.pinned(root, carry.SEARCH_REL, args.search_summary_sha256)
-    receipt = json.loads(carry.pinned(root, carry.CARRY_REL, args.carry_sha256))
-    approval = json.loads(carry.pinned(root, APPROVAL, args.approval_sha256))
-    lock = commitment(args, config, rules, summary, receipt, approval)
-    roster = json.loads(carry.pinned(root, MANIFEST, args.vault_manifest_sha256))
-    check_manifest(roster)
-    if not args.validate_inputs:
-        # Never open even the first archive until file and directory are synced.
-        carry.create_private(root, LOCK, search.rows_bytes([lock]))
-    panel, counts = load(root, roster)
-    header = {"input_counts": counts}
-    if args.validate_inputs:
-        return search.rows_bytes([header])
-    return search.rows_bytes([header, *score(panel, config, rules, lock["carried_ids"])])
+    with exact_parent(root, LOCK) as (parent, lock_name):
+        # Both modes coordinate on the directory inode, not a new validation file.
+        fcntl.flock(parent, fcntl.LOCK_EX)
+        try:
+            os.stat(lock_name, dir_fd=parent, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
+            raise FileExistsError("Plan 70 vault use is already claimed")
+        summary = carry.pinned(root, carry.SEARCH_REL, args.search_summary_sha256)
+        receipt = json.loads(carry.pinned(root, carry.CARRY_REL, args.carry_sha256))
+        approval = json.loads(carry.pinned(root, APPROVAL, args.approval_sha256))
+        lock = commitment(args, config, rules, summary, receipt, approval)
+        _, chosen = carry.finalists(summary, rules, config["search_marks"]["finalist_cap"])
+        check_vectors(carry.pinned(root, carry.VECTORS_REL, lock["vectors_sha256"], mode=0o600), rules, chosen)
+        roster = json.loads(carry.pinned(root, MANIFEST, args.vault_manifest_sha256))
+        check_manifest(roster)
+        if not args.validate_inputs:
+            # Never open even the first archive until file and directory are synced.
+            carry.create_at(parent, lock_name, search.rows_bytes([lock]))
+        panel, counts = load(root, roster)
+        header = {"input_counts": counts}
+        if args.validate_inputs:
+            return search.rows_bytes([header])
+        return search.rows_bytes([header, *score(panel, config, rules, lock["carried_ids"])])
 
 
 def main():

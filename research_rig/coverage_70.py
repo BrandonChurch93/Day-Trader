@@ -5,6 +5,7 @@ import json
 import os
 import stat
 import sys
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -26,8 +27,9 @@ def has_hour_close(fields, opening, ticks_per_ms=1):
     return close == opening + HOUR_MS * ticks_per_ms - 1
 
 
-def read_snapshot(root, rel):
-    """Open an exact regular file without following redirects, then read it once."""
+@contextmanager
+def exact_parent(root, rel):
+    """Hold the parent of a canonical path without following redirects."""
     root, rel = Path(root), Path(rel)
     if root.anchor != "/" or rel.is_absolute() or not rel.parts or ".." in (*root.parts, *rel.parts):
         raise ValueError("invalid custody path")
@@ -38,13 +40,20 @@ def read_snapshot(root, rel):
             child = os.open(part, flags, dir_fd=parent)
             os.close(parent)
             parent = child
-        fd = os.open(rel.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
-        with os.fdopen(fd, "rb") as wire:
-            if not stat.S_ISREG(os.fstat(wire.fileno()).st_mode):
-                raise ValueError("custody input is not a regular file")
-            return wire.read()
+        yield parent, rel.name
     finally:
         os.close(parent)
+
+
+def read_snapshot(root, rel, *, mode=None):
+    """Open an exact regular file without following redirects, then read it once."""
+    with exact_parent(root, rel) as (parent, name):
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+        with os.fdopen(fd, "rb") as wire:
+            st = os.fstat(wire.fileno())
+            if not stat.S_ISREG(st.st_mode) or (mode is not None and stat.S_IMODE(st.st_mode) != mode):
+                raise ValueError("custody input is not a regular file with the required mode")
+            return wire.read()
 
 
 def census(root, clock_report=None):

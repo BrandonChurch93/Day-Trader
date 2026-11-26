@@ -1,5 +1,6 @@
 """Made-up-data tests for Plan 70 carry and vault; never access real custody."""
 import copy
+import fcntl
 import json
 import os
 import stat
@@ -113,7 +114,7 @@ class SyntheticPost(unittest.TestCase):
                                    vault_manifest_sha256="a", validate_inputs=True)
             counts = {"rows_kept_by_coin": {"BTC": 1}}
             roster = mock_manifest()
-            lock = {"carried_ids": ["70-102"]}
+            lock = {"carried_ids": ["70-102"], "vectors_sha256": "v"}
             syncs = []
             real_fsync = os.fsync
 
@@ -121,31 +122,110 @@ class SyntheticPost(unittest.TestCase):
                 syncs.append(stat.S_IFMT(os.fstat(fd).st_mode))
                 return real_fsync(fd)
 
-            def fake_read(root, rel, pin):
+            def fake_read(root, rel, pin, **kwargs):
                 return json.dumps(roster if rel == vault.MANIFEST else {}).encode()
 
             def fake_load(*_):
                 self.assertEqual((root / vault.LOCK).exists(), not args.validate_inputs)
                 self.assertEqual(syncs, [stat.S_IFREG, stat.S_IFDIR] if not args.validate_inputs else [])
+                contender = os.open(root / "sweep_70", os.O_RDONLY | os.O_DIRECTORY)
+                try:
+                    with self.assertRaises(BlockingIOError):
+                        fcntl.flock(contender, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                finally:
+                    os.close(contender)
                 if not args.validate_inputs:
                     self.assertEqual(stat.S_IMODE((root / vault.LOCK).stat().st_mode), 0o600)
                 return "panel", counts
 
             with (patch.object(carry, "pinned", side_effect=fake_read),
+                  patch.object(carry, "finalists", return_value=({}, [])),
                   patch.object(vault, "commitment", return_value=lock),
+                  patch.object(vault, "check_vectors"),
                   patch.object(carry.os, "fsync", side_effect=trace_sync),
                   patch.object(vault, "load", side_effect=fake_load) as loader,
                   patch.object(vault, "score", side_effect=RuntimeError("no scoring")) as scorer):
-                preflight = vault.dispatch(root, args, {}, [])
+                cfg = {"search_marks": {"finalist_cap": 3}}
+                self.assertEqual(list((root / "sweep_70").iterdir()), [])
+                preflight = vault.dispatch(root, args, cfg, [])
                 self.assertEqual(preflight, search.rows_bytes([{"input_counts": counts}]))
-                self.assertFalse((root / vault.LOCK).exists())
+                self.assertEqual(list((root / "sweep_70").iterdir()), [])
                 scorer.assert_not_called()
                 args.validate_inputs = False
                 with self.assertRaisesRegex(RuntimeError, "no scoring"):
-                    vault.dispatch(root, args, {}, [])
+                    vault.dispatch(root, args, cfg, [])
                 with self.assertRaises(FileExistsError):
-                    vault.dispatch(root, args, {}, [])
+                    vault.dispatch(root, args, cfg, [])
+                args.validate_inputs = True
+                with self.assertRaises(FileExistsError):
+                    vault.dispatch(root, args, cfg, [])
                 self.assertEqual(loader.call_count, 2)
+
+    def test_vault_reads_private_vectors_once_and_before_any_archive(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "sweep_70").mkdir()
+            row = {"rule": "70-102", "trades": 1, "active_days": 1, "meets_search_marks": True,
+                   "finalist_rank": 1, "duplicate_of": None}
+            rules = [{"id": "70-102", "hold_hours": 2}]
+            summary = search.rows_bytes([{"input_counts": {}}, row])
+            vectors = {"columns": carry.VECTOR_COLUMNS, "rules": [{"rule": "70-102", "tickets": [
+                ["ZEC", search.START + 3 * search.HOUR, search.START + 5 * search.HOUR, 0.01, 0.0, 0.01]]}]}
+            vect_file = root / carry.VECTORS_REL
+            raw = search.rows_bytes([vectors])
+            args = SimpleNamespace(freeze_commit="runner", search_summary_sha256=carry.digest(summary),
+                                   grid_sha256="grid", settings_sha256="settings", validate_inputs=True,
+                                   carried_id=["70-102"])
+
+            def build_inputs(vectors_pin):
+                roster = search.rows_bytes([mock_manifest()])
+                args.vault_manifest_sha256 = carry.digest(roster)
+                common = {"runner_freeze_commit": "runner", "search_freeze_commit": carry.SEARCH_FREEZE,
+                          "search_summary_sha256": args.search_summary_sha256, "grid_sha256": "grid",
+                          "settings_sha256": "settings", "search_manifest_sha256": carry.MANIFEST_SHA,
+                          "vectors_sha256": vectors_pin, "carried_ids": ["70-102"]}
+                receipt = search.rows_bytes([{**common, "forecasts": [{"rule": "70-102", "seed": 702102,
+                                               "draws": 20000, "passes": 6600, "carry": True, "probability": .33}]}])
+                args.carry_sha256 = carry.digest(receipt)
+                approval = search.rows_bytes([{**common, "carry_sha256": args.carry_sha256,
+                                               "vault_manifest_sha256": args.vault_manifest_sha256,
+                                               "lead_authorizes_single_use": True}])
+                args.approval_sha256 = carry.digest(approval)
+                for rel, data in ((carry.SEARCH_REL, summary), (carry.CARRY_REL, receipt),
+                                  (vault.APPROVAL, approval), (vault.MANIFEST, roster)):
+                    (root / rel).write_bytes(data)
+
+            with (patch.object(vault, "load", return_value=(None, {"rows": 1})) as load,
+                  patch.object(carry, "read_snapshot", wraps=carry.read_snapshot) as snapshots,
+                  patch.object(search, "Tape", side_effect=AssertionError("validation reached Tape")),
+                  patch.object(search, "ticket_legs", side_effect=AssertionError("validation reached returns")),
+                  patch.object(vault, "marks", side_effect=AssertionError("validation reached marks"))):
+                build_inputs(carry.digest(raw))
+                with self.assertRaises(FileNotFoundError):
+                    vault.dispatch(root, args, SETTINGS, rules)
+                vect_file.write_bytes(raw)
+                vect_file.chmod(0o644)
+                with self.assertRaisesRegex(ValueError, "required mode"):
+                    vault.dispatch(root, args, SETTINGS, rules)
+                vect_file.chmod(0o600)
+                vect_file.write_bytes(raw + b" ")
+                with self.assertRaisesRegex(ValueError, "changed pinned input"):
+                    vault.dispatch(root, args, SETTINGS, rules)
+                build_inputs(carry.digest(b'{"rules":[]}'))
+                vect_file.write_bytes(b'{"rules":[]}')
+                with self.assertRaisesRegex(ValueError, "invalid carry ticket handoff"):
+                    vault.dispatch(root, args, SETTINGS, rules)
+                load.assert_not_called()
+                self.assertFalse((root / vault.LOCK).exists())
+                build_inputs(carry.digest(raw))
+                vect_file.write_bytes(raw)
+                before = {p.name: p.read_bytes() for p in (root / "sweep_70").iterdir()}
+                snapshots.reset_mock()
+                out = vault.dispatch(root, args, SETTINGS, rules)
+                self.assertEqual(out, search.rows_bytes([{"input_counts": {"rows": 1}}]))
+                self.assertEqual([call for call in snapshots.call_args_list if call.args[1] == carry.VECTORS_REL],
+                                 [unittest.mock.call(root, carry.VECTORS_REL, mode=0o600)])
+                self.assertEqual({p.name: p.read_bytes() for p in (root / "sweep_70").iterdir()}, before)
 
     def test_pinned_signed_receipt_requires_exact_ids_and_authorization(self):
         args = SimpleNamespace(freeze_commit="runner", search_summary_sha256="search", grid_sha256="grid",
