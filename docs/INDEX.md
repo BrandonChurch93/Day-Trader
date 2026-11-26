@@ -365,6 +365,10 @@ Working papers.
 | `research_rig/REVIEW_48_identity.md` | Ledger 200: review of Replay 48 after the roster symbol fault (MUI listed as MUNUX); steps fixed before any MUI price is read | CURRENT |
 | `research_rig/ADOPTION_43_ATTEMPT3.md`, `research_rig/APPROVAL_43_ATTEMPT3.md` | Ledger 195: third attempt's packet adoption and validation-only approval; validation refused, no score | RECORD |
 | `research_rig/AMENDMENT_43_BASIS.md`, `research_rig/basis_43.py` | Queue 74 third attempt, ledger 195: quantization, no-return gate diagnostics, sealed adoption; no vendor data | CURRENT. Frozen, not authorized |
+| `research_rig/PREREG_60_special_dividends.md`, `research_rig/CALIBRATION_60.json`, `research_rig/PINNED_60.json` | Queue 99 / ledger 199: execution-first special dividend design, filing-only calibration and draft source pins | DRAFT |
+| `research_rig/score_60.py`, `research_rig/test_60.py` | Plan 60 offline validation, one-shot scorer and artificial Git/custody fixtures | DRAFT |
+| `research_rig/vendor_60.py` | Plan 60 offline action transport verifier and deterministic native-to-window projection | DRAFT |
+| `research_rig/ADOPTION_60.md`, `research_rig/APPROVAL_60.md` | Plan 60 lead approvals: adoption of the sealed Plan 43 prices with no price acquisition, then validation only. Neither allows a scored run | RECORD |
 | `research_rig/score_43.py`, `research_rig/test_43.py`, `research_rig/CALIBRATION_43.json` | Replay 43 raw SIP and cash-action approval gate, one-shot scorer, synthetic tests and null calibration. No replay result | CURRENT |
 | `research_rig/PREREG_46_cftc_altcoin_futures.md`, `research_rig/PINNED_46.json` | Queue 83 and ledger 179 and 181. Frozen pre-launch long and post-launch short proxy rules, costs, and required marks. Unscored | CURRENT |
 | `research_rig/APPROVAL_46.md` | The lead agent's approval line for plan 46 legs A and B: validation and one scored run, names the freeze commit, the freeze manifest hash and the input manifest hash. Read by the approval gate | CURRENT |

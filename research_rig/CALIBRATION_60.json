@@ -1,0 +1,57 @@
+{
+  "cases": {
+    "0.65": {
+      "all_mark_passes": [
+        0,
+        10,
+        45,
+        107
+      ],
+      "data": "synthetic only, real filing schedule",
+      "docket_sha256": "2ab8c47c5bc666ae05eabb808237c7ef347e8d0a30a15e38e117541b1658c5e7",
+      "edges": [
+        0.0,
+        0.005,
+        0.01,
+        0.02
+      ],
+      "eligible": 443,
+      "shares": [
+        0.0,
+        0.01,
+        0.045,
+        0.107
+      ],
+      "trials": 1000
+    },
+    "0.75": {
+      "all_mark_passes": [
+        8,
+        110,
+        477,
+        981
+      ],
+      "data": "synthetic only, real filing schedule",
+      "docket_sha256": "2ab8c47c5bc666ae05eabb808237c7ef347e8d0a30a15e38e117541b1658c5e7",
+      "edges": [
+        0.0,
+        0.005,
+        0.01,
+        0.02
+      ],
+      "eligible": 443,
+      "shares": [
+        0.008,
+        0.11,
+        0.477,
+        0.981
+      ],
+      "trials": 1000
+    }
+  },
+  "ledger": 199,
+  "memo": "synthetic only, fixed placement assumptions, not estimates of the actual universe",
+  "placed_floor": 300,
+  "plan": 60,
+  "queue": 99
+}
