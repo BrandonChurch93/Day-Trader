@@ -1,0 +1,8 @@
+{
+  "config/thresholds.yaml": "15d4131322f43eda6685f79996b71513122c14388019efa45d0d2219c7dc2c75",
+  "research_rig/DOCKET_47_preprice.md": "092bafe753f3437d465970ba7a32786d692b7bb5a9884bcd4b9d9edef740ed38",
+  "research_rig/PREREG_47_edgar_altcoin_treasuries.md": "171d76787a3a50db280eaffcc9e91ccc0ff79ad3a841e22a63fb84d4c79658f6",
+  "research_rig/common_47.py": "ea5b18ae11caedc08cbda98588783aa43a5e603dac3ea692f4a5d640801f8e4b",
+  "research_rig/score_47.py": "4c668909658c3f4e074468b7cf04a6a22cc789a97dbb784c762fcd8442cf56ad",
+  "research_rig/test_47.py": "76f4fd2243c5f64fdd8649fa15651293479c0d84cb97d5754164bf8ffdcb060e"
+}
