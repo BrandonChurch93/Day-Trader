@@ -215,7 +215,8 @@ def render(S):
         "## Verdict and limits", "",
         "- Screen-based for all six models. The reasons cite screen values, the buys follow visible moves, and the "
         "mechanical screen rule made most of the same money in May.",
-        "- Memory not ruled out. UNKNOWN: each model's knowledge line for April to November 2026. A strong spring and a "
+        "- Memory not ruled out. STATED by the maker: a June 2026 knowledge line for Claude Opus 5.5 and GPT-6.2 Sol "
+        "(page 102); UNKNOWN for the other four, and UNKNOWN how much any of them knows of these months. A strong spring and a "
         "weak summer to autumn is also what a spring knowledge line would produce. TM07 runs on weeks after the stated "
         "knowledge lines and is the test that can separate the two.",
         f"- One thin pick named: GPT-6.2 Sol's XLM buy on {quotes[2][4]}.",
