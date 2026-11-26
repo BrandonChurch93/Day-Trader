@@ -970,6 +970,7 @@ measure_34_plan:
     bars_per_fund: 520
     quote_endpoints_per_fund: 260
     quote_lookback_seconds: 60
+    final_timestamp_tie: maximum_relative_half_spread_after_all_rows_validate
     trim_best_windows: 3
     fixed_cost_bps_per_side: [2, 5, 10]
     marks:

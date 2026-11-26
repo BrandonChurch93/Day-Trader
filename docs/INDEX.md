@@ -285,6 +285,9 @@ Working papers.
 | `research_rig/common_26.py`, `research_rig/score_26.py`, `research_rig/test_26.py` | Replay 26 schedule, offline input validator, one-shot gate and synthetic tests. Reuses Replay 25 numerical helpers | CURRENT |
 | `research_rig/PREREG_31_bond_etf_month_end.md`, `research_rig/PINNED_31.json` | Queue 50 and ledger 166. Frozen bond ETF month-end test against Treasury and equity factors. No input bars or payouts | CURRENT |
 | `research_rig/common_31.py`, `research_rig/score_31.py`, `research_rig/test_31.py` | Replay 31 pooled residual math, offline no-return validation, one-shot approval gate and synthetic tests | CURRENT |
+| `research_rig/PREREG_33_treasury_auctions.md`, `research_rig/PINNED_33.json` | Queue 52 and ledger 168. Frozen intraday Treasury auction-day test: long IEF or TLT from 13:10 to 15:59 ET on 10-year and 30-year auction days, judged on executable quotes. No vendor data | CURRENT |
+| `research_rig/score_33.py`, `research_rig/test_33.py` | Replay 33 scorer with offline no-return validation, one-shot approval gate, and synthetic tests | CURRENT |
+| `research_rig/auction_calendar_33.csv`, `research_rig/control_pairs_33.csv`, `research_rig/sessions_33.csv`, `research_rig/fees_33.csv`, `research_rig/fomc_dates_33.txt`, `research_rig/nonbill_auction_days_33.txt` | Replay 33 pinned public inputs: official auction calendar, the 260 matched control dates, exchange sessions, regulator fee table, FOMC dates, and other coupon auction days. Public metadata only | CURRENT |
 | `research_rig/PREREG_24_same_coin_carry.md` | Frozen Queue 39 same-coin funding carry, ledger 161, five marks, reviewed off-repo metadata hashes. No real result | CURRENT |
 | `research_rig/common_24.py` | Replay 24 spot and perpetual event accounting, fees and matched controls | CURRENT |
 | `research_rig/score_24.py` | Replay 24 owner-gated no-claim input validator, one-shot scorer and result renderer | CURRENT |
