@@ -811,6 +811,8 @@ tm09:
     boss_models: [claude_fable_5_2, claude_opus_5_5]
     scouts: {price: gemini_neon, news: gemini_neon}
     arms: {price_only: [P1, P2], price_plus_news: N}
+    session_counts_per_arm: {p1: 1, p2: 1, n: 1}
+    scoring: {unit: week, treatment_weight: 1, price_only_weights: [-0.5, -0.5]}
     marks: {primary_t_min: 2.43, positive_weeks_min: 12, mean_without_best_strictly_positive: true, mean_weekly_bps_min: 20, placebo_abs_t_strict_max: 2, forward_requires_n_above_equal_weight_hold: true}
     delivery: {min_fraction_eligible_wakes_with_note: 0.5}
     failures: {max_successors_per_lost_worker: 1, max_lost_weeks_per_boss: 3, min_weeks_with_primary: 17, rerun_finished_sessions: false}
@@ -828,6 +830,12 @@ tm09:
       feed:
         repeat_jaccard_min: 0.8
         repeat_min_shared_tokens: 4
+        figure_max_chars: 64
+        figure_units: [hundred, thousand, million, billion, trillion, percent, bps, 'basis point', 'basis points', 'percentage point', 'percentage points', share, shares, 'per share', 'a share', dollars, euros, pounds, yen, rupees, USD, EUR, GBP, JPY, INR, day, days, week, weeks, month, months, year, years, barrels, tonnes, units]
+        paraphrase_block_run_tokens: 6
+        paraphrase_min_title_tokens: 3
+        figure_extract_pattern: '(?i)(?<![\w.,])(?:(?:{{months}})[ \t]+\d{1,2}(?:st|nd|rd|th)?(?:,[ \t]*\d{4})?|\d{1,2}(?:st|nd|rd|th)?[ \t]+(?:{{months}})(?:[ \t]+\d{4})?|(?:(?:plus|minus|negative)[ \t]+)?(?:(?:USD|EUR|GBP|JPY|INR|CAD|AUD|NZD|HKD)[ \t]*)?(?:[+−-][ \t]*)?(?:(?:(?:US|CA|AU|NZ|HK)?\$|[€£¥₹])[ \t]*)?(?:[+−-][ \t]*)?(?:\d+(?:[.,:/–—-]\d+)*|[.,]\d+)(?:e[+−-]?\d+)?(?:bln|trn|bps|mm|mn|bn|bp|st|nd|rd|th|k|m|b|t)?(?:[ \t]?[%‰])?(?:[ \t]+(?:{{units}})\b){0,2})(?![\w]|[.,]\d)'
+        figure_possible_miss_pattern: '(?i)\d|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundreds?|thousands?|millions?|billions?|trillions?|dozens?|half|quarter|first|second|third)\b'
         title_token_pattern: '[^\W_]+'
         figure_fingerprint_pattern: '[+\-\u2212]?(?:[$€£¥₹][ \t]*)?[+\-\u2212]?\d+(?:[.,:/\u2013\u2014-]\d+)*(?:[ \t]?[%‰])?'
   status: proposed
