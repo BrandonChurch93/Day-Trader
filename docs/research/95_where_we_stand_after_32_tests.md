@@ -1,10 +1,10 @@
-# Where We Stand After 39 Scored Tests
+# Where We Stand After 40 Scored Tests
 
-Last changed: 2026-11-26 UTC (identity review, open work and unscored closures). Plain synthesis for the owner. Figures come from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the named repo files, including drafts where noted; no return was recomputed. Claims are labeled MEASURED (from our own runs), STATED (from plans, schedules, or external sources cited in repo docs), or UNKNOWN (not yet measured).
+Last changed: 2026-11-26 UTC (Replay 53 result, the Bitcoin cost stop and new queue checks). Plain synthesis for the owner. Figures come from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the named repo files, including drafts where noted; no return was recomputed. Claims are labeled MEASURED (from our own runs), STATED (from plans, schedules, or external sources cited in repo docs), or UNKNOWN (not yet measured).
 
 ## 1. Every Scored Test So Far
 
-Thirty-nine scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample. Three counted trading replays passed their frozen marks: Replays 25 and 48 (US $500 reachable) and Replay 20 (not US-reachable). Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
+MEASURED: Forty scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample, as counted below. Three counted trading replays passed their frozen marks: Replays 25 and 48 (US $500 reachable) and Replay 20 (not US-reachable). Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
 
 | # | Test | What it tested (6 words) | Family | US $500? | Result (MEASURED) | Headline net number and source |
 |---|---|---|---|---|---|---|
@@ -47,28 +47,33 @@ Thirty-nine scored tests (trading replays, AI time-machine evaluations, and the 
 | 37 | Replay 46 Leg B | Altcoins after a CFTC futures filing, short leg | event | No | Did not pass (5 of 6 marks) | 110 events on 31 posting dates, +1.2790% mean net, +0.5574% paired versus BTC, t 0.572; spot-price proxy, not an executable short (`docs/research/101_replay_46_cftc_altcoin_futures.md`) |
 | 38 | Replay 48 | Long the five worst muni closed-end funds, last December close to last January close | forced flow | Yes | Passed (7 of 7 marks) | 10 yearly turns, +1.39% mean net per turn against +0.09% for MUB and +0.59% for the roster; 8 of 10 positive (`docs/research/103_replay_48_muni_cef_january.md`); MEASURED identity review on 2026-11-26 found MUI under the wrong symbol for nine turns, and pre-entry prices show it would not have been picked in any turn, so the pass stands (`research_rig/REVIEW_48_identity.md`). |
 | 39 | Replay 52 | Buy corporate bond funds after quarter-end | forced flow | Yes | Did not pass (0 of 6 marks) | 40 quarters, -0.0308% mean net, t -0.24; -0.0197% net of Treasury proxies, against +0.1279% net after 80 ordinary month-ends (`docs/research/113_replay_52_quarter_end_corporate_bond_funds.md`) |
+| 40 | Replay 53 | Buy taxable closed-end fund losers into January | forced flow | Yes | Did not pass (5 of 7 marks) | +2.74% mean net, versus +2.00% for PCEF and +1.83% for the roster; positive in 6 of 10 turns and ahead of PCEF in 6 of 10, both below the frozen marks (`docs/research/122_replay_53_taxable_fund_january_rebound.md`) |
 
 ## 2. Count by Family
 
-MEASURED from the 39 scored tests in Section 1 (rows 33 to 39 added 2026-11-26):
+MEASURED from the 40 scored tests in Section 1:
 
 | Family | Tested | Counted passes | Notes |
 |---|---:|---:|---|
 | momentum | 8 | 0 | Replay 13 Rule A met relative marks vs all coins but lost ~70% in 3 years and is not a counted pass |
 | AI discretionary | 9 | 0 | TM06 picker met its marks on months that may lie inside the models' memory and is not a counted pass; Replay 11 held-back (2,146 releases) is still open; TM02 met its headlines-help sub-mark only |
-| forced flow | 8 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable. Replay 52 did not pass. |
+| forced flow | 9 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable. Replays 52 and 53 did not pass. |
 | chart pattern | 5 | 0 | All five failed, including Measurement 15 fill gate |
 | carry | 2 | 0 | Both cross-coin and same-coin funding carry failed after costs |
 | calendar | 2 | 0 | Replay 39 (IWM pre-holiday) missed both t marks at 1.91 and 1.82 |
 | event | 4 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable); Replay 21 and both legs of Replay 46 did not pass |
 | copy-trading | 1 | 0 | Replay 12 (Congress disclosures) lagged SPY by 1.0%/yr on held-back data |
-| Total | 39 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
+| Total | 40 | 3 | 2 US $500 reachable passes (Replay 25, Replay 48); 1 offshore-only pass (Replay 20) |
 
 ## 3. What the First Two Passes Have in Common and Their Dollar Size
 
 Both counted passes are mechanical, short-horizon rules tied to a specific forced or retail flow on a fixed clock: Replay 25 holds TLT for the last three sessions of each month during Treasury index rebalancing (`docs/research/69_replay_25_treasury_month_end.md`), and Replay 20 shorts newly Upbit-KRW-listed coins for up to 72 hours after their first red UTC day (`docs/research/71_replay_20_upbit_listing_short.md`). Neither is a chart pattern, a trend rule, a carry rule, or an AI pick. Both stay in cash outside their short window.
 
 The later [Replay 48](103_replay_48_muni_cef_january.md) pass averaged about $7 on $500 once a year, before taxes. Its evidence is ten turns and does not separate the loser effect from a general year-end rally with confidence.
+
+- MEASURED: [Replay 53](122_replay_53_taxable_fund_january_rebound.md) beat PCEF and the eligible roster on average, but missed both year-count marks: years above zero and years ahead of PCEF.
+- MEASURED, shown only: the taxable and muni yearly results had a correlation of 0.80. STATED interpretation: the two replays are mostly the same bet, not independent evidence ([Replay 53](122_replay_53_taxable_fund_january_rebound.md)).
+- STATED: the fifth-session exit was shown only, so it cannot count as a pass ([Replay 53](122_replay_53_taxable_fund_january_rebound.md)).
 
 Dollar size of Replay 25 (TLT month-end, US $500 reachable, unlevered, before taxes):
 
@@ -86,9 +91,7 @@ Dollar size of Replay 20 (Upbit listing short, NOT US-executable, unlevered Bina
 
 ## 4. What Is Still Open and What Each Must Show
 
-- Plan 53, taxable closed-end fund January rebound: STATED, frozen; the data packet is being repaired for ticker changes. Must score all ten turns, average above zero, win eight turns outright and seven against PCEF, beat PCEF on average, stay positive without its best year, and beat the roster with and without payouts (`research_rig/PREREG_53_taxable_cef_tax_loss.md`, `research_rig/AMENDMENT_53_JUMPS.md`, ledger 187).
 - Plan 60, special dividends: STATED, successor to Plan 43, draft under audit. Must place at least 300 stock/IWM pairs, show positive net and positive excess over IWM with monthly clustered t of at least 2.0 for both, stay positive without the best 1% and from 2020 on, and show gains in at least seven years (`ae00056:research_rig/PREREG_60_special_dividends.md`, `research_rig/PREREG_43_special_dividends.md`, `config/thresholds.yaml`).
-- Plan 58 and Measurement 59, Bitcoin from 21:00 to 23:00 UTC: STATED, judge weekdays using a Bitcoin spot proxy at IBIT costs only; before any price pull, require at least 95% paired quote coverage overall, 90% in each season and mean round-trip cost below 3.50 basis points. Then require positive net versus cash, weekly clustered t of at least 2.0, and positive net from July 2023; actual cost and coverage UNKNOWN (`research_rig/PREREG_58_btc_hour_of_day.md`, `research_rig/MEASURE_59_crypto_clock_costs.md`, ledger 196 and 197).
 - Plan 22, range-break crypto rule: STATED, near freeze. At 12 basis points per side the fixed rule must beat the equal-weight hold and the 95th percentile of random twins, with Sharpe at least 1.0, drawdown no more than 40%, and at least five positive years (queue 40 in `docs/QUEUE.md`; draft settings at `6af8761:config/thresholds.yaml`).
 - TM07, AI desk with scouts versus the same AI alone: STATED, registration being finished. Over 20 paired weeks each claim needs one-sided t of at least 2.43, at least 12 winning weeks and a positive mean without its best week; no early screen decides whether the rest runs (draft `bfc9dcc:timemachine/TM07_REGISTRATION.md` and row 198 of `bfc9dcc:research_rig/TRIAL_LEDGER.md`).
 - Plan 11, held-back earnings reader: STATED, score once after the last five-session exits have traded; exact date UNKNOWN. The chosen reader must make at least 100 buys and beat both buying all releases and the 95th percentile of random picks after costs (`research_rig/PREREG_11_earnings_release_reader.md`, queue 9b in `docs/QUEUE.md`).
@@ -100,11 +103,14 @@ Dollar size of Replay 20 (Upbit listing short, NOT US-executable, unlevered Bina
 - E05, hot-five cash switch: STATED, proposed only, not started. If approved, it would report on-time coverage and compare the unchanged rule with the hold and random yardsticks after 26 complete weeks; results UNKNOWN (`practice/traders/E05_momentum_regime_watch.md`).
 - E06, hot-coin forward rules: STATED, each of the two candidate rules must beat the fixed comparison in at least 16 of 20 weeks; a tie or missed week is not a win (`practice/traders/E06_forward_hot_coin_rules.md`).
 - E07, ETF closure payouts: STATED, needs a mean payout over the closing ask above 0.25%, a positive median, at least 60% positive cases, and subgroup means above 0.15% where the card has enough cases, with at least 20 completed funds if stopped by date (`practice/traders/E07_etf_closure_payout_watch.md`).
+- Queue 101, earnings dates moved earlier: STATED, find a lawful, free source of timestamped issuer announcements and count eligible date changes before pulling any prices. Whether the source exists is UNKNOWN (`docs/QUEUE.md`, `docs/121_idea_round_32.md`).
+- Queue 102, activist filings in listed closed-end funds: STATED, count eligible SEC Schedule 13D filings and amendments with proxy or tender escalations before opening prices; the screen can clear at 150 events under its assumptions. Exact post-filing return is UNKNOWN (`docs/QUEUE.md`, `docs/121_idea_round_32.md`).
 
 ## 5. What Has Been Ruled Out Without a Run (Skip List)
 
 These additional items closed without a scored return. Documentary checks, synthetic tests and input validation are not trading replays. See `docs/STATUS.md`, the Done section of `docs/QUEUE.md`, and the sources below.
 
+- Plan 58, Bitcoin evening window: MEASURED by Measurement 59, IBIT quote coverage passed but modeled round-trip cost was 8.127517 basis points against a strict limit of 3.50, so the plan closed before any historical replay prices were read (`docs/research/123_measure_59_bitcoin_evening_window_costs.md`).
 - Plan 50, listed fund closures: MEASURED, 22 strict documentary candidates against 30 required; closed on count (`research_rig/CLOSE_50_on_count.md`).
 - Plan 51, hot-five momentum cash switch: MEASURED in synthetic tests, the original cleared 0 of 100 and uniform placement cleared 1 of 100 at the target effect, below the 50% floor (`research_rig/CLOSE_51_on_power.md`).
 - Plan 36, insider buying clusters: MEASURED, unresolved coverage was 5.71% against the frozen 5% limit; stopped inconclusive without a return (`research_rig/CLOSE_36_on_coverage.md`).
