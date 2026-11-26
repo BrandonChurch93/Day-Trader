@@ -161,6 +161,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/73_replay_26_blocked_at_source_check.md` | Earlier Treasury month-end replication blocked at the frozen SIP source check. Aggregate discrepancies only; no score and no lock claim | CURRENT |
 | `docs/research/74_round_10_forced_flow_ideas.md` | Round 10 forced-flow and known-clock scouting for a $500 US retail account (13 candidates: 2 KEEP, 4 KEEP WITH CHANGES, 7 DROP; top three named) | CURRENT |
 | `docs/research/75_reverse_split_round_up_feasibility.md` | Reverse-split round-ups: issuer wording, broker handling, EDGAR counts 2023 to 2026, Trial 60 dollars, risks. Decision: forward log with no money; real one-share check waits on the owner | CURRENT |
+| `docs/research/76_round_11_larger_moves.md` | Round 11 larger-per-trade forced-flow and known-clock scouting for a $500 US retail account (15 candidates across US small-stock events, US-reachable crypto events, and levered Replay 25 Treasury ETFs: 2 KEEP, 3 KEEP WITH CHANGES, 10 DROP; top three named) | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
