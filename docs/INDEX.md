@@ -250,6 +250,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/139_replay_65_stock_bond_rebalancing.md` | Replay 65 result: the NBER w33554 stock-bond rebalancing rule on SPY against IEF did not pass, 3 of 5 marks; not shown, not refuted, and the row closes | CURRENT |
 | `docs/research/140_false_pass_audit.md` | False-pass audit: no-edge pass rate of each of the 44 scored tests, expected passes by luck against the 3 counted, trust in each pass, ideas closed before a return | CURRENT |
 | `docs/research/142_power_screen_rows_67_68_69.md` | Queue 67, 68 and 69: published ETF-window evidence and calendar-only synthetic power screens; all close before prices | CURRENT |
+| `docs/research/145_screen_queue_11_12_13.md` | Ledger 215: dated source and synthetic power screen for queues 11, 12 and 13; all close before prices | CURRENT |
 | `docs/research/132_count_107_dividend_month_coverage.md` | Count 107 closure before prices: dated roster and regular dividend-month counts below the fixed line; source check | RECORD |
 | `docs/research/128_row104_equity_cef_distribution_count.md` | Row 104 count, price-blind: equity closed-end fund non-monthly and special distributions 2016 to 2026 (472 fund-days on 241 ex-dates, pass line met; declaration lead time unknown). Addendum: second count over all SEC-classified equity closed-end funds, year-end and special distributions (461 fund-days on 261 ex-dates, passes; 36 of 60 sampled public at least 3 sessions before ex, 1 not, 23 undatable) | CURRENT |
 
@@ -415,6 +416,8 @@ Working papers.
 | `research_rig/PREREG_67_rsi2_pullback.md` | Queue 109 and ledger 211: next-open RSI pullback draft, source audit, and closure before prices on all-mark synthetic power | RECORD |
 | `research_rig/power_67.py`, `research_rig/POWER_67.json` | Plan 67 synthetic-only calibration and saved output; no market inputs, scorer, or run | RECORD |
 | `research_rig/power_rows_67_68_69.py` | Queue rows 67, 68 and 69 synthetic five-mark power script; date-only calendars | RECORD |
+| `research_rig/power_rows_11_12_13.py` | Ledger 215 public metadata counts and synthetic-only power for queue rows 11, 12 and 13 | RECORD |
+| `research_rig/POWER_ROWS_11_12_13.json` | Ledger 215 deterministic output from made-up worlds and frozen count inputs; no prices | RECORD |
 | `research_rig/POWER_ROWS_67_68_69.json` | Saved deterministic power figures for queue rows 67, 68 and 69; no market data | RECORD |
 | `research_rig/PREREG_68_earnings_drift_plain.md` | Queue 17 and ledger 213: price-blind later filing-clock earnings count, long-side evidence, and power screen; no market inputs or scored run | RECORD |
 | `research_rig/power_68.py`, `research_rig/POWER_68.json` | Plan 68 synthetic-only quarter-clustered power script and reproducible output | RECORD |
