@@ -31,7 +31,7 @@ NOTICE = DATA / "upbit_listings/notices.csv"
 DATED_ROSTER = NOTICE.with_name("binance_um_roster.csv")
 NOTICE_MAP = NOTICE.with_name("notice_perp_map_v2.csv")
 IDENTITIES = NOTICE.with_name("notice_identity_sidecar_v2.csv")
-LIFETIMES = NOTICE.with_name("symbol_lifetimes_sidecar_v2.csv")
+LIFETIMES = NOTICE.with_name("symbol_lifetimes_sidecar_v3.csv")
 STAGING = DATA / "replay_20_inputs"
 SUPPLEMENT = STAGING / "archives_v2.json"
 US_ROSTER = DATA.parent / "ideas" / US.NAME
@@ -41,7 +41,7 @@ NOTICE_PIN = "6d7e4a67f7964d394a9412551369df27c2317b21a156d2cb5cd73f34040baec7"
 DATED_ROSTER_PIN = "dfaac9be1818f0867b1e200a6bb511a3970e01df5dbd04418726bf2567ae1ede"
 NOTICE_MAP_PIN = "888517afd7da535f48053258cf86b4ad68728522e90831b953be44c2decce61b"
 IDENTITY_PIN = "6c91e59758359fbce0ffb572973061116ae97c80ac7a29bb66741b9f6624c10a"
-LIFETIMES_PIN = "6f1123653083270389c2c2f815a87e88e39dfd5eb6e7954cdbc802691721e921"
+LIFETIMES_PIN = "1587771c64d7f28d538087539b5b00dc60c63ce1f234a855dbf0b715f41590d2"
 SUPPLEMENT_PIN = "6b4625cff91a82fb000c5d2b37f92c9ad369328b73837427d640850c27f43059"
 MANIFESTS = {
     DATA / "replay_16/manifest_futures.json": "07a28ae776606bb1430aa91ab94ae69b5cfeec37e0f48c9f2d342ab745e8b94d",
