@@ -15,6 +15,7 @@ from urllib.parse import parse_qs, urlsplit
 from timemachine.tm09_desk import Desk, PORTS, PUBLIC_SID, SID, initialize, seal, slot, store_new, verify_seal, weekly_benchmark
 from timemachine.tm09_fixture import compile_export, compile_weeks, encode, fingerprint, mondays, read_private, session_layout, settings, stage1_weeks
 from timemachine.tm09_blind import exact, input_receipt, verify_stage2
+from timemachine.tm09_isolation_probe import required_canary_targets
 from timemachine.tm09_orders import BenchmarkUnavailable
 
 READY = 'Registered desk ready; brief only this session\'s roles.'
@@ -274,7 +275,7 @@ def review(desk, key, boundary, probe_path):
             or not signature_digest(after['post_stop_probe_sha256']) or not signature_digest(after['sudo_review_sha256'])
             or evidence.get('phase') != 'stopped' or evidence.get('session') != desk.public_id
             or evidence.get('port') != after['port'] or type(evidence.get('denied_count')) is not int
-            or evidence['denied_count'] < 1
+            or evidence['denied_count'] != len(required_canary_targets(desk.role))
             or {k: stop['body'][k] for k in control['body']} != control['body']):
         raise ValueError('incomplete post-stop operator review')
     routes = desk.access_records(control['body']['journal_start_row'], stop['body']['journal_stop_row'])

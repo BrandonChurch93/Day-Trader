@@ -97,3 +97,12 @@ STATED: Signed by the lead agent on 2026-11-26 10:30 MT, before any real TM09 ba
 - **Settings signed with this amendment:** `figure_max_chars`, `figure_units`, `paraphrase_block_run_tokens`, `paraphrase_min_title_tokens`, `figure_extract_pattern`, `figure_possible_miss_pattern` under `tm09.amendment_1.feed`, and `tm09.session_counts_per_arm` and `tm09.scoring`, at the values in `config/thresholds.yaml` at this commit.
 - Everything else in the registration and Amendment 1 stands. This is not a launch seal.
 
+## Host limits accepted for TM09 (2026-11-26)
+
+STATED: Written by the lead agent on 2026-11-26 11:13 MT, before any real TM09 bar or headline was opened. These are the same two limits TM07 runs under. They are stated here so that no host receipt is read as proving more than it does.
+
+- **Shared account:** Workers run under the same host account as the workspace. The isolation probe therefore shows that the four protected places (private tape, notes, key, results) are unreadable to that account without sudo. It does not show a separate sandbox per worker. Wherever the operator guide says "actual sandboxed worker", read "a process under the shared worker account".
+- **Soft sudo boundary:** The sudo log review catches a careless breach: a worker's sudo command, or an operator command outside the listed route. It cannot catch a deliberate breach by someone who uses root to hide it.
+- **Still required, not softened:** each probe and canary bound to its own launch, exact command matching, exactly four denied targets per role, no empty path counted as covered, the export checked for every role, and the operator's command list at a pinned, owner-checked path.
+- UNKNOWN: whether any worker would attempt a hidden breach. The final report must repeat these two limits next to the result.
+

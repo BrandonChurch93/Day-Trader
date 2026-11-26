@@ -1208,3 +1208,134 @@ replay_69_plan:
   status: builder
   note: Shared Plan 69 settings; immutable at the audit freeze. The checksummed rule grid supplies the individually written clock and signal variants and names. No change to doc 150 marks; this is not authorization to access data.
   source: research_rig/PREREG_69_stock_sweep.md
+
+m121_sizing:
+  value:
+    fund: ADX
+    session: "2025-10-08"
+    requests: 2
+    retries: 0
+    trades: {rows: 1571, gzip_body_bytes: 28910, decoded_body_bytes: 163545, lit_rows: 482, finra_rows: 1089, unknown_venue_rows: 0, adjacent_equal_timestamp_rows: 20}
+    quotes: {rows: 1799, gzip_body_bytes: 19866, decoded_body_bytes: 199329, adjacent_equal_timestamp_rows: 6}
+    totals: {rows: 3370, gzip_body_bytes: 48776, decoded_body_bytes: 362874}
+    max_page: {gzip_body_bytes: 28910, decoded_body_bytes: 199329}
+    peak_rss_mib: 39.32
+    pilot_equivalents_at_day_cap: 739
+    aggregate_receipt_sha256: "9025195f89dbdd8db90e00e4d635ee2865c583a47a82337ca4a1e9e53ccbd183"
+    tape_dictionaries_sha256:
+      exchanges: "c054b46422690d0690f4c9ae86acbc2ed40a86197d5e43afedc424fc47aed43b"
+      trade_tape_a: "fa1bee5a96f152b2069fb413cd44bc99a7c8a44edd6439f1c38b67e183ad4709"
+      quote_tape_a: "895d0ef2ae946a25d1f4298da6bc4139bbe6cb8472815f43e1f2c6967859608f"
+  status: builder
+  note: MEASURED sizing counts from the custodian; no runtime authorization and no retained price payload.
+  source: docs/research/166_m121_cef_resting_bid.md
+
+m121_limits:
+  value:
+    job_total_peak_mib_exclusive: 1024
+    min_host_free_mib: 1024
+    job_disk_cap_mib: 256
+    job_memory_cap_mib: 384
+    kept_order_rows_cap_mib: 8
+    max_kept_bytes_per_order: 1024
+    decoded_bytes_cap_per_day_mib: 256
+    wire_and_decoded_page_cap_mib_each: 16
+    workers: 1
+    niceness: 10
+    request_page_rows: 10000
+    pages_per_endpoint_per_day: 64
+    history_requests_total: 12000
+    retry_cap: 0
+    planned_fund_days: 576
+    planned_order_slots: 6336
+  status: builder
+  note: STATED draft limits, not authority to implement or pull; MiB is binary.
+  source: docs/research/166_m121_cef_resting_bid.md
+
+m121_sample:
+  value:
+    quarterly_archives:
+      - {quarter: "2024q3", sha256: "f166532f362eca167065a593c313b0ce3b85304c9dfeebde66dc61b149a0a0e1", rows: 420, first_filing: "2024-07-02", last_filing: "2024-09-25"}
+      - {quarter: "2024q4", sha256: "460783ea76a0f807fc22060cb9954632429248cc0502f9eb7467cf89023e0840", rows: 602, first_filing: "2024-10-01", last_filing: "2024-12-27"}
+      - {quarter: "2025q1", sha256: "beed82037d5c03ad931b096dbfef6978faf76cc2a58e14942fca055a1fbb22a0", rows: 1956, first_filing: "2025-01-02", last_filing: "2025-03-31"}
+      - {quarter: "2025q2", sha256: "ddf34fe8851d3190dd248821e9021cb7761e200ae347aa608010d158d79be216", rows: 477, first_filing: "2025-04-01", last_filing: "2025-06-27"}
+    directory_checked_utc: "2026-11-26T18:00:06Z"
+    directory_sha256: "a4549a73d027584e90490c5b8ff207de3e6a607768c7de416144ef52e6474c84"
+    directory_nyse_label: NYSE
+    form_investment_company_type: "N-2"
+    form_common_stock_label: "Common stock"
+    venue_primary: XNYS
+    tape: A
+    exclude_open_end_style_ticker_length: 5
+    exclude_open_end_style_ticker_suffix: X
+    name_keywords:
+      muni: [Municipal, Muni, Tax-Free, Tax-Exempt, Tax Exempt]
+      taxable_bond: [Income, Bond, Credit, Yield, Loan, Mortgage, Debt, Floating]
+    normalized_dash_variants: "‐‑‒–—−"
+    hash_prefix: "M121:"
+    funds_per_type: 8
+    roster_counts_before_ab_c: {equity: 102, taxable_bond: 152, muni: 104}
+    roster_counts_after_ab_c: {equity: 99, taxable_bond: 147, muni: 103}
+    directory_absent_counts_after_ab_c: {equity: 7, taxable_bond: 10, muni: 31}
+    roster_before_draw_sha256: "9855f61ef380a48d8fdedd59d562ee791e0e1030ee3fa3350b6051004cc79305"
+    prescreen_exclusions: {ABAYX: ab, BNY: c, EGF: a, FLEX: c, PHD: c, VVJHX: ab, VVJIX: ab, VVJJX: ab, XTYGX: b}
+    delisting_forms: ["25", "25-NSE"]
+    walk_type_order: [equity, taxable_bond, muni]
+    delisting_walk_request_cap: 120
+    delisting_walk_max_requests_per_second: 4
+    full_hash_rank_sha256: "f9f509ca7b2b88f2c189adc1a94764e739cebc903230e9574e6d9393ec749b30"
+    delisting_walk_sha256: "992ea3b23026fde550e1517050d4ed8715755a69648ab346ab22dbc3aedb76cb"
+    delisting_walk_requests: 28
+    delisting_walk_skips:
+      RMT: [["25", "2003-10-22"], ["25-NSE", "2012-12-17"]]
+      HNW: [["25-NSE", "2025-09-30"]]
+      MXE: [["25-NSE", "2013-12-20"]]
+      NZF: [["25", "2016-04-15"], ["25-NSE", "2014-04-11"]]
+    selected_in_hash_order:
+      equity: [GDO, CEE, THQ, BME, IIF, BSTZ, IDE, BDJ]
+      taxable_bond: [DSU, BXMX, SDHY, FSCO, PFL, ETB, PAXS, DFP]
+      muni: [BMN, MUE, IIM, VCV, EIM, DMB, PML, RMM]
+    sessions: ["2025-09-08", "2025-09-10", "2025-09-12", "2025-09-16", "2025-09-18", "2025-09-19", "2025-09-22", "2025-09-23", "2025-09-25", "2025-09-29", "2025-10-01", "2025-10-03", "2025-10-07", "2025-10-09", "2025-10-10", "2025-10-13", "2025-10-14", "2025-10-16", "2025-10-20", "2025-10-22", "2025-10-24", "2025-10-28", "2025-10-30", "2025-10-31"]
+  status: builder
+  note: STATED draft rules using public SEC filings only. MEASURED roster counts and completed price-free rank walk; the directory is a post-period screen.
+  source: docs/research/166_m121_cef_resting_bid.md
+
+m121_order:
+  value:
+    time_zone: America/New_York
+    core_open: "09:30:00"
+    core_close: "16:00:00"
+    placement_times: ["10:00:00", "10:30:00", "11:00:00", "11:30:00", "12:00:00", "12:30:00", "13:00:00", "13:30:00", "14:00:00", "14:30:00", "15:00:00"]
+    notional_usd: 500
+    min_bid_usd: "1.00"
+    tick_usd: "0.01"
+    through_ticks: 1
+    round_lot_shares: 100
+    entry_delay_seconds: 1
+    rest_seconds: 1800
+    quote_max_age_seconds: 15
+    mark_seconds_after_fill: {short: 60, primary: 300, long: 900}
+    close_bid_clock: "15:59:59"
+    continuous_quote_condition_arrays: [["R"], ["R", "R"]]
+    eligible_trade_condition_arrays: [[" "], [" ", "I"]]
+    finra_trade_venue: D
+    eligible_continuous_lit_venues: [A, B, C, H, J, K, L, M, N, P, T, U, V, X, Y, Z]
+  status: builder
+  note: STATED draft, historical round-lot quote regime, conservative through-print proxy and gross bid marks only.
+  source: docs/research/166_m121_cef_resting_bid.md
+
+m121_reporting:
+  value:
+    bps_scale: 10000
+    bootstrap_draws: 10000
+    bootstrap_seed: 121042
+    interval_tail_probability: 0.025
+    min_known_slot_share_per_type: 0.90
+    min_primary_mark_coverage_per_type: 0.90
+    min_primary_marked_fund_days_per_type: 15
+    min_primary_marked_dates: 12
+    min_primary_marked_funds_per_type: 3
+    gross_bid_markout_lower_bound_bps_strictly_above: 0
+  status: builder
+  note: STATED draft evidence rule for discussing a later strategy test, not a profitability threshold or authorization.
+  source: docs/research/166_m121_cef_resting_bid.md
