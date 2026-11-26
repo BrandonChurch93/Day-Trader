@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 09:45 UTC
+Last updated: 2026-11-26 17:55 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Queue 102, US-listed closed-end fund activist Schedule 13D census ([doc 124](research/124_count_102_cef_activist_13d_census.md), `research_rig/COUNT_102_cef_13d_census.md`, ledger 201), completed 2026-11-26 with zero price access. MEASURED: 437 qualifying common-stock activist events across 337 primary same-day clusters (293 5-day waves; 256 initial-13D-only clusters; 147 non-Saba clusters), clearing the 100-cluster pass line and advancing to pre-registration eligibility. 44.2% of events arrived during market hours, 41.2% after close, and 14.6% pre-market; Saba Capital Management accounts for 56.4% of clusters; 60-trading-day common-stock listing survival is 97.9% (97.4% raw Form 25-NSE). Post-filing tradable return is UNKNOWN.
 
 - Replay 48 identity review ([review](../research_rig/REVIEW_48_identity.md), ledger 200) opened and closed 2026-11-26. MEASURED: the pass stands. One fund (MUI, listed as MUNUX) was absent from nine turns; on pre-entry bars it was eligible every turn and outside the worst five every turn (closest rank 42 of 124), so all 50 picks and all marks are unchanged. The eight funds merged away during a January holding month were not picked; the run did not remove any fund for lacking an exit bar. The shown-only equal-weight roster line omitted that one fund.
 

@@ -1,0 +1,19 @@
+# Count 102: US-Listed Closed-End Fund Activist Schedule 13D Census (2016 to 2026)
+
+Ledger 201, queue row 102. Opened 2026-11-26 MT before any SEC EDGAR count or price access. Source idea: `docs/121_idea_round_32.md`; power screen: `docs/research/117_power_screen_before_data.md`.
+
+## Fixed Rules (Set Before Counting)
+
+- STATED (zero price access): This is a count-first SEC EDGAR census only. No market prices, no returns, no vendor price/quote calls, and no SEC full-text search endpoint (`efts.sec.gov`) are used.
+- STATED (fund universe): US-listed closed-end funds identified by stable CIK, reusing the identity work from Plan 48 (`192` muni CEF CIKs) and Plan 53 (`181` taxable CEF CIKs; `373` verified listed CEF CIKs union), extended with all CIKs appearing in the SEC Division of Investment Management annual `closed-end_investment_company_YYYY.csv` rosters (`2016` to `2025`) whose exchange-listed status (NYSE, NYSE American/MKT, Nasdaq, or Cboe) is verified from SEC records (Plan 48/53 verification, SEC submissions `exchanges`, or Form 8-A12B / Form 25-NSE). Non-listed interval/tender-offer funds and BDCs are excluded. Today's ticker field is never used to rebuild historical membership.
+- STATED (date range): SEC EDGAR filings dated `2016-01-01` through the latest available Q4 2026 SEC index (`2026-11-25`). Both legacy (`SC 13D`, `SC 13D/A`) and modernized XML (`SCHEDULE 13D`, `SCHEDULE 13D/A`) forms are included.
+- STATED (what counts as one event):
+  - Initial filing event: the first `SC 13D` or `SCHEDULE 13D` filed by a normalized filer group on a listed CEF subject CIK within the study window.
+  - Escalation amendment event: a subsequent `SC 13D/A` or `SCHEDULE 13D/A` by the same filer group on the same subject CIK counts as a new event only when its Item 4 text discloses a new active escalation step (proxy contest or special-meeting solicitation, board/trustee nomination, or tender-offer / open-ending / liquidation / merger demand) not already counted for that `(filer_group, subject_cik)` pair within the prior 60 calendar days. Routine stake-change updates, boilerplate repetitions of prior Item 4 text, and passive exits do not count. Standstill/settlement amendments are tagged separately and excluded from the primary escalation count.
+- STATED (clustering rule): Activist groups frequently file on multiple CEFs in the same fund complex on the same day. All qualifying events by the same normalized `filer_group` on the same Eastern-time filing date form **1 independent event cluster**. Sensitivity counts collapsing `(filer_group)` filings within 5 calendar days are also reported.
+- STATED (pass line, fixed before counting):
+  - Proceed to pre-registration only if primary independent event clusters >= 100.
+  - Close on count if primary independent event clusters < 60.
+  - Between 60 and 100: report exact counts and defer to the lead agent.
+- STATED (required measurements): events and independent clusters by year (`2016` to `2026`); acceptance timestamp split (pre-market before 09:30:00 ET, regular market hours 09:30:00 to 15:59:59 ET, after close 16:00:00 ET onward); top filers and their shares; 60-trading-day post-filing listing survival determined solely from SEC delisting/deregistration filings (`25-NSE`, `25`, `N-8F`, `N-8F ORDR`); and what Bradley, Brav, Goldstein, and Jiang (2008/2010) actually measured versus what a tradable post-filing rule requires (post-filing return is UNKNOWN in the paper).
+- STATED (storage and SEC fair-access hygiene): SEC EDGAR form/master indexes and individual filings fetched strictly below 5 request starts/sec with `User-Agent: Day-Trader research modernsoftworks@gmail.com`. Only compact metadata and short Item 4 excerpts are stored under `/home/user/workspace/rig/data/count_102/` (`0700`); whole submissions are deleted immediately after parsing. Stop immediately if free disk drops below 2.0 GiB.
