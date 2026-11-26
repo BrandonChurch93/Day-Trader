@@ -1,11 +1,14 @@
-"""Plan 75 repeat engine. CLI exposes synthetic tests and no-decode validation only."""
+"""Plan 75 repeat only: invented tests, no-decode validation, and a one-shot go."""
 
+import csv
 import hashlib
 import json
 import os
 import re
 import stat
+import subprocess
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -21,6 +24,7 @@ START, STOP = date(2020, 1, 1), date(2024, 1, 1)
 REPEAT_DAYS = tuple(START + timedelta(days=i) for i in range((STOP - START).days))
 HASH = re.compile(r"[0-9a-f]{64}\Z")
 INDEX_HEADER = b"date,coin,eligible,open_present,close_present,sell_allowed\n"
+LEDGER = "research_rig/TRIAL_LEDGER.md"
 
 
 class Refusal(Exception):
@@ -36,24 +40,35 @@ def sha(blob):
     return hashlib.sha256(blob).hexdigest()
 
 
-def snapshot(folder, name, limit):
-    """Open pinned, regular files, refusing symlinks on every component."""
+@contextmanager
+def open_folder(folder):
+    """Anchor reads, lock and output to one directory inode; reject symlinks."""
+    require(folder.is_absolute() and not {"..", "."}.intersection(folder.parts), "REFUSE_DIR")
     fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
     try:
         for part in folder.parts[1:]:
             child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
             os.close(fd)
             fd = child
-        child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
-        with os.fdopen(child, "rb") as f:
-            meta = os.fstat(f.fileno())
-            require(stat.S_ISREG(meta.st_mode) and meta.st_nlink == 1 and meta.st_size <= limit,
-                    "REFUSE_FILE")
-            blob = f.read(limit + 1)
-            require(len(blob) == meta.st_size, "REFUSE_SIZE")
-            return blob
+        yield fd
     finally:
         os.close(fd)
+
+
+def read_at(fd, name, limit):
+    child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
+    with os.fdopen(child, "rb") as f:
+        meta = os.fstat(f.fileno())
+        require(stat.S_ISREG(meta.st_mode) and meta.st_nlink == 1 and meta.st_size <= limit,
+                "REFUSE_FILE")
+        blob = f.read(limit + 1)
+        require(len(blob) == meta.st_size, "REFUSE_SIZE")
+        return blob
+
+
+def snapshot(folder, name, limit):
+    with open_folder(folder) as fd:
+        return read_at(fd, name, limit)
 
 
 def unique(pairs):
@@ -96,17 +111,19 @@ def validate_bytes(manifest, index, payload, expected_manifest_sha):
     return flags
 
 
-def load_repeat_snapshot(pin):
+def load_repeat_snapshot(fd, pin):
     require(HASH.fullmatch(pin), "REFUSE_PIN")
-    manifest = snapshot(REPEAT_DIR, "manifest.json", 8192)
+    manifest = read_at(fd, "manifest.json", 8192)
     require(sha(manifest) == pin, "REFUSE_PIN")
-    index = snapshot(REPEAT_DIR, "index.csv", 1024 * 1024)
-    opaque = snapshot(REPEAT_DIR, "prices.f64", 16 * len(REPEAT_DAYS) * len(NAMES))
+    index = read_at(fd, "index.csv", 1024 * 1024)
+    opaque = read_at(fd, "prices.f64", 16 * len(REPEAT_DAYS) * len(NAMES))
     return validate_bytes(manifest, index, opaque, pin), opaque
 
 
 def validate_inputs(pin):
-    load_repeat_snapshot(pin)
+    require(HASH.fullmatch(pin), "REFUSE_PIN")
+    with open_folder(REPEAT_DIR) as fd:
+        load_repeat_snapshot(fd, pin)
 
 
 def decode_repeat(flags, opaque):
@@ -271,7 +288,7 @@ def play(tape, cost, cfg, cap, inputs, roster_clock, *, mode="trend", override=N
             peak_target = max(peak_target, float(np.max(target)))
             good = warm[signal_day] & np.isfinite(v)
             risk_ok = good
-            reweight = ((shares == 0) | (np.abs(target - drift) > cfg["resize_weight_delta"]))
+            reweight = monthly | (shares == 0) | (np.abs(target - drift) > cfg["resize_weight_delta"])
             wanted = np.where(good & intent & reweight, target, drift)
             wanted[~intent] = 0
             queued |= ~intent & (shares > 0)
@@ -415,7 +432,7 @@ def twins(tape, cost, cfg, marks, inputs, clock, book):
             ends.append(play(tape, cost, cfg, cfg["cap"], inputs, clock, override=intents).nav[-1])
         else:
             ends.append(1.0)
-    return float(np.percentile(ends, marks["twin_percentile"], method="linear")), missed
+    return float(np.percentile(ends, marks["twin_percentile"], method="linear")), missed, len(spells) * len(ends)
 
 
 def period_return(nav, days, first, stop):
@@ -448,8 +465,8 @@ def summarize(tape, book, marks):
     }
 
 
-def score_repeat(tape):
-    """In-memory engine for audit. There is intentionally no CLI price decoder/run path."""
+def score_repeat(tape, save_fills=None):
+    """In-memory repeat engine. The runner can keep a private ledger of actual fills."""
     tape.check()
     require(tape.days == REPEAT_DAYS, "REFUSE_FENCE")
     cfg, marks, costs = load_config()
@@ -466,7 +483,10 @@ def score_repeat(tape):
     for line, fee in costs.items():
         book = play(tape, fee, cfg, cfg["cap"], inp, clock)
         hold = play(tape, fee, cfg, 1, inp, clock, mode="hold")
-        twin_cut, missed = twins(tape, fee, cfg, marks, inp, clock, book)
+        if save_fills is not None:
+            save_fills(line, "primary", book.fills)
+            save_fills(line, "same_list_hold", hold.fills)
+        twin_cut, missed, attempted = twins(tape, fee, cfg, marks, inp, clock, book)
         shown = summarize(tape, book, marks)
         a = period_return(book.nav, tape.days, START, cut)
         b = period_return(book.nav, tape.days, cut, STOP)
@@ -474,6 +494,8 @@ def score_repeat(tape):
             "primary": shown, "cost_per_side": fee, "same_list_hold_net": float(hold.nav[-1] - 1),
             "halves_net": [a, b], "both_halves_positive_shown_only": a > 0 and b > 0,
             "twins_cut_net": twin_cut - 1, "twins_failed_placements": missed,
+            "twins_placement_attempts": attempted,
+            "twins_placement_failure_rate": missed / attempted if attempted else None,
             "twins_n": marks["twins"],
             "marks_shown_only": {
                 "above_same_list_hold": book.nav[-1] > hold.nav[-1],
@@ -491,11 +513,105 @@ def score_repeat(tape):
         for label, lookbacks, cap in alt:
             a_inp = indicator_lines[lookbacks]
             # Keep the same coin admission clock. Unwarmed individual legs stay cash.
-            lines[line]["shown_only"][label] = summarize(
-                tape, play(tape, fee, cfg, cap, a_inp, clock), marks)
+            alt_book = play(tape, fee, cfg, cap, a_inp, clock)
+            lines[line]["shown_only"][label] = summarize(tape, alt_book, marks)
+            if save_fills is not None:
+                save_fills(line, label, alt_book.fills)
     main = lines["main"]
     return {"lines": lines, "implementation_check": main["primary"]["net"] > 0
             and any(x > 0 for x in main["halves_net"])}
+
+
+def approval_id(ledger):
+    rows = re.findall(r"^\|[ \t]*225[ \t]*\|[^\n]*$", ledger, flags=re.M)
+    require(len(rows) == 1, "REFUSE_LEDGER_ROW")
+    row = rows[0]
+    keys = re.findall(r"(?<![A-Za-z0-9_])P75_REPEAT_GO\s*=", row)
+    matches = re.findall(r"(?<![A-Za-z0-9_])P75_REPEAT_GO=(p75r-[0-9a-f]{64})(?=[\s`|]|$)", row)
+    require(len(keys) == len(matches) == 1, "REFUSE_LEDGER_GO")
+    return matches[0]
+
+
+def committed_approval():
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+    def git(*args):
+        proc = subprocess.run(("git", *args), cwd=ROOT, env=env,
+                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+        require(proc.returncode == 0, "REFUSE_GIT")
+        return proc.stdout.decode("utf-8")
+
+    commit = git("rev-parse", "--verify", "HEAD").strip()
+    require(re.fullmatch(r"[0-9a-f]{40,64}", commit), "REFUSE_GIT")
+    require(git("status", "--porcelain", "--untracked-files=no") == "", "REFUSE_DIRTY")
+    go = approval_id(git("show", f"{commit}:{LEDGER}"))
+    require(git("rev-parse", "--verify", "HEAD").strip() == commit, "REFUSE_GIT")
+    return go
+
+
+def receipt_pin(fd, approved):
+    try:
+        receipt = json.loads(read_at(fd, "repeat_receipt.json", 4096), object_pairs_hook=unique)
+    except (ValueError, RecursionError, Refusal):
+        raise Refusal("REFUSE_RECEIPT") from None
+    require(isinstance(receipt, dict) and set(receipt) == {"schema", "go_id", "manifest_sha256"}
+            and type(receipt["schema"]) is int and receipt["schema"] == 1
+            and isinstance(receipt["manifest_sha256"], str)
+            and HASH.fullmatch(receipt["manifest_sha256"]), "REFUSE_RECEIPT")
+    pin = receipt["manifest_sha256"]
+    require(receipt["go_id"] == approved == "p75r-" + pin, "REFUSE_GO_MISMATCH")
+    return pin
+
+
+def ensure_absent(fd, name, code):
+    try:
+        os.stat(name, dir_fd=fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    raise Refusal(code)
+
+
+@contextmanager
+def new_private(fd, name, code):
+    try:
+        f = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=fd)
+    except FileExistsError:
+        raise Refusal(code) from None
+    with os.fdopen(f, "w", encoding="ascii", newline="") as output:
+        yield output
+        output.flush()
+        os.fsync(output.fileno())
+    os.fsync(fd)
+
+
+def run_repeat(fd, approved):
+    """Validate once on the same directory handle, claim permanently, then decode."""
+    folder = os.fstat(fd)
+    require(folder.st_uid == os.geteuid() and folder.st_mode & 0o077 == 0, "REFUSE_PRIVATE_DIR")
+    ensure_absent(fd, "RUN.lock", "REFUSE_LOCK")
+    ensure_absent(fd, "fills.csv", "REFUSE_OUTPUT")
+    pin = receipt_pin(fd, approved)
+    flags, opaque = load_repeat_snapshot(fd, pin)
+    with new_private(fd, "RUN.lock", "REFUSE_LOCK") as lock:
+        lock.write(approved + "\n")
+    tape = decode_repeat(flags, opaque)
+    with new_private(fd, "fills.csv", "REFUSE_OUTPUT") as fills:
+        out = csv.writer(fills)
+        out.writerow(("cost_line", "book", "date_utc", "coin", "signed_notional", "cost"))
+
+        def save_fills(cost_line, book, rows):
+            out.writerows((cost_line, book, tape.days[d].isoformat(), tape.names[j], notional, cost)
+                          for d, j, notional, cost in rows)
+
+        return score_repeat(tape, save_fills)
+
+
+def registered_summary(report):
+    """Three fixed lines; the report is aggregate, never keyed by coin or fill."""
+    lines = [label.upper() + " " + json.dumps(report["lines"][label], sort_keys=True,
+             default=lambda scalar: scalar.item(), allow_nan=False) for label in ("main", "harsh")]
+    lines.append("IMPLEMENTATION_CHECK " + ("PASS" if report["implementation_check"] else "FAIL"))
+    return "\n".join(lines)
 
 
 def main(args):
@@ -503,16 +619,23 @@ def main(args):
         from test_score_75 import self_test
         self_test()
         return 0
-    if len(args) == 2 and args[0] == "--validate-inputs":
+    if len(args) == 2 and args[0] in {"--validate-inputs", "--go-repeat"}:
         try:
-            validate_inputs(args[1])
+            if args[0] == "--validate-inputs":
+                validate_inputs(args[1])
+                summary = "VALIDATED_NO_PRICE_DECODE"
+            else:
+                require(args[1] == str(REPEAT_DIR), "REFUSE_DIR")
+                approved = committed_approval()
+                with open_folder(REPEAT_DIR) as fd:
+                    summary = registered_summary(run_repeat(fd, approved))
         except Refusal as e:
             print(str(e))
             return 2
         except (OSError, ValueError):
             print("REFUSE_INPUT")
             return 2
-        print("VALIDATED_NO_PRICE_DECODE")
+        print(summary)
         return 0
     print("REFUSE_MODE")
     return 2

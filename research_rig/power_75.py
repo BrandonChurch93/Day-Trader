@@ -13,46 +13,29 @@ def dates(first, stop):
     return [start + timedelta(days=i) for i in range((end - start).days)]
 
 
-def schedule(days, names, cfg, rng):
-    """Toy periodic episodes, not a Donchian signal, with staggered coin/leg phases."""
+def schedule(days, names, cfg, phase_rng, worlds):
+    """Toy episodes; each world independently draws every coin/leg phase."""
     s = cfg["synthetic"]
     n, k = len(days), len(cfg["lookbacks"])
     paper_days = len(dates(*s["paper_dates"]))
     # The first simulated return after a next-open fill needs 91 completed closes.
     warm = cfg["vol_days"] + 1
-    t = np.arange(n - warm)[:, None, None]
+    t = np.arange(n - warm, dtype=np.float32)[None, :, None]
     gaps = np.asarray(paper_days / np.array(s["paper_counts"]))
     dwell = np.maximum(1, np.rint(gaps * s["sleeve_duty"]))
-    phase = rng.uniform(size=(1, names, k)) * gaps
-    active = (t + phase) % gaps < dwell
-    leg = s["invested_weight"] * active.astype(np.float32) / k
-    coin = np.pad(leg.sum(axis=2) / names, ((warm, 0), (0, 0)))
-    weight = coin.sum(axis=1)
+    phases = phase_rng.random((worlds, 1, names, k), dtype=np.float32)
+    coin = np.zeros((worlds, n, names), dtype=np.float32)
+    plant = np.zeros((worlds, n), dtype=np.float32)
+    for j, (gap, span) in enumerate(zip(gaps, dwell, strict=True)):
+        active = (t + phases[..., j] * np.float32(gap)) % np.float32(gap) < span
+        coin[:, warm:] += active * np.float32(s["invested_weight"] / (k * names))
+        plant[:, warm:] += active.sum(axis=2) * (s["paper_sized_gross_means"][j] / (span * k * names))
+    weight = coin.sum(axis=2)
     # Basket residual is already in the equal-weight hold. Use dispersion about equal exposure.
-    idio_weight = np.sqrt(np.sum((coin - weight[:, None] / names) ** 2, axis=1))
-    plant = np.pad((active.mean(axis=1) @ (np.asarray(s["paper_sized_gross_means"]) / dwell)) / k,
-                   (warm, 0))
-    delta = np.empty_like(coin)
-    delta[0], delta[1:] = coin[0], np.diff(coin, axis=0)
-    turnover = np.abs(delta).sum(axis=1)
-    turnover[-1] += weight[-1]
-    # Preserve realized cost base while shifting exposure in calendar months.
+    idio_weight = np.sqrt(np.sum((coin - weight[..., None] / names) ** 2, axis=2))
+    turnover = np.abs(np.diff(coin, axis=1, prepend=np.zeros_like(coin[:, :1]))).sum(axis=2)
+    turnover[:, -1] += weight[:, -1]
     return weight, idio_weight, plant, turnover, warm
-
-
-def month_slices(days, first=0):
-    starts = [first] + [i for i in range(first + 1, len(days)) if days[i].day == 1]
-    return list(zip(starts, starts[1:] + [len(days)]))
-
-
-def twin_weights(weight, periods, draws, rng):
-    """Roll aggregate exposures within month. Approximation to matched ticket placements."""
-    out = np.zeros((len(weight), draws), dtype=np.float32)
-    for lo, hi in periods:
-        length = hi - lo
-        shifts = rng.integers(length, size=draws)
-        out[lo:hi] = weight[lo + (np.arange(length)[:, None] + shifts) % length]
-    return out, out**2
 
 
 def stats(simple):
@@ -74,22 +57,20 @@ def study(cfg, marks, cost_rows, key, case_name):
     s = cfg["synthetic"]
     c = s["cases"][case_name]
     rng = np.random.default_rng(s["seed"] + (key == "vault"))
+    phase_rng = np.random.default_rng(np.random.SeedSequence([s["seed"], 75, key == "vault"]))
     days = dates(*cfg[key])
     n, names = len(days), s["central_names"][key]
-    w, wi, p, u, warm = schedule(days, names, cfg, rng)
-    periods = month_slices(days, first=warm)
     if key == "repeat":
-        a, a2 = twin_weights(w, periods, marks["twins"], np.random.default_rng(marks["twin_seed"]))
-        year_stops = [i for i in range(1, n) if days[i].month == days[i].day == 1] + [n]
         cut = days.index(date.fromisoformat(cfg["repeat_cut"]))
     else:
         cut = days.index(date.fromisoformat(cfg["after_paper_first"]))
     blocks = np.arange(n) // s["factor_block_days"]
     ny = marks["annual_days"]
-    ib = wi * c["idio_vol"] / sqrt(ny)
     totals = {(cost, edge): 0 for cost in cost_rows for edge in s["edge_multipliers"]}
     for end in range(0, s["worlds"], s["batch"]):
         b = min(s["batch"], s["worlds"] - end)
+        w, wi, p, u, warm = schedule(days, names, cfg, phase_rng, b)
+        ib = wi * c["idio_vol"] / sqrt(ny)
         def normal(width):
             return rng.standard_normal((b, width), dtype=np.float32)
 
@@ -101,38 +82,16 @@ def study(cfg, marks, cost_rows, key, case_name):
                * (c["btc_corr"] * shared + sqrt(1 - c["btc_corr"] ** 2) * normal(n)))
         basket[:, :warm] = btc[:, :warm] = 0
         base = basket * w + normal(n) * ib
-        if key == "repeat":
-            # Second-order log compounding and independent residual draws: a deliberately
-            # approximate twin statistic, not the future exact twin placement algorithm.
-            twin_log_base = (basket @ a - 0.5 * (basket**2 @ a2)
-                             - 0.5 * (ib**2).sum()
-                             + sqrt((ib**2).sum()) * normal(marks["twins"]))
-            twin_no_cost = np.quantile(twin_log_base, marks["twin_percentile"] / 100, axis=1)
         for cost_name, side_bp in cost_rows.items():
             fee = side_bp / 10000
             debit = u * (1 + c["extra_turnover"]) * fee
-            if key == "repeat":
-                twin_cut = twin_no_cost - debit.sum()
-                hold = basket.copy()
-                hold[:, (warm, n - 1)] -= fee
-                hold_log, _ = stats(hold)
             for edge in s["edge_multipliers"]:
                 book = base + edge * p - debit
                 log, dd = stats(book)
                 sigma = book.std(axis=1, ddof=1)
                 if key == "repeat":
-                    year_end = log[:, np.asarray(year_stops) - 1]
-                    yoy = np.diff(year_end, axis=1, prepend=0)
-                    old_passes = ((log[:, -1] > hold_log[:, -1]) &
-                              (book.mean(axis=1) * sqrt(ny) >= marks["min_sharpe"] * sigma) &
-                              (sigma > 0) & (dd <= marks["max_drawdown"]) &
-                              (log[:, -1] > twin_cut) &
-                              (np.count_nonzero(yoy > 0, axis=1) >= cfg["repeat_years_positive"]) &
-                              (log[:, cut - 1] > 0) & (log[:, -1] > log[:, cut - 1]))
                     passes = (log[:, -1] > 0) & ((log[:, cut - 1] > 0) |
                                                   (log[:, -1] > log[:, cut - 1]))
-                    if np.any(old_passes & ~passes):
-                        raise AssertionError("old repeat passes must clear the implementation check")
                 else:
                     scale = sigma / btc.std(axis=1, ddof=1)
                     matched = btc * scale[:, None]

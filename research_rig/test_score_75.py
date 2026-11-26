@@ -8,8 +8,9 @@ from tempfile import TemporaryDirectory
 import numpy as np
 
 from score_75 import (
-    INDEX_HEADER, NAMES, REPEAT_DAYS, Refusal, Tape, calendar, decode_repeat, indicators,
-    load_config, period_return, play, score_repeat, sha, snapshot, twins, validate_bytes,
+    INDEX_HEADER, NAMES, REPEAT_DAYS, Refusal, Tape, approval_id, calendar, decode_repeat, indicators,
+    load_config, open_folder, period_return, play, registered_summary, run_repeat, score_repeat,
+    sha, snapshot, twins, validate_bytes,
 )
 
 
@@ -83,6 +84,74 @@ def validation():
             pass
         else:
             raise AssertionError("symlink accepted")
+    return raw, pin, index, opaque
+
+
+def go_refusals(fixture):
+    raw, pin, index, opaque = fixture
+    go = "p75r-" + pin
+    prefix = "| 225 | approved "
+    token = f"P75_REPEAT_GO={go}"
+    assert approval_id(f"{prefix}`{token}` |\n") == go
+    assert_refusal("REFUSE_LEDGER_ROW", approval_id, f"| 224 | {token} |")
+    assert_refusal("REFUSE_LEDGER_ROW", approval_id, f"{prefix}{token} |\n{prefix}{token} |")
+    assert_refusal("REFUSE_LEDGER_GO", approval_id, f"{prefix}not approved |")
+    assert_refusal("REFUSE_LEDGER_GO", approval_id, f"{prefix}{token} {token} |")
+    assert_refusal("REFUSE_LEDGER_GO", approval_id, f"{prefix}{token}a |")
+    with TemporaryDirectory() as directory:
+        folder = Path(directory)
+        (folder / "manifest.json").write_bytes(raw)
+        (folder / "index.csv").write_bytes(index)
+        (folder / "prices.f64").write_bytes(b"\x00" + opaque[1:])
+        receipt = folder / "repeat_receipt.json"
+        receipt.write_text(json.dumps({"schema": 1, "go_id": go, "manifest_sha256": pin}))
+        with open_folder(folder) as fd:
+            assert_refusal("REFUSE_GO_MISMATCH", run_repeat, fd, "p75r-" + "0" * 64)
+            assert_refusal("REFUSE_HASH", run_repeat, fd, go)
+            assert not (folder / "RUN.lock").exists()
+            (folder / "prices.f64").write_bytes(opaque)
+            output = registered_summary(run_repeat(fd, go)).splitlines()
+            assert (folder / "RUN.lock").read_text() == go + "\n"
+            assert (folder / "fills.csv").read_text().splitlines() == [
+                "cost_line,book,date_utc,coin,signed_notional,cost"
+            ]
+            assert len(output) == 3 and output[0].startswith("MAIN ") and output[1].startswith("HARSH ")
+            assert output[-1] == "IMPLEMENTATION_CHECK FAIL" and not any("BTC" in line for line in output)
+            assert_refusal("REFUSE_LOCK", run_repeat, fd, go)
+    # A price-only refusal happens after the durable lock, never before it.
+    with TemporaryDirectory() as directory:
+        folder = Path(directory)
+        invalid = b"\x00" * len(opaque)
+        m = json.loads(raw)
+        m["payload_sha256"] = sha(invalid)
+        revised = json.dumps(m).encode()
+        pin = sha(revised)
+        go = "p75r-" + pin
+        for name, value in (("manifest.json", revised), ("index.csv", index), ("prices.f64", invalid),
+                            ("repeat_receipt.json", json.dumps(
+                                {"schema": 1, "go_id": go, "manifest_sha256": pin}).encode())):
+            (folder / name).write_bytes(value)
+        with open_folder(folder) as fd:
+            assert_refusal("REFUSE_PRICES", run_repeat, fd, go)
+            assert (folder / "RUN.lock").read_text() == go + "\n"
+            assert not (folder / "fills.csv").exists()
+            assert_refusal("REFUSE_LOCK", run_repeat, fd, go)
+
+
+def monthly_no_band(cfg, fee):
+    days = tuple(date(2020, 1, 29) + timedelta(days=i) for i in range(6))
+    prices = np.full((len(days), 1), 100.)
+    allowed = np.ones_like(prices, dtype=bool)
+    tape = Tape(days, ("TOY",), prices, prices, allowed, allowed)
+    long = np.ones((len(days), 1, 1), dtype=bool)
+    target = np.array([.50, .60, .60, .60, .60, .60])
+    spec = (long, (cfg["target_vol"] / target)[:, None], long)
+    clock = calendar(tape, spec[2])
+    book = play(tape, fee, cfg, 1, spec, clock)
+    assert .0 < abs(book.weights[2, 0, 0] - .60) < cfg["resize_weight_delta"]
+    assert not any(d == 2 for d, *_ in book.fills)
+    assert any(d == 3 and signed > 0 for d, _, signed, _ in book.fills)
+    assert book.targets[3, 0, 0] == .60
 
 
 def equation_and_gap(cfg, marks):
@@ -105,7 +174,8 @@ def equation_and_gap(cfg, marks):
 
 def self_test():
     cfg, marks, costs = load_config()
-    validation()
+    go_refusals(validation())
+    monthly_no_band(cfg, costs["main"])
     equation_and_gap(cfg, marks)
     hit, null = toy(True), toy(False)
     inp = indicators(hit, cfg["lookbacks"], cfg, marks["annual_days"])
@@ -139,8 +209,8 @@ def self_test():
     short_clock = calendar(short, short_input[2])
     short_book = play(short, fee, cfg, cfg["cap"], short_input, short_clock)
     args = (short, fee, cfg, {**marks, "twins": 12}, short_input, short_clock, short_book)
-    twin_cut, missed = twins(*args)
-    assert twin_cut != 1 and missed >= 0 and (twin_cut, missed) == twins(*args)
+    twin_cut, missed, attempted = twins(*args)
+    assert twin_cut != 1 and attempted >= missed >= 0 and (twin_cut, missed, attempted) == twins(*args)
     # Exercise the entire report on flat prices (no volatility size, no spells).
     flat_px = np.full_like(hit.opens, 100.)
     flat = Tape(hit.days, hit.names, flat_px, flat_px, hit.eligible, hit.sell)
@@ -150,3 +220,4 @@ def self_test():
         for r in report["lines"].values())
     print("MEASURED SYNTHETIC planted edge found; null edge not found; future shift changed terminal result")
     print("MEASURED SYNTHETIC every fill costed; 100% cap; ratchet priority; pending gap exit; no-decode validation")
+    print("MEASURED SYNTHETIC monthly reset bypassed band; committed-go parser; lock before decode; one-shot refusals")
