@@ -308,6 +308,7 @@ Working papers.
 | `research_rig/APPROVAL_26.md` | The lead agent's approval line for replay 26: validation and one scored run, names the freeze commit. Read by the approval gate | CURRENT |
 | `research_rig/APPROVAL_31.md` | The lead agent's approval line for replay 31: validation and one scored run, names the freeze commit and the three pinned hashes. Read by the approval gate | CURRENT |
 | `research_rig/APPROVAL_33.md` | The lead agent's approval line for replay 33: validation and one scored run, names the freeze commit and the two pinned hashes. Read by the approval gate | CURRENT |
+| `research_rig/APPROVAL_41.md` | The lead agent's approval line for replay 41: validation and one scored run, names the freeze commit and the three pinned hashes. Read by the approval gate | CURRENT |
 | `research_rig/APPROVAL_35.md` | The lead agent's approval line for replay 35: validation and one scored run, names the freeze commit and the two pinned hashes. Read by the approval gate | CURRENT |
 | `research_rig/APPROVAL_39.md` | The lead agent's approval line for replay 39: validation and one scored run, names the freeze commit and the three pinned hashes. Read by the approval gate | CURRENT |
 | `research_rig/common_26.py`, `research_rig/score_26.py`, `research_rig/test_26.py` | Replay 26 schedule, offline input validator, one-shot gate and synthetic tests. Reuses Replay 25 numerical helpers | CURRENT |
