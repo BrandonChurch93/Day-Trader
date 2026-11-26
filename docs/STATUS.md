@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 12:17 UTC
+Last updated: 2026-11-26 12:26 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -14,6 +14,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- Queue 30 (dip entries against breakout entries for the AI crypto trader, [TM08 draft plan](../timemachine/PLAN_TM08_dip_vs_breakout_DRAFT.md)): closed before any session 2026-11-26 05:26 MT. MEASURED, counts only, no price read: of the 11 months on the crypto minute tape (2026-01 to 2026-11) every model has traded April to November, and the 3 untraded months (January to March) fall before at least one model's knowledge line, so 0 honest months exist today; the first usable month is December 2026, complete on 2027-01-01, and six would be complete on 2027-06-01. MEASURED on made-up data with noise taken from scored TM01 and TM02 monthly gaps: with a tightened mark (one-sided t at least 2.57 over 6 months and positive without the best month; zero-edge pass rate about 2.5%), the chance to pass at an edge of 1% of the account a month is 8.9% to 24.6%, under the 33% line. Also STATED from doc 59: random twins at the same moments matched the models' floor buys (+3.69% against +3.12%), so the floor result was mostly timing. Queue 31, 32 and 9e wait on honest months for the same reason. The two gates go on as fixed rules with no model in queue 110 (ledger 216), screen first.
 
 - [Queue 18](research/144_screen_queue_18_manager_new_holdings.md) (new holdings of well-known managers; ledger 214): closed before prices 2026-11-26 05:17 MT. MEASURED without prices: 203 new positions since 2016 for the five managers fixed first (Berkshire, Icahn, Scion, Pershing Square, Trian), under the 300 line; at most 285 if every unresolved row counted. MEASURED on made-up data: 19.08% chance to pass all marks at 63 sessions at +160 bp (STATED, the study's delayed-entry figure, gross and rebalanced daily, not our clock), 17.57% at higher cost, under the 33% line. Shown only: the study's wider 24-manager list gives 1,505 signals and 30.81%, also under the line, so no new row was opened. The edge on our exact clock against SPY is UNKNOWN.
 
