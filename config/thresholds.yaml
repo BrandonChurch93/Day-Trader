@@ -838,6 +838,12 @@ replay_14_plan:
   note: Plan 14, plain 12-month momentum skipping the last month on S&P 500 members by date, re-formed monthly, two basket sizes. All settings fixed before any price was collected. Frozen 2026-11-25.
   source: research_rig/PREREG_14_large_stock_momentum.md
 
+measure_15_build_max_slip_share_of_stop:
+  value: 0.05
+  status: builder
+  note: Measurement 15, queue row 23. A full plan for the opening-range rule on stocks in play is written only if mean entry slippage plus mean stop-exit slippage, as a share of the stop distance, is at or below this. Fixed 2026-11-26 before any trade or quote was collected.
+  source: research_rig/MEASURE_15_breakout_fills.md
+
 tm_server_day_bars_cache_max:
   value: 400
   status: builder
