@@ -1,0 +1,22 @@
+{
+  "null_ok": true,
+  "power_ok": false,
+  "power_target": "persistent_20bp_40d",
+  "rows": {
+    "feedback_20bp": {"mean_active_share": 0.7383465959328028, "mean_permutable_panels": 6.7, "passes": 13, "rate": 0.13, "trials": 100, "upper95": 0.19871979304248844},
+    "feedback_40bp": {"mean_active_share": 0.9180548187444739, "mean_permutable_panels": 4.36, "passes": 10, "rate": 0.1, "trials": 100, "upper95": 0.1637176232758179},
+    "feedback_80bp": {"mean_active_share": 0.9610919540229885, "mean_permutable_panels": 1.0, "passes": 0, "rate": 0.0, "trials": 100, "upper95": 0.029513049607061248},
+    "iid_0bp": {"mean_active_share": 0.4931741821396994, "mean_permutable_panels": 6.93, "passes": 0, "rate": 0.0, "trials": 100, "upper95": 0.029513049607061248},
+    "persistent_20bp_20d": {"mean_active_share": 0.4961229000884173, "mean_permutable_panels": 6.94, "passes": 0, "rate": 0.0, "trials": 100, "upper95": 0.029513049607061248},
+    "persistent_20bp_40d": {"mean_active_share": 0.4973961096374889, "mean_permutable_panels": 6.93, "passes": 0, "rate": 0.0, "trials": 100, "upper95": 0.029513049607061248},
+    "persistent_20bp_80d": {"mean_active_share": 0.494920424403183, "mean_permutable_panels": 6.8, "passes": 9, "rate": 0.09, "trials": 100, "upper95": 0.15179542861359863},
+    "persistent_40bp_20d": {"mean_active_share": 0.4997745358090186, "mean_permutable_panels": 6.98, "passes": 0, "rate": 0.0, "trials": 100, "upper95": 0.029513049607061248},
+    "persistent_40bp_40d": {"mean_active_share": 0.49660919540229886, "mean_permutable_panels": 6.99, "passes": 4, "rate": 0.04, "trials": 100, "upper95": 0.08919625015890231},
+    "persistent_40bp_80d": {"mean_active_share": 0.49888152077807246, "mean_permutable_panels": 6.35, "passes": 94, "rate": 0.94, "trials": 100, "upper95": 0.9735502870240539},
+    "persistent_80bp_20d": {"mean_active_share": 0.5024403183023872, "mean_permutable_panels": 6.99, "passes": 0, "rate": 0.0, "trials": 100, "upper95": 0.029513049607061248},
+    "persistent_80bp_40d": {"mean_active_share": 0.4997745358090186, "mean_permutable_panels": 6.98, "passes": 2, "rate": 0.02, "trials": 100, "upper95": 0.06161920039604582},
+    "persistent_80bp_80d": {"mean_active_share": 0.49880194518125553, "mean_permutable_panels": 6.13, "passes": 96, "rate": 0.96, "trials": 100, "upper95": 0.9862233875351447},
+    "volatility_blocks_0bp": {"mean_active_share": 0.5077630415561449, "mean_permutable_panels": 6.94, "passes": 0, "rate": 0.0, "trials": 100, "upper95": 0.029513049607061248}
+  },
+  "unlocked": false
+}

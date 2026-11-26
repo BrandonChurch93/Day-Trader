@@ -1,0 +1,20 @@
+{
+  "comparison": "uniform_placement",
+  "null_ok": true,
+  "power_ok": false,
+  "power_target": "persistent_20bp_40d",
+  "rows": {
+    "iid_0bp": {"all_non_twin_passed":0,"marks_passed":{"above_twin_p90":0,"family_tail_guard":0,"positive_full_years":0,"positive_net":2,"without_best_month":0},"mean_active_share":0.4931741821396994,"mean_permutable_panels":6.97,"passes":0,"rate":0,"trials":100,"upper95":0.029513049607061248},
+    "persistent_20bp_20d": {"all_non_twin_passed":1,"marks_passed":{"above_twin_p90":0,"family_tail_guard":0,"positive_full_years":2,"positive_net":3,"without_best_month":1},"mean_active_share":0.4961229000884173,"mean_permutable_panels":6.98,"passes":0,"rate":0,"trials":100,"upper95":0.029513049607061248},
+    "persistent_20bp_40d": {"all_non_twin_passed":3,"marks_passed":{"above_twin_p90":17,"family_tail_guard":2,"positive_full_years":10,"positive_net":12,"without_best_month":5},"mean_active_share":0.4973961096374889,"mean_permutable_panels":7,"passes":1,"rate":0.01,"trials":100,"upper95":0.04655981145354189},
+    "persistent_20bp_80d": {"all_non_twin_passed":19,"marks_passed":{"above_twin_p90":49,"family_tail_guard":10,"positive_full_years":32,"positive_net":48,"without_best_month":29},"mean_active_share":0.494920424403183,"mean_permutable_panels":6.97,"passes":5,"rate":0.05,"trials":100,"upper95":0.10225337764327663},
+    "persistent_40bp_20d": {"all_non_twin_passed":0,"marks_passed":{"above_twin_p90":0,"family_tail_guard":0,"positive_full_years":0,"positive_net":0,"without_best_month":0},"mean_active_share":0.4997745358090186,"mean_permutable_panels":7,"passes":0,"rate":0,"trials":100,"upper95":0.029513049607061248},
+    "persistent_40bp_40d": {"all_non_twin_passed":18,"marks_passed":{"above_twin_p90":48,"family_tail_guard":13,"positive_full_years":29,"positive_net":42,"without_best_month":25},"mean_active_share":0.49660919540229886,"mean_permutable_panels":7,"passes":7,"rate":0.07,"trials":100,"upper95":0.12745801558298492},
+    "persistent_40bp_80d": {"all_non_twin_passed":96,"marks_passed":{"above_twin_p90":100,"family_tail_guard":92,"positive_full_years":96,"positive_net":100,"without_best_month":100},"mean_active_share":0.49888152077807246,"mean_permutable_panels":6.98,"passes":90,"rate":0.9,"trials":100,"upper95":0.9447367623171319},
+    "persistent_80bp_20d": {"all_non_twin_passed":0,"marks_passed":{"above_twin_p90":0,"family_tail_guard":0,"positive_full_years":0,"positive_net":0,"without_best_month":0},"mean_active_share":0.5024403183023872,"mean_permutable_panels":7,"passes":0,"rate":0,"trials":100,"upper95":0.029513049607061248},
+    "persistent_80bp_40d": {"all_non_twin_passed":79,"marks_passed":{"above_twin_p90":95,"family_tail_guard":28,"positive_full_years":80,"positive_net":95,"without_best_month":88},"mean_active_share":0.4997745358090186,"mean_permutable_panels":7,"passes":26,"rate":0.26,"trials":100,"upper95":0.3419918018360397},
+    "persistent_80bp_80d": {"all_non_twin_passed":100,"marks_passed":{"above_twin_p90":100,"family_tail_guard":100,"positive_full_years":100,"positive_net":100,"without_best_month":100},"mean_active_share":0.49880194518125553,"mean_permutable_panels":7,"passes":100,"rate":1,"trials":100,"upper95":1},
+    "volatility_blocks_0bp": {"all_non_twin_passed":1,"marks_passed":{"above_twin_p90":2,"family_tail_guard":0,"positive_full_years":3,"positive_net":4,"without_best_month":1},"mean_active_share":0.5077630415561449,"mean_permutable_panels":6.96,"passes":0,"rate":0,"trials":100,"upper95":0.029513049607061248}
+  },
+  "unlocked": false
+}
