@@ -39,6 +39,7 @@ SOURCES = {PLAN, ENGINE, *CALENDARS, CONFIG, CALIBRATION, "research_rig/score_43
 SEC = "www.sec.gov"
 ENDPOINT = "https://data.alpaca.markets/v2/stocks/bars"
 PACKETS = ("identities.json", "bars.json", "actions.json")
+NONCASH_SKIP = "unmodeled_noncash_distribution"
 DOCKET = Path("/home/user/workspace/rig/plan43_draft/EVENT_DOCKET_V2.jsonl")
 reset_tzpath(("/usr/share/zoneinfo",))
 TZ_BYTES=Path("/usr/share/zoneinfo/America/New_York").read_bytes()
@@ -229,8 +230,12 @@ def actions_packet(p, keyed, days, c):
         checked[a] = {}
         for leg,z in legs.items():
             need(z["identity"] == ids[leg]["identity"] and cites(z["coverage_sources"])
-                 and z["status"] == "complete" and z["start"] == e.start.isoformat()
+                 and z["start"] == e.start.isoformat()
                  and z["end"] == e.end.isoformat(), "ACTION_COVERAGE")
+            if leg=="stock" and z.get("status")=="blocked":
+                need(z.get("reason_code")==NONCASH_SKIP and cites(z.get("reason_sources")),"ACTION_COVERAGE")
+                continue
+            need(z.get("status")=="complete","ACTION_COVERAGE")
             aset = {}
             for row in z["items"]:
                 ex = d(row["ex"])
@@ -296,6 +301,8 @@ def actions_packet(p, keyed, days, c):
         known[identity].add(item)
     for a,(e,ids) in keyed.items():
         for leg,ident in ids.items():
+            if leg not in checked[a]:
+                continue
             seq,_ = checked[a][leg]
             need({x for x in known[ident["identity"]] if e.start <= x[0] <= e.end}
                  == {x for x in seq if e.start <= x[0] <= e.end}, "ACTION_OVERLAP")
@@ -354,7 +361,7 @@ def prepared(event_rows, days, C, c, identity, bars, actions):
          and set(identity["records"]) == {e.a for e in event_rows}, "IDENTITY")
     need(bars["version"] == 1 and bars["custodian"] == c["custodian"] and bars["endpoint"] == ENDPOINT
          and bars["feed"] == "sip" and bars["timeframe"] == "1Day"
-         and bars["adjustments"] == ["raw","all"] and set(bars["records"]) == set(identity["records"]), "BARS")
+         and bars["adjustments"] == ["raw","all"], "BARS")
     keyed,mapping,subject_ids = {},{},{}
     controls = c["controls"]
     for e in event_rows:
@@ -377,9 +384,13 @@ def prepared(event_rows, days, C, c, identity, bars, actions):
         keyed[e.a] = e,ids
     need(all(len({ids[s]["identity"] for _,ids in keyed.values()}) == 1 for s in controls), "CONTROL_IDENTITY")
     action = actions_packet(actions,keyed,set(days),c)
+    modeled = {a for a in action if "stock" in action[a]}
+    need(modeled <= bars["records"].keys() <= keyed.keys(),"BARS")
     complete, identities = {}, defaultdict(dict)
     reversed_fingerprints, alias_dates = defaultdict(set), defaultdict(set)
     for a,(e,ids) in keyed.items():
+        if a not in modeled:
+            continue
         packet = bars["records"][a]
         need(set(packet) == set(ids), "BARS")
         complete[a] = {}
@@ -556,7 +567,8 @@ def report(event_rows, complete, days, c):
     cap=c["capital"]
     base,stress=c["cost"]["bps"],c["cost"]["stress_bps"]
     spy_cash=0
-    for e in event_rows:
+    modeled=[e for e in event_rows if e.a in complete]
+    for e in modeled:
         bars=complete[e.a]
         stock=trade(e,bars["stock"],e.entry,cap,base,c)
         for key,entry,bps in (("entry_plus_one",e.early,base),("stress_cost",e.entry,stress)):
@@ -580,9 +592,11 @@ def report(event_rows, complete, days, c):
         band=sum(stock.yield_at_open>=exact(x) for x in ratio)
         shown[f"size_bucket_{band}"].append(stock.economic)
     return dict(judged=marks(out,c), no_trade_unaffordable=sum(no.values()), no_trade_by_year=dict(no),
-                eligible=len(event_rows), idle_zero_mean=avg([r.stock for r in out]+[0]*sum(no.values())),
+                eligible=len(event_rows),modeled=len(modeled),
+                skipped_by_reason={NONCASH_SKIP:len(event_rows)-len(modeled)},
+                idle_zero_mean=avg([r.stock for r in out]+[0]*sum(no.values())),
                 shown={k:dict(n=len(vals),mean=avg(vals)) for k,vals in sorted(shown.items())},
-                spy_unaffordable_cash=spy_cash,sleeves=sleeve_path(event_rows,complete,days,c))
+                spy_unaffordable_cash=spy_cash,sleeves=sleeve_path(modeled,complete,days,c))
 
 
 def calibrate(event_rows,c):
@@ -654,7 +668,7 @@ def contents(rev,name):
 
 
 def approval_line(commit,name,pattern):
-    body=pattern.fullmatch(contents(commit,name))
+    body=re.fullmatch(pattern,contents(commit,name))
     need(body is not None,"APPROVAL")
     parent=git("rev-list","--parents","-n","1",commit).stdout.split()[1:]
     need(len(parent)==1,"APPROVAL")
