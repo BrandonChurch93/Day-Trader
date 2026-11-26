@@ -268,6 +268,9 @@ Working papers.
 | `research_rig/PINNED_23.json` | Replay 23 frozen plan, code and config-block hashes read by the approval gate. No bars, breakpoints or prices | CURRENT |
 | `research_rig/APPROVAL_23.md` | The lead agent's approval line for replay 23: one collection and one scored run, names the freeze commit. Read by the approval gate | CURRENT |
 | `research_rig/PREREG_25_treasury_month_end.md` | Frozen Queue 41 Treasury ETF month-end window, ledger 162, nine marks. No data collected or result | CURRENT |
+| `research_rig/PREREG_26_treasury_month_end_early.md` | Earlier Treasury ETF month-end replication, queue 45 and ledger 163. Nine marks and a separate no-return vendor overlap check | CURRENT |
+| `research_rig/calendar_26.json`, `research_rig/source_26.json`, `research_rig/PINNED_26.json` | Replay 26 exchange calendar, private-source provenance pins and freeze manifest. No price data | CURRENT |
+| `research_rig/common_26.py`, `research_rig/score_26.py`, `research_rig/test_26.py` | Replay 26 schedule, offline input validator, one-shot gate and synthetic tests. Reuses Replay 25 numerical helpers | CURRENT |
 | `research_rig/PREREG_24_same_coin_carry.md` | Frozen Queue 39 same-coin funding carry, ledger 161, five marks, reviewed off-repo metadata hashes. No real result | CURRENT |
 | `research_rig/common_24.py` | Replay 24 spot and perpetual event accounting, fees and matched controls | CURRENT |
 | `research_rig/score_24.py` | Replay 24 owner-gated no-claim input validator, one-shot scorer and result renderer | CURRENT |
@@ -349,7 +352,7 @@ Working papers.
 | `practice/test_trader.py`, `practice/test_review.py`, `practice/test_market.py` | Checks with a pretend broker and no network. The timer runs them before every real run | CURRENT |
 | `practice/traders/E01_tlt_month_end_close.md` | E01, the forward log of Replay 25's TLT month-end window from December 2026: data only, no orders, a month counts only if written before the next month starts. A fixed rule, not an AI trader, and not in `practice/traders.json` | CURRENT |
 | `practice/forward_e01.py`, `practice/test_forward_e01.py` | The E01 recorder (`plan`, `record YYYY-MM`) through the saved data credential, and its checks with a pretend data source and no network. Full records stay off repo; the log in the repo holds no prices | CURRENT |
-| `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | PROPOSAL |
+| `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 
 ## timemachine/ (the time machine: pretend money, past days)

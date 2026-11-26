@@ -1,0 +1,12 @@
+{
+  "adjustment": "raw",
+  "export_adjust_flag": "split-adjusted only; no splits for these funds",
+  "export_manifest_sha256": "94c999808c5303dc310c962f36e5d945704f7230d16fdd815b4ddbded77acc92",
+  "name": "Perplexity Finance daily market history",
+  "normalizer_sha256": "71a33a844c8a6722355515bcf36e3566d44834ba64c5b3f567e5ef0c6c552f16",
+  "route": "finance_ohlcv_histories",
+  "status": "lead_selected",
+  "terms_note": "STATED by the lead agent: the route is a built-in licensed data tool of this workspace, used for the owner's private research. Files stay off repo and are not redistributed. UNKNOWN: explicit retention terms for this route were not found.",
+  "terms_url": "https://www.perplexity.ai/hub/legal",
+  "upstream_adjustment": "split-only; no TLT or IEF splits; not dividend-adjusted"
+}
