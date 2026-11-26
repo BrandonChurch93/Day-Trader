@@ -62,7 +62,7 @@ def custody_fixtures():
             return ZipFile(arg)
 
         with patch.object(search, "ZipFile", swap_then_open):
-            assert search.load_frozen(root, manifest, config)[0, 0, 0] == 10
+            assert search.load_frozen(root, manifest, config)[0][0, 0, 0] == 10
         refusal(lambda: search.load_frozen(root, manifest, config))
         path.rename(replacement)
         path.symlink_to(replacement)
@@ -73,6 +73,49 @@ def custody_fixtures():
         path.parent.rename(path.parent.with_name("other"))
         path.parent.symlink_to(path.parent.with_name("other"), target_is_directory=True)
         refusal(lambda: census_module.read_snapshot(root, rel), OSError)
+
+
+def close_clock_fixture():
+    with TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        names = search.ALLOWED
+        coin = names[0]
+        name = f"{coin}USDT-1h-2020-01"
+        rel = f"replay_13/archives/data/spot/monthly/klines/{coin}USDT/1h/{name}.zip"
+        path = root / rel
+        path.parent.mkdir(parents=True)
+        altered = {1: -755_000, 2: 3_599_000, 3: 3_600_001}
+        body = []
+        for i in range(744):
+            t = (search.START + i * HOUR) * 1000
+            vals = "DO,NOT,DECODE,THIS,PAYLOAD" if i in altered else "10,10,10,10,1"
+            body.append(f"{t},{vals},{t + altered.get(i, 3_599_999)},0\n")
+        with ZipFile(path, "w") as z:
+            z.writestr(name + ".csv", "".join(body))
+        with patch.object(census_module, "COINS", [coin]), patch.object(census_module, "MONTHS", [(2020, 1)]):
+            detected = {}
+            doc = census_module.census(root, detected)
+        assert detected == {rel: 3}
+        assert doc[coin]["files"][0]["rows"] == 744 and doc[coin]["files"][0]["complete"]
+        doc.update((c, {"files": []}) for c in names[1:])
+        manifest = root / search.MANIFEST_REL
+        manifest.parent.mkdir()
+        wire = json.dumps(doc).encode()
+        manifest.write_bytes(wire)
+        config = {"coins": names, "private_manifest_sha256": hashlib.sha256(wire).hexdigest(),
+                  "futures_round_trip_bp": dict.fromkeys(names, 0)}
+        panel, counts = search.load_frozen(root, manifest, config)
+        assert counts["rows_kept_by_coin"][coin] == 741
+        assert counts["rows_dropped_by_reason"] == {"wrong_close_clock": 3}
+        assert counts["rows_dropped_by_reason_and_coin"]["wrong_close_clock"][coin] == 3
+        assert np.isnan(panel[0, [1, 2, 3]]).all() and panel[0, 4, 0] == 10
+        with patch.object(search, "sweep", side_effect=AssertionError("validation must not score")):
+            validation = search.render_run(root, manifest, config, (), validation_only=True)
+        assert [json.loads(line) for line in validation.splitlines()] == [{"input_counts": counts}]
+        with patch.object(search, "sweep", return_value=[{"rule": "made-up"}]):
+            search_output = search.render_run(root, manifest, config, (), validation_only=False)
+        assert search_output.splitlines()[0] == validation.splitlines()[0]
+        refusal(lambda: list(read_hour_rows([f"{search.START * 1000},DO,NOT,DECODE,THIS,PAYLOAD,not_a_clock\n".encode()])))
 
 
 def freeze_fixtures():
@@ -147,10 +190,11 @@ def wire_rows(rows, suffix):
 
 
 def wire_panel(panel, suffix):
-    out = np.empty_like(panel)
+    out = np.full_like(panel, np.nan)
     for j, rows in enumerate(panel):
         for i, row in read_hour_rows(wire_rows(rows, suffix)):
-            out[j, i] = row
+            if row is not None:
+                out[j, i] = row
     return out
 
 
@@ -199,6 +243,7 @@ def power_fixture(config):
 
 def synthetic_main(rules, config):
     custody_fixtures()
+    close_clock_fixture()
     freeze_fixtures()
     cluster_fixture()
     marks = config["search_marks"]
@@ -259,6 +304,7 @@ def synthetic_main(rules, config):
     d_thin = [r["active_days"] for r in thin_crossings]
     print(json.dumps({"planted_target": target_row["rule"],
                       "archive_swap_and_redirect_guards": True,
+                      "wrong_close_rows_missing_and_counts_only_validation": True,
                       "frozen_checkout_and_hash_guards": True,
                       "cluster_t_scale_invariance": True,
                       "planted_finalists": [r["rule"] for r in finalists],
