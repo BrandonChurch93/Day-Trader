@@ -802,6 +802,23 @@ tm07_screen:
   note: TM07 draft only. Dates are first positive-volume UTC daily candles in the opened public windows, not minute listing clocks. The judged fee still comes from tm06_plan.main_fee_bps. Sensitivities are display only.
   source: docs/research/98_kraken_and_coinbase_short_access.md
 
+tm09:
+  value:
+    window: {first_monday: "2026-07-06", last_monday: "2026-11-16", weeks: 20}
+    roster_key: tm04_plan.symbols
+    clock: {zone: America/New_York, wake_hours_key: tm_stock_wake_times_ny, known_at_lag_minutes: 60}
+    news_sources: [alpaca, sec_edgar]
+    boss_models: [claude_fable_5_2, claude_opus_5_5]
+    scouts: {price: gemini_neon, news: gemini_neon}
+    arms: {price_only: [P1, P2], price_plus_news: N}
+    marks: {primary_t_min: 2.43, positive_weeks_min: 12, mean_without_best_strictly_positive: true, mean_weekly_bps_min: 20, placebo_abs_t_strict_max: 2, forward_requires_n_above_equal_weight_hold: true}
+    delivery: {min_fraction_eligible_wakes_with_note: 0.5}
+    failures: {max_successors_per_lost_worker: 1, max_lost_weeks_per_boss: 3, min_weeks_with_primary: 17, rerun_finished_sessions: false}
+    execution: {starting_cash_key: tm_account_start_usd, half_spread_bps_key: tm_stock_half_spread_bps, minute_volume_cap_key: tm_max_share_of_minute_volume, stock_commission_bps: 0}
+  status: proposed
+  note: TM09 lead rulings, ledger 222. Shared stock settings are references; pin their resolved values with this key at the seal. This is not a launch authorization.
+  source: timemachine/TM09_REGISTRATION.md
+
 replay_12_plan:
   value: {design_filed_from: "2019-01-01", design_filed_to: "2022-12-31", heldback_filed_from: "2023-01-01", holds_days: [21, 63, 126], main_hold_days: 63, cost_bps_per_side: 10, large_buy_min_usd: 50001, proven_lookback_days: 1095, proven_min_events: 10, proven_top_members: 10, proven_refresh_days: 63, bootstrap_draws: 5000, bootstrap_seed: 12, bootstrap_days_per_month: 21, min_events: 200, random_date_window_days: 90, random_date_draws: 200, late_entry_trading_days: 5, late_entry_calendar_days: 30, named_members: [Pelosi, Khanna, McCaul, Gottheimer, Cisneros, "Lisa C. McClain", Tuberville, Greene, Mullin, Bresnahan, Goldman, Crenshaw, "Wasserman Schultz"], new_trials: 9}
   status: builder
