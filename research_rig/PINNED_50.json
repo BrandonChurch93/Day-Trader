@@ -1,0 +1,12 @@
+{
+  "config/thresholds.yaml": "1256ccd91cbabcc29a64b3de548018e46359aa1498e2af617a7aa5dad4db9b3d",
+  "packet:actions.json": null,
+  "packet:events.json": null,
+  "packet:instruments.json": null,
+  "research_rig/CALIBRATION_50.json": "72c224997f05f87da9e0582d4f2d17b160134d886ee00c6c7de061a5ea72a0c0",
+  "research_rig/PREREG_50_cef_liquidations.md": "f9b0699425f0552f04386558eb1540dc438402462bc6c3d4682cba954d54fde8",
+  "research_rig/calendar_50.json": "9012929cf3e207d99b7b1400856c74c69a360243d14adaa32bd274e6b6cd9300",
+  "research_rig/common_50.py": "46c3e4e7a16999b947303d4b4448ba0481034a031f6ae9e409694a4bab7c9133",
+  "research_rig/score_50.py": "a9891d772a8493e2caedb9bcdf10b3b126c9468e388dbd1cf686556ab4e87af3",
+  "research_rig/test_50.py": "e63315667c12b84424e2988db78d679c2c7eeccfed2bd9732627bcac102017ac"
+}
