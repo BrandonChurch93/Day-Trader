@@ -1,6 +1,6 @@
 # Plan 62: special-dividend ex-day replay, same-date vendor cash
 
-Status DRAFT.
+Status FROZEN.
 
 Queue 105, ledger 205. This succeeds [Plan 61](PREREG_61_special_dividend_ex_day.md), which was validated without computing a return, was not scored, and is closed to scoring permanently. All of its frozen terms apply except the narrow vendor gate change, the two added shown-only lines, and the new approval chain. In particular, Replay 60's aggregate results were already known.
 
