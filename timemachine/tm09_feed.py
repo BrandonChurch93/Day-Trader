@@ -33,7 +33,10 @@ def annotate(ordered_by_wake, feed):
                         repeat = True
                         break
                 history.append((tokens, unique))
-                pairs.append(dict(headline=item['headline'], source_time=item['source_time'], symbol=symbol, repeat=repeat))
+                pair = dict(headline=item['headline'], source_time=item['source_time'], symbol=symbol, repeat=repeat)
+                if 'build_item_id' in item:
+                    pair['build_item_id'] = item['build_item_id']
+                pairs.append(pair)
     return result
 
 

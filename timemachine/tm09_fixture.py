@@ -321,7 +321,7 @@ def compile_export(config, directory, pins, counts=None, *, stage1=False):
     if raw is not None and feed and counts is not None:
         index = [item for fixture in weeks.values() for wake, _ in fixture['wakes']
                  for item in fixture['news_index'][str(wake)]]
-        lookup = {i['id']: p for i, p in zip(index, project_headlines(raw, index))}
+        lookup = {i['id']: dict(p, build_item_id=i['id']) for i, p in zip(index, project_headlines(raw, index))}
         for week, fixture in weeks.items():
             pairs = [pair for group in week_pairs(fixture, feed, lookup=lookup).values() for pair in group]
             # assign_news admits each source item once, even when it has several roster tags.
@@ -330,11 +330,21 @@ def compile_export(config, directory, pins, counts=None, *, stage1=False):
                 'items_with_extracted_figure': 0, 'items_without_extracted_figure': 0,
                 'possible_figure_missed': 0,
             }
+            figures_by_item = {}
             for group in fixture['news_index'].values():
                 for row in group:
                     spans, missed = extract_figures(lookup[row['id']]['headline'], feed)
+                    figures_by_item[row['id']] = tuple(spans)
                     weekly['items_with_extracted_figure' if spans else 'items_without_extracted_figure'] += 1
                     weekly['possible_figure_missed'] += missed
+            # Source time fixes admission to one wake. Count the union across symbol buckets.
+            buckets = {}
+            for pair in pairs:
+                key = (pair['symbol'], pair['source_time'], pair['repeat'])
+                buckets.setdefault(key, set()).add(pair['build_item_id'])
+            colliding_items = {item_id for ids in buckets.values()
+                               if len({figures_by_item[i] for i in ids}) > 1 for item_id in ids}
+            weekly['items_with_figure_collision'] = len(colliding_items)
     return weeks
 
 
