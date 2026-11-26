@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 13:40 UTC
+Last updated: 2026-11-26 13:49 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -14,6 +14,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- Plan 70 carry check, run once 2026-11-26 06:49 MT: MEASURED, at half its search mean the finalist 70-102 passes every vault mark in 20.67% of 20,000 draws, under the 33% line fixed before any bar was read. It was not carried, the line was not moved, and the vault (2024 to 2026) was not opened. Plan 70's search is closed. The lead is real enough to follow two ways that do not touch the vault: a forward log on live prices, and a second, smaller grid on the search dates within the 300-rule allowance.
 
 - Plan 70, the coin discovery sweep ([plan](../research_rig/PREREG_70_coin_sweep.md), [design](150_discovery_sweep_design.md)), search step run once 2026-11-26 06:40 MT on 2020 to 2023 only. MEASURED: of 188 written rules on 20 coins, 160 had enough trades and 142 of those lost clearly to their baseline after cost. One rule cleared every search mark: 70-102, fade a coin that has moved more than twice as far as bitcoin during a 1.5% two-hour bitcoin move, hold two hours. 691 trades on 435 days, +56.5 bp a trade net at the judged US futures cost, t 3.51 against a bar of 3.5, both halves positive, +36.4 bp without its best 1% of trades. Its family holds the next four rules by t as well. STATED: this is a search result on prices standing in for the futures contract, picked as the best of 188, so some of it is luck by construction; at the US spot fee it loses. It is not a pass. The dates from 2024 on have not been read by this rule and decide it, once.
 
