@@ -229,6 +229,7 @@ Results of our own tests. `research_rig/README.md` has the plan, script and outp
 | `docs/research/22_replay_05_stock_trend.md` | Replay 05: slow trend rules on the US stock market from 1927 | CURRENT |
 | `docs/research/23_replay_04_coin_basket.md` | Replay 04: trend rules on a wide basket of coins | CURRENT |
 | `docs/research/24_order_book_costs.md` | What it cost to trade small sizes on two venues, sampled on 2026-11-25 | CURRENT |
+| `docs/research/122_replay_53_taxable_fund_january_rebound.md` | Replay 53 saved result: taxable closed-end fund tax-loss losers did not pass; judged marks, yearly turns, costs, diagnostics and gaps | CURRENT |
 
 Working papers.
 
@@ -380,6 +381,7 @@ Working papers.
 | `research_rig/common_52.py`, `research_rig/score_52.py`, `research_rig/test_52.py` | Replay 52 no-return validation, independent cash and split packet checks, one approved score, and synthetic temporary Git rehearsal | CURRENT |
 | `research_rig/PINNED_52.json`, `research_rig/CALIBRATION_52.json` | Replay 52 draft hashes and synthetic null and planted-edge check, no market data | CURRENT |
 | `research_rig/report_48.py` | Prints the Replay 48 result page from the pinned saved result and the pinned recompute note. Does not open market inputs or score | CURRENT |
+| `research_rig/report_53.py` | Prints the Replay 53 result page from the pinned saved result and frozen settings. Does not open market inputs or score | CURRENT |
 | `research_rig/PREREG_51_momentum_when_it_pays.md`, `research_rig/CALIBRATION_51.json`, `research_rig/CALIBRATION_51_UNIFORM.json`, `research_rig/CLOSE_51_on_power.md` | Queue 96 and ledger 185. Original and uniform-placement synthetic power checks; closed before any prices | RECORD |
 | `research_rig/common_51.py`, `research_rig/score_51.py`, `research_rig/test_51.py`, `research_rig/calibrate_51.py` | Retained engine and gates for a plan closed before any prices; disposable synthetic Git fixture only | RECORD |
 | `research_rig/PREREG_53_taxable_cef_tax_loss.md`, `research_rig/PINNED_53.json` | Queue 90 and ledger 187. Frozen PCEF holdings-derived taxable closed-end fund replay and roster attestations; no market data or result | CURRENT |
