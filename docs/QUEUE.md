@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 23:44 UTC
+Last changed: 2026-11-26 23:48 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -61,6 +61,8 @@ Skip list from Round 46 (`docs/research/159_idea_round_46.md`, 0 new rows queued
 Skip list from Round 47 (`docs/research/160_idea_round_47.md`, row 121 queued as a measurement only): the round asked whether a $500 account can earn the spread with small resting limit orders instead of paying it. Future rounds skip resting orders in thin small-cap US stocks (exchange realized spreads negative on average and gone within one second in the Tick Size Pilot names) and maker orders on US-reachable spot coins (measured maker markouts negative before US retail maker fees of 30 to about 100 bp a round trip). Closed-end funds, preferreds and baby bonds, and thin exchange-traded funds have no published realized-spread figure (UNKNOWN), so they are not evidence either way.
 
 ## Running now
+
+PAUSE NOTE (lead agent, 2026-11-26 4:48 PM MT): the loops for E06, E09, E10, E11 and Measurement 132 were stopped at 23:47 UTC on 2026-11-26 because Coinbase's Market Data Terms of Use bar this use without written consent (see STATUS). Do not restart any of them at a wake-up until the lead agent writes here that the pause is lifted. The standing-chore lines below stay as the restart record.
 
 Standing chore at every wake-up (lead agent, 2026-11-26): the E06 forward log (`practice/traders/E06_forward_hot_coin_rules.md`) runs as a detached loop from the frozen worktree `/home/user/workspace/wt-e05`. Check it with `cd /home/user/workspace/wt-e05 && (pgrep -f "forward_e06.py loop" >/dev/null || python3 practice/forward_e06.py record)`. If the loop is dead, restart it from that folder. A missed wake is void and is never back-filled; never run `start` again; do not check out or edit in that worktree.
 
