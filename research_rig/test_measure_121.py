@@ -273,8 +273,10 @@ class InterlockTest(unittest.TestCase):
         self.c = replace(self.c, sample=dict(self.c.sample, delisting_walk_sha256=walk))
         self.before = self.filing('0000000001-25-000001', '2025-09-07')
         self.after = self.filing('0000000001-25-000002', '2025-09-09')
+        latest = self.keep(dict(cik='1', filings=dict(recent=dict(form=['N-CEN', 'N-CEN', '25'],
+                      filingDate=['2025-09-07', '2025-09-09', '2025-09-10']))))
         self.i = dict(config_sha256=self.c.sha, fund_brackets=[dict(ticker='GDO', before=self.ref(self.before),
-                      after=self.ref(self.after), filing_list=dict(sha256=walk, response_sha256=check))],
+                      after=self.ref(self.after), filing_list=dict(sha256=walk, response_sha256=check, current_sha256=latest))],
             halt_days=[dict(session=DAY, coverage='unavailable', intervals=[])])
         self.replace_inputs()
 
@@ -312,12 +314,20 @@ class InterlockTest(unittest.TestCase):
         self.replace_inputs()
         with self.assertRaisesRegex(m.Stop, 'identity_filing_list'):
             m.inputs(self.c, self.store)
+        badlist = self.keep(dict(cik='1', filings=dict(recent=dict(form=['N-CEN', '25-NSE', 'N-CEN'],
+                      filingDate=['2025-09-07', DAY, '2025-09-09']))))
+        entry['filing_list'] = dict(original['filing_list'], current_sha256=badlist)
+        self.replace_inputs()
+        with self.assertRaisesRegex(m.Stop, 'filing_list_delisting_form'):
+            m.inputs(self.c, self.store)
         entry.update(original)
         entry['after'] = self.ref(dict(self.after, listings=[dict(self.after['listings'][0], DESCRIPTION='Preferred stock')]))
         self.replace_inputs()
         with self.assertRaisesRegex(m.Stop, 'identity_amendment_exclusions'):
             m.inputs(self.c, self.store)
         excluded = replace(self.c, excluded_tickers=frozenset({'GDO'}))
+        entry['filing_list'] = {k: v for k, v in original['filing_list'].items() if k != 'current_sha256'}
+        self.replace_inputs()
         self.assertFalse(m.inputs(excluded, self.store)[1]['GDO', DAY])
         self.i['fund_brackets'].clear()
         self.replace_inputs()

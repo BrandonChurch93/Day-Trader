@@ -8,8 +8,9 @@ Input handoff (all paths relative to the private M121 store):
 * Place the hash-pinned roster_before_draw.json and price-free inputs.json in the
   store. Each fund_brackets entry names ticker and before/after references, each
   with accession and sha256, and a filing_list reference with sha256 and
-  response_sha256. Put price-free extracts from the two filings and the frozen
-  filing-list walk at evidence/<sha256>. The bracket is not daily listing proof. Each
+  response_sha256 plus current_sha256 for bracket-proved funds. Put price-free
+  extracts, the frozen walk, and current raw SEC submissions responses at
+  evidence/<sha256>. The bracket is not daily listing proof. Each
   halt_days entry names session, coverage, and intervals (ticker, start, resume);
   when coverage or events are asserted, give its official source url and sha256.
   Put exact evidence bytes at evidence/<sha256>. The manifest has a
@@ -724,6 +725,19 @@ def listing_matches(cfg, record, sym, class_title=None):
                and (class_title is None or item['SECURITY_CLASS_TITLE'] == class_title) for item in record['listings'])
 
 
+def filing_list_clear(store, cfg, tag, cik, first, last):
+    body = strict_json(evidence_bytes(store, cfg, tag))
+    require(type(body['cik']) in (str, int) and int(body['cik']) == cik, 'filing_list_cik')
+    recent = body['filings']['recent']
+    forms, dates = recent['form'], recent['filingDate']
+    require(isinstance(forms, list) and isinstance(dates, list) and len(forms) == len(dates) > 0
+            and all(bool(text(form)) for form in forms), 'filing_list_shape')
+    days = list(map(date.fromisoformat, dates))
+    require(min(days) <= first <= last <= max(days), 'filing_list_date_coverage')
+    require(not any(form in cfg.sample['delisting_forms'] and day <= last for form, day in zip(forms, days)),
+            'filing_list_delisting_form')
+
+
 def inputs(cfg, store):
     """Validate local evidence only. No quote, trade, network, or secret access."""
     private_dir(store)
@@ -758,6 +772,10 @@ def inputs(cfg, store):
                 and listing_matches(cfg, before, sym, roster_row['security_class']), 'identity_bracket')
         proved[sym] = listing_matches(cfg, after, sym)
         require(proved[sym] == (sym not in cfg.excluded_tickers), 'identity_amendment_exclusions')
+        if proved[sym]:
+            filing_list_clear(store, cfg, walk_ref['current_sha256'], roster_row['cik'], first, last)
+        else:
+            require('current_sha256' not in walk_ref, 'filing_list_excluded_fund')
     require(proved.keys() == expected_funds.keys(), 'identity_missing_fund')
     selected = {(sym, day): proved[sym] for sym, day in expected}
 
