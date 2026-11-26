@@ -88,14 +88,15 @@ R1, R2 and R3 are as in the plan at `bdc5f6a` ("Fixed-rule arms (no AI)"). They 
 
 For each boss, the comparisons B against A and C against A make four claims.
 
-- Gate: the extension opens for a claim only if that arm beats fresh A to the cent in all three screen weeks. A tie, a missing week or an invalid week is not a win.
-- Weekly mark: at least 16 wins out of all 20 weeks, with the three screen weeks included. The one-sided per-claim cap is 1.25%, and the fair-coin tail at 16 of 20 is 0.5909% (`score_tm07.sign_tail`).
+- Ruling (lead, 2026-11-26, before the seal and before any TM07 return): the weekly mark below replaces the earlier 3 of 3 screen gate plus 16 of 20 mark. The screen gate is removed from the claim. All 20 scored weeks run for every arm, whatever happens in the first three. The two TM06 one-model marks below are unchanged.
+- Weekly mark, per claim, on the 20 weekly net differences (arm minus fresh A, 1x, main fee): a one-sided paired t of at least 2.43, at least 12 of 20 winning weeks, and a positive mean after dropping the best week. A tie, a missing week or an invalid week is not a winning week. The one-sided per-claim cap is 1.25%. The 2.43 cutoff was checked by simulation (see "Power of the registered weekly mark") and did not need raising.
+- Engine gap, MEASURED: `score_tm07.py` at the pinned `bdc5f6a` still enforces the old mark. It requires a sealed 3/3 screen gate before an extension launch (`verify_gate`), refuses extension scores without it, and passes a claim on `wins >= pass_mark` from the sign tail. The new mark needs a change on branch `tm07` and a new engine pin before the seal. That change is not made here.
 - Both TM06 one-model marks must also hold, on chained net weekly gains. The arm must beat the week's five coins held equally, and it must beat the 90th percentile of 1,000 shuffled timing twins (seed 1).
 - C against B is descriptive only. Different bosses on the same week are not independent weeks.
 
-## Synthetic power
+## Synthetic power of the old mark (history)
 
-MEASURED by exact arithmetic (`tools/tm07_power.py`), with no market data. Weeks are taken as independent, with one weekly win chance. A claim passes its weekly part only if it wins all three screen weeks and at least 13 of the 17 extension weeks. The two chained-gain lines are extra conditions, so every figure below is an upper bound.
+History: this is the power of the replaced mark (3 of 3 screen gate plus 16 of 20), kept as written in draft e29d8cf. MEASURED by exact arithmetic (`tools/tm07_power.py`), with no market data. Weeks are taken as independent, with one weekly win chance. A claim passes its weekly part only if it wins all three screen weeks and at least 13 of the 17 extension weeks. The two chained-gain lines are extra conditions, so every figure below is an upper bound.
 
 | Weekly win chance | Screen gate passes | Claim passes the weekly part |
 |---:|---:|---:|
@@ -109,9 +110,9 @@ MEASURED by exact arithmetic (`tools/tm07_power.py`), with no market data. Weeks
 
 Under the null, the chance that any of the four claims passes is at most 1.22%. STATED: the design is powered only for an arm that wins about 85% or more of its weeks against fresh A; at 70% it fails most of the time. Under the queue screen ([doc 117](../docs/research/117_power_screen_before_data.md)), it is a weakly powered test of a modest edge. It can still catch a large one.
 
-## Power of the alternative weekly mark
+## Power of the alternative weekly mark (history)
 
-MEASURED by simulation (`tools/tm07_power_alt.py`, fixed seed), using TM06 results for the noise only. No TM07 bar was read and no TM07 return was computed. The alternative mark the lead asked about, for comparison with 16 of 20: a one-sided paired t of at least 2 on the 20 weekly net differences (arm minus fresh A), at least 12 of 20 winning weeks, and a positive mean after dropping the best week. The registered mark is the 3 of 3 screen gate plus 16 of 20. The alternative is shown alone and with the same screen gate.
+History: this is the comparison table from draft c89760e that led to the ruling. MEASURED by simulation (`tools/tm07_power_alt.py`, fixed seed), using TM06 results for the noise only. No TM07 bar was read and no TM07 return was computed. The alternative mark the lead asked about, for comparison with 16 of 20: a one-sided paired t of at least 2 on the 20 weekly net differences (arm minus fresh A), at least 12 of 20 winning weeks, and a positive mean after dropping the best week. The registered mark is the 3 of 3 screen gate plus 16 of 20. The alternative is shown alone and with the same screen gate.
 
 The noise is the TM06 week-to-week spread of weekly net differences between two arms on the same week. TM06 has no paired scout and no-scout arms, so every pair of the seven TM06 swing models on the same four weeks (including the May diagnostic week, at 1x and 12 bp) stands in for it. Each pair is centred on its own mean, so a steady gap between two models is not counted as noise. The normal rows use the pooled spread; the resampled rows draw the centred values themselves, which keeps their heavier tails. Weeks are independent draws and the chained-gain lines are not modelled, so these are upper bounds like the table above.
 
@@ -135,8 +136,38 @@ STATED, reading the table:
 - At the same true edge, the alternative mark alone has much more power than the registered mark, most clearly at 1 and 2 points.
 - Its null false-pass rate alone is above the 1.25% one-sided per-claim cap. A t of 2 with 19 degrees of freedom is about a 3% one-sided test, and the two extra conditions remove little under the null. A cutoff of about 2.43 would match 1.25% on the t alone under normal noise (from the t distribution; not simulated here).
 - With the 3 of 3 screen gate added, the null rate falls under the cap per claim, but most of the power gain is lost, because the gate alone fails often for a modest edge.
-- The noise proxy has only four weeks per pair and uses different models, not the same boss with and without scouts. The true spread for TM07 arm pairs could be smaller or larger. UNKNOWN.
-- The registered mark is unchanged by this section. Any switch is the lead's ruling and needs its own line before the seal.
+- The noise figure is a proxy. It comes from TM06 pairs of different models, not the same boss with and without scouts, and has only four weeks per pair. The true spread for TM07 arm pairs could be smaller or larger. UNKNOWN.
+- At the time, the registered mark was unchanged by this section. The lead then ruled the change recorded under "Marks, fixed now".
+
+## Power of the registered weekly mark
+
+MEASURED by simulation with the same script, the same noise and the same draw count (`tools/tm07_power_alt.py`, fixed seeds). No TM07 bar was read and no TM07 return was computed. The noise figure is a proxy: it comes from TM06 pairs of different models on the same week, not from the same boss with and without scouts, and it rests on four weeks per pair. Weeks are independent draws and the two TM06 one-model marks are not modelled, so these are upper bounds.
+
+t cutoff used: 2.43 (start 2.43, step 0.01, stop when the null rate per claim is at or under 1.25% under both noise models).
+
+| Noise model | True weekly edge (pp) | Registered mark: t at least the cutoff, 12 of 20, mean without best week above 0, no screen gate |
+|---|---:|---:|
+| normal | 0.0 (null) | 1.20% |
+| normal | 0.5 | 6.78% |
+| normal | 1.0 | 23.00% |
+| normal | 2.0 | 77.32% |
+| normal | 3.0 | 98.73% |
+| resampled | 0.0 (null) | 1.11% |
+| resampled | 0.5 | 7.25% |
+| resampled | 1.0 | 24.61% |
+| resampled | 2.0 | 77.40% |
+| resampled | 3.0 | 98.39% |
+
+| Noise model | Null rate per claim | Any of four claims, simulated with shared A per boss | Any of four claims, union bound 1-(1-p)^4 |
+|---|---:|---:|---:|
+| normal | 1.20% | 4.65% | 4.73% |
+| resampled | 1.11% | 4.47% | 4.37% |
+
+STATED, reading the tables:
+
+- The null false-pass rate per claim is at or under the 1.25% cap under both noise models at a cutoff of 2.43, so the cutoff was not raised. The normal-noise figure sits close to the cap; with 100,000 draws its simulation error is about 0.03 points.
+- The four-claim null rate (any of the four claims passing when no arm has an edge) is about four times the per-claim rate, well above 1.25%. The old mark held the four-claim rate at or under 1.22%; the new mark caps each claim, not the family. A family cap would need a higher cutoff. That is the lead's call.
+- Against the old mark, the new mark has much more power at every edge tested, because no screen gate can stop a claim after three weeks.
 
 ## Isolation design
 
@@ -177,14 +208,15 @@ These are operator steps under the service account, after approval and before an
 - Build each week's fixture with `desk.prepare_week` from a protected copy of the snapshot. Record the fixture hash and the funding settlement hash (`score_tm07.funding_profile_hash`) for each week, and assign one unique neutral run ID per week.
 - Record the exact platform model IDs for the three participants, with their first-after-cutoff dates. The runner ID is `tm07_desk_v1`, and the study root is one absolute canonical path.
 - Sign the registration body with the operator key. `score_tm07.Registration` refuses a body that is missing any of these.
+- Change `score_tm07.py` on branch `tm07` to the ruled weekly mark (t cutoff 2.43, 12 of 20, mean without the best week, no screen gate or gate seal), test it, and re-pin the engine hashes in this package.
 - Run the real-host rehearsal in `TM07_WORKER_PROBE.md`. The independent isolation review (`/root/rig_code_auditor_b`) comes before any registered session.
 
 ## Ledger and queue text
 
 Ledger row 198 (`research_rig/TRIAL_LEDGER.md`), as added in this commit:
 
-> 198 | 2026-11-26 MT | `timemachine/TM07_REGISTRATION.md` | Queue 33, TM07 desk. Two bosses (`claude_fable_5_2`, `claude_opus_5_5`), arms A, B and C, two `gemini_neon` scouts, price-only, hourly, 1x, 12 bp per side plus TM06 half spreads and Kraken funding proxy, on Coinbase spot minute bars, snapshot `6346be0d…`. 20 scored weeks fixed by the registered coverage and Sunday-close rule (3 screen, 17 extension; screen baskets differ from TM06 by the accepted minute rule), May 11 diagnostic. Four claims B/A and C/A per boss: 3 of 3 screen gate, then 16 of 20 weekly wins and both TM06 one-model marks. R1, R2, R3 shown only. | DRAFT registration. No session, no replay and no return. MEASURED synthetic upper-bound power 13.33% at a 0.70 weekly win chance and 55.35% at 0.85; null at most 1.22% across four claims. Alternative mark (t of at least 2, 12 of 20, mean without best week) simulated for comparison only; not adopted. Extension blocked until every raw copy is unreadable by uid 2000. Isolation review pending.
+> 198 | 2026-11-26 MT | `timemachine/TM07_REGISTRATION.md` | Queue 33, TM07 desk. Two bosses (`claude_fable_5_2`, `claude_opus_5_5`), arms A, B and C, two `gemini_neon` scouts, price-only, hourly, 1x, 12 bp per side plus TM06 half spreads and Kraken funding proxy, on Coinbase spot minute bars, snapshot `6346be0d…`. 20 scored weeks fixed by the registered coverage and Sunday-close rule (3 screen, 17 extension; screen baskets differ from TM06 by the accepted minute rule), May 11 diagnostic. Four claims B/A and C/A per boss. Lead ruling 2026-11-26, before the seal and before any return: weekly mark is a one-sided paired t of at least 2.43 on the 20 weekly net differences, at least 12 of 20 winning weeks and a positive mean without the best week, with no screen gate (all 20 weeks run for every arm); both TM06 one-model marks unchanged. Replaces 3 of 3 screen gate plus 16 of 20. R1, R2, R3 shown only. | DRAFT registration. No session, no replay and no return. MEASURED simulated upper-bound power of the registered mark in the package, noise a proxy from TM06 pairs of different models; null per claim at or under 1.25%, four-claim null above 1.25%. Old mark power kept as history. Engine at `bdc5f6a` still scores the old mark and needs a change and new pin before the seal. Extension blocked until every raw copy is unreadable by uid 2000. Isolation review pending.
 
 Queue row 33, last column (`docs/QUEUE.md`):
 
-> Registration package drafted (ledger 198, `timemachine/TM07_REGISTRATION.md`): 20 weeks and coins fixed from snapshot `6346be0d…`, costs and marks fixed, synthetic power stated. The lead accepted the 90% minute rule and the four replaced screen names (screen baskets differ from TM06). Waiting on the isolation review, operator sealing, and protected raw copies for the extension. Engine branch `tm07` not merged.
+> Registration package drafted (ledger 198, `timemachine/TM07_REGISTRATION.md`): 20 weeks and coins fixed from snapshot `6346be0d…`, costs and marks fixed (weekly mark replaced by the lead's t-based ruling, no screen gate), simulated power stated. The lead accepted the 90% minute rule and the four replaced screen names (screen baskets differ from TM06). Waiting on the isolation review, operator sealing, and protected raw copies for the extension. Engine branch `tm07` not merged.
