@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 import fcntl
+from functools import cache
 from hashlib import sha256
 import json
 import os
@@ -49,6 +50,12 @@ class Blocked(Failure):
     def __init__(self, host, status):
         super().__init__(f"{host} refused with HTTP {status}")
         self.host, self.status = host, status
+
+
+class RequestAlarm(TimeoutError):
+    def __init__(self, window_limited):
+        super().__init__("request wall-clock budget elapsed")
+        self.window_limited = window_limited
 
 
 def need(ok, reason):
@@ -102,9 +109,17 @@ def frozen():
                                    "config_block": digest(enc(block).encode())})
 
 
+@cache
+def private_roots():
+    block = yaml.safe_load((ROOT / "config/thresholds.yaml").read_text())["measure_132"]
+    return tuple(Path(root).resolve() for root in block["value"]["private_roots"])
+
+
 def checked_dir(off, create=False):
     need(not off.is_symlink(), "log directory must not be a symlink")
     off = off.resolve()
+    need(any(off != root and off.is_relative_to(root) for root in private_roots()),
+         "private log directory must be below an allowed storage root")
     # An ordinary checkout, linked worktree, or submodule has a .git directory
     # or gitfile at its root. Refuse even when the marker is broken, ignored by
     # Git discovery settings, or supplied through a symlinked parent.
@@ -276,11 +291,11 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 @contextmanager
-def wall_budget(seconds):
+def wall_budget(seconds, window_limited):
     # The Linux runner is single-threaded. A per-socket timeout alone does not
     # bound a response that keeps sending data slowly.
     def expired(signum, frame):
-        raise TimeoutError("request wall-clock budget elapsed")
+        raise RequestAlarm(window_limited)
 
     prior = signal.signal(signal.SIGALRM, expired)
     try:
@@ -310,8 +325,8 @@ class PublicPages:
             self.last[host] = self.monotonic()
             try:
                 budget = min(5, remaining)
-                with wall_budget(budget):
-                    with self.opener.open(req, timeout=budget) as response:
+                with wall_budget(budget, self.deadline is not None and remaining <= 5):
+                    with self.opener.open(req, timeout=5) as response:
                         raw = response.read(8 * 1024 * 1024 + 1)
                     if len(raw) > 8 * 1024 * 1024:
                         raise Failure("response_too_large")
@@ -338,13 +353,20 @@ class PublicPages:
                     raise Failure("http_429_retry_after_window") from None
                 self.sleep(delay)
             except urllib.error.URLError as exc:
-                raise Failure("timeout" if isinstance(exc.reason, TimeoutError) else "network_failure") from None
-            except TimeoutError:
-                raise Failure("timeout") from None
+                reason = self.timeout_status(exc.reason) if isinstance(exc.reason, TimeoutError) else "network_failure"
+                raise Failure(reason) from None
+            except TimeoutError as exc:
+                raise Failure(self.timeout_status(exc)) from None
             except OSError:
                 raise Failure("network_failure") from None
             except (ValueError, RecursionError):
                 raise Failure("invalid_json") from None
+
+    def timeout_status(self, exc):
+        if ((isinstance(exc, RequestAlarm) and exc.window_limited)
+                or (self.deadline is not None and now_utc() >= self.deadline)):
+            return "wake_window_elapsed"
+        return "timeout"
 
     def book(self, venue, coin):
         path = (f"/products/{coin}-USD/book?level=2" if venue == "Coinbase"
@@ -392,13 +414,17 @@ def walk(levels, usd):
     return None
 
 
-def ticket(book, sizes, fee):
+def ticket(book, venue, sizes, fee):
+    fields = {"Coinbase": 3, "Binance.US": 2}[venue]
+
     def levels(raw, descending):
-        if not isinstance(raw, (list, tuple)) or not raw:
+        if not isinstance(raw, list) or not raw:
             raise ValueError("empty or malformed side")
         out = []
         for level in raw:
-            if not isinstance(level, (list, tuple)) or len(level) < 2:
+            if (not isinstance(level, list) or len(level) != fields
+                    or type(level[0]) is not str or type(level[1]) is not str
+                    or (fields == 3 and type(level[2]) is not int)):
                 raise ValueError("malformed level")
             px, qty = price(level[0]), price(level[1])
             if out and not (out[-1][0] > px if descending else out[-1][0] < px):
@@ -535,7 +561,7 @@ def collect(off, rows, st, pairs, pages, wake, clock):
                     fee = (st["coinbase_fee"] if venue == "Coinbase" else
                            st["binance_bnb_fee"] if coin == "BNB" else st["binance_fee"])
                     try:
-                        out = ticket(pages.book(venue, coin), st["sizes_usd"], fee)
+                        out = ticket(pages.book(venue, coin), venue, st["sizes_usd"], fee)
                     except Blocked:
                         raise
                     except Failure as exc:
@@ -581,7 +607,8 @@ def summarize(rows, *, full=False):
             continue
         signal = row["bitcoin"]
         btc_counts[signal["status"]] += 1
-        if any(b["status"] == "wake_window_elapsed" for books in row["books"].values() for b in books.values()):
+        if (signal["status"] == "wake_window_elapsed"
+                or any(b["status"] == "wake_window_elapsed" for books in row["books"].values() for b in books.values())):
             wake_counts["partial"] += 1
         groups = ["all"]
         if parse(row["wake"]).hour == 0:

@@ -1558,6 +1558,7 @@ replay_74_plan:
 
 measure_132:
   value:
+    private_roots: [/home/user/workspace/rig/data, /tmp]
     days: 30
     sizes_usd: [25, 250]
     decision: {max_cost_bp: 25, min_coins: 15, min_midnights: 25, fallback_cost_bp: 75}
