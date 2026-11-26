@@ -356,6 +356,11 @@ class Desk:
             return [json.loads(raw) for (raw,) in con.execute(
                 "SELECT data FROM journal WHERE kind='access' AND rowid>? AND rowid<=? ORDER BY rowid", (start, end))]
 
+    def work_rows(self):
+        kind = 'decision' if self.role == 'boss' else 'notes'
+        with self.tx() as (con, _):
+            return [rowid for (rowid,) in con.execute('SELECT rowid FROM journal WHERE kind=? ORDER BY rowid', (kind,))]
+
     def successor(self):
         with self.tx() as (con, st):
             cap = self.options['study']['failures']['max_successors_per_lost_worker']
