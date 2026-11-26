@@ -1,4 +1,6 @@
-"""Plan 66 (DRAFT): synthetic power, a no-return input check, or one approved scored run."""
+"""Plan 66 (CLOSED BEFORE PRICES): synthetic power, a no-return input check, or one approved scored run."""
+# ROW CLOSED BEFORE PRICES (lead ruling 2026-11-26, ledger 210): kept as the record only.
+# Do not run --validate-inputs or --go. No input packet, PINNED_66.json or approval file exists.
 import argparse
 from datetime import datetime, timezone
 from hashlib import sha256

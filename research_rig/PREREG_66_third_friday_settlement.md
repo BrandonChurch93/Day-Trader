@@ -1,8 +1,10 @@
 # Plan 66. Third-Friday S&P 500 option settlement, two legs
 
-Status DRAFT.
+Status CLOSED BEFORE PRICES.
 
-Queue 108, ledger 210. Author: plan 66 helper. Drafted 2026-11-26 (clock read 11:16 UTC). No real bar was opened and no return on real data was computed in drafting this. Settings marked PENDING RULING wait for the lead. Only the lead may freeze, approve and run the scorer, once.
+Closed by the lead agent's ruling on 2026-11-26, before any bar was opened. Ledger 210 fixed that the row closes if synthetic power at the stated edge is under 33%. The +25 bp size is the paper's figure at the settlement print (SOQ), and a brokerage account cannot trade at that print. At a print we can trade, the largest stated size is Martone's +21.9 bp at the SPY open, which gives 29.8% power, under the line. The paper's own traded-open figures are far smaller (+5.11 bp and −2.60 bp, Jan 2024 Table II), and every post-2023 scenario gives under 15%. Using the settlement-print size to keep the row open would mean choosing the one figure that does not apply to this trade. The power table is in the Power section below. The calendar, code and tests stay as the record. `research_rig/score_66.py` was never run in `--validate-inputs` or `--go` mode, and no `PINNED_66.json` or approval file exists.
+
+Queue 108, ledger 210. Author: plan 66 helper. Drafted 2026-11-26 (clock read 11:16 UTC). No real bar was opened and no return on real data was computed in drafting this. The settings marked PENDING RULING below were never ruled on, because the row closed first.
 
 ## Fixed in ledger 210 before any bar (copied, not changed)
 
@@ -164,7 +166,7 @@ Assumptions:
 
 Reading of the table:
 
-- The stated edge passes the 33% gate.
+- At the paper's settlement-print size (+25 bp), power is 42.1%. That size cannot be traded from a brokerage account, so it does not decide the gate (see Status).
 - At Martone's ETF-open size (+21.9 bp), power is 29.8%, which is under the gate. The paper's edge is measured at the SOQ, not at an ETF print.
 - Half of it, and the post-2023 size, do not.
 - If the SH one-cent rule raises total cost to about 12 bp, power at the stated edge falls below 33%. Whether that happens depends on SH share prices, which I have not seen.
