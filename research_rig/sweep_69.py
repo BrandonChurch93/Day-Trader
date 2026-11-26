@@ -5,6 +5,7 @@ import argparse
 from bisect import bisect_right
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
+import fcntl
 import gzip
 import hashlib
 import io
@@ -214,6 +215,10 @@ def read_identity(grid, identity_raw):
     return spans, splits, actions
 
 
+class BarsTransportFailure(ValueError):
+    pass
+
+
 def bars_transport():
     REQUEST_PAUSE_SECONDS = 0.25
     env = {k: os.environ[k] for k in ('HTTPS_PROXY', 'CURL_CA_BUNDLE', 'SSL_CERT_FILE') if k in os.environ}
@@ -225,7 +230,7 @@ def bars_transport():
     def get(query):
         # urlencode escapes curl-config metacharacters; the fixed URL is never in argv.
         stdin = f'url = "{ENDPOINT}?{urlencode(query)}"\n'.encode('ascii')
-        for delay in (0, 2, 4, 8, 16):
+        for delay in (0, 2, 4, 8, 16, 32, 64, 128):
             if delay:
                 sleep_clock.sleep(delay)
             sleep_clock.sleep(REQUEST_PAUSE_SECONDS)
@@ -243,9 +248,9 @@ def bars_transport():
                     return json.loads(body)
                 except (json.JSONDecodeError, UnicodeDecodeError):
                     continue
-            if delay == 16:
+            if delay >= 16:
                 raise ValueError(f'Alpaca bars HTTP {code}; no response body logged')
-        raise ValueError('Alpaca bars transport failed; no response body logged')
+        raise BarsTransportFailure('Alpaca bars transport failed; no response body logged')
 
     return get
 
@@ -289,10 +294,100 @@ def new_private(root_fd, name):
         raise
 
 
-def publish(root_fd, staging, destination):
-    os.link(staging, destination, src_dir_fd=root_fd, dst_dir_fd=root_fd, follow_symlinks=False)
+def publish(root_fd, staging, destination, *, dest_fd=None):
+    target = root_fd if dest_fd is None else dest_fd
+    os.link(staging, destination, src_dir_fd=root_fd, dst_dir_fd=target, follow_symlinks=False)
+    os.fsync(target)
     os.unlink(staging, dir_fd=root_fd)
     os.fsync(root_fd)
+
+
+def chunk_metadata(span, pins):
+    member, alias, start, end = span
+    return {'span': [member, alias, start.isoformat(), end.isoformat()], 'input_sha256': pins}
+
+
+def chunk_name(index, metadata):
+    return f'{index:04d}-{digest(json.dumps(metadata, sort_keys=True).encode())}.jsonl'
+
+
+def chunk_header(metadata, rows, pin, width):
+    return json.dumps({**metadata, 'rows': rows, 'rows_sha256': pin}, sort_keys=True).encode().ljust(width) + b'\n'
+
+
+def store_chunk(chunks_fd, name, span, metadata, get):
+    member, alias, start, end = span
+    temp = name + '.tmp'
+    sha, rows = hashlib.sha256(), 0
+    # Reserve first-line space for the final row count and payload digest.
+    width = len(chunk_header(metadata, 0, '0' * 64, 0)) + 24
+    with new_private(chunks_fd, temp) as file:
+        file.write(chunk_header(metadata, 0, '0' * 64, width))
+        for row in bars_pages(alias, start, end, get):
+            line = (json.dumps([member, alias, row['t'], *(row.get(k) for k in FIELDS)],
+                               allow_nan=False, separators=(',', ':')) + '\n').encode()
+            file.write(line)
+            sha.update(line)
+            rows += 1
+        file.seek(0)
+        file.write(chunk_header(metadata, rows, sha.hexdigest(), width))
+        file.flush()
+        os.fsync(file.fileno())
+    publish(chunks_fd, temp, name)
+    return rows
+
+
+def read_chunk(chunks_fd, name, metadata, out=None):
+    problem = f'Invalid collection chunk {name}; inspect and delete it before re-collecting this span'
+    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=chunks_fd)
+    with os.fdopen(fd, 'rb') as file:
+        mode = os.fstat(file.fileno()).st_mode
+        if not stat.S_ISREG(mode) or stat.S_IMODE(mode) != 0o600:
+            raise ValueError(problem)
+        raw = file.readline(len(chunk_header(metadata, 0, '0' * 64, 0)) + 25)
+        try:
+            header = json.loads(raw)
+        except (ValueError, UnicodeError):
+            raise ValueError(problem) from None
+        if (not raw.endswith(b'\n') or not isinstance(header, dict)
+                or {k: v for k, v in header.items() if k not in ('rows', 'rows_sha256')} != metadata
+                or type(header.get('rows')) is not int or header['rows'] < 0):
+            raise ValueError(problem)
+        sha, rows = hashlib.sha256(), 0
+        for line in file:
+            if not line.endswith(b'\n'):
+                raise ValueError(problem)
+            sha.update(line)
+            rows += 1
+            if out is not None:
+                out.write(line)
+        if rows != header['rows'] or sha.hexdigest() != header.get('rows_sha256'):
+            raise ValueError(problem)
+        return rows
+
+
+def consolidate_chunks(root_fd, chunks_fd, chunks, start, end, pins):
+    temp, temp_receipt = 'archive.tmp', 'receipt.tmp'
+    count = 0
+    with new_private(chunks_fd, temp) as file:
+        with gzip.GzipFile(fileobj=file, mode='wb', filename='', mtime=0) as out:
+            out.write((json.dumps(collection_header(start, end, pins)) + '\n').encode())
+            for name, metadata, _ in chunks:
+                count += read_chunk(chunks_fd, name, metadata, out)
+        file.flush()
+        os.fsync(file.fileno())
+        file.seek(0)
+        bar_pin = hashlib.file_digest(file, 'sha256').hexdigest()
+    if not count:
+        raise ValueError('Vendor returned no bars; chunks retained for audit')
+    with new_private(chunks_fd, temp_receipt) as file:
+        file.write((json.dumps({'scope': SCOPE, 'bars_sha256': bar_pin, 'input_sha256': pins,
+                                'archive_records': count}, sort_keys=True) + '\n').encode())
+        file.flush()
+        os.fsync(file.fileno())
+    publish(chunks_fd, temp, BAR_FILE, dest_fd=root_fd)
+    publish(chunks_fd, temp_receipt, RECEIPT, dest_fd=root_fd)
+    return {'bars_sha256': bar_pin, 'archive_records': count}
 
 
 def collect(grid, start, end, root_fd, bufs, pins):
@@ -301,38 +396,61 @@ def collect(grid, start, end, root_fd, bufs, pins):
         raise ValueError('The persisted collection must cover the entire frozen search')
     spans, _, _ = read_identity(grid, bufs['identity.json'])
     session_list(start, end, calendar_raw=bufs['calendar_65.json'])
-    temp, temp_receipt = BAR_FILE + '.partial', RECEIPT + '.partial'
-    for name in (BAR_FILE, RECEIPT, temp, temp_receipt):
+    fcntl.flock(root_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:
+        for name in (BAR_FILE, RECEIPT, BAR_FILE + '.partial', RECEIPT + '.partial'):
+            try:
+                os.stat(name, dir_fd=root_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                continue
+            raise ValueError('Existing search data, receipt or partial collection; do not overwrite')
         try:
-            os.stat(name, dir_fd=root_fd, follow_symlinks=False)
-        except FileNotFoundError:
-            continue
-        raise ValueError('Existing search data, receipt or partial collection; do not overwrite')
-    get = bars_transport()
-
-    count = 0
-    with new_private(root_fd, temp) as file:
-        with gzip.GzipFile(fileobj=file, mode='wb', filename='', mtime=0) as out:
-            out.write((json.dumps(collection_header(start, end, pins)) + '\n').encode())
-            for member, alias, a, b in spans:
-                for row in bars_pages(alias, a, b, get):
-                    out.write((json.dumps([member, alias, row['t'], *(row.get(k) for k in FIELDS)],
-                                          allow_nan=False, separators=(',', ':')) + '\n').encode())
-                    count += 1
-        file.flush()
-        os.fsync(file.fileno())
-        file.seek(0)
-        bar_pin = digest(file.read())
-    if not count:
-        raise ValueError('Vendor returned no bars; partial retained for audit')
-    with new_private(root_fd, temp_receipt) as file:
-        file.write((json.dumps({'scope': SCOPE, 'bars_sha256': bar_pin, 'input_sha256': pins,
-                                'archive_records': count}, sort_keys=True) + '\n').encode())
-        file.flush()
-        os.fsync(file.fileno())
-    publish(root_fd, temp, BAR_FILE)
-    publish(root_fd, temp_receipt, RECEIPT)
-    print(json.dumps({'bars_sha256': bar_pin, 'archive_records': count}, sort_keys=True))
+            os.mkdir('chunks', 0o700, dir_fd=root_fd)
+            os.fsync(root_fd)
+        except FileExistsError:
+            pass
+        chunks_fd = os.open('chunks', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=root_fd)
+        try:
+            if stat.S_IMODE(os.fstat(chunks_fd).st_mode) != 0o700:
+                raise ValueError('Collection chunks directory must have mode 0700')
+            chunks = []
+            for i, span in enumerate(spans, 1):
+                metadata = chunk_metadata(span, pins)
+                chunks.append((chunk_name(i, metadata), metadata, span))
+            expected = {name for name, _, _ in chunks}
+            completed = set()
+            for name in sorted(os.listdir(chunks_fd)):
+                if name.endswith('.tmp'):
+                    os.unlink(name, dir_fd=chunks_fd)
+                elif name not in expected:
+                    raise ValueError(f'Unexpected collection chunk {name}; inspect approval pins before re-collecting')
+                else:
+                    completed.add(name)
+            os.fsync(chunks_fd)
+            counts = {name: read_chunk(chunks_fd, name, metadata)
+                      for name, metadata, _ in chunks if name in completed}
+            get = None  # Finished chunks can be consolidated without a transport.
+            for i, (name, metadata, span) in enumerate(chunks, 1):
+                if name not in counts:
+                    if get is None:
+                        get = bars_transport()
+                    try:
+                        counts[name] = store_chunk(chunks_fd, name, span, metadata, get)
+                    except BarsTransportFailure as error:
+                        print(f'{error}; spans done {len(counts)}, remaining {len(chunks) - len(counts)}', file=sys.stderr)
+                        raise SystemExit(75) from None
+                    print(f'Collection span {i} of {len(chunks)}: {counts[name]} rows', file=sys.stderr, flush=True)
+            result = consolidate_chunks(root_fd, chunks_fd, chunks, start, end, pins)
+            for name, _, _ in chunks:
+                os.unlink(name, dir_fd=chunks_fd)
+            os.fsync(chunks_fd)
+        finally:
+            os.close(chunks_fd)
+        os.rmdir('chunks', dir_fd=root_fd)
+        os.fsync(root_fd)
+        print(json.dumps(result, sort_keys=True))
+    finally:
+        fcntl.flock(root_fd, fcntl.LOCK_UN)
 
 
 def archive_input(root_fd, pins, *, score):

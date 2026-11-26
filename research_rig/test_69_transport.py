@@ -1,6 +1,6 @@
 """Run with python3 -B research_rig/test_69_transport.py; no network or real bars."""
 
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import gzip
 import io
 import json
@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import stat
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import call, patch
@@ -128,19 +129,177 @@ class TransportTests(unittest.TestCase):
             with self.subTest(failure=failure):
                 self.runner.reset_mock()
                 self.sleep.reset_mock()
-                self.runner.side_effect = [failure] * 5
-                with self.assertRaisesRegex(ValueError, r'^Alpaca bars transport failed; no response body logged$'):
+                self.runner.side_effect = [failure] * 8
+                with self.assertRaisesRegex(sweep.BarsTransportFailure, r'^Alpaca bars transport failed; no response body logged$'):
                     sweep.bars_transport()({})
-                self.assertEqual(self.runner.call_count, 5)
+                self.assertEqual(self.runner.call_count, 8)
                 self.assertEqual(self.sleep.call_args_list,
-                                 [call(.25), call(2), call(.25), call(4), call(.25),
-                                  call(8), call(.25), call(16), call(.25)])
+                                 [call(.25)] + [event for delay in (2, 4, 8, 16, 32, 64, 128)
+                                               for event in (call(delay), call(.25))])
 
     def test_no_proxy_never_starts_curl(self):
         del os.environ['HTTPS_PROXY']
         with self.assertRaisesRegex(ValueError, 'requires the credential HTTPS proxy'):
             sweep.bars_transport()
         self.runner.assert_not_called()
+
+
+class SpanTests(unittest.TestCase):
+    def setUp(self):
+        self.scratch = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        start, end = sweep.FIRST.isoformat(), sweep.LAST.isoformat()
+        self.members = ['FAKEA', 'FAKEB', 'FAKEC']
+        self.grid = {'universe': {'stocks': self.members}, 'pools': {'stocks': self.members},
+                     'families': {'S1': {}},
+                     'rules': [{'id': 'fixture', 'family': 'S1', 'pool': 'stocks', 'side': 'long',
+                                'cash_500': True, 'latest_signal_close_et': None,
+                                'entry': {'clock_et': '09:30', 'print': 'open'},
+                                'exit': {'clock_et': '09:35', 'print': 'open', 'session_offset': 0}}]}
+        identity = {'coverage_start': start, 'coverage_end': end,
+                    'members': {name: {'sources': ['https://example.invalid/invented'],
+                                       'aliases': [{'ticker': name, 'start': start, 'end': end}], 'splits': []}
+                                for name in self.members}}
+        self.buffers = {'GRID_69.json': json.dumps(self.grid).encode(),
+                        'sweep_69.py': b'synthetic script fingerprint fixture',
+                        'identity.json': json.dumps(identity).encode(),
+                        'calendar_65.json': b'{"sessions":[["2016-01-04","2016-01-04T14:30:00Z","2016-01-04T21:00:00Z"]]}'}
+        self.code = self.scratch / 'code'
+        self.code.mkdir()
+        for name in ('GRID_69.json', 'sweep_69.py', 'calendar_65.json'):
+            (self.code / name).write_bytes(self.buffers[name])
+        self.pins = {name: sweep.digest(self.buffers[name]) for name in ('GRID_69.json', 'sweep_69.py', 'calendar_65.json', 'identity.json')}
+        self.pins['thresholds.yaml'] = sweep.digest(sweep.CONFIG_RAW)
+
+    @staticmethod
+    def vendor(query):
+        name = query['symbols']
+        return {'bars': {name: [{'t': '2016-01-04T14:35:00Z' if 'page_token' in query else '2016-01-04T14:30:00Z',
+                                'o': 10, 'h': 10, 'l': 10, 'c': 10, 'v': 1, 'vw': 10}]},
+                'next_page_token': None if 'page_token' in query else 'next'}
+
+    def run_collect(self, folder, get):
+        folder.mkdir(exist_ok=True)
+        root_fd = sweep.open_directory(folder)
+        err = io.StringIO()
+        self.err = err
+        try:
+            with redirect_stdout(io.StringIO()) as out, redirect_stderr(err), patch.object(sweep, 'bars_transport', return_value=get):
+                sweep.collect(self.grid, sweep.FIRST, sweep.LAST, root_fd, self.buffers, self.pins)
+                return json.loads(out.getvalue())
+        finally:
+            os.close(root_fd)
+
+    def interrupt(self, folder):
+        def fail(query):
+            if query['symbols'] == 'FAKEB' and 'page_token' in query:
+                raise sweep.BarsTransportFailure('Alpaca bars transport failed; no response body logged')
+            return self.vendor(query)
+        with self.assertRaises(SystemExit) as stop:
+            self.run_collect(folder, fail)
+        self.assertEqual(stop.exception.code, 75)
+        self.assertEqual(self.err.getvalue().splitlines(), ['Collection span 1 of 3: 2 rows',
+            'Alpaca bars transport failed; no response body logged; spans done 1, remaining 2'])
+        chunks = folder / 'chunks'
+        self.assertEqual(stat.S_IMODE(chunks.stat().st_mode), 0o700)
+        self.assertEqual(len(list(chunks.glob('*.tmp'))), 1)
+        self.assertFalse((folder / sweep.BAR_FILE).exists())
+        return next(chunks.glob('*.jsonl'))
+
+    def legacy_archive(self):
+        buffer = io.BytesIO()
+        with gzip.GzipFile(fileobj=buffer, mode='wb', filename='', mtime=0) as out:
+            out.write((json.dumps(sweep.collection_header(sweep.FIRST, sweep.LAST, self.pins)) + '\n').encode())
+            for name in self.members:
+                for row in sweep.bars_pages(name, sweep.FIRST, sweep.LAST, self.vendor):
+                    out.write((json.dumps([name, name, row['t'], *(row.get(k) for k in sweep.FIELDS)],
+                                          allow_nan=False, separators=(',', ':')) + '\n').encode())
+        raw = buffer.getvalue()
+        receipt = (json.dumps({'scope': sweep.SCOPE, 'bars_sha256': sweep.digest(raw), 'input_sha256': self.pins,
+                               'archive_records': 6}, sort_keys=True) + '\n').encode()
+        return raw, receipt
+
+    def test_resume_matches_uninterrupted_and_legacy_bytes_and_validates(self):
+        resumed, fresh = self.scratch / 'resumed', self.scratch / 'fresh'
+        self.interrupt(resumed)
+        touched = []
+
+        def vendor(query):
+            touched.append(query['symbols'])
+            return self.vendor(query)
+
+        # Discard a dangling .tmp symlink without opening its target.
+        (resumed / 'chunks' / 'leftover.tmp').symlink_to('missing')
+        result = self.run_collect(resumed, vendor)
+        self.assertEqual(touched, ['FAKEB', 'FAKEB', 'FAKEC', 'FAKEC'])
+        self.assertEqual(result, self.run_collect(fresh, self.vendor))
+        for name, expected in zip((sweep.BAR_FILE, sweep.RECEIPT), self.legacy_archive()):
+            self.assertEqual((resumed / name).read_bytes(), expected)
+            self.assertEqual((fresh / name).read_bytes(), expected)
+        self.assertFalse((resumed / 'chunks').exists())
+        (resumed / 'identity.json').write_bytes(self.buffers['identity.json'])
+        (resumed / 'search_approval.json').write_text(json.dumps({'scope': sweep.SCOPE, 'approved_by': 'fixture',
+                                                                 'sha256': self.pins}))
+        with redirect_stdout(io.StringIO()) as out, patch.object(sweep, 'STORE', resumed), patch.object(sweep, 'HERE', self.code), \
+                patch.object(sys, 'argv', ['sweep_69.py', '--validate-inputs']):
+            sweep.main()
+        self.assertEqual(json.loads(out.getvalue())['regular_rows'], 6)
+
+    def test_wrong_pins_in_name_or_header_refused(self):
+        folder = self.scratch / 'wrong-pins'
+        chunk = self.interrupt(folder)
+        saved = self.pins
+        self.pins = {'fixture': 'other-pin'}
+        with self.assertRaisesRegex(ValueError, 'Unexpected collection chunk'):
+            self.run_collect(folder, self.vendor)
+        self.pins = saved
+        raw = chunk.read_bytes().replace(saved['identity.json'].encode(), b'0' * 64, 1)
+        chunk.write_bytes(raw)
+        with self.assertRaisesRegex(ValueError, 'Invalid collection chunk'):
+            self.run_collect(folder, self.vendor)
+
+    def test_corruption_refuses_until_operator_deletes_chunk(self):
+        folder = self.scratch / 'corrupt'
+        chunk = self.interrupt(folder)
+        raw = chunk.read_bytes()
+        for altered in (raw[:-1], raw.replace(b'14:30', b'14:31', 1)):
+            chunk.write_bytes(altered)
+            with self.assertRaisesRegex(ValueError, 'inspect and delete it before re-collecting'):
+                self.run_collect(folder, self.vendor)
+            self.assertTrue(chunk.exists())
+        chunk.unlink()
+        self.run_collect(folder, self.vendor)
+        self.assertEqual((folder / sweep.BAR_FILE).read_bytes(), self.legacy_archive()[0])
+
+    def test_consolidation_crash_before_publish(self):
+        folder = self.scratch / 'crashed'
+        real_publish = sweep.publish
+
+        def fail_before_publish(*args, **kwargs):
+            if kwargs.get('dest_fd') is not None:
+                raise OSError('simulated consolidation crash')
+            return real_publish(*args, **kwargs)
+
+        with patch.object(sweep, 'publish', side_effect=fail_before_publish):
+            with self.assertRaisesRegex(OSError, 'simulated consolidation crash'):
+                self.run_collect(folder, self.vendor)
+        self.assertEqual(len(list((folder / 'chunks').glob('*.jsonl'))), 3)
+        self.assertFalse((folder / sweep.BAR_FILE).exists())
+
+        def no_refetch(_):
+            self.fail('a completed chunk must not be requested again')
+
+        self.run_collect(folder, no_refetch)
+        self.assertEqual((folder / sweep.BAR_FILE).read_bytes(), self.legacy_archive()[0])
+
+    def test_legacy_partial_still_refuses(self):
+        folder = self.scratch / 'legacy'
+        folder.mkdir()
+        partial = folder / (sweep.BAR_FILE + '.partial')
+        partial.write_bytes(b'untouched')
+        with self.assertRaisesRegex(ValueError, 'Existing search data, receipt or partial'):
+            self.run_collect(folder, self.vendor)
+        self.assertEqual(partial.read_bytes(), b'untouched')
+        self.assertFalse((folder / 'chunks').exists())
 
 
 if __name__ == '__main__':
