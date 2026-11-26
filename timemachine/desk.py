@@ -614,7 +614,11 @@ class DeskSession:
                              if isinstance(x,dict) and isinstance(x.get("symbol"),str))
         if (mentioned & set(self.spec["symbols"])) - marks.keys():
             raise ValueError("protective exits and conditions need a visible quote; request bars")
-        errs = P.check_answer(bare, self.spec["symbols"], self.spec["cfg"], self.spec["gross"], marks)
+        asked = bare.get("weights")
+        if isinstance(asked,dict) and any(not orders.number(w) for w in asked.values()):
+            raise ValueError("target weights must be finite numbers")
+        limit = max(self.spec["gross"],math.fsum(abs(w) for w in asked.values())) if isinstance(asked,dict) else self.spec["gross"]
+        errs = P.check_answer(bare, self.spec["symbols"], self.spec["cfg"], limit, marks)
         if errs:
             raise ValueError(errs[0])
         if self.arm != "C" and body.keys() & {"conditions", "keep"}:
@@ -637,7 +641,7 @@ class DeskSession:
                     or any(not isinstance(x, str) or x not in ids for x in e)):
                 raise ValueError("cite a visible note, tape row or book id")
 
-        weights = bare.get("weights")
+        weights = orders.priced_target(asked,self.spec["gross"]) if asked is not None else None
         if weights is not None:
             old = st["book"]["target"]
             for s in set(old) | set(weights):

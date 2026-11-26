@@ -387,6 +387,53 @@ class DeskTest(unittest.TestCase):
         self.assertEqual(engine.events[-1]["kind"],"filled")
         self.assertAlmostEqual(P.weights_at(book,marks)[A],1,places=8)
 
+    def test_pass4_joint_baskets_are_complete_under_label_permutations(self):
+        C = "CCC/USD"
+        names = (A,B,C)
+        rng = random.Random(468)
+        cases = [(1000,(0,0,0),(w,0,0)) for w in (.9999,-.9999)]
+        cases += [(1000,(0,0,0),(.49995,.49995,0)),(1000,(0,0,0),(.49975,.49975,0)),
+                 (100,(0,9,0),(.5,-.5,0)),(1000,(0,0,0),(.63,-.51,.24))]
+        for i in range(160):
+            held = tuple(rng.uniform(-4,4) for _ in names)
+            scores = [rng.uniform(.08,1) for _ in names]
+            gross = (.9995,1,1.08)[i%3]
+            weights = tuple(rng.choice((-1,1))*gross*x/sum(scores) for x in scores)
+            cases.append((1250-100*sum(held),held,weights))
+        for cash,held,weights in cases:
+            prior = None
+            for labels in (names,names[::-1],(B,C,A)):
+                spec = world()
+                pp = P.p_params(names,spec["cfg"])
+                pp["fallback_per_day"] = 0
+                marks = dict.fromkeys(labels,100)
+                book = P.new_book(1000)
+                book.update(cash=cash,qty={s:q for s,q in zip(labels,held) if q},last_px=marks.copy())
+                target = dict(zip(labels,weights))
+                bars = P.Minutes(sorted((T,s,100,100,100,100) for s in labels))
+                rec,_,_ = O.step(book,dict(weights=target),dict(marks=marks),pp,bars,T,T+60,True,{},1)
+                got = tuple(book["qty"].get(s,0) for s in labels)
+                self.assertLessEqual(P.gross_at(book,marks),P.value_at(book,marks))
+                self.assertEqual({t["symbol"] for t in rec["trades"]},
+                                 {s for s,x,y in zip(labels,held,got) if abs((x-y)*100) >= 1e-9})
+                fractions = [q/w for q,w in zip(got,weights) if w]
+                self.assertGreater(min(fractions),0)
+                self.assertAlmostEqual(min(fractions),max(fractions),places=10)
+                state = got+(book["cash"],book["fee_usd"],book["traded_usd"])
+                if prior is not None:
+                    for l,r in zip(prior,state):
+                        self.assertAlmostEqual(l,r,places=10)
+                prior = state
+
+    def test_pass4_boss_can_submit_over_cap_vector(self):
+        a = self.create("A")
+        _,key = info(a)
+        result = a.handle("boss","pick",dict(wake_key=key,weights={A:.8,B:-.7},why="Scale.",
+                          citations={s:{"evidence_ids":[f"book:{T}"]} for s in (A,B)}))
+        self.assertTrue(result["accepted"])
+        with a.tx() as (_,st):
+            self.assertAlmostEqual(st["book"]["qty"][A]/st["book"]["qty"][B],-.8/.7)
+
     def test_reaudit_opr_r5_price_packet_rejects_unscreened_fields(self):
         spec = world()
         price, other = spec["evidence"][0][:2]
