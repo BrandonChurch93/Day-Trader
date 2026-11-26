@@ -99,7 +99,13 @@ STATED. There were four freezes, not four scored runs. Earlier refusals stopped 
 
 MEASURED. The saved result records ledger 157 and a start at 2026-11-26 03:54:55 UTC from `20701a0d7bd6c31f329ea52dad96f4aaccd6a5b8`. Saved result SHA-256 `285c74cbe2573fe51b08b0672f84293dbb3e2e53b599884c862278d6368fe6a2`. This page uses only that saved result for numerical performance.
 
-UNKNOWN. Independent recompute of the listing trades is pending. The lead agent will record it here.
+## Independent listing-arm check
+
+MEASURED. A separate implementation written from the frozen plan reproduced 139 listing trades, +3.208846% mean net, t 2.838661, and +2.536671% after dropping the best three. The mean was +0.000046 percentage points above the rounded +3.2088% initially reported. The counts agree: 269 first notices, 156 trading at publication, 139 traded, 17 had no red day, and 0 missed an entry fill. The ordinary-jump control pool and its 95th-percentile mark were not independently recomputed, so this does not independently verify the full pass.
+
+MEASURED, EXPLORATORY ONLY. Across 99 weeks with entries, weighting each week equally gave +2.92% mean net, with a weekly t of 2.59. Three trades at most were open simultaneously. Keeping just the first trade per week gave 99 trades, +3.01% mean net and t 2.37. Reading funding stamps literally rather than aligning them to the time grid changed 22 returns and reduced the mean by 0.0096 percentage points; it did not change trade selection or exits. None of these checks changes a mark.
+
+Independent aggregate report SHA-256 `59d8a2c944715f0f2e7edb3c9a76b8f68d3a4a1e0e71789aac410482c278afe7`. The generator verifies the report before using its figures and does not open the audit's market inputs.
 
 ## Limits
 

@@ -4,9 +4,11 @@ from datetime import datetime
 from hashlib import sha256
 import json
 from pathlib import Path
+import re
 from statistics import fmean
 
 RESULT_SHA = "285c74cbe2573fe51b08b0672f84293dbb3e2e53b599884c862278d6368fe6a2"
+RECHECK_SHA = "59d8a2c944715f0f2e7edb3c9a76b8f68d3a4a1e0e71789aac410482c278afe7"
 
 
 def pct(x, digits=3):
@@ -17,7 +19,59 @@ def row(*cells):
     return "| " + " | ".join(map(str, cells)) + " |"
 
 
-def render(data):
+def recheck_lines(report, outcome):
+    def extract(pattern, value):
+        found = re.search(pattern, value, re.MULTILINE)
+        if not found:
+            raise ValueError("independent report field missing")
+        return found.groups()
+
+    def table(label, first, rest=r" \|"):
+        return extract(r"^\| " + re.escape(label) + r" \| " + first + rest, report)
+
+    first, = table("First notices by dated asset in the registered window", r"(\d+)")
+    active, = table("Trading at publication", r"(\d+)")
+    trades, = table("Traded", r"(\d+)")
+    no_red, = table("No strictly red UTC day in the three-day window", r"(\d+)")
+    no_fill, = table("Passed the red-day test but no entry fill", r"(\d+)")
+    mean, rounded, delta = table("Mean net", r"(\+\d+\.\d+%)", r" \| (\+\d+\.\d+%) \| (\+\d+\.\d+) pp \|")
+    t, = table("Trade-mean t-statistic", r"(\d+\.\d+)")
+    trimmed, = table("Mean excluding best three", r"(\+\d+\.\d+%)")
+    d = outcome["notice_disposition"]
+    if tuple(map(int, (first, active, trades, no_red, no_fill))) != (
+            outcome["first_notices"], outcome["trading_at_notice"], d["traded"], d["no_red_day"], d["no_fill"]):
+        raise ValueError("independent cohort does not reconcile")
+
+    weeks, week_mean, week_t = extract(
+        r"Calendar-week means:\*\* Across (\d+) nonempty UTC ISO weeks[^\n]+?means was (\+\d+\.\d+)%"
+        r"[^\n]+?as observations was (\d+\.\d+)", report)
+    peak, = extract(r"Peak overlap:\*\* (Three) trades\.", report)
+    weekly_n, first_mean, first_t = extract(
+        r"First trade per UTC entry week:\*\* (\d+) trades, (\+\d+\.\d+)% equal-weight net mean; t = (\d+\.\d+)",
+        report)
+    funding_n, funding_delta = extract(
+        r"changes funding and net returns for (\d+) trades[^\n]+?\(−(\d+\.\d+) percentage points\)", report)
+    return [
+        "## Independent listing-arm check", "",
+        f"MEASURED. A separate implementation written from the frozen plan reproduced {trades} listing trades, "
+        f"{mean} mean net, t {t}, and {trimmed} after dropping the best three. The mean was "
+        f"{delta} percentage points above the rounded {rounded} initially reported. "
+        f"The counts agree: {first} first notices, {active} trading at publication, {trades} traded, "
+        f"{no_red} had no red day, and {no_fill} missed an entry fill. The ordinary-jump control pool and its "
+        "95th-percentile mark were not independently recomputed, so this does not independently verify the full pass.", "",
+        f"MEASURED, EXPLORATORY ONLY. Across {weeks} weeks with entries, weighting each week equally gave "
+        f"{float(week_mean):+.2f}% mean net, with a weekly t of {float(week_t):.2f}. {peak} trades at most "
+        f"were open simultaneously. Keeping just the first trade per week gave {weekly_n} trades, "
+        f"{float(first_mean):+.2f}% mean net and t {float(first_t):.2f}. Reading funding stamps literally rather "
+        f"than aligning them to the time grid changed {funding_n} returns and reduced the mean by "
+        f"{float(funding_delta):.4f} percentage points; it did not change trade selection or exits. "
+        "None of these checks changes a mark.", "",
+        f"Independent aggregate report SHA-256 `{RECHECK_SHA}`. The generator verifies the report before "
+        "using its figures and does not open the audit's market inputs.", "",
+    ]
+
+
+def render(data, recheck):
     o, p, job = data["outcome"], data["policy"], data["job"]
     judged, verdict = o["judged"], o["judgment"]
     n, mean = judged["count"], verdict["mean"]
@@ -161,7 +215,7 @@ def render(data):
         f"MEASURED. The saved result records ledger {job['ledger']} and a start at {began} from "
         f"`{job['commit']}`. Saved result SHA-256 `{RESULT_SHA}`. "
         "This page uses only that saved result for numerical performance.", "",
-        "UNKNOWN. Independent recompute of the listing trades is pending. The lead agent will record it here.", "",
+        *recheck_lines(recheck, o),
         "## Limits", "",
         "STATED. Binance.com perpetuals are not available to US accounts, and we do not go around that "
         "restriction ([CFTC Binance order announcement](https://www.cftc.gov/PressRoom/PressReleases/8825-23)). "
@@ -181,11 +235,15 @@ def render(data):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("result", type=Path, help="Off-repo saved results_20.json")
+    parser.add_argument("--recheck", required=True, type=Path, help="Off-repo independent aggregate REPORT.md")
     args = parser.parse_args()
     raw = args.result.read_bytes()
     if sha256(raw).hexdigest() != RESULT_SHA:
         parser.exit(1, "P20_REPORT_RESULT_PIN\n")
-    print(render(json.loads(raw)), end="")
+    recheck = args.recheck.read_bytes()
+    if sha256(recheck).hexdigest() != RECHECK_SHA:
+        parser.exit(1, "P20_REPORT_RECHECK_PIN\n")
+    print(render(json.loads(raw), recheck.decode()), end="")
 
 
 if __name__ == "__main__":
