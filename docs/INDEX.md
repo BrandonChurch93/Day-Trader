@@ -188,6 +188,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/96_round_23_permitted_small_coin_sources.md` | Round 23 data-first audit of permitted, documented small-coin event sources across public blockchains, exchange market-data APIs / CFTC filings, and regulator/court filings (queues rows 82, 83, and 84 count-first or forward-logger-first; puts 8 candidates on the `docs/QUEUE.md` skip list), plus dated delta check of US-legal short venues outside BTC and ETH vs `docs/research/40_leverage_venues_checked.md` | CURRENT |
 | `docs/research/97_replay_21_odd_lot_tenders.md` | Replay 21 cash tenders did not pass, 4 of 6 marks: 14 placements, +11.80% mean net and t 1.688. Documents the refused acquisition and transport-only refreeze; no fill data tracked | CURRENT |
 | `docs/research/98_kraken_and_coinbase_short_access.md` | STATED / MEASURED / UNKNOWN: Kraken US perps and Bitnomial spot margin, Coinbase Financial Markets perpetual-style futures, and what a small Idaho account can short by API | CURRENT |
+| `docs/research/99_round_24_forced_flow_and_shortable_coins.md` | Round 24: dated forced-flow events for a $500 US account (next 60 days priority; queues rows 86 and 87) and events on the 29 US-shortable non-BTC/ETH coins (0 new rows) | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
