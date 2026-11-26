@@ -563,9 +563,9 @@ class FundingCarryTests(unittest.TestCase):
             files = {}
             for kind,inside,outside in (
                 ("klines",[t*C.H+2*C.H,100,100,100,100,5],[t*C.H+9*C.H,0,0,0,0,0]),
-                ("markPriceKlines",[t*C.H+2*C.H,100,100,100,100],[t*C.H+9*C.H,0,0,0,0]),
+                ("markPriceKlines",None,[t*C.H+9*C.H,0,0,0,0]),
                 ("fundingRate",[(t+8)*C.H,8,.001],[(t+16)*C.H,8,.999])):
-                name,meta = archive_fixture(root,"FTTUSDT",kind,[inside,outside])
+                name,meta = archive_fixture(root,"FTTUSDT",kind,[r for r in (inside,outside) if r])
                 files[name] = dict(where="plan18_ftt",sha256=meta["sha256"])
             u = dict(ftt_archive_supplement=dict(archives=files,evidence_sha256="f"*64))
             manifest = A.ftt_manifest(u,(c,),syms)
@@ -574,12 +574,84 @@ class FundingCarryTests(unittest.TestCase):
             self.assertEqual(set(periods[c.key]["2022-01"].values()),{"archive_file_listed_rows_unverified"})
             tape = A.Tape(root/"not-old-store",[manifest],syms,set(),p,contracts=(c,),supplemental_dir=root)
             self.assertEqual(tape.open_price(c.key,t+2),100.)
+            self.assertFalse(C.valid(tape.mark_close(c.key,t+2)))
             self.assertIsNone(tape.open_price(c.key,t+9))
             self.assertEqual(tape.funding(c.key,t+8),(True,.001))
             self.assertEqual(tape.funding(c.key,t+16),(False,None))
             files.pop(next(iter(files)))
             with self.assertRaisesRegex(C.Incomplete,"each registered monthly ZIP"):
                 A.ftt_manifest(u,(c,),syms)
+
+    def test_ftt_coverage_branches_and_charged_equity(self):
+        start,close,end = (A.day_hour(d) for d in ("2022-10-20","2022-11-14","2022-11-20"))
+        close += 4
+        pivot = A.FTT_FAST_FUNDING
+        charge_at = A.day_hour("2022-11-10")
+        c = C.Contract(4195,0,"ftt",start-100,close,closed_effective=close,
+                       closed_known_at=(close-18)*C.H)
+        others = snapshots(start,end)[0].contracts
+        cs = (*others,c)
+        ranks = (*((o.rank,o.coin_id) for o in others),(20,4195))
+        snaps = (C.Snapshot((start-1)*C.H,cs,ranks),)
+        p = C.P|dict(start=start,end=end,random_draws=2)
+
+        class CoverageFake(Fake):
+            def raw_at(self,key,h,index):
+                return self.trade_close(key,h) if index==1 else self.mark_close(key,h)
+
+            def expects_settlement(self,key,h):
+                return A.scheduled_funding("FTTUSDT" if key=="ftt" else "OTHER",h,p)
+
+            def funding(self,key,h):
+                return self.funding_overrides.get((key,h),(True,0. if self.expects_settlement(key,h) else None))
+
+        tape = CoverageFake()
+        complete = A.ftt_coverage(tape,snaps,c,p)
+        self.assertEqual(complete["branch"],"normal")
+        self.assertTrue(complete["complete"])
+        self.assertIsNone(complete["charge_decision_hour"])
+        with (patch.object(S.A,"load",return_value=(tape,snaps,{},{"ftt_coverage":complete})),
+              patch.object(S,"memory_check")):
+            result = S.score(({"commit":"fake","inputs":{},"evidence_inventory_sha256":"fake"},p))
+        self.assertIsNone(result["shown_uncharged_ftt"])
+        self.assertIsNone(result["judged"]["result"]["ftt_stress"])
+        self.assertEqual(complete["counts"]["funding_settlements"]["expected"],
+                         (pivot//8-(c.begin+7)//8+1)+(close-pivot)//2)
+        # A complete FTT is rankable after the change, not excluded as off-grid.
+        self.assertIn(c,[contract for _,contract in C.eligible(tape,snaps[0],charge_at+C.ROLL,p=p)])
+        # A row missing outside the November decision windows is reported but
+        # cannot trigger the exceptional charge.
+        tape.trade_overrides["ftt",start] = None
+        old_gap = A.ftt_coverage(tape,snaps,c,p)
+        self.assertFalse(old_gap["complete"])
+        self.assertEqual(old_gap["branch"],"normal")
+        for kind, when, overrides, missing in (
+            ("trade_bars",charge_at+3,tape.trade_overrides,None),
+            ("mark_bars",charge_at+5,tape.mark_overrides,None),
+            ("funding_settlements",pivot+2,tape.funding_overrides,(False,None)),
+        ):
+            with self.subTest(kind=kind):
+                overrides["ftt",when] = missing
+                gap = A.ftt_coverage(tape,snaps,c,p)
+                self.assertEqual(gap["counts"][kind]["missing_protected_hours"],[when])
+                self.assertEqual(gap["branch"],"judged_one_long_leg_written_to_zero")
+                self.assertEqual(gap["charge_decision_hour"],charge_at)
+                with (patch.object(S.A,"load",return_value=(tape,snaps,{},{"ftt_coverage":gap})),
+                      patch.object(S,"memory_check")):
+                    result = S.score(({"commit":"fake","inputs":{},"evidence_inventory_sha256":"fake"},p))
+                judged,uncharged = (result[k]["result"] for k in ("judged","shown_uncharged_ftt"))
+                self.assertEqual(result["scope"]["ftt_coverage"],gap)
+                loss = judged["ftt_stress"]
+                self.assertAlmostEqual(loss["loss"],loss["equity_before"]/6)
+                self.assertAlmostEqual(loss["equity_after"],loss["equity_before"]-loss["loss"])
+                # Later resizes have their own actual turnover fees. With
+                # flat prices and zero funding, final equity reconciles exactly.
+                self.assertAlmostEqual(judged["final"],1.-loss["loss"]-judged["fees"])
+                self.assertAlmostEqual(uncharged["final"],1.-uncharged["fees"])
+                self.assertLess(judged["years"][2022],uncharged["years"][2022])
+                self.assertGreater(judged["max_drawdown"],uncharged["max_drawdown"])
+                self.assertIsNone(uncharged["ftt_stress"])
+                del overrides["ftt",when]
 
     def test_terminal_checks_same_coin_successor_evidence(self):
         t = self.t

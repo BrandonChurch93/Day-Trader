@@ -99,6 +99,7 @@ class Result:
     forced_count: int
     qualified_slots: int
     coverage_exclusions: dict
+    ftt_stress: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -153,16 +154,18 @@ def eligible(tape, snap, t, roster=None, p=P, funnel=None, exclusions=None):
         funnel["prior_bar"] += 1
         rates = []
         for h in range(lo, hi):
+            expected = (tape.expects_settlement(c.key,h) if hasattr(tape,"expects_settlement")
+                        else h%p["funding_interval_hours"]==0)
             covered, rate = tape.rank_funding(c.key, h, t*H)
             if not covered:
                 reason = (tape.funding_gap_reason(c.key,h) if hasattr(tape,"funding_gap_reason")
                           else "funding_uncovered_or_unavailable")
                 blocked(reason,c)
                 break
-            if rate is None and h % p["funding_interval_hours"] == 0:
+            if rate is None and expected:
                 blocked("expected_settlement_missing",c)
                 break
-            if rate is not None and (h % p["funding_interval_hours"] or not isfinite(rate)):
+            if rate is not None and (not expected or not isfinite(rate)):
                 blocked("off_grid_or_invalid_settlement",c)
                 break
             if rate is not None:
@@ -198,7 +201,7 @@ def marks(p, sharpe, dd, years, traded):
 
 
 def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=P,
-             pools=None, gross_reopen=False):
+             pools=None, gross_reopen=False, ftt_charge_decision=None):
     bps = p["judged_cost_bps"] if bps is None else bps
     if start % 24 or end % 24 or end <= start or bps not in (p["judged_cost_bps"],*p["shown_cost_bps"]):
         raise ValueError("use UTC day boundaries and a declared fee")
@@ -211,6 +214,7 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
     funnel = Counter()
     forced = []
     coverage_exclusions = {}
+    ftt_stress = None
     positions = {}  # key -> (contract, quantity, basis, last traded hour, last trade close)
     roll,lag = p["roll_hours"],p["fill_lag_hours"]
 
@@ -238,6 +242,15 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
             forced.append(dict(hour=h,last_trade_hour=last_h,coin_id=c.coin_id,key=key,
                                side="long" if q>0 else "short",reason=reason,price=px,
                                last_close=last_px,fee=charge,zeroed=zero))
+
+    def ftt_charge(h,equity):
+        nonlocal cash,ftt_stress
+        if h==ftt_charge_decision:
+            loss = equity/(2*p["legs"])
+            cash -= loss
+            ftt_stress = dict(decision_hour=h,equity_before=equity,loss=loss,
+                              equity_after=equity-loss)
+            value(h,equity-loss,save_day=False)
 
     def retarget(h,picks,opens):
         nonlocal cash,price_pnl,fees
@@ -316,6 +329,7 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
 
     first = start+lag
     stop = first+max(0,(end-first)//roll)*roll
+    ftt_charge(start,cash)
     for h in range(start+24,min(first,end)+1,24):
         value(h,cash)
     for t in range(first,stop,roll):
@@ -374,6 +388,7 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
                     unrealized -= q*(closes[key]-basis)
                     force(key,h,"dated_accounting_fence")
             value(h, cash+unrealized)
+            ftt_charge(h,cash+unrealized)
             # Positive offsets are after the UTC close; at a rebalance they
             # are processed by post_fill against the incoming quantities.
             if h!=e:
@@ -397,7 +412,7 @@ def run_book(tape, snapshots, start, end, bps=None, *, roster=None, rng=None, p=
               and roster is None and rng is None and not gross_reopen)
     hit = marks(p,sharpe,dd,years,traded) if judged else (False,)*3
     return Result(sharpe,dd,years,cash,traded,too_few,no_open,hit,price_pnl,funding_pnl,fees,
-                  dict(funnel),tuple(forced),forced_count,qualified,coverage_exclusions)
+                  dict(funnel),tuple(forced),forced_count,qualified,coverage_exclusions,ftt_stress)
 
 
 def random_books(tape,snapshots,start,end,*,p=P,pools=None,check=lambda:None):

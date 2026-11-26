@@ -225,15 +225,27 @@ def check_memory_budget(groups,count):
     return size
 
 
-def zip_rows(raw):
+def zip_rows(raw,*,allow_empty=False):
     with zipfile.ZipFile(io.BytesIO(raw)) as z:
-        member, = [name for name in z.namelist() if name.endswith(".csv")]
+        members = [name for name in z.namelist() if name.endswith(".csv")]
+        if allow_empty and not members:
+            return
+        member, = members
         with z.open(member) as stream:
             for i,row in enumerate(csv.reader(io.TextIOWrapper(stream,encoding="utf-8-sig"))):
                 if row and row[0].isdigit():
                     yield row
                 elif i>0:
                     raise C.Incomplete("invalid archive row")
+
+
+# Binance's dated FTTUSDT settlement-frequency notice, effective at 04:00 UTC.
+FTT_FAST_FUNDING = int(datetime(2022,11,10,4,tzinfo=timezone.utc).timestamp())//C.H
+
+
+def scheduled_funding(pair,h,p):
+    interval = 2 if pair=="FTTUSDT" and h>=FTT_FAST_FUNDING else p["funding_interval_hours"]
+    return h%interval==0
 
 
 class Tape:
@@ -283,10 +295,9 @@ class Tape:
                 path = (supplemental_dir if is_ftt else archive_dir)/name
                 kind = match[2]
                 n = 0
-                in_segment = 0
                 if path.stat().st_size>MAX_ZIP_BYTES:
                     raise C.Incomplete("archive ZIP exceeds the preflight per-file limit")
-                for row in zip_rows(read_pinned(path,m["sha256"])):
+                for row in zip_rows(read_pinned(path,m["sha256"]),allow_empty=is_ftt):
                     n += 1
                     stamp = clock_us(row[0])
                     hour_us = C.H*10**6
@@ -300,7 +311,6 @@ class Tape:
                     if is_ftt:
                         if not any(c.begin*hour_us<=stamp<c.end*hour_us for c in by_pair[pair]):
                             continue
-                        in_segment += 1
                     if not self.lo<=h<=self.hi:
                         continue
                     i = h-self.lo
@@ -320,8 +330,6 @@ class Tape:
                         dest[i] = tr if vol>0 else -1.
                         if kind=="klines" and vol>0:
                             opens[i] = op
-                if is_ftt and in_segment==0:
-                    raise C.Incomplete("FTT supplemental archive has no in-segment rows")
                 if not is_ftt and n!=m["n"]:
                     raise C.Incomplete("unexpected archive row count")
             previous = None
@@ -338,7 +346,7 @@ class Tape:
                 coverage[i] = 1
                 if previous is not None and owner==last_owner and i-previous<=p["funding_interval_hours"]:
                     for j in range(previous+1,i):
-                        coverage[j] = 1 if (self.lo+j)%p["funding_interval_hours"] else 2
+                        coverage[j] = 2 if scheduled_funding(pair,self.lo+j,p) else 1
                 previous,last_owner = i,owner
             last = next((self.lo+i for i in range(len(closes)-1,-1,-1) if closes[i]>0),None)
             self.store[pair] = opens,closes,marks,rates,times,coverage,last
@@ -369,6 +377,9 @@ class Tape:
 
     def funding(self,key,h):
         return self.funding_event(key,h)[:2]
+
+    def expects_settlement(self,key,h):
+        return scheduled_funding(self.symbols[key],h,self.p)
 
     def funding_event(self,key,h):
         value = self.raw_at(key,h,3)
@@ -715,6 +726,9 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
         raise C.Incomplete("FTT checksum-only files must come from the separate universe supplement")
     supplement = ftt_manifest(u,contracts,symbols)
     if supplement:
+        ftt = next(c for c in contracts if symbols[c.key]=="FTTUSDT")
+        if ftt_protection(snaps,ftt,p)[1] is None:
+            raise C.Incomplete("FTT coverage requires a pinned as-of top-30 charge decision")
         manifests.append(supplement)
     if "rank_page_exclusions" not in u:
         raise C.Incomplete("missing dated decisions for unrepresented rank positions")
@@ -793,11 +807,59 @@ def inspect_universe(paths,pins,p,*,evidence_dir,inventory_pin):
     return contracts,symbols,notices,snaps,mapped,coverage,manifests,top
 
 
+def ftt_protection(snaps,c,p):
+    """Registered clock windows and the first as-of top-30 charge decision."""
+    first_protected, first_charge = (day_hour(d) for d in ("2022-11-01","2022-11-08"))
+    protected, charge_at = set(),None
+    interval, roll, lag = (p[k] for k in ("funding_interval_hours","roll_hours","fill_lag_hours"))
+    padding = p["lookback_hours"]+interval*p["funding_lag_intervals"]
+    for decision in range(p["start"],min(c.end,p["end"]-lag-roll+1),roll):
+        if decision<first_protected or not any(i==4195 and 1<=r<=p["top_rank"]
+                                               for r,i in C.latest(snaps,decision,p).ranks):
+            continue
+        protected.update(range(max(c.begin,decision-padding),min(c.end,decision+lag+roll+1)))
+        if decision>=first_charge and charge_at is None:
+            charge_at = decision
+    return protected,charge_at
+
+
+def ftt_coverage(tape,snaps,c,p):
+    """Count row presence on the dated clock before scoring any book."""
+    protected,charge_at = ftt_protection(snaps,c,p)
+    # The pinned FTT notices establish launch and closure, with no intervening
+    # exchange-announced pause exemptions in this packet.
+    counts = {k:dict(expected=0,observed=0,protected_expected=0,protected_observed=0,missing_protected_hours=[])
+              for k in ("trade_bars","mark_bars","funding_settlements")}
+    for h in range(c.begin,c.end):
+        seen = [("trade_bars",tape.raw_at(c.key,h,1)),("mark_bars",tape.raw_at(c.key,h,2))]
+        if scheduled_funding("FTTUSDT",h,p):
+            seen.append(("funding_settlements",tape.funding_event(c.key,h)[1]))
+        for kind,observation in seen:
+            row = counts[kind]
+            row["expected"] += 1
+            # A zero-volume trade bar is a received bar, not a missing row.
+            present = observation is not None and math.isfinite(observation)
+            row["observed"] += present
+            if h in protected:
+                row["protected_expected"] += 1
+                row["protected_observed"] += present
+                if not present:
+                    row["missing_protected_hours"].append(h)
+    gap = any(v["missing_protected_hours"] for v in counts.values())
+    return dict(counts=counts,complete=all(v["expected"]==v["observed"] for v in counts.values()),
+                announced_pauses=[],protected_clock_hours=len(protected),
+                branch="judged_one_long_leg_written_to_zero" if gap else "normal",
+                charge_decision_hour=charge_at if gap else None)
+
+
 def load(paths,pins,archive_dir,p,*,evidence_dir,inventory_pin,supplemental_dir=None,check=lambda:None):
     contracts,symbols,notices,snaps,mapped,coverage,manifests,top = inspect_universe(
         paths,pins,p,evidence_dir=evidence_dir,inventory_pin=inventory_pin)
     tape = Tape(archive_dir,manifests,symbols,notices,p,
                 contracts=contracts,supplemental_dir=supplemental_dir,check=check)
+    for c in contracts:
+        if symbols[c.key]=="FTTUSDT":
+            coverage["ftt_coverage"] = ftt_coverage(tape,snaps,c,p)
     coverage["archive_memory_budget_bytes"] = tape.budget_bytes
     coverage["observed_archive_coverage_by_month"] = tape.observed_coverage()
     archive_ids = {c.coin_id for c in contracts if symbols[c.key] in tape.store}

@@ -181,11 +181,12 @@ def score(binding):
                                         inventory_pin=seal["evidence_inventory_sha256"],check=memory_check)
     pool = {}
 
-    def measure(bps=None,roster=None,gross=False):
+    def measure(bps=None,roster=None,gross=False,ftt_charge_decision=None):
         memory_check()
         try:
             return C.run_book(tape,snaps,p["start"],p["end"],bps,roster=roster,p=p,
-                              pools=pool if roster is None else None,gross_reopen=gross),None
+                              pools=pool if roster is None else None,gross_reopen=gross,
+                              ftt_charge_decision=ftt_charge_decision),None
         except C.Incomplete as exc:
             return None,str(exc)
 
@@ -195,10 +196,13 @@ def score(binding):
                                   "cash_slots":result.too_few+result.no_open}) if result else None
         return dict(result=result,refusal=refusal)
 
-    ranks = measure()
+    ftt_charge_at = coverage.get("ftt_coverage",{}).get("charge_decision_hour")
+    ranks = measure(ftt_charge_decision=ftt_charge_at)
+    uncharged = pack(measure()) if ftt_charge_at is not None else None
     draws = C.random_books(tape,snaps,p["start"],p["end"],p=p,pools=pool,check=memory_check)
     costs = (*p["shown_cost_bps"],p["judged_cost_bps"])
     return dict(ledger=153,ledger_shown=154,frozen_commit=seal["commit"],scope=coverage,judged=pack(ranks),
+                shown_uncharged_ftt=uncharged,
                 shown_costs={str(bps):pack(measure(bps)) for bps in p["shown_cost_bps"]},
                 shown_gross_reopen=pack(measure(gross=True)),
                 shown_rosters={v:{str(bps):pack(measure(bps,ids)) for bps in costs}
