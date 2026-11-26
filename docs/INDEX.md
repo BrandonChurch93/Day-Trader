@@ -170,6 +170,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/79_round_13_known_clock_premia.md` | Round 13 known-clock long-only premia for a $500 US account with December and January focus (14 candidates: 2 new queued tests in IWM pre-holiday sessions and late-December tax-loss small-cap rebound, 1 already row 51 blocked on payment-date data, 2 WATCH, 9 DROP) | CURRENT |
 | `docs/research/80_replay_31_bond_fund_month_end.md` | Bond fund month-end replay. Plain basket rose; pooled return after Treasury and stock benchmarks was negative, 2 of 10 marks | CURRENT |
 | `docs/research/81_replay_35_cme_bitcoin_expiry_ibit.md` | IBIT at monthly CME Bitcoin expiry. Full placement, negative net mean and Friday gap; shorter window, friction and spot checks shown | CURRENT |
+| `docs/research/82_measurement_34_tmf_ubt_month_end.md` | Measurement 34 results: leveraged Treasury month-end tracking, spreads, net results and drawdown on the same Replay 25 windows; not a new trial | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
@@ -273,6 +274,7 @@ Working papers.
 | `research_rig/MEASURE_34_tmf_month_end.md` | Frozen Measurement 34, queue 56 and ledger 169: TMF instrument tracking, cost and drawdown on Replay 25's windows, with UBT shown only | CURRENT |
 | `research_rig/measure_34.py`, `research_rig/test_34.py` | Measurement 34: offline no-return input validation, an exclusive one-run lock and synthetic tests. Bar and quote inputs and run results stay off repo | CURRENT |
 | `research_rig/FREEZE.json` | Measurement 34 freeze manifest: pins the approved plan, code, tests and reused Replay 25 calendar and common code. No market inputs | CURRENT |
+| `research_rig/report_34.py` | Formats the pinned saved Measurement 34 aggregate into doc 82 and an optional dashboard card. No scoring or market-data reads | CURRENT |
 | `research_rig/PREREG_35_ibit_cme_expiry.md`, `research_rig/config_35.json`, `research_rig/PINNED_35.json` | Frozen Plan 35 IBIT expiry window, queue 57 and ledger 170. Exact settings and audited byte pins; no market inputs | CURRENT |
 | `research_rig/score_35.py`, `research_rig/test_35.py` | Plan 35 no-return input validator, approved one-shot runner and synthetic-only tests. Private independently staged inputs and results stay off repo | CURRENT |
 | `research_rig/measure_15_summary.json` | Measurement 15 aggregates only (counts, medians, means, 90th percentiles, outlier check). No trade, quote, price, time or symbol; the per-stock-day output stays off repo | CURRENT |
