@@ -38,8 +38,8 @@ PINNED_NAMES = (PLAN_NAME, "score_65.py", "test_65.py", "calendar_65.json", "pow
 CONFIG_PIN = "thresholds.yaml#replay_65_plan"
 APPROVAL = "research_rig/APPROVAL_65.md"
 PINNED = "research_rig/PINNED_65.json"
-APPROVAL_LINE = re.compile(r"(?m)^Approved by the lead: plan 65 ledger 208, one scored run, freeze commit ([0-9a-f]{40}), "
-                           r"inputs SHA-256 ([0-9a-f]{64})\.$")
+APPROVAL_LINE = re.compile(r"Approved by the lead: plan 65 ledger 208, one scored run, freeze commit ([0-9a-f]{40}), "
+                           r"inputs SHA-256 ([0-9a-f]{64})\.\n")    # the whole file, exactly this one line
 LEDGER_ROW = re.compile(rb"(?m)^\| 208 \|[^\n]+PREREG_65_stock_bond_rebalance_spread")
 GIT = shutil.which("git") or "/usr/bin/git"
 INPUT_NAMES = ("SPY_15m.json", "IEF_15m.json", "SPY_1d.json", "IEF_1d.json", "TLT_1d.json", "SH_1d.json", "actions.json")
@@ -82,10 +82,31 @@ def deltas(cfg):
     return np.array([round(cfg["delta_min"] + i * cfg["delta_step"], 10) for i in range(n)])
 
 
+class Sessions(list):
+    """The scored sessions, first_session to last_session. .tail holds the calendar sessions after last_session,
+    used only to place month ends (the sample end is not a month end)."""
+    tail = ()
+
+
 def load_calendar(raw, cfg):
-    s = [x for x in json.loads(raw)["sessions"] if cfg["first_session"] <= x[0] <= cfg["last_session"]]
+    allx = json.loads(raw)["sessions"]
+    prev = ""
+    for x in allx:
+        if not (isinstance(x, list) and len(x) == 3 and all(isinstance(v, str) for v in x)):
+            raise Refused("P65_CALENDAR row")
+        try:
+            d0, o, c = dt.date.fromisoformat(x[0]), utc(x[1]), utc(x[2])
+        except ValueError as e:
+            raise Refused("P65_CALENDAR row") from e
+        if x[0] <= prev or o >= c or d0.weekday() > 4 or o.date() != d0 or o.strftime("%H:%M") not in ("13:30", "14:30"):
+            raise Refused("P65_CALENDAR row " + x[0])
+        prev = x[0]
+    s = Sessions(x for x in allx if cfg["first_session"] <= x[0] <= cfg["last_session"])
     if not s or s[0][0] != cfg["first_session"] or s[-1][0] != cfg["last_session"]:
         raise Refused("P65_CALENDAR span")
+    s.tail = [x for x in allx if x[0] > cfg["last_session"]]
+    if not any(x[0][:7] > cfg["last_session"][:7] for x in s.tail):
+        raise Refused("P65_CALENDAR no session after the last month end")
     return s
 
 
@@ -94,8 +115,11 @@ def utc(s):
 
 
 def session_flags(sessions, cfg):
-    """last-of-month, in-week4 (last k sessions of the month) and first-of-month flags, from the calendar only."""
-    dates = [x[0] for x in sessions]
+    """last-of-month, in-week4 (last k sessions of the month) and first-of-month flags, from the calendar only.
+    Sessions in sessions.tail (after the sample end) are counted so that the sample end is not taken as a month end;
+    the flags returned cover only the scored sessions."""
+    n0 = len(sessions)
+    dates = [x[0] for x in sessions] + [x[0] for x in getattr(sessions, "tail", ())]
     ym = [d[:7] for d in dates]
     n = len(dates)
     last = np.array([i == n - 1 or ym[i + 1] != ym[i] for i in range(n)])
@@ -109,8 +133,7 @@ def session_flags(sessions, cfg):
             j += 1
             left += 1
         week4[i] = left < k            # this session is among the last k of its month
-    # the final calendar month may be incomplete; its flags are only used if a judged session needs them
-    return last, week4, first
+    return last[:n0], week4[:n0], first[:n0]
 
 
 def signal_bar_start(session, cfg):
@@ -122,14 +145,14 @@ def signal_bar_start(session, cfg):
 
 def check_dir(path):
     st = os.lstat(path)
-    if not stat.S_ISDIR(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o700:
+    if not stat.S_ISDIR(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o700 or st.st_uid != os.getuid():
         raise Refused("P65_INPUTS directory mode " + str(path))
     names = sorted(os.listdir(path))
     if names != sorted(INPUT_NAMES):
         raise Refused("P65_INPUTS names")
     for n in names:
         st = os.lstat(path / n)
-        if not stat.S_ISREG(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o600:
+        if not stat.S_ISREG(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o600 or st.st_uid != os.getuid():
             raise Refused("P65_INPUTS file mode " + n)
 
 
@@ -142,52 +165,97 @@ def inputs_digest(blobs):
     return digest(json.dumps({n: digest(blobs[n]) for n in sorted(blobs)}, sort_keys=True).encode())
 
 
-def _bars(raw, name):
+def _no_dupes(pairs):
+    keys = [k for k, _ in pairs]
+    if len(keys) != len(set(keys)):
+        raise Refused("P65_FORMAT duplicate JSON key")
+    return dict(pairs)
+
+
+def jload(raw, name):
     try:
-        rows = json.loads(raw)
+        return json.loads(raw, object_pairs_hook=_no_dupes)
     except ValueError as e:
         raise Refused("P65_FORMAT " + name) from e
+
+
+def _num(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def _bars(raw, name):
+    rows = jload(raw, name)
     if not isinstance(rows, list):
         raise Refused("P65_FORMAT " + name)
     out = {}
     for r in rows:
         if not isinstance(r, dict) or set(r) != {"t", "o", "h", "l", "c", "v"}:
             raise Refused("P65_FORMAT fields " + name)
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00Z", str(r["t"])):
+        if not isinstance(r["t"], str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:(00|15|30|45):00Z", r["t"]):
             raise Refused("P65_FORMAT time " + name)
-        c = r["c"]
-        if not isinstance(c, (int, float)) or not math.isfinite(c) or c <= 0:
-            raise Refused("P65_FORMAT close " + name)
+        try:
+            utc(r["t"])
+        except ValueError as e:
+            raise Refused("P65_FORMAT time " + name) from e
+        if not all(_num(r[k]) and r[k] > 0 for k in "ohlc") or not (_num(r["v"]) and r["v"] >= 0):
+            raise Refused("P65_FORMAT value " + name)
+        if not r["l"] <= min(r["o"], r["c"]) <= max(r["o"], r["c"]) <= r["h"]:
+            raise Refused("P65_FORMAT range " + name)
         if r["t"] in out:
             raise Refused("P65_FORMAT duplicate " + name)
-        out[r["t"]] = float(c)
+        out[r["t"]] = float(r["c"])
     return out
 
 
-def parse_daily(raw, name):
+def parse_daily(raw, name, sessions):
+    """Daily stamp must be midnight New York for a calendar session: 05:00Z when the session opens at 14:30Z
+    (standard time), 04:00Z when it opens at 13:30Z (daylight time). One bar per session; no bar off the calendar."""
+    want = {}
+    for x in list(sessions) + list(getattr(sessions, "tail", ())):
+        want[x[0]] = x[0] + ("T05:00:00Z" if x[1][11:16] == "14:30" else "T04:00:00Z")
     out = {}
     for t, c in _bars(raw, name).items():
-        if t[11:] not in ("04:00:00Z", "05:00:00Z"):
+        d = t[:10]
+        if d not in want:
+            if sessions[0][0] <= d <= sessions[-1][0]:
+                raise Refused("P65_FORMAT daily bar off the calendar " + name)
+            continue
+        if t != want[d]:
             raise Refused("P65_FORMAT daily stamp " + name)
-        out[t[:10]] = c
+        if d in out:
+            raise Refused("P65_FORMAT duplicate " + name)
+        out[d] = c
     return out
 
 
-def parse_actions(raw):
-    try:
-        rows = json.loads(raw)
-    except ValueError as e:
-        raise Refused("P65_FORMAT actions.json") from e
+def parse_actions(raw, sessions):
+    """One row per symbol, type and ex-date (custody merges same-day cash). An ex-date inside the span must be a
+    calendar session."""
+    rows = jload(raw, "actions.json")
+    on_cal = {x[0] for x in sessions}
+    if not isinstance(rows, list):
+        raise Refused("P65_FORMAT actions.json")
     acts = {s: {} for s in DAILY}
+    seen = set()
     for r in rows:
         if not isinstance(r, dict) or r.get("symbol") not in DAILY or r.get("type") not in ("cash", "split"):
             raise Refused("P65_FORMAT actions row")
         key = "amount" if r["type"] == "cash" else "ratio"
         if set(r) != {"symbol", "type", "ex_date", key} or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(r["ex_date"])):
             raise Refused("P65_FORMAT actions row")
+        try:
+            dt.date.fromisoformat(r["ex_date"])
+        except ValueError as e:
+            raise Refused("P65_FORMAT actions date") from e
         x = r[key]
-        if not isinstance(x, (int, float)) or not math.isfinite(x) or x <= 0:
+        if not _num(x) or x <= 0 or (r["type"] == "split" and x == 1):
             raise Refused("P65_FORMAT actions value")
+        if sessions[0][0] <= r["ex_date"] <= sessions[-1][0] and r["ex_date"] not in on_cal:
+            raise Refused("P65_FORMAT action date off the calendar")
+        k3 = (r["symbol"], r["type"], r["ex_date"])
+        if k3 in seen:
+            raise Refused("P65_FORMAT duplicate action")
+        seen.add(k3)
         cash, ratio = acts[r["symbol"]].get(r["ex_date"], (0.0, 1.0))
         if r["type"] == "cash":
             cash += float(x)
@@ -200,9 +268,9 @@ def parse_actions(raw):
 
 
 def parse(blobs, sessions, cfg):
-    daily = {s: parse_daily(blobs[s + "_1d.json"], s + "_1d.json") for s in DAILY}
+    daily = {s: parse_daily(blobs[s + "_1d.json"], s + "_1d.json", sessions) for s in DAILY}
     intra = {s: _bars(blobs[s + "_15m.json"], s + "_15m.json") for s in INTRA}
-    acts = parse_actions(blobs["actions.json"])
+    acts = parse_actions(blobs["actions.json"], sessions)
     return daily, intra, acts
 
 
@@ -249,7 +317,7 @@ def drift(w, rs, rb):
     return a / (a + (1 - w) * (1 + rb))
 
 
-def signals(rs, rb, ps, pb, last, week4, first, cfg):
+def signals(rs, rb, ps, pb, last, week4, first, cfg, alt_reversal=False):
     """Paper section 4 weight. History uses full closes; the day-i signal uses close i-1 state plus the
     signal-bar return on day i. Returns w (judged clock), wlag (shown, signal through close i-1 held
     from close i), thr_half and cal_half (the two halves of w), all indexed by session of the close
@@ -280,6 +348,11 @@ def signals(rs, rb, ps, pb, last, week4, first, cfg):
     def mod_cal(i, cal_now):
         if week4[i]:
             return float(np.sign(-cal_now))
+        if first[i] and alt_reversal:
+            j = i - 1
+            while j - 1 >= 1 and week4[j - 1] and not last[j - 1]:
+                j -= 1
+            return float(np.sign(cal_full[j])) if j >= 1 and week4[j] else 0.0
         if first[i] and i - lag >= 1:
             return float(np.sign(cal_full[i - lag]))
         return 0.0
@@ -349,7 +422,9 @@ def cluster_t(x, groups):
         return float("nan")
     g = np.bincount(inv, weights=x - m)
     se = math.sqrt(G / (G - 1) * float(np.sum(g ** 2))) / n
-    return float(m / se) if se > 0 else float("nan")
+    if not math.isfinite(se) or se <= 1e-15 * max(1.0, abs(m)) or np.ptp(x) == 0:
+        return float("nan")                    # constant or zero-variance series: t is undefined
+    return float(m / se)
 
 
 def week_key(d):
@@ -361,7 +436,9 @@ def marks(x, exit_dates, cfg):
     M = cfg["marks"]
     n = len(x)
     if n == 0:
-        return {"n": 0, "pass": False}
+        ok = dict.fromkeys(("sessions", "money", "evidence", "trim", "years"), False)
+        return {"n": 0, "mean": None, "t_week": None, "trim_mean": None, "trim_dropped": 0, "years_positive": 0,
+                "by_year": {str(y): None for y in M["years"]}, "marks": ok, "marks_met": 0, "pass": False}
     m = float(x.mean())
     t = cluster_t(x, np.array([week_key(d) for d in exit_dates]))
     k = int(math.ceil(M["trim_share"] * n))
@@ -406,16 +483,27 @@ def sh_version(w, daily, acts, dates, idx, cfg):
             pnl += n * (c1 + acts[s].get(dates[i + 1], (0.0, 1.0))[0] - c0)
             prev[s] = n
             any_held |= n > 0
+        if i == idx[-1] and ok:                 # liquidate whatever is held at the last close
+            for s in ("IEF", "SH"):
+                if prev[s]:
+                    c1 = daily[s][dates[i + 1]]
+                    pnl -= max(cfg["cost_bps"] * 1e-4 * prev[s] * c1, cfg["cost_cent"] * prev[s])
         held += any_held
         out.append(pnl / (2 * cfg["sh_leg_usd"]))
     return plain_stats(np.array(out)) | {"sessions_held": int(held)}
 
 
-def score(daily, intra, acts, sessions, cfg):
+def preflight(daily, sessions):
+    """Every refusal the score can raise on the data, run before the one-shot lock."""
     dates = [x[0] for x in sessions]
     for s in ("SPY", "IEF"):
         if any(d not in daily[s] for d in dates):
             raise Refused("P65_MISSING_DAILY " + s)
+
+
+def score(daily, intra, acts, sessions, cfg):
+    dates = [x[0] for x in sessions]
+    preflight(daily, sessions)
     last, week4, first = session_flags(sessions, cfg)
     cs, rs = total_returns(daily["SPY"], acts["SPY"], dates)
     cb, rb = total_returns(daily["IEF"], acts["IEF"], dates)
@@ -438,6 +526,10 @@ def score(daily, intra, acts, sessions, cfg):
     for name, ww in (("threshold_half", th), ("calendar_half", ch)):
         n2, _, k2 = economics(ww, rs, rb, cs, cb, dates, B["SPY"], B["IEF"], cfg, idx)
         sh[name] = plain_stats(n2) | {"t_week": cluster_t(n2, np.array([week_key(dates[i + 1]) for i in k2]))}
+    w_alt = signals(rs, rb, ps, pb, last, week4, first, cfg, alt_reversal=True)[0]
+    n6, _, k6 = economics(w_alt, rs, rb, cs, cb, dates, B["SPY"], B["IEF"], cfg, idx)
+    sh["calendar_reversal_window_start"] = plain_stats(n6) | {
+        "t_week": cluster_t(n6, np.array([week_key(dates[i + 1]) for i in k6]))}
     n3, _, k3 = economics(wlag, rs, rb, cs, cb, dates, B["SPY"], B["IEF"], cfg, idx)
     sh["lag_one_clock"] = plain_stats(n3) | {"t_week": cluster_t(n3, np.array([week_key(dates[i + 1]) for i in k3]))}
     n4, _, k4 = economics(w, rs, rb, cs, cb, dates, B["SPY"], B["IEF"], cfg, idx, round_trip=True)
@@ -478,7 +570,7 @@ def authorize(commit, repo=REPO, config=CONFIG):
     if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
         raise Refused("P65_NOT_APPROVED tracked files changed")
     r = git("show", f"{commit}:{APPROVAL}", ok=True)
-    m = APPROVAL_LINE.search(r.stdout.decode("utf-8", "replace")) if not r.returncode else None
+    m = APPROVAL_LINE.fullmatch(r.stdout.decode("utf-8", "replace")) if not r.returncode else None
     if not m:
         raise Refused("P65_NOT_APPROVED " + APPROVAL)
     frozen, in_digest = m.group(1), m.group(2)
@@ -489,11 +581,14 @@ def authorize(commit, repo=REPO, config=CONFIG):
     pins = json.loads(show(commit, PINNED))
     if set(pins) != {*PINNED_NAMES, CONFIG_PIN}:
         raise Refused("P65_NOT_APPROVED pin names")
+    checked = {}
     for name in PINNED_NAMES:
         path = "research_rig/" + name
+        disk = (rig / name).read_bytes()             # read once; the calendar bytes checked here are the ones scored
         h = digest(show(commit, path))
-        if h != pins[name] or h != digest((rig / name).read_bytes()):
+        if h != pins[name] or h != digest(disk):
             raise Refused("P65_NOT_APPROVED pin " + name)
+        checked[name] = disk
     disk_cfg = Path(config).read_bytes()
     h = config_block_sha256(show(commit, "config/thresholds.yaml"))
     if h != pins[CONFIG_PIN] or h != config_block_sha256(disk_cfg):
@@ -504,7 +599,7 @@ def authorize(commit, repo=REPO, config=CONFIG):
         raise Refused("P65_NOT_APPROVED plan not frozen")
     if not LEDGER_ROW.search(show(commit, "research_rig/TRIAL_LEDGER.md")):
         raise Refused("P65_NOT_APPROVED ledger row 208")
-    return in_digest, disk_cfg, (rig / "calendar_65.json").read_bytes()
+    return in_digest, disk_cfg, checked["calendar_65.json"]
 
 
 def lock_file(path, job):
@@ -559,10 +654,15 @@ def go(commit, inputs=INPUTS, run=RUN, repo=REPO, config=CONFIG):
     if inputs_digest(blobs) != in_digest:
         raise Refused("P65_INPUTS digest differs from the approval line")
     run = Path(run)
-    st = os.lstat(run)
-    if not stat.S_ISDIR(st.st_mode) or os.listdir(run):
-        raise Refused("P65_RUN directory must exist and be empty")
+    try:
+        st = os.lstat(run)
+    except FileNotFoundError as e:
+        raise Refused("P65_RUN directory must exist and be empty") from e
+    if (not stat.S_ISDIR(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o700 or st.st_uid != os.getuid()
+            or os.listdir(run)):
+        raise Refused("P65_RUN directory must exist, be empty, mode 0700 and owned by this user")
     daily, intra, acts = parse(blobs, sessions, cfg)
+    preflight(daily, sessions)
     lock_file(run / LOCK, {"approval_commit": commit, "inputs_sha256": in_digest,
                            "taken_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")})
     res = score(daily, intra, acts, sessions, cfg)
@@ -638,8 +738,8 @@ def main():
             print(json.dumps(validate(), sort_keys=True, indent=1))
         else:
             res = go(a.approval_commit)
-            print(json.dumps({"pass": res["judged"]["pass"], "marks_met": res["judged"]["marks_met"],
-                              "n": res["judged"]["n"]}))
+            j = res["judged"]
+            print(json.dumps({"pass": j.get("pass"), "marks_met": j.get("marks_met"), "n": j.get("n")}))
     except Refused as e:
         print("REFUSED", e)
         sys.exit(2)

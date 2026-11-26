@@ -28,6 +28,14 @@ def block(j):
           + ", ".join(f"{m[str(s)]['skew_iid_jump_share_of_mean']:.0%} at Sharpe {s}" for s in sh)
           + ". Above 100% means the other days lose on average. The soft mix has skew "
           + ", ".join(f"{m[str(s)]['skew_half_skew']:.2f}" for s in sh) + " at the same four Sharpe levels."]
+    def at(kind, sharpe):
+        return next(r for r in j["table"] if r["kind"] == kind and r["sharpe"] == sharpe)["pass_all"]
+
+    def span(sharpe):
+        lo, hi = sorted(round(100 * at(k, sharpe)) for k in ("skew_iid", "skew_burst"))
+        return f"about {lo}%" if lo == hi else f"about {lo}% to {hi}%"
+    t += ["", "In plain words: under the paper's own skew the chance to pass all five marks is "
+          + span(0.9) + " at a true net Sharpe of 0.9 and " + span(0.6) + " at 0.6."]
     worst = max(v for v in j["even_chance_sharpe"].values() if v is not None) if all(
         v is not None for v in j["even_chance_sharpe"].values()) else None
     t += ["", "Close rule, fixed before bars: if an even chance needs a net Sharpe above 0.9, the row closes. "

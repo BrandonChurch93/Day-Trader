@@ -54,6 +54,7 @@ def edit_bars(blobs, name, pred, f):
     for r in rows:
         if pred(r["t"]):
             r["c"] = f(r["c"])
+            r["o"] = r["h"] = r["l"] = r["c"]
     out = dict(blobs)
     out[name] = json.dumps(rows).encode()
     return out
@@ -70,7 +71,7 @@ def test_formulas():
 def test_flags_and_clock():
     last, week4, first = S.session_flags(SESS, CFG)
     jan = [i for i, d in enumerate(DATES) if d.startswith("2016-01")]
-    check("jan 2016 last", DATES[jan[-1]] == "2016-01-29" and last[jan[-1]] and last.sum() == len({d[:7] for d in DATES}))
+    check("jan 2016 last", DATES[jan[-1]] == "2016-01-29" and last[jan[-1]] and last.sum() == len({d[:7] for d in DATES}) - 1)
     check("jan 2016 week4", [DATES[i] for i in jan if week4[i]] == ["2016-01-25", "2016-01-26", "2016-01-27",
                                                                        "2016-01-28", "2016-01-29"])
     check("first", first[0] and DATES[[i for i in range(len(DATES)) if first[i]][1]] == "2016-02-01")
@@ -143,6 +144,20 @@ def test_no_lookahead():
     b4["SPY_15m.json"] = json.dumps(rows).encode()
     (w4, _, _, _), _ = run_rule(b4)
     check("missing signal bar gives nan for that day only", np.isnan(w4[k]) and np.allclose(w4[k + 1:], w[k + 1:]))
+
+
+def test_alt_reversal():
+    blobs = S.synthetic_inputs(SESS, CFG)
+    (w, _, _, ch), z = run_rule(blobs)
+    rs, rb, ps, pb, last, week4, first = z[:7]
+    _, _, _, cha = S.signals(rs, rb, ps, pb, last, week4, first, CFG, alt_reversal=True)
+    cfg5 = dict(CFG, reversal_lag=5)
+    _, _, _, ch5 = S.signals(rs, rb, ps, pb, last, week4, first, cfg5)
+    fi = [i for i in range(10, len(DATES)) if first[i]]
+    check("alt reversal is the window start, five sessions back", np.allclose(cha[fi], ch5[fi]))
+    check("alt reversal differs somewhere", not np.allclose(cha[fi], ch[fi]))
+    nf = [i for i in range(1, len(DATES)) if not first[i]]
+    check("alt reversal same off first days", np.allclose(cha[nf], ch[nf], equal_nan=True))
 
 
 def test_economics():
@@ -223,6 +238,66 @@ def test_parse_refusals():
     check("coverage counts a missing daily bar", cov["missing_daily"]["SPY"] == 1)
 
 
+def test_audit_fixes():
+    last, week4, first = S.session_flags(SESS, CFG)
+    nov = {d: (bool(week4[i]), bool(last[i])) for i, d in enumerate(DATES) if d.startswith("2026-11")}
+    check("november 2026 week4", [d for d, v in nov.items() if v[0]] == ["2026-11-23", "2026-11-24", "2026-11-25"])
+    check("sample end is not a month end", not nov["2026-11-25"][1])
+    blobs = S.synthetic_inputs(SESS, CFG)
+
+    def mutate(name, f):
+        b = dict(blobs)
+        rows = json.loads(b[name])
+        f(rows)
+        b[name] = json.dumps(rows).encode()
+        return b
+    k = DATES.index("2016-01-05")
+    refuses("daily 04 and 05 same day", lambda: S.parse(mutate("SPY_1d.json", lambda r: r.append(
+        dict(r[k], t=r[k]["t"][:11] + "04:00:00Z"))), SESS, CFG), "P65_FORMAT")
+    refuses("wrong DST stamp", lambda: S.parse(mutate("SPY_1d.json", lambda r: r[k].update(
+        t=r[k]["t"][:11] + "04:00:00Z")), SESS, CFG), "P65_FORMAT daily stamp")
+    refuses("bool close", lambda: S.parse(mutate("IEF_1d.json", lambda r: r[3].update(c=True)), SESS, CFG), "P65_FORMAT")
+    refuses("high below close", lambda: S.parse(mutate("IEF_1d.json", lambda r: r[3].update(h=r[3]["c"] / 2)), SESS, CFG),
+            "P65_FORMAT")
+    refuses("negative volume", lambda: S.parse(mutate("IEF_15m.json", lambda r: r[3].update(v=-1)), SESS, CFG), "P65_FORMAT")
+    refuses("off-grid bar", lambda: S.parse(mutate("IEF_15m.json", lambda r: r[3].update(t=r[3]["t"][:14] + "07:00Z")),
+                                            SESS, CFG), "P65_FORMAT time")
+    refuses("not a real date", lambda: S.parse(mutate("IEF_15m.json", lambda r: r[3].update(t="2019-02-30T20:30:00Z")),
+                                               SESS, CFG), "P65_FORMAT time")
+    b = dict(blobs)
+    b["SPY_1d.json"] = blobs["SPY_1d.json"].replace(b'"v": 1000}', b'"v": 1000, "v": 1}', 1)
+    refuses("duplicate JSON key", lambda: S.parse(b, SESS, CFG), "P65_FORMAT")
+
+    def acts(rows):
+        b2 = dict(blobs)
+        b2["actions.json"] = json.dumps(rows).encode()
+        return b2
+    refuses("split ratio 1", lambda: S.parse(acts([{"symbol": "SH", "type": "split", "ex_date": "2020-01-02", "ratio": 1}]),
+                                             SESS, CFG), "P65_FORMAT actions value")
+    two = [{"symbol": "SPY", "type": "cash", "ex_date": "2020-01-02", "amount": 1.0}] * 2
+    refuses("duplicate action", lambda: S.parse(acts(two), SESS, CFG), "P65_FORMAT duplicate action")
+    refuses("action bad date", lambda: S.parse(acts([{"symbol": "SPY", "type": "cash", "ex_date": "2020-02-30",
+                                                      "amount": 1.0}]), SESS, CFG), "P65_FORMAT actions date")
+    refuses("action off calendar", lambda: S.parse(acts([{"symbol": "SPY", "type": "cash", "ex_date": "2020-01-04",
+                                                          "amount": 1.0}]), SESS, CFG), "P65_FORMAT action date")
+    check("constant series t undefined", math.isnan(S.cluster_t(np.full(2400, 0.001), np.arange(2400) // 4)))
+    z = S.marks(np.array([]), [], CFG)
+    check("empty marks complete", z["marks_met"] == 0 and z["pass"] is False and set(z["marks"]) == {
+        "sessions", "money", "evidence", "trim", "years"})
+    cal = json.loads((HERE / "calendar_65.json").read_text())
+    bad = dict(cal, sessions=cal["sessions"][:5] + [cal["sessions"][3]] + cal["sessions"][5:])
+    refuses("calendar order", lambda: S.load_calendar(json.dumps(bad).encode(), CFG), "P65_CALENDAR")
+    short = dict(cal, sessions=[x for x in cal["sessions"] if x[0] <= "2026-11-30"])
+    refuses("calendar needs next month", lambda: S.load_calendar(json.dumps(short).encode(), CFG), "P65_CALENDAR")
+    # SH line pays the exit at the last close
+    dates = ["2020-01-02", "2020-01-03", "2020-01-06"]
+    daily = {"IEF": {d: 100.0 for d in dates}, "SH": {d: 20.0 for d in dates}}
+    a0 = {"IEF": {}, "SH": {}}
+    r = S.sh_version(np.array([np.nan, -1.0, -1.0]), daily, a0, dates, [0, 1], CFG)
+    entry = max(2e-4 * 5 * 100, 0.01 * 5) + max(2e-4 * 25 * 20, 0.01 * 25)
+    check("sh entry and exit", abs(r["mean"] - (-(entry + entry) / 1000) / 2) < 1e-12 and r["sessions_held"] == 1)
+
+
 def write_inputs(path, blobs):
     path.mkdir(mode=0o700)
     os.chmod(path, 0o700)
@@ -257,7 +332,8 @@ def test_validate_and_modes(tmp):
     check("synthetic deterministic", json.dumps(res, sort_keys=True, default=float) == json.dumps(res2, sort_keys=True, default=float))
     check("synthetic shown lines", set(res["shown_only"]) == {"post_paper", "without_stress_months", "threshold_half",
                                                               "calendar_half", "lag_one_clock", "full_daily_round_trip",
-                                                              "tlt_for_ief", "sh_cash_account"})
+                                                              "tlt_for_ief", "sh_cash_account",
+                                                              "calendar_reversal_window_start"})
     check("post paper subset", res["shown_only"]["post_paper"]["n"] == sum(x >= "2023-04-01" for x in DATES[127:]))
     check("stress subset", res["shown_only"]["without_stress_months"]["n"] == sum(x[:7] != "2020-03" for x in DATES[127:]))
 
@@ -316,7 +392,10 @@ def test_gate(tmp):
     refuses("gate bad hash", lambda: S.authorize("0" * 40, root, cfgp), "P65_NOT_APPROVED")
     # go: run dir must exist and be empty
     run = tmp / "run"
-    run.mkdir()
+    run.mkdir(mode=0o700)
+    os.chmod(run, 0o755)
+    refuses("run dir mode", lambda: S.go(good, inp, run, root, cfgp), "P65_RUN")
+    os.chmod(run, 0o700)
     res = S.go(good, inp, run, root, cfgp)
     check("go writes result", (run / S.RESULT).exists() and (run / S.LOCK).exists() and res["judged"]["n"] == 2614)
     refuses("go twice", lambda: S.go(good, inp, run, root, cfgp), "P65_RUN")
@@ -326,9 +405,43 @@ def test_gate(tmp):
     refuses("lock exists", lambda: S.lock_file(run2 / S.LOCK, {}), "P65_ALREADY_USED")
     run3 = tmp / "run3"
     run3.mkdir()
+    os.chmod(run3, 0o700)
     bad = approve_wrong_digest(tmp, blobs)
     refuses("go digest", lambda: S.go(bad[1], inp, run3, bad[0], bad[0] / "config/thresholds.yaml"), "P65_INPUTS digest")
     check("digest refusal leaves no lock", not os.listdir(run3))
+    # missing SPY daily refuses before the lock
+    b5 = dict(blobs)
+    b5["SPY_1d.json"] = json.dumps([r for r in json.loads(b5["SPY_1d.json"]) if r["t"][:10] != "2019-05-01"]).encode()
+    inp5 = tmp / "gin5"
+    write_inputs(inp5, b5)
+    root6, frozen6 = make_repo(tmp / "f")
+    c6 = approve(root6, frozen6, S.inputs_digest(b5))
+    run6 = tmp / "run6"
+    run6.mkdir()
+    os.chmod(run6, 0o700)
+    refuses("missing daily before lock", lambda: S.go(c6, inp5, run6, root6, root6 / "config/thresholds.yaml"),
+            "P65_MISSING_DAILY")
+    check("missing daily leaves no lock", not os.listdir(run6))
+    # approval file with an extra line
+    root7, frozen7 = make_repo(tmp / "g")
+    (root7 / S.APPROVAL).write_text(f"Approved by the lead: plan 65 ledger 208, one scored run, freeze commit {frozen7}, "
+                                    f"inputs SHA-256 {dg}.\nextra\n")
+    git(root7, "add", S.APPROVAL)
+    git(root7, "commit", "-q", "-m", "approve")
+    c7 = git(root7, "rev-parse", "HEAD")
+    refuses("approval extra line", lambda: S.authorize(c7, root7, root7 / "config/thresholds.yaml"), "P65_NOT_APPROVED")
+    # the same gate through the command line, in the temp repo (cases that refuse before any input is read)
+    for name, rt, c in (("cli extra line", root7, c7), ("cli wrong commit", root7, "0" * 40), ("cli other file", None, None)):
+        if rt is None:
+            rt, fz = make_repo(tmp / "h")
+            c = approve(rt, fz, dg, extra="research_rig/other.md")
+        r = subprocess.run([sys.executable, str(rt / "research_rig/score_65.py"), "--go", "--approval-commit", c],
+                           capture_output=True, text=True, env={k: v for k, v in os.environ.items()
+                                                                 if k != "PYTHONDONTWRITEBYTECODE"} | {"PYTHONDONTWRITEBYTECODE": "1"})
+        check(name, r.returncode == 2 and r.stdout.startswith("REFUSED P65_NOT_APPROVED"))
+    r = subprocess.run([sys.executable, str(root7 / "research_rig/score_65.py"), "--synthetic"], capture_output=True, text=True,
+                       env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
+    check("cli synthetic", r.returncode == 0 and r.stdout.startswith("SYNTHETIC ONLY"))
     # approval adding another file
     root2, frozen2 = make_repo(tmp / "b")
     c2 = approve(root2, frozen2, dg, extra="research_rig/other.md")
@@ -361,9 +474,11 @@ def main():
     test_flags_and_clock()
     test_signal_state()
     test_no_lookahead()
+    test_alt_reversal()
     test_economics()
     test_marks()
     test_parse_refusals()
+    test_audit_fixes()
     with tempfile.TemporaryDirectory() as t:
         test_validate_and_modes(Path(t))
     with tempfile.TemporaryDirectory() as t:

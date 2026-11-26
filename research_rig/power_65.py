@@ -26,7 +26,7 @@ P_JUMP = 0.01
 SKEW = 5.23
 BURN = 126
 
-sess = [x[0] for x in json.load(open(CAL))['sessions']]
+sess = [x[0] for x in json.load(open(CAL))['sessions'] if x[0] <= '2026-11-25']   # scored span only (last_session)
 # position set at close of session index i (i >= BURN), return to close i+1
 exit_dates = sess[BURN + 1:]
 N = len(exit_dates)
