@@ -14,7 +14,7 @@ import argparse, hashlib, json, sqlite3, subprocess, sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-ENGINE = "4408b7c59fb882228fd8d8f3cb470d536fe57891"
+ENGINE = "058a54320c2bc13043761633d828c1b2a78fbb82"
 SNAPSHOT = Path("/home/user/workspace/rig/tm07_custody/tm07_coinbase_all21_20261126.sqlite")
 SNAPSHOT_SHA256 = "6346be0d4a10976a3531f2f2c70dd99132bfad331c47564366e0e6f4c2e486eb"
 UTC = timezone.utc
