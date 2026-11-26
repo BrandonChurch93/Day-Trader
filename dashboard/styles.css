@@ -110,8 +110,11 @@ p, li, dd { text-wrap: pretty; }
 
 .sectionnav {
   max-width: 1200px; margin: 0 auto;
-  padding: 0 12px;
+  padding: 0 44px 0 12px;
   display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
+  /* fade at the right edge shows the row scrolls; the padding lets the last link clear the fade */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
 }
 .sectionnav::-webkit-scrollbar { display: none; }
 .sectionnav a {
