@@ -1,6 +1,6 @@
 # Plan 52. Corporate bond ETFs after quarter-end
 
-Status DRAFT. No market acquisition, validation, or score authorized.
+Status FROZEN.
 
 Ledger 186, queue 94. Read the disclosure first.
 
