@@ -8,12 +8,12 @@
  },
  "alarms": [],
  "done": {
-  "P1-BTC": "20261124T0000",
+  "P1-BTC": "20261125T0000",
   "T1-VTI": "2026-10"
  },
  "key_refused": false,
  "last_px": {
-  "BTC/USD": 60394.515,
+  "BTC/USD": 60435.56,
   "VTI": 353.19
  },
  "rules": {
