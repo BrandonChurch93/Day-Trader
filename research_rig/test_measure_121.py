@@ -2,13 +2,16 @@
 
 from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import replace
+from datetime import datetime, timezone
 from decimal import Decimal as D
 import gzip
 import io
 import json
 import os
 from pathlib import Path
+import resource
 from tempfile import TemporaryDirectory
+import time
 import unittest
 from unittest.mock import patch
 
@@ -23,7 +26,7 @@ def fake_settings():
     c = m.settings()
     return replace(c, sample=dict(c.sample, selected_in_hash_order={'equity': ['GDO']}, walk_type_order=['equity'], sessions=[DAY]),
                    order=dict(c.order, placement_times=['10:00:00']),
-                   limits=dict(c.limits, planned_fund_days=1, planned_order_slots=1),
+                   limits=dict(c.limits, planned_fund_days=1, planned_order_slots=1), excluded_tickers=frozenset(),
                    report=dict(c.report, bootstrap_draws=100, min_primary_marked_fund_days_per_type=1,
                                min_primary_marked_funds_per_type=1, min_primary_marked_dates=1))
 
@@ -263,36 +266,73 @@ class InterlockTest(unittest.TestCase):
         r = m.json_bytes([dict(ticker='GDO', group='equity', cik=1, security_class='Common stock', rules='')])
         self.c = replace(self.c, sample=dict(self.c.sample, roster_before_draw_sha256=m.digest(r)))
         m.private_write(self.store / 'roster_before_draw.json', r)
-        contents = b'INVENTED dated listing proof only\n'
         (self.store / 'evidence').mkdir(mode=0o700)
-        m.private_write(self.store / 'evidence' / m.digest(contents), contents)
-        self.i = dict(config_sha256=self.c.sha, identities=[dict(ticker='GDO', session=DAY, state='verified', proof={
-            'cik': 1, 'ticker': 'GDO', 'common_class': 'Common stock', 'exchange': 'XNYS', 'from': DAY, 'through': DAY,
-            'ncen_security_class_title': 'Common stock', 'security_type': 'Common stock',
-            'url': 'https://www.sec.gov/Archives/edgar/data/1/invented', 'sha256': m.digest(contents)})],
+        check = m.digest(b'invented filing-list response')
+        walk = self.keep(dict(completed=True, selected={'equity': ['GDO']}, visited=[
+            dict(ticker='GDO', group='equity', cik=1, outcome='pass', forms=[], body_sha256=check)]))
+        self.c = replace(self.c, sample=dict(self.c.sample, delisting_walk_sha256=walk))
+        self.before = self.filing('0000000001-25-000001', '2025-09-07')
+        self.after = self.filing('0000000001-25-000002', '2025-09-09')
+        latest = self.keep(dict(cik='1', filings=dict(recent=dict(form=['N-CEN', 'N-CEN', '25'],
+                      filingDate=['2025-09-07', '2025-09-09', '2025-09-10']))))
+        self.i = dict(config_sha256=self.c.sha, fund_brackets=[dict(ticker='GDO', before=self.ref(self.before),
+                      after=self.ref(self.after), filing_list=dict(sha256=walk, response_sha256=check, current_sha256=latest))],
             halt_days=[dict(session=DAY, coverage='unavailable', intervals=[])])
         self.replace_inputs()
+
+    def keep(self, obj):
+        raw = m.json_bytes(obj)
+        tag = m.digest(raw)
+        m.private_write(self.store / 'evidence' / tag, raw)
+        return tag
+
+    def ref(self, record):
+        return dict(accession=record['accession'], sha256=self.keep(record))
+
+    def filing(self, accession, filed):
+        return dict(accession=accession, filed=filed, form='N-CEN', cik=1,
+                    source_url='https://www.sec.gov/Archives/edgar/data/1/invented', source_sha256=m.digest(b'invented raw filing'),
+                    listings=[dict(TICKER_SYMBOL='GDO', EXCHANGE='XNYS', DESCRIPTION='Common stock', SECURITY_CLASS_TITLE='Common stock')])
 
     def replace_inputs(self):
         path = self.store / 'inputs.json'
         path.unlink(missing_ok=True)
         m.private_write(path, m.json_bytes(self.i))
 
-    def test_proof_required_and_unknown_never_verified(self):
+    def test_proof_requires_both_filings_and_the_frozen_walk(self):
         info, identities, _, _, _ = m.inputs(self.c, self.store)
-        self.assertEqual(info['identity_verified'], 1)
+        self.assertEqual(info['bracket_proved_fund_days'], 1)
         self.assertTrue(identities['GDO', DAY])
-        self.i['identities'][0]['proof']['url'] = 'https://www.sec.gov/files/company_tickers_exchange.json'
+        entry = self.i['fund_brackets'][0]
+        original = dict(entry)
+        entry['before'] = self.ref(dict(self.before, source_url='https://www.sec.gov/files/company_tickers_exchange.json'))
         self.replace_inputs()
-        with self.assertRaisesRegex(m.Stop, 'identity_proof'):
+        with self.assertRaisesRegex(m.Stop, 'identity_filing_record'):
             m.inputs(self.c, self.store)
-        self.i['identities'][0].update(state='unknown', proof=None, reason='unproved')
+        entry.update(original)
+        entry['filing_list'] = dict(original['filing_list'], response_sha256=m.digest(b'wrong submission receipt'))
         self.replace_inputs()
-        self.assertFalse(m.inputs(self.c, self.store)[1]['GDO', DAY])
-        self.i['identities'].clear()
-        self.replace_inputs()
-        with self.assertRaisesRegex(m.Stop, 'identity_missing_session'):
+        with self.assertRaisesRegex(m.Stop, 'identity_filing_list'):
             m.inputs(self.c, self.store)
+        badlist = self.keep(dict(cik='1', filings=dict(recent=dict(form=['N-CEN', '25-NSE', 'N-CEN'],
+                      filingDate=['2025-09-07', DAY, '2025-09-09']))))
+        entry['filing_list'] = dict(original['filing_list'], current_sha256=badlist)
+        self.replace_inputs()
+        with self.assertRaisesRegex(m.Stop, 'filing_list_delisting_form'):
+            m.inputs(self.c, self.store)
+        entry.update(original)
+        entry['after'] = self.ref(dict(self.after, listings=[dict(self.after['listings'][0], DESCRIPTION='Preferred stock')]))
+        self.replace_inputs()
+        with self.assertRaisesRegex(m.Stop, 'identity_amendment_exclusions'):
+            m.inputs(self.c, self.store)
+        excluded = replace(self.c, excluded_tickers=frozenset({'GDO'}))
+        entry['filing_list'] = {k: v for k, v in original['filing_list'].items() if k != 'current_sha256'}
+        self.replace_inputs()
+        self.assertFalse(m.inputs(excluded, self.store)[1]['GDO', DAY])
+        self.i['fund_brackets'].clear()
+        self.replace_inputs()
+        with self.assertRaisesRegex(m.Stop, 'identity_missing_fund'):
+            m.inputs(excluded, self.store)
 
     def test_guard_requires_exact_ledger_go_and_hashes(self):
         with self.assertRaises(FileNotFoundError):
@@ -304,7 +344,7 @@ class InterlockTest(unittest.TestCase):
         m.private_write(self.store / 'GO.json', m.json_bytes(go))
         with patch.object(m, 'LEDGER', ledger):
             self.assertEqual(m.go_context(self.c, self.store)[0], 'test_approval')
-            self.i['identities'][0].update(state='unknown', proof=None, reason='unproved')
+            self.i['fund_brackets'][0]['after'] = self.ref(dict(self.after, filed='2025-09-10'))
             self.replace_inputs()
             with self.assertRaisesRegex(m.Stop, 'go_hash_mismatch'):
                 m.go_context(self.c, self.store)
@@ -322,7 +362,7 @@ class InterlockTest(unittest.TestCase):
               redirect_stdout(out), redirect_stderr(err)):
             self.assertEqual(m.main(['--validate-inputs']), 0)
             receipt = json.loads(out.getvalue())
-            self.assertEqual((receipt['identity_verified'], receipt['price_requests']), (1, 0))
+            self.assertEqual((receipt['bracket_proved_fund_days'], receipt['price_requests']), (1, 0))
             # Exercise the go guard directly rather than invoke historical mode.
             with self.assertRaises(FileNotFoundError):
                 m.go_context(self.c, self.store)
@@ -343,16 +383,11 @@ class InterlockTest(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             m.execution(self.c, self.store, ctx, self.fail)
 
-    def test_unverified_execution_produces_only_reduced_unknown_and_receipt(self):
-        info, _, coverage, halts, _ = m.inputs(self.c, self.store)
-        m.execution(self.c, self.store, ('invented', info, {('GDO', DAY): False}, coverage, halts), self.fail)
-        done = self.store / 'completed'
-        self.assertEqual(set(p.name for p in done.iterdir()), {'orders.jsonl', 'summary.json', 'receipt.json'})
-        self.assertEqual(json.loads((done / 'orders.jsonl').read_bytes())['reason'], 'unresolved_identity')
-        self.assertEqual(json.loads((done / 'receipt.json').read_bytes())['attempted_requests'], 0)
-
     def test_invented_paged_success_writes_only_reduced_outputs(self):
         info, verified, coverage, halts, _ = m.inputs(self.c, self.store)
+        c = replace(self.c, sample=dict(self.c.sample, selected_in_hash_order={'equity': ['GDO', 'FICT']}),
+                    limits=dict(self.c.limits, planned_fund_days=2, planned_order_slots=2), excluded_tickers=frozenset({'FICT'}))
+        verified['FICT', DAY] = False
         quote_fields = dict(bp=10, ap=10.08, bs=1, bx='N', ax='N', z='A', c=['R'])
         quote_fields['as'] = 1
         def q(clock):
@@ -370,7 +405,7 @@ class InterlockTest(unittest.TestCase):
             raw = m.json_bytes({endpoint: records, 'symbol': 'GDO', 'next_page_token': nex})
             self.assertLessEqual(len(raw), min(decoded, wire))
             return raw, len(raw)
-        m.execution(self.c, self.store, ('invented', info, verified, coverage, halts), fabricated_get)
+        m.execution(c, self.store, ('invented', info, verified, coverage, halts), fabricated_get)
         self.assertEqual(list(responses), [])
         done = self.store / 'completed'
         self.assertEqual(set(p.name for p in done.iterdir()), {'orders.jsonl', 'summary.json', 'receipt.json'})
@@ -380,10 +415,74 @@ class InterlockTest(unittest.TestCase):
         receipt = json.loads((done / 'receipt.json').read_bytes())
         self.assertEqual(receipt['attempted_requests'], 3)
         self.assertEqual(receipt['order_rows_sha256'], m.digest((done / 'orders.jsonl').read_bytes()))
+        equity = json.loads((done / 'summary.json').read_bytes())['by_group']['equity']
+        self.assertEqual((equity['scheduled'], equity['known_slots'], equity['identity_excluded_fund_days'],
+                          equity['identity_excluded_slots']), (1, 1, 1, 1))
+
+
+def full_shape_receipt():
+    """Run the real execution/report path with no socket, credential or real store use."""
+    c = m.settings()
+    m.limit_process(c)
+    t0 = time.monotonic()
+    fake_ids = {(s, d): s not in c.excluded_tickers for _, s, d in c.schedule()}
+    halt = {(s, d): [] for _, s, d in c.schedule()}
+    n = len(c.order['placement_times'])
+
+    def stamp(ns):
+        base = datetime.fromtimestamp(ns // SECOND, timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
+        return f'{base}.{ns % SECOND:09d}Z'
+
+    def fabricated_get(url, args, decoded, wire):
+        symbol, endpoint = url.rsplit('/', 2)[-2:]
+        date = args['asof']
+        assert fake_ids[symbol, date]
+        opened, _, close, slots = c.clocks(date)
+        offset = sum((symbol + date).encode()) % 29
+        quotes, prints = [], []
+
+        def make_quote(ns, cents):
+            return dict(t=stamp(ns), bp=cents / 100, ap=(cents + 4) / 100,
+                        bs=1, bx='N', ax='N', z='A', c=['R'], **{'as': 1})
+
+        for j, slot in enumerate(slots):
+            cents = 1000 + offset + j
+            hit = slot + (c.order['entry_delay_seconds'] + 1) * SECOND
+            quotes.append(make_quote(slot - 1, cents))
+            prints.append(dict(t=stamp(hit), i=j, p=(cents - 1) / 100, s=50, z='A', x='N', c=[' ']))
+            quotes.extend(make_quote(hit + h * SECOND - 1, cents + 1) for h in c.order['mark_seconds_after_fill'].values())
+        quotes.append(make_quote(close - 1, 1050))
+        if symbol == c.sample['selected_in_hash_order'][c.sample['walk_type_order'][0]][0] and date == c.sample['sessions'][0]:
+            quotes = [make_quote(opened + j, 1000) for j in range(c.limits['request_page_rows'] - len(quotes))] + quotes
+        raw = m.json_bytes({endpoint: quotes if endpoint == 'quotes' else prints, 'symbol': symbol, 'next_page_token': None})
+        assert len(raw) <= min(decoded, wire)
+        return raw, len(raw)
+
+    old = os.umask(0o077)
+    try:
+        with TemporaryDirectory() as path, patch('socket.socket', side_effect=AssertionError('no network in fixture')):
+            tmp = Path(path)
+            m.execution(c, tmp, ('invented_resource_test', {}, fake_ids, dict.fromkeys(c.sample['sessions'], 'unavailable'), halt), fabricated_get)
+            report = json.loads((tmp / 'completed' / 'summary.json').read_bytes())
+            receipt = json.loads((tmp / 'completed' / 'receipt.json').read_bytes())
+            assert report['consider_later_strategy_test']
+            assert report['by_group']['pooled']['scheduled'] == sum(fake_ids.values()) * n
+            assert receipt['attempted_requests'] == 2 * sum(fake_ids.values())
+    finally:
+        os.umask(old)
+    peaks = {k[:-1]: int(v) for s in Path('/proc/self/status').read_text().splitlines()
+             if (k := s.split()[0]) in ('VmPeak:', 'VmHWM:') and (v := s.split()[1])}
+    print(m.json_bytes(dict(invented=True, historical_requests=0, fund_days=sum(fake_ids.values()), slots=sum(fake_ids.values()) * n,
+                            bootstrap_draws_per_method=c.report['bootstrap_draws'], nice=os.nice(0),
+                            child_rlimit_as_bytes=resource.getrlimit(resource.RLIMIT_AS), child_peak_kib=peaks,
+                            elapsed_seconds=round(time.monotonic() - t0, 2))).decode(), end='')
 
 
 def run():
     for key in ('OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'OMP_NUM_THREADS'):
         os.environ[key] = '1'
+    if os.environ.get('M121_FULL_INVENTED_FIXTURE') == '1':
+        full_shape_receipt()
+        return 0
     suite = unittest.defaultTestLoader.loadTestsFromModule(__import__(__name__))
     return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
