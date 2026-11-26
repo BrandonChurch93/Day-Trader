@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 18:51 UTC
+Last updated: 2026-11-26 18:56 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,7 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
-- Measurement 121, resting bids in closed-end funds ([plan and stop record](research/166_m121_cef_resting_bid.md); ledgers 223 and 224), 2026-11-26 11:51 MT: the first pull stopped in under a minute on the data service's request limit after 200 requests; nothing was kept or seen. The lead agent had signed limits with no request pacing. A second and last attempt with paced requests was registered as a written rule change (Amendment 3), audited clear and started; no result yet.
+- Measurement 121, resting bids in closed-end funds ([result](research/170_m121_result.md), [plan and stop record](research/166_m121_cef_resting_bid.md); ledgers 223 and 224), 2026-11-26 11:56 MT: MEASURED, run once and recomputed independently, figures agree ([result](research/170_m121_result.md)): a pretend $500 bid resting at the best bid for 30 minutes filled 7.56% of the time (227 of 3,003 placed); five minutes after a fill the best bid was 26.6 bp below the fill price on average (95% interval -30.3 to -23.0 bp by fund-day), median -22.0 bp, on the 136 fills that could be marked. Coverage floors not met: 50.1% of 6,072 slots could be judged (floor 90%) because the placement quote was too old in 2,889, and 59.9% of fills had a five-minute mark (floor 90%). By the line fixed before the run no strategy test follows; the idea of earning the spread with a patient bid in these funds is closed. The first pull stopped in under a minute on the data service's request limit with nothing kept (the lead agent had signed limits with no request pacing); the second and last attempt, paced, was a written rule change before any price result.
 - Screen for queue 122 to 124 ([doc 168](research/168_screen_queue_122_123_124.md), 2026-11-26 11:51 MT): all three desk noise tests closed before any session. MEASURED: temperature 0 could not be set on the two registered boss models. INFERENCE on made-up data: 9.2% chance of passing both marks at a true +20 bp a week on 7 weeks even if the weekly gap were halved. The fixed-size idea moves into the criteria gate (queue 125).
 - Criteria gate (queue 125), 2026-11-26 11:51 MT: in work. The owner's design: scouts propose, code checks a fixed criteria card, code buys and code exits; no model decides size, entry or exit.
 - Idea round 49 ([doc 167](research/167_round_49_noise_and_design_levers.md), second-checked): published evidence on cutting an AI trader's run-to-run noise. STATED in the sources and narrowed by the second check: one study cut one model's three-month spread from 9.0% to 5.5% on one stock with randomness off; memory, debate and extra roles were null or negative; nine of 13 sources are preprints without code.
