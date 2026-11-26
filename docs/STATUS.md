@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 05:57 UTC
+Last updated: 2026-11-26 06:55 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Queue 89 closed 2026-11-26 on count. MEASURED: 8 verified eligible reverse-split cash-outs against a floor of 30, and none of the 8 promised equal street-name treatment. No market prices or returns read; manual forward watch only. Plan 49 and ledger 183 stay unused.
 
 - [Replay 21](research/97_replay_21_odd_lot_tenders.md), run once 2026-11-26 05:52:52 UTC. MEASURED. Did not pass, 4 of 6 marks: 14 trades from 106 eligible filings, +11.80% mean net and t 1.688. The other 92 missed the entry discount. The rule missed the minimum of 30 trades and t of 2.0. Rule not advanced; queue 85 is a forward pretend-money watch proposal only.
 
