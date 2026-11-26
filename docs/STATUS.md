@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 11:27 UTC
+Last updated: 2026-11-26 11:30 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Queue 108, plan 66 (third-Friday S&P 500 option settlement; ledger 210): closed before prices 2026-11-26 11:30 UTC. MEASURED on made-up data only, no bar read (20,000 runs, noise 104.6 bp an expiration, 8 bp cost, 131 expirations 2016 to 2026): the chance of passing all six marks is 42.1% at the paper's +25 bp, but that size is at the settlement print, which a brokerage account cannot trade at. At the largest stated size on a print we can trade (+21.9 bp at the SPY open) it is 29.8%, under the 33% line; at half the paper's size 6.1%; with the stated near-zero size after 2023, 14.0% or less; with no edge 0.2%.
 
 - Idea round 38 ([doc 135](135_idea_round_38.md)), finished 2026-11-26 11:25 UTC: seven independent 2025 to 2026 replication libraries read (STATED by them: over 2,600 tested rules). Nothing new queued. The only rule several of them kept was the RSI(2) pullback, already closed on power as plan 67; none kept a crypto rule.
 
