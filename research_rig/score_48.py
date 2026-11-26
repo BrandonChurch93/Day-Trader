@@ -122,7 +122,8 @@ def authorize(approval, freeze_pin, input_pin, roster_pin, dist_pin):
     freeze, *named = (x.decode("ascii") for x in body.groups())
     parent = git("rev-list", "--parents", "-n", "1", approval).stdout.split()[1:]
     need(tuple(named) == (freeze_pin, input_pin, roster_pin, dist_pin) and len(parent) == 1, "APPROVAL")
-    need(git("merge-base", "--is-ancestor", freeze, parent[0].decode(), allow=True).returncode == 0, "APPROVAL")
+    # The approval sits directly on the freeze, so every pinned file (including the whole config) is the frozen one.
+    need(parent[0].decode() == freeze, "APPROVAL")
     need(git("diff-tree", "--no-commit-id", "--no-renames", "--name-status", "-r", approval).stdout
          == f"A\t{APPROVAL}\n".encode(), "APPROVAL")
     need(git("cat-file", "-e", f"{freeze}:{APPROVAL}", allow=True).returncode != 0, "APPROVAL")

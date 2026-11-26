@@ -245,24 +245,37 @@ class EndToEnd(unittest.TestCase):
                 return subprocess.run(["/usr/bin/git", "-C", str(root), *args], check=True, capture_output=True,
                                       text=True, env=genv).stdout.strip()
 
+            def cli_at(commit, mode):
+                return subprocess.run(
+                    [sys.executable, "-I", "-B", str(root / "research_rig/score_48.py"), mode,
+                     "--approval-commit", commit, "--freeze-sha256", freeze_pin, "--input-sha256", input_pin,
+                     "--roster-sha256", roster_pin, "--distributions-sha256", dist_pin],
+                    capture_output=True, text=True, env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"}, timeout=600)
+
             git("init", "-q")
             git("add", ".")
             git("commit", "-qm", "synthetic freeze")
             freeze = git("rev-parse", "HEAD")
-            (root / S.APPROVAL).write_text(
+            approval_text = (
                 f"Approved by the lead: plan 48, validation and one scored run, freeze commit {freeze}, "
                 f"freeze SHA-256 {freeze_pin}, input SHA-256 {input_pin}, roster SHA-256 {roster_pin}, "
                 f"distributions SHA-256 {dist_pin}.\n")
+            (root / "NOTE.md").write_text("intervening commit\n")
+            git("add", "NOTE.md")
+            git("commit", "-qm", "intervening")
+            (root / S.APPROVAL).write_text(approval_text)
+            git("add", S.APPROVAL)
+            git("commit", "-qm", "approval not on the freeze")
+            head = git("rev-parse", "HEAD")
+            self.assertEqual(cli_at(head, "--validate-inputs").stderr.strip(), "P48_APPROVAL")
+            git("reset", "-q", "--hard", freeze)
+            (root / S.APPROVAL).write_text(approval_text)
             git("add", S.APPROVAL)
             git("commit", "-qm", "synthetic approval")
             head = git("rev-parse", "HEAD")
 
             def cli(mode):
-                return subprocess.run(
-                    [sys.executable, "-I", "-B", str(root / "research_rig/score_48.py"), mode,
-                     "--approval-commit", head, "--freeze-sha256", freeze_pin, "--input-sha256", input_pin,
-                     "--roster-sha256", roster_pin, "--distributions-sha256", dist_pin],
-                    capture_output=True, text=True, env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"}, timeout=600)
+                return cli_at(head, mode)
 
             v = cli("--validate-inputs")
             self.assertEqual((v.returncode, v.stderr), (0, ""))
