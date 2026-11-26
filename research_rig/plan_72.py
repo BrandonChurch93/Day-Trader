@@ -46,6 +46,14 @@ def freeze(args):
     specs = {r["id"]: r for r in (*earlier, *later) if r["id"] in (model.PRIMARY, *model.SHOWN)}
     if set(specs) != {model.PRIMARY, *model.SHOWN} or any(r["side"] != 1 or r["btc_hedge"] for r in specs.values()):
         raise ValueError("unexpected fixed rule list")
+    fees = inherited_fees(repo, blobs)
+    cfg = json.loads(blobs[CONFIG])
+    if not set(cfg["sources"]) <= set(old.ALLOWED) or not 0.5 <= cfg["request_delay_seconds"] <= 5.:
+        raise ValueError("unapproved source or request pace")
+    return cfg, fees, later, specs
+
+
+def inherited_fees(repo, blobs):
     fees = old.parse_config(blobs[old.COVERAGE_PATH], blobs[old.SETTINGS_PATH], blobs[old.GRID_PATH])
     git_env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     git_env["GIT_NO_REPLACE_OBJECTS"] = "1"
@@ -54,10 +62,7 @@ def freeze(args):
     if (p70.digest(original_settings) != p70.SETTINGS_SHA
             or fees != old.parse_config(blobs[old.COVERAGE_PATH], original_settings, blobs[old.GRID_PATH])):
         raise ValueError("the inherited Plan 70 settings section differs from its original freeze")
-    cfg = json.loads(blobs[CONFIG])
-    if not set(cfg["sources"]) <= set(old.ALLOWED) or not 0.5 <= cfg["request_delay_seconds"] <= 5.:
-        raise ValueError("unapproved source or request pace")
-    return cfg, fees, later, specs
+    return fees
 
 
 def authority(args):

@@ -275,25 +275,38 @@ def power(tickets, half_edge, cfg, mark):
             "probability": float(passes / p["draws"]), "schedule_tickets": n, "schedule_days": active}
 
 
-def diagnostic(tickets, data, cfg, fees):
+def outage_touch(opening, closing, outage):
+    return any(t // DAY in outage for t in range(opening - 2 * HOUR, closing + HOUR, HOUR))
+
+
+def diagnostic(tickets, data, cfg, fees, *, detailed=False):
     """One common sample for apples-to-apples venue and clock repricing."""
     policy = cfg["minutes"]
     clock = policy["judged"]
     modes = {"coinbase_hourly_open": ("hourly", (0, 0)),
              "coinbase_reachable_minute": ("midpoint", (clock, clock)),
              **{f"coinbase_entry_{n}m_late": ("midpoint", (n, clock)) for n in policy["shown_late"]}}
+    if detailed:
+        modes["coinbase_worst_minute"] = ("worst", (clock, clock))
     hourly = {c: v for (c, gran), v in data.items() if gran == HOUR}
     outage = {stamp(d) // DAY for d in cfg["outage_utc_dates"]}
     coverage = dict.fromkeys(modes, 0)
     filtered_coverage = dict.fromkeys(modes, 0)
     filtered_scheduled = 0
     common = []
+    detail = []
     for coin, opening, closing, search_net in tickets:
-        touched = {t // DAY for t in range(opening - 2 * HOUR, closing + HOUR, HOUR)}
-        ex = bool(touched & outage)
+        ex = outage_touch(opening, closing, outage)
+        if detailed and ex:
+            detail.append((coin, opening, closing, None, None))
+            continue
         filtered_scheduled += not ex
-        result = {key: ticket_value((coin, opening, closing), mode, args, data, hourly, cfg, fees, DIAG)[0]
+        priced = {key: ticket_value((coin, opening, closing), mode, args, data, hourly, cfg, fees, DIAG)
                   for key, (mode, args) in modes.items()}
+        if detailed:
+            detail.append((coin, opening, closing, search_net, priced))
+            continue
+        result = {key: pair[0] for key, pair in priced.items()}
         for k, v in result.items():
             coverage[k] += v is not None
             if not ex:
@@ -301,6 +314,9 @@ def diagnostic(tickets, data, cfg, fees):
         if any(v is None for v in result.values()):
             continue
         common.append((search_net, result, ex))
+
+    if detailed:
+        return tuple(modes), detail
 
     def summarize(records):
         mean = float(np.mean([r[0] for r in records])) if records else None

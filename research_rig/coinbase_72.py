@@ -5,6 +5,7 @@ import os
 import re
 import stat
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -37,7 +38,8 @@ def validate(job, stage):
     diagnostic = DIAG[0] <= lo < hi <= DIAG[1]
     if (stage == "hourly" and not (fresh and gran == HOUR)
             or stage == "windows" and not ((fresh and gran == MINUTE) or diagnostic)
-            or stage not in ("hourly", "windows")):
+            or stage == "diagnostic" and not diagnostic
+            or stage not in ("hourly", "windows", "diagnostic")):
         raise ValueError("request outside its fixed date fence")
     return coin, gran, lo, hi
 
@@ -71,21 +73,43 @@ class Client:
         self.next_at = time.monotonic() + self.delay_seconds
         params = urllib.parse.urlencode({"granularity": gran, "start": iso(lo), "end": iso(hi - 1)})
         req = urllib.request.Request(f"{URL}/products/{coin}-USD/candles?{params}",
-                                     headers={"User-Agent": "day-trader-research-plan72/1.0",
+                                     headers={"User-Agent": ("day-trader-research-plan73/1.0" if stage == "diagnostic"
+                                                             else "day-trader-research-plan72/1.0"),
                                               "Accept": "application/json"})
-        with self.opener.open(req, timeout=25) as wire:
-            if wire.status != 200 or wire.headers.get_content_type() != "application/json":
-                raise ValueError("non-JSON or unsuccessful Coinbase response; stop collection")
-            raw = wire.read(1_000_001)
+        try:
+            with self.opener.open(req, timeout=25) as wire:
+                if wire.status != 200 or wire.headers.get_content_type() != "application/json":
+                    raise ValueError("non-JSON or unsuccessful Coinbase response; stop collection")
+                raw = wire.read(1_000_001)
+        except urllib.error.HTTPError as err:
+            if stage == "diagnostic" and err.code == 404 and err.headers.get_content_type() == "application/json":
+                with err:
+                    raw = err.read(1025)
+                if missing_product(raw):
+                    return raw
+            raise
         if len(raw) > 1_000_000 or not ENVELOPE.fullmatch(raw):
             raise ValueError("unexpected Coinbase response; stop collection")
         return raw
+
+
+def missing_product(raw):
+    if len(raw) > 1024:
+        return False
+    try:
+        pairs = json.loads(raw, object_pairs_hook=tuple)
+    except (ValueError, UnicodeError):
+        return False
+    # Keep duplicate keys visible and do not infer product absence from a bare route error.
+    return pairs in ((("message", "Product not found"),), (("message", "product not found"),))
 
 
 def parse(raw, job, stage):
     """Skip any server-supplied earlier bucket before decoding price fields."""
     _, gran, lo, hi = validate(job, stage)
     if not ENVELOPE.fullmatch(raw):
+        if stage == "diagnostic" and missing_product(raw):
+            return {}
         raise ValueError("invalid Coinbase JSON candle envelope")
     out = {}
     matches = list(ROW.finditer(raw))
