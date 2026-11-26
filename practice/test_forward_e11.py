@@ -148,8 +148,8 @@ class Tests(unittest.TestCase):
             result = e.resting(self.v, "ETH", b, self.cfg)
         self.assertEqual((result["status"], result["seconds_to_fill"]), ("FILLED", 61))
         w = e.iso(T)
-        book = {(w, "ETH", 0): b, (w, "ETH", 60): fake_book(depth(), taken=70),
-                (w, "ETH", 300): fake_book(depth(), taken=310)}
+        book = {(w, "ETH", "entry", 0): b, (w, "ETH", "entry", 60): fake_book(depth(), taken=70),
+                (w, "ETH", "entry", 300): fake_book(depth(), taken=310)}
         marks = e.rest_marks({"coin": "ETH", "wake": w}, book, result)
         self.assertEqual([m["phase"] for m in marks.values()], ["BEFORE_FILL", "AFTER_FILL", "UNKNOWN"])
         self.assertAlmostEqual(marks["60"]["move_bp"], (100 / 99 - 1) * 10000)
@@ -197,13 +197,58 @@ class Tests(unittest.TestCase):
         self.assertEqual(w["candle_failures"], {"ETH": "timeout"})
         self.assertIn("ZEC", self.v.candle_calls)
         self.assertIn(e.e09.JUDGED, w["exits"])
-        self.assertEqual(w["books"]["ETH"]["status"], "ok")
-        self.assertEqual(w["books"]["ETH"]["taken_s"], 5)
+        self.assertEqual(w["exit_books"]["ETH"]["status"], "ok")
+        self.assertEqual(w["exit_books"]["ETH"]["taken_s"], 5)
         self.assertEqual(self.v.depth_calls, ["ETH"] * 4)
         public = e.alive(self.off)
         self.assertEqual(public["entry_void_wakes"], 1)
         self.assertEqual(public["judged_trades"], 1)
         self.assertEqual(public["judged_void_reasons"], {})
+
+    def test_same_coin_reentry_has_fresh_book_and_own_schedule(self):
+        self.record()
+        wake = T + 2 * e.HOUR
+        clock = Clock(wake + timedelta(seconds=5))
+        candles, picks = self.v.candles, e.picks
+
+        def slow_candles(coin, hour):
+            if coin == "ETH":
+                clock.sleep(120)
+            return candles(coin, hour)
+
+        def slow_pick(*args):
+            clock.sleep(5)
+            return picks(*args)
+
+        def moving_book(coin):
+            self.assertEqual(coin, "ETH")
+            return depth() if clock() == wake + timedelta(seconds=5) else depth(ask="111", bid="109")
+
+        self.v.agg_calls.clear()
+        with (patch.object(self.v, "candles", side_effect=slow_candles),
+              patch.object(e, "picks", side_effect=slow_pick),
+              patch.object(self.v, "depth", side_effect=moving_book)):
+            w = e.record(clock(), self.v, self.off, clock, clock.sleep)
+        self.assertIn(e.e09.JUDGED, w["exits"])
+        self.assertIn((e.e09.JUDGED, "ETH"), [(r["arm"], r["coin"]) for r in w["entries"]])
+        exit_book, entry_book = w["exit_books"]["ETH"], w["entry_books"]["ETH"]
+        self.assertEqual((exit_book["bid"], exit_book["taken_s"]), ("99", 5))
+        self.assertEqual((entry_book["bid"], entry_book["taken_s"]), ("109", 130))
+        _, _, _, books, _, closed = e.index_log(self.rows())
+        for side, times in (("exit", (130, 305, 905)), ("entry", (190, 430, 1030))):
+            self.assertEqual([books[w["wake"], "ETH", side, offset]["taken_s"] for offset in e.e09.FOLLOW_S],
+                             list(times))
+        entry_ms = e.epoch_ms(wake + timedelta(seconds=130))
+        self.assertEqual(self.v.agg_calls, [("ETH", {"first_ms": entry_ms + 1, "last_ms": entry_ms + 300000,
+                                                   "from_id": None})])
+        finished = e.evaluate(closed, books, self.cfg, self.fees)
+        old = e.judged_trades(finished, self.cfg)[0]["lines"]["250:0"]
+        self.assertAlmostEqual(old["net"], (99 / 101) * .9998 - 1.0002)
+        public = e.alive(self.off)
+        self.assertEqual(public["late_wakes"], 1)
+        self.assertEqual(public["cost_per_side_bp"]["ETH"]["250"]["buy"]["n"], 3)
+        self.record(T + 4 * e.HOUR)
+        self.assertEqual(e.alive(self.off)["judged_void_reasons"], {"late book": 1})
 
     def test_candles_at_and_after_decision_hour_dropped(self):
         candles = self.v.candles
@@ -242,8 +287,8 @@ class Tests(unittest.TestCase):
         timely = fake_book(depth(), taken=120)
         late = fake_book(depth(), taken=120.000001)
         def summary(a, b):
-            start = {"kind": "wake", "wake": w0, "books": {"ETH": a}, "entries": [entry], "exits": []}
-            end = {"kind": "wake", "wake": w1, "books": {"ETH": b}, "entries": [], "exits": [e.e09.JUDGED]}
+            start = {"kind": "wake", "wake": w0, "entry_books": {"ETH": a}, "entries": [entry], "exits": []}
+            end = {"kind": "wake", "wake": w1, "exit_books": {"ETH": b}, "entries": [], "exits": [e.e09.JUDGED]}
             return e.summary([start, end], self.cfg, self.fees)
         self.assertFalse(summary(late, timely)["cost_per_side_bp"])
         cost = summary(timely, late)["cost_per_side_bp"]["ETH"]["250"]
@@ -262,8 +307,8 @@ class Tests(unittest.TestCase):
         with patch.object(e, "picks", return_value=proposed), patch.object(self.v, "depth", side_effect=partial):
             w = self.record()
         self.assertEqual(w["kind"], "wake")
-        self.assertEqual(w["books"]["BTC"]["status"], "book page unavailable")
-        self.assertEqual(w["books"]["ETH"]["status"], "ok")
+        self.assertEqual(w["entry_books"]["BTC"]["status"], "book page unavailable")
+        self.assertEqual(w["entry_books"]["ETH"]["status"], "ok")
         self.assertEqual(len([r for r in self.rows() if r["kind"] == "follow" and r["coin"] == "ETH"]), 3)
 
     def test_host_stop_persists_without_next_request(self):

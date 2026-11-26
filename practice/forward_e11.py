@@ -291,10 +291,11 @@ def index_log(rows):
                 closed.append((opens.pop(arm), w, kind))
             for entry in r["entries"]:
                 opens[entry["arm"]] = entry
-            for c, book in r.get("books", {}).items():
-                books[w, c, 0] = book
+            for side in ("entry", "exit"):
+                for c, book in r.get(f"{side}_books", {}).items():
+                    books[w, c, side, 0] = book
         if kind == "follow":
-            books[r["wake"], r["coin"], r["offset_s"]] = r["book"]
+            books[r["wake"], r["coin"], r["side"], r["offset_s"]] = r["book"]
         if kind == "rest":
             rests[r["wake"], r["coin"]] = r["resting"]
     return opens, claims, visits, books, rests, closed
@@ -307,7 +308,7 @@ def evaluate(closed, books, cfg, fees):
         charge = fee_bp(fees, coin)
         result = {}
         for offset in (0, *e09.FOLLOW_S):
-            first, last = books.get((w, coin, offset)), books.get((exit_wake, coin, offset))
+            first, last = books.get((w, coin, "entry", offset)), books.get((exit_wake, coin, "exit", offset))
             for size in cfg["sizes_usd"].values():
                 key = f"{size}:{offset}"
                 result[key] = (settle(first, last, size, charge, limit=cfg["first_book_limit_s"] if not offset else None)
@@ -338,7 +339,7 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx):
     live_until = wake + timedelta(seconds=e09.WINDOW_S)
     last = parse(cfg["last_wake_utc"])
     coins_due = {opens[arm]["coin"] for arm in due}
-    first = {}
+    exit_books, entry_books = {}, {}
     pair_states = None
     pages.deadline = live_until
 
@@ -358,48 +359,54 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx):
     if coins_due:
         pair_states = read_pairs()
         for coin in sorted(coins_due):
-            first[coin] = book_now(pages, pair_states, coin, wake, clock)
+            exit_books[coin] = book_now(pages, pair_states, coin, wake, clock)
     can_enter = any(wake + timedelta(hours=rules[a]["hold_hours"]) <= last for a in free)
     bars, failed = collect_candles(pages, wake) if can_enter else ({}, {})
     proposed = picks(wake, bars, free, rules, last) if can_enter and not failed else []
     if any(a == e09.JUDGED for a in due):
         judged_due = opens[e09.JUDGED]
-        b0, b1 = prior_books.get((judged_due["wake"], judged_due["coin"], 0)), first[judged_due["coin"]]
+        coin = judged_due["coin"]
+        b0, b1 = prior_books.get((judged_due["wake"], coin, "entry", 0)), exit_books[coin]
         counts_now = "net" in settle(b0, b1, cfg["sizes_usd"]["judged"], fee_bp(fees, judged_due["coin"]),
                                      limit=cfg["first_book_limit_s"])
         if counts_now and len(judged_trades(evaluate(closed, prior_books, cfg, fees), cfg)) + 1 >= cfg["judging_count"]:
             proposed = []
     if proposed and pair_states is None:
         pair_states = read_pairs()
-    for coin in sorted({e["coin"] for e in proposed} - first.keys()):
-        first[coin] = book_now(pages, pair_states, coin, wake, clock)
+    # An entry cannot use a book sampled before its decision, even on a coin
+    # that already has an exit book from this wake.
+    for coin in sorted({e["coin"] for e in proposed}):
+        entry_books[coin] = book_now(pages, pair_states, coin, wake, clock)
     pair_states = pair_states or {}
-    m132.append(path, rows, kind="wake", wake=w, entries=proposed, exits=due, books=first,
+    m132.append(path, rows, kind="wake", wake=w, entries=proposed, exits=due,
+                entry_books=entry_books, exit_books=exit_books,
                 entries_void=bool(failed), candle_failures=failed,
-                busy=[a for a in e09.ARMS if a not in free], pair_states={c: pair_states.get(c, "NO_USD_PAIR") for c in first},
+                busy=[a for a in e09.ARMS if a not in free],
+                pair_states={c: pair_states.get(c, "NO_USD_PAIR") for c in sorted(entry_books.keys() | exit_books.keys())},
                 closed_bar_sha256=m132.digest(m132.enc(bars).encode()), signal_bars=bars if proposed else {})
     wake_row = rows[-1]
     tasks = []
-    for coin, b in first.items():
-        btime = parse(b["received"])
-        if pair_states.get(coin) == "TRADING":
-            for offset in e09.FOLLOW_S:
-                tasks.append((btime + timedelta(seconds=offset), 0, coin, offset))
-        if coin in {e["coin"] for e in proposed}:
-            if usable(b):
-                tasks.append((btime + timedelta(seconds=cfg["resting_window_s"], milliseconds=1), 1, coin, 0))
-            else:
-                m132.append(path, rows, kind="rest", wake=w, coin=coin, resting=resting(pages, coin, b, cfg))
-    for when, kind, coin, offset in sorted(tasks):
+    for side, first in (("entry", entry_books), ("exit", exit_books)):
+        for coin, b in first.items():
+            btime = parse(b["received"])
+            if pair_states.get(coin) == "TRADING":
+                for offset in e09.FOLLOW_S:
+                    tasks.append((btime + timedelta(seconds=offset), 0, coin, side, offset))
+            if side == "entry":
+                if usable(b):
+                    tasks.append((btime + timedelta(seconds=cfg["resting_window_s"], milliseconds=1), 1, coin, side, 0))
+                else:
+                    m132.append(path, rows, kind="rest", wake=w, coin=coin, resting=resting(pages, coin, b, cfg))
+    for when, kind, coin, side, offset in sorted(tasks):
         sleep(max(0, (when - clock()).total_seconds()))
         if clock() >= wake + HOUR:
             break
         pages.deadline = wake + HOUR
         if kind == 0:
             book = book_now(pages, pair_states, coin, wake, clock)
-            m132.append(path, rows, kind="follow", wake=w, coin=coin, offset_s=offset, book=book)
+            m132.append(path, rows, kind="follow", wake=w, coin=coin, side=side, offset_s=offset, book=book)
         else:
-            m132.append(path, rows, kind="rest", wake=w, coin=coin, resting=resting(pages, coin, first[coin], cfg))
+            m132.append(path, rows, kind="rest", wake=w, coin=coin, resting=resting(pages, coin, entry_books[coin], cfg))
     return wake_row
 
 
@@ -453,10 +460,10 @@ def stats(x):
 
 def rest_marks(entry, books, rest):
     coin, w = entry["coin"], entry["wake"]
-    first = books.get((w, coin, 0))
+    first = books.get((w, coin, "entry", 0))
     result = {}
     for offset in e09.FOLLOW_S:
-        later = books.get((w, coin, offset))
+        later = books.get((w, coin, "entry", offset))
         marker = {"phase": "UNKNOWN", "move_bp": None}
         if usable(first) and usable(later):
             if rest["status"] == "FILLED":
@@ -481,13 +488,13 @@ def summary(rows, cfg, fees):
     clock_samples = defaultdict(list)
     costs = defaultdict(lambda: defaultdict(lambda: {"buy": [], "sell": []}))
     stop = next((r for r in rows if r["kind"] == "stop"), None)
-    for (_, coin, offset), book in books.items():
+    for (_, _, _, offset), book in books.items():
         book_status[book["status"]] += 1
         if usable(book):
             clock_samples[str(offset)].append(book["taken_s"])
     for e in entries:
         resting_counts[e["arm"]][rest_for(rests, e)["status"]] += 1
-        first = books.get((e["wake"], e["coin"], 0))
+        first = books.get((e["wake"], e["coin"], "entry", 0))
         if leg_reason(first, cfg["first_book_limit_s"]):
             continue
         for size in cfg["sizes_usd"].values():
@@ -510,7 +517,7 @@ def summary(rows, cfg, fees):
             "void_wakes": sum(r["kind"] == "void" for r in visits.values()),
             "entry_void_wakes": sum(bool(r.get("entries_void")) for r in visits.values()),
             "claimed_unresolved_wakes": len(claims - visits.keys()),
-            "late_wakes": len({w for (w, _, offset), b in books.items() if not offset and usable(b)
+            "late_wakes": len({w for (w, _, _, offset), b in books.items() if not offset and usable(b)
                                and b["taken_s"] > cfg["first_book_limit_s"]}),
             "book_status": dict(book_status), "seconds_after_hour": {k: stats(v) for k, v in clock_samples.items()},
             "cost_per_side_bp": {c: {n: {s: stats(v) for s, v in sides.items()} for n, sides in sizes.items()}
@@ -585,7 +592,9 @@ def shown_results(visits, finished, books, rests, cfg, fees, cut):
                 if rest["status"] == "FILLED":
                     maker = {"reason": "exit wake void or unresolved"}
                     if r and r["exit_kind"] == "wake":
-                        b0, b1 = books.get((e["wake"], e["coin"], 0)), books.get((r["exit"], e["coin"], 0))
+                        coin = e["coin"]
+                        b0 = books.get((e["wake"], coin, "entry", 0))
+                        b1 = books.get((r["exit"], coin, "exit", 0))
                         why = leg_reason(b1, cfg["first_book_limit_s"])
                         maker = {"reason": why} if why else settle(b0, b1, main, fee_bp(fees, e["coin"]), maker=True)
                     if "net" in maker:
