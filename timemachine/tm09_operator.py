@@ -20,6 +20,19 @@ from timemachine.tm09_orders import BenchmarkUnavailable
 
 READY = 'Registered desk ready; brief only this session\'s roles.'
 MAX_BODY = 65536
+LEDGER = 'research_rig/TRIAL_LEDGER.md'
+GO_ID = re.compile(r'[0-9a-f]{32}')
+
+
+def go_line(ledger_raw, auth_id):
+    """Require an unambiguous plain ledger and the lead's exact row 222 marker."""
+    text = ledger_raw.decode()
+    rows = [line for line in text.split('\n') if re.match(r'\s*\|\s*222\s*\|', line)]
+    if (not isinstance(auth_id, str) or not GO_ID.fullmatch(auth_id)
+            or any(marker in text for marker in ('<!--', '-->', '```', '~~~', '<script', '<pre', '\r'))
+            or text.count('TM09_GO=' + auth_id) != 1 or len(rows) != 1 or not rows[0].startswith('| 222 | ')
+            or not rows[0].endswith(' TM09_GO=' + auth_id + ' |')):
+        raise ValueError('lead TM09_GO authorization missing')
 
 
 def content(path, pin):
@@ -68,6 +81,8 @@ def approved(root, keyfile, approval, command, rehearsal=False):
         release_content(name, body['release_files'][name])
     config = release_content('config/thresholds.yaml', body['config_sha256'])
     release_content('timemachine/TM09_REGISTRATION.md', body['registration_sha256'])
+    if not rehearsal and scope in ('ledger-222-build-fixtures', 'ledger-222-run-tm09'):
+        go_line(release_content(LEDGER, body.get('ledger_sha256')), body.get('authorization_id'))
     opts = settings(config)
     if command != 'build':
         if (body['resolved_settings'] != opts or not body['operator_boundary_sha256']
