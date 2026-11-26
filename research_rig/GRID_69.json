@@ -1,13 +1,5 @@
 {
-  "schema": "plan-69-v1",
-  "search_dates": [
-    "2016-01-04",
-    "2021-12-31"
-  ],
-  "vault_dates_documentation_only": [
-    "2022-01-03",
-    "2026-10-30"
-  ],
+  "schema": "plan-69-v2",
   "sources_for_universe": {
     "shares": "https://www.sec.gov/Archives/edgar/data/1067839/000110465915004817/0001104659-15-004817.txt",
     "listed_funds": "https://www.sec.gov/file/exhibit-3-182",
@@ -378,33 +370,22 @@
       "XRT",
       "XSD",
       "YHOO"
-    ]
-  },
-  "cost_bps_per_side": {
-    "broad": [
-      0.342,
-      0.209,
-      0.176
     ],
     "bond": [
-      0.609,
-      0.61,
-      0.61
-    ],
-    "sector": [
-      0.888,
-      0.587,
-      0.587
-    ],
-    "stocks": [
-      3.787,
-      1.591,
-      1.074
-    ],
-    "cautious": [
-      10.055,
-      3.832,
-      2.44
+      "AGG",
+      "BND",
+      "HYG",
+      "IEF",
+      "IEI",
+      "LQD",
+      "MBB",
+      "SHV",
+      "SHY",
+      "TIP",
+      "TLH",
+      "TLT",
+      "VCIT",
+      "VCSH"
     ]
   },
   "measured_cost_symbols": {
@@ -485,10 +466,6 @@
     "S11": {
       "mechanism": "Financially constrained liquidity providers pull back amid sharp intraday selling, leaving a possible rebound premium.",
       "source": "https://academic.oup.com/rfs/article-abstract/25/7/2005/1602153"
-    },
-    "S12": {
-      "mechanism": "Portfolio window dressing can force sales near equity month/quarter ends that unwind on the next session.",
-      "source": "https://onlinelibrary.wiley.com/doi/10.1111/jofi.12062"
     }
   },
   "rules": [
@@ -637,6 +614,246 @@
       "signal_words": "Own 09:30 open to 15:25 bar close return at least +2.00%; rank by largest gain."
     },
     {
+      "id": "S1-07",
+      "family": "S1",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01
+      },
+      "signal_words": "Own 09:30–15:25 rise at least 1.00%; rank by largest gain."
+    },
+    {
+      "id": "S1-08",
+      "family": "S1",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015
+      },
+      "signal_words": "Own 09:30–15:25 rise at least 1.50%; rank by largest gain."
+    },
+    {
+      "id": "S1-09",
+      "family": "S1",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.025
+      },
+      "signal_words": "Own 09:30–15:25 rise at least 2.50%; rank by largest gain."
+    },
+    {
+      "id": "S1-10",
+      "family": "S1",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.03
+      },
+      "signal_words": "Own 09:30–15:25 rise at least 3.00%; rank by largest gain."
+    },
+    {
+      "id": "S1-11",
+      "family": "S1",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01
+      },
+      "signal_words": "Own 09:30–15:25 rise at least 1.00%; rank by largest gain. Long inverse means exposure to continuation of underlying selling."
+    },
+    {
+      "id": "S1-12",
+      "family": "S1",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015
+      },
+      "signal_words": "Own 09:30–15:25 rise at least 1.50%; rank by largest gain. Long inverse means exposure to continuation of underlying selling."
+    },
+    {
+      "id": "S1-13",
+      "family": "S1",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.025
+      },
+      "signal_words": "Own 09:30–15:25 rise at least 2.50%; rank by largest gain. Long inverse means exposure to continuation of underlying selling."
+    },
+    {
+      "id": "S1-14",
+      "family": "S1",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.03
+      },
+      "signal_words": "Own 09:30–15:25 rise at least 3.00%; rank by largest gain. Long inverse means exposure to continuation of underlying selling."
+    },
+    {
+      "id": "S1-15",
+      "family": "S1",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:20",
+      "entry": {
+        "clock_et": "15:25",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "35 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.02
+      },
+      "signal_words": "Own 09:30–15:20 rise at least 2.00%; rank by largest gain."
+    },
+    {
+      "id": "S1-16",
+      "family": "S1",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:20",
+      "entry": {
+        "clock_et": "15:25",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "35 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.025
+      },
+      "signal_words": "Own 09:30–15:20 rise at least 2.50%; rank by largest gain."
+    },
+    {
       "id": "S2-01",
       "family": "S2",
       "pool": "stock_sector",
@@ -779,6 +996,294 @@
         "threshold": 0.02
       },
       "signal_words": "Same trigger and rank as S2-02; literal short mirror, shown unscored."
+    },
+    {
+      "id": "S2-07",
+      "family": "S2",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 1.00%; rank by largest loss. Buy inverse rebound to express a fade of underlying strength."
+    },
+    {
+      "id": "S2-08",
+      "family": "S2",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 1.00%; rank by largest loss. Buy inverse rebound to express a fade of underlying strength."
+    },
+    {
+      "id": "S2-09",
+      "family": "S2",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 1.50%; rank by largest loss. Buy inverse rebound to express a fade of underlying strength."
+    },
+    {
+      "id": "S2-10",
+      "family": "S2",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 1.50%; rank by largest loss. Buy inverse rebound to express a fade of underlying strength."
+    },
+    {
+      "id": "S2-11",
+      "family": "S2",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.02
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 2.00%; rank by largest loss. Buy inverse rebound to express a fade of underlying strength."
+    },
+    {
+      "id": "S2-12",
+      "family": "S2",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.02
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 2.00%; rank by largest loss. Buy inverse rebound to express a fade of underlying strength."
+    },
+    {
+      "id": "S2-13",
+      "family": "S2",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.025
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 2.50%; rank by largest loss. Buy inverse rebound to express a fade of underlying strength."
+    },
+    {
+      "id": "S2-14",
+      "family": "S2",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.025
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 2.50%; rank by largest loss. Buy inverse rebound to express a fade of underlying strength."
+    },
+    {
+      "id": "S2-15",
+      "family": "S2",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 1.00%; rank by largest loss."
+    },
+    {
+      "id": "S2-16",
+      "family": "S2",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 1.50%; rank by largest loss."
+    },
+    {
+      "id": "S2-17",
+      "family": "S2",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.02
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 2.00%; rank by largest loss."
+    },
+    {
+      "id": "S2-18",
+      "family": "S2",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.025
+      },
+      "signal_words": "Own 09:30–15:55 loss at least 2.50%; rank by largest loss."
     },
     {
       "id": "S3-01",
@@ -943,6 +1448,276 @@
       "signal_words": "Own 15:50 bar loss at least 0.50% and volume at least 2x median of exact same bar in previous 20 sessions; rank by largest loss."
     },
     {
+      "id": "S3-07",
+      "family": "S3",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.005,
+        "volume_from_et": "15:50",
+        "volume_multiple": 2,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 0.50% on at least 2x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-08",
+      "family": "S3",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.005,
+        "volume_from_et": "15:50",
+        "volume_multiple": 2,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 0.50% on at least 2x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-09",
+      "family": "S3",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.0075,
+        "volume_from_et": "15:50",
+        "volume_multiple": 2,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 0.75% on at least 2x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-10",
+      "family": "S3",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.0075,
+        "volume_from_et": "15:50",
+        "volume_multiple": 2,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 0.75% on at least 2x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-11",
+      "family": "S3",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.01,
+        "volume_from_et": "15:50",
+        "volume_multiple": 2,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 1.00% on at least 2x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-12",
+      "family": "S3",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.01,
+        "volume_from_et": "15:50",
+        "volume_multiple": 2,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 1.00% on at least 2x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-13",
+      "family": "S3",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.005,
+        "volume_from_et": "15:50",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 0.50% on at least 1.5x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-14",
+      "family": "S3",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.005,
+        "volume_from_et": "15:50",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 0.50% on at least 1.5x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-15",
+      "family": "S3",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.005,
+        "volume_from_et": "15:50",
+        "volume_multiple": 2.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 0.50% on at least 2.5x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
+      "id": "S3-16",
+      "family": "S3",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:50",
+        "threshold": 0.005,
+        "volume_from_et": "15:50",
+        "volume_multiple": 2.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:50–15:55 loss at least 0.50% on at least 2.5x the prior 20-session same-bar median volume; rank by largest loss."
+    },
+    {
       "id": "S4-01",
       "family": "S4",
       "pool": "stocks",
@@ -1071,6 +1846,292 @@
         "volume_days": 20
       },
       "signal_words": "Own 09:30 open gap down at least 1.50% versus prior regular close (split-neutral); first five-minute bar must close up and trade at least 2x median volume of the identical bar from prior 20 sessions; rank by largest gap down."
+    },
+    {
+      "id": "S4-06",
+      "family": "S4",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:30",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "50 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.005,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 0.50% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-07",
+      "family": "S4",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:00",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "80 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.005,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 0.50% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-08",
+      "family": "S4",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:30",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "50 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 1.00% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-09",
+      "family": "S4",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:00",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "80 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 1.00% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-10",
+      "family": "S4",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:30",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "50 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 1.50% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-11",
+      "family": "S4",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:00",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "80 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 1.50% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-12",
+      "family": "S4",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:30",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "50 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.02,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 2.00% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-13",
+      "family": "S4",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:00",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "80 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.02,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 2.00% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-14",
+      "family": "S4",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:30",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "50 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 1.00% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-15",
+      "family": "S4",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:30",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "50 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.02,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 2.00% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
+    },
+    {
+      "id": "S4-16",
+      "family": "S4",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "09:35",
+      "entry": {
+        "clock_et": "09:40",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:30",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "50 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.03,
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Split-neutral gap down at least 3.00% versus prior regular close; 09:30–09:35 must close up with volume at least 1.5x the prior 20-session same-bar median; rank by largest gap down."
     },
     {
       "id": "S5-01",
@@ -1211,6 +2272,286 @@
         "benchmark": "SPY"
       },
       "signal_words": "Own 09:30-to-14:25 return trails SPY by at least 1.00% and 13:00-to-14:25 volume is at least 1.5x prior 20-session same-clock median; rank by widest deficit."
+    },
+    {
+      "id": "S5-06",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:55",
+      "entry": {
+        "clock_et": "14:00",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "120 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.005,
+        "volume_from_et": "13:00",
+        "volume_multiple": 1.25,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–13:55 return trails SPY by at least 0.50%; 13:00–13:55 volume at least 1.25x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-07",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:55",
+      "entry": {
+        "clock_et": "14:00",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "120 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.0075,
+        "volume_from_et": "13:00",
+        "volume_multiple": 1.25,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–13:55 return trails SPY by at least 0.75%; 13:00–13:55 volume at least 1.25x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-08",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:55",
+      "entry": {
+        "clock_et": "14:00",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "120 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "volume_from_et": "13:00",
+        "volume_multiple": 1.25,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–13:55 return trails SPY by at least 1.00%; 13:00–13:55 volume at least 1.25x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-09",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:55",
+      "entry": {
+        "clock_et": "14:00",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "120 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.005,
+        "volume_from_et": "13:00",
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–13:55 return trails SPY by at least 0.50%; 13:00–13:55 volume at least 2x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-10",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:55",
+      "entry": {
+        "clock_et": "14:00",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "120 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.0075,
+        "volume_from_et": "13:00",
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–13:55 return trails SPY by at least 0.75%; 13:00–13:55 volume at least 2x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-11",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:55",
+      "entry": {
+        "clock_et": "14:00",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "120 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "volume_from_et": "13:00",
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–13:55 return trails SPY by at least 1.00%; 13:00–13:55 volume at least 2x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-12",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "14:25",
+      "entry": {
+        "clock_et": "14:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "90 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.0075,
+        "volume_from_et": "13:00",
+        "volume_multiple": 1.25,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–14:25 return trails SPY by at least 0.75%; 13:00–14:25 volume at least 1.25x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-13",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "14:25",
+      "entry": {
+        "clock_et": "14:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "90 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "volume_from_et": "13:00",
+        "volume_multiple": 1.25,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–14:25 return trails SPY by at least 1.00%; 13:00–14:25 volume at least 1.25x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-14",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "14:25",
+      "entry": {
+        "clock_et": "14:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "90 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.0075,
+        "volume_from_et": "13:00",
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–14:25 return trails SPY by at least 0.75%; 13:00–14:25 volume at least 2x prior 20-session same-window median; rank by largest deficit."
+    },
+    {
+      "id": "S5-15",
+      "family": "S5",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "14:25",
+      "entry": {
+        "clock_et": "14:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "90 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "volume_from_et": "13:00",
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "benchmark": "SPY"
+      },
+      "signal_words": "Own 09:30–14:25 return trails SPY by at least 1.00%; 13:00–14:25 volume at least 2x prior 20-session same-window median; rank by largest deficit."
     },
     {
       "id": "S6-01",
@@ -1381,6 +2722,342 @@
       "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2.5x 20-prior-session median; 15:55 close is in the bottom 20% of 09:30–15:55 high-low; rank by most extreme location."
     },
     {
+      "id": "S6-07",
+      "family": "S6",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 1.5,
+        "location": "top",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 1.5x 20-prior-session median; 15:25 close is in the top 20% of 09:30–15:25 high-low; rank by most extreme location. Apply to inverse fund prints to express bearish underlying exposure."
+    },
+    {
+      "id": "S6-08",
+      "family": "S6",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 2,
+        "location": "top",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2x 20-prior-session median; 15:25 close is in the top 20% of 09:30–15:25 high-low; rank by most extreme location. Apply to inverse fund prints to express bearish underlying exposure."
+    },
+    {
+      "id": "S6-09",
+      "family": "S6",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 2.5,
+        "location": "top",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2.5x 20-prior-session median; 15:25 close is in the top 20% of 09:30–15:25 high-low; rank by most extreme location. Apply to inverse fund prints to express bearish underlying exposure."
+    },
+    {
+      "id": "S6-10",
+      "family": "S6",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 1.5,
+        "location": "bottom",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 1.5x 20-prior-session median; 15:55 close is in the bottom 20% of 09:30–15:55 high-low; rank by most extreme location. Apply to inverse fund prints to express bearish underlying exposure."
+    },
+    {
+      "id": "S6-11",
+      "family": "S6",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 2,
+        "location": "bottom",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2x 20-prior-session median; 15:55 close is in the bottom 20% of 09:30–15:55 high-low; rank by most extreme location. Apply to inverse fund prints to express bearish underlying exposure."
+    },
+    {
+      "id": "S6-12",
+      "family": "S6",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 2.5,
+        "location": "bottom",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2.5x 20-prior-session median; 15:55 close is in the bottom 20% of 09:30–15:55 high-low; rank by most extreme location. Apply to inverse fund prints to express bearish underlying exposure."
+    },
+    {
+      "id": "S6-13",
+      "family": "S6",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 1.5,
+        "location": "top",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 1.5x 20-prior-session median; 15:25 close is in the top 20% of 09:30–15:25 high-low; rank by most extreme location. Apply to the leveraged long fund itself."
+    },
+    {
+      "id": "S6-14",
+      "family": "S6",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 2,
+        "location": "top",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2x 20-prior-session median; 15:25 close is in the top 20% of 09:30–15:25 high-low; rank by most extreme location. Apply to the leveraged long fund itself."
+    },
+    {
+      "id": "S6-15",
+      "family": "S6",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:25",
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 2.5,
+        "location": "top",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2.5x 20-prior-session median; 15:25 close is in the top 20% of 09:30–15:25 high-low; rank by most extreme location. Apply to the leveraged long fund itself."
+    },
+    {
+      "id": "S6-16",
+      "family": "S6",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 1.5,
+        "location": "bottom",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 1.5x 20-prior-session median; 15:55 close is in the bottom 20% of 09:30–15:55 high-low; rank by most extreme location. Apply to the leveraged long fund itself."
+    },
+    {
+      "id": "S6-17",
+      "family": "S6",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 2,
+        "location": "bottom",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2x 20-prior-session median; 15:55 close is in the bottom 20% of 09:30–15:55 high-low; rank by most extreme location. Apply to the leveraged long fund itself."
+    },
+    {
+      "id": "S6-18",
+      "family": "S6",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "range_end_et": "15:00",
+        "range_days": 20,
+        "threshold": 2.5,
+        "location": "bottom",
+        "fraction_from_other_end": 0.8
+      },
+      "signal_words": "Own 09:30–15:00 high-low over 09:30 open is at least 2.5x 20-prior-session median; 15:55 close is in the bottom 20% of 09:30–15:55 high-low; rank by most extreme location. Apply to the leveraged long fund itself."
+    },
+    {
       "id": "S7-01",
       "family": "S7",
       "pool": "stock_sector",
@@ -1487,6 +3164,330 @@
         "volume_days": 20
       },
       "signal_words": "Own 15:00 open to 15:55 close loss at least 2.00% and same window volume at least 1.5x median of the previous 20 sessions; rank by largest loss."
+    },
+    {
+      "id": "S7-05",
+      "family": "S7",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.005,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 0.50% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss. Long inverse rebound expresses a fade of underlying strength."
+    },
+    {
+      "id": "S7-06",
+      "family": "S7",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.01,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 1.00% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss. Long inverse rebound expresses a fade of underlying strength."
+    },
+    {
+      "id": "S7-07",
+      "family": "S7",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.015,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 1.50% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss. Long inverse rebound expresses a fade of underlying strength."
+    },
+    {
+      "id": "S7-08",
+      "family": "S7",
+      "pool": "inverse",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.02,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 2.00% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss. Long inverse rebound expresses a fade of underlying strength."
+    },
+    {
+      "id": "S7-09",
+      "family": "S7",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.005,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 0.50% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss."
+    },
+    {
+      "id": "S7-10",
+      "family": "S7",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.01,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 1.00% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss."
+    },
+    {
+      "id": "S7-11",
+      "family": "S7",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.015,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 1.50% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss."
+    },
+    {
+      "id": "S7-12",
+      "family": "S7",
+      "pool": "bull",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.02,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 2.00% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss."
+    },
+    {
+      "id": "S7-13",
+      "family": "S7",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.005,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 0.50% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss."
+    },
+    {
+      "id": "S7-14",
+      "family": "S7",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.01,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 1.00% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss."
+    },
+    {
+      "id": "S7-15",
+      "family": "S7",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.015,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 1.50% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss."
+    },
+    {
+      "id": "S7-16",
+      "family": "S7",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "15:00",
+        "threshold": 0.02,
+        "volume_from_et": "15:00",
+        "volume_multiple": 1.5,
+        "volume_days": 20
+      },
+      "signal_words": "Own 15:00–15:55 loss at least 2.00% on at least 1.5x the prior 20-session same-window median volume; rank by largest loss."
     },
     {
       "id": "S8-01",
@@ -1651,6 +3652,384 @@
       "signal_words": "Own same 15:30–16:00 30-minute return averaged over exactly the prior 10 sessions, excluding today, at least +0.30%; rank by highest prior mean."
     },
     {
+      "id": "S8-07",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "09:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "to_et": "10:00",
+        "past_days": 3,
+        "threshold": null,
+        "top_fraction": 0.1
+      },
+      "signal_words": "Own 09:30–10:00 30-minute return averaged over prior 3 sessions excluding today ranks in the highest cross-sectional decile; rank by highest prior mean."
+    },
+    {
+      "id": "S8-08",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "09:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "to_et": "10:00",
+        "past_days": 5,
+        "threshold": 0.0001,
+        "top_fraction": null
+      },
+      "signal_words": "Own 09:30–10:00 30-minute return averaged over prior 5 sessions excluding today is at least +0.01%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-09",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "09:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "to_et": "10:00",
+        "past_days": 5,
+        "threshold": 0.0003,
+        "top_fraction": null
+      },
+      "signal_words": "Own 09:30–10:00 30-minute return averaged over prior 5 sessions excluding today is at least +0.03%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-10",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "09:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "to_et": "10:00",
+        "past_days": 10,
+        "threshold": 0.0006,
+        "top_fraction": null
+      },
+      "signal_words": "Own 09:30–10:00 30-minute return averaged over prior 10 sessions excluding today is at least +0.06%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-11",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "10:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "10:30",
+        "to_et": "11:00",
+        "past_days": 3,
+        "threshold": null,
+        "top_fraction": 0.1
+      },
+      "signal_words": "Own 10:30–11:00 30-minute return averaged over prior 3 sessions excluding today ranks in the highest cross-sectional decile; rank by highest prior mean."
+    },
+    {
+      "id": "S8-12",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "10:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "10:30",
+        "to_et": "11:00",
+        "past_days": 5,
+        "threshold": 0.0001,
+        "top_fraction": null
+      },
+      "signal_words": "Own 10:30–11:00 30-minute return averaged over prior 5 sessions excluding today is at least +0.01%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-13",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "10:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "10:30",
+        "to_et": "11:00",
+        "past_days": 5,
+        "threshold": 0.0003,
+        "top_fraction": null
+      },
+      "signal_words": "Own 10:30–11:00 30-minute return averaged over prior 5 sessions excluding today is at least +0.03%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-14",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "10:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "10:30",
+        "to_et": "11:00",
+        "past_days": 10,
+        "threshold": 0.0006,
+        "top_fraction": null
+      },
+      "signal_words": "Own 10:30–11:00 30-minute return averaged over prior 10 sessions excluding today is at least +0.06%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-15",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "15:30",
+        "to_et": "16:00",
+        "past_days": 3,
+        "threshold": null,
+        "top_fraction": 0.1
+      },
+      "signal_words": "Own 15:30–16:00 30-minute return averaged over prior 3 sessions excluding today ranks in the highest cross-sectional decile; rank by highest prior mean."
+    },
+    {
+      "id": "S8-16",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "15:30",
+        "to_et": "16:00",
+        "past_days": 5,
+        "threshold": 0.0001,
+        "top_fraction": null
+      },
+      "signal_words": "Own 15:30–16:00 30-minute return averaged over prior 5 sessions excluding today is at least +0.01%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-17",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "15:30",
+        "to_et": "16:00",
+        "past_days": 5,
+        "threshold": 0.0003,
+        "top_fraction": null
+      },
+      "signal_words": "Own 15:30–16:00 30-minute return averaged over prior 5 sessions excluding today is at least +0.03%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-18",
+      "family": "S8",
+      "pool": "bond",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "15:30",
+        "to_et": "16:00",
+        "past_days": 10,
+        "threshold": 0.0006,
+        "top_fraction": null
+      },
+      "signal_words": "Own 15:30–16:00 30-minute return averaged over prior 10 sessions excluding today is at least +0.06%; rank by highest prior mean."
+    },
+    {
+      "id": "S8-19",
+      "family": "S8",
+      "pool": "stocks",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "09:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "09:30",
+        "to_et": "10:00",
+        "past_days": 10,
+        "threshold": null,
+        "top_fraction": 0.1
+      },
+      "signal_words": "Own 09:30–10:00 30-minute return averaged over prior 10 sessions excluding today ranks in the highest cross-sectional decile; rank by highest prior mean."
+    },
+    {
+      "id": "S8-20",
+      "family": "S8",
+      "pool": "stocks",
+      "bar_minutes": 30,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:30",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "16:00",
+        "print": "close",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "15:30",
+        "to_et": "16:00",
+        "past_days": 10,
+        "threshold": null,
+        "top_fraction": 0.1
+      },
+      "signal_words": "Own 15:30–16:00 30-minute return averaged over prior 10 sessions excluding today ranks in the highest cross-sectional decile; rank by highest prior mean."
+    },
+    {
       "id": "S9-01",
       "family": "S9",
       "pool": "stocks",
@@ -1774,6 +4153,256 @@
         "bottom_fraction": 0.2
       },
       "signal_words": "Own 15:55 close is at least 1.00% under consolidated volume-weighted VWAP from 09:30 to 15:55; own return same interval ranks in the bottom quintile; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-06",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.005,
+        "bottom_fraction": 0.1
+      },
+      "signal_words": "Own 15:55 close at least 0.50% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 10%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-07",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "bottom_fraction": 0.1
+      },
+      "signal_words": "Own 15:55 close at least 1.00% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 10%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-08",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015,
+        "bottom_fraction": 0.1
+      },
+      "signal_words": "Own 15:55 close at least 1.50% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 10%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-09",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.005,
+        "bottom_fraction": 0.1
+      },
+      "signal_words": "Own 15:55 close at least 0.50% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 10%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-10",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "bottom_fraction": 0.1
+      },
+      "signal_words": "Own 15:55 close at least 1.00% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 10%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-11",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.005,
+        "bottom_fraction": 0.3
+      },
+      "signal_words": "Own 15:55 close at least 0.50% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 30%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-12",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "bottom_fraction": 0.3
+      },
+      "signal_words": "Own 15:55 close at least 1.00% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 30%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-13",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "09:35",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 09:35 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.015,
+        "bottom_fraction": 0.3
+      },
+      "signal_words": "Own 15:55 close at least 1.50% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 30%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-14",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.005,
+        "bottom_fraction": 0.3
+      },
+      "signal_words": "Own 15:55 close at least 0.50% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 30%; rank by largest VWAP deficit."
+    },
+    {
+      "id": "S9-15",
+      "family": "S9",
+      "pool": "stocks",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:55",
+      "entry": {
+        "clock_et": "16:00",
+        "print": "close"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "signal": {
+        "from_et": "09:30",
+        "threshold": 0.01,
+        "bottom_fraction": 0.3
+      },
+      "signal_words": "Own 15:55 close at least 1.00% under 09:30–15:55 volume-weighted VWAP and same-clock return in bottom 30%; rank by largest VWAP deficit."
     },
     {
       "id": "S10-01",
@@ -1903,6 +4532,262 @@
         "past_days": 5
       },
       "signal_words": "Friday followed by a Monday session; positive last five completed split-neutral close-to-close returns compounded (through Thursday), and own Friday 13:00 to 15:50 loss at least 0.50%; rank by largest Friday loss."
+    },
+    {
+      "id": "S10-06",
+      "family": "S10",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "low_vol",
+        "vol_days": 10,
+        "bottom_fraction": 0.2
+      },
+      "signal_words": "Friday followed by Monday session; prior 10 split-neutral close-to-close returns have population SD in the bottom 20% of the pool; rank by lowest SD."
+    },
+    {
+      "id": "S10-07",
+      "family": "S10",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "low_vol",
+        "vol_days": 40,
+        "bottom_fraction": 0.2
+      },
+      "signal_words": "Friday followed by Monday session; prior 40 split-neutral close-to-close returns have population SD in the bottom 20% of the pool; rank by lowest SD."
+    },
+    {
+      "id": "S10-08",
+      "family": "S10",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "low_vol",
+        "vol_days": 20,
+        "bottom_fraction": 0.1
+      },
+      "signal_words": "Friday followed by Monday session; prior 20 split-neutral close-to-close returns have population SD in the bottom 10% of the pool; rank by lowest SD."
+    },
+    {
+      "id": "S10-09",
+      "family": "S10",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": null,
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "low_vol",
+        "vol_days": 20,
+        "bottom_fraction": 0.3
+      },
+      "signal_words": "Friday followed by Monday session; prior 20 split-neutral close-to-close returns have population SD in the bottom 30% of the pool; rank by lowest SD."
+    },
+    {
+      "id": "S10-10",
+      "family": "S10",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:50",
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "Friday_dip",
+        "from_et": "13:00",
+        "threshold": 0.005,
+        "past_days": 3
+      },
+      "signal_words": "Friday followed by Monday; prior 3 split-neutral close-to-close returns compounded through Thursday are positive; Friday 13:00–15:50 loss at least 0.50%; rank by largest loss."
+    },
+    {
+      "id": "S10-11",
+      "family": "S10",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:50",
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "Friday_dip",
+        "from_et": "13:00",
+        "threshold": 0.01,
+        "past_days": 3
+      },
+      "signal_words": "Friday followed by Monday; prior 3 split-neutral close-to-close returns compounded through Thursday are positive; Friday 13:00–15:50 loss at least 1.00%; rank by largest loss."
+    },
+    {
+      "id": "S10-12",
+      "family": "S10",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:50",
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "Friday_dip",
+        "from_et": "13:00",
+        "threshold": 0.015,
+        "past_days": 3
+      },
+      "signal_words": "Friday followed by Monday; prior 3 split-neutral close-to-close returns compounded through Thursday are positive; Friday 13:00–15:50 loss at least 1.50%; rank by largest loss."
+    },
+    {
+      "id": "S10-13",
+      "family": "S10",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:50",
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "Friday_dip",
+        "from_et": "13:00",
+        "threshold": 0.005,
+        "past_days": 10
+      },
+      "signal_words": "Friday followed by Monday; prior 10 split-neutral close-to-close returns compounded through Thursday are positive; Friday 13:00–15:50 loss at least 0.50%; rank by largest loss."
+    },
+    {
+      "id": "S10-14",
+      "family": "S10",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:50",
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "Friday_dip",
+        "from_et": "13:00",
+        "threshold": 0.01,
+        "past_days": 10
+      },
+      "signal_words": "Friday followed by Monday; prior 10 split-neutral close-to-close returns compounded through Thursday are positive; Friday 13:00–15:50 loss at least 1.00%; rank by largest loss."
+    },
+    {
+      "id": "S10-15",
+      "family": "S10",
+      "pool": "sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "15:50",
+      "entry": {
+        "clock_et": "15:55",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "10:00",
+        "print": "open",
+        "session_offset": 1
+      },
+      "hold": "Across one session boundary, 15:55 ET to next session 10:00 ET (Monday only)",
+      "signal": {
+        "type": "Friday_dip",
+        "from_et": "13:00",
+        "threshold": 0.015,
+        "past_days": 10
+      },
+      "signal_words": "Friday followed by Monday; prior 10 split-neutral close-to-close returns compounded through Thursday are positive; Friday 13:00–15:50 loss at least 1.50%; rank by largest loss."
     },
     {
       "id": "S11-01",
@@ -2073,144 +4958,509 @@
       "signal_words": "Own 13:00–13:30 30-minute loss at least 2.00% on volume at least 3x same interval prior 20-session median; trailing 5-day close-to-close population SD through yesterday greater than median of prior 60 trailing SD observations; rank by biggest loss."
     },
     {
-      "id": "S12-01",
-      "family": "S12",
-      "pool": "stock_sector",
+      "id": "S11-07",
+      "family": "S11",
+      "pool": "bond",
       "bar_minutes": 5,
       "side": "long",
       "cash_500": true,
-      "latest_signal_close_et": "15:55",
+      "latest_signal_close_et": "10:30",
       "entry": {
-        "clock_et": "16:00",
-        "print": "close"
+        "clock_et": "10:35",
+        "print": "open"
       },
       "exit": {
-        "clock_et": "10:00",
+        "clock_et": "11:05",
         "print": "open",
-        "session_offset": 1
+        "session_offset": 0
       },
-      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "hold": "30 minutes",
       "signal": {
-        "from_et": "15:00",
-        "threshold": 0.0075,
-        "volume_from_et": "15:00",
+        "from_et": "10:00",
+        "threshold": 0.001,
         "volume_multiple": 1.5,
         "volume_days": 20,
-        "period": "month"
+        "risk_days": 5,
+        "risk_median_days": 60
       },
-      "signal_words": "Last exchange session of month; own 15:00 open to 15:55 close loss at least 0.75% with volume at least 1.5x the same interval's median over prior 20 sessions; rank by largest loss. Structurally too thin; output shown only."
+      "signal_words": "Own 10:00–10:30 loss at least 0.10% on at least 1.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
     },
     {
-      "id": "S12-02",
-      "family": "S12",
+      "id": "S11-08",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "10:30",
+      "entry": {
+        "clock_et": "10:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "10:00",
+        "threshold": 0.002,
+        "volume_multiple": 1.5,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 10:00–10:30 loss at least 0.20% on at least 1.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-09",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "10:30",
+      "entry": {
+        "clock_et": "10:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "10:00",
+        "threshold": 0.002,
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 10:00–10:30 loss at least 0.20% on at least 2x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-10",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "10:30",
+      "entry": {
+        "clock_et": "10:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "11:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "10:00",
+        "threshold": 0.004,
+        "volume_multiple": 3,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 10:00–10:30 loss at least 0.40% on at least 3x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-11",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "11:30",
+      "entry": {
+        "clock_et": "11:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "12:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "11:00",
+        "threshold": 0.001,
+        "volume_multiple": 1.5,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 11:00–11:30 loss at least 0.10% on at least 1.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-12",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "11:30",
+      "entry": {
+        "clock_et": "11:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "12:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "11:00",
+        "threshold": 0.002,
+        "volume_multiple": 1.5,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 11:00–11:30 loss at least 0.20% on at least 1.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-13",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "11:30",
+      "entry": {
+        "clock_et": "11:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "12:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "11:00",
+        "threshold": 0.002,
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 11:00–11:30 loss at least 0.20% on at least 2x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-14",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "11:30",
+      "entry": {
+        "clock_et": "11:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "12:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "11:00",
+        "threshold": 0.004,
+        "volume_multiple": 3,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 11:00–11:30 loss at least 0.40% on at least 3x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-15",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:30",
+      "entry": {
+        "clock_et": "13:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "14:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "13:00",
+        "threshold": 0.001,
+        "volume_multiple": 1.5,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 13:00–13:30 loss at least 0.10% on at least 1.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-16",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:30",
+      "entry": {
+        "clock_et": "13:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "14:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "13:00",
+        "threshold": 0.002,
+        "volume_multiple": 1.5,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 13:00–13:30 loss at least 0.20% on at least 1.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-17",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:30",
+      "entry": {
+        "clock_et": "13:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "14:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "13:00",
+        "threshold": 0.002,
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 13:00–13:30 loss at least 0.20% on at least 2x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-18",
+      "family": "S11",
+      "pool": "bond",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "13:30",
+      "entry": {
+        "clock_et": "13:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "14:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "13:00",
+        "threshold": 0.004,
+        "volume_multiple": 3,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 13:00–13:30 loss at least 0.40% on at least 3x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-19",
+      "family": "S11",
       "pool": "stock_sector",
       "bar_minutes": 5,
       "side": "long",
       "cash_500": true,
-      "latest_signal_close_et": "15:55",
+      "latest_signal_close_et": "10:30",
       "entry": {
-        "clock_et": "16:00",
-        "print": "close"
+        "clock_et": "10:35",
+        "print": "open"
       },
       "exit": {
-        "clock_et": "10:00",
+        "clock_et": "11:05",
         "print": "open",
-        "session_offset": 1
+        "session_offset": 0
       },
-      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "hold": "30 minutes",
       "signal": {
-        "from_et": "15:00",
+        "from_et": "10:00",
         "threshold": 0.01,
-        "volume_from_et": "15:00",
-        "volume_multiple": 1.5,
+        "volume_multiple": 2,
         "volume_days": 20,
-        "period": "month"
+        "risk_days": 5,
+        "risk_median_days": 60
       },
-      "signal_words": "Last exchange session of month; own 15:00 open to 15:55 close loss at least 1.00% with volume at least 1.5x the same interval's median over prior 20 sessions; rank by largest loss. Structurally too thin; output shown only."
+      "signal_words": "Own 10:00–10:30 loss at least 1.00% on at least 2x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
     },
     {
-      "id": "S12-03",
-      "family": "S12",
+      "id": "S11-20",
+      "family": "S11",
       "pool": "stock_sector",
       "bar_minutes": 5,
       "side": "long",
       "cash_500": true,
-      "latest_signal_close_et": "15:55",
+      "latest_signal_close_et": "10:30",
       "entry": {
-        "clock_et": "16:00",
-        "print": "close"
+        "clock_et": "10:35",
+        "print": "open"
       },
       "exit": {
-        "clock_et": "10:00",
+        "clock_et": "11:05",
         "print": "open",
-        "session_offset": 1
+        "session_offset": 0
       },
-      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "hold": "30 minutes",
       "signal": {
-        "from_et": "15:00",
-        "threshold": 0.015,
-        "volume_from_et": "15:00",
-        "volume_multiple": 1.5,
+        "from_et": "10:00",
+        "threshold": 0.0125,
+        "volume_multiple": 2.5,
         "volume_days": 20,
-        "period": "month"
+        "risk_days": 5,
+        "risk_median_days": 60
       },
-      "signal_words": "Last exchange session of month; own 15:00 open to 15:55 close loss at least 1.50% with volume at least 1.5x the same interval's median over prior 20 sessions; rank by largest loss. Structurally too thin; output shown only."
+      "signal_words": "Own 10:00–10:30 loss at least 1.25% on at least 2.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
     },
     {
-      "id": "S12-04",
-      "family": "S12",
+      "id": "S11-21",
+      "family": "S11",
       "pool": "stock_sector",
       "bar_minutes": 5,
       "side": "long",
       "cash_500": true,
-      "latest_signal_close_et": "15:55",
+      "latest_signal_close_et": "11:30",
       "entry": {
-        "clock_et": "16:00",
-        "print": "close"
+        "clock_et": "11:35",
+        "print": "open"
       },
       "exit": {
-        "clock_et": "10:00",
+        "clock_et": "12:05",
         "print": "open",
-        "session_offset": 1
+        "session_offset": 0
       },
-      "hold": "Across one session boundary, 16:00 ET to next session 10:00 ET",
+      "hold": "30 minutes",
       "signal": {
-        "from_et": "15:00",
-        "threshold": 0.0075,
-        "volume_from_et": "15:00",
-        "volume_multiple": 1.5,
+        "from_et": "11:00",
+        "threshold": 0.01,
+        "volume_multiple": 2,
         "volume_days": 20,
-        "period": "quarter"
+        "risk_days": 5,
+        "risk_median_days": 60
       },
-      "signal_words": "Last exchange session of quarter; own 15:00 open to 15:55 close loss at least 0.75% with volume at least 1.5x the same interval's median over prior 20 sessions; rank by largest loss. Structurally too thin; output shown only."
+      "signal_words": "Own 11:00–11:30 loss at least 1.00% on at least 2x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
     },
     {
-      "id": "S12-05",
-      "family": "S12",
+      "id": "S11-22",
+      "family": "S11",
       "pool": "stock_sector",
       "bar_minutes": 5,
       "side": "long",
       "cash_500": true,
-      "latest_signal_close_et": "15:55",
+      "latest_signal_close_et": "11:30",
       "entry": {
-        "clock_et": "16:00",
-        "print": "close"
+        "clock_et": "11:35",
+        "print": "open"
       },
       "exit": {
-        "clock_et": "16:00",
-        "print": "close",
-        "session_offset": 1
+        "clock_et": "12:05",
+        "print": "open",
+        "session_offset": 0
       },
-      "hold": "Across one session boundary, 16:00 ET to next session 16:00 ET",
+      "hold": "30 minutes",
       "signal": {
-        "from_et": "15:00",
-        "threshold": 0.015,
-        "volume_from_et": "15:00",
-        "volume_multiple": 1.5,
+        "from_et": "11:00",
+        "threshold": 0.0125,
+        "volume_multiple": 2.5,
         "volume_days": 20,
-        "period": "quarter"
+        "risk_days": 5,
+        "risk_median_days": 60
       },
-      "signal_words": "Last exchange session of quarter; own 15:00 open to 15:55 close loss at least 1.50% with volume at least 1.5x the same interval's median over prior 20 sessions; rank by largest loss. Structurally too thin; output shown only."
+      "signal_words": "Own 11:00–11:30 loss at least 1.25% on at least 2.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-23",
+      "family": "S11",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "12:30",
+      "entry": {
+        "clock_et": "12:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "13:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "12:00",
+        "threshold": 0.01,
+        "volume_multiple": 2,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 12:00–12:30 loss at least 1.00% on at least 2x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
+    },
+    {
+      "id": "S11-24",
+      "family": "S11",
+      "pool": "stock_sector",
+      "bar_minutes": 5,
+      "side": "long",
+      "cash_500": true,
+      "latest_signal_close_et": "12:30",
+      "entry": {
+        "clock_et": "12:35",
+        "print": "open"
+      },
+      "exit": {
+        "clock_et": "13:05",
+        "print": "open",
+        "session_offset": 0
+      },
+      "hold": "30 minutes",
+      "signal": {
+        "from_et": "12:00",
+        "threshold": 0.0125,
+        "volume_multiple": 2.5,
+        "volume_days": 20,
+        "risk_days": 5,
+        "risk_median_days": 60
+      },
+      "signal_words": "Own 12:00–12:30 loss at least 1.25% on at least 2.5x prior 20-session same-window median volume; prior 5-day realized population SD above its prior 60-session median; rank by largest loss."
     }
-  ]
+  ],
+  "shared_settings_key": "replay_69_plan"
 }

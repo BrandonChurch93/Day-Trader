@@ -7,11 +7,13 @@ from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
 import gzip
 import hashlib
+import io
 import json
 import math
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 import time as sleep_clock
 from urllib.error import HTTPError
@@ -24,15 +26,61 @@ from numpy.lib.stride_tricks import sliding_window_view
 
 HERE = Path(__file__).resolve().parent
 STORE = Path('/home/user/workspace/rig/data/sweep_69')
-FIRST, LAST = date(2016, 1, 4), date(2021, 12, 31)
-SECOND = date(2019, 1, 1)
-SETTLE_CHANGE = date(2017, 9, 5)
+CONFIG = HERE.parent / 'config' / 'thresholds.yaml'
+BAR_FILE, RECEIPT = 'bars_sip_5min.jsonl.gz', 'collection_receipt.json'
 NY, UTC = ZoneInfo('America/New_York'), timezone.utc
 ENDPOINT = 'https://data.alpaca.markets/v2/stocks/bars'
 FIELDS = ('o', 'h', 'l', 'c', 'v', 'vw')
-BARS = 78
-CASH = 500
-YEARS = 6
+
+
+def open_directory(path):
+    """Walk physical directories using anchored directory FDs; never follow symlinks."""
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for part in path.parts[1:]:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def read_once(path, directory_fd=None):
+    parent = open_directory(path.parent) if directory_fd is None else directory_fd
+    try:
+        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+        with os.fdopen(fd, 'rb') as file:
+            if not stat.S_ISREG(os.fstat(file.fileno()).st_mode):
+                raise ValueError('Custody input must be a regular file')
+            return file.read()
+    finally:
+        if directory_fd is None:
+            os.close(parent)
+
+
+def digest(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def verified(raw, expected, label):
+    actual = digest(raw)
+    if actual != expected:
+        raise ValueError(f'Custody SHA-256 mismatch: {label}')
+    return actual
+
+
+CONFIG_RAW = read_once(CONFIG)
+P = json.loads(re.search(rb'^replay_69_plan:\n  value: (\{[^\n]+\})$', CONFIG_RAW, re.M).group(1))
+FIRST, LAST, SECOND, SETTLE_CHANGE = (date.fromisoformat(P[k]) for k in ('first', 'last', 'half2', 'settle_change'))
+# Absolute safety ceiling stays independently fail-closed if the settings file is modified.
+if (FIRST.isoformat(), LAST.isoformat()) != ('2016-01-04', '2021-12-31'):
+    raise ValueError('Configured search dates do not equal the absolute Plan 69 fence')
+MARKS, SYN = P['marks'], P['synthetic']
+MINS = P['bar_minutes']
+BARS, CASH, YEARS = P['session_minutes'] // MINS, P['capital'], P['years']
+SCOPE = f'plan-69-search-only-{FIRST}_{LAST}'
 
 
 def date_fence(start, end):
@@ -57,9 +105,9 @@ def guard_stamp(stamp, start, end):
     return value, day
 
 
-def session_list(start=FIRST, end=LAST):
+def session_list(start=FIRST, end=LAST, *, calendar_raw):
     date_fence(start, end)
-    records = json.loads((HERE / 'calendar_65.json').read_text())['sessions']
+    records = json.loads(calendar_raw)['sessions']
     lo, hi = start.isoformat(), end.isoformat()
     return [(date.fromisoformat(d), parse_time(o), parse_time(c))
             for d, o, c in records if lo <= d <= hi]
@@ -67,10 +115,11 @@ def session_list(start=FIRST, end=LAST):
 
 def offset(clock):
     h, m = map(int, clock.split(':'))
-    minutes = 60 * h + m - 570
-    if not 0 <= minutes <= 390 or minutes % 5:
+    start = time.fromisoformat(P['session_open'])
+    minutes = 60 * (h - start.hour) + m - start.minute
+    if not 0 <= minutes <= P['session_minutes'] or minutes % MINS:
         raise ValueError('Not a valid five-minute regular-hours clock')
-    return minutes // 5
+    return minutes // MINS
 
 
 def print_spec(spec):
@@ -81,21 +130,21 @@ def print_spec(spec):
     return i, mode
 
 
-def load_grid():
-    grid = json.loads((HERE / 'GRID_69.json').read_text())
+def load_grid(grid_raw):
+    grid = json.loads(grid_raw)
     rules = grid['rules']
-    if not 1 <= len(rules) <= 300 or len({r['id'] for r in rules}) != len(rules):
+    if not 1 <= len(rules) <= P['rule_limit'] or len({r['id'] for r in rules}) != len(rules):
         raise ValueError('Bad rule count or duplicate ID')
     for r in rules:
         e, _ = print_spec(r['entry'])
         x, _ = print_spec(r['exit'])
         if r['family'] not in grid['families'] or r['pool'] not in grid['pools']:
             raise ValueError('Rule has an unknown family or pool')
-        if r['exit']['session_offset'] not in (0, 1) or (not r['exit']['session_offset'] and x <= e):
+        if type(r['exit']['session_offset']) is not int or r['exit']['session_offset'] not in (0, 1) or (not r['exit']['session_offset'] and x <= e):
             raise ValueError('Rule has an invalid exit clock')
         if r['latest_signal_close_et'] is not None and offset(r['latest_signal_close_et']) >= e:
             raise ValueError('Rule may use a bar not closed strictly before entry')
-        if r['side'] not in ('long', 'short') or r['cash_500'] != (r['side'] == 'long'):
+        if r['side'] not in ('long', 'short') or type(r['cash_500']) is not bool or r['cash_500'] != (r['side'] == 'long'):
             raise ValueError('Only a long position in a listed security can be cash judged')
     return grid
 
@@ -104,37 +153,28 @@ def roster(grid):
     return tuple(sorted({s for symbols in grid['universe'].values() for s in symbols}))
 
 
-def data_path(name):
-    p = STORE / name
-    if p.resolve() != p or p.parent.resolve() != STORE:
-        raise ValueError('Plan 69 data must stay in its off-repo directory; no symlinks')
-    return p
+def approval(root_fd):
+    """Verify captured buffers before parsing; pass the same buffers to consumers."""
+    status = json.loads(read_once(STORE / 'search_approval.json', root_fd))
+    bufs = {name: read_once(HERE / name) for name in ('GRID_69.json', 'sweep_69.py', 'calendar_65.json')}
+    bufs['identity.json'] = read_once(STORE / 'identity.json', root_fd)
+    bufs['thresholds.yaml'] = CONFIG_RAW
+    if (status.get('scope') != SCOPE or not isinstance(status.get('approved_by'), str)
+            or not status['approved_by'].strip() or set(status.get('sha256', {})) != set(bufs)):
+        raise ValueError('Missing or mismatched independent Plan 69 collection approval')
+    pins = {name: verified(buf, status['sha256'][name], name) for name, buf in bufs.items()}
+    return bufs, pins
 
 
-def sha(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def approval():
-    """Independent sign-off binds the program, the grid and the identity file."""
-    status = json.loads(data_path('search_approval.json').read_text())
-    expected = {name: sha(HERE / name) for name in ('GRID_69.json', 'sweep_69.py', 'calendar_65.json')}
-    expected['identity.json'] = sha(data_path('identity.json'))
-    if (status.get('scope') != 'plan-69-search-only-2016-01-04_2021-12-31'
-            or status.get('sha256') != expected
-            or not isinstance(status.get('approved_by'), str) or not status['approved_by'].strip()):
-        raise ValueError('Missing or mismatched independent Plan 69 search approval')
-
-
-def read_identity(grid):
+def read_identity(grid, identity_raw):
     """Dated, non-price identity and split data. No substitution for delisted securities."""
-    obj = json.loads(data_path('identity.json').read_text())
+    obj = json.loads(identity_raw)
     if obj.get('coverage_start') != FIRST.isoformat() or obj.get('coverage_end') != LAST.isoformat():
         raise ValueError('The identity register must cover exactly the search dates')
     members = obj['members']
     if set(members) != set(roster(grid)):
         raise ValueError('The identity register must retain every original member')
-    spans, splits = [], {}
+    spans, splits, actions = [], {}, set()
     by_alias = defaultdict(list)
     for member, rec in sorted(members.items()):
         if not rec.get('sources') or not all(str(u).startswith('https://') for u in rec['sources']):
@@ -150,17 +190,29 @@ def read_identity(grid):
             by_alias[alias].append((start, end))
             prev = end
         for p in rec['splits']:
-            day, factor = date.fromisoformat(p['effective_date']), float(p['new_per_old'])
+            day = date.fromisoformat(p['effective_date'])
+            if type(p['new_per_old']) not in (int, float):
+                raise ValueError('Split ratios must be numeric, not boolean')
+            factor = float(p['new_per_old'])
             date_fence(day, day)
             if (not math.isfinite(factor) or factor <= 0 or (member, day) in splits
                     or not any(m == member and lo <= day <= hi for m, _, lo, hi in spans)):
                 raise ValueError('Invalid split register row')
             splits[member, day] = factor
+            actions.add((member, day))
+        for p in rec.get('other_actions', []):
+            day = date.fromisoformat(p['effective_date'])
+            date_fence(day, day)
+            if (p['kind'] not in ('cash_distribution', 'spin_off', 'reorganization')
+                    or not p['source'].startswith('https://')
+                    or not any(m == member and lo <= day <= hi for m, _, lo, hi in spans)):
+                raise ValueError('Invalid non-price corporate-action row')
+            actions.add((member, day))
     for periods in by_alias.values():
         periods.sort()
         if any(later[0] <= earlier[1] for earlier, later in zip(periods, periods[1:])):
             raise ValueError('A ticker cannot represent two original members at once')
-    return spans, splits
+    return spans, splits, actions
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -170,7 +222,7 @@ class NoRedirect(HTTPRedirectHandler):
 
 def bars_pages(ticker, start, end, get):
     date_fence(start, end)
-    window = {'symbols': ticker, 'timeframe': '5Min', 'feed': 'sip', 'adjustment': 'raw',
+    window = {'symbols': ticker, 'timeframe': f'{MINS}Min', 'feed': 'sip', 'adjustment': 'raw',
               'asof': '-', 'sort': 'asc', 'limit': 10000,
               'start': datetime.combine(start, time(9, 30), NY).astimezone(UTC).isoformat(),
               'end': datetime.combine(end, time(15, 55), NY).astimezone(UTC).isoformat()}
@@ -192,15 +244,40 @@ def bars_pages(ticker, start, end, get):
         window['page_token'] = token
 
 
-def collect(grid, start, end):
+def collection_header(start, end, pins):
+    return {'feed': 'sip', 'timeframe': f'{MINS}Min', 'adjustment': 'raw', 'asof': '-',
+            'start': start.isoformat(), 'end': end.isoformat(), 'input_sha256': pins}
+
+
+def new_private(root_fd, name):
+    fd = os.open(name, os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=root_fd)
+    try:
+        os.fchmod(fd, 0o600)
+        return os.fdopen(fd, 'w+b')
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def publish(root_fd, staging, destination):
+    os.link(staging, destination, src_dir_fd=root_fd, dst_dir_fd=root_fd, follow_symlinks=False)
+    os.unlink(staging, dir_fd=root_fd)
+    os.fsync(root_fd)
+
+
+def collect(grid, start, end, root_fd, bufs, pins):
     date_fence(start, end)
     if (start, end) != (FIRST, LAST):
         raise ValueError('The persisted collection must cover the entire frozen search')
-    approval()
-    spans, _ = read_identity(grid)
-    final, temp = data_path('bars_sip_5min.jsonl.gz'), data_path('bars_sip_5min.partial.jsonl.gz')
-    if final.exists() or temp.exists():
-        raise ValueError('Existing search data or partial collection; do not overwrite')
+    spans, _, _ = read_identity(grid, bufs['identity.json'])
+    session_list(start, end, calendar_raw=bufs['calendar_65.json'])
+    temp, temp_receipt = BAR_FILE + '.partial', RECEIPT + '.partial'
+    for name in (BAR_FILE, RECEIPT, temp, temp_receipt):
+        try:
+            os.stat(name, dir_fd=root_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            continue
+        raise ValueError('Existing search data, receipt or partial collection; do not overwrite')
     opener = build_opener(NoRedirect())
     headers = {'APCA-API-KEY-ID': os.environ['APCA_API_KEY_ID'],
                'APCA-API-SECRET-KEY': os.environ['APCA_API_SECRET_KEY']}
@@ -217,38 +294,91 @@ def collect(grid, start, end):
                     raise ValueError(f'Alpaca bars HTTP {err.code}; no response body logged') from None
         raise AssertionError('unreachable')
 
-    with gzip.open(temp, 'xt', encoding='utf-8') as out:
-        header = {'feed': 'sip', 'timeframe': '5Min', 'adjustment': 'raw', 'asof': '-',
-                  'start': start.isoformat(), 'end': end.isoformat(),
-                  'identity_sha256': sha(data_path('identity.json'))}
-        out.write(json.dumps(header) + '\n')
-        for member, alias, a, b in spans:
-            for row in bars_pages(alias, a, b, get):
-                out.write(json.dumps([member, alias, row['t'], *(row.get(k) for k in FIELDS)],
-                                     allow_nan=False, separators=(',', ':')) + '\n')
-    os.link(temp, final)  # atomic, no overwrite if another process created it
-    temp.unlink()
+    count = 0
+    with new_private(root_fd, temp) as file:
+        with gzip.GzipFile(fileobj=file, mode='wb', filename='', mtime=0) as out:
+            out.write((json.dumps(collection_header(start, end, pins)) + '\n').encode())
+            for member, alias, a, b in spans:
+                for row in bars_pages(alias, a, b, get):
+                    out.write((json.dumps([member, alias, row['t'], *(row.get(k) for k in FIELDS)],
+                                          allow_nan=False, separators=(',', ':')) + '\n').encode())
+                    count += 1
+        file.flush()
+        os.fsync(file.fileno())
+        file.seek(0)
+        bar_pin = digest(file.read())
+    if not count:
+        raise ValueError('Vendor returned no bars; partial retained for audit')
+    with new_private(root_fd, temp_receipt) as file:
+        file.write((json.dumps({'scope': SCOPE, 'bars_sha256': bar_pin, 'input_sha256': pins,
+                                'archive_records': count}, sort_keys=True) + '\n').encode())
+        file.flush()
+        os.fsync(file.fileno())
+    publish(root_fd, temp, BAR_FILE)
+    publish(root_fd, temp_receipt, RECEIPT)
+    print(json.dumps({'bars_sha256': bar_pin, 'archive_records': count}, sort_keys=True))
 
 
-def load_collection(grid, start, end):
+def archive_input(root_fd, pins, *, score):
+    receipt_raw = read_once(STORE / RECEIPT, root_fd)
+    receipt = json.loads(receipt_raw)
+    receipt_pin = digest(receipt_raw)
+    if (receipt.get('scope') != SCOPE or receipt.get('input_sha256') != pins
+            or type(receipt.get('archive_records')) is not int or receipt['archive_records'] <= 0):
+        raise ValueError('Invalid Plan 69 collection receipt')
+    if score:
+        permit = json.loads(read_once(STORE / 'score_approval.json', root_fd))
+        if (permit.get('scope') != SCOPE + '-score' or not isinstance(permit.get('approved_by'), str)
+                or not permit['approved_by'].strip() or permit.get('collection_receipt_sha256') != receipt_pin
+                or permit.get('bars_sha256') != receipt.get('bars_sha256')):
+            raise ValueError('Missing or mismatched independent Plan 69 scoring approval')
+    raw = read_once(STORE / BAR_FILE, root_fd)
+    pin = verified(raw, receipt.get('bars_sha256'), BAR_FILE)
+    return raw, pin, receipt['archive_records']
+
+
+def is_number(value):
+    return type(value) in (int, float) and math.isfinite(value)
+
+
+def validate_jumps(a, dates, names, actions):
+    limits = P['jump_ratio']
+    for i, name in enumerate(names):
+        o, c = a[0, :, i].ravel(), a[3, :, i].ravel()
+        seen = np.flatnonzero(np.isfinite(o) & np.isfinite(c))
+        if not seen.size:
+            continue
+        steps = [c[seen].astype(np.float64) / o[seen]]
+        origins = [seen]
+        if len(seen) > 1:
+            steps += [o[seen[1:]].astype(np.float64) / c[seen[:-1]], c[seen[1:]].astype(np.float64) / c[seen[:-1]]]
+            origins += [seen[1:], seen[1:]]
+        bad = sorted({int(k) // BARS for v, ix in zip(steps, origins)
+                      for k in ix[(v < limits['lower']) | (v > limits['upper'])]})
+        for d in bad:
+            if (name, dates[d]) not in actions:
+                raise ValueError(f'Unexplained price jump: {name} {dates[d]}')
+
+
+def load_collection(grid, start, end, root_fd, bufs, pins, *, score):
     date_fence(start, end)
     if (start, end) != (FIRST, LAST):
         raise ValueError('The registered search uses the whole search period')
-    approval()
-    spans, splits = read_identity(grid)
-    sessions, names = session_list(start, end), roster(grid)
+    raw, bar_pin, expected_count = archive_input(root_fd, pins, score=score)
+    spans, splits, actions = read_identity(grid, bufs['identity.json'])
+    sessions, names = session_list(start, end, calendar_raw=bufs['calendar_65.json']), roster(grid)
     dates = [x[0] for x in sessions]
     di, si = {d: i for i, d in enumerate(dates)}, {s: i for i, s in enumerate(names)}
     active = {(m, d): a for m, a, lo, hi in spans for d in dates if lo <= d <= hi}
     a = np.full((len(FIELDS), len(dates), len(names), BARS), np.nan, dtype=np.float32)
-    with gzip.open(data_path('bars_sip_5min.jsonl.gz'), 'rt', encoding='utf-8') as f:
+    count, kept = 0, 0
+    with gzip.GzipFile(fileobj=io.BytesIO(raw), mode='rb') as f:
         header = json.loads(next(f))
-        expected = {'feed': 'sip', 'timeframe': '5Min', 'adjustment': 'raw', 'asof': '-',
-                    'start': start.isoformat(), 'end': end.isoformat(),
-                    'identity_sha256': sha(data_path('identity.json'))}
+        expected = collection_header(start, end, pins)
         if header != expected:
             raise ValueError('Collection header does not match the registered inputs')
         for line in f:
+            count += 1
             member, alias, stamp, *vals = json.loads(line)
             when, day = guard_stamp(stamp, start, end)
             if active.get((member, day)) != alias:
@@ -260,16 +390,19 @@ def load_collection(grid, start, end):
             if not session_open <= when < session_close:
                 continue  # never use extended hours
             seconds = (when - session_open).total_seconds()
-            if seconds % 300 or len(vals) != len(FIELDS):
+            if seconds % (60 * MINS) or len(vals) != len(FIELDS):
                 raise ValueError('Off-grid or malformed regular-hours bar')
-            i = int(seconds / 300)
+            i = int(seconds / (60 * MINS))
             o, h, low, c, v, vw = vals
-            if (not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0 for x in vals[:5])
+            if (not all(is_number(x) and x > 0 for x in vals[:5])
                     or low > min(o, c) or h < max(o, c)
-                    or (vw is not None and (not math.isfinite(vw) or vw <= 0))
+                    or (vw is not None and (not is_number(vw) or vw <= 0))
                     or np.isfinite(a[0, d, n, i])):
                 raise ValueError('Invalid or duplicate regular-hours bar')
             a[:, d, n, i] = vals
+            kept += 1
+    if count != expected_count:
+        raise ValueError('Archive record count does not match collection receipt')
     for member, _, lo, hi in spans:
         span_days = [di[day] for day in dates if lo <= day <= hi]
         if span_days and not np.any(np.isfinite(a[0, span_days, si[member]])):
@@ -279,7 +412,14 @@ def load_collection(grid, start, end):
         if day not in di:
             raise ValueError('Split date must be its first effective search session')
         split_array[di[day], si[member]] = factor
-    return Tape(dates, names, a, [int((c - o).total_seconds() / 300) for _, o, c in sessions], split_array)
+    if any(day not in di for _, day in actions):
+        raise ValueError('Corporate-action date must be its first effective search session')
+    validate_jumps(a, dates, names, actions)
+    counts = {'archive_rows': count, 'regular_rows': kept, 'sessions': len(dates),
+              'registered_instruments': len(names), 'active_alias_spans': len(spans),
+              'instruments_with_regular_rows': int(np.any(np.isfinite(a[0]), axis=(0, 2)).sum()),
+              'registered_splits': len(splits), 'registered_action_dates': len(actions)}
+    return dates, names, a, [int((c - o).total_seconds() / (60 * MINS)) for _, o, c in sessions], split_array, counts, bar_pin
 
 
 def ratio(end, start):
@@ -375,18 +515,11 @@ class Tape:
         if fam == 'S1':
             val = self.period_return(earliest(), cut)
             test = val >= limit
-        elif fam in ('S2', 'S3', 'S7', 'S12'):
+        elif fam in ('S2', 'S3', 'S7'):
             val = -self.period_return(earliest(), cut)
             test = val >= limit
             if 'volume_multiple' in p:
                 test &= self.volume_multiple(offset(p['volume_from_et']), cut, p['volume_days']) >= p['volume_multiple']
-            if fam == 'S12':
-                # This uses only the published calendar; no actual data beyond the fence.
-                # Dec 31 2021 cannot enter an overnight trade in any case.
-                last = np.array([d.month != n.month for d, n in zip(self.dates[:-1], self.dates[1:])] + [False])
-                if p['period'] == 'quarter':
-                    last &= np.array([d.month % 3 == 0 for d in self.dates])
-                test &= last[:, None]
         elif fam == 'S4':
             val = -ratio(self.print(earliest(), 'open').astype(np.float64) * self.splits,
                          lag(self.reg_close(), 1))
@@ -403,7 +536,7 @@ class Tape:
             range_end = offset(p['range_end_et'])
             hi, lo = self.high_low(earliest(), range_end)
             range_size = (hi.astype(np.float64) - lo) / self.print(earliest(), 'open')
-            mult = self.cached(('range', range_end, p['range_days']),
+            mult = self.cached(('range', earliest(), range_end, p['range_days']),
                                lambda: range_size / past(range_size, p['range_days'], np.median))
             hi, lo = self.high_low(earliest(), cut)
             loc = (self.print(cut, 'close') - lo) / (hi.astype(np.float64) - lo)
@@ -480,8 +613,9 @@ class Tape:
 def cost_bps(grid, symbol, spec):
     e, mode = print_spec(spec)
     i = e - (mode == 'close')
-    bucket = 0 if i < 6 else 2 if i >= 72 else 1
-    model = grid['cost_bps_per_side']
+    width = P['cost_window_minutes'] // MINS
+    bucket = 0 if i < width else 2 if i >= BARS - width else 1
+    model = P['cost_bps_per_side']
     group = next((g for g, symbols in grid['measured_cost_symbols'].items() if symbol in symbols), 'cautious')
     if mode == 'close' and e == BARS:
         group = 'cautious'
@@ -489,7 +623,7 @@ def cost_bps(grid, symbol, spec):
 
 
 def settlement_delay(day):
-    return 3 if day < SETTLE_CHANGE else 2
+    return P['settlement_delays'][day >= SETTLE_CHANGE]
 
 
 def clearing_session(day):
@@ -569,7 +703,7 @@ def clustered(rows):
 
 def trim_mean(net):
     n = len(net)
-    k = math.ceil(n * 0.01)
+    k = math.ceil(n * MARKS['trim'])
     return float(np.sort(net)[:n - k].mean()) if n > k else math.nan
 
 
@@ -583,9 +717,9 @@ def summarize(r, trades, blocks, missing_entries=0, missing_exit=False):
     half_plain = [float(np.mean([net_i for d, net_i, _ in trades if d in ids])) if ids else math.nan
                   for ids in ({d for d, _ in b} for b in blocks[1:])]
     trim = trim_mean(net)
-    ok = (plain > 0 and min(half_plain) > 0 and t >= 3.5 and h1 >= 1.5 and h2 >= 1.5
-          and trim > 0 and annual >= 0.12)
-    status = ('unpriced_exit' if missing_exit else 'too_thin' if n < 200 or days[0] < 100 or min(days[1:]) < 40
+    ok = (plain > 0 and all(v > 0 for v in half_plain) and t >= MARKS['t']
+          and h1 >= MARKS['half_t'] and h2 >= MARKS['half_t'] and trim > 0 and annual >= MARKS['annual'])
+    status = ('unpriced_exit' if missing_exit else 'too_thin' if n < MARKS['trades'] or days[0] < MARKS['days'] or min(days[1:]) < MARKS['half_days']
               else 'eligible' if ok else 'miss')
     return {'id': r['id'], 'family': r['family'], 'status': status, 'trades': n, 'days': days[0],
             'days_h1': days[1], 'days_h2': days[2], 'net_mean': plain, 'net_mean_h1': half_plain[0],
@@ -595,7 +729,7 @@ def summarize(r, trades, blocks, missing_entries=0, missing_exit=False):
 
 def overlap_corr(a, b):
     common = sorted(a.keys() & b.keys())
-    if len(common) < 2:
+    if len(common) < MARKS['duplicate_days'] or len(common) < MARKS['duplicate_share'] * min(len(a), len(b)):
         return math.nan
     x, y = np.array([(a[d], b[d]) for d in common]).T
     if x.std() == 0 or y.std() == 0:
@@ -610,10 +744,6 @@ def search(tape, grid):
         if not r['cash_500']:
             summaries.append({'id': r['id'], 'family': r['family'], 'status': 'shown_short_unscored'})
             continue
-        if r['family'] == 'S12':
-            summaries.append({'id': r['id'], 'family': r['family'], 'status': 'too_thin',
-                              'structural_max_entries': 72 if r['signal']['period'] == 'month' else 24})
-            continue
         trades, blocks, absent, no_exit = execute(tape, grid, r, tape.signals(r, grid))
         row = summarize(r, trades, blocks, absent, no_exit)
         summaries.append(row)
@@ -621,10 +751,10 @@ def search(tape, grid):
             eligible.append((row, {d: n for d, n, _ in trades}))
     finalists = []
     for row, pnl in sorted(eligible, key=lambda item: (-item[0]['t'], item[0]['id'])):
-        dup = next((prior['id'] for prior, p in finalists if overlap_corr(pnl, p) > .7), None)
+        dup = next((prior['id'] for prior, p in finalists if overlap_corr(pnl, p) > MARKS['duplicate_r']), None)
         if dup is not None:
             row['status'], row['duplicate_of'] = 'duplicate', dup
-        elif len(finalists) < 3:
+        elif len(finalists) < MARKS['finalists']:
             row['status'] = 'finalist'
             finalists.append((row, pnl))
         else:
@@ -632,14 +762,14 @@ def search(tape, grid):
     return summaries
 
 
-def synthetic_tape(grid, seed, case='noise'):
+def synthetic_tape(grid, seed, case='noise', *, calendar_raw, inject_plant=True):
     rng = np.random.default_rng(seed)
-    sessions = session_list()
+    sessions = session_list(calendar_raw=calendar_raw)
     # Small fake cross-section exercises the same families, clocks and scoring. Real names are never used here.
     source_pools = ['stocks'] * 7 + ['sector'] * 4 + ['broad'] * 2 + ['bond'] * 2 + ['bull', 'inverse']
     names = tuple('FAKE%02d' % i for i in range(len(source_pools)))
     n, d = len(names), len(sessions)
-    early_lengths = [int((c - o).total_seconds() / 300) for _, o, c in sessions]
+    early_lengths = [int((c - o).total_seconds() / (60 * MINS)) for _, o, c in sessions]
     full = np.arange(BARS)[None, :] < np.array(early_lengths)[:, None]
     a = np.empty((len(FIELDS), d, n, BARS), dtype=np.float32)
     shock = rng.normal(0, 0.0034, (d, n, BARS)).astype(np.float32)
@@ -653,18 +783,25 @@ def synthetic_tape(grid, seed, case='noise'):
         gap[:] = 0.018  # identical drift each night; no timed predictive information
         shock *= .025
     if case == 'plant':
-        # Fix two isolated, causal blocks for fake sector member 07, the rest pure noise.
-        # One signal interval ends at 15:25 and an independent reward starts strictly after 15:30.
+        # Fix two isolated, causal positive blocks for fake sector member 07.
+        # The signal ends at 15:25 and a reward starts strictly after 15:30.
         known = np.arange(d) % 4 == 0
         shock[:, 7, :] *= .05
-        shock[known, 7, 9:70] += .042 / 61
-        shock[known, 7, 74:78] += .030 / 4
-    gap += np.vstack((np.zeros((1, n)), shock[:-1].sum(axis=2)))
-    start = np.cumsum(gap, axis=0) if case == 'noise' else np.zeros((d, n))
+        # Distribute the balancing log move across the next three sessions.
+        # Keep it in the no-plant control too, so it cannot explain a finalist.
+        shock[~known, 7, :] -= (.042 + .030) / (3 * np.array(early_lengths)[~known, None])
+        if inject_plant:
+            shock[known, 7, 9:70] += .042 / 61
+            shock[known, 7, 74:78] += .030 / 4
     if case == 'drift':
-        # Keep only the tiny within-day changes; additive drift would make all prices unaffordable.
-        # The overnight return is put into the prior close versus next open without a price trend.
-        shock[:, 0, 20:68] -= np.log(1.018) / 48
+        # Offset the deliberately constant log gap intraday, preserving both
+        # positive overnight drift and a whole-share-affordable control price.
+        shock[:, 0, 20:68] -= .018 / 48
+    # Every open carries the previous close forward plus its own gap. With
+    # a daily reset, the next gap would undo the prior day's intraday move.
+    shock *= full[:, None, :]  # injected moves outside an early close cannot carry forward
+    gap += np.vstack((np.zeros((1, n)), shock[:-1].sum(axis=2)))
+    start = np.cumsum(gap, axis=0)
     open0 = 28 + np.arange(n) * .4
     log_close = np.cumsum(shock, axis=2)
     a[0, :, :, 0] = np.exp(start) * open0
@@ -696,10 +833,10 @@ def assert_raises(fn):
     raise AssertionError('Expected a ValueError')
 
 
-def internal_tests(grid):
+def internal_tests(grid, calendar_raw):
     poison = date(2022, 1, 3)
     assert_raises(lambda: date_fence(FIRST, poison))
-    assert_raises(lambda: session_list(FIRST, poison))
+    assert_raises(lambda: session_list(FIRST, poison, calendar_raw=calendar_raw))
     assert_raises(lambda: next(bars_pages('FAKE', FIRST, poison, lambda _: 1 / 0)))
     assert_raises(lambda: next(bars_pages('FAKE', FIRST, LAST, lambda _: {
         'bars': {'FAKE': [{'t': '2022-01-03T14:30:00Z'}]}})))
@@ -719,14 +856,35 @@ def internal_tests(grid):
     assert settlement_delay(date(2017, 9, 1)) == 3 and settlement_delay(date(2017, 9, 5)) == 2
     assert not clearing_session(date(2018, 10, 8)) and not clearing_session(date(2018, 11, 12))
     assert trim_mean(np.array([0., 1., 100.])) == .5
-    assert overlap_corr({1: 1, 2: 2, 4: 4}, {1: 11, 2: 12, 4: 14, 8: 1}) > .7
-    assert overlap_corr({1: 1, 2: 2, 4: 4}, {1: -11, 2: -12, 4: -14}) < -.7
+    assert math.isnan(overlap_corr({i: i for i in range(20)}, {i: i for i in range(1, 21)}))
+    assert math.isnan(overlap_corr({i: i for i in range(101)}, {i: i for i in range(81, 182)}))
+    assert overlap_corr({i: i for i in range(100)}, {i: i for i in range(80, 180)}) > MARKS['duplicate_r']
+    assert overlap_corr({i: i for i in range(100)}, {i: -i for i in range(80, 180)}) < -MARKS['duplicate_r']
+    assert not is_number(True) and is_number(1.0)
+    jump = np.full((len(FIELDS), 2, 1, BARS), np.nan)
+    jump[0, :, 0, 0] = jump[3, :, 0, 0] = [20, 80]
+    second = FIRST + timedelta(days=1)
+    assert_raises(lambda: validate_jumps(jump, [FIRST, second], ['FAKE'], set()))
+    validate_jumps(jump, [FIRST, second], ['FAKE'], {('FAKE', second)})
+    jump[0, 0, 0, 1] = jump[3, 0, 0, 1] = 9
+    assert_raises(lambda: validate_jumps(jump, [FIRST, second], ['FAKE'], {('FAKE', second)}))
 
-    tape, fake = synthetic_tape(grid, 691000, 'plant')
+    tape, fake = synthetic_tape(grid, SYN['plant_seed'], 'plant', calendar_raw=calendar_raw)
     res = search(tape, fake)
-    found = [r for r in res if r['status'] == 'finalist' and r['family'] == 'S1']
-    if not found:
-        raise AssertionError(f'Planted S1 not found: {[r for r in res if r["family"] == "S1"]}')
+    clears_mark = {'finalist', 'duplicate', 'cap'}
+    planted = next(r for r in res if r['id'] == 'S1-04')
+    if planted['status'] not in clears_mark:
+        raise AssertionError(f'Planted S1-04 did not clear every statistical mark: {planted}')
+    rank = lambda r: (-r['t'], r['id'])
+    ahead = sorted((r for r in res if r['status'] == 'finalist' and rank(r) < rank(planted)), key=rank)
+    control_tape, control_grid = synthetic_tape(grid, SYN['plant_seed'], 'plant',
+                                                calendar_raw=calendar_raw, inject_plant=False)
+    control = {r['id']: r for r in search(control_tape, control_grid)}
+    surviving_ahead = [r['id'] for r in ahead if control[r['id']]['status'] in clears_mark]
+    control_finalists = [r['id'] for r in control.values() if r['status'] == 'finalist']
+    if surviving_ahead or control_finalists:
+        raise AssertionError(f'Plant-free control failed: higher-ranked rules still clearing marks '
+                             f'{surviving_ahead}; finalists {control_finalists}')
     # Every executable rule: poison all its signal-day bars whose closing time is >= entry,
     # including the entry-bar open and exit print, and all future days. Prior dates are invariant.
     for r in fake['rules']:
@@ -743,19 +901,23 @@ def internal_tests(grid):
             if (not np.array_equal(before, after) or not np.array_equal(
                     tape.sizing_reference(i)[d], probe.sizing_reference(i)[d], equal_nan=True)):
                 raise AssertionError(f'Entry selection looked ahead: {r["id"]}')
-    print(json.dumps({'test': 'plant_and_no_lookahead', 'found': [r['id'] for r in found],
+    print(json.dumps({'test': 'plant_and_no_lookahead', 'plant_rule': planted['id'],
+                      'plant_status': planted['status'], 'plant_t': planted['t'],
+                      'higher_finalists': [{'id': r['id'], 't': r['t'],
+                                            'control_status': control[r['id']]['status']} for r in ahead],
+                      'control_finalists': control_finalists,
                       'prospective_rules_tested': sum(r['cash_500'] for r in fake['rules']),
                       'date_fence_mocked_pages': True}), flush=True)
 
-    tape, fake = synthetic_tape(grid, 691001, 'drift')
+    tape, fake = synthetic_tape(grid, SYN['drift_seed'], 'drift', calendar_raw=calendar_raw)
     r = {'id': 'always-long-overnight-control', 'family': 'TEST', 'signal': {}, 'pool': 'drift_control',
          'cash_500': True, 'side': 'long', 'latest_signal_close_et': None,
          'entry': {'clock_et': '16:00', 'print': 'close'},
          'exit': {'clock_et': '09:35', 'print': 'open', 'session_offset': 1}}
     fake['pools']['drift_control'] = [tape.names[0]]
     row = search(tape, dict(fake, rules=[r]))[0]
-    if not (row['annual_net_500'] >= .12 and row['net_mean'] > 0 and row['trades'] >= 200
-            and row['t'] < 3.5 and row['status'] == 'miss'):
+    if not (row['annual_net_500'] >= MARKS['annual'] and row['net_mean'] > 0 and row['trades'] >= MARKS['trades']
+            and row['t'] < MARKS['t'] and row['status'] == 'miss'):
         raise AssertionError(f'Positive upward drift did not demonstrate the matched-baseline guard: {row}')
     print(json.dumps(row | {'test': 'upward_drift'}), flush=True)
 
@@ -763,33 +925,34 @@ def internal_tests(grid):
 def power():
     # Whole mark, conditional one true rule with zero gross clock baseline, one trade per day,
     # equal halves, no duplicate competitor, fixed 90% deployed, fixed trade counts.
-    rng = np.random.default_rng(690001)
-    for n in (200, 400, 480):
-        for sd in (.005, .010, .020):
-            simulations = 20000
+    rng = np.random.default_rng(SYN['power_seed'])
+    for n in SYN['power_counts']:
+        for sd in SYN['power_sd']:
+            simulations = SYN['power_draws']
             x = rng.normal(0, sd, (simulations, n))
             avg = x.mean(axis=1)
             se = x.std(axis=1, ddof=1) / np.sqrt(n)
             h = x.reshape(simulations, 2, n // 2)
             ha = h.mean(axis=2)
             hs = h.std(axis=2, ddof=1) / np.sqrt(n // 2)
-            trim = np.sort(x, axis=1)[:, :-math.ceil(n / 100)].mean(axis=1)
-            min_edge = np.maximum.reduce([3.5 * se - avg,
-                                         np.max(1.5 * hs - ha, axis=1),
-                                         .12 * YEARS / (n * .9) - avg, -trim])
+            trim = np.sort(x, axis=1)[:, :-math.ceil(n * MARKS['trim'])].mean(axis=1)
+            min_edge = np.maximum.reduce([MARKS['t'] * se - avg,
+                                         np.max(MARKS['half_t'] * hs - ha, axis=1),
+                                         MARKS['annual'] * YEARS / (n * SYN['deployed_share']) - avg, -trim])
             p50, p80 = np.quantile(min_edge, [.50, .80])
             print(json.dumps({'test': 'power', 'trades': n, 'days': n, 'sd_bp': sd * 1e4,
                               'simulations': simulations, 'net_edge_bp_50': round(p50 * 1e4, 2),
                               'net_edge_bp_80': round(p80 * 1e4, 2)}))
 
 
-def synthetic(grid):
-    internal_tests(grid)
+def synthetic(grid, calendar_raw):
+    internal_tests(grid, calendar_raw)
     failures, max_t = [], -np.inf
     reached_floors = set()
     max_eligible_by_seed = 0
-    for seed in range(690100, 690200):
-        tape, fake = synthetic_tape(grid, seed)
+    seeds = range(SYN['first_seed'], SYN['first_seed'] + SYN['worlds'])
+    for seed in seeds:
+        tape, fake = synthetic_tape(grid, seed, calendar_raw=calendar_raw)
         rows = search(tape, fake)
         hits = [r['id'] for r in rows if r['status'] == 'finalist']
         eligible = [r for r in rows if r['status'] in {'finalist', 'duplicate', 'cap', 'miss'}]
@@ -799,12 +962,12 @@ def synthetic(grid):
             reached_floors.add(r['family'])
         if hits:
             failures.append({'seed': seed, 'rules': hits})
-    print(json.dumps({'test': 'whole_mark_pure_noise', 'clean_seeds': 100 - len(failures),
-                      'first_seed': 690100, 'last_seed': 690199, 'all_registered_rules': len(grid['rules']),
+    print(json.dumps({'test': 'whole_mark_pure_noise', 'clean_seeds': len(seeds) - len(failures),
+                      'first_seed': seeds[0], 'last_seed': seeds[-1], 'all_registered_rules': len(grid['rules']),
                       'families_with_any_rule_at_floors': sorted(reached_floors),
                       'max_rules_reaching_floors_in_seed': max_eligible_by_seed,
                       'largest_t_among_rules_at_floors': round(max_t, 6), 'failures': failures}), flush=True)
-    if len(failures) > 5:
+    if len(seeds) - len(failures) < SYN['min_clean']:
         raise ValueError('Synthetic luck gate failed: stop. No rule, cost, seed or mark was retuned.')
     power()
 
@@ -812,26 +975,36 @@ def synthetic(grid):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     mode = p.add_mutually_exclusive_group(required=True)
-    for name in ('collect', 'search', 'synthetic'):
+    for name in ('collect', 'search', 'synthetic', 'validate-inputs'):
         mode.add_argument('--' + name, action='store_true')
     p.add_argument('--start', type=date.fromisoformat, default=FIRST)
     p.add_argument('--end', type=date.fromisoformat, default=LAST)
     args = p.parse_args()
     date_fence(args.start, args.end)
-    grid = load_grid()
-    if args.collect:
-        collect(grid, args.start, args.end)
-    else:
-        # Missing feature windows are represented by NaN and can never select a candidate.
+    if (args.start, args.end) != (FIRST, LAST):
+        raise ValueError('All modes use the exact frozen search calendar')
+    if args.synthetic:
         with np.errstate(invalid='ignore', divide='ignore'):
-            if args.synthetic:
-                if (args.start, args.end) != (FIRST, LAST):
-                    raise ValueError('Synthetic fixtures use the whole frozen search calendar')
-                synthetic(grid)
-            else:
-                for row in search(load_collection(grid, args.start, args.end), grid):
-                    print(json.dumps({k: (None if isinstance(v, float) and not math.isfinite(v) else v)
-                                      for k, v in row.items()}, allow_nan=False))
+            synthetic(load_grid(read_once(HERE / 'GRID_69.json')), read_once(HERE / 'calendar_65.json'))
+        return
+    root_fd = open_directory(STORE)
+    try:
+        bufs, pins = approval(root_fd)
+        grid = load_grid(bufs['GRID_69.json'])
+        if args.collect:
+            collect(grid, args.start, args.end, root_fd, bufs, pins)
+            return
+        *data, counts, bar_pin = load_collection(grid, args.start, args.end, root_fd, bufs, pins, score=args.search)
+        if args.validate_inputs:
+            print(json.dumps(counts, sort_keys=True))
+            return
+        with np.errstate(invalid='ignore', divide='ignore'):
+            for row in search(Tape(*data), grid):
+                row['bars_sha256'] = bar_pin
+                print(json.dumps({k: (None if isinstance(v, float) and not math.isfinite(v) else v)
+                                  for k, v in row.items()}, allow_nan=False))
+    finally:
+        os.close(root_fd)
 
 
 if __name__ == '__main__':
