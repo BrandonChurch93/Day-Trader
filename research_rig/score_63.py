@@ -260,3 +260,34 @@ def marks(rows, saba, cap_bps):
     return {"placed_filer_days": n, "marks": flags, "disposition": status, "raw_mean_bps": raw,
             "winsor_mean_bps": center, "winsor_t": t, "trim_removed": drop,
             "trimmed_mean_bps": trimmed, "non_saba_mean_bps": non_saba, "year_mean_bps": by_year}
+
+
+@dataclass(frozen=True)
+class PairOutcome:
+    """Only consumed by a separately authorized scorer inside go."""
+    day: date
+    filer: str
+    paired_bps: Fraction
+    intersects_cusip_unverified_segment: bool
+
+
+def judged_and_shown_only(outcomes, saba, cap_bps):
+    all_rows, sensitive, removed = [], [], 0
+    for record in outcomes:
+        row = record.day, record.filer, record.paired_bps
+        all_rows.append(row)
+        if record.intersects_cusip_unverified_segment:
+            removed += 1
+        else:
+            sensitive.append(row)
+    full, without = filer_days(all_rows), filer_days(sensitive)
+    # Rebuild filer-day means after eliminating the marked fund pairs, not
+    # whole filer-days preserving the old pair weights. The sensitivity does
+    # not produce a second verdict, choose N or determine the judged result.
+    w = marks(without, saba, cap_bps)
+    return {"judged": marks(full, saba, cap_bps),
+            "shown_only_without_cusip_unverified_segments": {
+                "fund_pairs_removed": removed, "filer_days_removed": len(full) - len(without),
+                **{k: w[k] for k in ("placed_filer_days", "raw_mean_bps", "winsor_mean_bps", "winsor_t",
+                                     "trimmed_mean_bps", "non_saba_mean_bps", "year_mean_bps")}
+            }}

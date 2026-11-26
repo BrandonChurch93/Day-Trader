@@ -18,10 +18,10 @@ from count_63 import CUTOFF, HOLDS, NY, SABA, measure as counts, schedule, self_
 from placebo_63 import Leg, admissible, leg_return, measure
 from placebo_native_63 import approved_bar_leaves
 from placebo_project_63 import project
-from placebo_run_63 import Proofs, approved_scope, decode, exclusive, read_projection
+from placebo_run_63 import APPROVAL, Proofs, approved, approved_scope, decode, exclusive, read_projection
 from power_63 import power
 from score_63 import (
-    BLIND_FLAGS, BlindFacts, Facts, Stop, filer_days, fund_rates, load_blind_facts,
+    BLIND_FLAGS, BlindFacts, Facts, PairOutcome, Stop, filer_days, fund_rates, judged_and_shown_only, load_blind_facts,
     marks, measure_half, print_price_free_validation, validate_inputs,
 )
 
@@ -85,6 +85,12 @@ class Plan63(unittest.TestCase):
         self.assertEqual(m["raw_mean_bps"], F(140, 3))
         self.assertFalse(m["marks"]["filer_breadth"])
         self.assertFalse(m["marks"]["placement"])
+        day = date(2020, 1, 1)
+        o = [PairOutcome(day, SABA, F(100), True), PairOutcome(day, SABA, F(20), False)]
+        j = judged_and_shown_only(o, SABA, 600)
+        self.assertEqual(j["judged"]["raw_mean_bps"], 60)
+        self.assertEqual(j["shown_only_without_cusip_unverified_segments"]["raw_mean_bps"], 20)
+        self.assertNotIn("marks", j["shown_only_without_cusip_unverified_segments"])
 
     def test_placebo_and_power_synthetic_only(self):
         sessions = schedule()
@@ -184,19 +190,25 @@ class Plan63(unittest.TestCase):
             return pin
 
         identity = {}
+        exceptions = []
         for i, key in enumerate(("test0", "test1", "PCEF")):
             issue, alias = "issue-" + key, "alias-" + key
-            cusip = f"QA{i:07d}"
+            cusips = [] if i == 0 else [f"QA{i:07d}"]
             identity[key] = {"subject_key": key, "stable_security_id": issue,
                              "identity_sha256": seal("identity", key, issue),
                              "dated_aliases": [{"alias": alias, "from_session": "2016-01-01",
-                                                "through_session": "2026-11-25", "cusips": [cusip], "evidence_sha256":
-                                                seal("alias", key, issue, alias, "2016-01-01", "2026-11-25", cusip)}]}
+                                                "through_session": "2026-11-25", "cusips": cusips, "evidence_sha256":
+                                                seal("alias", key, issue, alias, "2016-01-01", "2026-11-25", *cusips)}]}
+            if not cusips:
+                exceptions.append({"subject_key": key, "alias": alias, "from_session": "2016-01-01",
+                                   "through_session": "2026-11-25",
+                                   "evidence_sha256": seal("cusip_unverified", key, alias, "2016-01-01", "2026-11-25")})
         scope = sorted({(key, *span) for rows in admissible(raw, sessions).values()
                         for r, g, span in rows if g == "eligible" for key in (r["fund"], "PCEF")})
         manifest = {"schema": "plan63-placebo-projection-v1",
                     "identity_map": list(identity.values()), "scopes": [], "successor_marks": []}
-        preflight = {"schema": "plan63-approved-scope-preflight-v1", "excluded": [], "deny": [], "successor_marks": []}
+        preflight = {"schema": "plan63-approved-scope-preflight-v1", "excluded": [], "deny": [],
+                     "successor_marks": [], "cusip_unverified": exceptions}
         indices = {"schema": "plan63-placebo-leaf-index-v1", "legs": []}
         native = {"schema": "plan63-placebo-bar-transport-v1", "streams": []}
         tokens, archives, denied_offsets = {}, {}, {}
@@ -254,6 +266,16 @@ class Plan63(unittest.TestCase):
             chain["streams"][0]["pages"][0]["next_page_token"] = "missing-tail"
             with self.assertRaises(Stop):
                 build(indices, chain)
+            false_missing = deepcopy(manifest)
+            entry = false_missing["scopes"][0]
+            entry["status"] = "missing_endpoint"
+            entry["split_basis_sha256"] = entry["action_coverage_sha256"] = None
+            entry["missing_endpoint_sha256"] = seal("missing_endpoint", entry["stable_security_id"],
+                                                    entry["start"], entry["end"])
+            with self.assertRaisesRegex(Stop, "NATIVE_MISSING_STATUS"):
+                project(false_missing, raw, sessions, Proofs(evidence), indices, native, preflight,
+                        load_archive=archives.__getitem__)
+            evidence.pop()  # remove the manufactured false status attestation
             spy.assert_not_called()
         malformed = deepcopy(blob)
         malformed["legs"][0]["entry"]["volume"] = 0
@@ -269,6 +291,8 @@ class Plan63(unittest.TestCase):
         with self.assertRaises(Stop):
             approved_scope(manifest, raw, sessions, Proofs(evidence), successor_missing)
         with self.assertRaises(Stop):
+            approved_scope(manifest, raw, sessions, Proofs(evidence), {**preflight, "cusip_unverified": []})
+        with self.assertRaises(Stop):
             Proofs([{**evidence[0], "bytes_b64": b64encode(b"unapproved").decode("ascii")}])
 
     def test_once_lock_and_duplicate_json(self):
@@ -283,6 +307,14 @@ class Plan63(unittest.TestCase):
                 self.assertEqual((Path(p) / "attempt.once").read_bytes(), b"pinned approval")
             finally:
                 os.close(folder)
+
+    def test_extra_change_in_lead_approval_commit_is_refused(self):
+        approved_sha, freeze = "a" * 40, "b" * 40
+        fixture = [approved_sha.encode("ascii"), f"{approved_sha} {freeze}\n".encode("ascii"),
+                   f"A\t{APPROVAL}\nM\tother-path\n".encode("ascii")]
+        with patch("placebo_run_63.git", side_effect=fixture):
+            with self.assertRaisesRegex(Stop, "APPROVAL_SOLE_ADD"):
+                approved(approved_sha)
 
     def test_native_bar_offset_scan_never_decodes_price(self):
         t = b'"2022-07-18T04:00:00Z"'

@@ -151,7 +151,7 @@ class Proofs:
             need(bool(raw) and valid_pin(pin) and sha256(raw).hexdigest() == pin, "ASSURANCE_BYTES")
             role, binding = row["role"], tuple(row["binding"])
             need(role in ("identity", "alias", "successor", "basis", "action_coverage", "action", "missing_endpoint",
-                          "excluded", "deny"),
+                          "excluded", "deny", "cusip_unverified"),
                  "ASSURANCE")
             # Bind role and asserted identifiers/dates to the authenticated
             # receipt content, not only the caller-supplied index wrapper.
@@ -176,7 +176,7 @@ class Proofs:
                 source_claims.append((kind, content["claim"]))
             if role in ("basis", "action_coverage", "action"):
                 need("vendor_native" in sources and "independent_reconciliation" in sources, "ASSURANCE_SOURCE")
-            if role in ("identity", "alias", "successor", "action", "deny"):
+            if role in ("identity", "alias", "successor", "action", "deny", "cusip_unverified"):
                 need(sources.intersection({"issuer_primary", "sec_primary", "exchange_primary"}), "ASSURANCE_SOURCE")
             details = receipt["details"]
             if role == "action_coverage":
@@ -207,7 +207,7 @@ class Proofs:
         need(self.used == self.rows.keys(), "ASSURANCE_EXTRA")
 
 
-def canonical_identities(source, census, proofs):
+def canonical_identities(source, census, proofs, cusip_unverified):
     """Enforce a full one-issue-per-CIK mapping, injective across the universe.
 
     A transfer/reused canonical ID or unresolved class requires a new reviewed
@@ -215,7 +215,7 @@ def canonical_identities(source, census, proofs):
     """
     need(type(source) is list, "IDENTITY")
     expected = {"PCEF", *(r["cef_cik"] for r in census)}
-    by_subject, by_issue = {}, {}
+    by_subject, by_issue, seen_unverified = {}, {}, set()
     for row in source:
         exact(row, "subject_key stable_security_id identity_sha256 dated_aliases")
         subject, issue = row["subject_key"], row["stable_security_id"]
@@ -232,14 +232,20 @@ def canonical_identities(source, census, proofs):
             need(last_end < start <= end and type(symbol) is str and
                  0 < len(symbol) <= 120 and valid_pin(a["evidence_sha256"]), "IDENTITY")
             cusips = a["cusips"]
-            need(type(cusips) is list and cusips and cusips == sorted(set(cusips)) and
+            need(type(cusips) is list and cusips == sorted(set(cusips)) and
                  all(type(c) is str and re.fullmatch(r"[A-Z0-9*@#]{9}", c) for c in cusips), "CUSIP")
+            if not cusips:
+                k = subject, symbol, start, end
+                need(subject != "PCEF" and k in cusip_unverified, "CUSIP_UNVERIFIED")
+                proofs.require(cusip_unverified[k], "cusip_unverified", *k)
+                seen_unverified.add(k)
             proofs.require(a["evidence_sha256"], "alias", subject, issue, symbol, start, end, *cusips)
             spans.append((symbol, start, end, cusips))
             last_end = end
         by_subject[subject] = issue, row["identity_sha256"], spans
         by_issue[issue] = subject
     need(set(by_subject) == expected, "IDENTITY")
+    need(seen_unverified == cusip_unverified.keys(), "CUSIP_UNVERIFIED")
     globally = {}
     for _, _, spans in by_subject.values():
         for symbol, start, end, cusips in spans:
@@ -254,9 +260,9 @@ def approved_scope(manifest, census, sessions, proofs, preflight):
     exact(manifest, "schema identity_map successor_marks scopes")
     need(manifest["schema"] == "plan63-placebo-projection-v1", "ROW_SHAPE")
     need(type(manifest["successor_marks"]) is list and type(manifest["scopes"]) is list, "ROW_SHAPE")
-    exact(preflight, "schema excluded deny successor_marks")
+    exact(preflight, "schema excluded deny successor_marks cusip_unverified")
     need(preflight["schema"] == "plan63-approved-scope-preflight-v1" and
-         all(type(preflight[k]) is list for k in ("excluded", "deny", "successor_marks")), "PREFLIGHT")
+         all(type(preflight[k]) is list for k in ("excluded", "deny", "successor_marks", "cusip_unverified")), "PREFLIGHT")
     need(preflight["successor_marks"] == manifest["successor_marks"], "SUCCESSOR_COMPLETENESS")
     dropped = {}
     all_subjects = {r["cef_cik"] for r in census}
@@ -272,7 +278,14 @@ def approved_scope(manifest, census, sessions, proofs, preflight):
     need(all((key in intended_mature) == (reason == "unresolved_identity") for key, reason in dropped.items()),
          "EXCLUSION_MATURITY")
     retained = [r for r in census if r["cef_cik"] not in dropped]
-    by_subject, by_issue = canonical_identities(manifest["identity_map"], retained, proofs)
+    cusip_unverified = {}
+    for row in preflight["cusip_unverified"]:
+        exact(row, "subject_key alias from_session through_session evidence_sha256")
+        a, b = stamp(row["from_session"]), stamp(row["through_session"])
+        key = row["subject_key"], row["alias"], a, b
+        need(a <= b and key not in cusip_unverified and valid_pin(row["evidence_sha256"]), "CUSIP_UNVERIFIED")
+        cusip_unverified[key] = row["evidence_sha256"]
+    by_subject, by_issue = canonical_identities(manifest["identity_map"], retained, proofs, cusip_unverified)
     excluded_tokens, deny = set(), {}
     for row in preflight["deny"]:
         exact(row, "subject_key kind identifier from_session through_session evidence_sha256")

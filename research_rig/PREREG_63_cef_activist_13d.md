@@ -46,15 +46,17 @@ MEASURED by Eastern filing year. Each hold column shows mature filer-days as tot
 
 Each full 2026 schedule has 18 filer-days (15 Saba / 3 other) and 24 fund trades. STATED, fixed by the lead: only exits on or before the last complete session of November 25, 2026 are in the test. No later top-up. Do not label missing future outcomes as refusals. Official future holiday and early-close schedule: [NYSE hours and calendars](https://www.nyse.com/trade/hours-calendars).
 
-MEASURED, price-free identity attrition from the [count script](count_exclusions_63.py). The lead excluded 12 unresolved fund CIKs (20 raw filing rows) and one fund with no mature window (one raw filing). The custodian's dated deny list and its stricter full-horizon check showed zero collisions among known identifiers. This does not clear 15 segments without a 13D CUSIP binding; their independent historical CUSIPs or a lead-approved exclusion are still needed. Target and placebo ceilings below are total / non-Saba filer-days. Approved successor marks can further reduce placebo counts.
+MEASURED, price-free identity attrition from the [count script](count_exclusions_63.py). The lead excluded 12 unresolved fund CIKs (20 raw filing rows) and one fund with no mature window (one raw filing). The custodian's dated deny list and stricter full-horizon check showed zero collisions among known identifiers. This cannot rule out a CUSIP collision for 15 admitted segments without a verified cover-page CUSIP. Target and placebo ceilings below are total / non-Saba filer-days. Approved successor marks can further reduce placebo counts.
 
-| Hold | Target, known identity fields | Placebo, known identity fields | Target if 15 unchecked segments dropped | Placebo if dropped |
+| Hold | Target, 15 flagged segments included | Placebo, 15 flagged segments included | Target without 15 | Placebo without 15 |
 | --- | ---: | ---: | ---: | ---: |
 | 5 | 314 / 129 | 279 / 109 | 298 / 115 | 263 / 95 |
 | 20 | 311 / 127 | 267 / 105 | 296 / 114 | 252 / 92 |
 | 60 | 281 / 113 | 240 / 91 | 268 / 100 | 228 / 79 |
 
 STATED, fixed by the lead. Do not start Stage A if every price-free target upper bound is below 260. Stage A consists only of retained placebo bars, PCEF and corporate actions. No subject target bars or closing quotes are acquired unless a hold qualifies and the lead separately approves Stage B for that hold.
+
+STATED, fixed by the lead. Retain the 15 specially flagged segments in the judged docket and pooled power input. Vendor requests use ticker and date, those tickers have dated primary SEC evidence, and excluded funds have no docket or acquisitions. That is not a verified CUSIP match and does not eliminate the possibility of misidentification. Show aggregate results excluding any fund pair whose target interval touches a flagged segment; rebuild filer-day averages from remaining fund pairs. This is shown only, not another rule, hold choice or verdict.
 
 ## Costs and settlement
 
