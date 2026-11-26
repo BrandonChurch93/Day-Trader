@@ -16,7 +16,21 @@ CUSTODY = Path("/home/user/workspace/rig/data")
 SEARCH_SHA = "13e5375a3ed8207eb07fee034af0d7fba088bebbdce951a234bbd61373a1b607"
 CARRY_SHA = "6837579d1e6b805cb2c5aa679b2c7b6a75cc244c604c57c8b7c3a3f7ea4e09cf"
 GRID_SHA = "ac16d46df925a3270b55563b82d5bf1a5d0bd4b4840b45f57a3ce8a286dc5842"
-SETTINGS_SHA = "91ec26101a503e196e9aad47168ba7ceaa9a0c9268a78418287897a821a6c1c2"
+# Only the fields rendered in doc 152, from the config pinned at build commit b3cd740.
+REPORT_SETTINGS = {
+    "funding_adverse_bp_per_hour": 1,
+    "spot_taker_round_trip_bp": 160,
+    "search_marks": {
+        "min_trades": 200,
+        "min_days": 100,
+        "min_days_each_half": 40,
+        "full_t": 3.5,
+        "half_t": 1.5,
+        "trim_share": 0.01,
+        "annual_min": 0.12,
+    },
+    "vault_marks": {"min_pre_vault_power": 0.33},
+}
 
 
 def checked(root, rel, pin):
@@ -26,11 +40,33 @@ def checked(root, rel, pin):
     return raw
 
 
+def report_settings(root):
+    cfg = yaml.safe_load(read_snapshot(root, "config/thresholds.yaml"))
+
+    def select(actual, expected, path):
+        if isinstance(expected, dict):
+            if not isinstance(actual, dict):
+                raise ValueError(f"immutable report threshold differs: {path}")
+            selected = {}
+            for key, pin in expected.items():
+                field = f"{path}.{key}"
+                if key not in actual:
+                    raise ValueError(f"immutable report threshold missing: {field}")
+                selected[key] = select(actual[key], pin, field)
+            return selected
+        if type(actual) is not type(expected) or actual != expected:
+            raise ValueError(f"immutable report threshold differs: {path}")
+        return actual
+
+    layout = {"replay_70_plan": {"value": REPORT_SETTINGS}}
+    return select(cfg, layout, "config/thresholds.yaml")["replay_70_plan"]["value"]
+
+
 def measure(custody):
     search = checked(custody, "sweep_70/search_summary.out", SEARCH_SHA)
     receipt = json.loads(checked(custody, "sweep_70/carry_results.json", CARRY_SHA))
     grid = json.loads(checked(ROOT, "research_rig/GRID_70.json", GRID_SHA))
-    cfg = yaml.safe_load(checked(ROOT, "config/thresholds.yaml", SETTINGS_SHA))["replay_70_plan"]["value"]
+    cfg = report_settings(ROOT)
     header, *rows = map(json.loads, search.splitlines())
     if [r["rule"] for r in rows] != [r["id"] for r in grid] or len(rows) != 188:
         raise ValueError("unexpected search grid")

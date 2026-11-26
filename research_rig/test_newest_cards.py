@@ -2,12 +2,53 @@
 files stop fitting, the E09 "no signal yet" case, and the Running now strip. Run: python3 -m pytest research_rig/test_newest_cards.py"""
 import json, os, shutil, sys
 import pytest
+import yaml
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import newest_cards as NC
 import build_doc152_plan70_search as B152
 
 HAVE = os.path.isdir(os.path.join(str(B152.CUSTODY), "sweep_70")) and os.path.isdir(os.path.join(str(B152.CUSTODY), "plan73"))
 need_custody = pytest.mark.skipif(not HAVE, reason="the summary files are kept off the repo")
+
+
+@pytest.fixture
+def doc152_config(tmp_path):
+    rel = "config/thresholds.yaml"
+    cfg = yaml.safe_load((B152.ROOT / rel).read_text())
+    target = tmp_path / rel
+    target.parent.mkdir()
+    return cfg, target
+
+
+def test_doc152_ignores_unrelated_thresholds(doc152_config):
+    cfg, target = doc152_config
+    expected = B152.report_settings(B152.ROOT)
+    cfg["unrelated_test_plan"] = {"value": 42}
+    cfg["replay_70_plan"]["value"]["search_marks"]["finalist_cap"] = 99
+    cfg["replay_70_plan"]["note"] = "Edited note"
+    target.write_text(yaml.safe_dump(cfg))
+    assert B152.report_settings(target.parent.parent) == expected
+
+
+@pytest.mark.parametrize("keys, value, fault", [
+    (("search_marks", "full_t"), 3.6, "differs"),
+    (("vault_marks", "min_pre_vault_power"), None, "missing"),
+    (("funding_adverse_bp_per_hour",), True, "differs"),
+    (("spot_taker_round_trip_bp",), 161, "differs"),
+])
+def test_doc152_rejects_changes_to_used_thresholds(doc152_config, keys, value, fault):
+    cfg, target = doc152_config
+    group = cfg["replay_70_plan"]["value"]
+    for key in keys[:-1]:
+        group = group[key]
+    if value is None:
+        del group[keys[-1]]
+    else:
+        group[keys[-1]] = value
+    target.write_text(yaml.safe_dump(cfg))
+    path = r"\.".join(keys)
+    with pytest.raises(ValueError, match=rf"{fault}: .*replay_70_plan\.value\.{path}$"):
+        B152.report_settings(target.parent.parent)
 
 
 @need_custody
