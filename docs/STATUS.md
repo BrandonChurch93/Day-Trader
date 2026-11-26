@@ -1,10 +1,28 @@
 # Status
 
-Last updated: 2026-11-26 08:05 UTC
+Last updated: 2026-11-26 09:10 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- Plan 43 third attempt (special dividends, ledger 195) stopped at input validation 2026-11-26, not scored, no return computed. MEASURED: 35 of 442 events had a zero-volume or missing day in the trade window against a cap of 22 fixed before counting; the raw-versus-adjusted factor check held on 538 of 39,564 bar checks in 36 events, clustered on cash ex-dates. Cause of the factor mismatch is UNKNOWN; under diagnosis. Earlier attempts are ledger 178 and 188.
+
+- Plan 53 (taxable closed-end fund January rebound, ledger 187) stopped at input validation 2026-11-26, not scored, no return computed. MEASURED: the jump guard flagged 12 neighbouring-day close moves beyond a factor of 1.4 with no recorded split. 11 are one-session moves on 2020-03-18 and 2020-03-19, checked as real market moves. 1 is a ticker reuse: BTX before 2025-02-20 is another security. A second pre-run amendment (one pinned clearance per flagged pair) is being drafted.
+
+- Idea round 30 ([doc 119](research/119_round_30_high_count_crypto_power_screen.md)) closed 2026-11-26. STATED from published studies: 0 of 7 crypto idea families cleared the power screen after US retail spot fees. No data spent.
+
+- Queue 97, forward stock split announcements ([doc 118](research/118_row97_forward_split_count_first_close.md)), closed 2026-11-26 before prices. MEASURED: 157 dated events in 2016 to 2025, 106 announced after the close or on a weekend. STATED: published post-2010 drift after the announcement jump is about zero.
+
+- Plan 56, insider cluster buys (queue 15, ledger 193, `research_rig/CLOSE_56_on_power.md`), closed 2026-11-26 on synthetic power before prices. MEASURED: 2,391 dated clusters in 1,479 issuers; at the recent published edge the 20-session test would catch it 9.20% of the time.
+
+- Plan 55, spin-offs (queue 58, ledger 192, `research_rig/CLOSE_55_on_power.md`), closed 2026-11-26 on synthetic power before prices. MEASURED: 100 dated events; 32.86% central power at the closest published short-window edge, which is old and gross of costs.
+
+- Queue 91 and 92, preferred shares and BDCs in January (ledger 190, 191, `research_rig/CLOSE_ROWS_91_92_on_power.md`), closed 2026-11-26 on synthetic power before prices. MEASURED, synthetic: at central noise the Plan 48 marks need about +4% gross to reach 50% power on ten turns.
+
+- Plan 54, late-October small-cap loser rebound (queue 93, ledger 189, `research_rig/CLOSE_54_on_power.md`), closed 2026-11-26 on synthetic power before prices. MEASURED, synthetic: 2.32%, 7.87% and 18.09% power at +1%, +2% and +3% at central noise.
+
+- New reference: [doc 117](research/117_power_screen_before_data.md), the power screen applied before any data is pulled (events times the square of net edge over noise, about 4 for 50% power and about 8 for 80%).
 
 - [Replay 52](research/113_replay_52_quarter_end_corporate_bond_funds.md), run once 2026-11-26 08:03:16 UTC. MEASURED. Did not pass, 0 of 6 marks. The corporate bond basket averaged -0.0308% net after 40 quarter-ends (t -0.24, 20 of 40 positive), -0.0197% net of the Treasury proxy (t -0.17), and +0.1279% after 80 ordinary month-ends (t 1.73). At four trades a year the quarter-end mean was about -$0.62 on $500, before taxes. Rule not advanced.
 
