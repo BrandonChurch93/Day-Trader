@@ -1,11 +1,14 @@
 """Write the counts-only TM09 feed note. Never render a publisher title or URL."""
 import argparse
 from datetime import datetime, timezone
+import json
 from zoneinfo import ZoneInfo
 
 from research_rig.feeds import news_77 as news
+from research_rig.feeds import calibrate_news_77 as calibration
 
 OUT = news.REPO / "docs/research/158_dated_news_feed_for_tm09.md"
+CALIBRATION_COUNTS = news.REPO / "research_rig/feeds/news_77_calibration_counts.json"
 MT = ZoneInfo("America/Boise")
 
 
@@ -15,7 +18,45 @@ def table(header, rows):
                       *("| " + " | ".join(map(str, row)) + " |" for row in rows)])
 
 
-def render(rows, counts, reviewed, recommendation, sample_key=None):
+def render_calibration(c):
+    if c["batches"] != calibration.DAY // news.QUARTER or c["seed"] != news.SEED:
+        raise ValueError("calibration does not cover one complete seeded day")
+    source = c["publishers"]
+    local, global_ = c["publisher_solana"], c["all_solana"]
+    if set(source) != set(calibration.PUBLISHERS) or set(local) != set(global_) or set(local) != set(calibration.REASONS):
+        raise ValueError("unexpected calibration counters")
+    for m in source.values():
+        if set(m) != set(calibration.METRICS) or any(type(n) is not int or n < 0 for n in m.values()):
+            raise ValueError("bad publisher counts")
+        if any(m[k] > m["page_title"] for k in calibration.TERMS) or m["page_title"] > m["records"]:
+            raise ValueError("title counts exceed record count")
+    totals = [sum(source[p][k] for p in source) for k in calibration.METRICS]
+    if totals[2 + tuple(calibration.TERMS).index("solana")] != sum(local.values()):
+        raise ValueError("publisher Solana reason counters do not sum to term count")
+    if any(not 0 <= local[r] <= global_[r] for r in local) or global_["kept"] != c["original_pilot_solana_kept"]:
+        raise ValueError("retention counters do not agree with the original pilot")
+    publishers = table(("Source domain (including subdomains)", "GKG records", "PAGE_TITLE present", "Bitcoin", "Solana", "Crypto"),
+                       [*(tuple([p] + [source[p][k] for k in calibration.METRICS])
+                          for p in calibration.PUBLISHERS), ("Total", *totals)])
+    why = table(("Solana-title disposition", "Ten publishers", "All domains"),
+                [(r.replace("_", " "), local[r], global_[r]) for r in calibration.REASONS
+                 if r == "kept" or global_[r]])
+    return f"""## One-day publisher calibration
+
+MEASURED: Seed {c["seed"]} picked {c["date_utc"]} UTC, a calendar day inside the first scored week. All {c["batches"]} batches completed: {c["compressed_bytes"]:,} compressed bytes streamed and {c["gkg_records"]:,} records scanned. The counts are GDELT records by document URL host, not unique articles or a census of what each publisher wrote. Term tests are case-insensitive whole words in decoded titles and can overlap.
+
+{publishers}
+
+MEASURED: Of {sum(local.values())} Solana-titled records from these publishers, the pilot kept {local["kept"]}; across all domains it kept {global_["kept"]} of {sum(global_.values())}. Replay of the pilot filters with the prior dedup state agrees with the original retained count. For the last UTC batch, the known-at clock puts it in week two, where SOL was outside the basket. Reasons below are mutually exclusive; unlisted filters rejected zero records.
+
+{why}
+
+{c["interpretation"]}
+
+"""
+
+
+def render(rows, counts, reviewed, recommendation, sample_key=None, calibration_counts=None):
     weeks, _ = news.batches()
     full = counts["completed_batches"] == counts["planned_batches"]
     day_columns = ("Scored week start (UTC)", "Coin", "Distinct headlines", "Visible by final hourly wake")
@@ -58,6 +99,7 @@ def render(rows, counts, reviewed, recommendation, sample_key=None):
                 "with no headline is unknown. The table contains prefix counts, not final weekly zeros.")
     if not recommendation.startswith(("STATED: ", "MEASURED: ", "UNKNOWN: ")):
         raise ValueError("recommendation needs an evidence label")
+    extra = render_calibration(calibration_counts) if calibration_counts is not None else ""
     return f"""<!-- Counts only; built by python3 -m research_rig.feeds.build_doc158_news_77. -->
 # A dated headline feed for TM09
 
@@ -91,7 +133,7 @@ MEASURED: The leading {len(counts["top_domains"])} source domains by retained co
 
 {title_line}
 
-## Decision
+{extra}## Decision
 
 {recommendation}
 
@@ -108,7 +150,8 @@ def main():
     p.add_argument("--recommendation", required=True, help="Counts-only conclusion with status label.")
     p.add_argument("--check", action="store_true")
     args = p.parse_args()
-    page = render(*news.report(), args.review, args.recommendation, args.review_key)
+    counts = json.loads(CALIBRATION_COUNTS.read_text())
+    page = render(*news.report(), args.review, args.recommendation, args.review_key, counts)
     if args.check:
         if OUT.read_text() != page:
             raise SystemExit("Doc 158 differs from its counts-only inputs")

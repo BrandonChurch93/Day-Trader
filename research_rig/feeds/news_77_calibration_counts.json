@@ -1,0 +1,29 @@
+{
+  "seed": 77,
+  "date_utc": "2026-07-12",
+  "batches": 96,
+  "compressed_bytes": 239190814,
+  "gkg_records": 56280,
+  "publishers": {
+    "coindesk.com": {"records": 6, "page_title": 6, "bitcoin": 3, "solana": 0, "crypto": 2},
+    "cointelegraph.com": {"records": 5, "page_title": 5, "bitcoin": 2, "solana": 0, "crypto": 1},
+    "decrypt.co": {"records": 0, "page_title": 0, "bitcoin": 0, "solana": 0, "crypto": 0},
+    "theblock.co": {"records": 0, "page_title": 0, "bitcoin": 0, "solana": 0, "crypto": 0},
+    "cryptoslate.com": {"records": 0, "page_title": 0, "bitcoin": 0, "solana": 0, "crypto": 0},
+    "beincrypto.com": {"records": 0, "page_title": 0, "bitcoin": 0, "solana": 0, "crypto": 0},
+    "u.today": {"records": 0, "page_title": 0, "bitcoin": 0, "solana": 0, "crypto": 0},
+    "dlnews.com": {"records": 0, "page_title": 0, "bitcoin": 0, "solana": 0, "crypto": 0},
+    "blockworks.co": {"records": 0, "page_title": 0, "bitcoin": 0, "solana": 0, "crypto": 0},
+    "cryptonews.com": {"records": 0, "page_title": 0, "bitcoin": 0, "solana": 0, "crypto": 0}
+  },
+  "publisher_solana": {
+    "kept": 0, "non_web_collection": 0, "pilot_title_format": 0, "pilot_title_length": 0,
+    "outside_solana_basket": 0, "alias_miss": 0, "excluded_domain": 0, "url_rejected": 0, "duplicate": 0
+  },
+  "all_solana": {
+    "kept": 4, "non_web_collection": 0, "pilot_title_format": 0, "pilot_title_length": 0,
+    "outside_solana_basket": 0, "alias_miss": 0, "excluded_domain": 0, "url_rejected": 0, "duplicate": 0
+  },
+  "original_pilot_solana_kept": 4,
+  "interpretation": "STATED: On this day the limit was GDELT coverage, not the Solana matcher or a missing title field. Eight publishers had no records at all, the other two had titles on every record but none about Solana by name, and the matcher kept all four Solana titles that were present across the archive. UNKNOWN: One day cannot establish coverage for other days or other coin aliases. STATED: The next candidate is [Common Crawl News](https://commoncrawl.org/blog/news-dataset-available), subject to [Common Crawl's terms and publisher rights](https://commoncrawl.org/terms-of-use). Stream the gzip WARC files and read captured HTML titles in memory alongside the [WARC-Date capture time](https://commoncrawl.org/get-started); do not save the files or redistribute article content. The [Infini-News paper](https://arxiv.org/html/2605.18337) reports about 180 TB of input WARC files from August 2016 through partial April 2026, roughly 51 billion streamed bytes per day averaged over that span. UNKNOWN: The exact July 12 byte total was not available from public listing metadata. No WARC payload was requested."
+}

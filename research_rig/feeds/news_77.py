@@ -130,10 +130,8 @@ class Archive:
         return raw
 
 
-def scan(raw, tick, coins):
+def batch_fields(raw, tick):
     prefix = stamp(tick)
-    rows = []
-    scanned = 0
     with ZipFile(BytesIO(raw)) as archive:
         info, = archive.infolist()
         if info.filename != prefix + ".gkg.csv" or info.file_size > MAX_UNZIP:
@@ -142,25 +140,32 @@ def scan(raw, tick, coins):
             while packet := source.readline(MAX_LINE + 1):
                 if len(packet) > MAX_LINE:
                     raise ValueError("overlong GKG record")
-                scanned += 1
                 fields = packet.split(b"\t", 26)
                 if len(fields) != 27 or not fields[0].startswith(prefix.encode() + b"-"):
                     raise ValueError("GKG row does not match its own archive batch")
-                if fields[2] != b"1" or b"<PAGE_TITLE>" not in fields[26]:
-                    continue
-                m = TITLE.search(fields[26])
-                if m is None:
-                    continue
-                title = " ".join(unescape(m[1].decode("utf-8", errors="replace")).split())
-                if not 2 <= len(title) <= 512:
-                    continue
-                coins_found = matched(title, coins)
-                url = link(fields[4].decode("utf-8", errors="replace")) if coins_found else None
-                if url is None:
-                    continue
-                for coin in coins_found:
-                    rows.append({"first_seen_utc": tick, "source_domain": url[0], "title": title,
-                                 "url": url[1], "matched_coin": coin})
+                yield fields
+
+
+def scan(raw, tick, coins):
+    rows = []
+    scanned = 0
+    for fields in batch_fields(raw, tick):
+        scanned += 1
+        if fields[2] != b"1" or b"<PAGE_TITLE>" not in fields[26]:
+            continue
+        m = TITLE.search(fields[26])
+        if m is None:
+            continue
+        title = " ".join(unescape(m[1].decode("utf-8", errors="replace")).split())
+        if not 2 <= len(title) <= 512:
+            continue
+        coins_found = matched(title, coins)
+        url = link(fields[4].decode("utf-8", errors="replace")) if coins_found else None
+        if url is None:
+            continue
+        for coin in coins_found:
+            rows.append({"first_seen_utc": tick, "source_domain": url[0], "title": title,
+                         "url": url[1], "matched_coin": coin})
     return scanned, rows
 
 
