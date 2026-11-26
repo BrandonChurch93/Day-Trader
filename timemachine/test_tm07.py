@@ -516,7 +516,7 @@ class DeskTest(unittest.TestCase):
         spec = world()
         price, other = spec["evidence"][0][:2]
         price["value"]["observed_at"] = T+3600
-        other["value"]["funding"] = {"rate":.002,"every_hours":1,"stamped_utc":O.stamp(T+1)}
+        other["value"]["funding"] = {"rate":.002,"every_hours":1,"stamped_utc":T+1}
         session = self.create("scout",spec=spec)
         raw,_ = info(session,D.SCOUTS[0])
         self.assertFalse({"p0","bp0"} & session.evidence(0).keys())
@@ -528,28 +528,28 @@ class DeskTest(unittest.TestCase):
     def test_pass3_m5_nested_dates_are_checked_to_full_precision(self):
         spec = world()
         rows = spec["evidence"][0]
-        late = O.stamp(T)[:-1]+".0000000001Z"
+        late = f"{T}.0000000001"
         proof = spec["vendor_proofs"]["n0"]
         news = rows[2]
         for name,stamp in (("future-origin",T+3600),("malformed-origin","not a timestamp"),
-                           ("other-key-iso",late),("valid-origin",O.stamp(T)),
-                           ("future-proof",O.stamp(T))):
-            key = "version" if name == "other-key-iso" else "observedAt"
-            item = dict(news,id=name,origins=[{"meta":[{key:stamp}]}])
+                           ("other-key",late),("valid-origin",T),
+                           ("future-proof",T)):
+            key = "version" if name == "other-key" else "observed_at"
+            item = dict(news,id=name,origins=[{key:stamp}])
             rows.append(item)
             spec["vendor_proofs"][name] = dict(proof,row_hash=D.digest(item))
         spec["vendor_proofs"]["future-proof"]["metadata"] = {"verifiedAt":late}
         rows[0]["value"].pop("observed_at",None)
         rows[1].update(published=T,known_at=T)
         rows[1]["value"]["observed_at"] = T-60
-        rows[1]["value"]["funding"] = dict(rate=.01,every_hours=1,stamped_utc=O.stamp(T)[:-1]+".900Z")
+        rows[1]["value"]["funding"] = dict(rate=.01,every_hours=1,stamped_utc=f"{T}.900")
         good = copy.deepcopy(rows[1])
         good.update(id="bp-good",known_at=T)
-        good["value"]["funding"]["stamped_utc"] = O.stamp(T)[:-1]+".0000000000Z"
+        good["value"]["funding"]["stamped_utc"] = f"{T}.0000000000"
         rows.append(good)
         session = self.create("scout",spec=spec)
         packet,key = info(session,D.SCOUTS[0])
-        bad = {"future-origin","malformed-origin","other-key-iso","future-proof","p0","bp0"}
+        bad = {"future-origin","malformed-origin","other-key","future-proof","p0","bp0"}
         ids = {e["id"] for e in packet["evidence"]}
         self.assertFalse(ids & bad)
         self.assertIn("valid-origin",ids)
@@ -571,6 +571,47 @@ class DeskTest(unittest.TestCase):
                     self.assertIsNone(result["quote"])
                 else:
                     self.assertEqual(result["quote"]["observed_at"],T-60)
+
+    def test_pass4_packet_and_notes_only_expose_typed_fields(self):
+        spec = world()
+        rows = spec["evidence"][0]
+        news = rows[2]
+        for name,origins in (
+                ("numeric-origin",[{"released":T+60}]),
+                ("nested-extra",[{"observed_at":T,"payload":{"observed_at":T+60}}]),
+                ("nano-origin",[{"observed_at":f"{T}.000000001"}])):
+            row = dict(news,id=name,origins=origins)
+            rows.append(row)
+            spec["vendor_proofs"][name] = dict(spec["vendor_proofs"]["n0"],row_hash=D.digest(row))
+        for field,offset in ((A,".000000001"),(B,".0")):
+            price = next(r for r in rows if r["symbol"] == field and r["kind"] == "price")
+            price.update(published=T,known_at=T)
+            wire = '{"price":100,"observed_at":'+str(T)+offset+'}'
+            price["value"] = D.json.loads(wire) if field == A else {"price":100,"observed_at":f"{T}{offset}"}
+        scout = self.create("scout",spec=spec)
+        packet,_ = info(scout,D.SCOUTS[0])
+        ids = {r["id"] for r in packet["evidence"]}
+        self.assertFalse(ids & {"p0","numeric-origin","nested-extra","nano-origin"})
+        self.assertIn("bp0",ids)
+        with scout.tx() as (con,_):
+            dropped = D.json.loads(con.execute("SELECT data FROM journal WHERE kind='evidence_drops'").fetchone()[0])
+        self.assertEqual(dropped["price"],1)
+        self.assertEqual(dropped["news"],6)
+        boss = self.create("A",spec=spec)
+        _,key = info(boss)
+        result = boss.handle("boss","look",dict(wake_key=key,kind="news",symbol=A,request_id="typed-news"))
+        self.assertEqual([r["id"] for r in result["rows"]],["n0"])
+        self.assertTrue(all("primary" not in r and "origins" not in r for r in result["rows"]))
+
+    def test_pass4_sealed_note_extras_never_reach_boss(self):
+        export = self.scout_export()
+        export["wakes"][0]["notes"][0]["metadata"] = {"published_at":T+60}
+        export["wakes"][0]["notes"][0]["evidence"][0]["raw_record"] = {"hidden":{"released":T+60}}
+        export["seal"] = D.seal(SEAL_KEY,"scout",{k:v for k,v in export.items() if k != "seal"})
+        boss = self.create("B",export)
+        packet,_ = info(boss)
+        self.assertNotIn("metadata",packet["notes"][0])
+        self.assertNotIn("raw_record",packet["notes"][0]["evidence"][0])
 
     def test_reaudit_sol_r04_signed_attention_must_match_its_own_clock(self):
         spec = world()

@@ -2,6 +2,8 @@
 from collections import Counter
 from contextlib import closing, contextmanager
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+from fractions import Fraction
 from hashlib import sha256
 import hmac
 import json
@@ -93,137 +95,160 @@ def wall(value):
     return datetime.fromtimestamp(value, UTC)
 
 
-PRICE_FIELDS = {"price","observed_at","change_1h","change_24h","volume","funding"}
-TYPED_ROW_FIELDS = {"id","symbol","kind","published","known_at","vintage","licensed","value"}
+ROW_FIELDS = ("id","symbol","kind","published","known_at","vintage","licensed")
+VALUE_FIELDS = {
+    "price": ("price","observed_at","change_1h","change_24h","volume","funding"),
+    "bars": ("t","timeframe","o","h","l","c","v"),
+    "news": ("headline","published_at","observed_at"),
+    "attention": ("count","period_start","period_end","published_at","observed_at"),
+}
+ROW_EXTRAS = {"price":(),"bars":("period_end","packet"),"news":("primary","origins"),"attention":("period_end",)}
+VOLUME = ("usd_24h","usual_usd_per_day","ratio")
+FUNDING = ("rate","every_hours","stamped_utc")
 BAR_LENGTHS = {"1Min":60,"30Min":1800,"1Hour":3600,"1Day":86400}
-ISO_CLOCK = re.compile(r"(?P<whole>\d{4}-\d{2}-\d{2}[Tt ]\d{2}:\d{2}:\d{2})(?:[.,](?P<fraction>\d+))?(?P<zone>Z|z|[+-]\d{2}:\d{2})\Z")
-DATE_PREFIX = re.compile(r"^\d{4}[-/]\d{1,2}(?:[-/]|$)")
-CLOCK_KEY = re.compile(r"(?:^|_)(?:timestamp|datetime|date|utc|epoch|time|stamp)(?:_|$)|(?:_at|_on)$")
-EXACT_CLOCK_KEYS = {"t","ts","published","known","observed","period_start","period_end","stamped","as_of","asof"}
+DECIMAL_CLOCK = re.compile(r"-?[0-9]+(?:\.[0-9]+)?\Z")
 
 
-def clock_not_after(stamp, bound):
-    """Compare against a whole-second bound without discarding fraction digits."""
+def clock(stamp):
+    """Unix seconds: integer or decimal string, never a decoded float."""
     if type(stamp) is int:
-        return stamp <= bound
-    if type(stamp) is float:
-        return math.isfinite(stamp) and stamp <= bound
-    if not isinstance(stamp,str):
-        return False
-    match = ISO_CLOCK.fullmatch(stamp)
-    if match:
-        whole, fraction, zone = match.groups()
-        try:
-            at = datetime.fromisoformat(whole+("Z" if zone == "z" else zone))
-            limit = wall(bound)
-        except (OSError, OverflowError, ValueError):
-            return False
-        return at < limit or at == limit and not (fraction or "").strip("0")
-    if re.fullmatch(r"\d{4}-\d{2}-\d{2}",stamp):
-        try:
-            return datetime.fromisoformat(stamp).replace(tzinfo=UTC) <= wall(bound)
-        except (OSError, OverflowError, ValueError):
-            return False
-    return False
+        return stamp
+    if isinstance(stamp,str) and DECIMAL_CLOCK.fullmatch(stamp):
+        return Decimal(stamp)
+    raise ValueError("evidence clock must be integer or decimal Unix seconds")
 
 
-def dated_at_wake(item, wake):
-    """Inspect nested snapshot and provenance fields, not just the envelope."""
-    pending = [(item,False)]
-    while pending:
-        value, is_clock = pending.pop()
-        if is_clock or isinstance(value,str) and DATE_PREFIX.match(value.strip()):
-            if not clock_not_after(value, wake):
-                return False
-        elif isinstance(value,dict):
-            for field, child in value.items():
-                if not isinstance(field,str):
-                    return False
-                key = re.sub(r"(?<=[a-z0-9])(?=[A-Z])","_",field).lower().replace("-","_")
-                pending.append((child,key in EXACT_CLOCK_KEYS or bool(CLOCK_KEY.search(key))))
-        elif isinstance(value,(list,tuple)):
-            pending.extend((child,False) for child in value)
-    return True
+def fields(item, keys):
+    return {k:item[k] for k in keys if k in item}
+
+
+def text(value):
+    return isinstance(value,str) and bool(value.strip())
+
+
+def nonnegative(value):
+    return orders.number(value) and value >= 0
+
+
+def positive(value):
+    return orders.number(value) and value > 0
 
 
 def typed_price(value, published):
-    if (not isinstance(value,dict) or value.keys()-PRICE_FIELDS or not orders.number(value.get("price"))
-            or value["price"] <= 0
-            or not clock_not_after(value.get("observed_at"),published)):
+    if not positive(value.get("price")) or clock(value.get("observed_at")) > published:
         return False
     if any(value.get(k) is not None and not orders.number(value[k]) for k in ("change_1h","change_24h")):
         return False
     volume = value.get("volume")
-    if volume is not None and (not isinstance(volume,dict) or volume.keys() != {"usd_24h","usual_usd_per_day","ratio"}
-                               or any(v is not None and (not orders.number(v) or v < 0) for v in volume.values())):
+    if volume is not None and (not isinstance(volume,dict) or volume.keys() != set(VOLUME)
+                               or any(v is not None and not nonnegative(v) for v in volume.values())):
         return False
     funding = value.get("funding")
-    if funding is not None:
-        if (not isinstance(funding,dict) or funding.keys() != {"rate","every_hours","stamped_utc"}
-                or not orders.number(funding["rate"]) or not orders.number(funding["every_hours"])
-                or not 1 <= funding["every_hours"] <= 24 or not isinstance(funding["stamped_utc"],str)):
-            return False
-        if not clock_not_after(funding["stamped_utc"],published):
-            return False
-    return True
+    return funding is None or (isinstance(funding,dict) and funding.keys() == set(FUNDING)
+        and orders.number(funding["rate"]) and orders.number(funding["every_hours"])
+        and 1 <= funding["every_hours"] <= 24 and clock(funding["stamped_utc"]) <= published)
 
 
-def available(e, wake, proofs=None):
-    if not isinstance(e,dict) or not dated_at_wake(e,wake):
-        return False
-    published, known = e.get("published"), e.get("known_at")
-    if not (type(published) is int and type(known) is int and published <= known <= wake
-            and e.get("vintage") == "original" and e.get("licensed") is True):
-        return False
-    kind = e.get("kind")
-    value = e.get("value")
-    if kind == "bars":
-        if (e.keys()-(TYPED_ROW_FIELDS|{"period_end","packet"}) or not isinstance(value,dict)
-                or value.keys() != set("ohlcv")|{"t","timeframe"} or not isinstance(value["timeframe"],str)
-                or any(not orders.number(value[k]) or value[k] <= 0 for k in "ohlc")
-                or value["v"] is not None and (not orders.number(value["v"]) or value["v"] < 0)):
-            return False
-        duration = BAR_LENGTHS.get(value["timeframe"])
-        return bool(duration and type(value["t"]) is int and value["t"]+duration == e.get("period_end")
-                    and e["period_end"] <= published and type(e.get("packet",True)) is bool)
-    if kind == "price":
-        return not (e.keys()-TYPED_ROW_FIELDS) and typed_price(value,published)
-    if kind not in ("news","attention") or not isinstance(value,dict):
-        return False
-    if e.keys()-(TYPED_ROW_FIELDS|({"period_end"} if kind == "attention" else {"primary","origins"})):
-        return False
-    if kind == "attention":
-        if (value.keys()-{"count","period_start","period_end","published_at","observed_at"}
-                or not orders.number(value.get("count")) or value["count"] < 0
-                or type(value.get("period_end")) is not int or value["period_end"] != e.get("period_end")
-                or value["period_end"] > published
-                or "period_start" in value and (type(value["period_start"]) is not int
-                                               or value["period_start"] > value["period_end"])):
-            return False
-    elif (value.keys()-{"headline","published_at","observed_at"} or not isinstance(value.get("headline"),str)
-          or not value["headline"].strip()):
-        return False
-    if ("published_at" in value and (type(value["published_at"]) is not int or value["published_at"] != published)
-            or "observed_at" in value and (type(value["observed_at"]) is not int or not published <= value["observed_at"] <= known)):
-        return False
-    proof = (proofs or {}).get(e.get("id"),{})
-    if (not isinstance(proof,dict) or not dated_at_wake(proof,wake)
+def typed_origins(e, wake):
+    origins = e.get("origins",[])
+    return (type(e.get("primary",False)) is bool and isinstance(origins,list)
+            and all(isinstance(origin,dict) and origin.keys() <= {"origin_id","observed_at"}
+                    and ("origin_id" not in origin or text(origin["origin_id"]))
+                    and clock(origin.get("observed_at")) <= wake for origin in origins))
+
+
+def vendor_valid(e, value, kind, published, known, proofs):
+    proof = (proofs or {}).get(e["id"],{})
+    if (not isinstance(proof,dict) or proof.keys()-{
+                "row_hash","version_hash","licensed","version_record","published","known_at","confirmations"}
             or proof.get("row_hash") != digest(e) or proof.get("version_hash") != digest(value)
-            or proof.get("licensed") is not True or not proof.get("version_record")
-            or proof.get("published") != published or proof.get("known_at") != known):
+            or proof.get("licensed") is not True or not text(proof.get("version_record"))
+            or clock(proof.get("published")) != published or clock(proof.get("known_at")) != known):
         return False
     confirmations = proof.get("confirmations",[])
     if not isinstance(confirmations,list):
         return False
-    if any(not isinstance(x,dict) or not x.get("group") or not x.get("version_record") or not x.get("version_hash")
-           or x.keys()-{"group","primary","known_at","published_at","version_record","version_hash"}
-           or type(x.get("known_at")) is not int or x["known_at"] > known
-           or "published_at" in x and (type(x["published_at"]) is not int or x["published_at"] > x["known_at"])
-           for x in confirmations):
+    for x in confirmations:
+        if (not isinstance(x,dict) or x.keys()-{"group","primary","known_at","published_at","version_record","version_hash"}
+                or not all(text(x.get(k)) for k in ("group","version_record","version_hash"))
+                or type(x.get("primary",False)) is not bool or clock(x.get("known_at")) > known
+                or ("published_at" in x and clock(x["published_at"]) > clock(x["known_at"]))):
+            return False
+    return (kind == "attention" or any(x.get("primary") is True for x in confirmations)
+            or len({x["group"] for x in confirmations}) >= 2)
+
+
+def available(e, wake, proofs=None):
+    """Validate only declared evidence clocks and their authenticated envelopes."""
+    try:
+        if (not isinstance(e,dict) or not isinstance(e.get("id"),str) or not OID.fullmatch(e["id"])
+                or not text(e.get("symbol")) or not isinstance(e.get("kind"),str)
+                or e["kind"] not in VALUE_FIELDS or e.get("vintage") != "original" or e.get("licensed") is not True):
+            return False
+        kind,value = e["kind"],e.get("value")
+        published,known = clock(e.get("published")),clock(e.get("known_at"))
+        if (not published <= known <= wake or e.keys()-set((*ROW_FIELDS,"value",*ROW_EXTRAS[kind]))
+                or not isinstance(value,dict) or value.keys()-set(VALUE_FIELDS[kind])):
+            return False
+        if kind == "price":
+            return typed_price(value,published)
+        if kind == "bars":
+            duration = BAR_LENGTHS.get(value.get("timeframe"))
+            end = clock(e.get("period_end"))
+            return bool(duration and Fraction(clock(value.get("t")))+duration == end <= published
+                        and type(e.get("packet",True)) is bool
+                        and all(positive(value.get(k)) for k in "ohlc")
+                        and "v" in value and (value["v"] is None or nonnegative(value["v"])))
+        if kind == "attention":
+            end = clock(value.get("period_end"))
+            if (not nonnegative(value.get("count")) or not end == clock(e.get("period_end")) <= published
+                    or "period_start" in value and clock(value["period_start"]) > end):
+                return False
+        elif not text(value.get("headline")) or not typed_origins(e,wake):
+            return False
+        if ("published_at" in value and clock(value["published_at"]) != published
+                or "observed_at" in value and not published <= clock(value["observed_at"]) <= known):
+            return False
+        return vendor_valid(e,value,kind,published,known,proofs)
+    except (TypeError,ValueError,OverflowError):
         return False
-    if kind == "attention":
-        return True
-    return any(x.get("primary") is True for x in confirmations) or len({x["group"] for x in confirmations}) >= 2
+
+
+def visible_row(e):
+    """Rebuild an admitted row; operator proof and provenance stay private."""
+    kind = e["kind"]
+    row = fields(e,(*ROW_FIELDS,"period_end","packet"))
+    value = fields(e["value"],VALUE_FIELDS[kind])
+    if kind == "price":
+        for key,allowed in (("volume",VOLUME),("funding",FUNDING)):
+            if value.get(key) is not None:
+                value[key] = fields(value[key],allowed)
+    return dict(row,value=value)
+
+
+def visible_notes(block, at, pool, watch, opts):
+    """Render a sealed block against canonical evidence; never copy note metadata."""
+    out = block.get("notes") if isinstance(block,dict) else None
+    if (not isinstance(out,list) or len(out) > 2*opts["notes_per_scout"] or clock(block.get("wake")) != at):
+        raise ValueError("wrong wake in scout seal")
+    allowed = {f"note:{at}:{role}:{i}" for role in SCOUTS for i in range(opts["notes_per_scout"])}
+    rendered = []
+    for note in out:
+        if (not isinstance(note,dict) or not isinstance(note.get("id"),str) or note["id"] not in allowed
+                or clock(note.get("wake")) != at or note.get("symbol") not in watch or not text(note.get("text"))
+                or len(note["text"]) > opts["note_chars"] or not isinstance(note.get("evidence"),list)
+                or not 1 <= len(note["evidence"]) <= 5):
+            raise ValueError("invalid note in scout seal")
+        symbol = note["symbol"]
+        evidence = []
+        for item in note["evidence"]:
+            row = pool.get(item["id"]) if isinstance(item,dict) and isinstance(item.get("id"),str) else None
+            if not row or row["symbol"] != symbol or encode(fields(item,row)) != encode(row):
+                raise ValueError("invalid note evidence in scout seal")
+            evidence.append(row)
+        allowed.remove(note["id"])
+        rendered.append(dict(id=note["id"],wake=at,symbol=symbol,text=note["text"],evidence=evidence))
+    return rendered
 
 
 def completed_mark(tape, symbol, wake):
@@ -295,10 +320,13 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
             if quote:
                 observed,_,mark = quote
                 h1, h24 = (mark_as_of(tape, s, t-3600*n) for n in (1, 24))
+                funding = tm06.last_funding(tape, s, w, cfg)
+                if funding:
+                    funding = dict(funding,stamped_utc=epoch(funding["stamped_utc"]))
                 packet.append(dict(id=f"price:{t}:{s}", symbol=s, kind="price", published=t, known_at=t,
                                    vintage="original", licensed=True, value=dict(price=mark,observed_at=observed,
                                        change_1h=(mark/h1-1)*100 if h1 else None, change_24h=(mark/h24-1)*100 if h24 else None,
-                                       volume=tm06.volume_row(tape, s, w, cfg), funding=tm06.last_funding(tape, s, w, cfg))))
+                                       volume=tm06.volume_row(tape, s, w, cfg), funding=funding)))
             for size, count, tf in ((3600, 24, "1Hour"), (60, 30, "1Min")):
                 bs = (P.S.built_bars(tape, s, size, w-timedelta(seconds=size*(count+1)), w, count)
                       if size == 3600 else tape.bars(s, tf, w-timedelta(minutes=count+1), w, limit=count))
@@ -309,7 +337,7 @@ def prepare_week(tape, cfg, start, end, symbols, evidence_by_wake, *, vendor_pro
                                        packet=True, value=dict(t=stamp, timeframe=tf, **{k: bar.get(k) for k in "ohlcv"})))
         rejected = Counter()
         for e in evidence_by_wake.get(str(t),[]):
-            kind = e.get("kind")
+            kind = e.get("kind") if isinstance(e,dict) else None
             if kind in ("news","attention") and available(e,t,vendor_proofs):
                 packet.append(e)
             else:
@@ -350,18 +378,8 @@ def create_desk(path, spec, arm, boss, tokens, scout=None, settings=None, *, app
             raise ValueError("scout seal belongs to another tape or neutral session")
         opts = dict(SETTINGS,**(settings or {}))
         for at, rows, block in zip(spec["wakes"],spec["evidence"],scout["wakes"]):
-            pool = {e["id"]:e for e in rows if available(e,at,proof)}
-            out = block["notes"]
-            if block.get("wake") != at or not isinstance(out,list) or len(out) > 2*opts["notes_per_scout"]:
-                raise ValueError("wrong wake in scout seal")
-            allowed = {f"note:{at}:{role}:{i}" for role in SCOUTS for i in range(opts["notes_per_scout"])}
-            for note in out:
-                if (note.get("id") not in allowed or note.get("wake") != at or note.get("symbol") not in spec["watch"]
-                        or not isinstance(note.get("text"),str) or not 1 <= len(note["text"]) <= opts["note_chars"]
-                        or not isinstance(note.get("evidence"),list) or not note["evidence"]
-                        or any(pool.get(e.get("id")) != e or e.get("symbol") != note["symbol"] for e in note["evidence"])):
-                    raise ValueError("invalid note in scout seal")
-                allowed.remove(note["id"])
+            pool = {e["id"]:visible_row(e) for e in rows if available(e,at,proof)}
+            visible_notes(block,at,pool,spec["watch"],opts)
     path = Path(path)
     if not SID.fullmatch(path.name):
         raise ValueError("invalid TM07 session id")
@@ -455,21 +473,26 @@ class DeskSession:
         at = self.spec["wakes"][k]
         out = {}
         for e in self.spec["evidence"][k]:
-            if (available(e,at,self.spec.get("vendor_proofs")) and e.get("symbol") in self.spec["watch"] and isinstance(e.get("id"), str)
-                    and OID.fullmatch(e["id"]) and e["kind"] in ("price", "bars", "news", "attention")):
-                if e["id"] in out and out[e["id"]] != e:
+            if available(e,at,self.spec.get("vendor_proofs")) and e["symbol"] in self.spec["watch"]:
+                row = visible_row(e)
+                if e["id"] in out and out[e["id"]] != row:
                     raise ValueError("conflicting evidence id")
-                out[e["id"]] = e
+                out[e["id"]] = row
         return out
+
+    def notes_at(self,k,pool=None):
+        at = self.spec["wakes"][k]
+        return visible_notes(self.manifest["scout"]["wakes"][k],at,self.evidence(k) if pool is None else pool,
+                             self.spec["watch"],self.opts)
 
     def raw(self, pool, at):
         result = []
         for s in self.spec["watch"]:
             for kind, limit in (("price", 1), ("bars", 54), ("news", self.opts["headline_rows"]), ("attention", self.opts["attention_rows"])):
                 es = [e for e in pool.values() if e["symbol"] == s and e["kind"] == kind
-                      and (kind != "news" or e["known_at"] >= at-86400)
+                      and (kind != "news" or clock(e["known_at"]) >= at-86400)
                       and (kind != "bars" or e.get("packet", True))]
-                result.extend(sorted(es, key=lambda e: (e["known_at"], e["id"]), reverse=True)[:limit])
+                result.extend(sorted(es, key=lambda e: (clock(e["known_at"]), e["id"]), reverse=True)[:limit])
         return result
 
     def merge_notes(self, by_role, k):
@@ -486,7 +509,7 @@ class DeskSession:
                 n = ns[rank]
                 ev = [exposed[i] for i in n["evidence_ids"]]
                 news = next((e for e in ev if e["kind"] == "news"), None)
-                key = (n["symbol"], news.get("event_id", news["id"]) if news else "price")
+                key = (n["symbol"], news["id"] if news else "price")
                 if key in seen:
                     continue
                 seen.add(key)
@@ -507,7 +530,7 @@ class DeskSession:
             prior = self.spec.get("evidence_drops")
             dropped = Counter(prior[k] if prior else {})
             for e in self.spec["evidence"][k]:
-                if not isinstance(e,dict) or pool.get(e.get("id")) != e:
+                if not (available(e,at,self.spec.get("vendor_proofs")) and e["id"] in pool):
                     kind = e.get("kind") if isinstance(e,dict) else None
                     dropped[kind if kind in ("price","bars","news","attention") else "other"] += 1
             self.log(con,at,"operator","evidence_drops",dict(dropped))
@@ -525,7 +548,7 @@ class DeskSession:
                           active=self.resting(st), looks_left=self.opts["looks"]-len(st["looks"]),
                           book_evidence=f"book:{at}")
             if self.arm != "A":
-                result["notes"] = self.manifest["scout"]["wakes"][k]["notes"]
+                result["notes"] = self.notes_at(k,pool)
         if not con.execute("SELECT 1 FROM journal WHERE wake=? AND role=? AND kind='packet'", (at, role)).fetchone():
             self.log(con, at, role, "packet", dict(hash=digest(result)))
         return result
@@ -533,8 +556,11 @@ class DeskSession:
     @staticmethod
     def resting(st):
         waiting = st["book"].get("desk_order_updates",{})
-        return list(st["active"].values())+[dict(c["order"],pending_install=True)
-                                            for _,c in sorted(waiting.items()) if c["order"] is not None]
+        keys = ("id","symbol","direction","level","ratio","wake","hours","expiry","weight",
+                "note_ids","evidence_ids","decision_id","observed")
+        return [fields(o,keys) for o in st["active"].values()]+[
+            dict(fields(c["order"],keys),pending_install=True)
+            for _,c in sorted(waiting.items()) if c["order"] is not None]
 
     def lookup(self, con, st, body):
         if len(st["looks"]) >= self.opts["looks"]:
@@ -544,8 +570,9 @@ class DeskSession:
         sym, kind = body.get("symbol"), body.get("kind")
         if sym not in self.spec["symbols"] or kind not in ("bars", "news", "attention"):
             raise ValueError("lookup needs one tradable symbol and an approved view")
-        rows = [e for e in self.evidence(k).values() if e["symbol"] == sym and e["kind"] == kind and e["known_at"] >= at-86400]
-        rows = sorted(rows, key=lambda e: (e["known_at"], e["id"]), reverse=True)[:self.opts["look_rows"]]
+        rows = [e for e in self.evidence(k).values() if e["symbol"] == sym and e["kind"] == kind
+                and clock(e["known_at"]) >= at-86400]
+        rows = sorted(rows, key=lambda e: (clock(e["known_at"]), e["id"]), reverse=True)[:self.opts["look_rows"]]
         ids = [e["id"] for e in rows]
         quote = self.quote(k,sym) if kind == "bars" else None
         if quote:
@@ -560,9 +587,10 @@ class DeskSession:
         quotes = [e for e in self.evidence(k).values() if e["kind"] == "price" and e["symbol"] == symbol
                   and e["value"]["price"] == mark]
         if quotes:
-            row = max(quotes,key=lambda e:(e["known_at"],e["id"]))
+            row = max(quotes,key=lambda e:(clock(e["known_at"]),e["id"]))
             t = self.spec["wakes"][k]
-            return dict(id=f"quote:{t}:{symbol}",symbol=symbol,utc=t,price=mark,observed_at=row["value"]["observed_at"])
+            return dict(id=f"quote:{t}:{symbol}",symbol=symbol,utc=t,price=row["value"]["price"],
+                        observed_at=row["value"]["observed_at"])
 
     def visible_marks(self,k,st,notes):
         marks = self.spec["rows"][k]["marks"]
@@ -591,8 +619,9 @@ class DeskSession:
             if (not isinstance(ids, list) or not 1 <= len(ids) <= 4
                     or any(not isinstance(i, str) or i not in pool or pool[i]["symbol"] != n["symbol"] for i in ids)):
                 raise ValueError("scout evidence not visible for this coin")
-        st["scout"][role] = items
-        self.log(con, at, role, "scout", dict(notes=items))
+        notes = [dict(symbol=n["symbol"],text=n["text"],evidence_ids=list(n["evidence_ids"])) for n in items]
+        st["scout"][role] = notes
+        self.log(con, at, role, "scout", dict(notes=notes))
         if all(r in st["scout"] for r in SCOUTS):
             notes = self.merge_notes(st["scout"], k)
             self.log(con, at, "neutral", "seal", dict(wake=at,notes=notes,count_before=sum(map(len,st["scout"].values()))))
@@ -605,7 +634,7 @@ class DeskSession:
         end = self.spec["end"]
         row = self.spec["rows"][k]
         bare = {x: v for x, v in body.items() if x not in ("conditions", "keep", "citations")}
-        notes = self.manifest["scout"]["wakes"][k]["notes"] if self.arm != "A" else []
+        notes = self.notes_at(k) if self.arm != "A" else []
         marks = self.visible_marks(k,st,notes)
         mentioned = set(bare["exits"]) if isinstance(bare.get("exits"),dict) else set()
         conditions = body.get("conditions",[])
