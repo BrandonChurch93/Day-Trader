@@ -1,10 +1,12 @@
 # Status
 
-Last updated: 2026-11-26 04:51 UTC
+Last updated: 2026-11-26 04:57 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
+
+- [Replay 39](research/84_replay_39_iwm_pre_holiday.md), run once 2026-11-26 04:55:55 UTC. MEASURED. Did not pass, 5 of 7 marks: IWM averaged +0.1909% net over 102 pre-holiday sessions at 2 bps per side, but net t 1.91 and gross Welch t 1.82 both missed 2.0. Net mean was positive in 8 of 11 years; the shown 10 bps per side result was only +0.0307% (t 0.31). Rule not advanced.
 
 - [Replay 35](research/81_replay_35_cme_bitcoin_expiry_ibit.md), run once 2026-11-26 04:50:46 UTC. MEASURED. Did not pass, 1 of 6 marks. IBIT averaged -0.1626% net on 34 of 34 expiry windows (t -0.72); the expiry-Friday gap was -0.1398% (Welch t -0.51).
 
