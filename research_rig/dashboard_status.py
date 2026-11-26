@@ -116,10 +116,13 @@ def scoreboard(markdown, findings, gh):
         if section and section.startswith("1. ") and cells[0].isdigit() and len(cells) == 7:
             _, label, name, _, reachable, verdict, details = cells
             match = CODE_PATH.search(details)
+            scope = "US $500 reachable" if reachable == "Yes" else "Not US-reachable"
+            if reachable == "Yes" and "Tested on a US venue proxy" in details:
+                scope = "US $500 reachable in principle; tested on a proxy feed"
             base.append(dict(label=label, name=name, verdict=verdict,
                              passed=bool(re.match(r"^passed\b", verdict, re.I)),
                              url=url(match[1], gh) if match else gh + SCORECARD_PATH,
-                             scope="US $500 reachable" if reachable == "Yes" else "Not US-reachable"))
+                             scope=scope))
         elif section and section.startswith("2. ") and cells[0] == "Total":
             total = int(cells[1]), int(cells[2])
     if total != (len(base), sum(row["passed"] for row in base)):

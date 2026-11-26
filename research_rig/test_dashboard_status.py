@@ -65,6 +65,15 @@ class DashboardStatusTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "family totals disagree"):
             scoreboard(INVENTORY.replace("| Total | 2", "| Total | 9"), [], GH)
 
+    def test_proxy_venue_pass_counts_with_qualified_reachability(self):
+        row = ("| 3 | Plan 75 | Coin trend | momentum | Yes | Passed (4 of 4 marks) | "
+               "Tested on a US venue proxy (`docs/research/181_plan_75_heldback_result.md`) |\n")
+        inventory = INVENTORY.replace("## 2.", row + "## 2.").replace("| Total | 2 | 1 |", "| Total | 3 | 2 |")
+        score = scoreboard(inventory, [], GH)
+        self.assertEqual((score["tests"], score["passed"]), (3, 2))
+        self.assertEqual(score["passes"][-1]["scope"], "US $500 reachable in principle; tested on a proxy feed")
+        self.assertEqual(score["passes"][-1]["url"], GH + "docs/research/181_plan_75_heldback_result.md")
+
     def test_distinct_legs_share_the_run_clock_and_report_without_double_counting(self):
         extra = """- [Replay 46 Leg A](research/101_two_legs.md), run once 2026-11-26 06:51:58 UTC. Did not pass, 3 of 6 marks.
 - [Replay 46 Leg B](research/101_two_legs.md), run once 2026-11-26 06:51:58 UTC. Did not pass, 5 of 6 marks.
