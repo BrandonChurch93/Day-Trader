@@ -7,14 +7,16 @@ from hashlib import sha256
 from io import BytesIO, StringIO
 import json
 from pathlib import Path
+import stat
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from urllib.error import URLError
 from zoneinfo import ZoneInfo
 
 from timemachine.score_tm09 import DEPS, run_approved, score
-from timemachine import tm09_blind
+from timemachine import tm09_blind, tm09_operator
 from timemachine.tm09_desk import Desk, PUBLIC_SID, initialize, seal, slot, store_new
 from timemachine.tm09_feed import copied_run, extract_figures
 from timemachine.tm09_fixture import FILES, compile_export, compile_weeks, encode, fingerprint, mondays, read_private, settings, stage1_weeks, week_pairs
@@ -551,6 +553,125 @@ class DeskTest(unittest.TestCase):
             probe(*args, paths, stopped=True)
             self.assertEqual([call.args[0] for call in denied.call_args_list], paths)
             request.assert_called_once()
+
+
+class OperatorGoTest(unittest.TestCase):
+    AUTH_ID = 'tm09-made-up-0123'
+    MARKER = 'TM09_GO=' + AUTH_ID
+    SUFFIX = f'; Approved for TM09 stage 1 and the registered stage 2 branch: `{MARKER}`'
+    LEDGER = f'| 221 | Invented earlier row |\n| 222 | Invented experiment | Invented docket{SUFFIX} |\n'.encode()
+    SCOPES = {'build': 'ledger-222-build-fixtures', 'launch': 'ledger-222-run-tm09',
+              'stage1-seal': 'ledger-222-seal-stage1', 'results': 'ledger-222-seal-results'}
+
+    def authorize(self, command, *, mode='stage1', ledger=LEDGER, overrides=None, omit=(), rehearsal=False,
+                  ledger_owner=0):
+        root = Path('/var/lib/tm09')  # Mocked; never opened or listed.
+        keyfile, receipt = root / 'invented-key', root / 'invented-approval'
+        release = Path('/invented-release')
+        files = {'timemachine/' + name: b'invented release member' for name in (
+            'tm09_desk.py', 'tm09_orders.py', 'tm09_fixture.py', 'tm09_feed.py', 'tm09_operator.py',
+            'tm09_isolation_probe.py', 'score_tm09.py', 'tm09_blind.py', 'test_tm09.py', 'TM09_WORKER_BRIEFS.md')}
+        config, registration = read_private(CONFIG), b'invented registration'
+        options = settings(config)
+        uid = 1234
+        body = dict(root=str(root), service_uid=uid, release=str(release), approved_by='invented lead',
+                    release_files={name: sha256(raw).hexdigest() for name, raw in files.items()},
+                    config_sha256=sha256(config).hexdigest(), registration_sha256=sha256(registration).hexdigest(),
+                    authorization_id=self.AUTH_ID, ledger_sha256=sha256(ledger).hexdigest(),
+                    resolved_settings=options, operator_boundary_sha256='a' * 64, synthetic_rehearsal_sha256='b' * 64,
+                    blind_report_sha256='c' * 64, mode=mode, ports=[8801], window_closed=True,
+                    limits=dict(notes=2, note_chars=280, looks=50, look_rows=120, headline_rows=20, headline_chars=500))
+        body.update(overrides or {})
+        for name in omit:
+            del body[name]
+        scope = 'ledger-222-rehearse-tm09' if rehearsal else self.SCOPES[command]
+        files.update({'config/thresholds.yaml': config, 'timemachine/TM09_REGISTRATION.md': registration,
+                      tm09_operator.LEDGER: ledger})
+        reads = {release / name: raw for name, raw in files.items()}
+        reads.update({keyfile: KEY.encode(), receipt: encode({'body': body, 'seal': seal(KEY, scope, body)}).encode()})
+
+        def metadata(path, **_kwargs):
+            if path == root:
+                return SimpleNamespace(st_mode=stat.S_IFDIR | 0o700, st_uid=uid)
+            if path == keyfile:
+                return SimpleNamespace(st_mode=stat.S_IFREG | 0o600, st_uid=uid)
+            if path in (release, release / 'config', release / 'timemachine'):
+                return SimpleNamespace(st_mode=stat.S_IFDIR | 0o755, st_uid=0)
+            self.assertIn(path, reads)
+            return SimpleNamespace(st_mode=stat.S_IFREG | 0o644,
+                                   st_uid=ledger_owner if path == release / tm09_operator.LEDGER else 0)
+
+        with (patch.object(tm09_operator, '__file__', str(release / 'timemachine/tm09_operator.py')),
+              patch('timemachine.tm09_operator.os.path.realpath', side_effect=lambda path, **_: str(path)),
+              patch('timemachine.tm09_operator.os.geteuid', return_value=uid),
+              patch.object(Path, 'stat', autospec=True, side_effect=metadata),
+              patch.object(Path, 'lstat', autospec=True, side_effect=metadata),
+              patch.object(tm09_operator, 'read_private', side_effect=reads.__getitem__) as read,
+              patch.object(tm09_operator, 'verify_stage2') as stage2):
+            result = tm09_operator.approved(root, keyfile, receipt, command, rehearsal=rehearsal)
+        checked_ledger = any(call.args[0] == release / tm09_operator.LEDGER for call in read.call_args_list)
+        self.assertEqual(checked_ledger, not rehearsal and command in ('build', 'launch'))
+        self.assertEqual(stage2.call_count, int(not rehearsal and mode in ('A', 'B')))
+        return result[3]['mode']
+
+    def test_build_and_run_refuse_missing_authorization_fields_or_wrong_ledger_pin(self):
+        for command in ('build', 'launch'):
+            for field, message in (('authorization_id', 'lead TM09_GO authorization missing'),
+                                   ('ledger_sha256', 'approved input changed')):
+                with self.subTest(command=command, missing=field), self.assertRaisesRegex(ValueError, message):
+                    self.authorize(command, omit=(field,))
+            with self.subTest(command=command, wrong_pin=True), self.assertRaisesRegex(ValueError, 'approved input changed'):
+                self.authorize(command, overrides={'ledger_sha256': '0' * 64})
+            with self.subTest(command=command, wrong_owner=True), self.assertRaisesRegex(PermissionError, 'release file'):
+                self.authorize(command, ledger_owner=1234)
+
+    def test_build_and_run_refuse_invalid_pinned_docket(self):
+        old_row = f'| 222 | Invented docket {self.MARKER} |\n'.encode()
+        invalid = {'missing row': self.LEDGER.replace(b'| 222 |', b'| 223 |'),
+                   'not at end': f'| 222 | {self.SUFFIX} more text |\n'.encode(),
+                   'not last cell': f'| 222 | {self.SUFFIX} | more text |\n'.encode(),
+                   'wrong line end': self.LEDGER.replace(b'` |\n', b'`|\n'),
+                   'wrong case': self.LEDGER.replace(b'Approved', b'approved'),
+                   'CRLF': self.LEDGER.replace(b'\n', b'\r\n'),
+                   'duplicate row': self.LEDGER + b'| 222 | another item |\n',
+                   'duplicate marker': self.LEDGER + b'Other text TM09_GO=another-id\n',
+                   'appendix lookalike, old format': b'## Invented appendix\n' + old_row,
+                   'mixed-case raw HTML, old format': b'<PrE>\n' + old_row + b'</PrE>\n',
+                   'bare ID repeated, old format': old_row + self.AUTH_ID.encode() + b'\n'}
+        for command in ('build', 'launch'):
+            for case, ledger in invalid.items():
+                with self.subTest(command=command, case=case), self.assertRaisesRegex(ValueError, 'lead TM09_GO authorization missing'):
+                    self.authorize(command, ledger=ledger)
+
+    def test_authorization_id_is_bounded_ascii_and_matches_the_row(self):
+        for auth_id in ('', 'has_underscore', 'UPPER', 'non-ascii-ñ', 'x' * 65):
+            with self.subTest(auth_id=auth_id), self.assertRaisesRegex(ValueError, 'lead TM09_GO authorization missing'):
+                self.authorize('launch', ledger=self.LEDGER.replace(self.AUTH_ID.encode(), auth_id.encode()),
+                               overrides={'authorization_id': auth_id})
+        with self.assertRaisesRegex(ValueError, 'lead TM09_GO authorization missing'):
+            self.authorize('launch', overrides={'authorization_id': 'different-valid-id'})
+
+    def test_signer_vouches_for_context_not_interpreted_by_byte_gate(self):
+        row = self.LEDGER.splitlines(keepends=True)[-1]
+        changed = {'appendix relocation': b'## Invented appendix\n' + row,
+                   'mixed-case raw HTML': b'<PrE>\n' + row + b'</PrE>\n',
+                   'bare ID repeated': self.LEDGER + self.AUTH_ID.encode() + b'\n'}
+        for command in ('build', 'launch'):
+            for case, ledger in changed.items():
+                with self.subTest(command=command, case=case):
+                    with self.assertRaisesRegex(ValueError, 'approved input changed'):
+                        self.authorize(command, ledger=ledger, overrides={'ledger_sha256': sha256(self.LEDGER).hexdigest()})
+                    self.assertEqual(self.authorize(command, ledger=ledger), 'stage1')
+
+    def test_exact_docket_accepts_all_stages_and_unrelated_scopes_need_no_docket(self):
+        for command in ('build', 'launch'):
+            for mode in ('stage1', 'A', 'B'):
+                with self.subTest(command=command, mode=mode):
+                    self.assertEqual(self.authorize(command, mode=mode), mode)
+        omitted = ('authorization_id', 'ledger_sha256')
+        self.assertEqual(self.authorize('launch', rehearsal=True, ledger=b'invented', omit=omitted), 'A')
+        self.assertEqual(self.authorize('stage1-seal', ledger=b'invented', omit=omitted), 'stage1')
+        self.assertEqual(self.authorize('results', mode='A', ledger=b'invented', omit=omitted), 'A')
 
 
 class ScoreTest(unittest.TestCase):
