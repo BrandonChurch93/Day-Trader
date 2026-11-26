@@ -4,6 +4,7 @@ Invented log lines, nonces, sessions and files only. No sudo, no host path is wr
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 from tempfile import TemporaryDirectory
 import unittest
@@ -475,9 +476,12 @@ class Shell(unittest.TestCase):
             self.assertEqual((r.returncode, calls), (2, []), args)
         for arm in ('P1', 'P2', 'P3', 'N', 'N1', 'N2', 'N3'):
             (self.d / 'calls').unlink(missing_ok=True)
+            shutil.rmtree(self.d / 'logs', ignore_errors=True)   # no ready line left from the previous arm
             r, calls = self.run_sh('tm09_launch.sh', 'boss m ' + arm, SID, '8801', SIB, self.bearer)
             self.assertEqual(r.returncode, 0, arm + r.stderr)
-            self.assertIn('--arm ' + arm + ' ', calls[2])
+            launches = [c for c in calls if ' launch ' in c]
+            self.assertEqual(len(launches), 1, arm)
+            self.assertIn('--arm ' + arm + ' ', launches[0])
 
     def test_launch_wiring(self):
         r, calls = self.run_sh('tm09_launch.sh', 'boss claude_fable_5_2 N', SID, '8803', SIB, self.bearer)
