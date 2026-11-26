@@ -405,7 +405,9 @@ def test_guards(cfg):
 
 def test_dead_name_coverage(cfg):
     default = {"C": None, "forced_half_line": False, "closed_cards": []}
-    assert cfg["dead_name_coverage"] == default
+    live = cfg["dead_name_coverage"]  # set once by the lead agent from the coverage count (ruling 35)
+    assert set(live) == set(default) and (live["C"] is None or 0 <= live["C"] <= 1)
+    cfg = {**cfg, "dead_name_coverage": default}
     forced = {**cfg, "dead_name_coverage": {**default, "C": .84, "forced_half_line": True}}
     dates = [date(y, m, d) for y in range(2017, 2022) for m in range(1, 13) for d in (3, 5, 7)]
     for card in ("A", "B"):
