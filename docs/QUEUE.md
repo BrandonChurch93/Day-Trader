@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 23:34 UTC
+Last changed: 2026-11-26 23:35 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -138,6 +138,8 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 
 | Idea | From |
 |---|---|
+| Count first, no prices (round 64, second-checked): foreign exchange delisting, caution and suspension notices on coins a US venue lists, as a protective exit rule extending row 72 (not a short). First clear each source's terms for keeping records; then count dated, actionable episodes; pass mark 30 in 12 months, with the nested Korean joint-review group counted separately. Crypto, in line with the owner's 2026-11-26 direction. | `docs/research/190_round_64_foreign_language_and_time_zone_sources.md` |
+| Watch only (round 64, second-checked): a delayed short after listing notices on exchanges other than Upbit waits on a cleared count of coins a US account can short. Dropped and skipped by future rounds: buying on listing notices, Japan's Green List, foreign filings ahead of the US open, foreign drug, antitrust, recall and patent records, Asia-hours coin gaps. | `docs/research/190_round_64_foreign_language_and_time_zone_sources.md` |
 | Skip list (round 62, second-checked): career winners by mechanism. Future rounds skip Thorp-style convertible and warrant hedges, Renaissance-style breadth, market making, contest winners, crypto vaults and carry, company plans of liquidation (about 4 a year) and a Kalshi Bitcoin taker blend. The one mechanism that fits this desk is patience with forced sellers, already the source of Replays 25 and 48. | `docs/research/188_round_62_career_winners_by_mechanism.md` |
 | Watch only (round 63, second-checked): machine reading. Filing wording changes stay under rows 10 and 63 (best after-cost replication t 1.31); reading one company through its linked companies waits on a US-only after-cost replication; forecasting bots wait on an audited multi-period live book. Dropped: companies with no analysts (no free dated coverage feed), a wide book of small news signals (paid feeds, the paper's text and tables disagree), buying on filings read after the close. Future rounds skip these unless a new after-cost result appears. | `docs/research/189_round_63_where_a_machine_reader_beats_people.md` |
 | Count first, no prices (round 65, second-checked): Lido withdrawal queue. Count how often and for how long the queue wait and the stETH discount data are both available with honest time stamps; a data-coverage count only, not a trade and not a claim of par in dollars. Crypto, so in line with the owner's 2026-11-26 direction. | `docs/research/191_round_65_small_and_tedious.md` |
