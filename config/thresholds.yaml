@@ -1196,6 +1196,7 @@ replay_75_plan:
     repeat_cut: "2022-01-01"
     vault: ["2024-01-01", "2026-11-01"]
     after_paper_first: "2025-03-20"
+    after_paper_min_net: -0.10
     lookbacks: [10, 20, 30]
     printed_lookbacks: [5, 10, 20, 30, 60, 90, 150, 250, 360]
     target_vol: 0.25

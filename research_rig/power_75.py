@@ -82,6 +82,8 @@ def study(cfg, marks, cost_rows, key, case_name):
         a, a2 = twin_weights(w, periods, marks["twins"], np.random.default_rng(marks["twin_seed"]))
         year_stops = [i for i in range(1, n) if days[i].month == days[i].day == 1] + [n]
         cut = days.index(date.fromisoformat(cfg["repeat_cut"]))
+    else:
+        cut = days.index(date.fromisoformat(cfg["after_paper_first"]))
     blocks = np.arange(n) // s["factor_block_days"]
     ny = marks["annual_days"]
     ib = wi * c["idio_vol"] / sqrt(ny)
@@ -121,19 +123,25 @@ def study(cfg, marks, cost_rows, key, case_name):
                 if key == "repeat":
                     year_end = log[:, np.asarray(year_stops) - 1]
                     yoy = np.diff(year_end, axis=1, prepend=0)
-                    passes = ((log[:, -1] > hold_log[:, -1]) &
+                    old_passes = ((log[:, -1] > hold_log[:, -1]) &
                               (book.mean(axis=1) * sqrt(ny) >= marks["min_sharpe"] * sigma) &
                               (sigma > 0) & (dd <= marks["max_drawdown"]) &
                               (log[:, -1] > twin_cut) &
                               (np.count_nonzero(yoy > 0, axis=1) >= cfg["repeat_years_positive"]) &
                               (log[:, cut - 1] > 0) & (log[:, -1] > log[:, cut - 1]))
+                    passes = (log[:, -1] > 0) & ((log[:, cut - 1] > 0) |
+                                                  (log[:, -1] > log[:, cut - 1]))
+                    if np.any(old_passes & ~passes):
+                        raise AssertionError("old repeat passes must clear the implementation check")
                 else:
                     scale = sigma / btc.std(axis=1, ddof=1)
                     matched = btc * scale[:, None]
                     matched[:, (warm, n - 1)] -= fee * scale[:, None]
                     matched_log, _ = stats(matched)
-                    passes = ((log[:, -1] > 0) & (log[:, -1] > matched_log[:, -1]) &
-                              (dd < marks["max_drawdown"]))
+                    old_passes = ((log[:, -1] > 0) & (log[:, -1] > matched_log[:, -1]) &
+                                  (dd < marks["max_drawdown"]))
+                    passes = old_passes & (log[:, -1] - log[:, cut - 1] >=
+                                           np.log1p(cfg["after_paper_min_net"]))
                 totals[cost_name, edge] += int(np.count_nonzero(passes))
     return totals
 
