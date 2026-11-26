@@ -12,7 +12,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 - Idea round 30 ([doc 119](research/119_round_30_high_count_crypto_power_screen.md)) closed 2026-11-26. STATED from published studies: 0 of 7 crypto idea families cleared the power screen after US retail spot fees. No data spent.
 
-- Queue 97, forward stock split announcements ([doc 118](research/118_forward_split_announcements.md)), closed 2026-11-26 before prices. MEASURED: 157 dated events in 2016 to 2025, 106 announced after the close or on a weekend. STATED: published post-2010 drift after the announcement jump is about zero.
+- Queue 97, forward stock split announcements ([doc 118](research/118_row97_forward_split_count_first_close.md)), closed 2026-11-26 before prices. MEASURED: 157 dated events in 2016 to 2025, 106 announced after the close or on a weekend. STATED: published post-2010 drift after the announcement jump is about zero.
 
 - Plan 56, insider cluster buys (queue 15, ledger 193, `research_rig/CLOSE_56_on_power.md`), closed 2026-11-26 on synthetic power before prices. MEASURED: 2,391 dated clusters in 1,479 issuers; at the recent published edge the 20-session test would catch it 9.20% of the time.
 
