@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 23:48 UTC
+Last changed: 2026-11-26 23:55 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -94,6 +94,9 @@ The table lists current work and deferred scoring. Completed time-machine runs a
 | 132 | Measurement 132: what a trade really costs on Binance.US against Coinbase, forward only, no profit claim. Every hour, top of book and the cost to fill $25 and $250 on each of the 20 coins in US dollars on both venues; read out after 30 days by coin and by hour, with the 00:00 UTC hour (Plan 75's order time) and E09's signal hours shown apart | [plan](research/182_measurement_132_venue_cost.md), [fee survey](research/180_round_57_cost_as_the_binding_limit.md), ledger 227 | 2026-11-26 2:56 PM MT: live. Audit CLEAR on the fourth pass. Loop runs from the frozen worktree `/home/user/workspace/dt-m132`; 720 hourly wakes to 2026-12-26 21:00 UTC; read out once after that (standing chore below). |
 | 133 | Practice card E11: card E09's three dip-buy rules (buy the coin that fell more than twice as far as bitcoin in a sharp drop, hold one or two hours) priced on Binance.US order books at $250 a trade, with a shown-only resting-bid line; same marks as E09, judged at 150 trades or 2027-11-30; pretend money | ledger 228, [E09 card](../practice/traders/E09_overextension_dip_buy.md), [fee survey](research/180_round_57_cost_as_the_binding_limit.md) | 2026-11-26 3:43 PM MT: live. Audit CLEAR on the third pass (one fault fixed: a failed candle page for one coin no longer skips a due exit; and an entry is always priced from a book taken after the decision). Loop runs from the frozen worktree `/home/user/workspace/dt-e11` at `de15a52`; first wake 2026-11-26 23:00 UTC; check at each wake-up (standing chore below). |
 | 134 | Plan 76: buy a coin after a one-hour fall of 5% or more, hold 24 hours (ledger 229; reopens row 28 as its price-only arm) | plan text PREREG 76 in research_rig, to be drafted; Plan 75's 20 coins, hourly bars, 75 bp a side main, 15 bp shown only | Registered 2026-11-26 4:44 PM MT. Builder drafting plan text, scorer and tests on made-up data. No price read. Next: audit, custodian receipt, count stage. |
+| 135 | Practice card E12: the dip-buy card rebuilt on Binance.US data only (signals and prices), replacing E09 and E11, which are closed unjudged on data terms | ledger 230; same rules and marks as ledger 228 | Registered 2026-11-26 4:55 PM MT. Builder assigned. No quote read. |
+| 136 | Practice card E13: the Plan 75 trend card rebuilt on Binance.US data only, replacing E10, closed unjudged on data terms | ledger 231 | Registered 2026-11-26 4:55 PM MT. Builder assigned. No quote read. |
+| 137 | Measurement 133: hourly cost of a small trade on Binance.US only, replacing Measurement 132, closed unread on data terms | ledger 232 | Registered 2026-11-26 4:55 PM MT. Builder assigned. No quote read. |
 
 ## Next, in order
 
