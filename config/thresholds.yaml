@@ -1120,3 +1120,9 @@ jan_rows_91_92_calibration:
   status: builder
   note: Synthetic assumptions in benchmark, roster, loser order. Both rows closed before roster construction or market access.
   source: research_rig/CLOSE_ROWS_91_92_on_power.md
+
+plan_55_closure:
+  value: {"first":2016,"last":2025,"capital":500,"entry_session":35,"exit_session":60,"paired_t":2,"power_floor":0.5,"refusal_cap":0.10,"min_active_years":8,"worlds":30000,"seed":55192,"independent_refusal":0.04,"residual_df":5,"residual_sd_bps":[800,1200,1600],"quarter_sd_bps":150,"year_sd_bps":75,"iwm_sd_bps":400,"stock_round_trip_bps":[50,110],"iwm_round_trip_bps":20,"gross_edge_bps":[0,100,211,300,400,500,600],"shared_edge_bps":200}
+  status: builder
+  note: Closed price-blind. Model inputs only; not frozen thresholds, observed costs or authorization.
+  source: research_rig/CLOSE_55_on_power.md

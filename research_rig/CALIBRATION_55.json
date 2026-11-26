@@ -1,0 +1,812 @@
+{
+  "documented": {
+    "n": 100,
+    "seed": 55192,
+    "worlds": 30000,
+    "year_counts": {
+      "2016": 20,
+      "2017": 8,
+      "2018": 15,
+      "2019": 9,
+      "2020": 9,
+      "2021": 9,
+      "2022": 5,
+      "2023": 11,
+      "2024": 8,
+      "2025": 6
+    },
+    "mean_placed": 96.00826666666667,
+    "coverage_gate_pass": 0.9979666666666667,
+    "rates": [
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.02,
+        "paired_only": 0.021066666666666668
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.021066666666666668,
+        "paired_only": 0.021066666666666668
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.1486,
+        "paired_only": 0.15393333333333334
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.5349666666666667,
+        "paired_only": 0.5430333333333334
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.8286,
+        "paired_only": 0.833
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.9669666666666666,
+        "paired_only": 0.9677666666666667
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.9945,
+        "paired_only": 0.9945
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9975333333333334,
+        "paired_only": 0.9975333333333334
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.0036,
+        "paired_only": 0.0037333333333333333
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.0037333333333333333,
+        "paired_only": 0.0037333333333333333
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.049633333333333335,
+        "paired_only": 0.05223333333333333
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.29943333333333333,
+        "paired_only": 0.30706666666666665
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.6474333333333333,
+        "paired_only": 0.6545666666666666
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.9045,
+        "paired_only": 0.9069333333333334
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.9839666666666667,
+        "paired_only": 0.9842
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9964333333333333,
+        "paired_only": 0.9964333333333333
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.025533333333333335,
+        "paired_only": 0.0259
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.0259,
+        "paired_only": 0.0259
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.10886666666666667,
+        "paired_only": 0.11003333333333333
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.32863333333333333,
+        "paired_only": 0.3303
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.5764666666666667,
+        "paired_only": 0.5775666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.8118,
+        "paired_only": 0.8121666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.9345333333333333,
+        "paired_only": 0.9346
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9818,
+        "paired_only": 0.9818333333333333
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.008466666666666667,
+        "paired_only": 0.008666666666666666
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.008666666666666666,
+        "paired_only": 0.008666666666666666
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.048633333333333334,
+        "paired_only": 0.049133333333333334
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.1927,
+        "paired_only": 0.1941
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.4073333333333333,
+        "paired_only": 0.4089
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.6824333333333333,
+        "paired_only": 0.6834333333333333
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.8724333333333333,
+        "paired_only": 0.8727666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9604333333333334,
+        "paired_only": 0.9605
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.029066666666666668,
+        "paired_only": 0.0292
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.0292,
+        "paired_only": 0.0292
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.08863333333333333,
+        "paired_only": 0.08896666666666667
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.23106666666666667,
+        "paired_only": 0.23136666666666666
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.4004666666666667,
+        "paired_only": 0.40066666666666667
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.6146666666666667,
+        "paired_only": 0.6149333333333333
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.7924,
+        "paired_only": 0.7924666666666667
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9039666666666667,
+        "paired_only": 0.9039666666666667
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.012966666666666666,
+        "paired_only": 0.013
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.013,
+        "paired_only": 0.013
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.047266666666666665,
+        "paired_only": 0.047433333333333334
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.14303333333333335,
+        "paired_only": 0.1432
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.2796666666666667,
+        "paired_only": 0.2799
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.4866333333333333,
+        "paired_only": 0.48686666666666667
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.6930666666666667,
+        "paired_only": 0.6931333333333334
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.8467,
+        "paired_only": 0.8467333333333333
+      }
+    ]
+  },
+  "illustration_twice_documented": {
+    "n": 200,
+    "seed": 55192,
+    "worlds": 30000,
+    "year_counts": {
+      "2016": 40,
+      "2017": 16,
+      "2018": 30,
+      "2019": 18,
+      "2020": 18,
+      "2021": 18,
+      "2022": 10,
+      "2023": 22,
+      "2024": 16,
+      "2025": 12
+    },
+    "mean_placed": 192.00793333333334,
+    "coverage_gate_pass": 0.9998666666666667,
+    "rates": [
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.0159,
+        "paired_only": 0.017733333333333334
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.017733333333333334,
+        "paired_only": 0.017733333333333334
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.1979,
+        "paired_only": 0.2111
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.7094,
+        "paired_only": 0.7283333333333334
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.9478333333333333,
+        "paired_only": 0.9538
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.9967,
+        "paired_only": 0.9973333333333333
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.9997333333333334,
+        "paired_only": 0.9997666666666667
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 50,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9998666666666667,
+        "paired_only": 0.9998666666666667
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.0012,
+        "paired_only": 0.0016
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.0016,
+        "paired_only": 0.0016
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.0516,
+        "paired_only": 0.0564
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.42406666666666665,
+        "paired_only": 0.4457
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.8159,
+        "paired_only": 0.831
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.9816333333333334,
+        "paired_only": 0.9843
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.9991333333333333,
+        "paired_only": 0.9993
+      },
+      {
+        "sd": 800,
+        "spinner_cost": 110,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9998666666666667,
+        "paired_only": 0.9998666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.020633333333333333,
+        "paired_only": 0.021766666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.021766666666666667,
+        "paired_only": 0.021766666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.14316666666666666,
+        "paired_only": 0.1467
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.49856666666666666,
+        "paired_only": 0.5044
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.7914333333333333,
+        "paired_only": 0.7957
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.957,
+        "paired_only": 0.9578666666666666
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.9939,
+        "paired_only": 0.9939666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 50,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9994333333333333,
+        "paired_only": 0.9994333333333333
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.0043,
+        "paired_only": 0.004633333333333333
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.004633333333333333,
+        "paired_only": 0.004633333333333333
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.04973333333333333,
+        "paired_only": 0.052
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.2810666666666667,
+        "paired_only": 0.2870333333333333
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.6039333333333333,
+        "paired_only": 0.6091
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.8788,
+        "paired_only": 0.8808666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.9803333333333333,
+        "paired_only": 0.9806666666666667
+      },
+      {
+        "sd": 1200,
+        "spinner_cost": 110,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9975666666666667,
+        "paired_only": 0.9975666666666667
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.024866666666666665,
+        "paired_only": 0.025333333333333333
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.025333333333333333,
+        "paired_only": 0.025333333333333333
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.11496666666666666,
+        "paired_only": 0.11583333333333333
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.35506666666666664,
+        "paired_only": 0.3566
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.6105666666666667,
+        "paired_only": 0.6120333333333333
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.8394,
+        "paired_only": 0.8400333333333333
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.9559333333333333,
+        "paired_only": 0.9560333333333333
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 50,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9904,
+        "paired_only": 0.9904
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 0,
+        "pass": 0.0073,
+        "paired_only": 0.007533333333333334
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 0,
+        "common_premium": 200,
+        "pass": 0.007533333333333334,
+        "paired_only": 0.007533333333333334
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 100,
+        "common_premium": 0,
+        "pass": 0.0489,
+        "paired_only": 0.0497
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 211,
+        "common_premium": 0,
+        "pass": 0.20456666666666667,
+        "paired_only": 0.2066
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 300,
+        "common_premium": 0,
+        "pass": 0.4382,
+        "paired_only": 0.43943333333333334
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 400,
+        "common_premium": 0,
+        "pass": 0.7144,
+        "paired_only": 0.7154333333333334
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 500,
+        "common_premium": 0,
+        "pass": 0.8985,
+        "paired_only": 0.8988666666666667
+      },
+      {
+        "sd": 1600,
+        "spinner_cost": 110,
+        "gross_edge": 600,
+        "common_premium": 0,
+        "pass": 0.9747666666666667,
+        "paired_only": 0.9747666666666667
+      }
+    ]
+  }
+}
