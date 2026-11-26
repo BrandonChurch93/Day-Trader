@@ -57,3 +57,10 @@ Raised by the plan 70 drafter. Nothing had been run.
 3. Funding on coins. The US futures route charges or pays funding every hour, so no holding time avoids it. The test charges a fixed adverse amount per hour held, set in the plan from a source before any return is worked out, never zero and never taken from an offshore venue. A coin finalist that passes the vault must then pass a check on real prints and funding of the same contract before it goes to a practice card.
 4. Vault years for coins. The coin vault is 2024-01-01 to 2026-10-31, which is not five years. For plan 70 the mark reads: positive in at least 4 of its 6 half-years (the last one ends 2026-10-31). The stock mark stays at 3 of 5 years.
 
+## Amendment 2, 2026-11-26 06:14 MT, by the lead agent, before any bar was read
+
+Raised by the plan 70 drafter from a made-up-data check. Nothing had been run on real bars.
+
+1. Thin rules. A t value from a handful of days is not to be trusted. In both sweeps a rule is only eligible if it has at least 200 trades on at least 100 different days in the search dates, and at least 40 different days in each half. A rule under that is listed as too thin and can never be a finalist. The same floor of 100 different days applies in the vault.
+2. The luck check on made-up data is on the whole finalist bar as written (trade and day floors, t of 3.5 over the matched baseline, both halves, the trim and the yearly line together), not on the t value alone. In pure noise no rule may become a finalist in at least 95 of 100 seeds. If the whole bar still lets luck through more often than that, the script is wrong or the bar is too low, and the drafter stops and reports instead of adjusting anything.
+
