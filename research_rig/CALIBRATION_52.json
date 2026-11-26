@@ -1,0 +1,296 @@
+{
+  "assumptions": {
+    "credit_daily_sd_bps": 35,
+    "edge_bps": [
+      0,
+      10,
+      20,
+      30
+    ],
+    "null_rate_cap": 0.05,
+    "null_upper_cap": 0.06,
+    "one_sided_normal_z": 1.6448536269514722,
+    "power_target_bps": 20,
+    "proxy_daily_sd_bps": 25,
+    "seed": 52,
+    "worlds": 5000,
+    "year_sd_bps": 15
+  },
+  "observations": {
+    "controls": 80,
+    "non_december": 30,
+    "quarters": 40,
+    "shown": 3
+  },
+  "selected": {
+    "breadth": "none",
+    "raw_t_required": false
+  },
+  "synthetic_only": true,
+  "variants": [
+    {
+      "breadth": "sixty_percent",
+      "eligible": true,
+      "null_upper_wilson": 0.009223737492249385,
+      "raw_t_required": true,
+      "scenarios": {
+        "all_month_ends": {
+          "0": {
+            "count": 35,
+            "rate": 0.007
+          },
+          "10": {
+            "count": 265,
+            "rate": 0.053
+          },
+          "20": {
+            "count": 977,
+            "rate": 0.1954
+          },
+          "30": {
+            "count": 1906,
+            "rate": 0.3812
+          }
+        },
+        "quarter_only": {
+          "0": {
+            "count": 35,
+            "rate": 0.007
+          },
+          "10": {
+            "count": 271,
+            "rate": 0.0542
+          },
+          "20": {
+            "count": 1097,
+            "rate": 0.2194
+          },
+          "30": {
+            "count": 2622,
+            "rate": 0.5244
+          }
+        }
+      }
+    },
+    {
+      "breadth": "strict_majority",
+      "eligible": true,
+      "null_upper_wilson": 0.009223737492249385,
+      "raw_t_required": true,
+      "scenarios": {
+        "all_month_ends": {
+          "0": {
+            "count": 35,
+            "rate": 0.007
+          },
+          "10": {
+            "count": 294,
+            "rate": 0.0588
+          },
+          "20": {
+            "count": 1048,
+            "rate": 0.2096
+          },
+          "30": {
+            "count": 1985,
+            "rate": 0.397
+          }
+        },
+        "quarter_only": {
+          "0": {
+            "count": 35,
+            "rate": 0.007
+          },
+          "10": {
+            "count": 300,
+            "rate": 0.06
+          },
+          "20": {
+            "count": 1186,
+            "rate": 0.2372
+          },
+          "30": {
+            "count": 2752,
+            "rate": 0.5504
+          }
+        }
+      }
+    },
+    {
+      "breadth": "none",
+      "eligible": true,
+      "null_upper_wilson": 0.009223737492249385,
+      "raw_t_required": true,
+      "scenarios": {
+        "all_month_ends": {
+          "0": {
+            "count": 35,
+            "rate": 0.007
+          },
+          "10": {
+            "count": 294,
+            "rate": 0.0588
+          },
+          "20": {
+            "count": 1051,
+            "rate": 0.2102
+          },
+          "30": {
+            "count": 1985,
+            "rate": 0.397
+          }
+        },
+        "quarter_only": {
+          "0": {
+            "count": 35,
+            "rate": 0.007
+          },
+          "10": {
+            "count": 300,
+            "rate": 0.06
+          },
+          "20": {
+            "count": 1189,
+            "rate": 0.2378
+          },
+          "30": {
+            "count": 2753,
+            "rate": 0.5506
+          }
+        }
+      }
+    },
+    {
+      "breadth": "sixty_percent",
+      "eligible": true,
+      "null_upper_wilson": 0.014589107801970091,
+      "raw_t_required": false,
+      "scenarios": {
+        "all_month_ends": {
+          "0": {
+            "count": 59,
+            "rate": 0.0118
+          },
+          "10": {
+            "count": 401,
+            "rate": 0.0802
+          },
+          "20": {
+            "count": 1182,
+            "rate": 0.2364
+          },
+          "30": {
+            "count": 2024,
+            "rate": 0.4048
+          }
+        },
+        "quarter_only": {
+          "0": {
+            "count": 59,
+            "rate": 0.0118
+          },
+          "10": {
+            "count": 429,
+            "rate": 0.0858
+          },
+          "20": {
+            "count": 1478,
+            "rate": 0.2956
+          },
+          "30": {
+            "count": 3064,
+            "rate": 0.6128
+          }
+        }
+      }
+    },
+    {
+      "breadth": "strict_majority",
+      "eligible": true,
+      "null_upper_wilson": 0.017226704559041472,
+      "raw_t_required": false,
+      "scenarios": {
+        "all_month_ends": {
+          "0": {
+            "count": 71,
+            "rate": 0.0142
+          },
+          "10": {
+            "count": 502,
+            "rate": 0.1004
+          },
+          "20": {
+            "count": 1372,
+            "rate": 0.2744
+          },
+          "30": {
+            "count": 2158,
+            "rate": 0.4316
+          }
+        },
+        "quarter_only": {
+          "0": {
+            "count": 71,
+            "rate": 0.0142
+          },
+          "10": {
+            "count": 548,
+            "rate": 0.1096
+          },
+          "20": {
+            "count": 1801,
+            "rate": 0.3602
+          },
+          "30": {
+            "count": 3475,
+            "rate": 0.695
+          }
+        }
+      }
+    },
+    {
+      "breadth": "none",
+      "eligible": true,
+      "null_upper_wilson": 0.017882771482691115,
+      "raw_t_required": false,
+      "scenarios": {
+        "all_month_ends": {
+          "0": {
+            "count": 74,
+            "rate": 0.0148
+          },
+          "10": {
+            "count": 510,
+            "rate": 0.102
+          },
+          "20": {
+            "count": 1389,
+            "rate": 0.2778
+          },
+          "30": {
+            "count": 2163,
+            "rate": 0.4326
+          }
+        },
+        "quarter_only": {
+          "0": {
+            "count": 74,
+            "rate": 0.0148
+          },
+          "10": {
+            "count": 560,
+            "rate": 0.112
+          },
+          "20": {
+            "count": 1835,
+            "rate": 0.367
+          },
+          "30": {
+            "count": 3502,
+            "rate": 0.7004
+          }
+        }
+      }
+    }
+  ]
+}
