@@ -512,6 +512,27 @@ class DeskTest(unittest.TestCase):
         with a.tx() as (_,st):
             self.assertAlmostEqual(st["book"]["qty"][A]/st["book"]["qty"][B],-.8/.7)
 
+    def test_pass5_same_minute_conditions_fill_as_one_label_independent_basket(self):
+        spec = world()
+        pp = spec["params"]
+        pp["fallback_per_day"] = 0
+        outcomes = []
+        for up,down,missing in ((A,B,False),(B,A,False),(A,B,True),(B,A,True)):
+            book = P.new_book(1000)
+            engine = O.Orders({**condition(T-3600,up,weight=.5),**condition(T-3600,down,weight=.5)})
+            bars = [(T,s,100,104,99,100) for s in (A,B)]
+            for bar in bars:
+                engine.observe_close(bar)
+            if missing:
+                engine.execute_open(book,pp,T+60,{up:100},1)
+                self.assertFalse(book["qty"],"A simultaneous pair waits for both opens")
+            engine.execute_open(book,pp,T+(120 if missing else 60),{up:100,down:100},1)
+            self.assertEqual({e["symbol"] for e in engine.events if e["kind"] == "filled"},{A,B})
+            self.assertAlmostEqual(book["qty"][up],book["qty"][down],places=12)
+            self.assertLessEqual(P.gross_at(book,{A:100,B:100}),P.value_at(book,{A:100,B:100}))
+            outcomes.append(P.value_at(book,{up:110,down:90}))
+        self.assertEqual(outcomes,[outcomes[0]]*4)
+
     def test_reaudit_opr_r5_price_packet_rejects_unscreened_fields(self):
         spec = world()
         price, other = spec["evidence"][0][:2]
