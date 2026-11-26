@@ -18,7 +18,7 @@ import numpy as np
 import yaml
 from numpy.lib.stride_tricks import sliding_window_view
 
-from coverage_70 import ROOTS as ARCHIVES, read_snapshot
+from coverage_70 import HOUR_MS, ROOTS as ARCHIVES, WRONG_CLOSE_CLOCK, has_hour_close, read_snapshot
 
 
 HERE = Path(__file__).resolve().parent
@@ -54,22 +54,24 @@ LONDON_CLOSE = np.array([datetime.fromtimestamp(int(t), timezone.utc).astimezone
 
 
 def read_hour_rows(stream):
-    """Only opening timestamp is read before the inclusive/exclusive date cut."""
+    """Yield each in-range physical row; None means the clocked hour is missing."""
     for wire in stream:
         stamp, _, payload = wire.partition(b",")
         t_ms = int(stamp)
         if not START * 1000 <= t_ms < STOP * 1000:
             continue
-        if t_ms % (HOUR * 1000):
+        if t_ms % HOUR_MS:
             raise ValueError("unaligned retained hourly bar")
-        vals = payload.split(b",")
-        if int(vals[5]) != t_ms + HOUR * 1000 - 1:
-            raise ValueError("retained bar has wrong close clock")
-        row = tuple(float(x) for x in vals[:5])  # open, high, low, close, base volume
+        i = (t_ms // 1000 - START) // HOUR
+        fields = [stamp, *payload.split(b",", 6)]
+        if not has_hour_close(fields, t_ms):
+            yield i, None
+            continue
+        row = tuple(float(x) for x in fields[1:6])  # open, high, low, close, base volume
         if not all(map(math.isfinite, row)) or not (0 < row[2] <= min(row[0], row[3])
                                                   <= max(row[0], row[3]) <= row[1] and row[4] >= 0):
             raise ValueError("malformed retained bar")
-        yield (t_ms // 1000 - START) // HOUR, row
+        yield i, row
 
 
 def load_frozen(root, manifest, config):
@@ -82,7 +84,10 @@ def load_frozen(root, manifest, config):
         raise ValueError("not the preregistered timestamp-only manifest")
     roster = json.loads(raw)
     panel = np.full((len(config["coins"]), len(HOURS), 5), np.nan)
+    kept = dict.fromkeys(config["coins"], 0)
+    dropped = dict.fromkeys(config["coins"], 0)
     for j, coin in enumerate(config["coins"]):
+        physical = set()
         for record in roster[coin]["files"]:
             tag = record["month"]
             y, m = map(int, tag.split("-"))
@@ -98,13 +103,20 @@ def load_frozen(root, manifest, config):
             seen = 0
             with ZipFile(BytesIO(archive_bytes)) as z, z.open(expected_name + ".csv") as stream:
                 for i, row in read_hour_rows(stream):
-                    if not np.isnan(panel[j, i, 0]) or not record["first_utc_seconds"] <= HOURS[i] <= record["last_utc_seconds"]:
+                    if i in physical or not record["first_utc_seconds"] <= HOURS[i] <= record["last_utc_seconds"]:
                         raise ValueError("duplicate or unexpected retained row")
-                    panel[j, i] = row
+                    physical.add(i)
                     seen += 1
+                    if row is None:
+                        dropped[coin] += 1
+                    else:
+                        kept[coin] += 1
+                        panel[j, i] = row
             if seen != record["rows"]:
-                raise ValueError("retained coverage changed")
-    return panel
+                raise ValueError("pinned physical row count changed")
+    counts = {"rows_kept_by_coin": kept, "rows_dropped_by_reason": {WRONG_CLOSE_CLOCK: sum(dropped.values())},
+              "rows_dropped_by_reason_and_coin": {WRONG_CLOSE_CLOCK: dropped}}
+    return panel, counts
 
 
 def shift(x, n):
@@ -427,11 +439,22 @@ def parse_config(coverage_bytes, settings_bytes, grid_bytes):
     return {**coverage, **settings}
 
 
+def render_run(root, manifest, config, rules, *, validation_only):
+    panel, counts = load_frozen(root, manifest, config)
+    header = {"input_counts": counts}
+    if validation_only:
+        return rows_bytes([header])
+    coins = config["coins"]
+    costs = np.array([config["futures_round_trip_bp"][c] for c in coins])
+    return rows_bytes([header, *sweep(coins, panel, rules, costs, config)])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--synthetic", action="store_true")
     mode.add_argument("--audited-search", action="store_true")
+    mode.add_argument("--validate-inputs", action="store_true")
     ap.add_argument("--root", type=Path)
     ap.add_argument("--manifest", type=Path)
     ap.add_argument("--freeze-commit")
@@ -445,9 +468,9 @@ def main():
         blobs = {path: (repo / path).read_bytes() for path in (COVERAGE_PATH, SETTINGS_PATH, GRID_PATH)}
     else:
         if args.root != CUSTODY or args.manifest != CUSTODY / MANIFEST_REL:
-            ap.error("audited search requires the exact canonical custody and manifest paths")
+            ap.error("custody modes require the exact canonical custody and manifest paths")
         if not (sys.flags.ignore_environment and sys.dont_write_bytecode and sys.pycache_prefix == "/dev/null"):
-            ap.error("audited search requires python -E -B -X pycache_prefix=/dev/null")
+            ap.error("custody modes require python -E -B -X pycache_prefix=/dev/null")
         blobs = checked_freeze(repo, args.freeze_commit, args.grid_sha256, args.settings_sha256)
     config = parse_config(blobs[COVERAGE_PATH], blobs[SETTINGS_PATH], blobs[GRID_PATH])
     rules = json.loads(blobs[GRID_PATH])
@@ -455,10 +478,8 @@ def main():
         from synthetic_70 import synthetic_main
         synthetic_main(rules, config)
         return
-    panel = load_frozen(args.root, args.manifest, config)
-    coins = config["coins"]
-    print(rows_bytes(sweep(coins, panel, rules, np.array([config["futures_round_trip_bp"][c] for c in coins]),
-                           config)).decode(), end="")
+    sys.stdout.buffer.write(render_run(args.root, args.manifest, config, rules,
+                                       validation_only=args.validate_inputs))
 
 
 if __name__ == "__main__":

@@ -13,6 +13,17 @@ from zipfile import ZipFile
 COINS = "AAVE ADA AVAX BCH BNB BTC DOGE DOT ENA ETH HBAR HYPE LINK LTC NEAR ONDO PAXG PEPE SHIB SOL SUI XLM XRP ZEC".split()
 ROOTS = ("replay_13", "replay_22", "replay_16")
 MONTHS = [(y, m) for y in range(2020, 2024) for m in range(1, 13)]
+HOUR_MS = 3_600_000
+WRONG_CLOSE_CLOCK = "wrong_close_clock"
+
+
+def has_hour_close(fields, open_ms):
+    """Inspect only the close-time field of an opening timestamp already checked."""
+    try:
+        close_ms = int(fields[6])
+    except (IndexError, ValueError):
+        raise ValueError("missing or noninteger close timestamp") from None
+    return close_ms == open_ms + HOUR_MS - 1
 
 
 def read_snapshot(root, rel):
@@ -36,7 +47,7 @@ def read_snapshot(root, rel):
         os.close(parent)
 
 
-def census(root):
+def census(root, clock_report=None):
     out = {}
     for coin in COINS:
         months = []
@@ -59,16 +70,24 @@ def census(root):
             first = int(datetime(y, m, 1, tzinfo=timezone.utc).timestamp())
             expected = calendar.monthrange(y, m)[1] * 24
             stamps = []
+            wrong_close = 0
             with ZipFile(BytesIO(snapshot)) as archive, archive.open(filename + ".csv") as stream:
                 for line in stream:
-                    # First field only. Do not parse, store or display OHLC or volume.
-                    t = int(line.split(b",", 1)[0])
-                    if t % 3_600_000:
+                    # Interpret only fields 0 and 6. No OHLC or volume is decoded.
+                    fields = line.split(b",", 7)
+                    t = int(fields[0])
+                    if t % HOUR_MS:
                         raise ValueError("misaligned hour")
+                    if not first * 1000 <= t < (first + expected * 3600) * 1000:
+                        raise ValueError("open outside named month")
+                    wrong_close += not has_hour_close(fields, t)
                     stamps.append(t // 1000)
             unique = set(stamps)
             if len(unique) != len(stamps) or any(not first <= t < first + expected * 3600 for t in unique):
                 raise ValueError("duplicate or spill outside named month")
+            if wrong_close and clock_report is not None:
+                clock_report[candidate] = wrong_close
+            # Keep the manifest's physical opening-row evidence separate from quality.
             months.append({"month": tag, "path": candidate, "sha256": digest,
                            "rows": len(unique), "expected": expected, "first_utc_seconds": min(unique),
                            "last_utc_seconds": max(unique), "complete": len(unique) == expected})
@@ -84,4 +103,8 @@ def census(root):
 
 
 if __name__ == "__main__":
-    print(json.dumps(census(Path(sys.argv[1]).absolute()), sort_keys=True, separators=(",", ":")))
+    report = {}
+    manifest = census(Path(sys.argv[1]).absolute(), report)
+    print(json.dumps({"rows_dropped_by_reason": {WRONG_CLOSE_CLOCK: sum(report.values())},
+                      "wrong_close_clock_by_archive": report}, sort_keys=True), file=sys.stderr)
+    print(json.dumps(manifest, sort_keys=True, separators=(",", ":")))
