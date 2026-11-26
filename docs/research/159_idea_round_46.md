@@ -30,11 +30,11 @@ Power formula used from printed figures only:
 
 | Rank | Candidate and market | Free dated signal | Gross gain vs 10x RT cost | Independent dates since 2016 and newest OOS | Printed power at half net mean (one-sided 5%) | Result and one-line failure reason |
 |---|---|---|---|---|---|---|
-| 1 | NYSE single-day -10% drop 3-day reversal (US single stocks, long-only) | Alpaca daily close-to-close bar on NYSE stocks | STATED +153.4 bp CAR(1,3) (15.3x 10 bp RT, 46.0x 3.336 bp RT) | STATED n = 452 events (2020-03-11 to 2022-06-30); independent dates UNKNOWN (clustered in COVID crash) | STATED 29.85% at 10 bp RT (31.67% at 3.336 bp RT) unclustered; date-clustered power UNKNOWN | FAIL: falls below 33% power even if all 452 events were independent, and COVID date clustering cuts power further |
-| 2 | U-shaped implied-volatility regime switch on SPY, QQQ, DIA to IEF (US equity ETFs, long-only) | Cboe daily VIX, VXN, VXD and Alpaca ETF closes | STATED SPY Risk-On +5.63 bp/day vs Risk-Off -9.00 bp/day (diff 14.63 bp/day; per-trade gross UNKNOWN) | STATED 2000 to 2024 (no post-2018-only OOS printed); only a few reallocations per year (<< 150 dates) | UNKNOWN (no trade count or per-trade spread printed; full-sample SPY vs BnH t = 1.7801) | FAIL: fails 150 independent trade dates, lacks a post-2018 OOS split, and prints no per-trade spread |
-| 3 | Month-end payment-cycle time-series reversal on S&P 500 (US equity ETF, long-only) | Alpaca SPY fourth-Friday to month-end close return | STATED OOS annualized excess 4.600% (4.112% net vs 3.786% passive); per-trade gross UNKNOWN | STATED 1986 to 2020 OOS (414 months, active 41% of months = ~5 dates/yr, ~54 since 2016 < 150) | UNKNOWN (no per-trade mean or spread printed; predictive slope t = -3.276) | FAIL: monthly rule active ~41% of months gives only ~54 independent dates since 2016 and prints no per-trade spread |
-| 4 | US equity ETF after-hours drop <= -5% next-session rebound (US ETFs, long-only) | Alpaca extended-hours and regular-session bars | STATED +141 bp next regular session (>> 10x broad/sector ETF RT) | STATED 2007 to 2014 ONLY (6,445 events across 847 ETFs; zero post-2018 evidence; independent dates UNKNOWN) | UNKNOWN (event-level t = 16.70 ignores same-morning ETF clustering; zero post-2018 data) | FAIL: sample ends December 2014 with zero post-2018 evidence and no date-clustered spread |
-| 5 | Walk-forward cost-aware XGBoost long-only Bitcoin (US spot crypto, long-only) | Free hourly BTC OHLCV bars | STATED 65.40% ARC over 251 trades at 10 bp/side Binance futures; per-trade gross UNKNOWN | STATED 2018-01-01 to 2026-01-01 (27 quarterly OOS folds, 251 trades >= 150) | UNKNOWN (no per-trade mean or SD printed; Sharpe diff vs Buy-and-Hold +0.27, Holm p = 0.89) | FAIL: does not beat Bitcoin buy-and-hold (Holm p = 0.89), uses 10 bp Binance futures costs instead of 80 to 120 bp US spot, and prints no per-trade spread |
+| 1 | NYSE single-day -10% drop 3-day reversal (US single stocks, long-only) | Alpaca daily close-to-close bar on NYSE stocks | STATED +153.4 bp CAR(1,3) measured from the same event-day close that sets the -10% trigger (next-open figure UNKNOWN) | STATED n = 452 events (2020-03-11 to 2022-06-30); independent dates UNKNOWN (clustered in COVID crash) | STATED 29.85% at 10 bp RT, 31.67% at 3.336 bp RT, 32.60% at zero cost (unclustered); date-clustered power UNKNOWN, likely lower if same-day trades move together | FAIL: falls below 33% power even at zero cost if all 452 events were independent, CAR starts from the trigger close with next-open UNKNOWN, and date-clustered power is UNKNOWN |
+| 2 | U-shaped implied-volatility regime switch on SPY, QQQ, DIA to IEF (US equity ETFs, long-only) | Cboe daily VIX, VXN, VXD and Alpaca ETF closes | STATED SPY Risk-On +5.63 bp/day vs Risk-Off -9.00 bp/day (diff 14.63 bp/day; per-trade gross UNKNOWN) | STATED 2000 to 2024 (no post-2018-only OOS printed); 6% to 12% is days in the risk-off state, not switches; independent date count UNKNOWN | UNKNOWN (no trade count or per-trade spread printed; full-sample SPY vs BnH t = 1.7801) | FAIL: independent switch-date count is UNKNOWN (6% to 12% is risk-off day share, not transitions), lacks a post-2018 OOS split, and prints no per-trade spread |
+| 3 | Month-end payment-cycle time-series reversal on S&P 500 (US equity ETF, long-only) | Alpaca SPY fourth-Friday to month-end close return | STATED OOS annualized excess 4.600% (4.112% net vs 3.786% passive); per-trade gross UNKNOWN | STATED 1986 to 2020 OOS (414 months, active 41% of months; ~54 post-2016 dates is an extrapolation, exact post-2016 count UNKNOWN) | UNKNOWN (no per-trade mean or spread printed; predictive slope t = -3.276) | FAIL: monthly rule active ~41% of months (~54 dates since 2016 is an extrapolation, well below 150) and prints no per-trade spread |
+| 4 | US equity ETF after-hours drop <= -5% next-session rebound (US ETFs, long-only) | Alpaca extended-hours and regular-session bars | STATED +141 bp measured from the same official open that defines the -5% event (not executable; next-executable-mark figure UNKNOWN) | STATED 2007 to 2014 ONLY (6,445 events across 847 ETFs; zero post-2018 evidence; independent dates UNKNOWN) | UNKNOWN (event-level t = 16.70 ignores same-morning ETF clustering; zero post-2018 data) | FAIL: sample ends December 2014 with zero post-2018 evidence, +141 bp starts at the trigger open (not executable), and date-clustered spread is UNKNOWN |
+| 5 | Walk-forward cost-aware XGBoost long-only Bitcoin (US spot crypto, long-only) | Free hourly BTC OHLCV bars | STATED 65.40% ARC over 251 trades at 10 bp/side Binance futures; data provenance unverified; per-trade gross UNKNOWN | STATED 2018-01-01 to 2026-01-01 (27 quarterly OOS folds, 251 trades >= 150) | UNKNOWN (no per-trade mean or SD printed; Sharpe diff vs Buy-and-Hold +0.27, Holm p = 0.89) | FAIL: does not beat Bitcoin buy-and-hold (Holm p = 0.89), data provenance is unverified (cites Dec 2017 Binance USD-M futures before launch), uses 10 bp futures costs, and prints no per-trade spread |
 | 6 | US spot crypto weekly factor spreads on Coinbase and Kraken (US spot coins) | Free public Coinbase and Kraken spot bars | STATED top weekly 5-1 long-short spreads 120 to 160 bp (fails 800 to 1,200 bp 10x coin RT) | STATED 2018 to 2022 across US spot exchanges including Coinbase and Kraken | UNKNOWN (no long-only per-trade t printed; weekly spreads require shorting unavailable on spot) | FAIL: weekly gross spreads are 5x to 10x below the 10x Coinbase/Kraken round-trip cost floor and rely on a short leg |
 
 ## Detailed Evidence, Verbatim Quotes, and Power Sums
@@ -51,14 +51,16 @@ Verbatim quotes carrying the numbers:
 
 Power sum from printed figures (Python verified):
 
+- Execution mark: CAR(1,3) starts from the same event-day closing mark that sets the -10% trigger, so no practical fill is shown and a next-open figure is UNKNOWN.
 - Printed n = 452 events (STATED; independent trade-date count UNKNOWN because many NYSE stocks dropped 10% on the same March 2020 crash dates).
 - Printed gross mean = +153.4 bp (STATED); printed t = 2.388 (STATED).
 - Implied spread per event = 153.4 / 2.388 * sqrt(452) = 1,365.72 bp (SE = 64.24 bp).
+- At zero cost: half gross mean = 76.70 bp, t at half gross mean = 1.1940, one-sided 5% power = 32.60% (< 33%).
 - At 10.0 bp single-stock replay allowance (MEASURED in doc 136): net mean = 143.40 bp, half net mean = 71.70 bp, t at half net mean = 1.1162, one-sided 5% power = 29.85% (< 33%).
 - At 3.336 bp single-stock regular-hours median RT (MEASURED in doc 136): net mean = 150.064 bp, half net mean = 75.032 bp, t at half net mean = 1.1680, one-sided 5% power = 31.67% (< 33%).
-- Date-clustered power across true independent dates: UNKNOWN and strictly lower than 29.85% to 31.67%.
+- Date-clustered power across true independent dates: UNKNOWN, likely lower if same-day trades move together.
 
-One-line failure reason: Fails the 33% power line even under the optimistic unclustered event count, and COVID crash date clustering shrinks independent dates and power further.
+One-line failure reason: Fails the 33% power line even at zero cost under the unclustered event count (32.60%), CAR starts from the trigger close with next-open UNKNOWN, and date-clustered power is UNKNOWN, likely lower if same-day trades move together.
 
 ### 2. U-Shaped Implied-Volatility Regime Switch on SPY, QQQ, and DIA to IEF
 
@@ -72,11 +74,11 @@ Verbatim quotes carrying the numbers:
 
 Power sum from printed figures:
 
-- Independent trade dates since 2016: UNKNOWN exact count, STATED as "only a few portfolio reallocations per year" (far below the 150-date floor).
+- Independent trade dates since 2016: UNKNOWN. The 6% to 12% market-exit ratios measure the share of days spent in the risk-off state, not regime-switch counts; the paper states "only a few portfolio reallocations per year" without printing any switch or trade count.
 - Per-trade gross mean and per-trade spread: UNKNOWN (not printed; full-sample strategy vs buy-and-hold return t-statistics are 1.7801 for SPY, 1.2145 for QQQ, and 2.2806 for DIA with no post-2018-only OOS table).
 - Power at half net mean: UNKNOWN.
 
-One-line failure reason: Fires only a few times per year (well under 150 independent dates since 2016), prints no post-2018 out-of-sample split, and prints no per-trade spread.
+One-line failure reason: Independent switch-date count is UNKNOWN (the 6% to 12% figures are risk-off day shares, not transitions), no post-2018 out-of-sample split is printed, and per-trade spread is UNKNOWN.
 
 ### 3. Month-End Payment-Cycle Time-Series Reversal on S&P 500
 
@@ -89,11 +91,11 @@ Verbatim quotes carrying the numbers:
 
 Power sum from printed figures:
 
-- Independent trade dates since 2016: monthly rule active ~41% of months gives ~5 trade dates per year (~54 dates from 2016 through 2026), failing the 150-date floor.
+- Independent trade dates since 2016: exact post-2016 count is UNKNOWN (the paper's OOS window ends December 2020); ~54 dates from 2016 through 2026 is an extrapolation from a monthly rule active 41% of months (~5 dates per year), which still falls well below the 150-date floor.
 - Printed OOS strategy annualized excess return is 4.600% (Sharpe 0.439, annualized SD 10.5%; net of 10 bp/month fees 4.112% vs passive 3.786%). Main predictive regression slope is -0.327 (Newey-West t = -3.276), and retail tracker covers January 2016 to January 2023.
 - Per-trade mean and per-trade spread: UNKNOWN (not printed); power at half net mean: UNKNOWN.
 
-One-line failure reason: Monthly frequency active 41% of the time produces roughly 54 independent trade dates since 2016 (below 150) and prints no per-trade spread.
+One-line failure reason: Monthly frequency active 41% of the time (~54 dates since 2016 is an extrapolation, well below 150) and prints no per-trade spread.
 
 ### 4. US Equity ETF After-Hours Drop <= -5% Next-Session Reversal
 
@@ -106,11 +108,12 @@ Verbatim quotes carrying the numbers:
 
 Power sum from printed figures:
 
+- Execution mark: the +141 bp next normal-hours return is measured from the same official open that defines the after-hours -5% event, so it is not an executable rule and any next-executable-mark return is UNKNOWN.
 - Newest out-of-sample date: December 2014 (zero post-2018 evidence).
 - Independent trade dates since 2016: UNKNOWN (6,445 events across 847 equity ETFs over 8 years are heavily clustered on market-wide gap-down mornings).
 - Date-clustered spread and power at half net mean: UNKNOWN.
 
-One-line failure reason: Sample ends in December 2014 with zero post-2018 evidence, and the printed t = 16.70 ignores cross-ETF same-morning clustering.
+One-line failure reason: Sample ends in December 2014 with zero post-2018 evidence, the +141 bp figure starts at the same official open that defines the event (not executable), and the printed t = 16.70 ignores cross-ETF same-morning clustering.
 
 ### 5. Walk-Forward Cost-Aware XGBoost Long-Only Bitcoin
 
@@ -124,11 +127,12 @@ Verbatim quotes carrying the numbers:
 
 Power sum from printed figures:
 
+- Data provenance: unverified. The paper cites hourly Binance USD-margined BTC/USDT futures starting December 1, 2017, before that contract existed (Binance launched its flagship BTC/USDT perpetual futures contract in September 2019), with no spot-to-futures stitching specified.
 - Per-trade gross mean and per-trade SD: UNKNOWN (not printed).
 - Cost mismatch: STATED 10 bp per side on Binance futures vs 80 to 120 bp round trip on Coinbase or Kraken spot.
 - Power at half net mean: UNKNOWN.
 
-One-line failure reason: Fails to beat Bitcoin buy-and-hold (Holm p = 0.89), assumes 10 bp Binance futures costs instead of 80 to 120 bp US spot costs, and prints no per-trade spread.
+One-line failure reason: Fails to beat Bitcoin buy-and-hold (Holm p = 0.89), data provenance is unverified (cites Binance USD-margined futures from December 2017 before that contract existed), assumes 10 bp futures costs instead of 80 to 120 bp US spot costs, and prints no per-trade spread.
 
 ### 6. US Spot Crypto Weekly Factor Spreads on Coinbase and Kraken
 
