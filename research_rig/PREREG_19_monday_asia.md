@@ -1,8 +1,21 @@
 # Plan 19. Monday Asia window on BTC and ETH perpetuals
 
-Status DRAFT.
+Status FROZEN.
 
-STATED. Queue 35, ledger 155. Approval is required before any real Plan 19 bars or funding are opened. This is a single all-viewed test, with no held-back BTC or ETH set and no document number assigned. The historical outcome is UNKNOWN.
+STATED. Queue 35, ledger 155. The lead agent approved the freeze before any real Plan 19 bars or funding were opened. This is a single all-viewed test, with no held-back BTC or ETH set and no document number assigned. The historical outcome at freeze is UNKNOWN. The local commit and ledger precede the replay. The public timestamp will follow it.
+
+MEASURED. Auditor A cleared the design at `7a89070bd10cf5c859541f20d9691b4ae251dff8` with zero blockers and zero should-fix findings. The off-repo report `rig/data/plan19_pass2_a.md` hashes to `f9a2b930a9a03cd768a4b6cf2568ba918e203bf9de54a3f39ea7dba9d5661635`. The auditor confirmed the synthetic checks and did not open outcome rows.
+
+| Reviewed file | Approved SHA-256 |
+|---|---|
+| Draft plan | `226090f98ca18d2489d0e7f52bac03402bec7242d94e6075a50c6f21e6c8e15b` |
+| Book accounting | `e72f0b731131f5e8e3f83a65fb039e280168b0dfc1e11973140ddc44a4a542d0` |
+| Scorer before path change | `da387dd2fd290f01b0f41e6d53406bde9fef292530bb0462ad03d2e5b3a9a32f` |
+| Synthetic tests | `4affd9110a73b3a0701a47b56b59596da9875020c19d4ef002dce649d6a682ab` |
+| Threshold config | `0d0fb86979102ba751ff08dd9120f2ade0f81cc862e1f4e6a9aee30f2966770b` |
+| Archive manifest | `994a81aa0cfee5d222e434c698ec431a860eb18a85d1e947e2b4fa9d4feb8b9f` |
+
+STATED. The lead agent separately authorized changing the scorer's plan path to the frozen filename. No scorer logic or config changed. The config's source field still names the original draft path as a historical label.
 
 ## What the sources actually say
 

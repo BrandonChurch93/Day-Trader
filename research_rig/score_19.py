@@ -18,7 +18,7 @@ from . import archive_18 as A, common_19 as C
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT.parent / "rig" / "data"
 RUN = DATA / "replay_19"
-PLAN = "research_rig/PREREG_19_monday_asia_DRAFT.md"
+PLAN = "research_rig/PREREG_19_monday_asia.md"
 CONFIG = "config/thresholds.yaml"
 LEDGER = "research_rig/TRIAL_LEDGER.md"
 ARCHIVE_DEP = "research_rig/archive_18.py", "research_rig/common_18.py"
