@@ -14,6 +14,16 @@ TYPES={
     "stock_and_cash_mergers","stock_dividends","stock_mergers","unit_splits","worthless_removals",
 }
 MAX_BODY=8*2**20
+GZIP_CHUNK=64*2**10
+
+
+def decoded_body(api,blob):
+    out=bytearray()
+    with gzip.GzipFile(fileobj=BytesIO(blob)) as gz:
+        while chunk:=gz.read(GZIP_CHUNK):
+            api.need(len(out)+len(chunk)<=MAX_BODY,"P60_VENDOR_NATIVE")
+            out.extend(chunk)
+    return out
 
 
 def decimal(api,raw):
@@ -171,9 +181,7 @@ def verify(api,root,index,c,q,keyed,endpoint,noncash):
             blob=api.file_bytes(root/name,page["sha256"],MAX_BODY,private=True)
             need(type(page["bytes"]) is int and page["bytes"]==len(blob),"P60_VENDOR_NATIVE")
             if name.endswith(".gz"):
-                with gzip.GzipFile(fileobj=BytesIO(blob)) as gz:
-                    blob=gz.read(MAX_BODY+1)
-                need(len(blob)<=MAX_BODY,"P60_VENDOR_NATIVE")
+                blob=decoded_body(api,blob)
             digest=sha256(blob).hexdigest()
             need(page["body_sha256"]==digest and type(page["body_bytes"]) is int and page["body_bytes"]==len(blob),
                  "P60_VENDOR_BODY")

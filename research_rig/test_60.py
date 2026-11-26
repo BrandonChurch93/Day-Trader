@@ -31,16 +31,44 @@ if sys.argv[5]=="--validate-inputs":
     def forbidden(*a,**k):
         raise AssertionError("validation must not compute returns")
     g.update(fill=forbidden,score=forbidden)
+    if sys.argv[6]=="--expect-300-mib":
+        import resource
+        resource.setrlimit(resource.RLIMIT_AS,(300*2**20,resource.getrlimit(resource.RLIMIT_AS)[1]))
+        original=p.check_native
+        first_open=[]
+        original_read=p.file_bytes
+        def check_order(path,*a,**k):
+            if path.name in (g["VENDOR_NAME"],"bars.json"):
+                first_open.append(path.name)
+                assert first_open[0]==g["VENDOR_NAME"]
+            return original_read(path,*a,**k)
+        p.file_bytes=check_order
+        def check_limit(*a,**k):
+            assert resource.getrlimit(resource.RLIMIT_AS)[0]==300*2**20
+            return original(*a,**k)
+        p.check_native=check_limit
+        original_approved=g["approved"]
+        def diagnose(*a,**k):
+            try:
+                return original_approved(*a,**k)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                raise
+        g["approved"]=diagnose
+        sys.argv.pop(6)
 sys.argv=["score_60.py",*sys.argv[5:]]
 raise SystemExit(g["main"]())
 """
 
 
 class Fixture:
-    def __init__(self,base,scenarios=False,frozen=True,spy_bad=False,wire_fault=None,alias_gap=False):
-        self.f=f=SyntheticRepo(base,with_blocked=True,modeled_count=10 if scenarios else 1)
+    def __init__(self,base,scenarios=False,frozen=True,spy_bad=False,wire_fault=None,alias_gap=False,large=False):
+        self.f=f=SyntheticRepo(base,with_blocked=True,modeled_count=442 if large else 10 if scenarios else 1)
         rec=f.packets[1]["records"]
         acc=[a for a in rec if a!=f.blocked]
+        if wire_fault=="ohlc":
+            rec[acc[0]]["stock"]["raw"][0]["h"]=1
         if scenarios:
             def zero(i,leg,j):
                 for view in s.p.VIEWS:
@@ -128,6 +156,8 @@ class Fixture:
                         wire.setdefault(kind,[]).append(fields)
                     terminal="broken" if wire_fault=="pagination" and leg=="stock" else None
                     rawbody=s.p.render(dict(corporate_actions={} if wire_fault=="empty" else wire,next_page_token=terminal))
+                    if large and ticker=="TEST":
+                        rawbody+=b" "*(256*1024)  # Exercise multiple bounded gzip reads within full-size custody.
                     body=gzip.compress(rawbody,mtime=0)
                     name=f"{ticker}.json.gz"
                     s.p.write_exclusive(native/name,body)
@@ -196,9 +226,10 @@ class Fixture:
                   f"vendor native index SHA-256 {self.index_pin}.\n").encode()
         self.val=f.commit(s.VALID,approval)
 
-    def cli(self,flag,commit):
+    def cli(self,flag,commit,large=False):
+        guard=["--expect-300-mib"] if large else []
         return subprocess.run([sys.executable,"-I","-B","-c",BOOT,str(self.f.root),str(self.f.data),
-                               self.price_base,self.prior,"--"+flag,"--approval-commit",commit],
+                               self.price_base,self.prior,"--"+flag,*guard,"--approval-commit",commit],
                                capture_output=True,text=True,timeout=180)
 
     def go(self,pin=None):
@@ -209,6 +240,88 @@ class Fixture:
 
 
 class Plan60(unittest.TestCase):
+    def test_full_size_real_validation_with_300_mib_address_limit(self):
+        with TemporaryDirectory() as d:
+            f=Fixture(Path(d),large=True)
+            # 442 modeled padded windows, all three legs and views, native pages and v2 action custody.
+            self.assertGreater((f.f.inp/"bars.json").stat().st_size,8*2**20)
+            proc=f.cli("validate-inputs",f.val,large=True)
+            self.assertEqual((proc.returncode,proc.stderr),(0,""))
+            summary,signal=proc.stdout.rsplit("\n",2)[:2]
+            self.assertEqual(signal,"P60_VALIDATED")
+            self.assertEqual(json.loads(summary)["reason_counts"]["eligible_pair"],442)
+            self.assertFalse((f.run/"score.lock").exists())
+
+    def test_cli_malformed_ohlc_stops_whole_validation_with_named_code(self):
+        with TemporaryDirectory() as d:
+            f=Fixture(Path(d),wire_fault="ohlc")
+            proc=f.cli("validate-inputs",f.val)
+            self.assertEqual((proc.returncode,proc.stderr),(2,"P43_P60_OHLC_SHAPE\n"))
+            self.assertFalse((f.run/f"validation.{f.val}.json").exists())
+
+    def test_bounded_gzip_enforces_cap_and_eof_crc(self):
+        import vendor_60 as v
+        at_cap=b" " * v.MAX_BODY
+        blob=gzip.compress(at_cap,mtime=0)
+        self.assertEqual(v.decoded_body(s.p,blob),at_cap)
+        with self.assertRaisesRegex(s.p.Refused,"P43_P60_VENDOR_NATIVE"):
+            v.decoded_body(s.p,gzip.compress(at_cap+b" ",mtime=0))
+        with self.assertRaises(gzip.BadGzipFile):
+            v.decoded_body(s.p,blob[:-8]+bytes([blob[-8]^1])+blob[-7:])
+        with self.assertRaises(EOFError):
+            v.decoded_body(s.p,blob[:-1])
+
+    def split_case(self,leg,entry=24,early=None):
+        days=[s.p.d("2024-06-03")+s.timedelta(days=i) for i in range(16)]
+        e=SimpleNamespace(a="artificial",cik="synthetic",year=2024,start=days[0],early=days[5],entry=days[6],
+                          exit=days[12],first="NO",declared=1)
+        ex=days[9]
+        tapes,acts,vendor={},{},{}
+        for name in ("stock","IWM","SPY"):
+            price=entry if name==leg else 25
+            raw,adj={},{}
+            for day in days:
+                op=early if name==leg and day==e.early and early is not None else price
+                adjusted=2*op if name==leg and day<ex else op
+                raw[day]=SimpleNamespace(v=10000,o=op,c=op,flat_key=(op,)*4)
+                adj[day]=SimpleNamespace(v=10000,o=adjusted,c=adjusted,flat_key=(adjusted,)*4)
+            tapes[name]=(raw,adj,adj)
+            acts[name]=([(ex,"split",Fraction(1,2),None,None)] if name==leg else [],None)
+            vendor[name]=(True,[(ex,"split",Fraction(1,2),Fraction(2))] if name==leg else [])
+        c=s.config((s.ROOT/s.p.CONFIG).read_bytes())
+        decisions,staged=s.prepare([e],{e.a:(days,tapes,acts)},{e.a:vendor},c)
+        return decisions[e.a],s.score([e],decisions,staged,days,c)
+
+    def test_judged_stock_fractional_split_refuses_only_event(self):
+        decision,out=self.split_case("stock",entry=25)
+        self.assertEqual(decision["reason"],"refused_fractional_split")
+        self.assertEqual(out["decisions"]["reason_counts"]["refused_fractional_split"],1)
+        self.assertEqual(out["decisions"]["reason_counts"]["eligible_pair"],0)
+        self.assertEqual(out["shown"]["including_vendor_basis_refusals"]["n"],0)
+
+    def test_judged_iwm_fractional_split_refuses_only_event(self):
+        decision,out=self.split_case("IWM",entry=25)
+        self.assertEqual(decision["reason"],"refused_fractional_split")
+        self.assertEqual(out["decisions"]["reason_counts"]["refused_fractional_split"],1)
+        self.assertEqual(out["decisions"]["reason_counts"]["eligible_pair"],0)
+        self.assertEqual(out["shown"]["including_vendor_basis_refusals"]["n"],0)
+
+    def test_only_optional_stock_arms_drop_for_fractional_lots(self):
+        decision,out=self.split_case("stock",entry=Fraction(2498,100),early=25)
+        self.assertEqual(decision["reason"],"eligible_pair")
+        self.assertEqual(set(decision["shown_fractional_arms"]),{"entry_plus_one","stress_cost","sleeves"})
+        self.assertNotIn("entry_plus_one",out["shown"])
+        self.assertNotIn("stress_cost",out["shown"])
+        self.assertEqual(out["sleeves"]["placed"],0)
+        self.assertEqual(out["shown"]["paired_spy"]["n"],1)
+
+    def test_only_spy_comparison_drops_for_fractional_lot(self):
+        decision,out=self.split_case("SPY",entry=25)
+        self.assertEqual(decision["reason"],"eligible_pair")
+        self.assertEqual(decision["shown_fractional_arms"],["paired_spy"])
+        self.assertNotIn("paired_spy",out["shown"])
+        self.assertEqual(out["shown"]["entry_plus_one"]["n"],1)
+
     def test_cli_tape_vendor_and_one_go(self):
         with TemporaryDirectory() as d:
             f=Fixture(Path(d),scenarios=True)
@@ -218,7 +331,7 @@ class Plan60(unittest.TestCase):
             self.assertEqual(signal,"P60_VALIDATED")
             summary=json.loads(payload)
             reasons=dict(noncash_skip=1,outside_padding_volume=1,outside_dollar_volume=1,unfilled_entry=1,
-                         refused_no_exit=1,refused_vendor_basis=2,unfilled_capital=0,unfilled_iwm_clock=1,
+                         refused_no_exit=1,refused_vendor_basis=2,refused_fractional_split=0,unfilled_capital=0,unfilled_iwm_clock=1,
                          unfilled_iwm_capital=0,eligible_pair=3)
             self.assertEqual(summary["reason_counts"],reasons)
             self.assertEqual(summary["by_year"]["2024"]["reason_counts"],reasons)

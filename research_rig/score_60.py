@@ -102,6 +102,19 @@ def authorize(commit,mode):
     return job,blobs
 
 
+def load_vendor(blobs,job,meta,c,q,keyed):
+    """Verify native vendor evidence independently before the heavy price stage."""
+    index=p.file_bytes(VENDOR/VENDOR_INDEX,job["vendor_index_sha256"],32*2**20,private=True)
+    adapter={}
+    exec(compile(blobs[ADAPTER],ADAPTER,"exec"),adapter)
+    expected=adapter["project_packet"](p,VENDOR/"native",index,meta,c,q,keyed,VENDOR_ENDPOINT,
+                                       p.NONCASH_ACCESSION)
+    external=p.parse(p.file_bytes(VENDOR/VENDOR_NAME,job["vendor_actions_sha256"],64*2**20,private=True))
+    need(external["native_index_sha256"]==job["vendor_index_sha256"],"P60_VENDOR_BINDING")
+    need(external==expected,"P60_VENDOR_PROJECTION")
+    return schema_vendor(external,meta,q,keyed,c)
+
+
 def approved(commit,mode):
     job,blobs=authorize(commit,mode)
     c=config(blobs[p.CONFIG])
@@ -126,27 +139,22 @@ def approved(commit,mode):
     receipt=p.render(p.acquired(price,c,price["identities.json"],price["actions.json"]))
     need(p.file_bytes(INPUT/f"acquisition.{acq}.lock",price["acquisition_receipt_sha256"],16384,private=True)
          ==receipt,"P60_PRICE_RECEIPT")
-    raw={name:p.file_bytes(INPUT/name,price[name],cap,private=True)
-         for name,cap in zip(p.PACKETS,(8*2**20,96*2**20,32*2**20))}
-    ids,bars,actions=[p.parse(raw[name]) for name in p.PACKETS]
+    ids=p.parse(p.file_bytes(INPUT/"identities.json",price["identities.json"],8*2**20,private=True))
+    actions=p.parse(p.file_bytes(INPUT/"actions.json",price["actions.json"],32*2**20,private=True))
     verified=p.identity_actions(q,days,c,ids,actions)
-    nscope=p.Prepared()
-    nscope.decisions={e.a:dict(noncash=e.a not in verified[2]) for e in q}
-    p.check_native(blobs[p.PROVENANCE],price,c,q,days,ids,nscope,raw["bars.json"])
+    del actions
     meta=dict(docket_sha256=price["docket_sha256"],identities_sha256=price["identities.json"],
               bars_sha256=price["bars.json"])
-    index=p.file_bytes(VENDOR/VENDOR_INDEX,job["vendor_index_sha256"],32*2**20,private=True)
-    adapter={}
-    exec(compile(blobs[ADAPTER],ADAPTER,"exec"),adapter)
-    expected=adapter["project_packet"](p,VENDOR/"native",index,meta,c,q,verified[0],VENDOR_ENDPOINT,
-                                       p.NONCASH_ACCESSION)
-    actions_blob=p.file_bytes(VENDOR/VENDOR_NAME,job["vendor_actions_sha256"],64*2**20,private=True)
-    external=p.parse(actions_blob)
-    need(external["native_index_sha256"]==job["vendor_index_sha256"],"P60_VENDOR_BINDING")
-    need(external==expected,"P60_VENDOR_PROJECTION")
-    vendor=schema_vendor(external,meta,q,verified[0],c)
+    vendor=load_vendor(blobs,job,meta,c,q,verified[0])
+    nscope=p.Prepared()
+    nscope.decisions={e.a:dict(noncash=e.a not in verified[2]) for e in q}
+    raw_bars=p.file_bytes(INPUT/"bars.json",price["bars.json"],96*2**20,private=True)
+    p.check_native(blobs[p.PROVENANCE],price,c,q,days,ids,nscope,raw_bars)
+    bars=p.parse(raw_bars)
+    del raw_bars,nscope
     C=p.engine(blobs[p.ENGINE])
     tapes=market_tapes(q,days,C,c,ids,bars,verified)
+    del bars
     decisions,staged=prepare(q,tapes,vendor,c)
     print_summary=rollup(decisions,c)
     v=job["validation_commit"]
@@ -336,7 +344,10 @@ def market_tapes(q,days,C,c,ids,bars,verified):
             need((r["ticker"],r["identity"],r["entry_asof"],r["filing_asof"],r["start"],r["end"])
                  ==(ident["ticker"],ident["identity"],str(e.entry),str(e.at.date()),str(e.start),str(e.end))
                  and all(type(r[x]) is list for x in p.VIEWS),"P60_BAR_SCOPE")
-            parsed=tuple(p.tape(r[v],set(scope),C) for v in p.VIEWS)
+            try:
+                parsed=tuple(p.tape(r[v],set(scope),C) for v in p.VIEWS)
+            except C.Incomplete:
+                need(False,"P60_OHLC_SHAPE")
             key=r["identity"]
             for day,bar in parsed[0].items():
                 need(day not in seen[key] or seen[key][day]==bar,"P60_BAR_CONFLICT")
@@ -356,13 +367,23 @@ def market_tapes(q,days,C,c,ids,bars,verified):
     return available
 
 
-def lot_ok(record,start,end,bps,capital,c):
+def fractional(n,seq,start,end):
+    for ex,kind,value,*_ in seq:
+        if start<ex<=end and kind=="split":
+            n*=p.exact(value)
+            if n!=int(n):
+                return True
+    return False
+
+
+def lot_state(record,start,end,bps,capital,c):
     raw,seq,_=record
     if not yes(raw,start) or not yes(raw,end):
-        return False
+        return "clock"
     n=p.quantity(raw[start].o,capital,bps,c)
-    p.split_basis(n,seq,start,end)
-    return n>0
+    if not n:
+        return "capital"
+    return "fractional" if fractional(n,seq,start,end) else "lot"
 
 
 def prepare(q,available,vendor,c):
@@ -396,31 +417,35 @@ def prepare(q,available,vendor,c):
         iwm,spy=c["controls"]
         base=c["cost"]["bps"]
         cap=c["capital"]
-        supports_iwm=yes(records[iwm][0],e.entry) and yes(records[iwm][0],exit_day)
-        main_records={leg:rec for leg,rec in records.items() if leg!=spy or spy not in failures}
-        for start,cost,bundles in ((e.entry,base,main_records),(e.entry,c["cost"]["stress_bps"],{"stock":stock}),
-                                   (e.early,base,{"stock":stock})):
-            for rec in bundles.values():
-                lot_ok(rec,start,exit_day,cost,cap,c)
-        for n in range(1,p.quantity(stock[0][e.entry].o,c["sleeve_usd"],base,c)+1):
-            p.split_basis(n,stock[1],e.entry,exit_day)
-        stock_lot=lot_ok(stock,e.entry,exit_day,base,cap,c)
-        control_lot=supports_iwm and lot_ok(records[iwm],e.entry,exit_day,base,cap,c)
+        stock_state=lot_state(stock,e.entry,exit_day,base,cap,c)
+        iwm_state=lot_state(records[iwm],e.entry,exit_day,base,cap,c)
+        spy_state=lot_state(records[spy],e.entry,exit_day,base,cap,c)
+        stock_lot,control_lot=stock_state=="lot",iwm_state=="lot"
+        shown_fractional=[]
+        if lot_state(stock,e.early,exit_day,base,cap,c)=="fractional":
+            shown_fractional.append("entry_plus_one")
+        if lot_state(stock,e.entry,exit_day,c["cost"]["stress_bps"],cap,c)=="fractional":
+            shown_fractional.append("stress_cost")
+        if spy_state=="fractional":
+            shown_fractional.append("paired_spy")
+        if any(fractional(n,stock[1],e.entry,exit_day)
+               for n in range(1,p.quantity(stock[0][e.entry].o,c["sleeve_usd"],base,c)+1)):
+            shown_fractional.append("sleeves")
         critical_basis="stock" in failures or iwm in failures
-        if critical_basis:
+        if "fractional" in (stock_state,iwm_state):
+            info["reason"]="refused_fractional_split"
+        elif critical_basis:
             info["reason"]="refused_vendor_basis"
         elif not stock_lot:
             info["reason"]="unfilled_capital"
-        elif not supports_iwm:
+        elif iwm_state=="clock":
             info["reason"]="unfilled_iwm_clock"
         elif not control_lot:
             info["reason"]="unfilled_iwm_capital"
         else:
             info["reason"]="eligible_pair"
-        spy_raw=records[spy][0]
-        spy_only_omission=(spy in failures and not critical_basis and stock_lot and yes(spy_raw,e.entry) and
-                           yes(spy_raw,exit_day) and p.quantity(spy_raw[e.entry].o,cap,base,c)>0)
-        info.update(shown_spy_basis_omission=spy_only_omission,
+        spy_only_omission=(spy in failures and not critical_basis and stock_lot and spy_state=="lot")
+        info.update(shown_spy_basis_omission=spy_only_omission,shown_fractional_arms=shown_fractional,
                     delayed=exit_day!=e.exit,inside_no_bar=sum(not yes(stock[0],day)
                     for day in scope if e.entry<day<exit_day))
         staged[e.a]=(records,exit_day,stock_lot,control_lot)
@@ -428,7 +453,8 @@ def prepare(q,available,vendor,c):
 
 
 COUNTS=("noncash_skip","outside_padding_volume","outside_dollar_volume","unfilled_entry","refused_no_exit",
-        "refused_vendor_basis","unfilled_capital","unfilled_iwm_clock","unfilled_iwm_capital","eligible_pair")
+        "refused_vendor_basis","refused_fractional_split","unfilled_capital","unfilled_iwm_clock",
+        "unfilled_iwm_capital","eligible_pair")
 
 
 def rollup(decisions,c):
@@ -436,7 +462,10 @@ def rollup(decisions,c):
         k=Counter(r["reason"] for r in rows)
         tails=[v for r in rows for v in r.get("tail",{}).values()]
         diffs=[v for r in rows for v in r.get("action_delta",{}).values()]
+        fractional_arms=Counter(arm for r in rows for arm in r.get("shown_fractional_arms",[]))
         return dict(events=len(rows),reason_counts={name:k[name] for name in COUNTS},
+                    shown_fractional_split_arms={a:fractional_arms[a] for a in
+                                                ("entry_plus_one","stress_cost","paired_spy","sleeves")},
                     post_window_action_legs=sum(x["post_action"] for x in tails),
                     post_window_action_explains_legs=sum(x["post_action_explains"] for x in tails),
                     vendor_only_in_window_actions=sum(x[0] for x in diffs),
@@ -460,7 +489,7 @@ def fill(e,rec,start,end,capital,bps,c):
     op=p.exact(raw[start].o)
     cl=p.exact(raw[end].c if end==e.exit else raw[end].o)
     n=p.quantity(op,capital,bps,c)
-    if not n:
+    if not n or fractional(n,seq,start,end):
         return None
     used=n*(op+p.fee(op,bps,c))
     cash=[]
@@ -468,7 +497,6 @@ def fill(e,rec,start,end,capital,bps,c):
         if start<ex<=end:
             if kind=="split":
                 n*=p.exact(value)
-                need(n==int(n),"P60_FRACTIONAL_SPLIT")
             else:
                 cash.append((available,n*p.exact(value)))
     proceeds=n*(cl-p.fee(cl,bps,c))
@@ -488,7 +516,9 @@ def sleeves(q,decisions,staged,days,c):
     placed=0
     grouped=defaultdict(list)
     for e in q:
-        if e.a in staged and not ({"stock",c["controls"][0]} & decisions[e.a]["vendor_basis"].keys()):
+        if (e.a in staged and decisions[e.a]["reason"]!="refused_fractional_split" and
+                "sleeves" not in decisions[e.a]["shown_fractional_arms"] and
+                not ({"stock",c["controls"][0]} & decisions[e.a]["vendor_basis"].keys())):
             grouped[e.entry].append(e)
     for day in sorted(grouped):
         active={slot:(end,cik) for slot,(end,cik) in active.items() if end>=day}
@@ -532,7 +562,7 @@ def score(q,decisions,staged,days,c):
     shown=defaultdict(list)
     iwm,spy=c["controls"]
     for e in q:
-        if e.a not in staged:
+        if e.a not in staged or decisions[e.a]["reason"]=="refused_fractional_split":
             continue
         rec,end,stock_lot,control_lot=staged[e.a]
         base=c["cost"]["bps"]
