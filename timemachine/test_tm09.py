@@ -556,9 +556,10 @@ class DeskTest(unittest.TestCase):
 
 
 class OperatorGoTest(unittest.TestCase):
-    AUTH_ID = '0123456789abcdef' * 2
+    AUTH_ID = 'tm09-made-up-0123'
     MARKER = 'TM09_GO=' + AUTH_ID
-    LEDGER = f'| 222 | Invented docket {MARKER} |\n'.encode()
+    SUFFIX = f'; Approved for TM09 stage 1 and the registered stage 2 branch: `{MARKER}`'
+    LEDGER = f'| 221 | Invented earlier row |\n| 222 | Invented experiment | Invented docket{SUFFIX} |\n'.encode()
     SCOPES = {'build': 'ledger-222-build-fixtures', 'launch': 'ledger-222-run-tm09',
               'stage1-seal': 'ledger-222-seal-stage1', 'results': 'ledger-222-seal-results'}
 
@@ -625,24 +626,42 @@ class OperatorGoTest(unittest.TestCase):
                 self.authorize(command, ledger_owner=1234)
 
     def test_build_and_run_refuse_invalid_pinned_docket(self):
-        invalid = {'missing row': f'| 221 | Invented docket {self.MARKER} |\n'.encode(),
-                   'not at end': f'| 222 | {self.MARKER} more text |\n'.encode(),
-                   'fenced backticks': b'```md\n' + self.LEDGER + b'```\n',
-                   'fenced tildes': b'~~~md\n' + self.LEDGER + b'~~~\n',
-                   'multiline HTML comment': b'<!--\n' + self.LEDGER + b'-->\n',
-                   'short inner fence': b'````md\n```\n' + self.LEDGER + b'````\n',
-                   'mixed-marker fence': b'~~~md\n```\n' + self.LEDGER + b'~~~\n',
-                   'HTML pre': b'<pre>\n' + self.LEDGER + b'</pre>\n',
-                   'HTML script': b'<script>\n' + self.LEDGER + b'</script>\n',
+        old_row = f'| 222 | Invented docket {self.MARKER} |\n'.encode()
+        invalid = {'missing row': self.LEDGER.replace(b'| 222 |', b'| 223 |'),
+                   'not at end': f'| 222 | {self.SUFFIX} more text |\n'.encode(),
+                   'not last cell': f'| 222 | {self.SUFFIX} | more text |\n'.encode(),
+                   'wrong line end': self.LEDGER.replace(b'` |\n', b'`|\n'),
+                   'wrong case': self.LEDGER.replace(b'Approved', b'approved'),
                    'CRLF': self.LEDGER.replace(b'\n', b'\r\n'),
                    'duplicate row': self.LEDGER + b'| 222 | another item |\n',
-                   'duplicate indented row': self.LEDGER + b'  |222| another item |\n',
-                   'duplicate fenced row': self.LEDGER + b'```md\n| 222 | another item |\n```\n',
-                   'duplicate marker': self.LEDGER + f'Other text {self.MARKER}\n'.encode()}
+                   'duplicate marker': self.LEDGER + b'Other text TM09_GO=another-id\n',
+                   'appendix lookalike, old format': b'## Invented appendix\n' + old_row,
+                   'mixed-case raw HTML, old format': b'<PrE>\n' + old_row + b'</PrE>\n',
+                   'bare ID repeated, old format': old_row + self.AUTH_ID.encode() + b'\n'}
         for command in ('build', 'launch'):
             for case, ledger in invalid.items():
                 with self.subTest(command=command, case=case), self.assertRaisesRegex(ValueError, 'lead TM09_GO authorization missing'):
                     self.authorize(command, ledger=ledger)
+
+    def test_authorization_id_is_bounded_ascii_and_matches_the_row(self):
+        for auth_id in ('', 'has_underscore', 'UPPER', 'non-ascii-ñ', 'x' * 65):
+            with self.subTest(auth_id=auth_id), self.assertRaisesRegex(ValueError, 'lead TM09_GO authorization missing'):
+                self.authorize('launch', ledger=self.LEDGER.replace(self.AUTH_ID.encode(), auth_id.encode()),
+                               overrides={'authorization_id': auth_id})
+        with self.assertRaisesRegex(ValueError, 'lead TM09_GO authorization missing'):
+            self.authorize('launch', overrides={'authorization_id': 'different-valid-id'})
+
+    def test_signer_vouches_for_context_not_interpreted_by_byte_gate(self):
+        row = self.LEDGER.splitlines(keepends=True)[-1]
+        changed = {'appendix relocation': b'## Invented appendix\n' + row,
+                   'mixed-case raw HTML': b'<PrE>\n' + row + b'</PrE>\n',
+                   'bare ID repeated': self.LEDGER + self.AUTH_ID.encode() + b'\n'}
+        for command in ('build', 'launch'):
+            for case, ledger in changed.items():
+                with self.subTest(command=command, case=case):
+                    with self.assertRaisesRegex(ValueError, 'approved input changed'):
+                        self.authorize(command, ledger=ledger, overrides={'ledger_sha256': sha256(self.LEDGER).hexdigest()})
+                    self.assertEqual(self.authorize(command, ledger=ledger), 'stage1')
 
     def test_exact_docket_accepts_all_stages_and_unrelated_scopes_need_no_docket(self):
         for command in ('build', 'launch'):

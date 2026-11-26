@@ -104,5 +104,5 @@ STATED: Written by the lead agent on 2026-11-26 11:13 MT, before any real TM09 b
 - **Shared account:** Workers run under the same host account as the workspace. The isolation probe therefore shows that the four protected places (private tape, notes, key, results) are unreadable to that account without sudo. It does not show a separate sandbox per worker. Wherever the operator guide says "actual sandboxed worker", read "a process under the shared worker account".
 - **Soft sudo boundary:** The sudo log review catches a careless breach: a worker's sudo command, or an operator command outside the listed route. It cannot catch a deliberate breach by someone who uses root to hide it.
 - **Still required, not softened:** each probe and canary bound to its own launch, exact command matching, exactly four denied targets per role, no empty path counted as covered, the export checked for every role, and the operator's command list at a pinned, owner-checked path.
+- **Stated `TM09_GO` limit:** The gate proves the pinned file holds the one go line on row 222, and the signer vouches for the rest of the file.
 - UNKNOWN: whether any worker would attempt a hidden breach. The final report must repeat these two limits next to the result.
-
