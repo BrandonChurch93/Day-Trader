@@ -57,6 +57,7 @@ Read `AGENTS.md` first, then `docs/STATUS.md` for current results and `docs/QUEU
 | `tools/report_saved_tm06r.py` | Renders the TM06-R result page from the three pinned picker result files and the shown-items file (off repo). Does not open prices or score | CURRENT |
 | `tools/report_saved_tm06_may.py` | Renders the TM06 why-May page from the pinned off-repo autopsy summary. Does not open prices or score | CURRENT |
 | `tools/report_saved_tm06_six.py` | Renders the TM06 six-model result page from the pinned six-model result file, the April-to-June split file and arm g's result file (off repo). Does not open prices or score | CURRENT |
+| `tools/build_tm07_registration.py`, `tools/tm07_power.py` | Builds the TM07 week table from the custodied snapshot with the engine's own selection code at a pinned clean checkout (names, counts and digests only), and the exact-arithmetic synthetic power table for the TM07 marks | CURRENT |
 | `tools/bars_coverage.py` | With `--write`, writes the coverage tables in `docs/research/10_historical_data_and_practice.md` from `research_rig/platform_bars_coverage.json` and `research_rig/platform_bars_crosscheck.json`, so no figure there is typed. With `--summarise`, on a machine that has the price files, rebuilds the first of those two files from the gap check's output | CURRENT |
 
 ## docs/
@@ -515,6 +516,7 @@ Working papers.
 | `timemachine/PLAN_TM04_stock_basket.md` | Plan for the fourth AI replays: each model names once a week eight of 38 stocks to hold. Marks fixed before any session | CURRENT |
 | `timemachine/PLAN_TM06_hot_coin_swing.md` | Plan for the owner's method in two parts tested apart: a daily picker of hot coins and an hourly swing trader, with a control run of the futures book first. Marks fixed before any session | CURRENT |
 | `timemachine/TM06R_addendum.md` | Addendum to plan TM06 that repeats the Claude Fable 5.2 picker twice more on the same eight months, with the marks for repeats, did not repeat and mixed fixed before the sessions | CURRENT |
+| `timemachine/TM07_REGISTRATION.md`, `timemachine/TM07_REGISTRATION_weeks.json` | TM07 desk registration package, ledger 198: engine commit and file hashes, snapshot hash, the 20 scored weeks and their five coins by the registered rule, arms and prompts, shown-only rule arms, costs, marks, synthetic power, isolation design, and what the seal still needs. Names and counts only, no prices or returns | DRAFT |
 | `timemachine/tm06_fix_weeks.py` | Works out once, from daily bars, the four test weeks and the five coins of each swing session in plan TM06 | CURRENT |
 | `timemachine/tm06.py` | Plan TM06's tools: the fast tape's funding and open interest as of the wake, picker sessions (part P), swing sessions (part S), the 15-minute reversal control, and their yardsticks, twins and carried leverage | CURRENT |
 | `timemachine/score_tm06.py`, `timemachine/results_tm06.json` | Scores plan TM06 from the finished TM06 sessions: each at every fee level, its yardsticks, its twins' percentile, trades, time in market and forced close-outs; swing sessions also at 2x and 3x. The JSON is its stored output | CURRENT |
