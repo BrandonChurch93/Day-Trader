@@ -871,6 +871,19 @@ replay_24_plan:
   note: Viewed dates only. Robinhood US fee model with actual order rounding on $500.
   source: research_rig/PREREG_24_same_coin_carry.md
 
+replay_23_plan:
+  value: {first_pricing: "2017-03-20", last_pricing: "2026-10-23", bar_end: "2026-11-24", bar_feed: sip, bar_adjustment: raw,
+          judged_ratio_min: 1.5, band_ratio_min: 1.0, near_ratio_min: 0.67, near_ratio_max: 1.5,
+          first_bar_window_bdays: 3, prior_bar_gap_bdays: 5, prior_listing_days: 30, fetch_after_days: 40, asof_days: 5, spy_start: "2017-02-01", exit_session: 5, exit_window_sessions: 8, flat_run: 5,
+          judged_bps: 10, shown_bps: 25, no_auction_bps: 50, min_trades: 30, min_t_stat: 2.0, drop_best: 3,
+          min_year_trades: 3, min_year_share_pct: 60, recent_from: "2023-01-01", mega_usd: 20000000000,
+          calibration_seed: 23001, calibration_seeds: 20, calibration_edges_pct: [0, 1, 2, 4],
+          calibration_trade_sigma: 0.15, calibration_year_sigma: 0.02, calibration_spy_sigma: 0.02, calibration_beta: 1.2,
+          calibration_tail_df: 4, ledger_row: 160, queue_row: 37}
+  status: builder
+  note: Frozen Plan 23 for queue 37, ledger 160. Fast-track size stand-in at 1.5 times the latest published 98% breakpoint from the prospectus share total. Buy the first day's close, sell the fifth session's close; judged at 10 bps a side, shown at 25 and 50. These entries mirror the byte-pinned audited code. No collection or scoring authorized by this entry; that needs the lead's approval commit.
+  source: research_rig/PREREG_23_ipo_fast_track.md
+
 replay_25_plan:
   value:
     judged_symbol: TLT
