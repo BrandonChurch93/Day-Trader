@@ -256,7 +256,8 @@ def funding_clock_gap(left, old, right, new):
     return "unlabelled_gap", ()
 
 
-def settled(tape, start, exit_minute, p, contract, *, terminal=False, validate_only=False):
+def settled(tape, start, exit_minute, p, contract, *, terminal=False, validate_only=False, input_fault=None):
+    assert input_fault is None or validate_only
     if start * 60 == exit_minute:
         return
     exit_hour = exit_minute // 60
@@ -287,10 +288,16 @@ def settled(tape, start, exit_minute, p, contract, *, terminal=False, validate_o
             if possible < b and possible <= exit_hour:
                 raise InputFault("fundingRate", possible)
         missing.extend(h for h in absent if start < h <= exit_hour)
+    def mark_fault(h):
+        error = InputFault("markPriceKlines", h)
+        if input_fault is None:
+            raise error
+        input_fault(error)
+
     for h in s[left:right]:
         mark = tape.at("mark", h)
         if not isfinite(mark):
-            raise InputFault("markPriceKlines", h)
+            mark_fault(h)
         if not validate_only:
             yield mark * tape.funding[h][1], False
     penalty = (max(p["missing_funding_floor_pct"] / 100, tape.funding_peak(contract))
@@ -298,16 +305,16 @@ def settled(tape, start, exit_minute, p, contract, *, terminal=False, validate_o
     for h in missing:
         mark = tape.at("mark", h)
         if not isfinite(mark):
-            raise InputFault("markPriceKlines", h)
+            mark_fault(h)
         if not validate_only:
             yield -mark * penalty, True
 
 
-def evaluate(tape, signal, p, contract, *, validate_only=False, continue_gaps=False):
+def evaluate(tape, signal, p, contract, *, validate_only=False, continue_gaps=False, input_fault=None):
     h = signal.entry
     e, price, reason, shown = execution(tape, signal, p, contract, continue_gaps=continue_gaps)
     funding = tuple(settled(tape, h, e, p, contract, terminal=reason in {"terminal_close", "gap_terminal_close"},
-                            validate_only=validate_only))
+                            validate_only=validate_only, input_fault=input_fault))
     if validate_only:
         return None
     start = tape.at("open", h)
@@ -334,7 +341,7 @@ def pump_triggers(tape, symbol, p):
 
 
 def ordinary(tapes, contracts, notice_index, p, counts=None, *, validate_only=False, absent=None, domains=None,
-             source_counts=None, gap_comparison=None):
+             source_counts=None, gap_comparison=None, input_fault=None):
     """Ordinary pumps, with one trigger per rolling asset week across aliases."""
     window = p["exclusion_days"] * 24
     blocks = {}
@@ -371,7 +378,8 @@ def ordinary(tapes, contracts, notice_index, p, counts=None, *, validate_only=Fa
             if not signal:
                 counts["no_red_day"] += 1
                 continue
-            trade = evaluate(tape, signal, p, contract, validate_only=validate_only)
+            trade = evaluate(tape, signal, p, contract, validate_only=validate_only,
+                             input_fault=None if input_fault is None else lambda error: input_fault(symbol, error))
             counts["traded"] += 1
             if source_counts is not None:
                 source = "supplement_only_symbols" if domains is not None and symbol in domains else "store_symbols"
@@ -386,6 +394,9 @@ def ordinary(tapes, contracts, notice_index, p, counts=None, *, validate_only=Fa
         except Canceled:
             counts["canceled_before_entry"] += 1
         except InputFault as error:
+            if input_fault is not None:
+                input_fault(symbol, error)
+                continue
             error.symbol = symbol
             raise
 

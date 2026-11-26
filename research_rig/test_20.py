@@ -1,6 +1,7 @@
 """Made-up Plan 20 inputs only."""
 from collections import defaultdict
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 from random import Random
 from tempfile import TemporaryDirectory
@@ -428,6 +429,49 @@ def suite(p):
                     S.claim(lock, result, {}, refuse, lambda _: self.fail("scored before claim"))
                 self.assertFalse(lock.exists())
                 self.assertFalse(result.exists())
+
+        def test_shared_validation_collects_input_faults_without_claim_or_scoring(self):
+            from . import score_20 as S
+            symbols = ("BADUSDT", "ONEUSDT", "TWOUSDT")
+            roster = {sym: [C.Contract(sym, sym, -1440, None)] for sym in symbols}
+            with TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                bad = [root / "bad-kline.zip", root / "bad-funding.zip"]
+                mark = {sym: root / f"{sym}-mark.zip" for sym in symbols[1:]}
+                groups = {symbols[0]: [(kind, 0, 480, path, "0" * 64)
+                                       for kind, path in zip(("klines", "fundingRate"), bad)]}
+                for sym in symbols[1:]:
+                    groups[sym] = [("markPriceKlines", 0, 480, mark[sym], "0" * 64)]
+                tape = self.tape
+                tape.fields["mark"][8 - tape.start] = C.NAN
+                tape.fields["mark"][16 - tape.start] = C.NAN
+                signal = C.Setup(1, 120, (), 0)
+                original_load = S.load
+
+                def load(files, policy, **kw):
+                    return tape if files[0][3] in mark.values() else original_load(files, policy, **kw)
+
+                mapped = {}, {}, {}
+                with patch.object(S, "authorize") as authorize, patch.object(S, "claim", side_effect=AssertionError), \
+                        patch.object(S.C.Trade, "net", side_effect=AssertionError), \
+                        patch.object(S.C, "Trade", side_effect=AssertionError), \
+                        patch.object(S.C, "policy", return_value=self.p), patch.object(S, "inventory", return_value=groups), \
+                        patch.object(S, "identities"), patch.object(S, "dated_roster", return_value=roster), \
+                        patch.object(S, "notices", return_value=mapped), patch.object(S, "load", side_effect=load), \
+                        patch.object(S.A, "read_pinned", return_value=b""), \
+                        patch.object(S.US, "rows", return_value=[]), patch.object(S, "memory"), \
+                        patch.object(C, "pump_triggers", side_effect=lambda _, sym, __: iter(((0, sym),))), \
+                        patch.object(C, "setup", return_value=signal), patch("builtins.print") as emit:
+                    with self.assertRaises(S.Refused) as error:
+                        S.prepare(self.p)
+                    self.assertEqual((error.exception.code, error.exception.path), ("P20_ARCHIVE_PIN", bad[0]))
+                    self.assertEqual(S.validate_inputs("approved-fixture"), 1)
+                    authorize.assert_called_once_with("approved-fixture")
+                    rows = json.loads(emit.call_args.args[0])
+                expected = sorted({("P20_ARCHIVE_PIN", str(path)) for path in bad} |
+                                  {("P20_REQUIRED_MARKPRICEKLINES", str(path)) for path in mark.values()})
+                self.assertEqual(rows, {"distinct_refusal_pairs": 4, "coverage": {"blocked_control_components": 1},
+                                        "refusals": [{"code": code, "path": path} for code, path in expected]})
 
     return unittest.defaultTestLoader.loadTestsFromTestCase(Tests)
 

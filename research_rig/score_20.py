@@ -33,7 +33,7 @@ NOTICE_MAP = NOTICE.with_name("notice_perp_map_v2.csv")
 IDENTITIES = NOTICE.with_name("notice_identity_sidecar_v2.csv")
 LIFETIMES = NOTICE.with_name("symbol_lifetimes_sidecar_v3.csv")
 STAGING = DATA / "replay_20_inputs"
-SUPPLEMENT = STAGING / "archives_v2.json"
+SUPPLEMENT = STAGING / "archives_v3.json"
 US_ROSTER = DATA.parent / "ideas" / US.NAME
 LOCK = RUN / "score_20.lock"
 RESULT = ROOT / "research_rig/results_20.json"
@@ -42,7 +42,7 @@ DATED_ROSTER_PIN = "dfaac9be1818f0867b1e200a6bb511a3970e01df5dbd04418726bf2567ae
 NOTICE_MAP_PIN = "888517afd7da535f48053258cf86b4ad68728522e90831b953be44c2decce61b"
 IDENTITY_PIN = "6c91e59758359fbce0ffb572973061116ae97c80ac7a29bb66741b9f6624c10a"
 LIFETIMES_PIN = "1587771c64d7f28d538087539b5b00dc60c63ce1f234a855dbf0b715f41590d2"
-SUPPLEMENT_PIN = "6b4625cff91a82fb000c5d2b37f92c9ad369328b73837427d640850c27f43059"
+SUPPLEMENT_PIN = "9862a3e7c6181dac46764f677b54d6eba8ebe47eb17183b68a508252d893bfe9"
 MANIFESTS = {
     DATA / "replay_16/manifest_futures.json": "07a28ae776606bb1430aa91ab94ae69b5cfeec37e0f48c9f2d342ab745e8b94d",
     DATA / "replay_16/manifest_futures_held.json": "d2949c130e4d98d13ed4bf376abee0700e4122fbf76af80a7d8fcf695a1e9afd",
@@ -531,11 +531,20 @@ def scan_notice_clocks(groups, events, p):
             "funding_clock_discontinuities": funding_clock_discontinuities}
 
 
-def load(files, p, *, funding_peak_contracts=()):
+def load(files, p, *, funding_peak_contracts=(), report=None):
     tape = C.Tape(p["start"] - 24, p["end"], funding_peak_contracts)
     quiet = Counter()
+    failed = False
     for kind, a, b, path, pin in files:
-        decode_archive(kind, a, b, path, pin, p, quiet, tape)
+        try:
+            decode_archive(kind, a, b, path, pin, p, quiet, tape)
+        except Refused as error:
+            if report is None:
+                raise
+            report(error)
+            failed = True
+    if failed:
+        return None
     tape.finish()
     return tape
 
@@ -607,7 +616,9 @@ def manifest_domains(groups):
     return {symbol: [list(span) for span in spans] for symbol, spans in control_domains(groups).items()}
 
 
-def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
+def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False, report=None, blocked=None):
+    assert report is None or (validate_only and blocked is not None)
+    faults = 0
     first, notice_index, source_counts = notice_data
     events = defaultdict(list)
     absent_notices = []
@@ -642,17 +653,28 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
     absent_controls, ordinary_counts, judged_diagnostics = Counter(), Counter(), Counter()
     control_counts = {"store_symbols": 0, "supplement_only_symbols": 0}
     funding_debits = {"ordinary": Counter(), "clean_ordinary": Counter()}
-    if set(events) - groups.keys():
-        symbol = sorted(set(events) - groups.keys())[0]
+    def required(symbol, error):
+        nonlocal faults
+        faults += 1
+        refusal = Refused("P20_REQUIRED_" + error.kind.upper(), affected(symbol, groups.get(symbol, ()), error))
+        if report is None:
+            raise refusal from None
+        report(refusal)
+
+    for symbol in sorted(set(events) - groups.keys()):
         start = events[symbol][0][0].minute // 60
-        raise Refused("P20_REQUIRED_KLINES", affected(symbol, (), C.InputFault("klines", start)))
+        required(symbol, C.InputFault("klines", start))
     domains = control_domains(groups)
     for component in control_components(groups, roster):
         memory()
         tapes = {}
         for symbol in component:
             memory()
-            tape = tapes[symbol] = load(groups[symbol], p, funding_peak_contracts=() if validate_only else roster[symbol])
+            tape = load(groups[symbol], p, funding_peak_contracts=() if validate_only else roster[symbol],
+                        **({"report": report} if report is not None else {}))
+            if tape is None:
+                continue
+            tapes[symbol] = tape
             for event, contract in events[symbol]:
                 try:
                     signal = C.setup(tape, event.minute, p, contract, counts=judged_diagnostics)
@@ -660,7 +682,8 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
                         disposition["no_red_day"] += 1
                         legacy["no_red_day"] += event.legacy_path_flag
                     else:
-                        trade = C.evaluate(tape, signal, p, contract, validate_only=validate_only)
+                        trade = C.evaluate(tape, signal, p, contract, validate_only=validate_only,
+                                           input_fault=None if report is None else lambda e: required(symbol, e))
                         disposition["traded"] += 1
                         legacy["traded"] += event.legacy_path_flag
                         if not validate_only:
@@ -674,7 +697,7 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
                     disposition["no_fill"] += 1
                     legacy["no_fill"] += event.legacy_path_flag
                 except C.InputFault as e:
-                    raise Refused("P20_REQUIRED_" + e.kind.upper(), affected(symbol, groups[symbol], e)) from None
+                    required(symbol, e)
                 if not validate_only:
                     variants = ((False, True, False, hourly), (True, True, False, earlier),
                                 (False, False, False, unscreened), (None, False, True, after_notice))
@@ -686,6 +709,9 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
                                 output.append(C.evaluate(tape, signal, p, contract))
                         except (C.NoFill, C.InputFault):
                             continue
+        if len(tapes) != len(component):
+            blocked["control_components"] += 1
+            continue
         try:
             alternates = {}
 
@@ -694,7 +720,8 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
 
             for trade, clean in C.ordinary(tapes, roster, notice_index, p, ordinary_counts,
                                            validate_only=validate_only, absent=absent_controls, domains=domains,
-                                           source_counts=control_counts, gap_comparison=compare_gap):
+                                           source_counts=control_counts, gap_comparison=compare_gap,
+                                           **({"input_fault": required} if report is not None else {})):
                 pools[trade.year].append(trade.net(p["judged_bps"]))
                 alt = alternates.pop(id(trade), trade)
                 if alt is not None:
@@ -706,8 +733,9 @@ def evaluate_book(groups, notice_data, roster, us, p, *, validate_only=False):
                                                 settlements=trade.missing_funding_settlements,
                                                 debit_sum_entry_notional=trade.missing_funding_debit)
         except C.InputFault as e:
-            raise Refused("P20_REQUIRED_" + e.kind.upper(), affected(e.symbol, groups[e.symbol], e)) from None
-    if sum(disposition.values()) != len(first) or disposition["other"] or ordinary_counts["other"]:
+            required(e.symbol, e)
+    incomplete = faults or (blocked and blocked["control_components"])
+    if not incomplete and (sum(disposition.values()) != len(first) or disposition["other"] or ordinary_counts["other"]):
         raise Refused("P20_NOTICE_RECONCILIATION", NOTICE_MAP)
     if validate_only:
         return
@@ -775,6 +803,41 @@ def authorize(commit):
     return bound
 
 
+def prepare(p, *, report=None, blocked=None):
+    groups = inventory(p)
+    identity_data = identities()
+    roster = dated_roster(identity_data=identity_data)
+    mapped = notices(p, roster, identity_data=identity_data)
+    try:
+        us = {row["symbol"] for row in US.rows(A.read_pinned(US_ROSTER, US.SHA256))}
+    except Exception:
+        if report is None:
+            raise Refused("P20_ROSTER_REFUSED", US_ROSTER) from None
+        report(Refused("P20_ROSTER_REFUSED", US_ROSTER))
+        us = set()
+    evaluate_book(groups, mapped, roster, us, p, validate_only=True, report=report, blocked=blocked)
+    memory()
+    return groups, mapped, roster, us
+
+
+def validate_inputs(commit):
+    authorize(commit)
+    p = C.policy(yaml.safe_load(CONFIG.read_bytes())["replay_20_plan"]["value"])
+    refusals, blocked = set(), Counter()
+
+    def report(error):
+        refusals.add((error.code, str(error.path)))
+
+    try:
+        prepare(p, report=report, blocked=blocked)
+    except Refused as error:
+        report(error)
+    print(json.dumps(dict(distinct_refusal_pairs=len(refusals),
+                          refusals=[dict(code=code, path=path) for code, path in sorted(refusals)],
+                          coverage=dict(blocked_control_components=blocked["control_components"])), sort_keys=True))
+    return int(bool(refusals))
+
+
 def go(commit):
     bound = authorize(commit)
     p = C.policy(yaml.safe_load(CONFIG.read_bytes())["replay_20_plan"]["value"])
@@ -784,24 +847,11 @@ def go(commit):
                us_roster_sha256=US.SHA256, repo_sha256=bound,
                started_utc=datetime.now(timezone.utc).isoformat())
 
-    def prepare():
-        groups = inventory(p)
-        identity_data = identities()
-        roster = dated_roster(identity_data=identity_data)
-        mapped = notices(p, roster, identity_data=identity_data)
-        try:
-            us = {row["symbol"] for row in US.rows(A.read_pinned(US_ROSTER, US.SHA256))}
-        except Exception:
-            raise Refused("P20_ROSTER_REFUSED", US_ROSTER) from None
-        evaluate_book(groups, mapped, roster, us, p, validate_only=True)
-        memory()
-        return groups, mapped, roster, us
-
     def calculate(prepared):
         return {"job": job, "policy": p, "outcome": evaluate_book(*prepared, p)}
 
     try:
-        claim(LOCK, RESULT, job, prepare, calculate)
+        claim(LOCK, RESULT, job, lambda: prepare(p), calculate)
     except Refused as error:
         if error.code == "P19_CONSUMED":
             raise Refused("P20_CONSUMED", error.path) from None
@@ -811,12 +861,15 @@ def go(commit):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
-    for name in ("inventory", "clock-scan", "notice-clock-scan", "selftest", "calibration", "go"):
+    for name in ("inventory", "clock-scan", "notice-clock-scan", "validate-inputs", "selftest",
+                 "calibration", "go"):
         mode.add_argument("--" + name, action="store_true")
     parser.add_argument("--approval-commit")
     args = parser.parse_args()
     try:
         configure_resources()
+        if args.validate_inputs:
+            return validate_inputs(args.approval_commit)
         if args.go:
             go(args.approval_commit)
             return 0
