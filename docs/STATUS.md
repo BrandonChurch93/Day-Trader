@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 12:26 UTC
+Last updated: 2026-11-26 12:44 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -14,6 +14,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- [Queue 110](research/148_screen_queue_110_dip_vs_breakout_rules.md) (dip gate against breakout gate as fixed rules, no model; ledger 216): closed before prices 2026-11-26 05:44 MT. MEASURED on made-up data, no price read and no gate-open count taken: 2.11% chance to pass at the defensible outside size (STATED: Grobys and others 2025, top 30 coins, August 2020 to December 2023, weekly winner-minus-loser spread -0.19%, t -0.13), 7.12% at the most generous published size (+1.36% a week, gross, favouring breakouts), and 33% would need 3.8% a week. Zero-edge pass rate 3.38% central, 4.89% at worst. No published sample shows weekly reversal in large coins, and Replays 13, 17 and 22 point the same way: no dip edge.
 
 - Queue 30 (dip entries against breakout entries for the AI crypto trader, [TM08 draft plan](../timemachine/PLAN_TM08_dip_vs_breakout_DRAFT.md)): closed before any session 2026-11-26 05:26 MT. MEASURED, counts only, no price read: of the 11 months on the crypto minute tape (2026-01 to 2026-11) every model has traded April to November, and the 3 untraded months (January to March) fall before at least one model's knowledge line, so 0 honest months exist today; the first usable month is December 2026, complete on 2027-01-01, and six would be complete on 2027-06-01. MEASURED on made-up data with noise taken from scored TM01 and TM02 monthly gaps: with a tightened mark (one-sided t at least 2.57 over 6 months and positive without the best month; zero-edge pass rate about 2.5%), the chance to pass at an edge of 1% of the account a month is 8.9% to 24.6%, under the 33% line. Also STATED from doc 59: random twins at the same moments matched the models' floor buys (+3.69% against +3.12%), so the floor result was mostly timing. Queue 31, 32 and 9e wait on honest months for the same reason. The two gates go on as fixed rules with no model in queue 110 (ledger 216), screen first.
 
