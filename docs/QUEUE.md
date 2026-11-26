@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 22:53 UTC
+Last changed: 2026-11-26 23:11 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -138,6 +138,9 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 
 | Idea | From |
 |---|---|
+| From survey 187, count first, no prices: first-time Schedule 13D filings on operating companies by activist funds since 2024-02-05 (the 5-business-day deadline), entered no earlier than the session after the SEC acceptance time. The published gain sits mostly before and on the filing day, so the count and the after-filing evidence are checked before any price is opened. Not the closed-end fund census of queue 102 | `docs/research/187_data_sources_for_an_ai_desk.md`, `docs/research/187c_event_text.md` |
+| From survey 187, a veto, not a buy rule: skip or exit a stock after an original 8-K with a delisting notice, a restatement, an impairment, a bankruptcy or a chief executive leaving, using the SEC acceptance time. Tested only as an overlay on a rule that already holds stocks (Plan 74's cards if they reach a design stage), by the change in the worst 20-day loss after the extra trading cost | `docs/research/187_data_sources_for_an_ai_desk.md` |
+| From survey 187, forward log only: the Fed, BLS and BEA release calendars as a risk window for the forward cards (smaller size or no new entry around rate decisions and the inflation and jobs reports), with the calendar saved as first seen; and the Federal Register public inspection list counted by day for crypto and listed-company notices before any price is opened | `docs/research/187a_forced_trades.md`, `docs/research/187c_event_text.md` |
 | What an AI desk should be shown (idea round 62 angle): which feeds give a trading agent real context, and how to test each feed's worth in the time machine with nothing from the future. In the lead agent's order: a base-rate lookup (how often a setup happened before and what followed after costs), a dated forced-trade calendar (index changes, unlocks, listings, auctions), a positioning feed (funding, open interest, liquidations, short interest), then on-chain flows and cross-venue lead and lag. Each feed is tested as its own arm against the same desk without it | the owner's question, 2026-11-26 3:50 PM MT: what context and data would an AI need to make money steadily |
 | Small cheap agents watch all the time and wake a strong agent only for the few things that matter | the owner's first request |
 | Copy the stated methods of traders with verified records, one trader per method | `docs/research/17_verified_traders_and_their_methods.md` |
