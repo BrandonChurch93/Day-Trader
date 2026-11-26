@@ -64,3 +64,13 @@ Raised by the plan 70 drafter from a made-up-data check. Nothing had been run on
 1. Thin rules. A t value from a handful of days is not to be trusted. In both sweeps a rule is only eligible if it has at least 200 trades on at least 100 different days in the search dates, and at least 40 different days in each half. A rule under that is listed as too thin and can never be a finalist. The same floor of 100 different days applies in the vault.
 2. The luck check on made-up data is on the whole finalist bar as written (trade and day floors, t of 3.5 over the matched baseline, both halves, the trim and the yearly line together), not on the t value alone. In pure noise no rule may become a finalist in at least 95 of 100 seeds. If the whole bar still lets luck through more often than that, the script is wrong or the bar is too low, and the drafter stops and reports instead of adjusting anything.
 
+## Amendment 3, 2026-11-26 06:50 MT, by the lead agent: a second grid on the same search dates
+
+Written after plan 70's search and carry check (one finalist of 188, not carried, vault unopened). It binds plan 71 and any later second grid.
+
+1. A second grid may be written for a sweep after its first search, on the same search dates, and it may use what the first search summary showed. The search dates exist to be searched.
+2. The 300-rule allowance is per sweep, not per grid. Plan 70 used 188, so plan 71 may add at most 112. Rules already run are not entered again.
+3. Nothing gets easier. Same coins, costs, dates, finalist bar, duplicate rule, carry check at half the search mean with the 33% line, vault marks and vault. At most 3 finalists across both grids together; 70-102 already holds one place as a finalist that was not carried.
+4. STATED, the weakness: a second grid written after seeing the first is aimed at the place where the first one looked best, and part of that was luck. The bar does not know this. The guard is the halved mean in the carry check and then the vault, which no grid has read.
+5. The vault is still opened once at most for this sweep. If plan 71 carries a rule, that is the one use.
+
