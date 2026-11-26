@@ -369,7 +369,7 @@ else:
 if c4: tests.append(c4)
 if M34.RESULT.is_file():
     tests.append(M34.dashboard_card(M34.load(), GH))
-tests += RC.cards(GH)   # Replays 48, 52 and 53, read from their result pages (replay_cards.py)
+tests += RC.cards(GH)   # Saved replay result pages (replay_cards.py)
 
 
 # ------------------------------------------------------------------ current owner-only items, read from docs/STATUS.md at export time
