@@ -838,6 +838,39 @@ replay_20_plan:
   note: Frozen Plan 20 for queue 29; one-shot scoring needs separate authorization. Notice shorts use the source red-day wait. Charge missing labelled settlements at the larger of the floor and the dated contract's largest absolute rate, using the missing clock's mark. The earlier hourly rule is shown only. All dates viewed.
   source: research_rig/PREREG_20_upbit_listing_short.md
 
+replay_24_plan:
+  value:
+    start: "2022-01-01"
+    end: "2026-10-26"
+    annual_days: 365
+    fill_hours: 1
+    lookback_hours: 168
+    initial_usd: 500
+    slots: 5
+    entry: 0.20
+    exit: 0.05
+    maintenance: 0.10
+    entry_min_usd: 1
+    missing_floor: 0.02
+    min_annual: 0.06
+    min_sharpe: 1.0
+    max_drawdown: 0.10
+    positive_years: 4
+    draws: 500
+    seed: 24039
+    percentile: 0.95
+    judged: robinhood
+    fees:
+      robinhood: {spot_bp: 95, perp_bp: 0.5, commission_min: 0.01, exchange_bp: 0.5, robinhood_rounding: true}
+      kraken: {spot_bp: 80, perp_bp: 25}
+      coinbase: null
+      flat_5: {spot_bp: 5, perp_bp: 5}
+    shown_entry: [0.10, 0.30]
+    grid: [0, 1, 2, 5, 10, 20, 40, 80]
+  status: builder
+  note: Viewed dates only. Robinhood US fee model with actual order rounding on $500.
+  source: research_rig/PREREG_24_same_coin_carry.md
+
 replay_25_plan:
   value:
     judged_symbol: TLT
