@@ -149,6 +149,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/64_replay_19_monday_asia.md` | Monday Asia stand-in on viewed dates. Run once, did not pass, one of five marks | CURRENT |
 | `docs/research/65_replay_18_funding_carry.md` | Funding carry on the reconstructed ranked subset. Did not pass, one of three marks; four US rosters shown only | CURRENT |
 | `docs/research/66_measure_15_breakout_fills.md` | Measurement 15: what a breakout order on stocks in play really paid. Entry plus stop-exit slippage 0.2089 of the stop distance against a limit of 0.05; idea dropped | CURRENT |
+| `docs/research/67_round_9_outside_evidence.md` | Checked outside evidence on dated and forced flows, with two test candidates, a broker and issuer audit, and a fill calibration | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
