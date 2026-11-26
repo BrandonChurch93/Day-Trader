@@ -354,7 +354,7 @@ Working papers.
 | `research_rig/report_48.py` | Prints the Replay 48 result page from the pinned saved result and the pinned recompute note. Does not open market inputs or score | CURRENT |
 | `research_rig/PREREG_53_taxable_cef_tax_loss.md`, `research_rig/PINNED_53.json` | Queue 90 and ledger 187. Frozen PCEF holdings-derived taxable closed-end fund replay and roster attestations; no market data or result | CURRENT |
 | `research_rig/AMENDMENT_53_CASH.md` | Proposed replacement freeze for Plan 53 cash admission. Requires lead approval; no market data or result | CURRENT |
-| `research_rig/AMENDMENT_53_JUMPS.md` | Proposed replacement freeze for Plan 53 raw-close jump review. Requires lead approval; no market data or result | CURRENT |
+| `research_rig/AMENDMENT_53_JUMPS.md` | Frozen Plan 53 v4 replacement for raw-close jumps and historical identity. Validation and scoring require lead approval; no market data or result | CURRENT |
 | `research_rig/score_53.py`, `research_rig/test_53.py`, `research_rig/CALIBRATION_53.json` | Plan 53 approval, counts-only validation, post-lock paired correlation and synthetic tests; reuses the Replay 48 engine | CURRENT |
 | `research_rig/PREREG_47_edgar_altcoin_treasuries.md`, `research_rig/PINNED_47.json`, `research_rig/CLOSE_47_on_count.md` | Queue 82, ledger 180. Plan protocol, retained draft hashes, and price-blind closure on count. No freeze, approved manifest, market data or score | RECORD |
 | `research_rig/DOCKET_47_preprice.md` | Audited SEC scout and independent dispositions, exact acceptance clocks, and dated venue evidence. Retained as a forward list | RECORD |

@@ -2,7 +2,7 @@
 
 Status FROZEN.
 
-This is a proposed replacement freeze, not an approval to validate or score. Its parent is the prior cash amendment freeze `06b7bba1c979ed1a4a443711e9f397bd4667dfa8`. STATED: Validation stopped at an unexplained close change before any lock or scored result. The author did not open the packet. This amendment does not change the cash rules, ranking rule, calendars, costs, yardsticks, seven marks, or shared Replay 48 engine.
+This is the frozen replacement for Plan 53, not an approval to validate or score. The reviewed draft `5fe158e322772926a658ced877ee6b44ebc2a8fe` is a direct child of the prior cash amendment freeze `06b7bba1c979ed1a4a443711e9f397bd4667dfa8`. STATED: Validation stopped at an unexplained close change before any lock or scored result. The author did not open the packet. This amendment does not change the cash rules, ranking rule, calendars, costs, yardsticks, seven marks, or shared Replay 48 engine.
 
 ## Rule
 
