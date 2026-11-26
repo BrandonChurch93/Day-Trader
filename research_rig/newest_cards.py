@@ -1,0 +1,212 @@
+"""The newest cards on the owner's screen: the coin sweep (Plans 70 and 71), Plan 73, the E09 forward log, and the
+"Running now" strip.
+
+Every figure is read at export time. The sweep and Plan 73 cards read the same pinned summary files that
+build_doc152_plan70_search.py, build_doc154_plan71_search.py and build_doc157_plan73_diagnosis.py read, with the
+same SHA-256 pins. If a pin no longer matches, or the numbers stop fitting together, the export stops with an error.
+If the summary files are not on this computer (they are kept off the repo), the card says so and shows no figure.
+The E09 card reads practice/forward/E09_log.json and the E09 card page. The strip reads docs/QUEUE.md. Only labels and
+plain wording are written here. Reads no prices and runs nothing.
+"""
+import datetime
+import json
+import os
+import re
+from math import isclose
+from zoneinfo import ZoneInfo
+
+import yaml
+
+import build_doc152_plan70_search as B152
+import build_doc154_plan71_search as B154
+import build_doc157_plan73_diagnosis as B157
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+MT = ZoneInfo("America/Boise")
+D152 = "docs/research/152_plan_70_coin_sweep_search.md"
+D154 = "docs/research/154_plan_71_second_coin_grid.md"
+D157 = "docs/research/157_plan_73_first_minute_diagnosis.md"
+E09_LOG = "practice/forward/E09_log.json"
+E09_CARD = "practice/traders/E09_overextension_dip_buy.md"
+QUEUE = "docs/QUEUE.md"
+MINUS = "\u2212"
+
+
+def read(path):
+    with open(os.path.join(ROOT, path), encoding="utf-8") as f:
+        return f.read()
+
+
+def bp(x):
+    """A fraction as signed basis points with one decimal, true minus sign: 0.0076 -> +76.5 bp."""
+    return f"{x * 10000:+.1f} bp".replace("-", MINUS)
+
+
+def pct(x):
+    return f"{x:.2%}"
+
+
+def mt(utc_text):
+    """'2026-11-26T14:20:05Z' -> '2026-11-26 07:20 MT'."""
+    t = datetime.datetime.fromisoformat(utc_text.replace("Z", "+00:00")).astimezone(MT)
+    return t.strftime("%Y-%m-%d %H:%M") + " MT"
+
+
+def missing(id_, title, what, links, err):
+    return dict(id=id_, title=title, date=None, verdict="Figures not on this computer", tone="unknown",
+                basis=f"The summary files are kept off the repo and could not be opened here ({type(err).__name__}). No figure is shown.",
+                summary=what, numbers=[], links=links)
+
+
+# ------------------------------------------------------------------ coin sweep, Plans 70 and 71
+def sweep_figures(custody):
+    s70 = B152.checked(custody, "sweep_70/search_summary.out", B152.SEARCH_SHA)
+    c70 = json.loads(B152.checked(custody, "sweep_70/carry_results.json", B152.CARRY_SHA))
+    s71 = B152.checked(custody, "sweep_70/search71_summary.out", B154.SUMMARY_SHA)
+    c71 = json.loads(B152.checked(custody, "sweep_70/carry71_results.json", B154.CARRY_SHA))
+    _, *r70 = map(json.loads, s70.splitlines())
+    h71, *r71 = map(json.loads, s71.splitlines())
+    g70 = json.loads(read("research_rig/GRID_70.json"))
+    g71 = json.loads(read("research_rig/GRID_71.json"))
+    if ([r["rule"] for r in r70] != [r["id"] for r in g70] or [r["rule"] for r in r71] != [r["id"] for r in g71]
+            or c70["search_summary_sha256"] != B152.SEARCH_SHA or c71["search71_sha256"] != B154.SUMMARY_SHA):
+        raise ValueError("sweep card: the summary files do not match the two checked-in grids")
+    fin = sorted((r for r in r70 + r71 if r["finalist_rank"] is not None and r["rule"] in h71["sweep_finalists"]),
+                 key=lambda r: h71["sweep_finalists"].index(r["rule"]))
+    forecasts = {f["rule"]: f for f in c70["forecasts"] + c71["forecasts"]}
+    if ([r["rule"] for r in fin] != h71["sweep_finalists"] or set(forecasts) != set(h71["sweep_finalists"])
+            or c70["carried_ids"] or c71["carried_ids"] or any(f["carry"] for f in forecasts.values())):
+        raise ValueError("sweep card: finalist or carry list does not fit (expected three finalists, none carried)")
+    cfg = yaml.safe_load(read("config/thresholds.yaml"))["replay_70_plan"]["value"]["vault_marks"]
+    bar = cfg["min_pre_vault_power"]
+    if any(f["probability"] >= bar or not isclose(f["passes"] / f["draws"], f["probability"], abs_tol=5e-5)
+           for f in forecasts.values()):
+        raise ValueError("sweep card: a carry figure does not fit its bar or its own draw count")
+    enough = lambda rows: sum(not r["too_thin"] for r in rows)
+    return dict(n70=len(r70), n71=len(r71), ok70=enough(r70), ok71=enough(r71), bar=bar,
+                finalists=[(r["rule"], forecasts[r["rule"]]) for r in fin])
+
+
+def sweep_card(gh, custody=B152.CUSTODY):
+    title = "Coin sweep (plans 70, 71)"
+    links = [["Plan 70 search", gh + D152], ["Plan 71 search", gh + D154]]
+    try:
+        f = sweep_figures(custody)
+    except (FileNotFoundError, NotADirectoryError) as e:
+        return missing("sweep70", title, "The search of written coin rules on 2020 to 2023 prices.", links, e)
+    n = f["n70"] + f["n71"]
+    fin = f["finalists"]
+    names = ", ".join(r for r, _ in fin)
+    rows = [[f"Rules written ({f['n70']} in plan 70, {f['n71']} in plan 71)", str(n)],
+            [f"Rules with enough trades to judge ({f['ok70']} and {f['ok71']})", str(f["ok70"] + f["ok71"])],
+            [f"Finalists: {names}", str(len(fin))]]
+    rows += [[f"Chance {r} would pass the sealed years, bar {f['bar']:.0%}", pct(c["probability"])] for r, c in fin]
+    rows.append(["Carried to the sealed years", "none"])
+    return dict(id="sweep70", title=title, date=None, verdict="No rule carried", tone="fail",
+                basis=f"MEASURED in the plan 70 and 71 searches. Figures read from the pinned summary files that build {os.path.basename(D152)} "
+                      f"and {os.path.basename(D154)}. The carry bar is STATED in config/thresholds.yaml. The summary files are kept off the repo.",
+                summary=(f"{n} coin rules were written and tested on 2020 to 2023 prices. {f['ok70'] + f['ok71']} had enough trades to judge. "
+                         f"{len(fin)} made the final cut ({names}). None was carried, because each one's chance of passing on the "
+                         f"sealed later years was under the {f['bar']:.0%} bar. The sealed years stay unread. "
+                         "Rule 70-102 is followed forward with pretend money as E09."),
+                numbers=rows, links=links)
+
+
+# ------------------------------------------------------------------ Plan 73
+CLOCK_WORDS = ((B157.SEARCH, "Saved search result"), (B157.HOURLY, "Coinbase hourly open"),
+               (B157.REACH, "One minute after the hour"), (B157.LATE, "Five minutes late"),
+               ("coinbase_entry_15m_late", "Fifteen minutes late"), ("coinbase_worst_minute", "Worst price of the minute"))
+
+
+def plan73_figures(custody):
+    # The same pinned files doc 157's builder reads; render() runs its full set of fit checks first.
+    B157.render(custody)
+    go = json.loads(B157.pinned(custody, "plan73/go.out", B157.GO_SHA, mode=0o600))
+    means = go["net_mean_by_clock"]
+    if set(means) != {k for k, _ in CLOCK_WORDS} or go["kind"] != "shown_search_dates_not_a_test":
+        raise ValueError("plan 73 card: go.out no longer has the six clocks or is not marked as a diagnosis")
+    hourly, reach = means[B157.HOURLY] / means[B157.SEARCH], means[B157.REACH] / means[B157.HOURLY]
+    if not (0.95 <= hourly <= 1.05 and 0.4 <= reach <= 0.6):
+        raise ValueError("plan 73 card: the plain words (same at the open, about half gone a minute later) no longer fit")
+    return dict(total=go["search_tickets"], compared=go["compared_tickets"], coins=go["compared_coin_count"],
+                reading=go["reading"], bars=[[label, round(means[k] * 10000, 1)] for k, label in CLOCK_WORDS])
+
+
+def plan73_card(gh, custody=B152.CUSTODY):
+    title = "Plan 73: can the gain be reached"
+    links = [["Plan 73 result", gh + D157]]
+    try:
+        f = plan73_figures(custody)
+    except (FileNotFoundError, NotADirectoryError) as e:
+        return missing("plan73", title, "Repricing rule 71-013's search trades at Coinbase prices someone could have reached.", links, e)
+    b = dict(f["bars"])
+    return dict(id="plan73", title=title, date=None, verdict="A diagnosis, not a test", tone="info",
+                basis=f"MEASURED on the search's own trades. Figures read from the pinned plan 73 summary files that build {os.path.basename(D157)}. "
+                      "The summary files are kept off the repo.",
+                summary=(f"Rule 71-013's search trades, priced again on Coinbase. {f['compared']} of {f['total']} trades had Coinbase prints "
+                         f"at every clock, in {f['coins']} coins. The average gain a trade was about the same at the hourly open, "
+                         f"but about half was gone one minute later. These are trades the search already picked, so this is a diagnosis, "
+                         f"not a test, and no money follows."),
+                numbers=[[f"Trades with Coinbase prints at every clock, of {f['total']}", str(f["compared"])],
+                         ["Coins in those trades", str(f["coins"])]],
+                bars=dict(unit="bp", label="Average net gain a trade, in hundredths of a percent (bp)", rows=f["bars"]),
+                links=links)
+
+
+# ------------------------------------------------------------------ E09 forward log
+def e09_card(gh):
+    card = read(E09_CARD)
+    n_judged, last_day = re.search(r"first (\d+) judged trades .*? last wake on (\d{4}-\d{2}-\d{2})", card).groups()
+    started = re.search(r"Standing chore at every wake-up \(lead agent, (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) MT\): the E09 forward log", read(QUEUE))
+    what = re.search(r"^# E09: Forward log of rule 70-102, (.+)$", card, re.M)[1]
+    fixed = f"No profit figure before {n_judged} judged trades or {last_day}."
+    links = [["E09 card", gh + E09_CARD], ["Log counts", gh + E09_LOG]]
+    base = dict(id="e09", title="Forward log E09", date=None, links=links)
+    since = f"Live since {started[1]} MT" if started else "Start time not found in the queue page"
+    path = os.path.join(ROOT, E09_LOG)
+    log = json.load(open(path)) if os.path.exists(path) else None
+    if not log or not log.get("started"):
+        return dict(base, verdict="No signal yet", tone="unknown", basis="STATED by the E09 card and the queue page.",
+                    summary=f"Follows rule 70-102, {what}, forward on live prices with pretend money. {since}. No signal yet. {fixed}",
+                    numbers=[])
+    arm = log["arms"]["70-102"]
+    signals = sum(a["signals"] for a in log["arms"].values())
+    nums = [["Wake-ups recorded", str(log["recorded"])],
+            ["Signals, rule 70-102", str(arm["signals"])],
+            ["Signals, the two shown rules (71-013, 71-035)", str(signals - arm["signals"])],
+            [f"Judged trades, rule 70-102 (of {n_judged} needed)", str(arm["trades_judged_ok"])],
+            ["Counts written", mt(log["written_utc"])]]
+    if any(k not in log for k in ("recorded", "wakes_closed", "written_utc")) or arm["trades_judged_ok"] > arm["trades_closed"]:
+        raise ValueError("E09 card: the log counts do not fit")
+    return dict(base, verdict="Running" + (", no signal yet" if signals == 0 else ""), tone="unknown",
+                basis=f"MEASURED counts read from {os.path.basename(E09_LOG)}. Start time STATED in the queue page. Pretend money, no real account.",
+                summary=(f"Follows rule 70-102, {what}, forward on live prices with pretend money. {since}. "
+                         + ("No signal yet. " if signals == 0 else "") + fixed),
+                numbers=nums)
+
+
+# ------------------------------------------------------------------ Running now strip
+def first_sentence(text):
+    text = re.sub(r"\s*\((?:[^()]*`[^()]*)\)", "", text)                       # parentheses that only point at files
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text).replace("`", "").replace("**", "").strip()
+    m = re.search(r"(?<!\bal)(?<!\be\.g)(?<!\bi\.e)\.(?=\s+[A-Z(]|$)", text)
+    return (text[:m.start() + 1] if m else text.rstrip(".") + ".").strip()
+
+
+def running_now():
+    """Rows of the "Running now" table in docs/QUEUE.md: [row number, first sentence of What]."""
+    body = re.search(r"^## Running now[ \t]*\n(.*?)(?=^## |\Z)", read(QUEUE), re.M | re.S)
+    if not body:
+        raise ValueError("running strip: docs/QUEUE.md has no Running now section")
+    lines = [l for l in body[1].splitlines() if l.startswith("|")]
+    if len(lines) < 3 or [c.strip() for c in lines[0].strip("|").split("|")][:2] != ["#", "What"]:
+        raise ValueError("running strip: the Running now table no longer starts with # and What")
+    rows = []
+    for l in lines[2:]:
+        cells = [c.strip() for c in l.strip().strip("|").split("|")]
+        rows.append([cells[0], first_sentence(cells[1])])
+    return rows
+
+
+def cards(gh):
+    return [sweep_card(gh), plan73_card(gh), e09_card(gh)]

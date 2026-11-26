@@ -150,8 +150,35 @@
 
   // ---------- section 2 ----------
   var TONE_MARK = { fail: '\u00d7', mixed: '~', unknown: '?', info: 'i' };
+  // A small bar chart drawn in plain HTML, so it reads on a phone. Each bar has its value written beside it.
+  function barsHtml(b) {
+    var rows = b.rows || [];
+    var top = Math.max.apply(null, rows.map(function (r) { return Math.abs(r[1]); }).concat([1e-9]));
+    return '<figure class="hbars" aria-label="' + esc(b.label) + '"><figcaption class="meta">' + esc(b.label) + '</figcaption>' +
+      rows.map(function (r) {
+        var v = r[1], w = (Math.abs(v) / top * 50).toFixed(1);
+        var txt = (v < 0 ? '\u2212' : '+') + Math.abs(v).toFixed(1) + ' ' + esc(b.unit);
+        return '<div class="hbar"><span class="hbar-label">' + esc(r[0]) + '</span>' +
+          '<span class="hbar-track"><span class="hbar-zero" aria-hidden="true"></span><span class="hbar-fill ' + (v < 0 ? 'neg' : 'pos') + '" style="' +
+          (v < 0 ? 'right:50%' : 'left:50%') + ';width:' + w + '%"></span></span>' +
+          '<span class="hbar-val' + (v < 0 ? ' neg' : '') + '">' + txt + '</span></div>';
+      }).join('') + '</figure>';
+  }
+  function renderNewest(d) {
+    $('newest-list').innerHTML = (d.newest || []).map(testCard).join('');
+    layoutCards($('newest-list'));
+    var rows = d.running_now || [];
+    $('running-body').innerHTML = rows.length
+      ? '<ol class="running-list">' + rows.map(function (r) {
+          return '<li><span class="running-num">' + (r[0] === '-' ? 'No number' : 'Row ' + esc(r[0])) + '</span><span class="running-what">' + esc(mtStampsIn(r[1])) + '</span></li>';
+        }).join('') + '</ol>' + (d.running_link ? '<p class="links"><a href="' + esc(d.running_link) + '" target="_blank" rel="noopener">Open the queue page</a></p>' : '')
+      : '<p class="meta">Nothing is listed as running.</p>';
+  }
   function renderTests(d) {
-    $('tests-list').innerHTML = (d.tests || []).map(function (t) {
+    $('tests-list').innerHTML = (d.tests || []).map(testCard).join('');
+    layoutCards($('tests-list'));
+  }
+  function testCard(t) {
       var tone = t.tone || 'unknown';
       var nums = (t.numbers || []).length
         ? '<dl class="numlist">' + t.numbers.map(function (n) {
@@ -179,11 +206,12 @@
         '<span class="badge badge-' + esc(tone) + '"><span class="mark" aria-hidden="true">' + (TONE_MARK[tone] || '?') + '</span>' + esc(t.verdict) + '</span></div>' +
         (t.date ? '<p class="meta">Run ' + esc(t.date) + '</p>' : '') +
         '<p class="test-summary">' + esc(t.summary) + '</p>' +
-        nums + table + links +
+        nums + (t.bars ? barsHtml(t.bars) : '') + table + links +
         (t.basis ? '<p class="test-basis">' + esc(t.basis) + '</p>' : '') +
         '</article>';
-    }).join('');
-    var col = 0, cards = $('tests-list').children;
+  }
+  function layoutCards(list) {
+    var col = 0, cards = list.children;
     for (var i = 0; i < cards.length; i++) {
       var c = cards[i];
       if (c.classList.contains('test-wide')) { if (col === 1 && i > 0) cards[i - 1].classList.add('test-wide'); col = 0; continue; }
@@ -471,9 +499,11 @@
   function timeOf(s) { var t = Date.parse(s || ''); return isNaN(t) ? null : t; }
   // The owner reads Mountain Time. Stored stamps stay UTC; the screen converts them.
   var OWNER_ZONE = 'America/Boise';
+  // The owner asked for the label MT, not MST or MDT.
+  function mtLabel(s) { return String(s).replace(/\bM[SD]T\b/, 'MT'); }
   function mtText(t) {
     try {
-      return new Date(t).toLocaleString('en-US', { timeZone: OWNER_ZONE, year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+      return mtLabel(new Date(t).toLocaleString('en-US', { timeZone: OWNER_ZONE, year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }));
     } catch (e) { return new Date(t).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
   }
   // Turns 'YYYY-MM-DD HH:MM[:SS][ UTC]' (a UTC stamp) into Mountain Time. Anything else is returned as it is.
@@ -498,7 +528,7 @@
     var o = { timeZone: OWNER_ZONE, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
     if (d.getFullYear() !== now.getFullYear()) o.year = 'numeric';
     if (withZone !== false) o.timeZoneName = 'short';
-    try { return d.toLocaleString('en-US', o); } catch (e) { return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
+    try { return mtLabel(d.toLocaleString('en-US', o)); } catch (e) { return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
   }
   // A time in the owner's local time, with the UTC time in the title.
   function timeTag(s, fallback) {
@@ -1161,6 +1191,7 @@
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (d) {
         state.data = d;
+        try { renderNewest(d); } catch (e) { $('newest-list').innerHTML = '<p class="meta">The newest results could not be shown.</p>'; }
         renderScoreboard(d);
         initPractice(d);
         try { renderBelieved(d); } catch (e) { $('believed-body').innerHTML = '<p class="meta">The findings could not be shown.</p>'; }

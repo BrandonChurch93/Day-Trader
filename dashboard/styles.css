@@ -473,3 +473,26 @@ select {
   .tm-sum-name { min-width: 0; flex-basis: 100%; }
   .tm-why td.tm-wrap, .tm-why td.tm-reason { min-width: 0; max-width: none; grid-column: 1 / -1; }
 }
+
+/* Running now strip and the bar chart on the newest cards */
+.running-list { list-style: none; display: grid; gap: 6px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.running-list li { display: grid; grid-template-columns: 6.5em 1fr; gap: 10px; align-items: baseline; padding: 4px 0; border-top: 1px solid var(--grid); }
+.running-list li:first-child { border-top: 0; }
+.running-num { font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.running-what { overflow-wrap: anywhere; }
+.running .links { margin-top: 8px; }
+.hbars { display: grid; gap: 6px; margin: 12px 0 4px; }
+.hbar { display: grid; grid-template-columns: minmax(8em, 13em) 1fr 5.5em; gap: 8px; align-items: center; }
+.hbar-label { color: var(--muted); }
+.hbar-track { position: relative; height: 14px; background: var(--quiet); border-radius: 3px; }
+.hbar-zero { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
+.hbar-fill { position: absolute; top: 0; bottom: 0; }
+.hbar-fill.pos { background: var(--rule); border-radius: 0 3px 3px 0; }
+.hbar-fill.neg { background: var(--fail-fg); border-radius: 3px 0 0 3px; }
+.hbar-val { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 560px) {
+  .running-list li { grid-template-columns: 1fr; gap: 2px; }
+  .hbar { grid-template-columns: 1fr 5.5em; row-gap: 2px; }
+  .hbar-label { grid-column: 1 / -1; }
+}
+#newest-list .numlist dd { white-space: nowrap; text-align: right; }
