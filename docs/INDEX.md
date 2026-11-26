@@ -252,6 +252,9 @@ Working papers.
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
 | `research_rig/report_19.py` | Prints the Replay 19 result page from the saved JSON. Does not score or read market data | CURRENT |
 | `research_rig/PREREG_20_upbit_listing_short.md`, `research_rig/common_20.py`, `research_rig/score_20.py`, `research_rig/test_20.py`, `research_rig/stage_20.py` | Queue 29 source red-day Upbit short, ordinary-jump comparison, checksum-only staging, offline clock scan and made-up tests. Frozen, no real result | CURRENT |
+| `research_rig/PREREG_23_ipo_fast_track.md` | Frozen Queue 37 IPO fast-track index buying, ledger 160, eight marks. No bar collected or result | CURRENT |
+| `research_rig/common_23.py`, `research_rig/fetch_23.py`, `research_rig/score_23.py`, `research_rig/report_23.py`, `research_rig/calibrate_23.py`, `research_rig/test_23.py` | Replay 23 engine and approval gate, off-repo bar collector and freeze, one-shot scorer, page writer, planted-path calibration, invented-input fixtures | CURRENT |
+| `research_rig/PINNED_23.json` | Replay 23 frozen plan, code and config-block hashes read by the approval gate. No bars, breakpoints or prices | CURRENT |
 | `research_rig/PREREG_25_treasury_month_end.md` | Frozen Queue 41 Treasury ETF month-end window, ledger 162, nine marks. No data collected or result | CURRENT |
 | `research_rig/PREREG_24_same_coin_carry.md` | Frozen Queue 39 same-coin funding carry, ledger 161, five marks, reviewed off-repo metadata hashes. No real result | CURRENT |
 | `research_rig/common_24.py` | Replay 24 spot and perpetual event accounting, fees and matched controls | CURRENT |
