@@ -830,6 +830,9 @@ tm09:
       feed:
         repeat_jaccard_min: 0.8
         repeat_min_shared_tokens: 4
+        figure_max_chars: 64
+        figure_units: [hundred, thousand, million, billion, trillion, percent, bps, 'basis point', 'basis points', 'percentage point', 'percentage points', share, shares, 'per share', 'a share', dollars, euros, pounds, yen, rupees, USD, EUR, GBP, JPY, INR, day, days, week, weeks, month, months, year, years, barrels, tonnes, units]
+        paraphrase_block_run_tokens: 6
         title_token_pattern: '[^\W_]+'
         figure_fingerprint_pattern: '[+\-\u2212]?(?:[$€£¥₹][ \t]*)?[+\-\u2212]?\d+(?:[.,:/\u2013\u2014-]\d+)*(?:[ \t]?[%‰])?'
   status: proposed

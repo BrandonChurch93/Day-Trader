@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from timemachine.tm09_desk import Desk, PORTS, PUBLIC_SID, SID, initialize, seal, slot, store_new, verify_seal, weekly_benchmark
 from timemachine.tm09_fixture import compile_export, compile_weeks, encode, fingerprint, mondays, read_private, session_layout, settings, stage1_weeks
-from timemachine.tm09_blind import exact
+from timemachine.tm09_blind import exact, input_receipt, verify_stage2
 from timemachine.tm09_orders import BenchmarkUnavailable
 
 READY = 'Registered desk ready; brief only this session\'s roles.'
@@ -86,9 +86,8 @@ def approved(root, keyfile, approval, command, rehearsal=False):
         if (command == 'results' and mode == 'stage1') or (command == 'stage1-seal' and mode != 'stage1'):
             raise ValueError('release scope does not match the study stage')
         if not rehearsal and mode in ('A', 'B'):
-            report = json.loads(content(root / 'stage1-checked.json', body['blind_report_sha256']))
-            if report['decision'] != mode:
-                raise ValueError('Stage 2 mode differs from blinded decision')
+            verify_stage2(root, key, mode, body['blind_report_sha256'], body['config_sha256'],
+                          body['registration_sha256'], len(stage1_weeks(opts['study'])))
         opts['mode'] = mode
     return key, body, config, opts
 
@@ -362,6 +361,8 @@ def main():
 
             values = stage1_contrasts(weeks, options, load_boss)
             store_new(a.root / 'stage1-contrasts.json', values)
+            input_receipt(a.root, key, approval['release'], approval['config_sha256'], approval['registration_sha256'],
+                          sha256((encode(values) + '\n').encode()).hexdigest(), len(values))
             print('TM09 Stage 1 blinded handoff sealed; no values printed.')
             return
         if a.command == 'results':

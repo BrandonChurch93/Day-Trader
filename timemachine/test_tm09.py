@@ -175,12 +175,32 @@ class DeskTest(unittest.TestCase):
         items = week_pairs(fixture, feed, raw=raw)[when]
         self.assertEqual([i['repeat'] for i in items], [False, True, False])
         title = 'SYN issues −$4–6 million forecast on November 5, 2026, with a gain of 2%'
-        self.assertFalse(figure_check(title, ['−$4–6 million', 'November 5, 2026', '2%']))
-        self.assertTrue(figure_check('SYN hires eighty people', ['eighty']))
+        self.assertFalse(figure_check(title, ['−$4–6 million', 'November 5, 2026', '2%'], feed))
+        self.assertFalse(figure_check('SYN hires eighty people', ['eighty'], feed))
+        self.assertTrue(figure_check('SYN closes a quarter with new factory', [], feed))
         with self.assertRaises(ValueError):
-            figure_check(title, ['−$4–6', 'November 5, 2026', '2%'])
+            figure_check('SYN ships two widgets from factory', [], feed)
         with self.assertRaises(ValueError):
-            figure_check(title, ['−$4–6 million', '2%', 'November 5, 2026'])
+            figure_check(title, ['−$4–6', 'November 5, 2026', '2%'], feed)
+        with self.assertRaises(ValueError):
+            figure_check(title, ['−$4–6 million', '2%', 'November 5, 2026'], feed)
+
+    def test_news_refuses_prose_in_figures_and_consecutive_copies(self):
+        title = 'SYN confirms private widget supplier as revenue rises to $20 million after review'
+        raw = encode({**self.news[0], 'headline': title}).encode()
+        desk, token = self.init('news_scout', news_reader=lambda: raw)
+        packet = desk.handle(token, 'next')
+        desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': []})
+        packet = desk.handle(token, 'next')
+        note = scout_note(self.news[0]['stated_time'])
+        note.update(figures=['private widget supplier as revenue rises to $20 million'])
+        for changes in ({}, {'figures': ['$20 million'], 'paraphrase': 'SYN update: private widget supplier as revenue rises this week.'}):
+            with self.assertRaises(ValueError) as refused:
+                desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [{**note, **changes}]})
+            self.assertNotIn('private widget supplier', str(refused.exception))
+        note.update(figures=['$20 million'], paraphrase='The company confirmed a supplier and reported higher sales.')
+        self.assertTrue(desk.handle(token, 'notes', {'wake_key': packet['wake_key'], 'notes': [note]})['accepted'])
+        self.assertNotIn(b'private widget supplier', (desk.path / 'desk.sqlite').read_bytes())
 
     def test_reject_wrong_and_tampered_stream_or_token(self):
         p, n = self.scouts()
@@ -539,6 +559,8 @@ class BlindTest(unittest.TestCase):
                             config_sha256=sha256(read_private(CONFIG)).hexdigest(), registration_sha256=sha256(read_private(reg)).hexdigest(),
                             contrasts_path=str(contrasts), contrasts_sha256=sha256(read_private(contrasts)).hexdigest(), approved_by='synthetic')
                 store_new(approval, {'body': body, 'seal': seal(KEY, 'tm09-stage1-check-approval', body)})
+                tm09_blind.input_receipt(root, KEY, str(ROOT), body['config_sha256'], body['registration_sha256'],
+                                         body['contrasts_sha256'], 5)
                 before = set(root.iterdir())
                 argv = ['check', '--root', str(root), '--approval', str(approval), '--key-file', str(key),
                         '--registration', str(reg), '--config', str(CONFIG), '--contrasts', str(contrasts)]
@@ -557,11 +579,32 @@ class BlindTest(unittest.TestCase):
                 if reading == 'good':
                     self.assertEqual(set(json.loads(stdout.getvalue())), allowed)
                     self.assertEqual(set(json.loads((root / 'stage1-checked.json').read_text())), allowed)
+                    report_path = root / 'stage1-checked.json'
+                    mode = json.loads(read_private(report_path))['decision']
+                    with patch('timemachine.tm09_blind.read_private', wraps=read_private) as checked:
+                        tm09_blind.verify_stage2(root, KEY, mode, sha256(read_private(report_path)).hexdigest(),
+                                                 body['config_sha256'], body['registration_sha256'], 5)
+                        self.assertNotIn(contrasts, [c.args[0] for c in checked.call_args_list])
+                    with self.assertRaises(ValueError):
+                        tm09_blind.verify_stage2(root, KEY, 'A' if mode == 'B' else 'B', sha256(read_private(report_path)).hexdigest(),
+                                                 body['config_sha256'], body['registration_sha256'], 5)
                     with self.assertRaises(FileExistsError):
                         tm09_blind.run_approved(root, approval, key, reg, CONFIG, contrasts)
+                    (root / 'stage1-check.claim.json').write_text('{"approval_sha256":"changed"}')
+                    with self.assertRaises(ValueError):
+                        tm09_blind.verify_stage2(root, KEY, mode, sha256(read_private(report_path)).hexdigest(),
+                                                 body['config_sha256'], body['registration_sha256'], 5)
                 else:
                     self.assertFalse(stdout.getvalue())
                     self.assertEqual(len(new), 1)
+
+    def test_stage2_refuses_bare_decision(self):
+        with TemporaryDirectory() as test_root:
+            root = Path(test_root)
+            report = root / 'stage1-checked.json'
+            store_new(report, {'decision':'A'})
+            with self.assertRaises(FileNotFoundError):
+                tm09_blind.verify_stage2(root, KEY, 'A', sha256(read_private(report)).hexdigest(), '1'*64, '2'*64, 5)
 
 
 if __name__ == '__main__':

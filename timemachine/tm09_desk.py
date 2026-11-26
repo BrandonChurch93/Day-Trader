@@ -11,7 +11,7 @@ import sqlite3
 from zoneinfo import ZoneInfo
 
 from timemachine.tm09_fixture import encode, fingerprint as digest, project_headlines, read_private, session_layout, week_pairs
-from timemachine.tm09_feed import figure_check
+from timemachine.tm09_feed import copied_run, figure_check
 from timemachine.tm09_orders import SPARSE_REASONS, Minutes, benchmark, fill, number, terminal, weights
 
 SID = re.compile(r'TM09-[A-Za-z0-9_-]{1,72}\Z')
@@ -225,7 +225,7 @@ class Desk:
             return notes, 0
         raw = self.news_reader()
         items = week_pairs(self.fixture, self.feed, raw=raw, until=at)
-        copies = [text_words(pair['headline']) for group in items.values() for pair in group]
+        headlines = [pair['headline'] for group in items.values() for pair in group]
         seen, undecided = set(), 0
         for note in notes:
             if (not isinstance(note, dict) or set(note) != {'symbol', 'source_time', 'repeat', 'has_number', 'figures', 'paraphrase'}
@@ -236,14 +236,14 @@ class Desk:
                     or not isinstance(note['paraphrase'], str) or len(encode(note)) > self.options['note_chars']):
                 raise ValueError('invalid structured news note')
             clean = text_words(note['paraphrase'])
-            if not clean or any(t and f' {t} ' in f' {clean} ' for t in copies):
+            if not clean or copied_run(note['paraphrase'], headlines, self.feed):
                 raise ValueError('headline copy refused')
             matches = []
             for i, pair in enumerate(items[at]):
                 if i in seen or any(note[k] != pair[k] for k in ('symbol', 'source_time', 'repeat')):
                     continue
                 try:
-                    uncertainty = figure_check(pair['headline'], note['figures'])
+                    uncertainty = figure_check(pair['headline'], note['figures'], self.feed)
                 except ValueError:
                     continue
                 matches.append((uncertainty, i))

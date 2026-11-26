@@ -6,10 +6,61 @@ from hashlib import sha256
 import json
 from pathlib import Path
 
-from timemachine.tm09_desk import store_new, verify_seal
-from timemachine.tm09_fixture import read_private, session_layout, settings, stage1_weeks
+from timemachine.tm09_desk import seal, store_new, verify_seal
+from timemachine.tm09_fixture import encode, read_private, session_layout, settings, stage1_weeks
 
-DEPS = ('tm09_desk.py', 'tm09_fixture.py', 'tm09_orders.py', 'tm09_feed.py')
+DEPS = ('tm09_desk.py', 'tm09_fixture.py', 'tm09_orders.py', 'tm09_feed.py', 'tm09_operator.py',
+        'tm09_isolation_probe.py', 'score_tm09.py', 'TM09_WORKER_BRIEFS.md')
+OUTPUT = frozenset(('placebo_sd_bps', 'primary_sd_a_bps', 'primary_sd_b_bps', 'edge_a_bps', 'edge_b_bps', 'decision'))
+
+
+def sha(raw):
+    return sha256(raw).hexdigest()
+
+
+def release_identity(config_sha256, registration_sha256):
+    running = Path(__file__).resolve()
+    return dict(release=str(running.parent.parent), checker_sha256=sha(read_private(running)),
+                dependency_sha256={name: sha(read_private(running.parent / name)) for name in DEPS},
+                config_sha256=config_sha256, registration_sha256=registration_sha256)
+
+
+def input_receipt(root, key, release, config_sha256, registration_sha256, input_sha256, count):
+    body = dict(root=str(root), release=release, config_sha256=config_sha256, registration_sha256=registration_sha256,
+                contrasts_sha256=input_sha256, weeks=count, mode='stage1')
+    store_new(root / 'stage1-input.receipt.json', {'body': body, 'seal': seal(key, 'tm09-stage1-input', body)})
+
+
+def verify_input_receipt(root, key, identity, input_sha256, count):
+    raw = read_private(root / 'stage1-input.receipt.json')
+    signed = json.loads(raw)
+    body = signed['body']
+    verify_seal(key, 'tm09-stage1-input', body, signed['seal'])
+    if body != dict(root=str(root), release=identity['release'], config_sha256=identity['config_sha256'],
+                    registration_sha256=identity['registration_sha256'], contrasts_sha256=input_sha256,
+                    weeks=count, mode='stage1'):
+        raise ValueError('Stage 1 contrast provenance refused')
+    return sha(raw)
+
+
+def verify_stage2(root, key, mode, report_pin, config_sha256, registration_sha256, count):
+    if mode not in ('A', 'B'):
+        raise ValueError('invalid Stage 2 branch')
+    signed = json.loads(read_private(root / 'stage1-check.receipt.json'))
+    body = signed['body']
+    verify_seal(key, 'tm09-stage1-check-provenance', body, signed['seal'])
+    identity = release_identity(config_sha256, registration_sha256)
+    report_raw = read_private(root / 'stage1-checked.json')
+    report = json.loads(report_raw)
+    claim_raw = read_private(root / 'stage1-check.claim.json')
+    claim = json.loads(claim_raw)
+    if (body['root'] != str(root) or body['checker_sha256'] != identity['checker_sha256']
+            or body['release_sha256'] != sha(encode(identity).encode())
+            or body['report_sha256'] != report_pin or sha(report_raw) != report_pin
+            or set(report) != OUTPUT or body['decision'] != mode or report['decision'] != mode
+            or body['claim_sha256'] != sha(claim_raw) or claim.get('approval_sha256') != body['approval_sha256']
+            or body['input_receipt_sha256'] != verify_input_receipt(root, key, identity, body['contrasts_sha256'], count)):
+        raise ValueError('Stage 2 checker provenance refused')
 
 
 def exact(x):
@@ -60,25 +111,31 @@ def run_approved(root, approval, key_file, registration, config, contrasts):
     decision = capsule['body']
     key = read_private(key_file).decode().strip()
     verify_seal(key, 'tm09-stage1-check-approval', decision, capsule['seal'])
-    running = Path(__file__).resolve()
     cfg = read_private(config)
     study = settings(cfg)['study']
+    identity = release_identity(sha(cfg), sha(read_private(registration)))
     if (decision['scope'] != 'ledger-222-check-stage1-once' or decision['root'] != str(root)
-            or decision['release'] != str(running.parent.parent)
-            or decision['checker_sha256'] != sha256(read_private(running)).hexdigest()
-            or decision['dependency_sha256'] != {name: sha256(read_private(running.parent / name)).hexdigest() for name in DEPS}
-            or decision['config_sha256'] != sha256(cfg).hexdigest()
-            or decision['registration_sha256'] != sha256(read_private(registration)).hexdigest()
+            or any(decision[k] != v for k, v in identity.items())
             or decision['contrasts_path'] != str(contrasts)
             or contrasts != root / 'stage1-contrasts.json'
             or not isinstance(decision['approved_by'], str) or not decision['approved_by'].strip()):
         raise ValueError('lead blinded-check approval required')
-    store_new(root / 'stage1-check.claim.json', {'approval_sha256': sha256(json.dumps(capsule, sort_keys=True).encode()).hexdigest()})
+    input_pin = decision['contrasts_sha256']
+    source_proof = verify_input_receipt(root, key, identity, input_pin, len(stage1_weeks(study)))
+    approval_pin = sha(encode(capsule).encode())
+    claim_path = root / 'stage1-check.claim.json'
+    store_new(claim_path, {'approval_sha256': approval_pin})
     raw = read_private(contrasts)
-    if sha256(raw).hexdigest() != decision['contrasts_sha256']:
+    if sha(raw) != input_pin:
         raise ValueError('sealed blinded input changed')
     report = calculate(study, json.loads(raw, parse_float=Decimal))
-    store_new(root / 'stage1-checked.json', report)
+    report_path = root / 'stage1-checked.json'
+    store_new(report_path, report)
+    proof = dict(root=str(root), decision=report['decision'], contrasts_sha256=input_pin, approval_sha256=approval_pin,
+                 checker_sha256=identity['checker_sha256'], release_sha256=sha(encode(identity).encode()),
+                 claim_sha256=sha(read_private(claim_path)), report_sha256=sha(read_private(report_path)),
+                 input_receipt_sha256=source_proof)
+    store_new(root / 'stage1-check.receipt.json', {'body': proof, 'seal': seal(key, 'tm09-stage1-check-provenance', proof)})
     return report
 
 
