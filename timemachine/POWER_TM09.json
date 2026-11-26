@@ -1,0 +1,739 @@
+{
+  "coins": {
+    "tm01_vs_tm02_near_comparison": {
+      "by_model": {
+        "Claude Opus 5.5": {
+          "implied_weekly_rms_gap_bp": 115.75923255031526,
+          "matched_months": 5
+        },
+        "Claude Sonnet 5.5": {
+          "implied_weekly_rms_gap_bp": 205.41639999316783,
+          "matched_months": 5
+        },
+        "GPT-6.2 Sol": {
+          "implied_weekly_rms_gap_bp": 75.15675229972818,
+          "matched_months": 5
+        },
+        "Gemini Neon": {
+          "implied_weekly_rms_gap_bp": 194.14143209802188,
+          "matched_months": 5
+        },
+        "Grok 4.7": {
+          "implied_weekly_rms_gap_bp": 99.05929776326958,
+          "matched_months": 5
+        },
+        "Kimi K3": {
+          "implied_weekly_rms_gap_bp": 139.91060076341574,
+          "matched_months": 5
+        }
+      },
+      "implied_weekly_rms_bp": 146.2436614349699,
+      "observed_week_pairs": 0,
+      "pair_months": 30
+    },
+    "tm06_swing_across_models_not_repeats": {
+      "centered_pooled_weekly_sd_bp": 278.97686953655455,
+      "different_model_pairs": 21,
+      "models": 7,
+      "pair_weeks": 84,
+      "unique_weeks": 4
+    },
+    "tm06r_fable": {
+      "by_run_pair_implied_weekly_bp": {
+        "g1_vs_g2": 623.9598421402644,
+        "g1_vs_g3": 430.55179389204903,
+        "g2_vs_g3": 361.35360752596927
+      },
+      "elapsed_weeks_by_month": [
+        4.285714285714286,
+        4.428571428571429,
+        4.285714285714286,
+        4.428571428571429,
+        4.428571428571429,
+        4.285714285714286,
+        4.428571428571429,
+        3.2857142857142856
+      ],
+      "full_run_pairings": 3,
+      "implied_weekly_rms_bp": 484.8632664643361,
+      "matched_months": 8,
+      "model": "Claude Fable 5.2",
+      "observed_week_pairs": 0,
+      "pair_months": 24,
+      "sessions": 24
+    }
+  },
+  "inventory": {
+    "duplicate_index_ids_by_plan": {
+      "TM03": 1,
+      "TM06": 72
+    },
+    "matched_model_exact_windows_across_families": {
+      "TM01 vs TM02": 30,
+      "TM01 vs TM03": 30,
+      "TM01 vs TM06-P": 24,
+      "TM02 vs TM03": 30,
+      "TM02 vs TM06-P": 24,
+      "TM03 vs TM06-P": 42,
+      "TM06-P vs TM06-R": 8
+    },
+    "scored_sessions_by_family": {
+      "TM01": [
+        "TM01-B01-GROK-2026-07",
+        "TM01-B01-GROK-2026-08",
+        "TM01-B01-GROK-2026-09",
+        "TM01-B01-GROK-2026-10",
+        "TM01-B01-GROK-2026-11",
+        "TM01-B01-KIMI-2026-07",
+        "TM01-B01-KIMI-2026-08",
+        "TM01-B01-KIMI-2026-09",
+        "TM01-B01-KIMI-2026-10",
+        "TM01-B01-KIMI-2026-11",
+        "TM01-B01-NEON-2026-07",
+        "TM01-B01-NEON-2026-08",
+        "TM01-B01-NEON-2026-09",
+        "TM01-B01-NEON-2026-10",
+        "TM01-B01-NEON-2026-11",
+        "TM01-B01-OPUS-2026-07",
+        "TM01-B01-OPUS-2026-08",
+        "TM01-B01-OPUS-2026-09",
+        "TM01-B01-OPUS-2026-10",
+        "TM01-B01-OPUS-2026-11",
+        "TM01-B01-SOL-2026-07",
+        "TM01-B01-SOL-2026-08",
+        "TM01-B01-SOL-2026-09",
+        "TM01-B01-SOL-2026-10",
+        "TM01-B01-SOL-2026-11",
+        "TM01-B01-SONNET-2026-07",
+        "TM01-B01-SONNET-2026-08",
+        "TM01-B01-SONNET-2026-09",
+        "TM01-B01-SONNET-2026-10",
+        "TM01-B01-SONNET-2026-11"
+      ],
+      "TM02": [
+        "TM02-B02-GROK-2026-07",
+        "TM02-B02-GROK-2026-08",
+        "TM02-B02-GROK-2026-09",
+        "TM02-B02-GROK-2026-10",
+        "TM02-B02-GROK-2026-11",
+        "TM02-B02-KIMI-2026-07",
+        "TM02-B02-KIMI-2026-08",
+        "TM02-B02-KIMI-2026-09",
+        "TM02-B02-KIMI-2026-10",
+        "TM02-B02-KIMI-2026-11",
+        "TM02-B02-NEON-2026-07",
+        "TM02-B02-NEON-2026-08",
+        "TM02-B02-NEON-2026-09",
+        "TM02-B02-NEON-2026-10",
+        "TM02-B02-NEON-2026-11",
+        "TM02-B02-OPUS-2026-07",
+        "TM02-B02-OPUS-2026-08",
+        "TM02-B02-OPUS-2026-09",
+        "TM02-B02-OPUS-2026-10",
+        "TM02-B02-OPUS-2026-11",
+        "TM02-B02-SOL-2026-07",
+        "TM02-B02-SOL-2026-08",
+        "TM02-B02-SOL-2026-09",
+        "TM02-B02-SOL-2026-10",
+        "TM02-B02-SOL-2026-11",
+        "TM02-B02-SONNET-2026-07",
+        "TM02-B02-SONNET-2026-08",
+        "TM02-B02-SONNET-2026-09",
+        "TM02-B02-SONNET-2026-10",
+        "TM02-B02-SONNET-2026-11"
+      ],
+      "TM03": [
+        "TM03-D01-GROK-2026-04",
+        "TM03-D01-GROK-2026-05",
+        "TM03-D01-GROK-2026-06",
+        "TM03-D01-GROK-2026-07",
+        "TM03-D01-GROK-2026-08",
+        "TM03-D01-GROK-2026-09",
+        "TM03-D01-GROK-2026-10",
+        "TM03-D01-GROK-2026-11",
+        "TM03-D01-KIMI-2026-04",
+        "TM03-D01-KIMI-2026-05",
+        "TM03-D01-KIMI-2026-06",
+        "TM03-D01-KIMI-2026-07",
+        "TM03-D01-KIMI-2026-08",
+        "TM03-D01-KIMI-2026-09",
+        "TM03-D01-KIMI-2026-10",
+        "TM03-D01-KIMI-2026-11",
+        "TM03-D01-NEON-2026-04",
+        "TM03-D01-NEON-2026-05",
+        "TM03-D01-NEON-2026-06",
+        "TM03-D01-NEON-2026-07",
+        "TM03-D01-NEON-2026-08",
+        "TM03-D01-NEON-2026-09",
+        "TM03-D01-NEON-2026-10",
+        "TM03-D01-NEON-2026-11",
+        "TM03-D01-OPUS-2026-04",
+        "TM03-D01-OPUS-2026-05",
+        "TM03-D01-OPUS-2026-06",
+        "TM03-D01-OPUS-2026-07",
+        "TM03-D01-OPUS-2026-08",
+        "TM03-D01-OPUS-2026-09",
+        "TM03-D01-OPUS-2026-10",
+        "TM03-D01-OPUS-2026-11",
+        "TM03-D01-SOL-2026-04",
+        "TM03-D01-SOL-2026-05",
+        "TM03-D01-SOL-2026-06",
+        "TM03-D01-SOL-2026-07",
+        "TM03-D01-SOL-2026-08",
+        "TM03-D01-SOL-2026-09",
+        "TM03-D01-SOL-2026-10",
+        "TM03-D01-SOL-2026-11",
+        "TM03-D01-SONNET-2026-04",
+        "TM03-D01-SONNET-2026-05",
+        "TM03-D01-SONNET-2026-06",
+        "TM03-D01-SONNET-2026-07",
+        "TM03-D01-SONNET-2026-08",
+        "TM03-D01-SONNET-2026-09",
+        "TM03-D01-SONNET-2026-10",
+        "TM03-D01-SONNET-2026-11"
+      ],
+      "TM04": [
+        "TM04-D02-GROK-r1",
+        "TM04-D02-GROK-r2",
+        "TM04-D02-KIMI-r1",
+        "TM04-D02-KIMI-r2",
+        "TM04-D02-NEON-r1",
+        "TM04-D02-NEON-r2",
+        "TM04-D02-OPUS-r1",
+        "TM04-D02-OPUS-r2",
+        "TM04-D02-SOL-r1",
+        "TM04-D02-SOL-r2",
+        "TM04-D02-SONNET-r1",
+        "TM04-D02-SONNET-r2"
+      ],
+      "TM06-P": [
+        "TM06-P-a-2026-04",
+        "TM06-P-a-2026-05",
+        "TM06-P-a-2026-06",
+        "TM06-P-a-2026-07",
+        "TM06-P-a-2026-08",
+        "TM06-P-a-2026-09",
+        "TM06-P-a-2026-10",
+        "TM06-P-a-2026-11",
+        "TM06-P-b-2026-04",
+        "TM06-P-b-2026-05",
+        "TM06-P-b-2026-06",
+        "TM06-P-b-2026-07",
+        "TM06-P-b-2026-08",
+        "TM06-P-b-2026-09",
+        "TM06-P-b-2026-10",
+        "TM06-P-b-2026-11",
+        "TM06-P-c-2026-04",
+        "TM06-P-c-2026-05",
+        "TM06-P-c-2026-06",
+        "TM06-P-c-2026-07",
+        "TM06-P-c-2026-08",
+        "TM06-P-c-2026-09",
+        "TM06-P-c-2026-10",
+        "TM06-P-c-2026-11",
+        "TM06-P-d-2026-04",
+        "TM06-P-d-2026-05",
+        "TM06-P-d-2026-06",
+        "TM06-P-d-2026-07",
+        "TM06-P-d-2026-08",
+        "TM06-P-d-2026-09",
+        "TM06-P-d-2026-10",
+        "TM06-P-d-2026-11",
+        "TM06-P-e-2026-04",
+        "TM06-P-e-2026-05",
+        "TM06-P-e-2026-06",
+        "TM06-P-e-2026-07",
+        "TM06-P-e-2026-08",
+        "TM06-P-e-2026-09",
+        "TM06-P-e-2026-10",
+        "TM06-P-e-2026-11",
+        "TM06-P-f-2026-04",
+        "TM06-P-f-2026-05",
+        "TM06-P-f-2026-06",
+        "TM06-P-f-2026-07",
+        "TM06-P-f-2026-08",
+        "TM06-P-f-2026-09",
+        "TM06-P-f-2026-10",
+        "TM06-P-f-2026-11",
+        "TM06-P-g-2026-04",
+        "TM06-P-g-2026-05",
+        "TM06-P-g-2026-06",
+        "TM06-P-g-2026-07",
+        "TM06-P-g-2026-08",
+        "TM06-P-g-2026-09",
+        "TM06-P-g-2026-10",
+        "TM06-P-g-2026-11"
+      ],
+      "TM06-R": [
+        "TM06-P-g2-2026-04",
+        "TM06-P-g2-2026-05",
+        "TM06-P-g2-2026-06",
+        "TM06-P-g2-2026-07",
+        "TM06-P-g2-2026-08",
+        "TM06-P-g2-2026-09",
+        "TM06-P-g2-2026-10",
+        "TM06-P-g2-2026-11",
+        "TM06-P-g3-2026-04",
+        "TM06-P-g3-2026-05",
+        "TM06-P-g3-2026-06",
+        "TM06-P-g3-2026-07",
+        "TM06-P-g3-2026-08",
+        "TM06-P-g3-2026-09",
+        "TM06-P-g3-2026-10",
+        "TM06-P-g3-2026-11"
+      ],
+      "TM06-S": [
+        "TM06-S-a-w1",
+        "TM06-S-a-w2",
+        "TM06-S-a-w3",
+        "TM06-S-a-w4",
+        "TM06-S-b-w1",
+        "TM06-S-b-w2",
+        "TM06-S-b-w3",
+        "TM06-S-b-w4",
+        "TM06-S-c-w1",
+        "TM06-S-c-w2",
+        "TM06-S-c-w3",
+        "TM06-S-c-w4",
+        "TM06-S-d-w1",
+        "TM06-S-d-w2",
+        "TM06-S-d-w3",
+        "TM06-S-d-w4",
+        "TM06-S-e-w1",
+        "TM06-S-e-w2",
+        "TM06-S-e-w3",
+        "TM06-S-e-w4",
+        "TM06-S-f-w1",
+        "TM06-S-f-w2",
+        "TM06-S-f-w3",
+        "TM06-S-f-w4",
+        "TM06-S-g-w1",
+        "TM06-S-g-w2",
+        "TM06-S-g-w3",
+        "TM06-S-g-w4"
+      ],
+      "TM06-control": [
+        "TM06-0-control"
+      ]
+    },
+    "tm05_indexed": 0,
+    "tm06_fees_leverage_and_twins": "same saved decisions / controls, not fresh matching model sessions"
+  },
+  "made_by": "research_rig/power_tm09.py",
+  "power": {
+    "blind_projected_target_bp": 50,
+    "blind_weeks": 5,
+    "boss_sessions_baseline": 120,
+    "boss_sessions_three_each": 240,
+    "cases": {
+      "central": {
+        "base_fat_tail_t5": {
+          "bp_for_80pct": 40.66559894130062,
+          "power_at_100_bp": 0.9992166666666666,
+          "power_at_20_bp": 0.258725,
+          "power_at_50_bp": 0.9206833333333333,
+          "power_at_zero": 0.010583333333333333
+        },
+        "base_normal": {
+          "bp_for_80pct": 41.297486379238755,
+          "power_at_100_bp": 1.0,
+          "power_at_20_bp": 0.226225,
+          "power_at_50_bp": 0.930775,
+          "power_at_zero": 0.01235
+        },
+        "base_shared_news_and_boss_noise": {
+          "bp_for_80pct": 65.29705929908732,
+          "power_at_100_bp": 0.9932583333333334,
+          "power_at_20_bp": 0.0967,
+          "power_at_50_bp": 0.5478333333333333,
+          "power_at_zero": 0.01235
+        },
+        "blinded_adaptive_normal": {
+          "bp_for_80pct": 39.68137543361499,
+          "expand": 0.20055,
+          "power_at_100_bp": 0.9897416666666666,
+          "power_at_20_bp": 0.27871666666666667,
+          "power_at_50_bp": 0.9348333333333333,
+          "power_at_zero": 0.012216666666666667,
+          "proceed_baseline": 0.7891916666666666,
+          "stop": 0.010258333333333333
+        },
+        "estimate_primary_sd_bp": 55.96044234713283,
+        "inferred_repeat_gap_sd_bp": 91.38301968727419,
+        "scoring_or_news_subset_assumed_sd_scaling": {
+          "0.5": {
+            "bp_for_80pct": 20.648743189619378,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.7713416666666667,
+            "power_at_50_bp": 1.0,
+            "power_at_zero": 0.01235
+          },
+          "0.75": {
+            "bp_for_80pct": 30.97311478442906,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.4008083333333333,
+            "power_at_50_bp": 0.9965333333333334,
+            "power_at_zero": 0.01235
+          },
+          "1": {
+            "bp_for_80pct": 41.297486379238755,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.226225,
+            "power_at_50_bp": 0.930775,
+            "power_at_zero": 0.01235
+          },
+          "1.25": {
+            "bp_for_80pct": 51.62185797404844,
+            "power_at_100_bp": 0.9999,
+            "power_at_20_bp": 0.146825,
+            "power_at_50_bp": 0.7713416666666667,
+            "power_at_zero": 0.01235
+          }
+        },
+        "three_each_fat_tail_t5": {
+          "bp_for_80pct": 27.110399294200413,
+          "power_at_100_bp": 0.9998583333333333,
+          "power_at_20_bp": 0.5423666666666667,
+          "power_at_50_bp": 0.9939916666666667,
+          "power_at_zero": 0.010583333333333333
+        },
+        "three_each_normal": {
+          "bp_for_80pct": 27.531657586159167,
+          "power_at_100_bp": 1.0,
+          "power_at_20_bp": 0.49935833333333335,
+          "power_at_50_bp": 0.9996166666666667,
+          "power_at_zero": 0.01235
+        },
+        "three_each_shared_news_and_boss_noise": {
+          "bp_for_80pct": 53.31482566233977,
+          "power_at_100_bp": 0.999775,
+          "power_at_20_bp": 0.13799166666666668,
+          "power_at_50_bp": 0.7409083333333333,
+          "power_at_zero": 0.01235
+        }
+      },
+      "high": {
+        "base_fat_tail_t5": {
+          "bp_for_80pct": 50.521354679261755,
+          "power_at_100_bp": 0.9966333333333334,
+          "power_at_20_bp": 0.17075833333333335,
+          "power_at_50_bp": 0.7917083333333333,
+          "power_at_zero": 0.010583333333333333
+        },
+        "base_normal": {
+          "bp_for_80pct": 51.30638699651652,
+          "power_at_100_bp": 0.9999083333333333,
+          "power_at_20_bp": 0.14839166666666667,
+          "power_at_50_bp": 0.7767166666666667,
+          "power_at_zero": 0.01235
+        },
+        "base_shared_news_and_boss_noise": {
+          "bp_for_80pct": 81.12252071151882,
+          "power_at_100_bp": 0.939325,
+          "power_at_20_bp": 0.06926666666666667,
+          "power_at_50_bp": 0.36725,
+          "power_at_zero": 0.01235
+        },
+        "blinded_adaptive_normal": {
+          "bp_for_80pct": 50.314488493366895,
+          "expand": 0.3614833333333333,
+          "power_at_100_bp": 0.9265166666666667,
+          "power_at_20_bp": 0.20271666666666666,
+          "power_at_50_bp": 0.7961416666666666,
+          "power_at_zero": 0.011433333333333334,
+          "proceed_baseline": 0.5651,
+          "stop": 0.07341666666666667
+        },
+        "estimate_primary_sd_bp": 69.52307182070128,
+        "inferred_repeat_gap_sd_bp": 113.53070087439066,
+        "scoring_or_news_subset_assumed_sd_scaling": {
+          "0.5": {
+            "bp_for_80pct": 25.65319349825826,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.5639916666666667,
+            "power_at_50_bp": 0.9999083333333333,
+            "power_at_zero": 0.01235
+          },
+          "0.75": {
+            "bp_for_80pct": 38.47979024738739,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.2609666666666667,
+            "power_at_50_bp": 0.9601916666666667,
+            "power_at_zero": 0.01235
+          },
+          "1": {
+            "bp_for_80pct": 51.30638699651652,
+            "power_at_100_bp": 0.9999083333333333,
+            "power_at_20_bp": 0.14839166666666667,
+            "power_at_50_bp": 0.7767166666666667,
+            "power_at_zero": 0.01235
+          },
+          "1.25": {
+            "bp_for_80pct": 64.13298374564565,
+            "power_at_100_bp": 0.9946166666666667,
+            "power_at_20_bp": 0.099425,
+            "power_at_50_bp": 0.5639916666666667,
+            "power_at_zero": 0.01235
+          }
+        },
+        "three_each_fat_tail_t5": {
+          "bp_for_80pct": 33.68090311950784,
+          "power_at_100_bp": 0.9997,
+          "power_at_20_bp": 0.37256666666666666,
+          "power_at_50_bp": 0.9740916666666667,
+          "power_at_zero": 0.010583333333333333
+        },
+        "three_each_normal": {
+          "bp_for_80pct": 34.20425799767768,
+          "power_at_100_bp": 1.0,
+          "power_at_20_bp": 0.33043333333333336,
+          "power_at_50_bp": 0.9878,
+          "power_at_zero": 0.01235
+        },
+        "three_each_shared_news_and_boss_noise": {
+          "bp_for_80pct": 66.23626079719375,
+          "power_at_100_bp": 0.9919416666666667,
+          "power_at_20_bp": 0.09443333333333333,
+          "power_at_50_bp": 0.5345333333333333,
+          "power_at_zero": 0.01235
+        }
+      },
+      "low": {
+        "base_fat_tail_t5": {
+          "bp_for_80pct": 28.67182892155867,
+          "power_at_100_bp": 0.999825,
+          "power_at_20_bp": 0.4950333333333333,
+          "power_at_50_bp": 0.9914166666666666,
+          "power_at_zero": 0.010583333333333333
+        },
+        "base_normal": {
+          "bp_for_80pct": 29.11734968087162,
+          "power_at_100_bp": 1.0,
+          "power_at_20_bp": 0.4504416666666667,
+          "power_at_50_bp": 0.998825,
+          "power_at_zero": 0.01235
+        },
+        "base_shared_news_and_boss_noise": {
+          "bp_for_80pct": 46.03857220956561,
+          "power_at_100_bp": 0.9999916666666666,
+          "power_at_20_bp": 0.18264166666666667,
+          "power_at_50_bp": 0.8646,
+          "power_at_zero": 0.01235
+        },
+        "blinded_adaptive_normal": {
+          "bp_for_80pct": 28.998389291650504,
+          "expand": 0.018708333333333334,
+          "power_at_100_bp": 0.999975,
+          "power_at_20_bp": 0.45765833333333333,
+          "power_at_50_bp": 0.9988166666666667,
+          "power_at_zero": 0.01235,
+          "proceed_baseline": 0.9812666666666666,
+          "stop": 2.5e-05
+        },
+        "estimate_primary_sd_bp": 39.45566452046514,
+        "inferred_repeat_gap_sd_bp": 64.43083035838235,
+        "scoring_or_news_subset_assumed_sd_scaling": {
+          "0.5": {
+            "bp_for_80pct": 14.55867484043581,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.9761083333333334,
+            "power_at_50_bp": 1.0,
+            "power_at_zero": 0.01235
+          },
+          "0.75": {
+            "bp_for_80pct": 21.838012260653713,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.7183833333333334,
+            "power_at_50_bp": 1.0,
+            "power_at_zero": 0.01235
+          },
+          "1": {
+            "bp_for_80pct": 29.11734968087162,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.4504416666666667,
+            "power_at_50_bp": 0.998825,
+            "power_at_zero": 0.01235
+          },
+          "1.25": {
+            "bp_for_80pct": 36.396687101089526,
+            "power_at_100_bp": 1.0,
+            "power_at_20_bp": 0.29141666666666666,
+            "power_at_50_bp": 0.9761083333333334,
+            "power_at_zero": 0.01235
+          }
+        },
+        "three_each_fat_tail_t5": {
+          "bp_for_80pct": 19.11455261437245,
+          "power_at_100_bp": 0.9999583333333333,
+          "power_at_20_bp": 0.8322916666666667,
+          "power_at_50_bp": 0.99945,
+          "power_at_zero": 0.010583333333333333
+        },
+        "three_each_normal": {
+          "bp_for_80pct": 19.411566453914414,
+          "power_at_100_bp": 1.0,
+          "power_at_20_bp": 0.824775,
+          "power_at_50_bp": 1.0,
+          "power_at_zero": 0.01235
+        },
+        "three_each_shared_news_and_boss_noise": {
+          "bp_for_80pct": 37.59033679990454,
+          "power_at_100_bp": 1.0,
+          "power_at_20_bp": 0.2734,
+          "power_at_50_bp": 0.967625,
+          "power_at_zero": 0.01235
+        }
+      }
+    },
+    "effects_bp": [
+      20,
+      50,
+      100
+    ],
+    "max_primary_sd_for_80pct_at_20_bp": 27.101006010062736,
+    "positive_weeks_min": 12,
+    "primary_t_min": 2.43,
+    "rehearsals": {
+      "0.9": {
+        "min_weeks_by_factor": {
+          "1.5": {
+            "boss_sessions": 56,
+            "interval_in_units_of_sample_sd": [
+              0.7624581992227053,
+              1.4854064551529886
+            ],
+            "weeks": 14
+          },
+          "2": {
+            "boss_sessions": 28,
+            "interval_in_units_of_sample_sd": [
+              0.6902960459318207,
+              1.915428300198184
+            ],
+            "weeks": 7
+          }
+        },
+        "multipliers_at_five_weeks": [
+          0.6493051673855675,
+          2.372355691409756
+        ]
+      },
+      "0.95": {
+        "min_weeks_by_factor": {
+          "1.5": {
+            "boss_sessions": 72,
+            "interval_in_units_of_sample_sd": [
+              0.7503875951592378,
+              1.499143990154207
+            ],
+            "weeks": 18
+          },
+          "2": {
+            "boss_sessions": 36,
+            "interval_in_units_of_sample_sd": [
+              0.6754570344012019,
+              1.9157708829427615
+            ],
+            "weeks": 9
+          }
+        },
+        "multipliers_at_five_weeks": [
+          0.5991331391341409,
+          2.873555634078218
+        ]
+      }
+    },
+    "seed": 22209,
+    "simulations": 120000,
+    "weeks": 20
+  },
+  "stocks": {
+    "observed_week_pairs": 0,
+    "pooled_whole_run_pairs": 6,
+    "weekly_repeat_sd_inference": {
+      "central": 91.38301968727419,
+      "high": 113.53070087439066,
+      "low": 64.43083035838235
+    },
+    "within_model": {
+      "Claude Opus 5.5": {
+        "final_gap_usd": -29.93,
+        "implied_weekly_bp_one_draw": 64.43083035838235,
+        "observed_week_pairs": 0,
+        "scored_pairs": 1,
+        "session_ids": [
+          "TM04-D02-OPUS-r1",
+          "TM04-D02-OPUS-r2"
+        ],
+        "terminal_log_gap_bp": -315.6453161637211,
+        "wakes": 25,
+        "weeks_assumed": 24.0
+      },
+      "Claude Sonnet 5.5": {
+        "final_gap_usd": 51.27,
+        "implied_weekly_bp_one_draw": 113.53070087439066,
+        "observed_week_pairs": 0,
+        "scored_pairs": 1,
+        "session_ids": [
+          "TM04-D02-SONNET-r1",
+          "TM04-D02-SONNET-r2"
+        ],
+        "terminal_log_gap_bp": 556.1845745656102,
+        "wakes": 25,
+        "weeks_assumed": 24.0
+      },
+      "GPT-6.2 Sol": {
+        "final_gap_usd": -35.13,
+        "implied_weekly_bp_one_draw": 70.6767664987073,
+        "observed_week_pairs": 0,
+        "scored_pairs": 1,
+        "session_ids": [
+          "TM04-D02-SOL-r1",
+          "TM04-D02-SOL-r2"
+        ],
+        "terminal_log_gap_bp": -346.2440291833305,
+        "wakes": 25,
+        "weeks_assumed": 24.0
+      },
+      "Gemini Neon": {
+        "final_gap_usd": 41.02,
+        "implied_weekly_bp_one_draw": 95.9217156490172,
+        "observed_week_pairs": 0,
+        "scored_pairs": 1,
+        "session_ids": [
+          "TM04-D02-NEON-r1",
+          "TM04-D02-NEON-r2"
+        ],
+        "terminal_log_gap_bp": 469.9185171848645,
+        "wakes": 25,
+        "weeks_assumed": 24.0
+      },
+      "Grok 4.7": {
+        "final_gap_usd": 54.64,
+        "implied_weekly_bp_one_draw": 112.6981948019719,
+        "observed_week_pairs": 0,
+        "scored_pairs": 1,
+        "session_ids": [
+          "TM04-D02-GROK-r1",
+          "TM04-D02-GROK-r2"
+        ],
+        "terminal_log_gap_bp": 552.1061443952212,
+        "wakes": 25,
+        "weeks_assumed": 24.0
+      },
+      "Kimi K3": {
+        "final_gap_usd": 33.1,
+        "implied_weekly_bp_one_draw": 78.53357125395813,
+        "observed_week_pairs": 0,
+        "scored_pairs": 1,
+        "session_ids": [
+          "TM04-D02-KIMI-r1",
+          "TM04-D02-KIMI-r2"
+        ],
+        "terminal_log_gap_bp": 384.73435450140454,
+        "wakes": 25,
+        "weeks_assumed": 24.0
+      }
+    }
+  }
+}
