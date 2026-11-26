@@ -417,6 +417,8 @@ Working papers.
 | `practice/forward_e01.py`, `practice/test_forward_e01.py` | The E01 recorder (`plan`, `record YYYY-MM`) through the saved data credential, and its checks with a pretend data source and no network. Full records stay off repo; the log in the repo holds no prices | CURRENT |
 | `practice/traders/E02_iwm_pre_holiday.md` | Manual, pretend-money IWM pre-holiday forward watch after Replay 39 did not pass; no orders or automation | CURRENT |
 | `practice/forward_e02.py` | E02 pinned dates and recorder for one completed event from a private manual packet. Prices stay off repo; the future summary log has no close prices | CURRENT |
+| `practice/traders/E03_odd_lot_tender_watch.md` | Approved manual pretend-money watch for listed-common cash tenders after Replay 21 did not pass; filing discovery, eligibility confirmation, unchanged entry and exit rules, and record packets | CURRENT |
+| `practice/forward_e03.py`, `practice/test_forward_e03.py` | E03 SEC filing inbox, Plan 21 entry clock and pretend-trade recorder, price-free hash-chain summaries and synthetic checks | CURRENT |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 
