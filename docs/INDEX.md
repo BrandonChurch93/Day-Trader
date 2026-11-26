@@ -392,7 +392,7 @@ Working papers.
 | `research_rig/books_summary.py`, `research_rig/books_summary.json`, `research_rig/build_doc24.py` | Order-book cost samples | CURRENT |
 | `research_rig/platform_bars_crosscheck.py` | Compares each day's open, high, low and close rebuilt from the one-minute files with the daily file, for SPY and QQQ, from the same lookup. Gaps in basis points only. No rule and no return | CURRENT |
 | `research_rig/platform_bars_consolidate.py`, `research_rig/platform_bars_integrity.py`, `research_rig/platform_bars_coverage.json`, `research_rig/platform_bars_crosscheck.json` | How the stock prices collected through the workspace's own price lookup were joined, checked for gaps and compared with each other (one-minute files against daily files), and the dates and counts those checks gave. No price is in the repo and no rule was run. Whether the files may be kept is item 6 of the morning list | CURRENT |
-| `research_rig/feeds/` | Public context collector, source notes, sample, and offline Wayback announcement scaffold | CURRENT |
+| `research_rig/feeds/` | Public context collector, source notes, sample, offline Wayback announcement scaffold, and Coinbase/Kraken forward product-status watcher (`research_rig/feeds/product_status_watcher.py`, tests, README) | CURRENT |
 | `research_rig/export_dashboard.py` | Builds the data file for the owner's screen | CURRENT |
 
 ## practice/ (the practice desk: pretend money, live prices)
