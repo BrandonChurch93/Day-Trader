@@ -47,6 +47,12 @@ Traders made for the time machine, each with its plan in `timemachine/`:
 
 The letter C is taken by the controls below, so these go from B to D.
 
+Forward measurement watches (pretend money only, no AI model, no broker orders):
+
+| ID | Short name | Market | What it does | Card |
+|---|---|---|---|---|
+| E07 | etf_closure_payout_watch | US ETFs | Forward measurement of last-trading-day closing SIP ask and bid versus published primary cash liquidation payout on SEC 497/497K closures (stop at 40 completed funds or 2027-05-31) | `practice/traders/E07_etf_closure_payout_watch.md` (queue row 95) |
+
 What research could not support:
 
 - No trader on this list has evidence that it makes money after costs for a small account. The strongest evidence is for A03 and A07, and it says they grow less than holding with smaller drops (`docs/STATUS.md`).
