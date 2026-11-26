@@ -22,6 +22,11 @@ CALIBRATION = {
     "fading": (ROOT / "research_rig/calibration_timing_22.json", "1444af07ce9f48c168f6cbc46caf21805b44d3b1f3f9bc2fe1c759f02eed5269"),
 }
 APPROVAL = ROOT / "research_rig/APPROVAL_22.md"
+# Independent recompute: a second helper's own code written from the plan text, saved off the repo and
+# fixed on disk (11:29:50 UTC) before it opened the scored result. Aggregates only.
+RECOMPUTE = Path("/home/user/workspace/rig/data/replay_22_notes/recompute_22.json")
+RECOMPUTE_SHA = "eb53c35924329360027e134fde81371491a2e6962077eebbc362192da3a594d2"
+RECOMPUTE_FIXED = "2026-11-26 11:29:50 UTC"
 # STATED by the lead agent: the saved aggregate holds no run clock.
 RUN_WINDOW = ("2026-11-26 11:21:18 UTC", "2026-11-26 11:22:26 UTC")
 PLAN_PATH = "../../research_rig/PREREG_22_fable_rule_a.md"
@@ -32,6 +37,35 @@ def read_result(path):
     if sha256(raw).hexdigest() != RESULT_SHA:
         raise ValueError("Replay 22 saved result does not match its SHA-256")
     return json.loads(raw)
+
+
+def read_recompute():
+    raw = RECOMPUTE.read_bytes()
+    if sha256(raw).hexdigest() != RECOMPUTE_SHA:
+        raise ValueError("Replay 22 recompute does not match its SHA-256")
+    return json.loads(raw)
+
+
+def recompute_lines(j, cfg, cost, rc):
+    rule, hold, tw = j["rule_a"][cost], j["hold"][cost], j["twins"]
+    pairs = [(rc["rule"]["end"], rule["final"]), (rc["hold"]["end"], hold["final"]),
+             (rc["rule"]["sharpe"], rule["sharpe"]), (rc["hold"]["sharpe"], hold["sharpe"]),
+             (rc["rule"]["max_drawdown"], rule["max_drawdown"]), (rc["hold"]["max_drawdown"], hold["max_drawdown"])]
+    pairs += [(rc[k]["by_year"][y], v) for k, side in (("rule", rule), ("hold", hold)) for y, v in side["by_year"].items()]
+    gap = max(abs(a - b) for a, b in pairs)
+    if gap > 1e-9 or rc["trade_count"] != j["trades"] or rc["rule"]["positive_years"] != rule["positive_years"]:
+        raise ValueError("recompute no longer agrees with the scored result; rewrite this section by hand")
+    names = {"beats_hold": "beats_hold", "sharpe": "sharpe", "drawdown": "drawdown", "twins": "twins", "positive_years": "years"}
+    if any(rc["marks"][a] != j["judge"]["tests"][b] for a, b in names.items()) or rc["passed"] != j["judge"]["pass"]:
+        raise ValueError("recompute marks differ from the scored result; rewrite this section by hand")
+    return "\n".join([
+        f"- MEASURED. A second helper rebuilt the judged numbers with its own code, written from the plan text without reading the scorer. Its numbers were fixed on disk at {RECOMPUTE_FIXED}, before it opened the scored result (SHA-256 `{RECOMPUTE_SHA}`). It checked all {rc['archives_verified']:,} input archives against the manifest.",
+        f"- MEASURED. All five marks agree, and the overall verdict agrees: did not pass.",
+        f"- MEASURED. Rule and same-list hold end values, daily Sharpe, largest fall and all {len(rule['by_year'])} yearly figures on both sides agree to within {gap:.0e}. Trades: {rc['trade_count']} in both. Positive years: {rc['rule']['positive_years']} in both.",
+        f"- MEASURED. The random twins differ a little, as expected: twin median {rc['twins']['median']:.2f} times the start against {tw['median']:.2f}, 95th percentile {rc['twins']['p95']:.2f} against {tw['cut']:.2f}, entries not placed {rc['twins']['dropped_entries']} against {tw['counts']['twin_entries_not_placed']}. The rule's {rule['final']:.2f} is under both cuts, so the mark is the same either way.",
+        "- STATED by the helper. The plan names the twin seed but not the random generator, the draw order or the percentile method, so the twin stream could not be rebuilt exactly. UNKNOWN which of those causes the gap.",
+        f"- UNKNOWN from the recompute. It did not work out the share of twins at or above the rule ({j['twins']['share_at_or_above_rule']:.0%} in the scored run), or any shown-only line.",
+    ])
 
 
 def read_calibration():
@@ -170,7 +204,7 @@ def render(data, cfg, calib, freeze):
         f"{plain_pct(tw['share_at_or_above_rule'], 0)} of random-entry twins did as well or better, so on these marks it cannot be told apart from random entries. "
         f"Without its best {cfg['drop_best']} trades it lost money ({total(wb['final'])}). STATED. The row closes.",
         "## Independent recompute",
-        "Pending.",
+        recompute_lines(j, cfg, str(c), read_recompute()),
         "## Run record",
         "\n".join([
             f"- STATED by the lead agent. Scored exactly once, from {RUN_WINDOW[0]} to {RUN_WINDOW[1]}, exit 0. Ledger 159, queue 40.",

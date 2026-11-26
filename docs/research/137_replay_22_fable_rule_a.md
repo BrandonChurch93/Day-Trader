@@ -72,7 +72,12 @@ MEASURED. The rule ended about level with holding the same coins (+275.40% again
 
 ## Independent recompute
 
-Pending.
+- MEASURED. A second helper rebuilt the judged numbers with its own code, written from the plan text without reading the scorer. Its numbers were fixed on disk at 2026-11-26 11:29:50 UTC, before it opened the scored result (SHA-256 `eb53c35924329360027e134fde81371491a2e6962077eebbc362192da3a594d2`). It checked all 2,044 input archives against the manifest.
+- MEASURED. All five marks agree, and the overall verdict agrees: did not pass.
+- MEASURED. Rule and same-list hold end values, daily Sharpe, largest fall and all 7 yearly figures on both sides agree to within 3e-15. Trades: 111 in both. Positive years: 3 in both.
+- MEASURED. The random twins differ a little, as expected: twin median 4.10 times the start against 4.09, 95th percentile 13.27 against 13.02, entries not placed 410 against 403. The rule's 3.75 is under both cuts, so the mark is the same either way.
+- STATED by the helper. The plan names the twin seed but not the random generator, the draw order or the percentile method, so the twin stream could not be rebuilt exactly. UNKNOWN which of those causes the gap.
+- UNKNOWN from the recompute. It did not work out the share of twins at or above the rule (57% in the scored run), or any shown-only line.
 
 ## Run record
 
