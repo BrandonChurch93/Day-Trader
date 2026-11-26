@@ -411,6 +411,8 @@ Working papers.
 | `research_rig/PREREG_62_special_dividend_ex_day_v2.md`, `research_rig/score_62.py`, `research_rig/test_62.py`, `research_rig/PINNED_62.json` | Queue 105 and ledger 205: same traded clock and marks as Plan 61 with a narrow Class A vendor cash exception, separate custody and synthetic checks | CURRENT |
 | `research_rig/PREREG_67_rsi2_pullback.md` | Queue 109 and ledger 211: next-open RSI pullback draft, source audit, and closure before prices on all-mark synthetic power | RECORD |
 | `research_rig/power_67.py`, `research_rig/POWER_67.json` | Plan 67 synthetic-only calibration and saved output; no market inputs, scorer, or run | RECORD |
+| `research_rig/PREREG_68_earnings_drift_plain.md` | Queue 17 and ledger 213: price-blind later filing-clock earnings count, long-side evidence, and power screen; no market inputs or scored run | RECORD |
+| `research_rig/power_68.py`, `research_rig/POWER_68.json` | Plan 68 synthetic-only quarter-clustered power script and reproducible output | RECORD |
 | `research_rig/ADOPTION_62.md`, `research_rig/APPROVAL_62.md` | The lead agent's one-line approvals for plan 62: adoption of the plan 61 lineage and sealed inputs with no new prices, then the no-return input validation | RECORD |
 | `research_rig/GO_62.md` | The lead agent's approval for the one scored run of plan 62, naming the validation approval commit and the validation receipt hash | RECORD |
 | `research_rig/RECOMPUTE_62.json` | Replay 62 independent recompute, aggregate note only: who did it, what was re-derived, fields compared, differences and rule-text ambiguities. No per-event rows | RECORD |
