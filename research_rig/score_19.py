@@ -118,6 +118,8 @@ def add_row(tape, kind, a, b, row, p):
             raise C.Incomplete("settlement outside archive span")
     elif stamp != h * US_HOUR or not a <= h < b:
         raise C.Incomplete("bar outside archive span or off-hour")
+    elif len(row) < 7 or A.clock_us(row[6]) // 1000 != (stamp + US_HOUR) // 1000 - 1:
+        raise C.Incomplete("bar has a missing or noncanonical closing clock")
     if not p["start"] <= h < p["end"]:
         return
     if kind == "fundingRate":
@@ -275,6 +277,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     choice = parser.add_mutually_exclusive_group(required=True)
     choice.add_argument("--selftest", action="store_true")
+    choice.add_argument("--calibration", action="store_true")
     choice.add_argument("--go", action="store_true")
     parser.add_argument("--approval-commit")
     parser.add_argument("--manifest-sha256")
@@ -283,6 +286,11 @@ def main():
         from . import test_19
         tests = unittest.defaultTestLoader.loadTestsFromModule(test_19)
         return int(not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful())
+    if args.calibration:
+        from . import test_19
+        p = C.policy(yaml.safe_load((ROOT / CONFIG).read_bytes())["replay_19_plan"]["value"])
+        test_19.calibrate(p)
+        return 0
     try:
         go(args.approval_commit, args.manifest_sha256)
     except Refused as exc:

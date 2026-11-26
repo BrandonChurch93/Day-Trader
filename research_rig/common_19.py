@@ -13,9 +13,14 @@ WEEK = 7 * DAY
 NY = ZoneInfo("America/New_York")
 UTC = timezone.utc
 SYMBOLS = ("BTCUSDT", "ETHUSDT")
+MARKS = ("sharpe", "full_years", "post_cme", "placebo", "breadth")
 
 
 class Incomplete(ValueError):
+    pass
+
+
+class NonpositiveEquity(Exception):
     pass
 
 
@@ -44,7 +49,10 @@ def hour(stamp):
 def policy(raw):
     required = {"first_date", "last_date", "cme_cut", "sunday_hour_ny", "hold_hours",
                 "funding_hours", "funding_jitter_seconds", "judged_bps", "shown_bps",
-                "min_sharpe", "min_positive_years", "placebo_percentile", "annual_days"}
+                "min_sharpe", "min_positive_years", "min_trade_pct", "placebo_percentile", "annual_days",
+                "calibration_seed", "calibration_seeds", "calibration_edges_bps",
+                "calibration_hourly_common_sigma", "calibration_hourly_idio_sigma",
+                "calibration_funding_bps"}
     if set(raw) != required:
         raise Incomplete("unexpected policy keys")
     p = dict(raw)
@@ -52,14 +60,22 @@ def policy(raw):
              cut=hour(p["cme_cut"]))
     if not (p["start"] < p["cut"] < p["end"] and
             all(type(p[k]) is int for k in ("sunday_hour_ny", "hold_hours", "funding_hours",
-                                            "funding_jitter_seconds", "min_positive_years", "annual_days"))
+                                            "funding_jitter_seconds", "min_positive_years", "min_trade_pct",
+                                            "annual_days", "calibration_seed", "calibration_seeds"))
             and 0 <= p["sunday_hour_ny"] < DAY and 0 < p["hold_hours"] < WEEK - 1
             and 0 < p["funding_hours"] <= DAY and DAY % p["funding_hours"] == 0
             and 0 <= p["funding_jitter_seconds"] < HOUR / 2 and p["min_positive_years"] > 0
             and p["annual_days"] > 0 and math.isfinite(p["min_sharpe"])
             and len(p["shown_bps"]) == 2 and
             0 <= p["shown_bps"][0] < p["judged_bps"] < p["shown_bps"][1] < 10000
-            and 0 < p["placebo_percentile"] < 100):
+            and 0 < p["min_trade_pct"] <= 100 and 0 < p["placebo_percentile"] < 100
+            and p["calibration_seeds"] > 0 and p["calibration_seed"] >= 0
+            and bool(p["calibration_edges_bps"]) and
+            all(math.isfinite(x) and 0 <= x < 10000 for x in p["calibration_edges_bps"])
+            and len(p["calibration_hourly_idio_sigma"]) == len(SYMBOLS)
+            and all(math.isfinite(s) and s > 0 for s in
+                    [p["calibration_hourly_common_sigma"], *p["calibration_hourly_idio_sigma"]])
+            and math.isfinite(p["calibration_funding_bps"])):
         raise Incomplete("invalid replay policy")
     return p
 
@@ -100,7 +116,7 @@ def sharpe(returns, annual_days):
     return mean(returns) / std * math.sqrt(annual_days) if std else None
 
 
-def replay(tapes, p, entries, bps, variant="momentum"):
+def replay(tapes, p, entries, bps, variant="momentum", *, sharpe_only=False):
     fee = bps / 10000
     hold = p["hold_hours"]
     capital = 1.
@@ -142,8 +158,10 @@ def replay(tapes, p, entries, bps, variant="momentum"):
             post_traded += entry >= p["cut"]
         for h in sorted(changes):
             capital += changes[h]
-            if not math.isfinite(capital) or capital <= 0:
-                raise Incomplete("nonpositive or invalid marked account equity")
+            if not math.isfinite(capital):
+                raise Incomplete("invalid marked account equity")
+            if capital <= 0:
+                raise NonpositiveEquity
             high = max(high, capital)
             fall = max(fall, 1 - capital / high)
             ticks.append(h)
@@ -160,6 +178,8 @@ def replay(tapes, p, entries, bps, variant="momentum"):
                     return_bins=len(returns))
 
     start, end = p["start"], p["end"]
+    if sharpe_only:
+        return {"whole": segment(start, end)}
     years, full = {}, []
     for y in range(utc(start).year, utc(end - 1).year + 1):
         a, b = hour(f"{y}-01-01"), hour(f"{y + 1}-01-01")
@@ -174,11 +194,24 @@ def replay(tapes, p, entries, bps, variant="momentum"):
                 max_initial_gross_bound=exposure)
 
 
-def percentile(xs, percent):
-    xs = sorted(xs)
-    frac = (len(xs) - 1) * percent / 100
+def placebo_threshold(values, failed, percent):
+    """Use minus infinity internally for failed accounts, never put it in JSON."""
+    finite = sorted(values)
+    n = len(finite) + failed
+    if not n:
+        return None, "undefined"
+    frac = (n - 1) * percent / 100
     left, right = math.floor(frac), math.ceil(frac)
-    return xs[left] + (xs[right] - xs[left]) * (frac - left)
+    if left < failed:
+        return None, "below_all_finite"
+    lo, hi = finite[left - failed], finite[right - failed]
+    return lo + (hi - lo) * (frac - left), "finite"
+
+
+def breadth(book, min_pct):
+    return all(book[scheduled] > 0 and 100 * book[traded] >= min_pct * book[scheduled]
+               for scheduled, traded in (("scheduled_weeks", "traded_weeks"),
+                                          ("post_cme_weeks", "post_cme_traded_weeks")))
 
 
 def measure(tapes, p, check=lambda: None):
@@ -186,23 +219,41 @@ def measure(tapes, p, check=lambda: None):
     bps = p["judged_bps"]
     books = {**{s: [tapes[s]] for s in SYMBOLS}, "pair": [tapes[s] for s in SYMBOLS]}
 
+    def book(tapes, entries, cost, variant="momentum", *, sharpe_only=False):
+        try:
+            return replay(tapes, p, entries, cost, variant, sharpe_only=sharpe_only)
+        except NonpositiveEquity:
+            return {"refusal": "NONPOSITIVE_EQUITY"}
+
     def grid(cost, variant="momentum"):
-        return {k: replay(v, p, selected, cost, variant) for k, v in books.items()}
+        return {k: book(v, selected, cost, variant) for k, v in books.items()}
 
     base = grid(bps)
     placebo = {}
+    failed = []
     for shift in range(1, WEEK):
         check()
-        placebo[str(shift)] = replay(books["pair"], p, starts(p, shift), bps)["whole"]["sharpe"]
+        b = book(books["pair"], starts(p, shift), bps, sharpe_only=True)
+        key = str(shift)
+        if "refusal" in b:
+            failed.append(key)
+        placebo[key] = b.get("whole", {}).get("sharpe")
     defined = [v for v in placebo.values() if v is not None]
-    threshold = percentile(defined, p["placebo_percentile"]) if len(defined) == len(placebo) else None
+    undefined = len(placebo) - len(defined) - len(failed)
+    threshold, rank = (None, "undefined") if undefined else placebo_threshold(
+        defined, len(failed), p["placebo_percentile"])
     pair = base["pair"]
-    s = pair["whole"]["sharpe"]
-    marks = dict(sharpe=s is not None and s >= p["min_sharpe"],
-                 full_years=sum(pair["years"][y] > 0 for y in pair["full_years"]) >= p["min_positive_years"],
-                 post_cme=pair["after_cme"]["net"] > 0,
-                 placebo=s is not None and threshold is not None and s > threshold)
+    marks = dict.fromkeys(MARKS, False)
+    if "refusal" not in pair:
+        s = pair["whole"]["sharpe"]
+        marks.update(sharpe=s is not None and s >= p["min_sharpe"],
+                     full_years=sum(pair["years"][y] > 0 for y in pair["full_years"]) >= p["min_positive_years"],
+                     post_cme=pair["after_cme"]["net"] > 0,
+                     placebo=s is not None and (rank == "below_all_finite" or
+                                                 (threshold is not None and s > threshold)),
+                     breadth=breadth(pair, p["min_trade_pct"]))
     return dict(main=base, marks=marks, passes=all(marks.values()),
                 shown_costs={str(c): grid(c) for c in p["shown_bps"]},
                 shown_signals={key: grid(bps, key) for key in ("one_candle", "long")},
-                placebo=dict(sharpes=placebo, percentile=threshold, defined=len(defined)))
+                placebo=dict(sharpes=placebo, percentile=threshold, percentile_status=rank,
+                             failed=failed, undefined=undefined, defined=len(defined)))

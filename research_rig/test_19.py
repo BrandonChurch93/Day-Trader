@@ -1,7 +1,10 @@
 """Synthetic Plan 19 tests. No real bars, manifests or canonical lock."""
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
+import json
+from math import expm1, log1p
 from pathlib import Path
+from random import Random
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -14,7 +17,12 @@ def setup(**changes):
                          cme_cut="2023-11-24T21:00:00+00:00", sunday_hour_ny=19,
                          hold_hours=24, funding_hours=8, funding_jitter_seconds=30,
                          judged_bps=5, shown_bps=[1, 10], min_sharpe=1.,
-                         min_positive_years=1, placebo_percentile=95, annual_days=365) | changes)
+                         min_positive_years=1, min_trade_pct=90, placebo_percentile=95,
+                         annual_days=365, calibration_seed=19001, calibration_seeds=20,
+                         calibration_edges_bps=[0, 10, 20, 40],
+                         calibration_hourly_common_sigma=.002,
+                         calibration_hourly_idio_sigma=[.0015, .0025],
+                         calibration_funding_bps=.5) | changes)
 
 
 def fixtures(p, planted):
@@ -27,6 +35,47 @@ def fixtures(p, planted):
             opens[h] -= 3. + i % 5
     return {s: C.Tape(opens.copy(), closes.copy(), dict.fromkeys(settlements, 100.),
                       settlements.copy()) for s in C.SYMBOLS}
+
+
+def noisy(p, seed, edge_bps):
+    rng = Random(seed)
+    entries = set(C.starts(p, 0))
+    tapes = [C.Tape({}, {}, {}, {}) for _ in C.SYMBOLS]
+    levels, drifts = [100.] * len(tapes), [0.] * len(tapes)
+    stop = p["start"]
+    for h in range(p["start"], p["end"] + 1):
+        common = rng.gauss(0, p["calibration_hourly_common_sigma"])
+        for i, tape in enumerate(tapes):
+            noise = common + rng.gauss(0, p["calibration_hourly_idio_sigma"][i])
+            levels[i] *= 1 + expm1(noise + (drifts[i] if h <= stop else 0.))
+            if h > p["start"]:
+                tape.closes[h - 1] = levels[i]
+            if h == p["end"]:
+                continue
+            tape.opens[h] = levels[i]
+            if h % p["funding_hours"] == 0:
+                tape.marks[h] = levels[i]
+                tape.rates[h] = p["calibration_funding_bps"] / 10000
+            if h in entries:
+                side = C.direction(tape, h, p, "momentum")
+                drifts[i] = log1p(side * edge_bps / 10000) / p["hold_hours"]
+        if h in entries:
+            stop = h + p["hold_hours"]
+    return dict(zip(C.SYMBOLS, tapes))
+
+
+def calibrate(p):
+    for edge in p["calibration_edges_bps"]:
+        passes = 0
+        for i in range(p["calibration_seeds"]):
+            S.memory()
+            tapes = noisy(p, p["calibration_seed"] + i, edge)
+            result = C.measure(tapes, p, check=S.memory)
+            if (len(result["placebo"]["sharpes"]) != C.WEEK - 1 or result["placebo"]["undefined"]
+                    or result["placebo"]["failed"]):
+                raise AssertionError("synthetic calibration needs a complete finite placebo grid")
+            passes += result["passes"]
+        print(f"{edge} bps gross plant: {passes}/{p['calibration_seeds']} clear all five marks", flush=True)
 
 
 class Plan19(unittest.TestCase):
@@ -74,6 +123,102 @@ class Plan19(unittest.TestCase):
         self.assertIn(C.hour("2023-11-05T05:00:00Z"), fall)
         self.assertNotIn(C.hour("2023-11-05T06:00:00Z"), fall)
         self.assertEqual(len({tuple(C.starts(p, n)) for n in range(C.WEEK)}), C.WEEK)
+
+    def test_sparse_fixture_passes_old_marks_but_fails_breadth(self):
+        p = setup(first_date="2020-01-01", last_date="2026-10-31",
+                  cme_cut="2026-05-29T21:00:00Z", min_positive_years=4)
+        tapes = fixtures(p, False)
+        chosen = []
+        for year, n in ((2020, 2), (2021, 2), (2022, 1), (2023, 1), (2026, 1)):
+            chosen.extend([h for h in C.starts(p, 0) if
+                           (C.utc(h).year, C.utc(h).month) == (year, 7)][:n])
+        for h in C.starts(p, 0):
+            for tape in tapes.values():
+                if h in chosen:
+                    tape.opens[h + 1] = 100 * (1 + p["judged_bps"] / 10000)
+                    tape.opens[h + p["hold_hours"]] = 101.2
+                else:
+                    tape.closes[h - 1] = tape.closes[h - p["hold_hours"] - 1]
+        r = C.measure(tapes, p)
+        pair = r["main"]["pair"]
+        self.assertEqual((pair["traded_weeks"], pair["post_cme_traded_weeks"]), (7, 1))
+        self.assertTrue(all(v for k, v in r["marks"].items() if k != "breadth"), r["marks"])
+        self.assertFalse(r["marks"]["breadth"])
+        self.assertFalse(r["passes"])
+        self.assertTrue(C.breadth(dict(scheduled_weeks=10, traded_weeks=9,
+                                      post_cme_weeks=10, post_cme_traded_weeks=9), 90))
+        self.assertFalse(C.breadth(dict(scheduled_weeks=10, traded_weeks=9,
+                                       post_cme_weeks=10, post_cme_traded_weeks=8), 90))
+
+    def test_late_missing_and_stale_candle_cannot_store_signal_close(self):
+        p = setup()
+        start = C.starts(p, 0)[0]
+        h = start - 1
+        ms = h * C.HOUR * 1000
+        close_ms = ms + C.HOUR * 1000 - 1
+        prefix = [str(ms), "100", "130", "99", "130", "20"]
+        tape = C.Tape({}, {h - p["hold_hours"]: 100.}, {}, {})
+        for row in (prefix, prefix + [str(close_ms - 1)],
+                    prefix + [str(close_ms + C.HOUR * 1000)]):
+            with self.assertRaises(C.Incomplete):
+                S.add_row(tape, "klines", h, h + 1, row, p)
+            self.assertNotIn(h, tape.closes)
+            with self.assertRaises(KeyError):
+                C.direction(tape, start, p, "momentum")
+        S.add_row(tape, "klines", h, h + 1,
+                  [str(ms * 1000), *prefix[1:], str(close_ms * 1000 + 999)], p)
+        self.assertEqual(C.direction(tape, start, p, "momentum"), 1)
+        with self.assertRaises(C.Incomplete):
+            S.add_row(tape, "markPriceKlines", h, h + 1, prefix + [str(close_ms + 1)], p)
+
+    def test_shown_only_bankruptcy_does_not_discard_judged_marks(self):
+        p = setup()
+        tapes = fixtures(p, True)
+        h = C.starts(p, 0)[0]
+        for tape in tapes.values():
+            tape.opens[h - 1] = 110.
+            tape.opens[h + 2] = 400.
+        r = C.measure(tapes, p)
+        self.assertIn("whole", r["main"]["pair"])
+        self.assertEqual(r["shown_signals"]["one_candle"]["pair"], {"refusal": "NONPOSITIVE_EQUITY"})
+        self.assertGreater(r["placebo"]["defined"], 0)
+        self.assertEqual(len(r["marks"]), 5)
+
+    def test_judged_bankruptcy_is_a_failed_result_and_placebos_rank_low(self):
+        p = setup()
+        tapes = fixtures(p, True)
+        h = C.starts(p, 0)[0]
+        for tape in tapes.values():
+            tape.closes[h - 1] = 80.
+            tape.closes[h] = 79.  # The next start-hour placebo also shorts before the spike.
+            tape.opens[h + 2] = 400.
+        r = C.measure(tapes, p)
+        self.assertEqual(r["main"]["pair"], {"refusal": "NONPOSITIVE_EQUITY"})
+        self.assertEqual(r["marks"], dict.fromkeys(C.MARKS, False))
+        self.assertFalse(r["passes"])
+        self.assertTrue(r["placebo"]["failed"])
+        self.assertTrue(all(r["placebo"]["sharpes"][k] is None for k in r["placebo"]["failed"]))
+        self.assertEqual(C.placebo_threshold([2., 3.], 2, 95)[1], "finite")
+        self.assertAlmostEqual(C.placebo_threshold([2., 3.], 2, 95)[0], 2.85)
+        self.assertEqual(C.placebo_threshold([3.], 166, 95), (None, "below_all_finite"))
+        with TemporaryDirectory() as d:
+            lock, result = Path(d) / "synthetic-lock", Path(d) / "synthetic-result"
+            S.claim(lock, result, {}, lambda: None, lambda _: r)
+            self.assertEqual(json.loads(result.read_text())["marks"], dict.fromkeys(C.MARKS, False))
+            self.assertIn('"completed"', lock.read_text())
+
+    def test_noisy_panel_is_seeded_distinct_and_signed(self):
+        p = setup()
+        a = noisy(p, p["calibration_seed"], 0)
+        b = noisy(p, p["calibration_seed"], 40)
+        first = C.starts(p, 0)[0]
+        self.assertEqual(a[C.SYMBOLS[0]].opens[first], b[C.SYMBOLS[0]].opens[first])
+        self.assertNotEqual(a[C.SYMBOLS[0]].opens, a[C.SYMBOLS[1]].opens)
+        self.assertEqual({C.direction(a[C.SYMBOLS[0]], h, p, "momentum") for h in C.starts(p, 0)}, {-1, 1})
+        for symbol in C.SYMBOLS:
+            side = C.direction(a[symbol], first, p, "momentum")
+            end = first + p["hold_hours"]
+            self.assertAlmostEqual(b[symbol].opens[end] / a[symbol].opens[end], 1 + side * .004)
 
     def test_actual_next_candle_open_and_24_hour_close_direction(self):
         p = setup()

@@ -827,7 +827,7 @@ replay_18_plan:
   source: research_rig/PREREG_18_funding_carry_DRAFT.md
 
 replay_19_plan:
-  value: {first_date: "2020-01-01", last_date: "2026-10-31", cme_cut: "2026-05-29T21:00:00+00:00", sunday_hour_ny: 19, hold_hours: 24, funding_hours: 8, funding_jitter_seconds: 30, judged_bps: 5, shown_bps: [1, 10], min_sharpe: 1.0, min_positive_years: 4, placebo_percentile: 95, annual_days: 365}
+  value: {first_date: "2020-01-01", last_date: "2026-10-31", cme_cut: "2026-05-29T21:00:00+00:00", sunday_hour_ny: 19, hold_hours: 24, funding_hours: 8, funding_jitter_seconds: 30, judged_bps: 5, shown_bps: [1, 10], min_sharpe: 1.0, min_positive_years: 4, min_trade_pct: 90, placebo_percentile: 95, annual_days: 365, calibration_seed: 19001, calibration_seeds: 20, calibration_edges_bps: [0, 10, 20, 40], calibration_hourly_common_sigma: 0.002, calibration_hourly_idio_sigma: [0.0015, 0.0025], calibration_funding_bps: 0.5}
   status: builder
   note: Draft Plan 19 for queue 35. The lookback equals hold_hours. Judged only on the equal-weight pair. Not approved or run.
   source: research_rig/PREREG_19_monday_asia_DRAFT.md
