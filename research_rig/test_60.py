@@ -292,7 +292,22 @@ class Plan60(unittest.TestCase):
         compare=lambda x:s.vendor_compare(raw,adj,adj,days,x,Fraction(1,200))[0]
         self.assertEqual(compare(items),"vendor_cash_reference_missing_or_invalid")
         self.assertIsNone(compare([(days[2],"cash",Fraction(1),Fraction(9,10))]))
-        self.assertEqual(compare([(days[0],"unsupported","unknown",None)]),"unsupported_vendor_action")
+
+    def test_first_padded_session_supported_action_needs_no_backward_factor(self):
+        days=[s.p.d("2024-06-03")+s.timedelta(days=i) for i in range(5)]
+        bar=SimpleNamespace(v=1,c=10,flat_key=(10,10,10,10))
+        view={day:bar for day in days}
+        for kind,value,factor in (("cash",Fraction(1),None),("split",Fraction(2),Fraction(1,2))):
+            with self.subTest(kind=kind):
+                self.assertEqual(s.vendor_compare(view,view,view,days,[(days[0],kind,value,factor)],
+                                                  Fraction(1,200)),(None,False,False))
+
+    def test_first_padded_session_unsupported_action_fails_leg(self):
+        days=[s.p.d("2024-06-03")+s.timedelta(days=i) for i in range(5)]
+        bar=SimpleNamespace(v=1,c=10,flat_key=(10,10,10,10))
+        view={day:bar for day in days}
+        result=s.vendor_compare(view,view,view,days,[(days[0],"unsupported","spin_offs",None)],Fraction(1,200))
+        self.assertEqual(result,("unsupported_vendor_action",False,False))
 
     def test_joint_multiplier_and_no_refit_after_gap(self):
         days=[s.p.d("2024-06-01")+s.timedelta(days=i) for i in range(8)]
