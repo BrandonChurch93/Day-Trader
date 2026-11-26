@@ -332,7 +332,7 @@ Working papers.
 | `research_rig/PREREG_43_special_dividends.md`, `research_rig/PINNED_43.json` | Queue 74 and ledger 178. Filing-only special-dividend replay rule, scope and strategy pins; no vendor data | CURRENT |
 | `research_rig/AMENDMENT_43_TAPE.md`, `research_rig/provenance_43.py` | Queue 74 successor, ledger 188: coverage amendment and offline-only native-body verifier; no vendor data | CURRENT. Frozen, not authorized |
 | `research_rig/ACQUISITION_43_SUCCESSOR.md`, `research_rig/APPROVAL_43_SUCCESSOR.md` | Ledger 188: spent acquisition and refused validation approval retained for the third attempt's sealed adoption | RECORD |
-| `research_rig/AMENDMENT_43_BASIS.md`, `research_rig/basis_43.py` | Queue 74 third attempt, ledger 195: quantization, no-return gate diagnostics, sealed adoption; no vendor data | DRAFT |
+| `research_rig/AMENDMENT_43_BASIS.md`, `research_rig/basis_43.py` | Queue 74 third attempt, ledger 195: quantization, no-return gate diagnostics, sealed adoption; no vendor data | CURRENT. Frozen, not authorized |
 | `research_rig/score_43.py`, `research_rig/test_43.py`, `research_rig/CALIBRATION_43.json` | Replay 43 raw SIP and cash-action approval gate, one-shot scorer, synthetic tests and null calibration. No replay result | CURRENT |
 | `research_rig/PREREG_33_treasury_auctions.md`, `research_rig/PINNED_33.json` | Queue 52 and ledger 168. Frozen intraday Treasury auction-day test: long IEF or TLT from 13:10 to 15:59 ET on 10-year and 30-year auction days, judged on executable quotes. No vendor data | CURRENT |
 | `research_rig/score_33.py`, `research_rig/test_33.py` | Replay 33 scorer with offline no-return validation, one-shot approval gate, and synthetic tests | CURRENT |

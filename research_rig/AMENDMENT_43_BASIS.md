@@ -1,6 +1,6 @@
 # Plan 43, third attempt: adjusted-price quantization
 
-Status DRAFT.
+Status FROZEN.
 
 Queue 74, ledger 195. Attempt 1 (ledger 178) stopped at the all-or-nothing padded tape gate, without a score. Attempt 2 (ledger 188) used the native-custody and per-event tape amendment and stopped at `P43_OHLC_BASIS` under validation approval `98fe76ca25af13867840a5a5eba2735da37979c6`, without a successful validation receipt, score lock, or computed return. This is the second pre-return gate correction. The author used only authorized status and aggregate/unitless quantization diagnostics, not any price observations or real refusal bins. This amendment does not erase either earlier stop and is not an acquisition authorization.
 
