@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 13:49 UTC
+Last updated: 2026-11-26 15:11 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- Count 118, pre-earnings reversal ([page](../research_rig/COUNT_118_pre_earnings_reversal.md)), closed 2026-11-26 08:11 MT before any price. MEASURED: 2,261 earnings reports from the 100 firms of the end-2015 S&P 100 in 2016 to 2021; the report day can be forecast exactly 43.1% of the time; 1,144 usable events, about 229 trades in the bottom fifth. With the paper's own figures (40.8 bp, spread 877 bp) halved and the measured cost taken off, power is about 9% against the 33% line. Round 45 now has no candidate left standing.
+- Plan 69 collection, lead agent, 2026-11-26 08:11 MT: two real collections stopped on dropped connections (one minute, then 15.8 minutes); both partial files were deleted unopened. The collector was rebuilt to pick up where it stopped (audited, 0 findings; ledger 217) and the third collection is running. No bar has been read or scored.
 - Plan 73 result page: [doc 157](research/157_plan_73_first_minute_diagnosis.md), built by script from the summary files.
 - Plan 73 (ledger 221) run once, 2026-11-26 07:56 MT. A diagnosis on trades already seen, not a test. MEASURED on 182 of the 382 search trades that had Coinbase prints: the gain at the hourly open print is +75.6 bp after costs; one minute later it is +39.4 bp; 5 minutes later +37.0 bp; 15 minutes later +28.4 bp; at the worst price of that first minute -28.1 bp. So about half of the gain is gone within a minute (paired t -3.97), and 185 of the 382 trades were in coins with no Coinbase print at the time. The fixed reading is REACHABLE, by a hair (51.5% left against a 50% line). What is left is too small to confirm: a dated test at half of it would need about 954 separate signal days and history holds a few hundred unspent. No dated test is opened and no money follows. The E09 forward log keeps recording real quotes. An independent recount (2026-11-26 07:59 MT) by a helper who had not seen the scoring code agrees on every figure.
 - Round 45 checked ([doc 156](research/156_round_45_sources_checked.md), 2026-11-26 07:55 MT): a second helper opened the papers and redid the sums. Three of the top four are dropped (later years lost money, shorting needed, or too little US history). The earnings-report idea survives only in a weaker form: about +41 bp before costs when the date is known beforehand, and about a one in four chance of a pass at half of that. Queue 118's count decides whether it is worth a test.

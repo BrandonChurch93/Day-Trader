@@ -1,0 +1,87 @@
+{
+ "extra_202_dropped": 198,
+ "clusters": {
+  "clusters": 182,
+  "picked_by_text": 152,
+  "fallback_first": 30
+ },
+ "reports": 2261,
+ "companies": 100,
+ "days": 709,
+ "by_year": {
+  "2016": {
+   "reports": 395,
+   "days": 119,
+   "before_open": 256,
+   "in_session": 8,
+   "after_close": 131,
+   "closed_day": 0
+  },
+  "2017": {
+   "reports": 389,
+   "days": 114,
+   "before_open": 254,
+   "in_session": 7,
+   "after_close": 128,
+   "closed_day": 0
+  },
+  "2018": {
+   "reports": 384,
+   "days": 123,
+   "before_open": 243,
+   "in_session": 5,
+   "after_close": 136,
+   "closed_day": 0
+  },
+  "2019": {
+   "reports": 371,
+   "days": 119,
+   "before_open": 234,
+   "in_session": 11,
+   "after_close": 126,
+   "closed_day": 0
+  },
+  "2020": {
+   "reports": 362,
+   "days": 121,
+   "before_open": 227,
+   "in_session": 10,
+   "after_close": 125,
+   "closed_day": 0
+  },
+  "2021": {
+   "reports": 360,
+   "days": 113,
+   "before_open": 221,
+   "in_session": 6,
+   "after_close": 133,
+   "closed_day": 0
+  }
+ },
+ "forecast_2a": {
+  "with_base": 2239,
+  "no_base": 22,
+  "exact": 966,
+  "late_1": 184,
+  "early_more": 405,
+  "late_more": 561,
+  "early_1": 123,
+  "skip_known": 528
+ },
+ "usable_2a": {
+  "events": 1144,
+  "entry_days": 491,
+  "by_year": {
+   "2016": 162,
+   "2017": 213,
+   "2018": 246,
+   "2019": 200,
+   "2020": 140,
+   "2021": 183
+  },
+  "wasted_entries": 567,
+  "fallback_dedupe_excluded": 6
+ },
+ "clus_flags_sha256": "03077041f8e465e6577a2438e13d4766906063eabd78e83e7f1b65183ee07d0b",
+ "events_csv_sha256": "0ebc51968c76a11f43061e5372ad23dc229cb910ff2ad5b3483bc2cc8b083564"
+}
