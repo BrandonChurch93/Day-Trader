@@ -14,13 +14,13 @@ Arm A sees the scouts' raw packet but not their notes. B and C get only the note
 
 Send a full vector of signed weights. Unlisted names go to zero. Total absolute weight cannot exceed 1x. Use `no_change` to keep the last target and its protective exits. Your reasons and citations must cover each change.
 
-A new or updated stop or target is not live on the bar where it is installed. After a fill it first applies on the next minute bar for that coin. If that bar opens past the level, the exit uses that bar's open.
+A new or updated stop or target is not live on the bar where it is installed. It first applies on the next recorded minute bar for that coin. On a complete bar that can hit both levels, the stop is taken. If the bar opens beyond the selected level, the exit uses that open.
 
 ```json
 {"wake_key":"...","weights":{"SOL/USD":0.25},"why":"The note describes the fact I used.","citations":{"SOL/USD":{"note_ids":["note-id"],"evidence_ids":[]}}}
 ```
 
-Arm C can add a price condition. Send `conditions` with at most one per coin and two live in total. Use `keep` to name a live order you want to keep. Any order you omit is cancelled. A new condition for the same coin replaces the old one. A condition stays live for one to six hours, never beyond the session. A relative level uses `pct` instead of `price`. Use a positive number for either direction.
+Arm C can add a price condition. Send `conditions` with at most one per coin and two live in total. Use `keep` to name a live or waiting order you want to keep. An omission or replacement takes effect on that coin's first recorded bar after the install minute. A new order cannot trigger or cancel an existing one during the install minute. Expiry is still one to six hours from the submission and never beyond the session. A relative level uses `pct` instead of `price`. Use a positive number for either direction.
 
 ```json
 {"wake_key":"...","no_change":true,"why":"Wait for the price signal.","keep":[],"conditions":[{"symbol":"SOL/USD","direction":"above","pct":1.5,"hours":2,"weight":0.25,"note_ids":["note-id"]}]}

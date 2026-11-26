@@ -469,13 +469,19 @@ class DeskSession:
             result.update(arm=self.arm, book=dict(cash=b["cash"], equity=P.value_at(b, marks),
                           weights=P.weights_at(b, marks), current_target=b["target"], exits=b["exits"],
                           marks={s:marks[s] for s in b["qty"] if s in marks}),
-                          active=list(st["active"].values()), looks_left=self.opts["looks"]-len(st["looks"]),
+                          active=self.resting(st), looks_left=self.opts["looks"]-len(st["looks"]),
                           book_evidence=f"book:{at}")
             if self.arm != "A":
                 result["notes"] = self.manifest["scout"]["wakes"][k]["notes"]
         if not con.execute("SELECT 1 FROM journal WHERE wake=? AND role=? AND kind='packet'", (at, role)).fetchone():
             self.log(con, at, role, "packet", dict(hash=digest(result)))
         return result
+
+    @staticmethod
+    def resting(st):
+        waiting = st["book"].get("desk_order_updates",{})
+        return list(st["active"].values())+[dict(c["order"],pending_install=True)
+                                            for _,c in sorted(waiting.items()) if c["order"] is not None]
 
     def lookup(self, con, st, body):
         if len(st["looks"]) >= self.opts["looks"]:
@@ -590,10 +596,11 @@ class DeskSession:
             c["decision_id"] = decision_id
             cite(c)
         keep = body.get("keep", [])
+        resting = {o["id"]:o["symbol"] for o in self.resting(st)}
         if (not isinstance(keep, list) or len(keep) > self.opts["max_conditions"]
-                or any(not isinstance(i, str) or i not in {o["id"] for o in st["active"].values()} for i in keep)):
+                or any(not isinstance(i, str) or i not in resting for i in keep)):
             raise ValueError("keep must name active order ids")
-        kept = {s for s, o in st["active"].items() if o["id"] in keep}
+        kept = {resting[i] for i in keep}
         if len(kept | new.keys()) > self.opts["max_conditions"]:
             raise ValueError("too many live conditions")
         bundle = dict(weights=weights, exits=bare.get("exits"), conditions=new, keep=keep,

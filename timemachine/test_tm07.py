@@ -255,6 +255,46 @@ class DeskTest(unittest.TestCase):
             self.assertEqual({r["symbol"]:r["open"] for r in out["closeout"]["trades"]},{A:38,B:100})
             self.assertTrue(all(r["penalty_usd"] > 0 for r in out["closeout"]["trades"]))
 
+    def test_pass3_m6_install_minute_cannot_use_new_stop_or_replacement(self):
+        spec = world([(T,A,90,91,89,90),(T+60,A,90,91,89,90)])
+        for new in (False,True):
+            book = P.new_book(1000)
+            book.update(cash=900,qty={A:1},target={A:.1},last_px={A:100},exits={A:{"stop":80}})
+            active = condition(T-3600,weight=.3)
+            active[A]["observed"] = T
+            replacement = condition(T,weight=.5) if new else {}
+            bundle = dict(weights={A:.1},exits={A:{"stop":95}},conditions=replacement,keep=[active[A]["id"]])
+            _,_,events = O.step(book,bundle,spec["rows"][0],spec["params"],P.Minutes(spec["minutes"]),
+                                T,T+120,True,active,1)
+            old, = [e for e in events if e["kind"] == "filled"]
+            self.assertEqual((old["utc"],old["order_id"]),(T,active[A]["id"]))
+            if new:
+                armed, = [e for e in events if e["kind"] == "armed"]
+                self.assertEqual(armed["utc"],T+60)
+
+    def test_pass3_m6_order_waits_for_own_bar_and_ignores_install_bar_cross(self):
+        spec = world()
+        engine,book = O.Orders(),P.new_book(1000)
+        engine.submit({"conditions":condition(T)},book,T)
+        bars = [(T,A,100,104,99,100),(T+60,B,100,101,99,100),
+                (T+120,A,100,104,99,100),(T+180,A,100,101,99,100)]
+        engine.advance(book,spec["params"],bars,T,T+240,1)
+        self.assertEqual([(e["kind"],e["utc"]) for e in engine.events],
+                         [("armed",T+120),("triggered",T+180),("filled",T+180)])
+
+    def test_pass3_m7_resting_ohlc_stop_is_accounted_at_close_after_settlement(self):
+        spec = world()
+        spec["params"]["funding"][A] = {T+45:.01,T+60:.01}
+        book = P.new_book(1000)
+        book.update(cash=500,qty={A:5},target={A:.5},exits={A:{"stop":95,"target":105}},last_px={A:100})
+        scan = O.Orders().advance(book,spec["params"],[(T,A,100,110,90,100),(T+60,A,100,101,99,100)],
+                                 T,T+120,1)
+        settlement, = [row for row in scan["settlements"] if row["rate"] is not None]
+        self.assertEqual((settlement["utc"],settlement["qty"],settlement["cost"]),(O.stamp(T+45),5,5))
+        exit, = scan["exits"]
+        self.assertEqual((exit["kind"],exit["utc"],exit["phase"]),("stop",O.stamp(T+60),"bar_close_proxy"))
+        self.assertEqual(O.protective_hit(5,{"stop":95,"target":105},110,111,90),(95,"stop",False))
+
     def test_reaudit_r02_exit_observation_does_not_take_next_open_citation(self):
         second = T+3600
         bars = [(T,A,100,101,99,100),(second,A,100,101,90,100),
@@ -267,7 +307,7 @@ class DeskTest(unittest.TestCase):
         _,log = S.load_session(session.path)
         exit, = (data for _,kind,data in log if kind == "protective_exit")
         self.assertEqual(exit["execution"]["utc"],O.stamp(second+60))
-        self.assertEqual(exit["execution"]["phase"],"intrabar")
+        self.assertEqual(exit["execution"]["phase"],"bar_close_proxy")
         self.assertEqual(exit["parent"]["evidence_ids"],[f"book:{T}"])
 
     def test_pass3_m2_legacy_benchmarks_match_to_the_cent(self):
@@ -714,7 +754,7 @@ class DeskTest(unittest.TestCase):
         # last wake's receipt. The complete book and exit history still match.
         before, = [e for r in slow[1] for e in r["scan"]["exits"]]
         after, = [e for r in dsk["scans"] for e in r["exits"]]
-        self.assertEqual(after,dict(before,utc=O.stamp(D.epoch(before["utc"])+60),phase="intrabar"))
+        self.assertEqual(after,dict(before,utc=O.stamp(D.epoch(before["utc"])+60),phase="bar_close_proxy"))
         self.assertAlmostEqual(sum(r["scan"]["funding_usd"] for r in slow[1]),sum(r["funding_usd"] for r in dsk["scans"]))
         for seed in range(4):
             twin = tm06.shuffle_answers(ans, spec["rows"], random.Random(seed))
@@ -785,20 +825,21 @@ class DeskTest(unittest.TestCase):
         engine.advance(book,spec["params"],[(T+60,A,100,103,99,100),(T+3600,A,200,210,199,205)],T,T+3660,1)
         self.assertFalse(book["qty"])
         self.assertEqual([(e["kind"],e["utc"]) for e in engine.events],
-                         [("armed",T),("triggered",T+120),("expired",T+3600)])
+                         [("armed",T+60),("triggered",T+120),("expired",T+3600)])
 
     def test_immediate_cancel_and_protection(self):
         spec = world()
         engine, book = O.Orders(), P.new_book(1000)
         book.update(qty={A:1}, target={A:.1}, exits={A:{"stop":98}}, last_px={A:100},cash=900)
         engine.submit({"conditions":condition(T)},book,T)
-        engine.advance(book,spec["params"],[(T,A,100,104,97,100),(T+60,A,100,104,99,100)],T,T+120,1)
+        engine.advance(book,spec["params"],[(T,A,100,101,99,100),(T+60,A,100,104,97,100)],T,T+120,1)
         self.assertEqual([e["kind"] for e in engine.events],["armed","cancelled"])
         self.assertEqual(book["exits_hit"][0]["kind"],"stop")
         engine.submit({"conditions":condition(T)},book,T)
-        engine.observe_close((T,A,100,104,99,100))
+        engine.activate(T+60,{A:100})
+        engine.observe_close((T+60,A,100,104,99,100))
         engine.submit({"weights":{A:.2},"keep":[engine.active[A]["id"]]},book,T+3600)
-        self.assertEqual(engine.events[-1]["reason"],"immediate_target")
+        self.assertEqual(engine.events[-1]["kind"],"triggered")
 
     def test_restart_exactly_once(self):
         s = self.create("A")

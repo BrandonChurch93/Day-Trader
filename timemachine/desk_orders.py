@@ -88,6 +88,20 @@ def funding_schedule(pp,start,end):
     return sorted(events)
 
 
+def protective_hit(q, ex, o, h, l):
+    """Evaluate only a completed bar, giving the stop priority on ambiguity."""
+    for kind in ("stop","target"):
+        level = ex.get(kind)
+        if level is None:
+            continue
+        down = (q > 0) == (kind == "stop")
+        crossed = l <= level if down else h >= level
+        if crossed:
+            gap = (o <= level) if down else (o >= level)
+            return o if gap else level,kind,gap
+    return None
+
+
 def normalize_conditions(items, marks, symbols, wake, end, max_hours, gross):
     if not isinstance(items, list):
         raise ValueError("conditions must be a list")
@@ -122,8 +136,9 @@ def normalize_conditions(items, marks, symbols, wake, end, max_hours, gross):
 class Orders:
     """Clock and book state are owned by caller; all events are deterministic."""
 
-    def __init__(self, active=None, delay=0):
+    def __init__(self, active=None, delay=0, pending=None):
         self.active = deepcopy(active or {})
+        self.pending = deepcopy(pending or {})
         self.events = []
         self.delay = delay
 
@@ -141,21 +156,39 @@ class Orders:
         for sym, order in sorted(self.active.items()):
             if at >= order["expiry"]:
                 self.remove(sym, "expired", at)
+        for sym,change in sorted(self.pending.items()):
+            order = change["order"]
+            if order and at >= order["expiry"]:
+                self.event("expired",order,at,reason="before_activation")
+                self.pending.pop(sym)
 
     def submit(self, bundle, book, at):
         self.expire(at)
-        weights = bundle.get("weights")
-        target = book["target"]
         keeps = set(bundle.get("keep", ()))
         new = bundle.get("conditions", {})
-        for sym, order in sorted(self.active.items()):
-            changed = weights is not None and weights.get(sym, 0) != target.get(sym, 0)
-            if sym in new or order["id"] not in keeps or (changed and "observed" in order):
-                reason = "replaced" if sym in new else "immediate_target" if changed and "observed" in order else "not_kept"
-                self.remove(sym, "cancelled", at, reason=reason)
-        for sym, order in sorted(new.items()):
-            self.active[sym] = deepcopy(order)
-            self.event("armed", order, at)
+        for sym in set(self.active)|set(self.pending)|set(new):
+            queued = self.pending.get(sym,{}).get("order")
+            live = self.active.get(sym)
+            if sym in new:
+                self.pending[sym] = dict(after=at,order=deepcopy(new[sym]))
+            elif queued and queued["id"] in keeps:
+                continue
+            elif live and live["id"] not in keeps:
+                self.pending[sym] = dict(after=at,order=None)
+            else:
+                self.pending.pop(sym,None)
+
+    def activate(self, at, opens):
+        self.expire(at)
+        for sym,change in sorted(self.pending.items()):
+            if at <= change["after"] or sym not in opens:
+                continue
+            order = self.pending.pop(sym)["order"]
+            if sym in self.active:
+                self.remove(sym,"cancelled",at,reason="replaced" if order else "not_kept")
+            if order:
+                self.active[sym] = order
+                self.event("armed",order,at)
 
     def execute_open(self, book, pp, at, opens, gross):
         self.expire(at)
@@ -164,11 +197,6 @@ class Orders:
         ready = []
         for sym, order in sorted(self.active.items()):
             if sym in opens and "observed" in order and order["observed"] + self.delay <= at:
-                px = opens[sym]
-                gap_exit = book["qty"].get(sym) and P.exit_hit(book["qty"][sym], book["exits"].get(sym, {}), px, px, px)
-                if gap_exit:
-                    self.remove(sym, "cancelled", at, reason="protective_exit")
-                    continue
                 held = P.weights_at(book, opens).get(sym, 0.0)
                 ready.append((not (held * order["weight"] >= 0 and abs(order["weight"]) < abs(held)), sym))
         for _, sym in sorted(ready):
@@ -251,6 +279,10 @@ class Orders:
             nonlocal blocked
             for s in sorted(self.active):
                 self.remove(s, "cancelled", tick, reason="maintenance")
+            for s,change in sorted(self.pending.items()):
+                if change["order"]:
+                    self.event("cancelled",change["order"],tick,reason="maintenance")
+            self.pending.clear()
             book.update(target={}, exits={}, pending=False)
             blocked = True
 
@@ -267,10 +299,11 @@ class Orders:
             peak = book["peak"]
             book["largest_drop"] = min(book["largest_drop"],max(0,eq)/peak-1 if peak else 0)
 
-        def protective(s, tick, hit, phase):
+        def protective(s, tick, hit, phase, active_exit):
             price, kind, gap = hit
             trade = P.trade(book,s,-book["qty"][s],price,pp)
-            event = dict(utc=stamp(tick),symbol=s,kind=kind,level=book["exits"].pop(s)[kind],
+            book["exits"].pop(s,None)
+            event = dict(utc=stamp(tick),symbol=s,kind=kind,level=active_exit[kind],
                          filled_at=price,gap=gap,price=trade["price"],side=trade["side"],qty=trade["qty"],phase=phase)
             book["target"].pop(s,None)
             book["exits_hit"].append(event)
@@ -314,15 +347,19 @@ class Orders:
                     note_drawdown(book["cash"])
                     block(at)
                     breach = True
+            if not blocked and bars:
+                self.activate(tick,opens)
+            bar_by_symbol = {r[1]:r for r in bars}
             for s, q in sorted(book["qty"].items()):
                 if s not in opens or s not in book["exits"]:
                     continue
-                p = opens[s]
-                hit = P.exit_hit(q, book["exits"][s], p, p, p)
-                if hit:
-                    protective(s,tick,hit,"open")
+                _,_,o,h,l,_ = bar_by_symbol[s]
+                hit = protective_hit(q,book["exits"][s],o,h,l)
+                if hit and hit[2]:
+                    protective(s,tick,hit,"open",book["exits"][s])
                     protected.add(s)
             prior_exits = dict(book["exits"])
+            prior_qty = dict(book["qty"])
             immediate_symbols = set()
             if on_open and not blocked and bars:
                 immediate_symbols = on_open(tick, opens, protected) or set()
@@ -335,16 +372,16 @@ class Orders:
             if not breach:
                 fund_until(at-1,{})
                 hold(at-tick)
-            # A resting exit can fill at its level intraminute. Record the
-            # observation at close, not as a second execution at the open.
+            # OHLC gives no touch timestamp. Account for the resting exit at
+            # the bar close, after all mid-minute funding and before the next open.
             for _,s,o,h,l,_ in bars:
-                ex = book["exits"].get(s)
-                if (not book["qty"].get(s) or not ex
-                        or s in immediate_symbols or ex != prior_exits.get(s)):
+                ex = prior_exits.get(s)
+                q = book["qty"].get(s,0)
+                if not ex or q*prior_qty.get(s,0) <= 0:
                     continue
-                hit = P.exit_hit(book["qty"][s],ex,o,h,l)
+                hit = protective_hit(q,ex,o,h,l)
                 if hit and not hit[2]:
-                    protective(s,at,hit,"intrabar")
+                    protective(s,at,hit,"bar_close_proxy",ex)
                     protected.add(s)
             book["last_px"].update({s:c for _,s,_,_,_,c in bars})
             if book["qty"]:
@@ -359,7 +396,7 @@ class Orders:
 
 def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=False, delay=0):
     """One shared transition for submission and replay; no broker side effects."""
-    orders = Orders(active, delay)
+    orders = Orders(active,delay,book.pop("desk_order_updates",None))
     orders.submit(bundle, book, at)
     weights, exits = bundle.get("weights"), bundle.get("exits")
     effective = P.norm(book["target"] if weights is None else weights)
@@ -412,9 +449,9 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
                     planned["exits"].pop(s,None)
             else:
                 record["trades"].append(dict(tr,fill_utc=stamp(tick)))
+        for s in protected:
+            target.pop(s,None)
         if at_cap:
-            for s in protected:
-                target.pop(s,None)
             book.update(applied)
         book.update(target=target, exits={s:e for s,e in planned["exits"].items() if s in target})
         record.update(target=dict(target), exits=dict(book["exits"]), value_after=P.value_at(book,opens),
@@ -424,7 +461,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     if not (changed or update_exits):
         immediate(at, {}, set())
     symbols = set(pp["symbols"]) if changed else set(book["qty"])
-    active_rows = P.scan_rows(minutes, at, end, symbols, watched=orders.active)
+    active_rows = P.scan_rows(minutes,at,end,symbols,watched=orders.active.keys()|orders.pending.keys())
     scan = orders.advance(book, pp, active_rows, at, end, gross, on_open=immediate, last=last)
     if record is None:
         record = dict(target=dict(book["target"]), trades=[],
@@ -432,4 +469,7 @@ def step(book, bundle, row, pp, minutes, at, end, last, active, gross, first=Fal
     record["scan"] = scan
     if last:
         orders.expire(end)
+        orders.pending.clear()
+    if orders.pending:
+        book["desk_order_updates"] = orders.pending
     return record, orders.active, orders.events
