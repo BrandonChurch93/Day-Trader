@@ -191,3 +191,74 @@ def test_plan75_missing_files_fall_back_quietly(tmp_path):
     c = NC.plan75_card("GH/", tmp_path / "nope.out", tmp_path / "nope.json")
     assert c["id"] == "plan75" and c["verdict"] == "Figures not on this computer" and c["numbers"] == [] and "bars" not in c
     assert NC.cards("GH/")[0]["id"] == "plan75"
+
+
+# ---- E10 forward log: shape from forward_e10.py publish, made-up logs only through its test helpers in a temp folder
+def e10_log(tmp_path, days=4, block_at=None):
+    from datetime import timedelta
+    sys.path.insert(0, os.path.join(NC.ROOT, "practice"))
+    import forward_e10 as fe
+    import test_forward_e10 as helpers
+    folder, out = tmp_path / "invented", tmp_path / "E10_log.json"
+    fe.start(helpers.T - timedelta(days=1), folder, "invented")
+    second = helpers.SecondVenue(block_at=block_at)
+    for d in range(days):
+        c = helpers.Clock(helpers.T + timedelta(days=d), 10)
+        fe.record(c(), helpers.Venue(), folder, c, c.sleep, second_venue=second)
+    fe.publish(folder, out)
+    return out
+
+
+def test_e10_placeholder_is_not_started(tmp_path):
+    # The repo's public file changes once the real log runs, so the not-started state is built here from an empty folder.
+    sys.path.insert(0, os.path.join(NC.ROOT, "practice"))
+    import forward_e10 as fe
+    out = tmp_path / "E10_log.json"
+    fe.publish(tmp_path / "empty", out)
+    assert json.load(open(out))["coinbase"]["status"] == "NOT_STARTED"
+    c = NC.e10_card("GH/", out)
+    assert c["id"] == "e10" and c["title"] == "E10: coin trend rule, running forward"
+    assert c["verdict"] == "Not started, no wakes yet" and c["numbers"] == [] and "columns" not in c
+    for words in ("pretend $500", "midnight UTC", "Coinbase quotes at a 60 bp fee", "Binance.US quotes at its stated 2 bp fee",
+                  "the first wake is 2026-11-26 17:00 MT", "365 days after the first wake", "a record, not a verdict"):
+        assert words in c["summary"]
+    assert [x["id"] for x in NC.cards("GH/")][-2:] == ["e09", "e10"]
+
+
+def test_e10_populated_made_up_log(tmp_path):
+    c = NC.e10_card("GH/", e10_log(tmp_path))
+    assert c["verdict"] == "Running" and c["columns"]["head"] == ["", "Coinbase", "Binance.US"]
+    rows = {r[0]: r[1:] for r in c["columns"]["rows"]}
+    assert rows["State"] == ["Running", "Running"] and rows["Wakes recorded"] == ["4", "4"]
+    assert rows["Orders"] == ["1", "1"] and rows["Fills"] == ["1", "1"] and rows["Voided buys"] == ["0", "0"]
+    assert rows["Median cost a side, buys (we assumed 75 bp)"] == ["65.0 bp", "7.0 bp"]
+    assert rows["Median cost a side, sells (we assumed 75 bp)"] == ["none yet", "none yet"]
+    text = json.dumps(c)
+    assert "$" not in text.replace("pretend $500", "").replace("the $500 book", "") and "profit is shown" in c["summary"]
+
+
+def test_e10_stopped_venue(tmp_path):
+    c = NC.e10_card("GH/", e10_log(tmp_path, block_at=3))
+    rows = {r[0]: r[1:] for r in c["columns"]["rows"]}
+    assert c["verdict"] == "Running, Binance.US stopped" and c["tone"] == "mixed"
+    assert rows["State"] == ["Running", "Stopped"] and "Binance.US refused" in c["summary"]
+
+
+@pytest.mark.parametrize("change", ["drop", "extra", "text", "status", "costs"])
+def test_e10_refuses_a_log_of_another_shape(tmp_path, change):
+    path = e10_log(tmp_path)
+    log = json.load(open(path))
+    v = log["coinbase"]
+    if change == "drop":
+        del v["placeability"]["main"]["void_buys"]
+    elif change == "extra":
+        log["profit"] = 0.1
+    elif change == "text":
+        v["wakes"] = "4"
+    elif change == "status":
+        v["status"] = "RUNNING"
+    else:
+        v["all_in_cost_by_side"]["buy"]["n"] = 2
+    path.write_text(json.dumps(log))
+    with pytest.raises(ValueError, match="E10 card"):
+        NC.e10_card("GH/", path)

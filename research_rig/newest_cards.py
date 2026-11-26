@@ -32,6 +32,8 @@ D181 = "docs/research/181_plan_75_heldback_result.md"
 E09_LOG = "practice/forward/E09_log.json"
 E09_CARD = "practice/traders/E09_overextension_dip_buy.md"
 QUEUE = "docs/QUEUE.md"
+E10_LOG = "practice/forward/E10_log.json"
+E10_CARD = "practice/traders/E10_coin_trend_ratchet.md"
 MINUS = "\u2212"
 
 
@@ -266,6 +268,106 @@ def e09_card(gh):
                 numbers=nums)
 
 
+# ------------------------------------------------------------------ E10 forward log
+E10_VENUES = (("coinbase", "Coinbase"), ("binance_us", "Binance.US"))
+E10_PLACE = {"delayed_sells", "fills", "minimum_unknown", "orders", "pair_unavailable", "queued_sells", "quote_missing",
+             "under", "venue_unavailable", "void_buys"}
+E10_VENUE_KEYS = {"all_in_cost_by_side", "block_reason", "coin_candle_page_failures", "coin_quote_page_failures",
+                  "flat_reference_bp", "follow_observations", "half_spread_by_coin", "label", "late_wakes", "missed_wakes",
+                  "placeability", "status", "unavailable_observations", "void_wakes", "wakes"}
+E10_STATES = {"NOT_STARTED", "STARTED", "BLOCKED", "NO_DECISION_FEED"}
+
+
+def e10_checked(log):
+    """Refuse a log whose shape is not the one forward_e10.py publish writes. Returns it unchanged."""
+    def need(ok, what):
+        if not ok:
+            raise ValueError(f"E10 card: the log does not fit: {what}")
+    count = lambda x: isinstance(x, int) and not isinstance(x, bool) and x >= 0
+    need(isinstance(log, dict) and set(log) == {"card", "coinbase", "binance_us", "coinbase_vs_second_feed"}, "top-level keys")
+    need(log["card"] == "E10" and log["coinbase_vs_second_feed"] == "NOT_MEASURED", "card name or feed comparison")
+    for key, _ in E10_VENUES:
+        v = log[key]
+        need(isinstance(v, dict) and set(v) == E10_VENUE_KEYS, f"{key} keys")
+        need(v["status"] in E10_STATES and (v["status"] == "BLOCKED") == isinstance(v["block_reason"], str), f"{key} status")
+        need(all(count(v[k]) for k in ("wakes", "void_wakes", "missed_wakes", "late_wakes", "follow_observations",
+                                       "unavailable_observations", "coin_quote_page_failures", "coin_candle_page_failures")), f"{key} counts")
+        need(v["void_wakes"] == v["missed_wakes"] + v["late_wakes"], f"{key} void wakes")
+        need(isinstance(v["flat_reference_bp"], (int, float)) and isclose(v["flat_reference_bp"], 75.0), f"{key} cost line")
+        need(set(v["placeability"]) == {"main", "shown"}, f"{key} books")
+        for book in v["placeability"].values():
+            need(set(book) == E10_PLACE and all(count(x) for x in book.values()) and book["fills"] <= book["orders"], f"{key} order counts")
+        cost = v["all_in_cost_by_side"]
+        need(set(cost) == {"buy", "sell"}, f"{key} cost sides")
+        for c in cost.values():
+            need(set(c) == {"n", "median_bp", "p90_bp", "median_minus_flat_bp", "p90_minus_flat_bp"} and count(c["n"]), f"{key} cost keys")
+            need(all((c[k] is None) == (c["n"] == 0) for k in ("median_bp", "p90_bp", "median_minus_flat_bp", "p90_minus_flat_bp")), f"{key} cost values")
+        need(cost["buy"]["n"] + cost["sell"]["n"] == v["placeability"]["main"]["fills"], f"{key} costs against fills")
+        if v["status"] == "NOT_STARTED":
+            need(v["wakes"] == v["void_wakes"] == v["placeability"]["main"]["orders"] == 0, f"{key} counts before start")
+    states = {log[k]["status"] for k, _ in E10_VENUES}
+    need((log["coinbase"]["status"] == "NOT_STARTED") == (log["binance_us"]["status"] == "NOT_STARTED"), "one venue not started")
+    need(log["coinbase"]["status"] != "NO_DECISION_FEED" and (log["binance_us"]["status"] != "NO_DECISION_FEED"
+         or log["coinbase"]["status"] == "BLOCKED"), "decision feed state")
+    return log
+
+
+def e10_card(gh, log_path=None):
+    card = read(E10_CARD)
+    raw = yaml.safe_load(read("config/thresholds.yaml"))
+    f = raw["forward_e10"]["value"]
+    base_key, field = f["spot_taker"]
+    fee_cb, fee_bn = raw[base_key]["value"][field], raw[f["second_fee_key"]]["value"]["default_taker_bp"]
+    coins = re.search(r"Read the (\d+) Plan 70 coins", card)[1]
+    legs = re.search(r"Use the Plan 75 primary book for decisions: (\d+)-, (\d+)- and (\d+)-day legs", card).groups()
+    started = re.search(r"Standing chore at every wake-up \(lead agent, (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M) MT\): the E10 forward log", read(QUEUE))
+    if not started or "The first scheduled wake is the next UTC date after start" not in card:
+        raise ValueError("E10 card: start time or wake rule not found in the queue page or the card")
+    start = datetime.datetime.strptime(started[1], "%Y-%m-%d %I:%M %p").replace(tzinfo=MT).astimezone(datetime.timezone.utc)
+    first = datetime.datetime.combine(start.date() + datetime.timedelta(days=1), datetime.time(), datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    nxt = datetime.datetime.combine(now.date() + datetime.timedelta(days=1), datetime.time(), datetime.timezone.utc)
+    at = nxt.astimezone(MT).strftime("%H:%M")
+    log = e10_checked(json.load(open(log_path or os.path.join(ROOT, E10_LOG))))
+    cb, bn = log["coinbase"], log["binance_us"]
+    what = (f"Follows the Plan 75 rule forward with pretend money: it buys one of {coins} large coins when its daily close reaches a "
+            f"{legs[0]}, {legs[1]} or {legs[2]} day high and sells when the close drops under a stop that only moves up. "
+            f"It decides once a day at midnight UTC ({at} MT) with a pretend $"
+            f"{f['bankroll_usd']['main']:,}, priced two ways side by side: Coinbase quotes at a {fee_cb:g} bp fee a side and "
+            f"Binance.US quotes at its stated {fee_bn:g} bp fee. A bp is a hundredth of a percent. ")
+    fixed = (f"No profit is shown until {f['score_days']} days after the first wake, and then it is a record, not a verdict. "
+             "No prices are shown.")
+    links = [["E10 card", gh + E10_CARD], ["Log counts", gh + E10_LOG]]
+    base = dict(id="e10", title="E10: coin trend rule, running forward", date=None, links=links)
+    if cb["status"] == "NOT_STARTED":
+        return dict(base, verdict="Not started, no wakes yet", tone="unknown", numbers=[],
+                    basis=f"STATED by the E10 card and the queue page. {os.path.basename(E10_LOG)} is still the not-started placeholder.",
+                    summary=what + f"Live since {mt(start.isoformat())}; the first wake is {mt(first.isoformat())}. No wakes recorded yet. " + fixed)
+    word = {"STARTED": "Running", "BLOCKED": "Stopped", "NO_DECISION_FEED": "Stopped"}
+    def cost(c):
+        return "none yet" if c["n"] == 0 else f"{c['median_bp']:.1f} bp"
+    pick = lambda fn: [fn(log[key]) for key, _ in E10_VENUES]
+    line = f"{cb['flat_reference_bp']:g} bp"
+    rows = [["State"] + pick(lambda v: word[v["status"]]),
+            ["Wakes recorded"] + pick(lambda v: f"{v['wakes']:,}"),
+            ["Orders"] + pick(lambda v: f"{v['placeability']['main']['orders']:,}"),
+            ["Fills"] + pick(lambda v: f"{v['placeability']['main']['fills']:,}"),
+            ["Voided buys"] + pick(lambda v: f"{v['placeability']['main']['void_buys']:,}"),
+            [f"Median cost a side, buys (we assumed {line})"] + pick(lambda v: cost(v["all_in_cost_by_side"]["buy"])),
+            [f"Median cost a side, sells (we assumed {line})"] + pick(lambda v: cost(v["all_in_cost_by_side"]["sell"]))]
+    stopped = [name for key, name in E10_VENUES if log[key]["status"] != "STARTED"]
+    if cb["status"] == "BLOCKED":
+        verdict, tone, state = "Stopped", "fail", "Coinbase, which feeds every decision, refused our requests, so both books have stopped. "
+    elif stopped:
+        verdict, tone, state = "Running, Binance.US stopped", "mixed", "Binance.US refused our quote requests, so that book has stopped. Coinbase continues. "
+    else:
+        verdict, tone, state = "Running", "unknown", ""
+    return dict(base, verdict=verdict, tone=tone, numbers=[], columns=dict(head=[""] + [n for _, n in E10_VENUES], rows=rows),
+                basis=(f"MEASURED counts read from {os.path.basename(E10_LOG)}, the ${f['bankroll_usd']['main']:,} book. Start time STATED in the queue page. "
+                       "Pretend money, no account at either venue."),
+                summary=what + f"First wake {mt(first.isoformat())}. " + state + fixed)
+
+
 # ------------------------------------------------------------------ Running now strip
 def first_sentence(text):
     text = re.sub(r"\s*\((?:[^()]*`[^()]*)\)", "", text)                       # parentheses that only point at files
@@ -290,4 +392,4 @@ def running_now():
 
 
 def cards(gh):
-    return [plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh)]
+    return [plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh)]

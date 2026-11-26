@@ -1,3 +1,85 @@
 {
-  "status": "not_started"
+  "binance_pair_status_counts": {
+    "TRADING": 20
+  },
+  "bitcoin_candle_counts": {
+    "ok": 1
+  },
+  "book_counts": {
+    "Binance.US": {
+      "ok": 20
+    },
+    "Coinbase": {
+      "ok": 20
+    }
+  },
+  "costs": {
+    "Binance.US": {
+      "25": {
+        "buy": {
+          "median_bp": 7.128066256906918,
+          "n": 20,
+          "p90_bp": 32.574113916883704
+        },
+        "sell": {
+          "median_bp": 7.128066256906918,
+          "n": 20,
+          "p90_bp": 42.33214709371293
+        }
+      },
+      "250": {
+        "buy": {
+          "median_bp": 7.128066256906918,
+          "n": 20,
+          "p90_bp": 63.113045505467916
+        },
+        "sell": {
+          "median_bp": 8.334853587367395,
+          "n": 20,
+          "p90_bp": 61.171597633136095
+        }
+      }
+    },
+    "Coinbase": {
+      "25": {
+        "buy": {
+          "median_bp": 61.544977132652626,
+          "n": 20,
+          "p90_bp": 67.40302043233639
+        },
+        "sell": {
+          "median_bp": 61.79277390669627,
+          "n": 20,
+          "p90_bp": 67.40302043233639
+        }
+      },
+      "250": {
+        "buy": {
+          "median_bp": 61.98994301542878,
+          "n": 20,
+          "p90_bp": 67.40302043233639
+        },
+        "sell": {
+          "median_bp": 61.79277390669627,
+          "n": 20,
+          "p90_bp": 68.52613027515491
+        }
+      }
+    }
+  },
+  "scheduled_wakes": 720,
+  "side_counts": {
+    "Binance.US": {
+      "ok": 80
+    },
+    "Coinbase": {
+      "ok": 80
+    }
+  },
+  "stop": null,
+  "wake_counts": {
+    "begin": 1,
+    "pairs": 1,
+    "wake": 1
+  }
 }
