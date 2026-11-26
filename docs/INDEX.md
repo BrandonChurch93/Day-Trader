@@ -385,6 +385,7 @@ Working papers.
 | `research_rig/PREREG_62_special_dividend_ex_day_v2.md`, `research_rig/score_62.py`, `research_rig/test_62.py`, `research_rig/PINNED_62.json` | Queue 105 and ledger 205: same traded clock and marks as Plan 61 with a narrow Class A vendor cash exception, separate custody and synthetic checks | CURRENT |
 | `research_rig/ADOPTION_62.md`, `research_rig/APPROVAL_62.md` | The lead agent's one-line approvals for plan 62: adoption of the plan 61 lineage and sealed inputs with no new prices, then the no-return input validation | RECORD |
 | `research_rig/GO_62.md` | The lead agent's approval for the one scored run of plan 62, naming the validation approval commit and the validation receipt hash | RECORD |
+| `research_rig/RECOMPUTE_62.json` | Replay 62 independent recompute, aggregate note only: who did it, what was re-derived, fields compared, differences and rule-text ambiguities. No per-event rows | RECORD |
 | `research_rig/vendor_60.py` | Plan 60 offline action transport verifier and deterministic native-to-window projection | DRAFT |
 | `research_rig/ADOPTION_60.md`, `research_rig/APPROVAL_60.md` | Plan 60 lead approvals: adoption of the sealed Plan 43 prices with no price acquisition, then validation only | RECORD |
 | `research_rig/GO_60.md` | Plan 60 lead approval for one scored run, names the validation approval commit and the validation receipt hash | RECORD |
