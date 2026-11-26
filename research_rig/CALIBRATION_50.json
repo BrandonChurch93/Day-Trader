@@ -1,0 +1,147 @@
+{
+  "cells": [
+    {
+      "groups": 15,
+      "n": 30,
+      "pass_rate": {
+        "all": 0.0287,
+        "breadth": 0.5668,
+        "count": 1.0,
+        "paired": 0.0326,
+        "raw": 0.4915,
+        "trim": 0.1242
+      },
+      "planted_net_excess_pp": 0,
+      "trials": 10000
+    },
+    {
+      "groups": 15,
+      "n": 30,
+      "pass_rate": {
+        "all": 0.1905,
+        "breadth": 0.7976,
+        "count": 1.0,
+        "paired": 0.2165,
+        "raw": 0.7795,
+        "trim": 0.4297
+      },
+      "planted_net_excess_pp": 1,
+      "trials": 10000
+    },
+    {
+      "groups": 15,
+      "n": 30,
+      "pass_rate": {
+        "all": 0.5571,
+        "breadth": 0.9275,
+        "count": 1.0,
+        "paired": 0.6001,
+        "raw": 0.9414,
+        "trim": 0.7758
+      },
+      "planted_net_excess_pp": 2,
+      "trials": 10000
+    },
+    {
+      "groups": 15,
+      "n": 30,
+      "pass_rate": {
+        "all": 0.8749,
+        "breadth": 0.9807,
+        "count": 1.0,
+        "paired": 0.902,
+        "raw": 0.99,
+        "trim": 0.9469
+      },
+      "planted_net_excess_pp": 3,
+      "trials": 10000
+    },
+    {
+      "groups": 15,
+      "n": 30,
+      "pass_rate": {
+        "all": 0.9982,
+        "breadth": 0.9995,
+        "count": 1.0,
+        "paired": 0.9995,
+        "raw": 0.9998,
+        "trim": 0.9989
+      },
+      "planted_net_excess_pp": 5,
+      "trials": 10000
+    },
+    {
+      "groups": 35,
+      "n": 70,
+      "pass_rate": {
+        "all": 0.0253,
+        "breadth": 0.5497,
+        "count": 1.0,
+        "paired": 0.0274,
+        "raw": 0.5046,
+        "trim": 0.1691
+      },
+      "planted_net_excess_pp": 0,
+      "trials": 10000
+    },
+    {
+      "groups": 35,
+      "n": 70,
+      "pass_rate": {
+        "all": 0.37,
+        "breadth": 0.8601,
+        "count": 1.0,
+        "paired": 0.3924,
+        "raw": 0.8854,
+        "trim": 0.7128
+      },
+      "planted_net_excess_pp": 1,
+      "trials": 10000
+    },
+    {
+      "groups": 35,
+      "n": 70,
+      "pass_rate": {
+        "all": 0.9,
+        "breadth": 0.98,
+        "count": 1.0,
+        "paired": 0.9204,
+        "raw": 0.9917,
+        "trim": 0.9676
+      },
+      "planted_net_excess_pp": 2,
+      "trials": 10000
+    },
+    {
+      "groups": 35,
+      "n": 70,
+      "pass_rate": {
+        "all": 0.9971,
+        "breadth": 0.9991,
+        "count": 1.0,
+        "paired": 0.9985,
+        "raw": 0.9999,
+        "trim": 0.9989
+      },
+      "planted_net_excess_pp": 3,
+      "trials": 10000
+    },
+    {
+      "groups": 35,
+      "n": 70,
+      "pass_rate": {
+        "all": 1.0,
+        "breadth": 1.0,
+        "count": 1.0,
+        "paired": 1.0,
+        "raw": 1.0,
+        "trim": 1.0
+      },
+      "planted_net_excess_pp": 5,
+      "trials": 10000
+    }
+  ],
+  "model": "synthetic net control + correlated monthly paired shocks",
+  "null_ceiling": 0.1,
+  "schema": 1
+}

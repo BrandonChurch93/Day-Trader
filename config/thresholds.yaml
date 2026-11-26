@@ -1079,6 +1079,12 @@ replay_48_plan:
   note: Only numeric and scope source for Plan 48 calendar, sizing, cost, marks, synthetic calibration and resource caps. JSON flow value for isolated standard-library parsing. The scorer binds the file to the freeze; it is not a runtime override. Calibration spreads are stated assumptions, not measured.
   source: research_rig/PREREG_48_muni_cef_tax_loss.md
 
+replay_50_plan:
+  value: {"capital":500,"min_placed":30,"t_cut":2,"drop_best":3,"term_sessions":20,"signal_minutes":15,"max_sessions":180,"first_day":"2016-01-01","last_entry":"2026-03-10","last_data":"2026-11-24","coverage_pct":5,"cost":{"extra_bps":5,"proxy_half_bps":50,"expiry_seconds":60,"min_coverage_seconds":180},"benchmarks":{"municipal":"MUB","municipal_state":"MUB","core_bond":"AGG","high_yield":"HYG","senior_loan":"BKLN","em_usd_debt":"EMB","us_equity":"SPY","developed_exus":"VEA","em_equity":"VWO","reit":"VNQ","mlp":"AMLP","preferred":"PFF","global_equity":"ACWI"},"calibration":{"trials":10000,"seed":50001,"sizes":[30,70],"edges_pp":[0,1,2,3,5],"monthly_sd_pp":2,"excess_sd_pp":4,"benchmark_sd_pp":5,"null_ceiling":0.10}}
+  status: builder
+  note: Whole configuration pinned for Plan 50. Synthetic widths are stipulated, not estimated from event returns.
+  source: research_rig/PREREG_50_cef_liquidations.md
+
 replay_47_plan:
   value: {"first":"2025-01-01","last":"2026-11-25","lag_min":30,"bar_min":1,"hold_h":24,"shown_h":[1,72],"coinbase_fee_bps":60,"kraken_fee_bps":80,"coinbase_sensitivity_bps":120,"halfspread_bps":15,"min_events":30,"min_t":2,"drop_best":3,"coin_cap":3,"excluded_asset":"SOL","max_news_hours":24,"cal_seed":47001,"cal_reps":2000,"cal_n":[30,40],"cal_plant_pct":[0,1,2,3,4,6],"cal_idio_pct":5,"cal_day_pct":2,"cal_btc_pct":3,"cal_tail_pct":10,"cal_rare_probability_pct":8}
   status: builder
