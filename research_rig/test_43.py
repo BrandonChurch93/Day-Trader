@@ -68,9 +68,9 @@ def condition(trade_days=None):
     return [e],trade_days,C,c,ids,bars,acts
 
 
-def add_blocked(event_rows, ids, bars, acts):
+def add_blocked(event_rows, ids, bars, acts, accession=s.NONCASH_ACCESSION):
     event=event_rows[0]
-    blocked=SimpleNamespace(**(vars(event)|dict(a="0000000002-24-000001",cik="0000000002")))
+    blocked=SimpleNamespace(**(vars(event)|dict(a=accession,cik="0000000002")))
     event_rows.append(blocked)
     for packet in (ids,acts):
         packet["records"][blocked.a]=copy.deepcopy(packet["records"][event.a])
@@ -87,10 +87,13 @@ class SyntheticRepo:
 
     BOOT = """
 import runpy, sys
+from hashlib import sha256
 from pathlib import Path
 root, data = map(Path, sys.argv[1:3])
 g = runpy.run_path(str(root / "research_rig/score_43.py"))["main"].__globals__
-g.update(ROOT=root, DATA=data, INPUT=data/"plan43_inputs", RUN=data/"replay_43", DOCKET=data/"docket.jsonl")
+collector = data/"collector.py"
+g.update(ROOT=root, DATA=data, INPUT=data/"plan43_successor_inputs", RUN=data/"replay_43_successor",
+         DOCKET=data/"docket.jsonl",COLLECTOR=collector,COLLECTOR_SHA256=sha256(collector.read_bytes()).hexdigest())
 sys.argv = ["score_43.py", *sys.argv[3:]]
 raise SystemExit(g["main"]())
 """
@@ -100,10 +103,13 @@ raise SystemExit(g["main"]())
         self.data=base/"data"
         self.root.mkdir()
         self.data.mkdir(mode=0o700)
-        self.inp=self.data/"plan43_inputs"
-        self.run=self.data/"replay_43"
+        self.inp=self.data/"plan43_successor_inputs"
+        self.run=self.data/"replay_43_successor"
         self.inp.mkdir(mode=0o700)
         self.run.mkdir(mode=0o700)
+        collector=b"# synthetic fixture; no collector is executed\n"
+        s.write_exclusive(self.data/"collector.py",collector)
+        self.collector=sha256(collector).hexdigest()
         self.git("init","-q","-b","main")
         self.git("config","user.name","Synthetic Fixture")
         self.git("config","user.email","fixture@example.invalid")
@@ -121,17 +127,19 @@ raise SystemExit(g["main"]())
         c["marks"]["placed"]=1
         # Keep OS guards and their real implementation in the test with small fixture floors.
         c["resources"].update(minimum_free_mib=1,disk_floor_mib=1)
+        s.write_exclusive(self.inp/"identities.json",s.render(self.packets[0]))
+        s.write_exclusive(self.inp/"actions.json",s.render(self.packets[2]))
         config=b"replay_43_plan:\n  value: "+json.dumps(c,default=float).encode()+b"\n"
         proof=s.render(dict(docket_sha256=self.dp,trials=c["calibration"]["trials"],eligible=len(events),
                             edges=c["calibration"]["edges"],shares=[0]))
         custom={s.CONFIG:config,s.CALIBRATION:proof}
         for name in s.SOURCES:
             blob=custom[name] if name in custom else (s.ROOT/name).read_bytes()
-            if name==s.PLAN:
+            if name in (s.PLAN,s.AMENDMENT):
                 blob=blob.replace(b"Status DRAFT.",b"Status FROZEN.")
             self.put(name,blob)
-        for name,num in (("research_rig/TRIAL_LEDGER.md",178),("docs/QUEUE.md",74)):
-            self.put(name,f"| {num} | `{s.PLAN}` | synthetic selection |\n".encode())
+        for name,num,doc in (("research_rig/TRIAL_LEDGER.md",s.LEDGER,s.AMENDMENT),("docs/QUEUE.md",74,s.PLAN)):
+            self.put(name,f"| {num} | `{doc}` | synthetic selection |\n".encode())
         self.repin()
         self.freeze=self.commit()
 
@@ -163,19 +171,23 @@ raise SystemExit(g["main"]())
 
     def acquisition(self,freeze=None):
         freeze=freeze or self.freeze
-        return (f"Approved by the lead: plan 43, one custodian acquisition, freeze commit {freeze}, "
-                f"freeze SHA-256 {self.fp}, docket SHA-256 {self.dp}.\n").encode()
+        return (f"Approved by the lead: plan 43 successor ledger 188, one custodian acquisition, freeze commit {freeze}, "
+                f"freeze SHA-256 {self.fp}, docket SHA-256 {self.dp}, collector SHA-256 {self.collector}.\n").encode()
 
     def validation(self,acq,bars_pin=None):
         receipt=self.inp/f"acquisition.{acq}.lock"
         ap=sha256(receipt.read_bytes()).hexdigest()
         ids,bars,actions=(sha256((self.inp/n).read_bytes()).hexdigest() for n in s.PACKETS)
-        return (f"Approved by the lead: plan 43, validation only, acquisition commit {acq}, "
+        fetch,native,transport,rebuild=[sha256((self.inp/n).read_bytes()).hexdigest() for n in
+                                       (f"fetch_start.{acq}.lock","native/native_index.json",
+                                        "native/transport_index.json","offline_rebuild.json")]
+        return (f"Approved by the lead: plan 43 successor ledger 188, validation only, acquisition commit {acq}, "
                 f"acquisition receipt SHA-256 {ap}, identities SHA-256 {ids}, bars SHA-256 {bars_pin or bars}, "
-                f"actions SHA-256 {actions}.\n").encode()
+                f"actions SHA-256 {actions}, fetch-start SHA-256 {fetch}, native index SHA-256 {native}, "
+                f"transport index SHA-256 {transport}, offline rebuild SHA-256 {rebuild}.\n").encode()
 
     def release(self,val,pin):
-        return (f"Approved by the lead: plan 43, one scored run, validation approval commit {val}, "
+        return (f"Approved by the lead: plan 43 successor ledger 188, one scored run, validation approval commit {val}, "
                 f"validation receipt SHA-256 {pin}.\n").encode()
 
     def process(self,flag,ref=None,*,isolated=True):
@@ -186,13 +198,81 @@ raise SystemExit(g["main"]())
 
     def cli(self,test,flag,ref,expected,*,isolated=True):
         proc=self.process(flag,ref,isolated=isolated)
-        ok=expected in ("P43_ACQUISITION_CLAIMED","P43_VALIDATED","P43_SCORED_ONCE")
+        ok=expected in ("P43_ACQUISITION_CLAIMED","P43_CUSTODY_READY","P43_VALIDATED","P43_SCORED_ONCE")
         test.assertEqual(proc.returncode,0 if ok else 2,proc.stderr)
         test.assertEqual((proc.stdout,proc.stderr),((expected+"\n","") if ok else ("",expected+"\n")))
 
-    def stage_packets(self):
-        for name,p in zip(s.PACKETS,self.packets):
-            s.write_exclusive(self.inp/name,s.render(p))
+    def stage_packets(self,acq,core_missing=False):
+        _,bars,_=self.packets
+        bars=copy.deepcopy(bars)
+        bars["records"].pop(self.blocked,None)
+        first=next(iter(bars["records"].values()))
+        # Keep one diagnostic gap and one earlier-entry omission; no core refusal
+        # fits the 5% cap in this two-accession fixture.
+        first["stock"]["filing_all"].pop(0)
+        early_index=cfg()["stale_run"]
+        first["stock"]["filing_all"][early_index-1]["v"]=0
+        if core_missing:
+            first["stock"]["raw"].pop(early_index+1)
+        for legs in bars["records"].values():
+            for leg in legs.values():
+                for view in s.VIEWS:
+                    for r in leg[view]:
+                        for k in "ohlc":
+                            r[k]=str(r[k])
+        body=lambda p:(json.dumps(p,sort_keys=True,separators=(",",":"),allow_nan=False)+"\n").encode()
+        s.write_exclusive(self.inp/"bars.json",body(bars))
+        native=self.inp/"native"
+        native.mkdir(mode=0o700)
+        (native/"errors").mkdir(mode=0o700)
+        receipt=self.inp/f"acquisition.{acq}.lock"
+        fetch=dict(version=1,custodian=cfg()["custodian"],acquisition_commit=acq,
+                   acquisition_receipt_sha256=sha256(receipt.read_bytes()).hexdigest())
+        timestamp="2026-11-26T00:00:00Z"
+        lock=s.render(fetch|dict(ledger=s.LEDGER,input_dir=str(self.inp),acquisition_receipt_path=str(receipt),
+                                 native_dir=str(native),out_bars=str(self.inp/"bars.json"),started_utc=timestamp))
+        s.write_exclusive(self.inp/f"fetch_start.{acq}.lock",lock)
+        header=fetch|dict(endpoint=s.ENDPOINT,feed="sip",timeframe="1Day",fetch_start_lock_sha256=sha256(lock).hexdigest())
+        good,all_attempts=[],[]
+        for a,legs in bars["records"].items():
+            x=legs["stock"]
+            syms=[legs[k]["ticker"] for k in ("stock","IWM","SPY")]
+            for view in s.VIEWS:
+                params=dict(symbols=",".join(syms),timeframe="1Day",start=x["start"],end=x["end"],feed="sip",
+                            adjustment="raw" if view=="raw" else "all",
+                            asof=x["filing_asof"] if view=="filing_all" else x["entry_asof"],limit="1000")
+                rows={leg["ticker"]:leg[view] for leg in legs.values()}
+                npages=2 if view=="raw" else 1
+                for j in range(npages):
+                    page_params=params|({"page_token":"fixture-token"} if j else {})
+                    if view=="raw" and j==0:
+                        seq=len(all_attempts)+1
+                        name=f"errors/{seq:06d}__{a}__{view}__p{j}__att1__http429.raw"
+                        blob=b"synthetic throttle"
+                        s.write_exclusive(native/name,blob)
+                        all_attempts.append(dict(seq=seq,file=name,accession=a,view=view,page=j,status=429,
+                                                 params=page_params,fetched_utc=timestamp,bytes=len(blob),
+                                                 sha256=sha256(blob).hexdigest(),attempt=1,curl_rc=0,outcome="retry"))
+                    seq=len(all_attempts)+1
+                    name=f"{a}__{view}__p{j}.json"
+                    if npages==2:
+                        rowdata={k:v[:10] if j==0 else v[10:] for k,v in rows.items()}
+                    else:
+                        rowdata=rows
+                    blob=body(dict(bars=rowdata,next_page_token="fixture-token" if npages==2 and j==0 else None))
+                    s.write_exclusive(native/name,blob)
+                    proto=dict(seq=seq,file=name,accession=a,view=view,page=j,status=200,params=page_params,
+                               fetched_utc=timestamp,bytes=len(blob),sha256=sha256(blob).hexdigest())
+                    good.append(proto)
+                    all_attempts.append(proto|dict(attempt=2 if view=="raw" and j==0 else 1,curl_rc=0,outcome="ok"))
+        tb=s.render(header|dict(status="complete",attempts_count=len(all_attempts),attempts=all_attempts))
+        s.write_exclusive(native/"transport_index.json",tb)
+        nb=s.render(header|dict(transport_index_sha256=sha256(tb).hexdigest(),files_count=len(good),files=good))
+        s.write_exclusive(native/"native_index.json",nb)
+        att=dict(reviewer="/root/rig_code_auditor_a",acquisition_commit=acq,collector_sha256=self.collector,
+                 native_index_sha256=sha256(nb).hexdigest(),transport_index_sha256=sha256(tb).hexdigest(),
+                 rebuilt_bars_sha256=sha256(body(bars)).hexdigest())
+        s.write_exclusive(self.inp/"offline_rebuild.json",s.render(att))
 
 
 class Plan43(unittest.TestCase):
@@ -214,14 +294,10 @@ class Plan43(unittest.TestCase):
             s.write_exclusive(staged,b"{}")
             f.cli(self,"claim-acquisition",acq,"P43_BARS_ALREADY_STAGED")
             staged.unlink()
-            f.cli(self,"claim-acquisition",acq,"P43_ACQUISITION_CLAIMED")
-            f.cli(self,"claim-acquisition",acq,"P43_REFUSED")
-            receipt=f.inp/f"acquisition.{acq}.lock"
-            self.assertEqual(s.parse(receipt.read_bytes())["acquisition_commit"],acq)
-            f.stage_packets()
+            f.cli(self,"check-custody",acq,"P43_REFUSED")
             actions_file=f.inp/"actions.json"
             original_actions=actions_file.read_bytes()
-            for case in ("missing_code","wrong_code","non_independent","blocked_comparator"):
+            for case in ("missing_code","wrong_code","non_independent","blocked_comparator","cbio_complete","other_blocked"):
                 with self.subTest(case=case):
                     altered=s.parse(original_actions)
                     legs=altered["records"][f.blocked]
@@ -231,13 +307,30 @@ class Plan43(unittest.TestCase):
                         legs["stock"]["reason_code"]="unsupported"
                     elif case=="non_independent":
                         legs["stock"]["reason_sources"]=[AUTH[0],AUTH[0]]
-                    else:
+                    elif case=="blocked_comparator":
                         legs["IWM"].update(status="blocked",reason_code=s.NONCASH_SKIP,reason_sources=AUTH)
+                    elif case=="cbio_complete":
+                        legs["stock"]["status"]="complete"
+                    else:
+                        other=next(v for a,v in altered["records"].items() if a!=f.blocked)
+                        other["stock"].update(status="blocked",reason_code=s.NONCASH_SKIP,reason_sources=AUTH)
                     actions_file.write_bytes(s.render(altered))
-                    bad=f.commit(s.APPROVAL,f.validation(acq))
-                    f.cli(self,"validate-inputs",bad,"P43_ACTION_COVERAGE")
-                    f.checkout(acq)
+                    f.cli(self,"claim-acquisition",acq,"P43_ACTION_COVERAGE")
             actions_file.write_bytes(original_actions)
+            f.cli(self,"claim-acquisition",acq,"P43_ACQUISITION_CLAIMED")
+            f.cli(self,"claim-acquisition",acq,"P43_REFUSED")
+            receipt=f.inp/f"acquisition.{acq}.lock"
+            self.assertEqual(s.parse(receipt.read_bytes())["acquisition_commit"],acq)
+            f.cli(self,"check-custody",acq,"P43_CUSTODY_READY")
+            actions_file.write_bytes(s.render(s.parse(original_actions)|{"fixture":"different bytes"}))
+            f.cli(self,"check-custody",acq,"P43_PIN")
+            actions_file.write_bytes(original_actions)
+            f.stage_packets(acq)
+            staged=f.inp/"bars.json"
+            staged_hold=f.inp/"bars.off"
+            staged.rename(staged_hold)
+            f.cli(self,"check-custody",acq,"P43_CUSTODY_CONSUMED")
+            staged_hold.rename(staged)
 
             (f.root/s.ACQUISITION).write_bytes(f.acquisition()+b"changed")
             f.commit()
@@ -271,6 +364,24 @@ class Plan43(unittest.TestCase):
             receipt.unlink()
             s.write_exclusive(receipt,buf)
             f.checkout(val)
+            nb=f.inp/"native/native_index.json"
+            saved=nb.read_bytes()
+            nb.write_bytes(b"tampered")
+            f.cli(self,"validate-inputs",val,"P43_PIN")
+            nb.write_bytes(saved)
+            saved=staged.read_bytes()
+            mismatch=s.parse(saved)
+            next(iter(mismatch["records"].values()))["stock"]["raw"][0]["v"]+=1
+            staged.write_bytes(s.render(mismatch))
+            attest=f.inp/"offline_rebuild.json"
+            orig_att=attest.read_bytes()
+            attest.write_bytes(s.render(s.parse(orig_att)|{"rebuilt_bars_sha256":sha256(staged.read_bytes()).hexdigest()}))
+            f.checkout(acq)
+            no_rebuild=f.commit(s.APPROVAL,f.validation(acq))
+            f.cli(self,"validate-inputs",no_rebuild,"P43_NATIVE_REBUILD")
+            staged.write_bytes(saved)
+            attest.write_bytes(orig_att)
+            f.checkout(val)
             f.cli(self,"validate-inputs",val,"P43_VALIDATED")
             f.cli(self,"validate-inputs",val,"P43_VALIDATED")
             self.assertFalse((f.run/"score.lock").exists())
@@ -294,6 +405,11 @@ class Plan43(unittest.TestCase):
             f.cli(self,"go",wrong,"P43_VALIDATION_RECEIPT")
             f.checkout(val)
             go=f.commit(s.GO,f.release(val,pin))
+            cover=f.run/f"coverage.{val}.json"
+            cv=cover.read_bytes()
+            cover.write_bytes(b"tampered")
+            f.cli(self,"go",go,"P43_PIN")
+            cover.write_bytes(cv)
             proof.unlink()
             f.cli(self,"go",go,"P43_REFUSED")
             self.assertFalse((f.run/"score.lock").exists())
@@ -304,24 +420,92 @@ class Plan43(unittest.TestCase):
             result=out["outcome"]
             self.assertEqual(result["eligible"],2)
             self.assertEqual(result["modeled"],1)
-            self.assertEqual(result["skipped_by_reason"],{s.NONCASH_SKIP:1})
+            self.assertEqual(result["skipped_by_reason"][s.NONCASH_SKIP],1)
             self.assertEqual(result["judged"]["absolute"]["n"],1)
             self.assertEqual(result["sleeves"]["placed"],1)
             self.assertEqual(result["no_trade_unaffordable"],0)
             self.assertEqual(result["idle_zero_mean"],result["judged"]["absolute"]["mean"])
+            self.assertEqual(result["coverage"]["early_omissions"]["zero_volume_day1"],1)
+            self.assertNotIn("entry_plus_one",result["shown"])
             f.cli(self,"go",go,"P43_CONSUMED")
+
+    def test_real_cli_coverage_cap_and_partial_transport_holds(self):
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d))
+            acq=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,"claim-acquisition",acq,"P43_ACQUISITION_CLAIMED")
+            f.stage_packets(acq,core_missing=True)
+            index=f.inp/"native/transport_index.json"
+            body=index.read_bytes()
+            index.write_bytes(s.render(s.parse(body)|{"status":"failed_or_partial"}))
+            partial=f.commit(s.APPROVAL,f.validation(acq))
+            f.cli(self,"validate-inputs",partial,"P43_NATIVE_TRANSPORT")
+            index.write_bytes(body)
+            f.checkout(acq)
+            val=f.commit(s.APPROVAL,f.validation(acq))
+            f.cli(self,"validate-inputs",val,"P43_COVERAGE_CAP")
+            summary=s.parse((f.run/f"coverage.{val}.json").read_bytes())["summary"]
+            self.assertEqual(summary["refused_by_reason"]["missing_entry"],1)
+            self.assertFalse((f.run/f"validation.{val}.json").exists())
+            self.assertFalse((f.run/"score.lock").exists())
+
+    def test_real_cli_native_lock_journal_and_attestation_refusals(self):
+        with TemporaryDirectory() as d:
+            f=SyntheticRepo(Path(d))
+            acq=f.commit(s.ACQUISITION,f.acquisition())
+            f.cli(self,"claim-acquisition",acq,"P43_ACQUISITION_CLAIMED")
+            f.cli(self,"check-custody",acq,"P43_CUSTODY_READY")
+            f.stage_packets(acq)
+            lock=f.inp/f"fetch_start.{acq}.lock"
+            native=f.inp/"native/native_index.json"
+            transport=f.inp/"native/transport_index.json"
+            att=f.inp/"offline_rebuild.json"
+            original={p:p.read_bytes() for p in (lock,native,transport,att)}
+            for case,code in (("wrong_lock","P43_NATIVE_LOCK"),("wrong_reviewer","P43_NATIVE_ATTESTATION"),
+                              ("page_token","P43_NATIVE_REQUEST"),("body_inventory","P43_NATIVE_INVENTORY")):
+                with self.subTest(case=case):
+                    stray=f.inp/"native/unindexed.json"
+                    if case=="wrong_lock":
+                        lock.write_bytes(s.render(s.parse(original[lock])|{"ledger":178}))
+                    elif case=="wrong_reviewer":
+                        att.write_bytes(s.render(s.parse(original[att])|{"reviewer":"unapproved"}))
+                    elif case=="page_token":
+                        doc=s.parse(original[transport])
+                        paged=next(x for x in doc["attempts"] if x["page"]==1)
+                        paged["params"]["page_token"]="substituted"
+                        new_t=s.render(doc)
+                        transport.write_bytes(new_t)
+                        tp=sha256(new_t).hexdigest()
+                        new_n=s.render(s.parse(original[native])|{"transport_index_sha256":tp})
+                        native.write_bytes(new_n)
+                        att.write_bytes(s.render(s.parse(original[att])|{"transport_index_sha256":tp,
+                                                                        "native_index_sha256":sha256(new_n).hexdigest()}))
+                    else:
+                        s.write_exclusive(stray,b"unindexed")
+                    val=f.commit(s.APPROVAL,f.validation(acq))
+                    f.cli(self,"validate-inputs",val,code)
+                    self.assertFalse((f.run/f"validation.{val}.json").exists())
+                    f.checkout(acq)
+                    for p,blob in original.items():
+                        p.write_bytes(blob)
+                    if stray.exists():
+                        stray.unlink()
 
     def test_real_cli_acquisition_git_refusals(self):
         flag="claim-acquisition"
         with TemporaryDirectory() as d:
             f=SyntheticRepo(Path(d))
             needle=f.acquisition()
-            for mode,ref in (("claim-acquisition",None),("validate-inputs",None),("go",None),("self-test",f.freeze)):
+            for mode,ref in (("claim-acquisition",None),("check-custody",None),("validate-inputs",None),
+                             ("go",None),("self-test",f.freeze)):
                 rejection=f.process(mode,ref)
                 self.assertEqual(rejection.returncode,2)
                 self.assertIn("real modes require --approval-commit; synthetic modes reject it",rejection.stderr)
             f.cli(self,flag,"invalid","P43_APPROVAL")
             f.cli(self,flag,f.freeze,"P43_APPROVAL")
+            bad=f.commit(s.ACQUISITION,needle.replace(f.collector.encode(),b"1"*64))
+            f.cli(self,flag,bad,"P43_COLLECTOR_PIN")
+            f.checkout(f.freeze)
             bad=f.commit(s.ACQUISITION,needle+b"\n")
             f.cli(self,flag,bad,"P43_APPROVAL")
             f.checkout(f.freeze)
@@ -341,7 +525,7 @@ class Plan43(unittest.TestCase):
             for path,content,expected in (
                 (s.CALIBRATION,b"{}", "P43_PIN"),
                 ("docs/QUEUE.md",b"| 74 | changed |\n","P43_LEDGER_QUEUE"),
-                ("research_rig/TRIAL_LEDGER.md",b"| 178 | changed |\n","P43_LEDGER_QUEUE"),
+                ("research_rig/TRIAL_LEDGER.md",b"| 188 | changed |\n","P43_LEDGER_QUEUE"),
             ):
                 with self.subTest(path=path):
                     f.commit(path,content)
@@ -486,11 +670,12 @@ class Plan43(unittest.TestCase):
     def test_approval_receipts_and_recheck(self):
         ordered,days,_,c,*_=condition()
         commit="a"*40
-        job=dict(ledger=178,acquisition_commit=commit,freeze_commit="b"*40,
+        job=dict(ledger=s.LEDGER,acquisition_commit=commit,freeze_commit="b"*40,
                  freeze_sha256="c"*64,docket_sha256=c["docket_sha256"])
         proof=dict(docket_sha256=c["docket_sha256"],trials=c["calibration"]["trials"],eligible=len(ordered),
                    edges=c["calibration"]["edges"],shares=[0])
-        blobs={s.CONFIG:(s.ROOT/s.CONFIG).read_bytes(),s.CALIBRATION:s.render(proof),s.ENGINE:b"dummy"}
+        blobs={s.CONFIG:(s.ROOT/s.CONFIG).read_bytes(),s.CALIBRATION:s.render(proof),s.ENGINE:b"dummy",
+               s.PROVENANCE:b"dummy"}
         with TemporaryDirectory() as d,redirect_stdout(StringIO()):
             tmp=Path(d)
             inp,run=tmp/"inp",tmp/"run"
@@ -498,16 +683,21 @@ class Plan43(unittest.TestCase):
             run.mkdir(mode=0o700)
             auth=Mock(side_effect=lambda *_:(job.copy(),blobs))
             returns=Mock(side_effect=lambda *_:{"dummy":True})
-            with patch.multiple(s,INPUT=inp,RUN=run,authorize=auth,resources=Mock(),
+            collector=tmp/"collector.py"
+            collector.write_bytes(b"synthetic")
+            with patch.multiple(s,INPUT=inp,RUN=run,COLLECTOR=collector,COLLECTOR_SHA256=sha256(b"synthetic").hexdigest(),
+                                authorize=auth,resources=Mock(),check_native=Mock(),identity_actions=Mock(),
                                 local_schedule=Mock(return_value=(ordered,days,c)),engine=Mock(),
-                                prepared=Mock(),report=returns):
+                                prepared=Mock(return_value=s.Prepared()),report=returns):
+                for name in ("identities.json","actions.json"):
+                    s.write_exclusive(inp/name,b"{}")
                 s.approved(commit,"acquire")
                 with self.assertRaises(FileExistsError):
                     s.approved(commit,"acquire")
                 receipt=inp/f"acquisition.{commit}.lock"
                 job.update(approval_commit="d"*40,acquisition_receipt_sha256=sha256(receipt.read_bytes()).hexdigest())
+                s.write_exclusive(inp/"bars.json",b"{}")
                 for name in s.PACKETS:
-                    s.write_exclusive(inp/name,b"{}")
                     job[name]=sha256(b"{}").hexdigest()
                 for _ in range(2):
                     s.approved(job["approval_commit"],"validate")
@@ -547,8 +737,14 @@ class Plan43(unittest.TestCase):
                 for k in ("all","filing_all"):
                     for j in range(i-2,i+3):
                         r[k][j].update(o=20,h=21,l=19,c=20)
-            with self.subTest(change=change), self.assertRaises(s.Refused):
-                s.prepared(*p)
+            with self.subTest(change=change):
+                if change=="stale":
+                    with self.assertRaisesRegex(s.Refused,"BAR_MISSING_STALE"):
+                        s.prepared(*p)
+                else:
+                    ready=s.prepared(*p)
+                    self.assertEqual(ready.decisions[a]["refusal"],
+                                     ("missing" if change=="missing" else "zero_volume")+"_entry")
 
     def test_asof_shape_and_identity(self):
         p=condition(); a=p[0][0].a
@@ -572,8 +768,7 @@ class Plan43(unittest.TestCase):
             s.prepared(*p)
 
     def test_padded_cross_day_basis_witnesses(self):
-        for change,code in (("raw_double","RAW_BASIS_CHANGE"),("asof_scale","ASOF_BASIS_CHANGE"),
-                            ("padding","PADDED_TAPE")):
+        for change,code in (("raw_double","RAW_BASIS_CHANGE"),("asof_scale","ASOF_BASIS_CHANGE")):
             p=condition()
             e=p[0][0]
             bar=p[5]["records"][e.a]["IWM"]
@@ -585,11 +780,132 @@ class Plan43(unittest.TestCase):
                 for n,row in enumerate(bar["filing_all"]):
                     for k in "ohlc":
                         row[k]*=2+n%2
-            else:
-                for k in ("raw","all","filing_all"):
-                    bar[k]=[r for r in bar[k] if r["t"][:10] in {x.isoformat() for x in (e.early,e.entry,e.exit)}]
             with self.subTest(change=change),self.assertRaisesRegex(s.Refused,code):
                 s.prepared(*p)
+
+    def test_successor_core_priority_and_exact_cap(self):
+        for day_key,cell,code in (("entry","zero","zero_volume_entry"),("exit","missing","missing_exit"),
+                                  ("core","zero","zero_volume_hold"),("core","missing","missing_hold")):
+            p=condition()
+            e=p[0][0]
+            day=next(x for x in p[1] if e.entry<x<e.exit) if day_key=="core" else getattr(e,day_key)
+            v=p[5]["records"][e.a]["SPY"]["filing_all"]
+            i=next(j for j,r in enumerate(v) if r["t"].startswith(day.isoformat()))
+            if cell=="zero":
+                v[i]["v"]=0
+            else:
+                del v[i]
+            ready=s.prepared(*p)
+            self.assertEqual(ready.decisions[e.a]["refusal"],code)
+            self.assertNotIn(e.a,ready)
+        self.assertEqual(s.coverage_limit(442),22)
+        decisions=s.Prepared()
+        decisions.decisions={str(i):dict(refusal="missing_entry" if i<22 else None) for i in range(442)}
+        decisions.decisions["noncash"]=dict(noncash=s.NONCASH_SKIP)
+        s.enforce_coverage(decisions)
+        decisions.decisions["22"]["refusal"]="zero_volume_exit"
+        with self.assertRaisesRegex(s.Refused,"COVERAGE_CAP"):
+            s.enforce_coverage(decisions)
+        self.assertEqual(s.downside_floor(Fraction(3,2),cfg()),Fraction(-5,2))
+
+    def test_unrelated_gap_never_hides_basis_or_stale_evidence(self):
+        for defect,code in (("basis","RAW_BASIS_CHANGE"),("stale","BAR_MISSING_STALE")):
+            p=condition()
+            e=p[0][0]
+            view=p[5]["records"][e.a]["IWM"]
+            i=next(j for j,r in enumerate(view["raw"]) if r["t"].startswith(str(e.entry)))
+            if defect=="basis":
+                del view["filing_all"][i]
+                for k in "ohlc":
+                    view["raw"][i][k]*=2
+            else:
+                # The five positive adjusted rows straddle the shown-only fill
+                # while filing-view padding beside it is unavailable.
+                for mode in ("all","filing_all"):
+                    for j in range(i-5,i):
+                        view[mode][j].update(o=16,h=17,l=15,c=16)
+                del view["filing_all"][i-3]
+            with self.subTest(defect=defect),self.assertRaisesRegex(s.Refused,code):
+                s.prepared(*p)
+
+    def test_cash_factor_invalid_vs_missing_and_exact_split_gap(self):
+        p=condition()
+        e=p[0][0]
+        v=p[5]["records"][e.a]["IWM"]
+        j=next(i for i,r in enumerate(v["raw"]) if r["t"].startswith(str(e.entry)))
+        v_cash=str(v["raw"][j-1]["c"])
+        p[6]["records"][e.a]["IWM"]["items"].append(dict(id="cash",ex=str(e.entry),kind="ordinary",
+                    value=v_cash,payment=str(e.entry),available=str(e.entry),sources=AUTH))
+        with self.assertRaisesRegex(s.Refused,"DIVIDEND_BASIS"):
+            s.prepared(*p)
+        del v["raw"][j-1]
+        ready=s.prepared(*p)
+        self.assertEqual(ready.decisions[e.a]["unproved_cash_bridge"],{"IWM":[str(e.entry)]})
+        self.assertEqual(ready.decisions[e.a]["early"],"missing_day1")
+        self.assertIn(e.a,ready)
+        p=condition()
+        e=p[0][0]
+        v=p[5]["records"][e.a]["SPY"]
+        ex=p[1][p[1].index(e.early)-2]
+        for view in ("all","filing_all"):
+            for row in v[view]:
+                if row["t"][:10]<str(ex):
+                    for k in "ohlc":
+                        row[k]=Decimal(row[k])/2
+            v[view]=[row for row in v[view] if row["t"][:10]!=str(ex)]
+        a=p[6]["records"][e.a]["SPY"]["items"]
+        a.append(dict(id="split",ex=str(ex),kind="split",new_shares=2,old_shares=1,
+                      payment=None,available=None,sources=AUTH))
+        self.assertIn(e.a,s.prepared(*p))
+        a.clear()
+        with self.assertRaisesRegex(s.Refused,"RAW_BASIS_CHANGE"):
+            s.prepared(*p)
+
+    def test_insufficient_adjusted_pair_and_three_distinct_native_alias_dates(self):
+        p=condition()
+        e=p[0][0]
+        v=p[5]["records"][e.a]["SPY"]
+        v["filing_all"]=v["filing_all"][:2]
+        ready=s.prepared(*p)
+        self.assertEqual(ready.decisions[e.a]["adjusted_insufficient"],["SPY"])
+        v["filing_all"][0]["h"]+=1
+        with self.assertRaisesRegex(s.Refused,"OHLC_BASIS"):
+            s.prepared(*p)
+        for equivalent in (2,3):
+            p=condition()
+            e=p[0][0]
+            legs=p[5]["records"][e.a]
+            for mode in s.VIEWS:
+                legs["SPY"][mode]=copy.deepcopy(legs["IWM"][mode])
+                for row in legs["SPY"][mode][equivalent:]:
+                    row["v"]+=7
+            # A separate core omission should not hide raw matching rows in the pad.
+            legs["SPY"]["filing_all"].pop(8)
+            if equivalent==3:
+                with self.assertRaisesRegex(s.Refused,"BAR_ALIAS"):
+                    s.prepared(*p)
+            else:
+                self.assertEqual(s.prepared(*p).decisions[e.a]["refusal"],"missing_hold")
+
+    def test_refused_event_still_checks_all_present_raw_overlap(self):
+        p=condition()
+        e=p[0][0]
+        extra=add_blocked(p[0],*p[4:],accession="0000000002-24-000001")
+        legs=p[6]["records"][extra]
+        legs["stock"]["status"]="complete"
+        legs["stock"]["target_disclosure"].update(accession=extra,
+            filing=f"https://www.sec.gov/Archives/edgar/data/2/{extra}.txt")
+        p[5]["records"][extra]=copy.deepcopy(p[5]["records"][e.a])
+        bar=p[5]["records"][extra]
+        bar["stock"].update(identity="SECL-BLOCKED",ticker="BLOCKED")
+        for mode in s.VIEWS:
+            for row in bar["stock"][mode]:
+                row["v"]+=111
+        bar["stock"]["filing_all"].pop(8)
+        prior=bar["IWM"]["raw"][0]
+        prior["v"]=0
+        with self.assertRaisesRegex(s.Refused,"BAR_CONFLICT"):
+            s.prepared(*p)
 
     def test_alias_with_single_mismatched_session_and_small_cumulative_drift(self):
         for change,code in (("alias","BAR_ALIAS"),("drift","RAW_BASIS_CHANGE")):
