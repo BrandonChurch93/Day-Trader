@@ -114,6 +114,11 @@ def render(data):
         "([Alpaca Market Data FAQ](https://docs.alpaca.markets/us/docs/market-data-faq)). "
         f"The same window's mean slips to {pct(costs['5']['mean_net'])} at 5 bps and "
         f"{pct(costs['10']['mean_net'])} at 10 bps per side, and both shown t-statistics are below 2.", "",
+        "MEASURED. In the [Measurement 27](70_measure_27_tlt_closing_cross.md) after-run check, not a judged mark, "
+        "the Nasdaq closing cross equalled Replay 25's TLT SIP close on 251 of 258 entry or exit sessions with "
+        "a cross identified; in the [Replay 26 source check](73_replay_26_blocked_at_source_check.md), a second "
+        "vendor differed from SIP by more than one cent on 55 of 1,508 TLT and IEF fund-sessions (3.6%) in "
+        "2016–2018, usually by no more than five cents, with the cause UNKNOWN.", "",
         f"MEASURED. A t-statistic of {stat(j['t'])} is modest. It uses the usual sample standard error and does not "
         "adjust for testing many ideas or for dependence over time. One pass in about 25 tests is not strong "
         f"confirmation. The partial 2026 year lost money, averaging {pct(years['2026']['mean_net'])} a window. "
@@ -122,12 +127,12 @@ def render(data):
         "STATED. The 2016–2018 years overlap the source paper's 1990–2018 sample. Its roughly 0.25% monthly "
         "figure came from a modeled 10-year Treasury position net of repo, not an ETF purchase "
         "([Hartley and Schwarz](https://kristaschwarz.com/EOM.pdf)). This replay is not a fully independent "
-        "test of the original idea. A fixed-rule check on older data from a different vendor is the next test, "
-        "not an already confirmed result.", "",
+        "test of the original idea. The planned fixed-rule check on older data from a different vendor "
+        "was blocked before scoring, so it does not confirm or refute this result.", "",
         "## Run record", "",
         f"MEASURED. The saved result records ledger {job['ledger']}, queue 41, and a claim at {time}. "
         f"STATED. The run owner reports one score from clean commit `{COMMIT}`. "
-        "This page was generated from the saved aggregate result only.", "",
+        "The replay figures come from the saved aggregate result; the later checks are linked above.", "",
         f"- Saved result SHA-256 `{RESULT_SHA}`",
         f"- Freeze manifest SHA-256 `{job['draft_sha256']}`",
         f"- Input manifest SHA-256 `{job['inputs_sha256']}`",

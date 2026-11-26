@@ -77,13 +77,15 @@ MEASURED. No alternate cost, width, or instrument was used to select the judged 
 
 UNKNOWN. The consolidated SIP close is not a proven auction fill. A live order could fill at a different price, and the study has no measured slippage beyond the assumed costs ([Alpaca Market Data FAQ](https://docs.alpaca.markets/us/docs/market-data-faq)). The same window's mean slips to +0.1961% at 5 bps and +0.0959% at 10 bps per side, and both shown t-statistics are below 2.
 
+MEASURED. In the [Measurement 27](70_measure_27_tlt_closing_cross.md) after-run check, not a judged mark, the Nasdaq closing cross equalled Replay 25's TLT SIP close on 251 of 258 entry or exit sessions with a cross identified; in the [Replay 26 source check](73_replay_26_blocked_at_source_check.md), a second vendor differed from SIP by more than one cent on 55 of 1,508 TLT and IEF fund-sessions (3.6%) in 2016–2018, usually by no more than five cents, with the cause UNKNOWN.
+
 MEASURED. A t-statistic of 2.36 is modest. It uses the usual sample standard error and does not adjust for testing many ideas or for dependence over time. One pass in about 25 tests is not strong confirmation. The partial 2026 year lost money, averaging -0.5501% a window. Twelve times the judged monthly mean is about 3.1% a year unlevered, before taxes. That is a way to put the size in context, not measured compound growth or a forecast.
 
-STATED. The 2016–2018 years overlap the source paper's 1990–2018 sample. Its roughly 0.25% monthly figure came from a modeled 10-year Treasury position net of repo, not an ETF purchase ([Hartley and Schwarz](https://kristaschwarz.com/EOM.pdf)). This replay is not a fully independent test of the original idea. A fixed-rule check on older data from a different vendor is the next test, not an already confirmed result.
+STATED. The 2016–2018 years overlap the source paper's 1990–2018 sample. Its roughly 0.25% monthly figure came from a modeled 10-year Treasury position net of repo, not an ETF purchase ([Hartley and Schwarz](https://kristaschwarz.com/EOM.pdf)). This replay is not a fully independent test of the original idea. The planned fixed-rule check on older data from a different vendor was blocked before scoring, so it does not confirm or refute this result.
 
 ## Run record
 
-MEASURED. The saved result records ledger 162, queue 41, and a claim at 2026-11-26 03:49:53 UTC. STATED. The run owner reports one score from clean commit `a23980332e241ba2813d4433b5313aa81e925863`. This page was generated from the saved aggregate result only.
+MEASURED. The saved result records ledger 162, queue 41, and a claim at 2026-11-26 03:49:53 UTC. STATED. The run owner reports one score from clean commit `a23980332e241ba2813d4433b5313aa81e925863`. The replay figures come from the saved aggregate result; the later checks are linked above.
 
 - Saved result SHA-256 `902482a78439835871582986aeb40265acd1d6442c95f8ffc90955c788d029a8`
 - Freeze manifest SHA-256 `c4c0108467c0acfcd95781b9a73379b4a1022a43ca8229f8654a2a445e777bd8`

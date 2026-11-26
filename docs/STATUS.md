@@ -1,12 +1,13 @@
 # Status
 
-Last updated: 2026-11-26 04:08 UTC
+Last updated: 2026-11-26 04:16 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
 
 - First counted trading-replay pass. MEASURED. Replay 25's unlevered TLT month-end rule met all nine frozen marks at 2 bps per side. It averaged +0.2562% net across 130 monthly windows with a t-statistic of 2.36. The last partial year lost, and higher assumed costs weakened the result. [Replay 25](research/69_replay_25_treasury_month_end.md) is a reason to test again on separate data, not clearance to trade.
+- [Replay 26](research/73_replay_26_blocked_at_source_check.md). STATED. Blocked at input validation on 2026-11-26 04:13:59 UTC, not scored, lock unused. MEASURED. The vendor differed from SIP by more than one cent on 42 TLT and 13 IEF sessions in 2016–2018, at most 14 and 5 cents, respectively; every overlap session from 2019 on agreed within one cent.
 - Replay 25's closing price, checked (measurement 27, queue 47). MEASURED. By the frozen rule mark 1 is not met: a Nasdaq closing cross print labelled exchange Q was found on only 124 of 260 entry and exit sessions. On every one of those 124 it equalled the SIP close the replay used. Written after the run, not a mark: the older tape labels the same cross as exchange T, and with Q or T it was found on 258 of 260, equal to the SIP close on 251, mean cost 0.018 bps on entry and −0.007 bps on exit, largest gap 2.486 bps. The median cross was 1,170,026 shares. Our reading: the replay priced at the auction, so a market-on-close order of ordinary size would have paid what the replay charged before its 2 bps ([doc 70](research/70_measure_27_tlt_closing_cross.md)).
 - Second counted trading-replay pass. MEASURED. Replay 20's unlevered Upbit listing short met all five frozen marks on viewed dates. It averaged +3.2088% net across 139 trades after 15 bps per side and funding, with a per-trade t-statistic of 2.839. 99 trades were in 2025–2026, and the worst loss was 28.8%. [Replay 20](research/71_replay_20_upbit_listing_short.md) uses Binance.com perpetuals, not US-executable fills.
 - Three machines exist or are being built: the rig (`research_rig/`, working), the practice desk (`practice/`, running), the time machine (`timemachine/`, working, running AI sessions on crypto since 2026-11-25).
