@@ -1060,3 +1060,9 @@ replay_21_plan:
     calibration_tail_chance: 0.08
     calibration_tail_scale: 2.0
   basis: "Plan 21, queue row 38, trial ledger row 158. No market acquisition authorized by the freeze."
+
+replay_43_plan:
+  value: {"from":"2016-01-01","through":"2026-09-30","first_year":2016,"last_year":2026,"frame_rows":3218,"eligible":443,"docket_sha256":"2ab8c47c5bc666ae05eabb808237c7ef347e8d0a30a15e38e117541b1658c5e7","entry":2,"shown_entry":1,"exit":20,"stale_run":5,"capital":500,"sleeve_usd":100,"sleeves":5,"controls":["IWM","SPY"],"cost":{"bps":5,"stress_bps":10,"floor":"0.01"},"size_breaks":[0.01,0.03],"settlement":[["1900-01-01",3],["2017-09-05",2],["2024-05-28",1]],"marks":{"placed":300,"t":2,"trim":0.01,"years":7,"recent":2020},"calibration":{"trials":1000,"seed":43001,"edges":[0,0.005,0.01,0.02],"placement":0.9,"market_month":0.025,"market_event":0.028,"residual_month":0.012,"residual_event":0.055,"tail_chance":0.08,"tail_scale":2,"null_ceiling":0.1},"custodian":"/root/market_feed_builder","action_checker":"/root/edges_fact_checker","clock":"strict_before_scheduled_close","resources":{"minimum_free_mib":1536,"disk_floor_mib":1024,"process_cap_mib":768,"nice":10}}
+  status: builder
+  note: Only numeric and scope source for Plan 43; approval-only custody, validation and one lock. No market acquisition authorized by the freeze.
+  source: research_rig/PREREG_43_special_dividends.md
