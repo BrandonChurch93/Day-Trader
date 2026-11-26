@@ -468,6 +468,8 @@ Working papers.
 | `research_rig/export_dashboard.py` | Builds the data file for the owner's screen | CURRENT |
 | `research_rig/dashboard_status.py` | Reads status findings and builds the research scoreboard from recorded results | CURRENT |
 | `research_rig/test_dashboard_status.py` | Checks status parsing, missed replay entries and scoreboard totals | CURRENT |
+| `research_rig/replay_cards.py` | Builds the Replay 48, 52 and 53 cards on the owner's screen from their result pages and the Replay 48 identity review. No scoring or market-data reads | CURRENT |
+| `research_rig/test_replay_cards.py` | Checks those cards: verdicts, tones, the required plain lines, and that each figure shown is on its source page | CURRENT |
 
 ## practice/ (the practice desk: pretend money, live prices)
 
