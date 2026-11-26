@@ -1,4 +1,4 @@
-"""Test cards for Replays 22, 48, 52, 53, 60 and 62, read from their result pages.
+"""Test cards for Replays 22, 48, 52, 53, 60, 62 and 65, read from their result pages.
 
 The saved results for these replays are kept outside the repo. Each card therefore reads its figures, at export
 time, from the result page in docs/research/ (and, for Replay 48, from research_rig/REVIEW_48_identity.md). Only
@@ -15,6 +15,7 @@ P53 = "docs/research/122_replay_53_taxable_fund_january_rebound.md"
 P60 = "docs/research/126_replay_60_special_dividends.md"
 P62 = "docs/research/130_replay_62_special_dividend_ex_day.md"
 P22 = "docs/research/137_replay_22_fable_rule_a.md"
+P65 = "docs/research/139_replay_65_stock_bond_rebalancing.md"
 R48 = "research_rig/REVIEW_48_identity.md"
 
 
@@ -217,5 +218,32 @@ def card_22(gh):
                 [["Replay 22", gh + P22], ["Plan", gh + "research_rig/PREREG_22_fable_rule_a.md"]])
 
 
+def card_65(gh):
+    text = read(P65)
+    did = section(text, "Did it pass?", P65)
+    target = need(r"rebalancing back to (\d+%) stocks", section(text, "The rule", P65), P65)[1]
+    mean, n, t = need(r"mean net return was ([+-][\d.]+ bp) a session over ([\d,]+) sessions, with a week-clustered t of (-?[\d.]+)", did, P65).groups()
+    sharpe = need(r"The net yearly Sharpe was (-?[\d.]+)\.", did, P65)[1]
+    means = section(text, "What it means", P65)
+    need(r"the fixed reading is \*\*not shown, not refuted\*\*", means, P65)
+    paper = need(r"against (about \d) stated in the paper", means, P65)[1]
+    nosm, post = need(r"Without March 2020 the mean was ([+-][\d.]+ bp), at or below zero\. From \S+ on, the only months outside the paper's sample, it was ([+-][\d.]+ bp), about zero", means, P65).groups()
+    cash = need(r"The cash-account version a \$500 account could hold lost money: ([+-][\d.]+ bp) a session", means, P65)[1]
+    need(r"No forward log is started, and the row closes\.", means, P65)
+    need(r"None of them can count toward a mark", section(text, "Shown only", P65), P65)
+    return card("replay65", "Stock-bond rebalancing", P65,
+                f"Trades SPY against IEF once a day at the close, against the flow of portfolios rebalancing to {target} stocks, as in NBER paper w33554. "
+                f"{n} sessions, mean {minus(mean)} a session net, t {minus(t)}.",
+                ["The reading fixed before the run for this result is not shown, not refuted.",
+                 f"Net yearly Sharpe {minus(sharpe)}, against {paper} stated in the paper.",
+                 "Without March 2020, and in the months after the paper's sample, the lines are shown only and cannot count toward a mark.",
+                 "No forward log is started, and the row closes."],
+                [["Net yearly Sharpe", minus(sharpe)],
+                 ["Without March 2020, shown only", minus(nosm) + " a session"],
+                 ["Outside the paper's sample, shown only", minus(post) + " a session"],
+                 ["Cash account a $500 account could hold, shown only", minus(cash) + " a session"]],
+                [["Replay 65", gh + P65], ["Plan", gh + "research_rig/PREREG_65_stock_bond_rebalance_spread.md"]])
+
+
 def cards(gh):
-    return [card_48(gh), card_52(gh), card_53(gh), card_60(gh), card_62(gh), card_22(gh)]
+    return [card_48(gh), card_52(gh), card_53(gh), card_60(gh), card_62(gh), card_22(gh), card_65(gh)]
