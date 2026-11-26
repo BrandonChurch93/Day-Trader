@@ -1204,11 +1204,20 @@ forward_e10:
     request_attempts: 4
     candle_page_days: 299
     rate_backoff_s: 5
+    rate_backoff_cap_s: 40
     reference_coin: BTC
     held_back_sharpe_context: 0.36
+    second_fee_key: forward_e10_binance_us
   status: builder
   note: E10 Coinbase USD practice log only; rule and flat costs inherited; separate audit and start.
   source: practice/traders/E10_coin_trend_ratchet.md
+
+forward_e10_binance_us:
+  value: {default_taker_bp: 2, taker_overrides_bp: {BNB: 1}}
+  status: stated
+  checked: "2026-11-26"
+  source: https://www.binance.us/fees
+  note: Doc 180 spot USD schedule, no maker fills, discount, account or trading assumed.
 
 replay_75_plan:
   value:

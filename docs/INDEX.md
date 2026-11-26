@@ -651,7 +651,7 @@ Working papers.
 | `practice/forward/E09_log.json` | The E09 public log written by `publish`: counts of wakes, void and late wakes, signals and trades by rule, quote clocks, and measured half-spreads by coin. No prices or profit. Not started yet | RECORD |
 | `practice/traders/E10_coin_trend_ratchet.md` | E10, Plan 75 Coinbase USD forward practice: pretend money only, audit before launch | DRAFT |
 | `practice/forward_e10.py`, `practice/test_forward_e10.py` | E10 logger, frozen Plan 75 decision adapter, private hash chain, and offline made-up tests | CURRENT |
-| `practice/forward/E10_log.json` | E10 public counts and cost aggregates only. No prices or returns; not started | RECORD |
+| `practice/forward/E10_log.json` | E10 public counts and cost aggregates for Coinbase main and Binance.US second execution books. No prices or returns; not started | RECORD |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 

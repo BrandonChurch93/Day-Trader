@@ -9,6 +9,7 @@ import stat
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
@@ -27,6 +28,10 @@ PINNED = (CARD, "practice/forward_e10.py", "research_rig/score_75.py", "config/t
 OFF = Path("/home/user/workspace/rig/data/forward_e10")
 PUBLIC = ROOT / "practice/forward/E10_log.json"
 HOST = "https://api.exchange.coinbase.com"
+BINANCE_HOST = "https://api.binance.us"
+SECOND = "binance_us"
+SECOND_LABEL = "second book, cheaper venue, quotes only, no account"
+QUOTE_LINES = {"quote", SECOND}
 UTC = timezone.utc
 NAMES = core.NAMES
 
@@ -46,7 +51,8 @@ def need(ok, message):
 
 def settings():
     raw = yaml.safe_load((ROOT / PINNED[-1]).read_text())
-    f = raw["forward_e10"]["value"]
+    base_f = raw["forward_e10"]["value"]
+    f = base_f | {"second_fees": raw[base_f["second_fee_key"]]["value"]}
     rule = raw[f["rule_key"]]["value"]
     marks = raw[rule["inherited_marks_key"]]["value"]
     fees = {key: sum(raw[base]["value"][field] for field in fields) / 10000
@@ -55,6 +61,11 @@ def settings():
     fees = {"quote": raw[base]["value"][field] / 10000,
             "flat": fees["main"], "harsh": fees["harsh"]}
     return f, rule, marks, fees
+
+
+def second_fee(f, coin):
+    cfg = f["second_fees"]
+    return cfg["taker_overrides_bp"].get(coin, cfg["default_taker_bp"]) / 10000
 
 
 def now_utc():
@@ -208,7 +219,9 @@ class SameHost(request.HTTPRedirectHandler):
         raise Refuse("public host returned a redirect")
 
 
-class Coinbase:
+class PublicREST:
+    host = None
+
     def __init__(self, f):
         self.f, self.last = f, 0.
         self.opener = request.build_opener(SameHost())
@@ -219,7 +232,7 @@ class Coinbase:
             time.sleep(max(0, self.last + self.f["request_gap_s"] - time.monotonic()))
             self.last = time.monotonic()
             try:
-                req = request.Request(HOST + path, headers={"User-Agent": "e10-forward/1", "Accept": "application/json"})
+                req = request.Request(self.host + path, headers={"User-Agent": "e10-forward/1", "Accept": "application/json"})
                 with self.opener.open(req, timeout=self.f["timeout_s"]) as inp:
                     return json.load(inp)
             except error.HTTPError as e:
@@ -231,10 +244,17 @@ class Coinbase:
                 delay = 2 ** attempt
                 if e.code == 429:
                     delay = max(delay * self.f["rate_backoff_s"], positive(e.headers.get("Retry-After")) or 0)
+                    if delay > self.f["rate_backoff_cap_s"]:
+                        raise Refuse("rate limit exceeds observation budget") from None
             except (error.URLError, OSError, ValueError):
                 delay = 2 ** attempt
-            time.sleep(delay)
+            if attempt + 1 < self.f["request_attempts"]:
+                time.sleep(delay)
         raise Refuse("public venue unavailable")
+
+
+class Coinbase(PublicREST):
+    host = HOST
 
     def products(self):
         return {p["id"]: p for p in self.get("/products")}
@@ -260,14 +280,61 @@ class Coinbase:
         return [bid, ask] if bid and ask and bid <= ask else None
 
 
+class BinanceUS(PublicREST):
+    host = BINANCE_HOST
+
+    def products(self):
+        raw = self.get("/api/v3/exchangeInfo")
+        need(isinstance(raw, dict) and isinstance(raw.get("symbols"), list), "invalid public pair list")
+        return {p["symbol"]: p for p in raw["symbols"] if isinstance(p, dict)
+                and p.get("baseAsset") in NAMES and p.get("quoteAsset") == "USD"
+                and p.get("symbol") == p["baseAsset"] + "USD"}
+
+    def book(self, coin):
+        symbol = coin + "USD"
+        raw = self.get("/api/v3/ticker/bookTicker?symbol=" + symbol, True)
+        if not isinstance(raw, dict) or raw.get("symbol") != symbol:
+            return None
+        bid, ask = positive(raw.get("bidPrice")), positive(raw.get("askPrice"))
+        if bid and ask and bid <= ask and positive(raw.get("bidQty")) and positive(raw.get("askQty")):
+            return [bid, ask]
+        return None
+
+
+def binance_pair(product):
+    p = product or {}
+    status = p.get("status")
+    market = isinstance(p.get("orderTypes"), list) and "MARKET" in p["orderTypes"]
+    allowed = status == "TRADING" and p.get("isSpotTradingAllowed") is True and market
+    minimums = {}
+    for entry in p.get("filters") or ():
+        if not isinstance(entry, dict):
+            continue
+        k = entry.get("filterType")
+        if (k == "MIN_NOTIONAL" and entry.get("applyToMarket") is True) or (
+                k == "NOTIONAL" and entry.get("applyMinToMarket") is True):
+            n = positive(entry.get("minNotional"))
+            if n:
+                minimums[k] = n
+    qty = [positive(entry.get("minQty")) for entry in p.get("filters") or ()
+           if isinstance(entry, dict) and entry.get("filterType") == "MARKET_LOT_SIZE"]
+    return {"eligible": allowed, "sell": allowed, "exists": product is not None,
+            "base_min": max((v for v in qty if v), default=None),
+            "usd_min": max(minimums.values(), default=None),
+            "flags": {"status": status, "spot": p.get("isSpotTradingAllowed"), "market": market}}
+
+
 def make_adapter():
-    """Compile frozen play with two checked forward-only execution seams."""
+    """Compile frozen play with checked execution, fees, and terminal marking seams."""
     source = inspect.getsource(core.play)
     signature = '*, mode="trend", override=None, shift=0):'
     old_start = "        sells, buys = np.minimum(delta, 0), np.maximum(delta, 0)"
     old_stop = "        shares += np.divide(delta, px[:, None], out=np.zeros_like(shares), where=px[:, None] > 0)"
     terminal = "        if d == nd - 1:"
-    need(all(source.count(s) == 1 for s in (signature, old_start, old_stop, terminal)), "frozen play seam changed")
+    old_fee = "float(abs(net[j]) * cost)"
+    old_cash = "balance -= net.sum() + debit(net)"
+    need(all(source.count(s) == 1 for s in (signature, old_start, old_stop, terminal, old_fee, old_cash)),
+         "frozen play seam changed")
     source = source.replace(signature, signature[:-2] + ", execution=None, terminal=True):")
     lo, hi = source.index(old_start), source.index(old_stop)
     block = source[lo:hi].rstrip().splitlines()
@@ -276,7 +343,9 @@ def make_adapter():
     block = block[:dl] + block[dh:]
     source = (source[:lo] + "\n".join(debit) + "\n        if execution is None:\n" +
               "\n".join("    " + line if line else "" for line in block) +
-              "\n        else:\n            delta, net = execution(d, delta, px, balance, cost, queued)\n" + source[hi:])
+              "\n        else:\n            delta, net, charges = execution(d, delta, px, balance, cost, queued)\n" + source[hi:])
+    source = source.replace(old_fee, "float(abs(net[j]) * cost if execution is None else charges[j])")
+    source = source.replace(old_cash, "balance -= net.sum() + (debit(net) if execution is None else charges.sum())")
     source = source.replace(terminal, "        if terminal and d == nd - 1:")
     namespace = vars(core).copy()
     exec(compile(source, core.__file__ + ":E10", "exec"), namespace)
@@ -291,51 +360,63 @@ def decisions(tape, rule, marks):
     return signals, core.calendar(tape, signals[2])
 
 
-def execution(rows, size, line, skip, attempted, void_buys, pending):
+def execution(rows, size, line, skip, attempted, void_buys, pending, f):
     """Plan at the reference open; settle the net coin quantity at its bid/ask."""
     def at(d, delta, px, cash, fee, queued):
-        market = rows[d]
+        shared = rows[d]
+        market = shared.get(SECOND, {}) if line == SECOND else shared
         sells, buys = np.minimum(delta, 0), np.maximum(delta, 0)
         base, usd = np.zeros(len(px)), np.zeros(len(px))
         ratio_buy, ratio_sell = np.ones(len(px)), np.ones(len(px))
         allowed = np.ones(len(px), dtype=bool)
+        rates = np.array([second_fee(f, k) for k in NAMES]) if line == SECOND else fee
+        reasons = {}
         for j in np.flatnonzero(np.any(delta != 0, axis=1)):
             state = market.get("states", {}).get(NAMES[j], {})
             q = market.get("quotes", {}).get(NAMES[j])
             base[j], usd[j] = state.get("base_min") or 0, state.get("usd_min") or 0
-            allowed[j] = bool(base[j] or usd[j])
-            if line == "quote":
+            allowed[j] = bool(usd[j] if line == SECOND else (base[j] or usd[j]))
+            reasons[j] = "minimum_unknown"
+            if line in QUOTE_LINES:
                 if q and px[j] > 0:
                     ratio_buy[j], ratio_sell[j] = q["ask"] / px[j], q["bid"] / px[j]
                 else:
                     allowed[j] = False
-            if not market.get("buy_window") or not (q and q["timely"]):
+                    reasons[j] = "quote_missing"
+            if line == SECOND and not state.get("eligible"):
+                allowed[j] = False
+                reasons[j] = ("venue_unavailable" if market.get("status") != "OBSERVED" else "pair_unavailable")
+            missing_shared_data = NAMES[j] in shared.get("candle_failures", {})
+            if missing_shared_data or not market.get("buy_window") or not (q and q["timely"]):
                 if delta[j].sum() > 1e-14:
                     void_buys.add((d, int(j)))
                     # Keep any exit quantity even when the coincident purchase is void.
                     buys[j] = 0
         trial = (sells + buys).sum(axis=1)
         candidates = {int(j) for j in np.flatnonzero(np.abs(trial) > 1e-14)}
-        attempted[d] = candidates
-        for j in candidates | {j for day, j in void_buys if day == d}:
+        attempted[d] = candidates | {j for day, j in void_buys if day == d}
+        for j in attempted[d]:
             if not allowed[j]:
-                skip[d, j] = ("quote_missing" if line == "quote" and not market.get("quotes", {}).get(NAMES[j])
-                              else "minimum_unknown")
+                skip[d, j] = reasons[j]
                 buys[j] = sells[j] = 0
 
         def net_at(x):
             net = (sells + x * buys).sum(axis=1)
             return net * np.where(net > 0, ratio_buy, ratio_sell)
 
+        def debit(net):
+            magnitude = np.abs(net)
+            return float(np.dot(magnitude, rates)) if line == SECOND else fee * magnitude.sum()
+
         while True:
             hi = 1.
             net = net_at(hi)
-            if net.sum() + fee * np.abs(net).sum() > cash + 1e-12:
+            if net.sum() + debit(net) > cash + 1e-12:
                 lo = 0.
                 for _ in range(48):
                     mid = (lo + hi) / 2
                     v = net_at(mid)
-                    if v.sum() + fee * np.abs(v).sum() <= cash:
+                    if v.sum() + debit(v) <= cash:
                         lo = mid
                     else:
                         hi = mid
@@ -346,9 +427,9 @@ def execution(rows, size, line, skip, attempted, void_buys, pending):
             too_small = (np.abs(net) > 1e-14) & ((qty < base) | (np.abs(net) * size < usd))
             if not too_small.any():
                 settled = sells + hi * buys
-                if market.get("kind") in {"wake", "void"}:
+                if shared.get("kind") in {"wake", "void"}:
                     pending[d] = set(np.flatnonzero(queued.any(axis=1) & ~(settled < -1e-14).any(axis=1)))
-                return settled, net
+                return settled, net, rates * np.abs(net)
             for j in np.flatnonzero(too_small):
                 skip[d, int(j)] = "under_minimum"
             buys[too_small] = sells[too_small] = 0
@@ -413,26 +494,72 @@ def make_tape(log, f, rule, line):
 
 
 def run_book(log, f, rule, marks, fees, line, size):
-    tape, rows, prefix = make_tape(log, f, rule, line)
+    # The second book consumes the same inputs and roster clock as Coinbase.
+    tape, rows, prefix = make_tape(log, f, rule, "quote" if line == SECOND else line)
     skipped, attempted, void_buys, pending = {}, {}, set(), {}
     signal, roster = decisions(tape, rule, marks)
-    book = play_forward(tape, fees[line], rule, rule["cap"], signal, roster, terminal=False,
-                        execution=execution(rows, size, line, skipped, attempted, void_buys, pending))
+    if line == SECOND:
+        opens = tape.opens.copy()
+        for d, row in enumerate(rows):
+            for k, q in row.get(SECOND, {}).get("quotes", {}).items():
+                opens[d, NAMES.index(k)] = (q["bid"] + q["ask"]) / 2
+        # Venue-specific restrictions, including missing pairs, are execution
+        # gates below; the shared roster and completed close signals do not change.
+        tape = core.Tape(tape.days, tape.names, opens, tape.closes, tape.eligible, np.isfinite(opens))
+    rate = second_fee(f, f["reference_coin"]) if line == SECOND else fees[line]
+    book = play_forward(tape, rate, rule, rule["cap"], signal, roster, terminal=False,
+                        execution=execution(rows, size, line, skipped, attempted, void_buys, pending, f))
     return tape, prefix, book, skipped, attempted, void_buys, pending
+
+
+def coin_page(fetch, failures, coin, *args):
+    try:
+        return fetch(coin, *args)
+    except Blocked:
+        raise
+    except (Refuse, OSError, ValueError, TypeError, IndexError, KeyError):
+        failures[coin] = "PAGE_UNAVAILABLE"
+        return None
 
 
 def public_quotes(venue, coins, wake, clock, f):
     found = {}
+    failures = {}
     for coin in coins:
-        q = venue.book(coin)
+        q = coin_page(venue.book, failures, coin)
+        if not q:
+            failures.setdefault(coin, "QUOTE_MISSING")
         sec = (clock() - wake).total_seconds()
         if q and 0 <= sec < f["day_s"]:
             found[coin] = {"bid": q[0], "ask": q[1], "seconds": sec,
                            "timely": sec <= f["quote_offsets_s"][-1]}
-    return found
+    return found, failures
 
 
-def capture(log, wake, venue, clock, f, rule, marks, fees, close_only=False):
+def capture_second(venue, wake, clock, f, stopped):
+    row = {"states": {}, "quotes": {}, "quote_failures": {},
+           "buy_window": False, "late": True, "status": "NOT_OBSERVED"}
+    if stopped or venue is None:
+        row["status"] = "BLOCKED" if stopped else "NOT_OBSERVED"
+        return row, None
+    try:
+        products = venue.products()
+        row["states"] = {k: binance_pair(products.get(k + "USD")) for k in NAMES}
+        row["quotes"], row["quote_failures"] = public_quotes(
+            venue, [k for k in NAMES if row["states"][k]["eligible"]], wake, clock, f)
+    except Blocked as e:
+        row["status"] = "BLOCKED"
+        return row, str(e)
+    except (Refuse, OSError, ValueError, TypeError, KeyError):
+        row["status"] = "UNAVAILABLE"
+        return row, None
+    row["status"] = "OBSERVED"
+    row["buy_window"] = any(q["timely"] for q in row["quotes"].values())
+    row["late"] = not row["buy_window"]
+    return row, None
+
+
+def capture(log, wake, venue, clock, f, rule, close_only=False):
     first = parse(log[0]["first"])
     warm = not any(r["kind"] == "wake" for r in log) and not close_only
     pre_days = max(rule["vol_days"] + 1, max(rule["lookbacks"]))
@@ -442,10 +569,12 @@ def capture(log, wake, venue, clock, f, rule, marks, fees, close_only=False):
     states = {k: product_state(products.get(k + "-USD")) for k in NAMES}
     row = {"kind": "close" if close_only else "wake", "wake": iso(wake),
            "states": states, "completed": {}, "warmup": {}, "opens": {}, "quotes": {},
+           "quote_failures": {}, "candle_failures": {},
            "outage": not any(s["eligible"] or s["sell"] for s in states.values())}
     if not close_only:
-        row["quotes"] = public_quotes(venue, [k for k in NAMES if states[k]["eligible"] or states[k]["sell"]
-                                             or k == f["reference_coin"]], wake, clock, f)
+        row["quotes"], row["quote_failures"] = public_quotes(
+            venue, [k for k in NAMES if states[k]["eligible"] or states[k]["sell"]
+                    or k == f["reference_coin"]], wake, clock, f)
         row["buy_window"] = any(q["timely"] for q in row["quotes"].values())
         row["late"] = not row["buy_window"]
         row["observed"] = iso(clock())
@@ -453,25 +582,27 @@ def capture(log, wake, venue, clock, f, rule, marks, fees, close_only=False):
         if k + "-USD" not in products:
             continue
         if warm:
-            warmup = venue.candles(k, begin, first)
+            warmup = coin_page(venue.candles, row["candle_failures"], k, begin, first) or {}
             row["warmup"][k] = {d: bar[1] for d, bar in warmup.items()
                                if d < first.date().isoformat() and bar[1] is not None}
         stop = wake if close_only else wake + timedelta(days=1)
         cursor = last
         while cursor < stop:
             part = min(stop, cursor + timedelta(days=f["candle_page_days"]))
-            daily = venue.candles(k, cursor, part)
+            daily = coin_page(venue.candles, row["candle_failures"], k, cursor, part) or {}
             for d, (op, cl) in daily.items():
                 if d < wake.date().isoformat() and cl is not None:
                     row["completed"].setdefault(d, {})[k] = cl
                 if not close_only and d == wake.date().isoformat() and op is not None:
                     row["opens"][k] = op  # never keep any close from the forming candle
             cursor = part
-    if close_only:
-        return row
-    day = wake.date()
-    by_line, follow = {}, set()
-    for line in fees:
+    return row
+
+
+def attach_orders(log, row, f, rule, marks, fees):
+    day = parse(row["wake"]).date()
+    by_line, follow, second_follow = {}, set(), set()
+    for line in (*fees, SECOND):
         for size_label, size in f["bankroll_usd"].items():
             tape, _, book, skipped, attempted, void_buys, pending = run_book(
                 log + [row], f, rule, marks, fees, line, size)
@@ -485,19 +616,23 @@ def capture(log, wake, venue, clock, f, rule, marks, fees, close_only=False):
                 "under": sum(v == "under_minimum" for (i, j), v in skipped.items() if i == d),
                 "minimum_unknown": sum(v == "minimum_unknown" for (i, j), v in skipped.items() if i == d),
                 "quote_missing": sum(v == "quote_missing" for (i, j), v in skipped.items() if i == d),
+                "pair_unavailable": sum(v == "pair_unavailable" for (i, j), v in skipped.items() if i == d),
+                "venue_unavailable": sum(v == "venue_unavailable" for (i, j), v in skipped.items() if i == d),
                 "void_buys": sum(i == d for i, j in void_buys),
                 "queued_sells": len(pending.get(d, ())),
                 "delayed_sells": sum(i == d and amount < 0 and j in pending.get(d-1, ())
                                      for i, j, amount, _ in book.fills),
             }
-            follow.update(ts)
+            (second_follow if line == SECOND else follow).update(ts)
     row["orders"], row["follow"] = by_line, sorted(follow)
-    return row
+    market = row[SECOND]
+    market["follow"] = sorted(k for k in second_follow if market["states"].get(k, {}).get("eligible"))
 
 
-def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep):
+def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep, *, second_venue=None):
     f, rule, marks, fees = settings()
     with private(folder) as fd, lock(fd, "observer.lock"):
+        pool = ThreadPoolExecutor(max_workers=1)
         try:
             with lock(fd, "writer.lock"):
                 rows = read_log(fd)
@@ -513,25 +648,57 @@ def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep):
                     next_wake += timedelta(days=1)
                 if next_wake != wake or now < wake + timedelta(seconds=f["wake_delay_s"]):
                     return None
+                if venue is None and second_venue is None:
+                    second_venue = BinanceUS(f)
                 venue = venue if venue is not None else Coinbase(f)
-                row = capture(rows, wake, venue, clock, f, rule, marks, fees, close_only=wake == end)
+                second_stopped = any(r["kind"] == "second_blocked" for r in rows)
+                job = (pool.submit(capture_second, second_venue, wake, clock, f, second_stopped)
+                       if wake != end else None)
+                try:
+                    row = capture(rows, wake, venue, clock, f, rule, close_only=wake == end)
+                finally:
+                    if job is not None:
+                        market, second_stop = job.result()
+                        if second_stop:
+                            append(fd, rows, {"kind": "second_blocked", "observed": iso(clock()), "reason": second_stop})
+                            second_stopped = True
+                if job is not None:
+                    row[SECOND] = market
+                    attach_orders(rows, row, f, rule, marks, fees)
                 append(fd, rows, row)
             for offset in f["quote_offsets_s"]:
-                if not row.get("follow"):
+                second_coins = row.get(SECOND, {}).get("follow") if not second_stopped else None
+                if not (row.get("follow") or second_coins):
                     break
                 target = wake + timedelta(seconds=offset)
                 wait = (target - clock()).total_seconds()
                 if wait < 0:
                     continue  # a missed observation is never made up
                 sleep(wait)
-                quotes = public_quotes(venue, row["follow"], wake, clock, f)
-                with lock(fd, "writer.lock", blocking=True):
-                    append(fd, rows, {"kind": "follow", "wake": iso(wake), "offset": offset, "quotes": quotes})
+                job = pool.submit(public_quotes, second_venue, second_coins, wake, clock, f) if second_coins else None
+                try:
+                    quotes, failures = public_quotes(venue, row["follow"], wake, clock, f)
+                    if row["follow"]:
+                        with lock(fd, "writer.lock", blocking=True):
+                            append(fd, rows, {"kind": "follow", "wake": iso(wake), "offset": offset,
+                                              "quotes": quotes, "quote_failures": failures})
+                finally:
+                    if job is not None:
+                        with lock(fd, "writer.lock", blocking=True):
+                            try:
+                                quotes, failures = job.result()
+                                append(fd, rows, {"kind": "second_follow", "wake": iso(wake),
+                                                  "offset": offset, "quotes": quotes, "quote_failures": failures})
+                            except Blocked as e:
+                                append(fd, rows, {"kind": "second_blocked", "observed": iso(clock()), "reason": str(e)})
+                                second_stopped = True
             return row
         except Blocked as e:
             with lock(fd, "writer.lock", blocking=True):
                 append(fd, rows, {"kind": "blocked", "observed": iso(clock()), "reason": str(e)})
             raise
+        finally:
+            pool.shutdown(wait=True)
 
 
 def quantiles(items):
@@ -539,43 +706,62 @@ def quantiles(items):
             "p90_bp": float(np.percentile(items, 90)) if items else None}
 
 
-def counts(rows, f, fees):
+def venue_counts(rows, f, fees, line):
     visits = market_rows(rows)
     done = [w for w in visits if w["kind"] == "wake"]
-    primary = "quote:main"
+    second = line == SECOND
+    market = (lambda w: w[SECOND]) if second else (lambda w: w)
+    primary = f"{line}:main"
     reference = fees["flat"] * 10000
     places = {}
     for size in f["bankroll_usd"]:
-        key = f"quote:{size}"
+        key = f"{line}:{size}"
         reports = [w["orders"][key] for w in done]
         places[size] = {name: sum(len(r[name]) if isinstance(r[name], list) else r[name] for r in reports)
                         for name in ("orders", "fills", "under", "minimum_unknown", "quote_missing",
-                                     "void_buys", "queued_sells")}
+                                     "void_buys", "queued_sells", "pair_unavailable", "venue_unavailable")}
         places[size]["delayed_sells"] = sum(r["delayed_sells"] for r in reports)
     spreads, side = {}, {"buy": [], "sell": []}
     for w in done:
         for k in w["orders"][primary]["orders"]:
-            q = w["quotes"].get(k)
+            q = market(w)["quotes"].get(k)
             if q:
                 spreads.setdefault(k, []).append(10000 * (q["ask"] - q["bid"]) / (q["ask"] + q["bid"]))
         for fill in w["orders"][primary]["fills"]:
-            q = w["quotes"][fill["coin"]]
+            q = market(w)["quotes"][fill["coin"]]
             midpoint = (q["ask"] + q["bid"]) / 2
             direction = fill["side"]
             ratio = (q["ask"] if direction == "buy" else q["bid"]) / midpoint
-            side[direction].append(10000 * (abs(ratio - 1) + ratio * fees["quote"]))
+            fee = second_fee(f, fill["coin"]) if second else fees["quote"]
+            side[direction].append(10000 * (abs(ratio - 1) + ratio * fee))
     cost = {s: quantiles(v) for s, v in side.items()}
     for value in cost.values():
         value["median_minus_flat_bp"] = None if value["median_bp"] is None else value["median_bp"] - reference
         value["p90_minus_flat_bp"] = None if value["p90_bp"] is None else value["p90_bp"] - reference
-    return {"card": "E10", "status": ("BLOCKED" if any(x["kind"] == "blocked" for x in rows)
-                                   else "STARTED" if rows else "NOT_STARTED"),
-            "wakes": len(done), "void_wakes": sum(w["kind"] == "void" for w in visits) + sum(w["late"] for w in done),
-            "missed_wakes": sum(w["kind"] == "void" for w in visits), "late_wakes": sum(w["late"] for w in done),
+    marker = "second_blocked" if second else "blocked"
+    block = next((x["reason"] for x in rows if x["kind"] == marker), None)
+    late = sum(market(w)["late"] for w in done)
+    unavailable = sum(market(w).get("status") != "OBSERVED" for w in done) if second else 0
+    return {"label": SECOND_LABEL if second else "main book, Coinbase quotes",
+            "status": ("BLOCKED" if block else "NO_DECISION_FEED" if second and any(
+                x["kind"] == "blocked" for x in rows) else "STARTED" if rows else "NOT_STARTED"),
+            "block_reason": block, "unavailable_observations": unavailable,
+            "coin_quote_page_failures": sum(
+                list(market(w).get("quote_failures", {}).values()).count("PAGE_UNAVAILABLE") for w in done)
+                + sum(list(r.get("quote_failures", {}).values()).count("PAGE_UNAVAILABLE") for r in rows
+                      if r["kind"] == ("second_follow" if second else "follow")),
+            "coin_candle_page_failures": 0 if second else sum(len(w.get("candle_failures", {})) for w in visits),
+            "wakes": len(done), "void_wakes": sum(w["kind"] == "void" for w in visits) + late,
+            "missed_wakes": sum(w["kind"] == "void" for w in visits), "late_wakes": late,
             "placeability": places, "half_spread_by_coin": {k: quantiles(v) for k, v in sorted(spreads.items())},
             "all_in_cost_by_side": cost, "flat_reference_bp": reference,
-            "coinbase_vs_second_feed": "NOT_MEASURED", "follow_observations": sum(
-                len(r["quotes"]) for r in rows if r["kind"] == "follow")}
+            "follow_observations": sum(len(r["quotes"]) for r in rows
+                                       if r["kind"] == ("second_follow" if second else "follow"))}
+
+
+def counts(rows, f, fees):
+    return {"card": "E10", "coinbase_vs_second_feed": "NOT_MEASURED",
+            "coinbase": venue_counts(rows, f, fees, "quote"), SECOND: venue_counts(rows, f, fees, SECOND)}
 
 
 def alive(folder=OFF):
@@ -632,18 +818,31 @@ def score(now, folder=OFF):
              "not yet: forward year incomplete")
         need(visits and visits[-1]["kind"] == "close", "final closing observation missing")
         reference = f["reference_coin"]
-        q = initial["quotes"].get(reference)
-        benchmark_ask = q["ask"] if q and q["timely"] else None
-        result = {}
-        for line, fee in fees.items():
+        result, second = {}, {"label": SECOND_LABEL}
+        second["status"] = ("INCOMPLETE_VENUE_BLOCKED" if any(r["kind"] == "second_blocked" for r in rows)
+                            else "RECORD_NOT_VERDICT")
+        for line in (*fees, SECOND):
+            if line == SECOND and not any(r.get(SECOND, {}).get("quotes") for r in visits):
+                second["status"] = ("UNSCORABLE_VENUE_BLOCKED" if second["status"] == "INCOMPLETE_VENUE_BLOCKED"
+                                    else "UNSCORABLE_NO_QUOTES")
+                second["record"] = None
+                continue
+            market = initial[SECOND] if line == SECOND else initial
+            q = market["quotes"].get(reference)
+            benchmark_ask = q["ask"] if q and q["timely"] else None
+            fee = second_fee(f, reference) if line == SECOND else fees[line]
             tape, _, book, _, _, _, _ = run_book(rows, f, rule, marks, fees, line, f["bankroll_usd"]["main"])
             idx = tape.days.index(first.date())
             close = tape.closes[idx:-1, tape.names.index(reference)]
             gross = close / benchmark_ask if benchmark_ask and np.isfinite(close).all() else None
-            result[line] = periods(tape, idx, book.nav, gross, fee)
-            result[line]["stale_coin_day_marks"] = int(np.count_nonzero(
+            metrics = periods(tape, idx, book.nav, gross, fee)
+            metrics["stale_coin_day_marks"] = int(np.count_nonzero(
                 (book.weights[idx:-1] > 0).any(axis=2) & ~np.isfinite(tape.closes[idx:-1])))
-        out = {"label": "RECORD_NOT_VERDICT", "lines": result}
+            if line == SECOND:
+                second["record"] = metrics
+            else:
+                result[line] = metrics
+        out = {"label": "RECORD_NOT_VERDICT", "lines": result, SECOND: second}
         append(fd, rows, {"kind": "score", "read": iso(now), "result_sha256": digest(out)})
         return out
 
