@@ -198,10 +198,11 @@ class Glue(unittest.TestCase):
                 ops.export_files(dict(s1, export_sha256=dict(s1['export_sha256'], **{'stock_bars.jsonl': ops.h(b'')})), Path.read_bytes, True, ex)
 
     def test_run_approval_needs_the_exact_go_line(self):
-        ok = b'| 222 | ... | lead text TM09_GO=' + N1.encode() + b'\n'
+        ok = b'| 222 | x | lead text TM09_GO=' + N1.encode() + b' |\n'
         ops.go_line(ok, N1)
-        for bad in (b'TM09_GO=' + N1.encode() + b'\n', b'lead text TM09_GO=' + N1.encode() + b' |\n',
-                    b'lead text TM09_GO=' + N2.encode() + b'\n', b'lead text TM09_GO=' + N1.encode()[:-1] + b'\n', b''):
+        for bad in (b'TM09_GO=' + N1.encode() + b'\n', b'| 222 | lead text TM09_GO=' + N1.encode() + b'\n',
+                    b'| 223 | lead text TM09_GO=' + N1.encode() + b' |\n', b'| 222 | lead text TM09_GO=' + N1.encode() + b' | \n',
+                    b'| 222 | lead text TM09_GO=' + N2.encode() + b' |\n', ok + ok, b''):
             with self.assertRaises(ValueError, msg=bad):
                 ops.go_line(bad, N1)
         with self.assertRaises(ValueError):
@@ -213,6 +214,137 @@ class Glue(unittest.TestCase):
             ops.put(p, b'{}', owner=None)
             with self.assertRaises(FileExistsError):
                 ops.put(p, b'{}', owner=None)
+
+
+class GlueCLI(unittest.TestCase):
+    """The real new-go-id, approve-run and preflight branches on a made-up root, release copy and export."""
+
+    def setUp(self):
+        import pwd, shutil
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        d = Path(os.path.realpath(self.tmp.name))
+        self.root, self.rel = d / 'tm09', d / 'rel'
+        for sub in ('ops-v2', 'control', 'canaries', 'export'):
+            (self.root / sub).mkdir(parents=True)
+        (self.root / 'operator.key').write_text('k' * 48 + '\n')
+        canaries = [self.root / 'canaries/tape', self.root / 'canaries/notes', self.root / 'operator.key', self.root / 'canaries/results']
+        for c in canaries[:2] + canaries[3:]:
+            c.write_text('canary\n')
+        for name in ops.FILES + ('config/thresholds.yaml', 'timemachine/TM09_REGISTRATION.md', ops.LEDGER):
+            (self.rel / name).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(REPO / name, self.rel / name)
+        me = pwd.getpwuid(os.getuid()).pw_name
+        for name, value in (('ROOT', self.root), ('OPS', self.root / 'ops-v2'), ('CONTROL', self.root / 'control'),
+                            ('CANARIES', canaries), ('SERVICE', me)):
+            patcher = mock.patch.object(ops, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        patcher = mock.patch.dict(os.environ, TM09_RELEASE=str(self.rel))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.ex = self.root / 'export'
+        self.pins = {}
+        for n in ('stock_sessions.jsonl', 'stock_bars.jsonl', 'stock_news.jsonl'):
+            (self.ex / n).write_bytes(b'made-up ' + n.encode())
+            self.pins[n] = ops.h(b'made-up ' + n.encode())
+
+    def main(self, *argv):
+        from io import StringIO
+        with mock.patch('sys.stdout', new=StringIO()) as out:
+            ops.main(list(argv))
+        return out.getvalue()
+
+    def go(self, row_end):
+        ledger = self.rel / ops.LEDGER
+        lines = ledger.read_text().split('\n')
+        i = next(i for i, l in enumerate(lines) if l.startswith('| 222 | '))
+        lines[i] = lines[i][:-2] + ' ' + row_end + ' |'
+        ledger.write_text('\n'.join(lines))
+
+    def fields(self, mode, names):
+        f = self.root / ('fields-' + mode + '.json')
+        f.write_text(json.dumps(dict(mode=mode, export_dir=str(self.ex), export_sha256={n: self.pins[n] for n in names})))
+        return str(f)
+
+    def test_stage1_run_capsule_and_preflight_without_news(self):
+        auth = self.main('new-go-id', 'stage1').strip().split('=')[1]
+        s1 = ('stock_sessions.jsonl', 'stock_bars.jsonl')
+        with self.assertRaises(ValueError):
+            self.main('approve-run', auth, self.fields('stage1', s1))           # no docket line yet
+        self.go('TM09_GO=' + auth)
+        with self.assertRaises(ValueError):
+            self.main('approve-run', auth, self.fields('stage1', ops.STAGE_FILES[False]))   # stage 1 with news refuses
+        with self.assertRaises(ValueError):
+            self.main('approve-run', N3, self.fields('stage1', s1))             # id not issued here
+        (self.ex / 'stock_news.jsonl').unlink()                                  # stage 1 needs no headline store
+        self.main('approve-run', auth, self.fields('stage1', s1))
+        cap = self.root / 'ops-v2' / f'run-stage1-{auth}.json'
+        body = json.loads(cap.read_text())['body']
+        self.assertEqual((body['mode'], body['authorization_id'], body['ledger_sha256']),
+                         ('stage1', auth, ops.h((self.rel / ops.LEDGER).read_bytes())))
+        self.assertIn('export files 2', self.main('preflight', 'production', str(cap), str(self.ex)))
+        with self.assertRaises(ValueError):
+            self.main('preflight', 'production', str(cap), str(self.root / 'other'))
+        with open(self.rel / ops.LEDGER, 'a') as f:
+            f.write('\nlater line\n')
+        with self.assertRaises(ValueError):
+            self.main('preflight', 'production', str(cap), str(self.ex))         # ledger changed since signing
+
+    def test_stage2_needs_the_engine_stage1_check_news_and_its_own_id(self):
+        from timemachine import tm09_blind
+        s1 = self.main('new-go-id', 'stage1').strip().split('=')[1]
+        a = self.main('new-go-id', 'A').strip().split('=')[1]
+        with self.assertRaises(FileExistsError):
+            self.main('new-go-id', 'A')                                         # one id per stage, never reissued
+        with self.assertRaises(ValueError):
+            self.main('new-go-id', 'C')
+        self.go('TM09_GO=' + a)
+        full = ops.STAGE_FILES[False]
+        with self.assertRaises(ValueError):
+            self.main('approve-run', s1, self.fields('A', full))                 # stage 1 id cannot approve A
+        with self.assertRaises(FileNotFoundError):
+            self.main('approve-run', a, self.fields('A', full))                  # real gate: no Stage 1 check receipt
+        f = self.root / 'nomode.json'
+        f.write_text(json.dumps(dict(export_dir=str(self.ex), export_sha256=self.pins)))
+        with self.assertRaises(ValueError):
+            self.main('approve-run', a, str(f))
+        with mock.patch.object(tm09_blind, 'verify_stage2') as gate:
+            with self.assertRaises(ValueError):
+                self.main('approve-run', a, self.fields('A', ('stock_sessions.jsonl', 'stock_bars.jsonl')))
+            fields = json.loads(Path(self.fields('A', full)).read_text())
+            fields['blind_report_sha256'] = 'r' * 64
+            (self.root / 'fa.json').write_text(json.dumps(fields))
+            self.main('approve-run', a, str(self.root / 'fa.json'))
+            self.assertEqual(gate.call_args.args[:4], (self.root, 'k' * 48, 'A', 'r' * 64))
+            cap = self.root / 'ops-v2' / f'run-A-{a}.json'
+            self.assertIn('export files 3', self.main('preflight', 'production', str(cap), str(self.ex)))
+            gate.side_effect = ValueError('Stage 2 checker provenance refused')
+            with self.assertRaises(ValueError):
+                self.main('preflight', 'production', str(cap), str(self.ex))
+        with self.assertRaises(FileNotFoundError):
+            self.main('preflight', 'production', str(cap), str(self.ex))        # real gate again
+        old = self.root / 'ops-v2' / 'old.json'
+        from timemachine.tm09_desk import seal
+        body = {k: v for k, v in json.loads(cap.read_text())['body'].items() if k not in ('ledger_sha256', 'authorization_id')}
+        old.write_text(json.dumps({'body': body, 'seal': seal('k' * 48, 'ledger-222-run-tm09', body)}))
+        with self.assertRaises(ValueError):
+            self.main('preflight', 'production', str(old), str(self.ex))        # capsule without ledger binding
+
+    def test_docket_line_must_be_exact(self):
+        auth = self.main('new-go-id', 'stage1').strip().split('=')[1]
+        s1 = ('stock_sessions.jsonl', 'stock_bars.jsonl')
+        for end in ('TM09_GO=' + auth + ' ', 'TM09_GO=' + auth + '.', 'xTM09_GO=' + auth, 'TM09_GO=' + auth + ' TM09_GO=' + auth,
+                    '<!-- TM09_GO=' + auth + ' -->'):
+            backup = (self.rel / ops.LEDGER).read_bytes()
+            self.go(end)
+            with self.assertRaises(ValueError, msg=end):
+                self.main('approve-run', auth, self.fields('stage1', s1))
+            (self.rel / ops.LEDGER).write_bytes(backup)
+        ledger = (self.rel / ops.LEDGER).read_text()
+        (self.rel / ops.LEDGER).write_text(ledger + '<!-- | 222 | x TM09_GO=' + auth + ' |\n')
+        with self.assertRaises(ValueError):
+            self.main('approve-run', auth, self.fields('stage1', s1))
 
 
 # The stub stands in for osudo only: it appends the timed operator record exactly as osudo does and the sudo log

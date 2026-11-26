@@ -12,9 +12,10 @@ worker probe run here through runuser is host-uid evidence, not proof of the hos
   bearer-copy SLOT_DIR OUT                             root: worker-owned copy of one slot bearer for the probe
   checkpoint SID PORT                                  root: canary, private checkpoint, proof, launch capsule
   probe PHASE SID PORT NONCE SIBLING BEARER            root: isolation probe as the worker uid, four canaries
-  new-go-id                                            root, once: authorization id for the lead's TM09_GO ledger line
-  approve-run AUTH_ID FIELDS_JSON                      root: run capsule, only if the pinned release ledger has a line
-                                                       ending exactly TM09_GO=AUTH_ID; records the ledger sha256
+  new-go-id STAGE                                      root, once per stage (stage1, A, B): id for the lead's TM09_GO line
+  approve-run AUTH_ID FIELDS_JSON                      root, once per stage: run capsule, only if the pinned release
+                                                       ledger row 222 ends exactly TM09_GO=AUTH_ID |, records the ledger
+                                                       sha256; A or B also needs the engine's signed Stage 1 check
   preflight MODE [RUN_CAPSULE EXPORT_DIR]              root: canaries exist; production: signed stage file set matches
   entries SID PORT NONCE                               root: after stop, cut the log lines since the checkpoint
   canaries                                             root: {nonce: session} of every TM09 checkpoint
@@ -146,7 +147,7 @@ def h(raw):
     return sha256(raw).hexdigest()
 
 
-def put(path,data,owner=SERVICE):
+def put(path,data,owner="service"):
     """New 0600 file, never overwritten (a repeated proof or review refuses)."""
     fd = os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
     with os.fdopen(fd,"wb") as f:
@@ -154,7 +155,7 @@ def put(path,data,owner=SERVICE):
         f.flush()
         os.fsync(f.fileno())
     if owner:
-        u = pwd.getpwnam(owner)
+        u = pwd.getpwnam(SERVICE if owner == "service" else owner)
         os.chown(path,u.pw_uid,u.pw_gid)
 
 
@@ -185,9 +186,24 @@ def export_files(run_body,read,stage1,export_dir):
 
 
 def go_line(ledger_raw,auth_id):
-    if not NONCE.fullmatch(auth_id) or not any(l.rstrip().endswith("TM09_GO="+auth_id) and l.rstrip() != "TM09_GO="+auth_id
-                                               for l in ledger_raw.decode().splitlines()):
-        raise ValueError("no ledger line ends with this TM09_GO authorization")
+    """The lead's docket: ledger row 222 must end with exactly `TM09_GO=<id> |`; the id appears nowhere else."""
+    lines = ledger_raw.decode().split("\n")
+    if (not NONCE.fullmatch(auth_id) or ledger_raw.decode().count("TM09_GO="+auth_id) != 1
+            or not any(l.startswith("| 222 | ") and l.endswith(" TM09_GO="+auth_id+" |") for l in lines)):
+        raise ValueError("ledger row 222 does not end with exactly this TM09_GO authorization")
+
+
+def run_stage(body):
+    if body.get("mode") not in ("stage1","A","B"):
+        raise ValueError("run capsule must sign the data stage")
+    return body["mode"] == "stage1"
+
+
+def check_go(body,ledger_raw):
+    """Every production preflight re-reads the pinned release ledger: same bytes as signed, docket line present."""
+    if h(ledger_raw) != body.get("ledger_sha256"):
+        raise ValueError("pinned release ledger differs from the one the run capsule signed")
+    go_line(ledger_raw,body.get("authorization_id",""))
 
 
 def main(argv):
@@ -196,6 +212,13 @@ def main(argv):
     from timemachine.tm09_desk import seal,verify_seal
     from timemachine.tm09_fixture import fingerprint,read_private,settings
     key = read_private(ROOT/"operator.key").decode().strip()
+
+    def stage2_gate(body,cfg,registration):
+        """The engine's own Stage 1 check receipt must name this branch before any Stage 2 input is opened."""
+        from timemachine.tm09_blind import verify_stage2
+        from timemachine.tm09_fixture import stage1_weeks
+        verify_stage2(ROOT,key,body["mode"],body.get("blind_report_sha256"),h(cfg),h(registration),
+                      len(stage1_weeks(settings(cfg)["study"])))
 
     def capsule(domain,body,path):
         put(path,(json.dumps({"body":body,"seal":seal(key,domain,body)},sort_keys=True)+"\n").encode())
@@ -220,24 +243,27 @@ def main(argv):
                     operator_boundary_sha256=h(read_private(Path(a[0]))),ports=list(PORTS))
         capsule("ledger-222-rehearse-tm09",body,OPS/"rehearsal-approval.json")
     elif cmd == "new-go-id":
+        run_stage(dict(mode=a[0]))
         auth = secrets.token_hex(16)
-        put(CONTROL/"tm09-go-id",auth.encode(),owner=None)
-        print("TM09_GO="+auth)
+        put(CONTROL/f"tm09-go-id-{a[0]}",auth.encode(),owner=None)
+        print(a[0],"TM09_GO="+auth)
     elif cmd == "approve-run":
         auth,fields = a[0],json.loads(read_private(Path(a[1])))
-        if read_private(CONTROL/"tm09-go-id").decode() != auth:
-            raise ValueError("authorization id was not issued here")
+        stage1 = run_stage(fields)
+        if read_private(CONTROL/f"tm09-go-id-{fields['mode']}").decode() != auth:
+            raise ValueError("authorization id was not issued here for this stage")
         ledger = read_private(rel/LEDGER)
         go_line(ledger,auth)
         cfg = read_private(rel/"config/thresholds.yaml")
-        stage1 = settings(cfg).get("mode") == "stage1"
+        if not stage1:
+            stage2_gate(fields,cfg,read_private(rel/"timemachine/TM09_REGISTRATION.md"))
         export_files(fields,read_private,stage1,fields["export_dir"])
         body = dict(fields,root=str(ROOT),service_uid=pwd.getpwnam(SERVICE).pw_uid,release=str(rel),
                     approved_by="lead agent, ledger 222 line TM09_GO="+auth,authorization_id=auth,ledger_sha256=h(ledger),
                     release_files={n:h(read_private(rel/n)) for n in FILES},config_sha256=h(cfg),
                     registration_sha256=h(read_private(rel/"timemachine/TM09_REGISTRATION.md")),
                     resolved_settings=settings(cfg),ports=list(PORTS))
-        capsule("ledger-222-run-tm09",body,OPS/f"run-{auth}.json")
+        capsule("ledger-222-run-tm09",body,OPS/f"run-{fields['mode']}-{auth}.json")
     elif cmd == "bearer-copy":
         slot_dir,out = Path(a[0]),Path(a[1])
         w = pwd.getpwnam(WORKER)
@@ -283,7 +309,10 @@ def main(argv):
         if a[0] == "production":
             cap = json.loads(read_private(Path(a[1])))
             verify_seal(key,"ledger-222-run-tm09",cap["body"],cap["seal"])
-            stage1 = settings(read_private(rel/"config/thresholds.yaml")).get("mode") == "stage1"
+            check_go(cap["body"],read_private(rel/LEDGER))
+            stage1 = run_stage(cap["body"])
+            if not stage1:
+                stage2_gate(cap["body"],read_private(rel/"config/thresholds.yaml"),read_private(rel/"timemachine/TM09_REGISTRATION.md"))
             n = export_files(cap["body"],read_private,stage1,a[2])
         print("preflight canaries",len(CANARIES),"export files",n)
     elif cmd == "entries":
