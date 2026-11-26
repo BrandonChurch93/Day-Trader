@@ -278,6 +278,13 @@ Working papers.
 | `research_rig/report_34.py` | Formats the pinned saved Measurement 34 aggregate into doc 82 and an optional dashboard card. No scoring or market-data reads | CURRENT |
 | `research_rig/PREREG_35_ibit_cme_expiry.md`, `research_rig/config_35.json`, `research_rig/PINNED_35.json` | Frozen Plan 35 IBIT expiry window, queue 57 and ledger 170. Exact settings and audited byte pins; no market inputs | CURRENT |
 | `research_rig/score_35.py`, `research_rig/test_35.py` | Plan 35 no-return input validator, approved one-shot runner and synthetic-only tests. Private independently staged inputs and results stay off repo | CURRENT |
+| `research_rig/PREREG_36_form4_cluster_buys.md` | Frozen Plan 36, Queue 60 and Ledger 171. Original Form 4 officer and director cluster purchases, matched fund and nine pass marks | CURRENT |
+| `research_rig/INPUT_CONTRACT_36.md` | Plan 36 independent data custody, point-in-time source roster and sparse market input contract. Payloads stay off repo | CURRENT |
+| `research_rig/PINNED_36.json` | SHA-256 pins for the Plan 36 freeze files | CURRENT |
+| `research_rig/calendar_36.json` | Pinned Plan 36 XNYS sessions, early closes and UTC timestamps | CURRENT |
+| `research_rig/common_36.py` | Plan 36 event, liquidity, spread, action and comparator logic; nine scoring marks | CURRENT |
+| `research_rig/score_36.py` | Plan 36 no-return validator and approval-gated one-shot runner | CURRENT |
+| `research_rig/test_36.py` | Plan 36 synthetic-only clock, coverage, outcome and gate tests | CURRENT |
 | `research_rig/measure_15_summary.json` | Measurement 15 aggregates only (counts, medians, means, 90th percentiles, outlier check). No trade, quote, price, time or symbol; the per-stock-day output stays off repo | CURRENT |
 | `research_rig/report_15.py` | Writes the Measurement 15 summary from the off-repo output, and prints doc 66 from the summary only. No rule run and no market-data reads | CURRENT |
 | `research_rig/results_19.json` | Saved one-shot result, aggregate returns and costs, shifted-hour Sharpes and run fingerprints. No raw bars | CURRENT |
