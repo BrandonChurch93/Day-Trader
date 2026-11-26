@@ -96,8 +96,9 @@ def roster(blob, cfg):
 
 
 def bar_rows(raw, window, required_through):
-    """Validated raw daily bars for one symbol; returns {session: close}. Rows may stop early (delisting),
-    but none may be missing between the anchor and `required_through` when the caller requires it."""
+    """Validated raw daily bars for one symbol; returns {session: close}. Rows may stop early (delisting).
+    Transport ruling before any price was read: a vendor row with zero volume is kept in the packet but is
+    treated exactly as a session with no bar (no trade, so no close to rank on or fill at)."""
     need(type(raw) is list, "BARS")
     allowed = set(window["sessions"])
     closes, previous = {}, None
@@ -110,10 +111,11 @@ def bar_rows(raw, window, required_through):
         need((local.hour, local.minute, local.second) == (0, 0, 0) and d in allowed
              and (previous is None or d > previous), "BAR_TIME")
         px = tuple(row[k] for k in ("o", "h", "l", "c"))
-        need(all(map(positive_number, px)) and type(row["v"]) is int and row["v"] > 0, "BAR_VALUES")
+        need(all(map(positive_number, px)) and type(row["v"]) is int and row["v"] >= 0, "BAR_VALUES")
         o, h, low, c = px
         need(low <= min(o, c) <= max(o, c) <= h, "BAR_VALUES")
-        closes[d] = exact(c)
+        if row["v"] > 0:
+            closes[d] = exact(c)
         previous = d
     return closes
 
@@ -215,6 +217,70 @@ def distributions(raw, windows, names_by_turn, cfg):
         need(not bench["splits"], "BENCHMARK_SPLIT")
         out[w["turn"]] = ({s: one(block["symbols"][s]) for s in names}, bench)
     return out
+
+
+def split_evidence(raw, windows, names_by_turn, cash):
+    """Native vendor corporate-actions pages, kept as evidence that every roster ticker was queried for forward
+    and reverse splits over exactly its turn window. Each page is stored as returned. Every split record the
+    vendor reports for a roster ticker must appear (same ex-date) in distributions.json after review."""
+    need(type(raw) is dict and set(raw) == {"schema", "vendor", "queries"} and type(raw["schema"]) is int
+         and raw["schema"] == 1 and type(raw["vendor"]) is str and raw["vendor"] and type(raw["queries"]) is list,
+         "SPLIT_EVIDENCE")
+    by_turn = {w["turn"]: w for w in windows}
+    queried = {y: set() for y in by_turn}
+    for q in raw["queries"]:
+        need(type(q) is dict and set(q) == {"turn", "symbols", "start", "end", "queried_utc", "pages"}
+             and type(q["turn"]) is int and q["turn"] in by_turn and type(q["symbols"]) is list
+             and all(type(x) is str for x in q["symbols"]) and type(q["pages"]) is list and q["pages"]
+             and type(q["queried_utc"]) is str
+             and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", q["queried_utc"]) is not None, "SPLIT_EVIDENCE")
+        w = by_turn[q["turn"]]
+        need(day(q["start"]) == w["anchor"] and day(q["end"]) == w["exit"], "SPLIT_EVIDENCE_WINDOW")
+        queried[q["turn"]] |= set(q["symbols"])
+        for page in q["pages"]:
+            need(type(page) is dict and set(page) <= {"corporate_actions", "next_page_token"}
+                 and type(page.get("corporate_actions", {})) is dict, "SPLIT_EVIDENCE")
+            for kind in ("forward_splits", "reverse_splits"):
+                records = page.get("corporate_actions", {}).get(kind, [])
+                need(type(records) is list, "SPLIT_EVIDENCE")
+                for r in records:
+                    need(type(r) is dict and type(r.get("symbol")) is str, "SPLIT_EVIDENCE")
+                    s = r["symbol"]
+                    if s in names_by_turn[q["turn"]]:
+                        d = day(r.get("ex_date"))
+                        if w["anchor"] < d <= w["exit"]:
+                            need(d in {x for x, _ in cash[q["turn"]][0][s]["splits"]}, "VENDOR_SPLIT_NOT_RECORDED")
+    need(all(set(names_by_turn[y]) <= queried[y] for y in by_turn), "SPLIT_EVIDENCE_COVERAGE")
+
+
+def split_control(raw, windows, names_by_turn, cfg):
+    """Vendor raw versus split-adjusted daily close comparison, counts only, per fund-turn and for MUB."""
+    need(type(raw) is dict and set(raw) == {"schema", "vendor", "queried_utc", "turns"} and type(raw["schema"]) is int
+         and raw["schema"] == 1 and type(raw["vendor"]) is str and raw["vendor"] and type(raw["queried_utc"]) is str
+         and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", raw["queried_utc"]) is not None
+         and type(raw["turns"]) is dict and set(raw["turns"]) == {str(w["turn"]) for w in windows}, "SPLIT_CONTROL")
+    out = {}
+    for w in windows:
+        block = raw["turns"][str(w["turn"])]
+        need(type(block) is dict and set(block) == set(names_by_turn[w["turn"]]) | {cfg["benchmark"]}, "SPLIT_CONTROL")
+        for v in block.values():
+            need(type(v) is dict and set(v) == {"matched", "one_sided", "steps"}
+                 and all(type(v[k]) is int and v[k] >= 0 for k in v), "SPLIT_CONTROL")
+        out[w["turn"]] = block
+    return out
+
+
+def check_control(block, raw_bars, cash, cfg):
+    """Every raw bar row has a matched adjusted close, none is one-sided, and the vendor's in-window adjustment
+    steps equal the reviewer-recorded splits (zero for MUB). A fund-turn with no bars must show zero matched."""
+    fund_actions, _ = cash
+    for s, rows in raw_bars["symbols"].items():
+        c = block[s]
+        need(c["matched"] == len(rows) and c["one_sided"] == 0
+             and c["steps"] == len(fund_actions[s]["splits"]), "SPLIT_CONTROL_MISMATCH")
+    c = block[cfg["benchmark"]]
+    need(c["matched"] == len(raw_bars["benchmark"]) and c["one_sided"] == 0 and c["steps"] == 0,
+         "SPLIT_CONTROL_MISMATCH")
 
 
 def check_jumps(closes, splits, cfg):

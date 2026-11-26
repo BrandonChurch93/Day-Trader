@@ -175,7 +175,7 @@ def check_calibration(C, cfg, blob):
 
 def input_names(cfg):
     years = range(cfg["first_turn"], cfg["last_turn"] + 1)
-    return ({"roster.csv", "distributions.json"} | {f"bars_{y}.json" for y in years}
+    return ({"roster.csv", "distributions.json", "split_evidence.json", "split_control.json"} | {f"bars_{y}.json" for y in years}
             | {f"quotes_{y}.json" for y in years})
 
 
@@ -199,11 +199,17 @@ def load_inputs(input_dir, input_pin, roster_pin, dist_pin, C, calendar_blob, cf
     roster = C.roster(pinned(input_dir / "roster.csv", roster_pin, private=True), cfg)
     cash = C.distributions(parse(pinned(input_dir / "distributions.json", dist_pin, private=True)),
                            windows, roster, cfg)
+    C.split_evidence(parse(pinned(input_dir / "split_evidence.json", m["files"]["split_evidence.json"],
+                                  private=True)), windows, roster, cash)
+    control = C.split_control(parse(pinned(input_dir / "split_control.json", m["files"]["split_control.json"],
+                                           private=True)), windows, roster, cfg)
     packet = {}
     for w in windows:
         y = w["turn"]
-        funds, bench = C.bars_file(parse(pinned(input_dir / f"bars_{y}.json", m["files"][f"bars_{y}.json"],
-                                                private=True)), w, roster[y], cfg)
+        raw_bars = parse(pinned(input_dir / f"bars_{y}.json", m["files"][f"bars_{y}.json"], private=True))
+        funds, bench = C.bars_file(raw_bars, w, roster[y], cfg)
+        C.check_control(control[y], raw_bars, cash[y], cfg)
+        del raw_bars
         quotes = C.quotes_file(parse(pinned(input_dir / f"quotes_{y}.json", m["files"][f"quotes_{y}.json"],
                                             private=True)), w, roster[y], cfg)
         for s, closes in funds.items():
