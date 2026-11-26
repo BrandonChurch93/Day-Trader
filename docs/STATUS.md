@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 12:05 UTC
+Last updated: 2026-11-26 12:14 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -14,6 +14,8 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 ## Latest results
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
+
+- [Queue 11, 12 and 13](research/145_screen_queue_11_12_13.md) (supplier before its report, earnings-call answers, large contracts; ledger 215): all three closed before prices 2026-11-26 05:14 MT. Row 11: MEASURED on made-up data, no price read: 23.59% chance to pass all marks at a favorable +142 bp (STATED, a monthly long-side figure from a 1978 to 2018 sample, not the trade's own window), under the 33% line. The free dated map of who sells to whom covers only 2025 and 2026 filings (281 links, 108 customers); the 842-event figure is a projection, the real count is UNKNOWN. A 2005 to 2024 replication of the related rule found +9.2 bp a month, t 0.34 (STATED). Row 12: No lawful free dated source of full call text across years: the one free licensed set is 482 US calls in one quarter (2025 Q4), which cannot meet year breadth; 0% chance to pass as held, 16.29% if the same count were spread over the years (MEASURED on made-up data, no price read). The broad transcript sets are paid. Row 13: MEASURED without prices: 252 candidate days at ten issuers on a loose dollar test, under the 300 line, and not yet checked against sales or first funding. Chance to pass 0% at that count and 13.16% even at a vendor's 1,006-event count, at +30 bp gross (STATED, a vendor's own study).
 
 - Queue 17, plan 68 (plain earnings drift on the filing clock; ledger 213): closed before prices 2026-11-26 05:05 MT. MEASURED on made-up data only, no price read: with the count of usable releases found from SEC data sets (11,491 of 36,982 candidates, 2016 to 2026 Q3; about 41 to 50 entries a quarter through 2020, falling to 2 or 3 by 2026) the chance to pass all four marks is 7.15% at +78 bp net and 8.11% at +88 bp, against the 33% line fixed in ledger 213. With a flat 50 entries a quarter it is 9.34% and 10.58%. It clears 33% only if returns inside a quarter are almost unrelated (0.05) and there are 90 entries a quarter, which the count does not support. STATED: +88 bp gross is the largest comparable published long-side size (Liu, Mao, Tang and Zhou, announcement clock); the closest tradable comparisons are +16 bp and -4 bp gross. UNKNOWN: why usable releases fall from 1,415 in 2021 to 301 in 2022; it may be a gap in the tagged-figure join and not a real fall, which is why the flat-count figure is given too; both are under the line. See [the screen page](../research_rig/PREREG_68_earnings_drift_plain.md).
 
