@@ -19,11 +19,14 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 REPEAT_DIR = Path("/home/user/workspace/rig/data/plan_75_repeat")
+VAULT_DIR = Path("/home/user/workspace/rig/data/plan_75_vault")
 NAMES = tuple("AAVE ADA AVAX BCH BNB BTC DOGE DOT ETH HBAR LINK LTC NEAR PEPE SHIB SOL SUI XLM XRP ZEC".split())
 START, STOP = date(2020, 1, 1), date(2024, 1, 1)
 REPEAT_DAYS = tuple(START + timedelta(days=i) for i in range((STOP - START).days))
 HASH = re.compile(r"[0-9a-f]{64}\Z")
 INDEX_HEADER = b"date,coin,eligible,open_present,close_present,sell_allowed\n"
+VAULT_HEADER = b"date,coin,admission,open_present,close_present,sell_allowed\n"
+ADMISSION = ("NOT_ADMITTED", "INFERRED", "PROVED")
 LEDGER = "research_rig/TRIAL_LEDGER.md"
 
 
@@ -532,7 +535,7 @@ def approval_id(ledger):
     return matches[0]
 
 
-def committed_approval():
+def committed_approval(parser=approval_id):
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
 
     def git(*args):
@@ -544,7 +547,7 @@ def committed_approval():
     commit = git("rev-parse", "--verify", "HEAD").strip()
     require(re.fullmatch(r"[0-9a-f]{40,64}", commit), "REFUSE_GIT")
     require(git("status", "--porcelain", "--untracked-files=no") == "", "REFUSE_DIRTY")
-    go = approval_id(git("show", f"{commit}:{LEDGER}"))
+    go = parser(git("show", f"{commit}:{LEDGER}"))
     require(git("rev-parse", "--verify", "HEAD").strip() == commit, "REFUSE_GIT")
     return go
 
@@ -614,10 +617,293 @@ def registered_summary(report):
     return "\n".join(lines)
 
 
+def vault_approval_id(ledger):
+    rows = re.findall(r"^\|[ \t]*225[ \t]*\|[^\n]*$", ledger, flags=re.M)
+    require(len(rows) == 1, "REFUSE_LEDGER_ROW")
+    row = rows[0]
+    keys = re.findall(r"(?<![A-Za-z0-9_])P75_VAULT_GO\s*=", row)
+    matches = re.findall(r"(?<![A-Za-z0-9_])P75_VAULT_GO=(p75v-[0-9a-f]{64})(?=[\s`|]|$)", row)
+    require(len(keys) == len(matches) == 1, "REFUSE_LEDGER_GO")
+    return matches[0]
+
+
+def vault_receipt_pin(fd, approved):
+    try:
+        receipt = json.loads(read_at(fd, "vault_receipt.json", 4096), object_pairs_hook=unique)
+    except (ValueError, RecursionError, Refusal):
+        raise Refusal("REFUSE_RECEIPT") from None
+    require(isinstance(receipt, dict) and set(receipt) == {
+        "schema", "go_id", "manifest_sha256", "scorer_absent_during_extract"
+    } and type(receipt["schema"]) is int and receipt["schema"] == 1
+        and receipt["scorer_absent_during_extract"] is True
+        and isinstance(receipt["manifest_sha256"], str)
+        and HASH.fullmatch(receipt["manifest_sha256"]), "REFUSE_RECEIPT")
+    pin = receipt["manifest_sha256"]
+    require(receipt["go_id"] == approved == "p75v-" + pin, "REFUSE_GO_MISMATCH")
+    return pin
+
+
+def vault_axes(cfg):
+    start, stop = map(date.fromisoformat, cfg["vault"])
+    require(start == STOP and stop > start, "REFUSE_VAULT_FENCE")
+    return tuple(start + timedelta(days=i) for i in range((stop - start).days))
+
+
+def validate_vault_bytes(cfg, manifest, index, payload, pin):
+    require(HASH.fullmatch(pin) and sha(manifest) == pin, "REFUSE_PIN")
+    try:
+        m = json.loads(manifest, object_pairs_hook=unique)
+    except (ValueError, RecursionError):
+        raise Refusal("REFUSE_MANIFEST") from None
+    require(isinstance(m, dict) and set(m) == {
+        "schema", "start", "stop_exclusive", "rows",
+        "names", "admission_coin_days", "index_sha256", "payload_sha256",
+        "source_receipt_sha256", "eligibility_receipt_sha256",
+    }, "REFUSE_MANIFEST")
+    days = vault_axes(cfg)
+    n = len(days) * len(NAMES)
+    require(type(m["schema"]) is int and m["schema"] == 1 and m["names"] == list(NAMES)
+            and [m["start"], m["stop_exclusive"]] == cfg["vault"]
+            and type(m["rows"]) is int and m["rows"] == n,
+            "REFUSE_VAULT_FENCE")
+    require(all(isinstance(m[k], str) and HASH.fullmatch(m[k]) for k in m if k.endswith("_sha256")),
+            "REFUSE_HASH")
+    require(sha(index) == m["index_sha256"] and sha(payload) == m["payload_sha256"], "REFUSE_HASH")
+    require(len(payload) == 16 * n and index.startswith(VAULT_HEADER)
+            and index.endswith(b"\n"), "REFUSE_SIZE")
+    rows = index[len(VAULT_HEADER):].split(b"\n")[:-1]
+    require(len(rows) == n, "REFUSE_ROWS")
+    flags = np.empty((len(days), len(NAMES), 4), dtype=bool)
+    counts = dict.fromkeys(ADMISSION, 0)
+    admission = {label.encode(): label for label in ADMISSION}
+    for d, day in enumerate(days):
+        for j, coin in enumerate(NAMES):
+            row = rows[d * len(NAMES) + j].split(b",")
+            require(len(row) == 6 and row[:2] == [day.isoformat().encode(), coin.encode()]
+                    and row[2] in admission and all(x in (b"0", b"1") for x in row[3:]),
+                    "REFUSE_INDEX")
+            label = admission[row[2]]
+            eligible = label != "NOT_ADMITTED"
+            opening, closing, sale = (x == b"1" for x in row[3:])
+            require(not eligible or sale, "REFUSE_INDEX")
+            counts[label] += 1
+            flags[d, j] = eligible, opening, closing, sale
+    declared = m["admission_coin_days"]
+    require(isinstance(declared, dict) and all(type(v) is int for v in declared.values())
+            and declared == counts, "REFUSE_ADMISSION")
+    return flags, counts
+
+
+def load_vault_snapshot(fd, cfg, pin):
+    require(HASH.fullmatch(pin), "REFUSE_PIN")
+    manifest = read_at(fd, "manifest.json", 8192)
+    require(sha(manifest) == pin, "REFUSE_PIN")
+    days = vault_axes(cfg)
+    index = read_at(fd, "index.csv", len(days) * len(NAMES) * 64 + len(VAULT_HEADER))
+    opaque = read_at(fd, "prices.f64", 16 * len(days) * len(NAMES))
+    flags, counts = validate_vault_bytes(cfg, manifest, index, opaque, pin)
+    return flags, opaque, counts
+
+
+def validate_vault(pin):
+    require(HASH.fullmatch(pin), "REFUSE_PIN")
+    cfg, _, _ = load_config()
+    with open_folder(VAULT_DIR) as fd:
+        require_private_vault(fd)
+        load_vault_snapshot(fd, cfg, pin)
+
+
+def decode_vault(cfg, flags, opaque):
+    days = vault_axes(cfg)
+    values = np.frombuffer(opaque, dtype="<f8").reshape(len(days), len(NAMES), 2)
+    present = flags[..., 1:3]
+    require(np.all(np.where(present, np.isfinite(values) & (values > 0), np.isnan(values))),
+            "REFUSE_PRICES")
+    return Tape(days, NAMES, values[..., 0], values[..., 1], flags[..., 0], flags[..., 3])
+
+
+def daily_simple(nav):
+    return nav / np.r_[1.0, nav[:-1]] - 1
+
+
+def matched_btc(gross_nav, gross_fills, strategy_nav, fee):
+    """Risk-normalize gross BTC; costs use scaled fraction of prior gross NAV per fill."""
+    gross = daily_simple(gross_nav)
+    btc_sd = float(np.std(gross, ddof=1))
+    strategy_sd = float(np.std(daily_simple(strategy_nav), ddof=1))
+    if btc_sd <= 0 or not np.isfinite(btc_sd) or not np.isfinite(strategy_sd):
+        return None, None
+    scale = strategy_sd / btc_sd
+    prior = np.r_[1.0, gross_nav[:-1]]
+    debits = np.zeros_like(gross)
+    for d, _, notional, _ in gross_fills:
+        debits[d] += abs(notional) * fee / prior[d]
+    net = 1 + scale * (gross - debits)
+    if not np.isfinite(net).all() or np.any(net <= 0):
+        return None, scale if np.isfinite(scale) else None
+    terminal = float(np.prod(net) - 1)
+    return (terminal if np.isfinite(terminal) else None), scale
+
+
+def btc_comparison(tape, book, fee, cfg, inp, clock, save_fills):
+    j = tape.names.index(cfg["vault_benchmark"])
+    column = [j]
+    btc = Tape(tape.days, (tape.names[j],), tape.opens[:, column], tape.closes[:, column],
+               tape.eligible[:, column], tape.sell[:, column])
+    stats = {"matched_net": None, "scale": None, "unscaled_net": None, "status": "UNSCORABLE"}
+    if not (np.isfinite(btc.opens).all() and np.isfinite(btc.closes).all()):
+        return stats
+    solo = tuple(a[:, column] for a in inp)
+    timing = clock[0][:, column], clock[1]
+    try:
+        gross = play(btc, 0., cfg, cfg["cap"], solo, timing, mode="hold")
+        unscaled = play(btc, fee, cfg, cfg["cap"], solo, timing, mode="hold")
+    except Refusal as e:
+        if str(e) in {"REFUSE_TERMINAL", "REFUSE_NAV"}:
+            return stats
+        raise
+    stats["unscaled_net"] = float(unscaled.nav[-1] - 1)
+    if save_fills is not None:
+        save_fills("btc_unscaled", ((d, j, n, f) for d, _, n, f in unscaled.fills))
+    stats["matched_net"], stats["scale"] = matched_btc(gross.nav, gross.fills, book.nav, fee)
+    if stats["matched_net"] is not None:
+        stats["status"] = "SCORED"
+    return stats
+
+
+def vault_marks(net, drawdown, btc_net, after_paper, cfg):
+    return {
+        "positive_net": bool(net > 0),
+        "above_matched_btc_net": btc_net is not None and bool(net > btc_net),
+        "drawdown_under_ceiling": bool(drawdown < cfg["vault_max_drawdown"]),
+        "after_paper_at_or_above_floor": bool(after_paper >= cfg["after_paper_min_net"]),
+    }
+
+
+def shown_book(tape, fee, cfg, cap, inputs, clock):
+    try:
+        return play(tape, fee, cfg, cap, inputs, clock)
+    except Refusal as e:
+        if str(e) in {"REFUSE_TERMINAL", "REFUSE_NAV"}:
+            return None
+        raise
+
+
+def score_vault(tape, cfg, costs, counts, save_fills=None):
+    """One vault book per fixed line, using the existing, unmodified trading functions."""
+    require(tape.days == vault_axes(cfg) and tape.names == NAMES, "REFUSE_VAULT_FENCE")
+    metrics = {"annual_days": cfg["vault_annual_days"]}
+    primary_legs = tuple(cfg["lookbacks"])
+    shown = [(str(n), (n,), cfg["cap"]) for n in primary_legs]
+    shown += [
+        ("three_legs_200_cap", primary_legs, cfg["printed_cap"]),
+        ("the paper's rule as printed", tuple(cfg["printed_lookbacks"]), cfg["printed_cap"]),
+    ]
+    signals = {line: indicators(tape, line, cfg, metrics["annual_days"])
+               for line in {primary_legs, *(leg for _, leg, _ in shown)}}
+    inputs = signals[primary_legs]
+    clock = calendar(tape, inputs[2])
+    slice_first = date.fromisoformat(cfg["after_paper_first"])
+    stop = date.fromisoformat(cfg["vault"][1])
+    require(tape.days[0] < slice_first < stop, "REFUSE_VAULT_FENCE")
+    lines = {}
+    for line, fee in costs.items():
+        if line == "main":
+            book = play(tape, fee, cfg, cfg["cap"], inputs, clock)
+        else:
+            book = shown_book(tape, fee, cfg, cfg["cap"], inputs, clock)
+
+        def private(label, fills):
+            if save_fills is not None:
+                save_fills(line, label, fills)
+
+        if book is None:
+            summary, after, btc = {"status": "UNSCORABLE"}, None, {"status": "UNSCORABLE"}
+        else:
+            summary = summarize(tape, book, metrics)
+            after = period_return(book.nav, tape.days, slice_first, stop)
+            private("primary", book.fills)
+            btc = btc_comparison(tape, book, fee, cfg, inputs, clock, private)
+        line_report = {"primary": summary, "after_paper_net": after, "btc": btc,
+                       "cost_per_side": fee, "shown_only": {}}
+        if line == "main":
+            marks = vault_marks(summary["net"], summary["drawdown"], btc["matched_net"], after, cfg)
+        for label, legs, cap in shown:
+            alt = shown_book(tape, fee, cfg, cap, signals[legs], clock)
+            if alt is None:
+                line_report["shown_only"][label] = {"status": "UNSCORABLE"}
+            else:
+                line_report["shown_only"][label] = summarize(tape, alt, metrics)
+                private(label, alt.fills)
+        lines[line] = line_report
+    return {"lines": lines, "admission": counts, "marks": marks, "passed": all(marks.values())}
+
+
+def require_private_vault(fd):
+    folder = os.fstat(fd)
+    require(folder.st_uid == os.geteuid() and folder.st_mode & 0o077 == 0, "REFUSE_PRIVATE_DIR")
+
+
+def run_vault(fd, approved):
+    require_private_vault(fd)
+    ensure_absent(fd, "RUN.lock", "REFUSE_LOCK")
+    ensure_absent(fd, "fills.csv", "REFUSE_OUTPUT")
+    cfg, _, costs = load_config()
+    pin = vault_receipt_pin(fd, approved)
+    flags, opaque, counts = load_vault_snapshot(fd, cfg, pin)
+    with new_private(fd, "RUN.lock", "REFUSE_LOCK") as lock:
+        lock.write(approved + "\n")
+    tape = decode_vault(cfg, flags, opaque)
+    with new_private(fd, "fills.csv", "REFUSE_OUTPUT") as fills:
+        out = csv.writer(fills)
+        out.writerow(("cost_line", "book", "date_utc", "coin", "signed_notional", "cost"))
+
+        def save_fills(cost_line, book, rows):
+            out.writerows((cost_line, book, tape.days[d].isoformat(), tape.names[j], notional, cost)
+                          for d, j, notional, cost in rows)
+
+        return score_vault(tape, cfg, costs, counts, save_fills)
+
+
+def vault_summary(report):
+    def encode(value):
+        return json.dumps(value, sort_keys=True, default=lambda scalar: scalar.item(), allow_nan=False)
+
+    output = ["ADMISSION_COIN_DAYS " + encode(report["admission"])]
+    for line, label in (("main", "VAULT_MAIN"), ("harsh", "VAULT_HARSH_SHOWN_ONLY")):
+        body = report["lines"][line]
+        output.append(label + " " + encode({k: v for k, v in body.items() if k != "shown_only"}))
+        for book, summary in body["shown_only"].items():
+            output.append("VAULT_SHOWN_ONLY " + encode({"cost_line": line, "book": book, "summary": summary}))
+    output += [
+        "VAULT_MARKS " + encode(report["marks"]),
+        "VAULT_RESULT " + ("PASS" if report["passed"] else "FAIL"),
+    ]
+    return "\n".join(output)
+
+
 def main(args):
     if args == ["--self-test"]:
         from test_score_75 import self_test
         self_test()
+        return 0
+    if len(args) == 2 and args[0] in {"--validate-vault", "--go-vault"}:
+        try:
+            if args[0] == "--validate-vault":
+                validate_vault(args[1])
+                summary = "VALIDATED_VAULT_NO_PRICE_DECODE"
+            else:
+                require(args[1] == str(VAULT_DIR), "REFUSE_DIR")
+                approved = committed_approval(vault_approval_id)
+                with open_folder(VAULT_DIR) as fd:
+                    summary = vault_summary(run_vault(fd, approved))
+        except Refusal as e:
+            print(str(e))
+            return 2
+        except (OSError, ValueError):
+            print("REFUSE_INPUT")
+            return 2
+        print(summary)
         return 0
     if len(args) == 2 and args[0] in {"--validate-inputs", "--go-repeat"}:
         try:
