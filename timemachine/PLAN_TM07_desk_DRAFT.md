@@ -68,10 +68,16 @@ MEASURED by exact arithmetic, not market results. The test assumes independent w
 
 - `desk.py`: frozen packets, role checks, note storage, a short lookup list, decisions and usage. `desk_orders.py`: arm and cancel, scan bars, queue and fill. `score_tm07.py`: replay checks, twins, paired marks and the extension calendar. `test_tm07.py`: made-up bars and records only. `TRADER_BRIEF_DESK.md`: role and answer rules.
 - Separate small changes wire the guarded server, weights dispatch and replay helpers. Keep legacy paths when there is no desk. Prove parity with fixture books, records, fills and final value. No recorder, ledger or config change belongs in the build.
-- The [same-host launch gate](TM07_WORKER_PROBE.md) requires a separate Unix service account, a mode-0700 registered root for tape copies, journals, notes, bearers and scores, and a sealed rehearsal that probes local access as uid 2000 without sudo. The operator reviews the deployment and compares the root-owned sudo log with their command record before and after every session. Unexplained sudo use or missing evidence blocks or invalidates the session. The receipt permits only the named stage: three screen weeks or 17 extension weeks. The diagnostic is not eligible through the registered listener.
+- The [same-host launch gate](TM07_WORKER_PROBE.md) requires a separate Unix service account and a mode-0700 registered root for tape copies, journals, notes, bearers and scores. Each registered session starts with a fresh rehearsal as uid 2000, a checked sudo canary, and a single-use, 10-minute startup receipt bound to the launch and root inode. An extension also checks its raw bar inventory without reading content in that launch and after it stops. A request outside the allowed stage is refused before opening week files. The operator reviews the root-owned sudo log before and after each session; unexplained sudo use or missing evidence blocks or invalidates it. The diagnostic is not eligible through the registered listener.
 - UNKNOWN: whether a worker deliberately uses passwordless sudo, the web, or other price files. The screen raw bars under `/home/user/workspace/rig` remain readable, as in TM06. Provider-side memory and the full provider request are also UNKNOWN. There is no wrapper or worker launcher to control these; instructions and sudo log review do not prove compliance. Actual host setup and rehearsal have not been run.
 
 ## Review answers
+
+### Eighth pass at `e08f4c3`
+
+- Opr A1 / Sol A1: The supervisor runs a fresh rehearsal and raw access check as applicable, then seals a nonce-bound receipt with the root device and inode, port, stage, release, named session and 10-minute expiry. The server atomically consumes it. MEASURED: a replay, changed inode, port or stage, expiry, and missing extension proof fail before listener creation. A genuine sudo canary must grow the root-owned log and appear in the new bytes; an empty log and growth without the canary both fail. Pre- and post-session sizes and hashes are saved.
+- Opr A2 / Sol A2: MEASURED: a readable raw file is named and refused without calling read. All six routes refuse the wrong stage using the private attempt index before loading or checking any week file.
+- Opr C1 / Sol C1: MEASURED: each runbook shell block passes `bash -n` and both launch command lines pass the real argument parser with execution mocked. The operator still needs to rehearse on the actual host. Privileged log tampering and continuous access denial between samples are not proven.
 
 ### Seventh pass at `24e6c66`
 

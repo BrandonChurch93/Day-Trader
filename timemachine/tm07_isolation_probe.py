@@ -5,17 +5,22 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import pwd
+import re
 import secrets
+import signal
 import stat
 import subprocess
 import sys
+import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
 from timemachine import desk
 
-VERSION = "TM07-worker-probe-v3"
+VERSION = "TM07-worker-probe-v4"
 SCOPE = "same-host-service-account-sample"
 WORKER_UID = 2000
 SUDO_LOG = Path("/var/log/tm07-sudo.log")
@@ -23,7 +28,7 @@ STAGES = {"screen","extension"}
 IDENTITIES = {*desk.SCOUTS,*(f"{boss}/{arm}" for boss in desk.BOSSES for arm in desk.ARMS)}
 CHECKS = {"own_route_allowed","bearer_required","desk_routes_only","wrong_role_denied",
           "sibling_token_denied","study_and_rehearsal_unreadable"}
-EXTENSION_CHECK = "extension_raw_bars_unreadable"
+LAUNCH_TTL = 600
 
 
 def private_root(path,uid):
@@ -33,6 +38,7 @@ def private_root(path,uid):
             or info.st_uid != uid or stat.S_IMODE(info.st_mode) != 0o700
             or str(path.resolve()) != str(path)):
         raise ValueError("expected a canonical mode-0700 root owned by the dedicated service uid")
+    return [info.st_dev,info.st_ino]
 
 
 def sudo_log_state():
@@ -40,6 +46,74 @@ def sudo_log_state():
     if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or stat.S_IMODE(info.st_mode) != 0o600:
         raise ValueError("expected a root-owned mode-0600 sudo log")
     return [info.st_dev,info.st_ino]
+
+
+def log_snapshot(*,prefix=None,canary=None):
+    """Hash a fixed-size sample of the root-owned sudo log, never a tape file."""
+    expected = sudo_log_state()
+    fd = os.open(SUDO_LOG,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    with os.fdopen(fd,"rb") as log:
+        info = os.fstat(fd)
+        size = info.st_size
+        if (expected != [info.st_dev,info.st_ino] or info.st_uid != 0
+                or not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600
+                or prefix is not None and (prefix["id"] != expected or prefix["size"] > size)):
+            raise ValueError("sudo log was replaced or truncated")
+        digest = sha256()
+        remaining = prefix["size"] if prefix else 0
+        while remaining:
+            b = log.read(min(remaining,65536))
+            if not b:
+                raise ValueError("sudo log truncated during the check")
+            digest.update(b)
+            remaining -= len(b)
+        if prefix and digest.hexdigest() != prefix["sha256"]:
+            raise ValueError("sudo log prefix changed")
+        remaining = size-log.tell()
+        matched = False
+        while remaining:
+            line = log.readline(min(remaining,65536))
+            if not line:
+                raise ValueError("sudo log truncated during the check")
+            digest.update(line)
+            remaining -= len(line)
+            if canary and re.search(rb"\buser\s*:\s+.*;\s*USER=root\s*;\s*COMMAND=/usr/bin/true tm07-"
+                                    +canary.encode()+rb"\s*\n$",line):
+                matched = True
+        if canary and (size <= prefix["size"] or not matched):
+            raise ValueError("sudo log did not grow and record the current canary command")
+        return dict(id=expected,size=size,sha256=digest.hexdigest())
+
+
+def sudo_checkpoint(nonce):
+    before = log_snapshot()
+    subprocess.run(["/usr/sbin/runuser","-u","user","--","/usr/bin/sudo","-n","/usr/bin/true","tm07-"+nonce],
+                   stdin=subprocess.DEVNULL,check=True,timeout=15)
+    return dict(log_snapshot(prefix=before,canary=nonce),before_size=before["size"],canary=nonce)
+
+
+def valid_log_checkpoint(value,nonce):
+    return (isinstance(value,dict) and isinstance(value.get("sha256"),str)
+            and re.fullmatch(r"[0-9a-f]{64}",value["sha256"]) is not None
+            and type(value.get("before_size")) is int and type(value.get("size")) is int
+            and 0 <= value["before_size"] < value["size"] and value.get("canary") == nonce)
+
+
+def consume_receipt(root,proof):
+    """Pin the directory instance and race concurrent starts on one exclusive create."""
+    fd = os.open(root,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    try:
+        info = os.fstat(fd)
+        if ([info.st_dev,info.st_ino] != proof["root_id"] or info.st_uid != proof["service_uid"]
+                or stat.S_IMODE(info.st_mode) != 0o700 or time.time() >= proof["expires_at"]):
+            raise ValueError("worker boundary study root changed or receipt expired")
+        try:
+            claim = os.open(".launch-used-"+proof["nonce"],os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600,dir_fd=fd)
+        except FileExistsError as exc:
+            raise ValueError("launch receipt already consumed") from exc
+        os.close(claim)
+    finally:
+        os.close(fd)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -64,8 +138,8 @@ def request(base,route,sid,token,body=None):
 
 def denied_read(path):
     try:
-        with open(path,"rb") as f:
-            f.read(1)
+        with open(path,"rb",opener=lambda p,flags:os.open(p,flags|os.O_NOFOLLOW|os.O_NONBLOCK)):
+            pass  # permission test only; even a readable raw tape yields no bytes
     except OSError as exc:
         if exc.errno in (errno.EACCES,errno.EPERM):
             return True
@@ -109,13 +183,20 @@ def worker(challenge):
         "study_and_rehearsal_unreadable":(all(denied_directory(p) for p in challenge["roots"])
                                          and all(denied_read(p) for p in challenge["canaries"])),
     }
-    if challenge["raw_paths"]:
-        checks[EXTENSION_CHECK] = raw_denied(challenge["raw_paths"])
     return dict(identity=identity,challenge=challenge["challenge"],checks=checks,uid=os.geteuid())
 
 
-def raw_denied(paths):
-    return all((denied_directory if kind == "dir" else denied_read)(p) for p,kind in paths.items())
+def readable_raw_path(paths):
+    return next((p for p,kind in paths.items()
+                 if not (denied_directory if kind == "dir" else denied_read)(p)),None)
+
+
+def check_raw(paths):
+    if not paths or inventory(paths) != paths:
+        raise ValueError("extension raw bar inventory is missing or changed")
+    readable = as_worker("worker-raw",paths)
+    if readable is not None:
+        raise ValueError(f"extension raw bar source is readable: {readable}")
 
 
 def evaluate(transcript):
@@ -126,19 +207,18 @@ def evaluate(transcript):
     if (stage not in STAGES or bool(paths) != (stage == "extension")
             or any(not Path(p).is_absolute() or kind not in {"dir","file"} for p,kind in paths.items())):
         raise ValueError("invalid screen or extension raw bar inventory")
-    expected = CHECKS | ({EXTENSION_CHECK} if paths else set())
     if len(rows) != len(IDENTITIES) or {r["identity"] for r in rows} != IDENTITIES:
         raise ValueError("isolation probes are missing roles")
     if len({r["challenge"] for r in rows}) != len(rows):
         raise ValueError("worker probe observation replayed")
     for row in rows:
         checks = row["checks"]
-        if row["uid"] != WORKER_UID or set(checks) != expected or any(v is not True for v in checks.values()):
+        if row["uid"] != WORKER_UID or set(checks) != CHECKS or any(v is not True for v in checks.values()):
             raise ValueError(f'isolation probes failed for {row["identity"]}')
     return dict(version=VERSION,scope=SCOPE,root=transcript["root"],registration=transcript["registration"],
                 release_digest=transcript["release_digest"],probe_transcript_digest=desk.digest(transcript),
-                service_uid=transcript["service_uid"],worker_uid=WORKER_UID,sudo_log=transcript["sudo_log"],
-                stage=stage,raw_paths=paths,passed=sorted(expected))
+                service_uid=transcript["service_uid"],worker_uid=WORKER_UID,
+                stage=stage,raw_paths=paths,passed=sorted(CHECKS))
 
 
 def release_fingerprint():
@@ -203,12 +283,12 @@ def collect(profile):
     # by the operator before accepting any permission denial as evidence.
     raw_paths = inventory(profile["raw_bars"])
     transcript = dict(root=root,registration=profile["registration"],release_digest=release_fingerprint(),
-                      service_uid=uid,stage=profile["stage"],raw_paths=raw_paths,sudo_log=sudo_log_state(),observations=[])
+                      service_uid=uid,stage=profile["stage"],raw_paths=raw_paths,observations=[])
     for i,e in sorted(entries.items()):
         challenge = dict(identity=i,challenge=secrets.token_hex(16),desk_url=profile["desk_url"],
                          session=e["session"],token=json.loads(Path(e["token_file"]).read_text()),
                          siblings=sorted(set(declared)-{e["session"]}),roots=[root,str(rehearsal)],
-                         canaries=sorted(set(map(str,canaries))),raw_paths=raw_paths)
+                         canaries=sorted(set(map(str,canaries))))
         row = as_worker("worker",challenge)
         if (set(row) != {"identity","challenge","checks","uid"}
                 or any(row[k] != challenge[k] for k in ("identity","challenge"))):
@@ -270,9 +350,101 @@ def rehearse(root,ready,port):
         # This listener has only the generated rehearsal root, never a registered study.
         srv.desk_registration = None
         srv.desk_stage = None
-        put(ready,dict(workers=entries,service_uid=os.geteuid(),rehearsal_root=str(root),
-                       desk_url=f"http://127.0.0.1:{srv.server_address[1]}"))
+        srv.desk_session = None
+        pending = ready.with_name(ready.name+".pending")
+        put(pending,dict(workers=entries,service_uid=os.geteuid(),rehearsal_root=str(root),
+                         desk_url=f"http://127.0.0.1:{srv.server_address[1]}"))
+        pending.rename(ready)
         srv.serve_forever()
+
+
+def service_command(account,*args):
+    return ["/usr/bin/setpriv","--reuid",str(account.pw_uid),"--regid",str(account.pw_gid),"--init-groups",
+            sys.executable,"-B","-m","timemachine.tm07_isolation_probe",*args]
+
+
+def stop(child):
+    if child.poll() is None:
+        child.terminate()
+        try:
+            child.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            child.kill()
+            child.wait()
+
+
+def launch_session(args):
+    if os.geteuid() != 0 or pwd.getpwnam("user").pw_uid != WORKER_UID:
+        raise ValueError("launch from the operator root shell with worker user at uid 2000")
+    if not desk.SID.fullmatch(args.session) or not 1 <= args.port <= 65535:
+        raise ValueError("name one registered session and a fixed listener port")
+    account = pwd.getpwnam("tm07desk")
+    root = str(args.root.resolve(strict=True))
+    root_id = private_root(root,account.pw_uid)
+    launch = dict(nonce=secrets.token_hex(32),port=args.port,stage=args.stage,session=args.session)
+    issued = int(time.time())
+    key = args.key_file.read_text().strip()
+    registration = json.loads(args.registration.read_text())
+    desk.verify_seal(key,"registration",registration["body"],registration.get("seal"))
+    if registration["body"].get("study_root") != root:
+        raise ValueError("registration names a different study root")
+    # Start a new toy listener on the intended live port during this launch.
+    with tempfile.TemporaryDirectory(prefix="tm07-launch-") as tmp:
+        os.chown(tmp,account.pw_uid,account.pw_gid)
+        rehearsal,ready = Path(tmp)/"rehearsal",Path(tmp)/"ready.json"
+        toy = subprocess.Popen(service_command(account,"rehearse","--rehearsal-root",str(rehearsal),
+                                               "--ready",str(ready),"--port",str(args.port)),
+                               stdin=subprocess.DEVNULL,start_new_session=True)
+        try:
+            while not ready.exists():
+                if toy.poll() is not None or time.time() >= issued+LAUNCH_TTL:
+                    raise ValueError("fresh rehearsal did not become ready")
+                time.sleep(.05)
+            profile = json.loads(ready.read_text())
+            if profile["desk_url"] != f"http://127.0.0.1:{args.port}" or profile["service_uid"] != account.pw_uid:
+                raise ValueError("fresh rehearsal port or service uid changed")
+            profile.update(root=root,registration=desk.digest(registration["body"]),stage=args.stage,raw_bars=args.raw_bar)
+            transcript = collect(profile)
+            proof = evaluate(transcript)
+        finally:
+            stop(toy)
+    if args.stage == "extension":
+        check_raw(proof["raw_paths"])
+    checkpoint = sudo_checkpoint(launch["nonce"])
+    proof.update(launch,root_id=root_id,issued_at=issued,expires_at=issued+LAUNCH_TTL,
+                 raw_checked=(args.stage == "extension"),sudo_log=checkpoint)
+    signature = desk.seal(key,"worker-boundary",proof)
+    desk.validate_worker_boundary(key,proof,signature,root,service_uid=account.pw_uid,launch=launch)
+    # The receipt travels on a private inherited pipe, not as a reusable file.
+    put(args.audit,dict(launch=launch,sudo_before=checkpoint,probe_transcript=transcript))
+    child = None
+    outcome = "incomplete"
+    try:
+        env = dict(os.environ,TM07_RUNS_DIR=root,PYTHONNOUSERSITE="1")
+        child = subprocess.Popen(service_command(account,"serve","--key-file",str(args.key_file)),
+                                 env=env,stdin=subprocess.PIPE,text=True,start_new_session=True)
+        with child.stdin:
+            child.stdin.write(desk.encode(dict(launch=launch,body=proof,seal=signature)))
+        code = child.wait()
+        if code:
+            raise ValueError(f"registered listener exited with status {code}")
+        outcome = "stopped"
+    except KeyboardInterrupt:
+        outcome = "operator-stop"
+    finally:
+        if child is not None:
+            stop(child)
+        after = {"outcome":outcome}
+        try:
+            after["sudo_after"] = log_snapshot(prefix=checkpoint)
+            if args.stage == "extension":
+                check_raw(proof["raw_paths"])
+                after["raw_denied_after"] = True
+        except (ValueError,OSError,subprocess.SubprocessError) as exc:
+            after.update(outcome="invalid",error=str(exc))
+            raise
+        finally:
+            put(args.audit.with_name(args.audit.name+".after.json"),after)
 
 
 def main():
@@ -280,66 +452,40 @@ def main():
     action = p.add_subparsers(dest="action",required=True)
     action.add_parser("worker")
     action.add_parser("worker-raw")
-    a = action.add_parser("check-raw")
-    a.add_argument("--receipt",type=Path,required=True)
-    a.add_argument("--key-file",type=Path,required=True)
-    c = action.add_parser("collect")
-    for key in ("ready","registration","root","transcript"):
-        c.add_argument("--"+key,type=Path,required=True)
-    c.add_argument("--stage",choices=sorted(STAGES),required=True)
-    c.add_argument("--raw-bar",action="append",default=[])
+    start = action.add_parser("launch")
+    for key in ("registration","root","key-file","audit"):
+        start.add_argument("--"+key,type=Path,required=True)
+    start.add_argument("--stage",choices=sorted(STAGES),required=True)
+    start.add_argument("--session",required=True)
+    start.add_argument("--port",type=int,required=True)
+    start.add_argument("--raw-bar",action="append",default=[])
     r = action.add_parser("rehearse")
     r.add_argument("--rehearsal-root",type=Path,required=True)
     r.add_argument("--ready",type=Path,required=True)
     r.add_argument("--port",type=int,required=True)
-    s = action.add_parser("seal")
-    for key in ("transcript","key-file","receipt"):
-        s.add_argument("--"+key,type=Path,required=True)
-    s.add_argument("--sudo-log-reviewed",action="store_true",required=True)
     run = action.add_parser("serve")
-    for key in ("receipt","key-file"):
-        run.add_argument("--"+key,type=Path,required=True)
-    run.add_argument("--port",type=int,required=True)
+    run.add_argument("--key-file",type=Path,required=True)
     args = p.parse_args()
     if args.action == "worker":
         print(desk.encode(worker(json.load(sys.stdin))))
     elif args.action == "worker-raw":
         if os.getuid() != WORKER_UID or os.geteuid() != WORKER_UID:
             raise ValueError("probe must run as uid 2000")
-        print(desk.encode(raw_denied(json.load(sys.stdin))))
-    elif args.action == "check-raw":
-        receipt = json.loads(args.receipt.read_text())
-        proof = receipt["body"]
-        desk.validate_worker_boundary(args.key_file.read_text().strip(),proof,receipt["seal"],
-                                      proof["root"],service_uid=proof["service_uid"])
-        if (proof["stage"] != "extension" or inventory(proof["raw_paths"]) != proof["raw_paths"]
-                or not as_worker("worker-raw",proof["raw_paths"])):
-            raise ValueError("extension raw bar access check failed")
+        print(desk.encode(readable_raw_path(json.load(sys.stdin))))
     elif args.action == "rehearse":
         rehearse(args.rehearsal_root,args.ready,args.port)
-    elif args.action == "collect":
-        profile = json.loads(args.ready.read_text())
-        profile.update(root=str(args.root),registration=desk.digest(json.loads(args.registration.read_text())["body"]),
-                       stage=args.stage,raw_bars=args.raw_bar)
-        transcript = collect(profile)
-        evaluate(transcript)
-        put(args.transcript,transcript)
+    elif args.action == "launch":
+        def interrupt(*_):
+            raise KeyboardInterrupt
+        signal.signal(signal.SIGTERM,interrupt)
+        launch_session(args)
     elif args.action == "serve":
         from timemachine import server
-        receipt = json.loads(args.receipt.read_text())
-        with server.serve_desk(args.port,approval_key=args.key_file.read_text().strip(),
+        receipt = json.load(sys.stdin)
+        with server.serve_desk(**receipt["launch"],approval_key=args.key_file.read_text().strip(),
                                proof=receipt["body"],signature=receipt["seal"]) as listener:
+            print("Registered desk ready; brief only this session's roles.",flush=True)
             listener.serve_forever()
-    else:
-        if os.geteuid() != 0:
-            raise ValueError("seal as the operator from a root shell")
-        proof = dict(evaluate(json.loads(args.transcript.read_text())),sudo_log_reviewed=args.sudo_log_reviewed)
-        if sudo_log_state() != proof["sudo_log"]:
-            raise ValueError("sudo log changed since collection")
-        key = args.key_file.read_text().strip()
-        signature = desk.seal(key,"worker-boundary",proof)
-        desk.validate_worker_boundary(key,proof,signature,proof["root"],service_uid=proof["service_uid"])
-        put(args.receipt,dict(body=proof,seal=signature))
 
 
 if __name__ == "__main__":

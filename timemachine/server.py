@@ -68,7 +68,7 @@ def done_answer(sess):
     return 200, dict(status="DONE", done=True, session=sess.meta["session"], result=str(sess.dir / "result.json"))
 
 
-def handle_desk(method, path, sid, body, authorization,registration=None,stage=None):
+def handle_desk(method, path, sid, body, authorization,registration=None,stage=None,session=None):
     actions = {("GET", "/desk/next"): "next", ("GET", "/desk/status"): "status",
                ("POST", "/desk/look"): "look", ("POST", "/desk/notes"): "notes",
                ("POST", "/desk/pick"): "pick", ("POST", "/desk/usage"): "usage"}
@@ -80,20 +80,27 @@ def handle_desk(method, path, sid, body, authorization,registration=None,stage=N
         return 403, dict(ok=False, error="desk access denied")
     try:
         token = authorization[len(prefix):]
+        if stage is not None:
+            from timemachine import desk, score_tm07
+            allowed = score_tm07.SCREEN if stage == "screen" else score_tm07.EXTENSION if stage == "extension" else ()
+            if session != sid or not desk.SID.fullmatch(sid):
+                raise PermissionError
+            # The private attempt index is not a week file. Do not open or stat the
+            # session directory, manifest, fixture or tape until this passes.
+            with desk.study_ledger(os.environ["TM07_RUNS_DIR"]) as con:
+                row = con.execute("SELECT week FROM attempts WHERE reg=? AND session=?",(registration,sid)).fetchone()
+            if row is None or row[0] not in allowed:
+                raise PermissionError
         sess = W.open_session(sid, desk_token=token)
         if registration is not None:
             from timemachine.desk import digest
             if digest((sess.manifest.get("registration") or {}).get("body")) != registration:
                 raise PermissionError
+        if stage is not None and desk.wall(sess.spec["wakes"][0]).date().isoformat() != row[0]:
+            raise PermissionError
         role = sess.authenticate(token)
         if role is None:
             raise PermissionError
-        if stage is not None:
-            from timemachine import desk, score_tm07
-            allowed = score_tm07.SCREEN if stage == "screen" else score_tm07.EXTENSION if stage == "extension" else ()
-            week = desk.wall(sess.spec["wakes"][0]).date().isoformat()
-            if week not in allowed:
-                raise PermissionError
         obj = json.loads(body) if body else {}
         if not isinstance(obj, dict):
             raise ValueError("expected a JSON object")
@@ -104,11 +111,11 @@ def handle_desk(method, path, sid, body, authorization,registration=None,stage=N
         return 400, dict(ok=False, error=str(exc)[:300])
 
 
-def handle_desk_only(method,path,q,body,authorization,registration=None,stage=None):
+def handle_desk_only(method,path,q,body,authorization,registration=None,stage=None,session=None):
     sid = (q.get("session") or [""])[0]
     if not path.startswith("/desk/") or not sid.startswith("TM07-"):
         return 404, dict(ok=False,error="unknown desk route")
-    return handle_desk(method,path,sid,body,authorization,registration,stage)
+    return handle_desk(method,path,sid,body,authorization,registration,stage,session)
 
 
 def handle(method, path, q, body, authorization=None):
@@ -180,7 +187,7 @@ class H(BaseHTTPRequestHandler):
         try:
             if self.desk_only:
                 code,obj = handle_desk_only(method,u.path,q,body,self.headers.get("Authorization"),self.server.desk_registration,
-                                            self.server.desk_stage)
+                                            self.server.desk_stage,self.server.desk_session)
             elif u.path.startswith("/desk/"):
                 code,obj = 404, dict(ok=False,error="use the isolated desk listener")
             else:
@@ -215,21 +222,24 @@ class DeskH(H):
     desk_only = True
 
 
-def serve_desk(port,*,approval_key,proof,signature):
-    """Bind the listener to the approved registration and one launch stage."""
+def serve_desk(port,*,approval_key,proof,signature,nonce,stage,session):
+    """Consume this approval before binding the single-session listener."""
     from timemachine.desk import validate_worker_boundary
+    from timemachine.tm07_isolation_probe import consume_receipt
     root = os.environ.get("TM07_RUNS_DIR")
     if not root:
         raise ValueError("set a separate TM07_RUNS_DIR")
     if os.getuid() != os.geteuid():
         raise ValueError("run directly as the dedicated service uid")
-    validate_worker_boundary(approval_key,proof,signature,root,service_uid=os.geteuid())
-    registration = proof.get("registration")
-    if not isinstance(registration,str) or len(registration) != 64:
-        raise ValueError("sealed rehearsal receipt must name the registered attempt")
-    server = ThreadingHTTPServer(("127.0.0.1",int(port)),DeskH)
-    server.desk_registration = registration
-    server.desk_stage = proof["stage"]
+    if type(port) is not int or not 1 <= port <= 65535:
+        raise ValueError("name a fixed listener port")
+    launch = dict(nonce=nonce,port=port,stage=stage,session=session)
+    validate_worker_boundary(approval_key,proof,signature,root,service_uid=os.geteuid(),launch=launch)
+    consume_receipt(root,proof)
+    server = ThreadingHTTPServer(("127.0.0.1",port),DeskH)
+    server.desk_registration = proof["registration"]
+    server.desk_stage = stage
+    server.desk_session = session
     return server
 
 

@@ -989,7 +989,8 @@ class DeskTest(unittest.TestCase):
                           approval_key=SEAL_KEY,vendor_signature=D.seal(SEAL_KEY,"vendor",spec["vendor_proofs"]))
         incomplete = dict(scope=probe.SCOPE,root=str(self.root),passed=["desk_routes_only"])
         with self.assertRaisesRegex(ValueError,"missing isolation"):
-            D.validate_worker_boundary(SEAL_KEY,incomplete,D.seal(SEAL_KEY,"worker-boundary",incomplete),self.root,service_uid=992)
+            D.validate_worker_boundary(SEAL_KEY,incomplete,D.seal(SEAL_KEY,"worker-boundary",incomplete),self.root,
+                                       service_uid=992,launch={})
 
     def test_b09_one_draw_cannot_pass_the_registered_gate(self):
         boss = D.BOSSES[0]
@@ -1055,45 +1056,75 @@ class DeskTest(unittest.TestCase):
         self.assertAlmostEqual(rec["scan"]["funding_usd"],book["qty"][A]*110*.02)
         self.assertEqual([r["utc"] for r in rec["scan"]["settlements"]],[O.stamp(T+61)])
 
-    def test_pass7_probe_receipt_binds_release_uid_and_stage(self):
+    def test_pass8_probe_receipt_expires_binds_context_and_is_consumed_once(self):
+        from types import SimpleNamespace
         from timemachine import tm07_isolation_probe as probe
         release = D.digest("release")
         transcript = dict(root=str(self.root),registration=D.digest("registration"),release_digest=release,
-                          service_uid=992,stage="screen",sudo_log=[1,2],raw_paths={},
+                          service_uid=992,stage="screen",raw_paths={},
                           observations=[dict(identity=i,challenge=D.digest(i),uid=2000,checks=dict.fromkeys(probe.CHECKS,True))
                                         for i in sorted(probe.IDENTITIES)])
-        screen = dict(probe.evaluate(transcript),sudo_log_reviewed=True)
-        extension = dict(screen,stage="extension",raw_paths={"/toy/raw":"dir"},passed=sorted(probe.CHECKS|{probe.EXTENSION_CHECK}))
-        seal = lambda proof:D.seal(SEAL_KEY,"worker-boundary",proof)
-        with (patch.multiple(probe,release_fingerprint=lambda:release,sudo_log_state=lambda:[1,2],private_root=lambda *a:None),
-              patch.dict(D.os.environ,{"TM07_RUNS_DIR":str(self.root)}),patch.object(server,"ThreadingHTTPServer")):
-            for proof in (screen,extension):
-                with patch.object(D.os,"getuid",return_value=992),patch.object(D.os,"geteuid",return_value=992):
-                    listener = server.serve_desk(8765,approval_key=SEAL_KEY,proof=proof,signature=seal(proof))
-                self.assertEqual(listener.desk_stage,proof["stage"])
+        launch = dict(nonce=D.digest("fresh launch"),port=8765,stage="screen",session="TM07-toy")
+        info = self.root.stat()
+        checkpoint = dict(id=[1,2],before_size=0,size=170,sha256=D.digest("log"),canary=launch["nonce"])
+        screen = dict(probe.evaluate(transcript),**{k:v for k,v in launch.items() if k != "stage"},
+                      issued_at=1000,expires_at=1600,root_id=[info.st_dev,info.st_ino],sudo_log=checkpoint,raw_checked=False)
+        fake = SimpleNamespace(st_dev=info.st_dev,st_ino=info.st_ino,st_uid=992,st_mode=info.st_mode)
+        def start(proof=screen,**overrides):
+            return server.serve_desk(**(launch|overrides),approval_key=SEAL_KEY,proof=proof,
+                                     signature=D.seal(SEAL_KEY,"worker-boundary",proof))
+        with (patch.multiple(probe,release_fingerprint=lambda:release,sudo_log_state=lambda:[1,2]),
+              patch.dict(D.os.environ,{"TM07_RUNS_DIR":str(self.root)}),patch.object(server,"ThreadingHTTPServer") as http,
+              patch.object(D.os,"getuid",return_value=992),patch.object(D.os,"geteuid",return_value=992),
+              patch.object(Path,"lstat",return_value=fake),patch.object(D.os,"fstat",return_value=fake),
+              patch.object(probe.time,"time",return_value=1100)):
+            for change in (dict(port=8766),dict(stage="extension"),dict(nonce=D.digest("different launch")),dict(session="TM07-other")):
+                with self.assertRaisesRegex(ValueError,"isolation"):
+                    start(**change)
             for bad in (dict(screen,scope="sampled-rehearsal-only"),dict(screen,service_uid=2000),
-                        dict(screen,stage="extension"),dict(extension,passed=screen["passed"]),
-                        dict(screen,release_digest=D.digest("wrong release")),dict(screen,sudo_log=[1,3]),
-                        dict(screen,sudo_log_reviewed=False)):
+                        dict(screen,release_digest=D.digest("wrong release")),dict(screen,root_id=[info.st_dev,info.st_ino+1]),
+                        dict(screen,sudo_log=dict(checkpoint,id=[1,3])),dict(screen,sudo_log=dict(checkpoint,size=0))):
                 with self.assertRaises(ValueError):
-                    D.validate_worker_boundary(SEAL_KEY,bad,seal(bad),self.root,service_uid=992)
+                    start(bad)
+            with patch.object(probe,"private_root",return_value=[info.st_dev,info.st_ino+1]):
+                with self.assertRaisesRegex(ValueError,"study root changed"):
+                    start()
+            with patch.object(probe.time,"time",return_value=1600),self.assertRaisesRegex(ValueError,"isolation"):
+                start()
+            extension = dict(screen,stage="extension",raw_paths={"/toy/raw":"file"})
+            with self.assertRaisesRegex(ValueError,"isolation"):
+                start(extension,stage="extension")
+            http.assert_not_called()
+            listener = start()
+            self.assertEqual(listener.desk_stage,"screen")
+            with self.assertRaisesRegex(ValueError,"already consumed"):
+                start()
+            http.assert_called_once()
         with self.assertRaisesRegex(ValueError,"inventory"):
             probe.evaluate(dict(transcript,stage="extension"))
-        with self.assertRaisesRegex(ValueError,"isolation"):
-            probe.evaluate(dict(transcript,stage="extension",raw_paths=extension["raw_paths"]))
         transcript["observations"][0]["uid"] = 0
         with self.assertRaisesRegex(ValueError,"isolation"):
             probe.evaluate(transcript)
 
-    def test_pass7_screen_receipt_cannot_serve_an_extension_week(self):
-        a = self.create("A")
+    def test_pass8_wrong_stage_refuses_all_routes_before_touching_week_files(self):
+        registration = D.digest(None)
         for allowed,week,stage in ((True,S.SCREEN[0],"screen"),(False,S.EXTENSION[0],"screen"),
                                    (True,S.EXTENSION[0],"extension"),(False,S.SCREEN[0],"extension"),
                                    (False,S.DIAGNOSTIC,"screen")):
-            a.spec["wakes"][0] = D.epoch(week+"T00:00:00Z")
-            with patch.object(W,"open_session",return_value=a),patch.object(a,"handle",return_value={}):
-                self.assertEqual(server.handle_desk_only("GET","/desk/next",{"session":[a.sid]},None,
-                                 "Bearer "+TOKEN,D.digest(None),stage)[0],200 if allowed else 403)
+            root = self.root/(week+"-"+stage)
+            root.mkdir()
+            sid = "TM07-toy"
+            D.record_attempt(root/sid,registration,week,"boss","A",[])
+            from unittest.mock import Mock
+            a = Mock(manifest={})
+            a.spec = {"wakes":[D.epoch(week+"T00:00:00Z")]}
+            with (patch.dict(D.os.environ,{"TM07_RUNS_DIR":str(root)}),
+                  patch.object(W,"open_session",return_value=a,
+                               side_effect=None if allowed else AssertionError("touched a week file")) as opened):
+                for method,route in (("GET","next"),("GET","status"),("POST","look"),("POST","pick"),("POST","notes"),("POST","usage")):
+                    self.assertEqual(server.handle_desk_only(method,"/desk/"+route,{"session":[sid]},None,
+                                     "Bearer "+TOKEN,registration,stage,sid)[0],200 if allowed else 403)
+                self.assertEqual(opened.call_count,6 if allowed else 0)
 
     def test_reaudit_probe_bootstrap_uses_only_toy_desk_routes(self):
         from timemachine import tm07_isolation_probe as probe
@@ -1151,7 +1182,8 @@ class DeskTest(unittest.TestCase):
                 for entry in profile["workers"].values():
                     self.assertNotIn(D.json.loads(Path(entry["token_file"]).read_text()),D.encode(transcript))
 
-    def test_pass7_file_probe_distinguishes_access_denied_missing_and_readable(self):
+    def test_pass8_file_probe_never_reads_even_a_readable_raw_file(self):
+        from unittest.mock import MagicMock
         from timemachine import tm07_isolation_probe as probe
         toy = self.root/"toy.json"
         probe.put(toy,{"invented":True})
@@ -1160,15 +1192,136 @@ class DeskTest(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             probe.denied_read(self.root/"missing")
         with patch("builtins.open",side_effect=PermissionError(13,"denied")):
-            self.assertTrue(probe.raw_denied({str(toy):"file"}))
+            self.assertIsNone(probe.readable_raw_path({str(toy):"file"}))
+        readable = MagicMock()
+        readable.__enter__.return_value = readable
+        readable.read.side_effect = AssertionError("raw file read")
+        with patch("builtins.open",return_value=readable):
+            self.assertEqual(probe.readable_raw_path({str(toy):"file"}),str(toy))
+        readable.read.assert_not_called()
+        readable.__exit__.assert_called_once()
+        with patch.object(probe,"as_worker",return_value=str(toy)):
+            with self.assertRaisesRegex(ValueError,"readable: .*toy.json"):
+                probe.check_raw({str(toy):"file"})
+
+    def test_pass8_sudo_log_requires_fresh_exact_canary_and_unchanged_prefix(self):
+        from types import SimpleNamespace
+        from timemachine import tm07_isolation_probe as probe
+        toy = self.root/"toy-sudo.log"
+        toy.touch(mode=0o600)
+        real_fstat = D.os.fstat
+        def as_root(fd):
+            s = real_fstat(fd)
+            return SimpleNamespace(st_uid=0,st_size=s.st_size,st_mode=s.st_mode,st_dev=s.st_dev,st_ino=s.st_ino)
+        def append(line):
+            with toy.open("ab") as log:
+                log.write(line)
+        nonce = D.digest("launch")
+        line = lambda nonce:f"Nov 26 12:34:56 : user : TTY=unknown ; PWD=/opt/tm07 ; USER=root ; COMMAND=/usr/bin/true tm07-{nonce}\n".encode()
+        with (patch.object(probe,"SUDO_LOG",toy),patch.object(D.os,"fstat",side_effect=as_root),
+              patch.object(probe,"sudo_log_state",return_value=[toy.stat().st_dev,toy.stat().st_ino])):
+            with patch.object(probe.subprocess,"run"):
+                with self.assertRaisesRegex(ValueError,"did not grow"):
+                    probe.sudo_checkpoint(nonce)
+            append(line(nonce))  # a matching line already present is insufficient
+            with patch.object(probe.subprocess,"run",side_effect=lambda *a,**k:append(line("other"))):
+                with self.assertRaisesRegex(ValueError,"current canary"):
+                    probe.sudo_checkpoint(nonce)
+            with patch.object(probe.subprocess,"run",side_effect=lambda *a,**k:append(line(nonce))) as sudo:
+                before = probe.sudo_checkpoint(nonce)
+            self.assertEqual(sudo.call_args.args[0][-5:],["--","/usr/bin/sudo","-n","/usr/bin/true","tm07-"+nonce])
+            self.assertTrue(probe.valid_log_checkpoint(before,nonce))
+            self.assertEqual(before["sha256"],probe.sha256(toy.read_bytes()).hexdigest())
+            append(line("after"))
+            after = probe.log_snapshot(prefix=before)
+            self.assertGreater(after["size"],before["size"])
+            self.assertEqual(after["sha256"],probe.sha256(toy.read_bytes()).hexdigest())
+            toy.write_bytes(b"x"+toy.read_bytes()[1:])
+            with self.assertRaisesRegex(ValueError,"prefix changed"):
+                probe.log_snapshot(prefix=before)
+
+    def test_pass8_runbook_shell_blocks_and_launch_arguments(self):
+        import re
+        import shlex
+        import subprocess
+        import sys
+        from timemachine import tm07_isolation_probe as probe
+        raw = Path(probe.__file__).with_name("TM07_WORKER_PROBE.md").read_text()
+        stages = []
+        for shell in re.findall(r"^\x60{3}sh\n(.*?)^\x60{3}$",raw,re.M|re.S):
+            checked = subprocess.run(["bash","-n"],input=shell,text=True,capture_output=True)
+            self.assertEqual(checked.returncode,0,checked.stderr)
+            if "tm07_isolation_probe launch" in shell:
+                args = shlex.split(shell.replace("\\\n"," ").replace("$PORT","8765"))
+                with (patch.object(sys,"argv",["probe",*args[args.index("launch"):]]),
+                      patch.object(probe.signal,"signal"),patch.object(probe,"launch_session") as run):
+                    probe.main()
+                parsed = run.call_args.args[0]
+                self.assertEqual(parsed.port,8765)
+                self.assertEqual(bool(parsed.raw_bar),parsed.stage=="extension")
+                stages.append(parsed.stage)
+        self.assertEqual(stages,["screen","extension"])
+
+    def test_pass8_extension_launcher_checks_raw_now_and_audits_after(self):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+        from timemachine import tm07_isolation_probe as probe
+        reg = {"study_root":str(self.root)}
+        args = SimpleNamespace(root=self.root,session="TM07-toy",stage="extension",port=8765,
+                               key_file=self.root/"key",registration=self.root/"reg",audit=self.root/"audit",
+                               raw_bar=["/invented/raw"])
+        args.key_file.write_text(SEAL_KEY)
+        probe.put(args.registration,dict(body=reg,seal=D.seal(SEAL_KEY,"registration",reg)))
+        transcript = dict(root=str(self.root),registration=D.digest(reg),stage="extension",
+                          release_digest=D.digest("release"),service_uid=992,raw_paths={"/invented/raw":"file"},
+                          observations=[dict(identity=i,challenge=D.digest(i),uid=2000,checks=dict.fromkeys(probe.CHECKS,True))
+                                        for i in probe.IDENTITIES])
+        events = []
+        child = MagicMock()
+        child.stdin.__enter__.return_value = child.stdin
+        child.wait.return_value = 0
+        def spawn(command,**kw):
+            if "rehearse" in command:
+                events.append("rehearse")
+                probe.put(Path(command[command.index("--ready")+1]),dict(desk_url="http://127.0.0.1:8765",service_uid=992))
+            else:
+                events.append("serve")
+            return child
+        def check(paths):
+            self.assertEqual(paths,transcript["raw_paths"])
+            events.append("raw")
+        def checkpoint(nonce):
+            events.append("sudo")
+            return dict(id=[1,2],size=42,before_size=0,sha256=D.digest("before"),canary=nonce)
+        with (patch.object(D.os,"geteuid",return_value=0),patch.object(D.os,"chown"),
+              patch.object(probe.pwd,"getpwnam",side_effect=lambda user:SimpleNamespace(pw_uid=2000 if user=="user" else 992,pw_gid=992)),
+              patch.object(probe,"private_root",return_value=[3,4]),patch.object(probe,"release_fingerprint",return_value=transcript["release_digest"]),
+              patch.object(probe,"sudo_log_state",return_value=[1,2]),patch.object(probe,"collect",return_value=transcript),
+              patch.object(probe,"sudo_checkpoint",side_effect=checkpoint),patch.object(probe,"stop"),
+              patch.object(probe,"log_snapshot",return_value=dict(id=[1,2],size=44,sha256=D.digest("after"))),
+              patch.object(probe.subprocess,"Popen",side_effect=spawn)):
+            with patch.object(probe,"check_raw",side_effect=ValueError("invented raw file readable")):
+                with self.assertRaisesRegex(ValueError,"readable"):
+                    probe.launch_session(args)
+            self.assertEqual(events,["rehearse"])
+            self.assertFalse(args.audit.exists())
+            events.clear()
+            with patch.object(probe,"check_raw",side_effect=check):
+                probe.launch_session(args)
+        self.assertEqual(events,["rehearse","raw","sudo","serve","raw"])
+        receipt = D.json.loads(child.stdin.write.call_args.args[0])
+        self.assertTrue(receipt["body"]["raw_checked"])
+        self.assertEqual(receipt["body"]["nonce"],receipt["launch"]["nonce"])
+        self.assertEqual(D.json.loads(args.audit.read_text())["sudo_before"]["size"],42)
+        self.assertEqual(D.json.loads((self.root/"audit.after.json").read_text())["sudo_after"]["size"],44)
 
     def test_pass7_root_must_belong_to_service_uid_and_be_mode_0700(self):
         from stat import S_IFDIR
         from types import SimpleNamespace
         from timemachine import tm07_isolation_probe as probe
         with patch.object(Path,"resolve",return_value=self.root):
-            with patch.object(Path,"lstat",return_value=SimpleNamespace(st_uid=992,st_mode=S_IFDIR|0o700)):
-                probe.private_root(self.root,992)
+            with patch.object(Path,"lstat",return_value=SimpleNamespace(st_uid=992,st_mode=S_IFDIR|0o700,st_dev=3,st_ino=4)):
+                self.assertEqual(probe.private_root(self.root,992),[3,4])
                 with self.assertRaisesRegex(ValueError,"dedicated"):
                     probe.private_root(self.root,2000)
             for uid,mode in ((2000,0o700),(992,0o750)):

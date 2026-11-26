@@ -24,12 +24,8 @@ RELEASE=/opt/tm07-release
 PY=/usr/bin/python3.14   # substitute the verified host path
 BASE=/var/lib/tm07
 STUDY=$BASE/study
-REHEARSAL=$BASE/service/rehearsal-screen
-READY=$BASE/service/ready-screen.json
 REG=$BASE/service/registration.json
 KEY=$BASE/service/operator.key
-TRANSCRIPT=$BASE/control/transcript-screen.json
-RECEIPT=$BASE/service/receipt-screen.json
 LOG=/var/log/tm07-sudo.log
 PORT=8765
 umask 077
@@ -45,63 +41,57 @@ install -o root -g root -m 0600 /dev/null "$LOG"  # first setup only
 visudo -f /etc/sudoers.d/tm07-log
 ```
 
-Put this line in the file and check it with `visudo -c`. From the operator's uid-2000 terminal, run `sudo -n /usr/bin/true` once and confirm the new command appears in the log. A root-owned file alone does not prove sudo is configured to use it.
+Put this line in the file and check it with `visudo -c`. Disable log wrapping so the complete canary command appears on one line. From the operator's uid-2000 terminal, run `sudo -n /usr/bin/true` once and confirm the new command appears in the log. A root-owned file alone does not prove sudo is configured to use it.
 
 ```sudoers
-Defaults:user logfile="/var/log/tm07-sudo.log"
+Defaults:user logfile="/var/log/tm07-sudo.log", loglinelen=0
 ```
 
 ## Probe and start the server
 
-Run from the root-owned release so neither account imports Python from a writable workspace. The command below starts a disposable, made-up listener as the desk account. It creates the rehearsal directory and ready file; both paths must not exist. The rehearsal and registered roots must be separate. Use the same loopback port that will serve the registered desk.
+Run from the root-owned release so neither account imports Python from a writable workspace. Set SESSION to the exact, already prepared registered attempt ID and AUDIT to a new file in the root-only control directory. Review the existing sudo log against your command record before launching. Run one foreground launch per registered session; handoffs within that session use the same listener.
 
 ```sh
 cd "$RELEASE"
+unset PYTHONPATH PYTHONHOME
 export PYTHONNOUSERSITE=1
-nice -n 10 /usr/sbin/runuser -u tm07desk -- "$PY" -B -m timemachine.tm07_isolation_probe rehearse +  --rehearsal-root "$REHEARSAL" --ready "$READY" --port "$PORT" &
-REHEARSAL_PID=$!
+read -r -p 'Registered session ID: ' SESSION
+AUDIT="$BASE/control/$SESSION-$(date -u +%Y%m%dT%H%M%S).json"
+less "$LOG"
 ```
 
-Once the ready file exists, run the collector in the root shell. It invokes the probe itself as uid 2000 through `runuser`; it does not run any sudo command from that uid. Each probe invocation gets only a toy bearer in stdin. The transcript records checks, not bearers. Own routes must work, missing bearers and wrong-role and sibling-session bearer use must fail, and legacy routes must return 404. The operator confirms the named rehearsal controls actually exist before accepting an access denial. A missing file is not a passing denial.
+For a screen session:
 
 ```sh
-nice -n 10 "$PY" -B -m timemachine.tm07_isolation_probe collect +  --ready "$READY" --root "$STUDY" --registration "$REG" +  --stage screen --transcript "$TRANSCRIPT"
-less "$TRANSCRIPT"
-less "$LOG"                     # review against your command record before attesting
-nice -n 10 "$PY" -B -m timemachine.tm07_isolation_probe seal +  --transcript "$TRANSCRIPT" --key-file "$KEY" --receipt "$BASE/control/receipt-screen.json" +  --sudo-log-reviewed
-install -o tm07desk -g tm07desk -m 0400 "$BASE/control/receipt-screen.json" "$RECEIPT"
-kill "$REHEARSAL_PID"
-wait "$REHEARSAL_PID" || true
-nice -n 10 /usr/sbin/runuser -u tm07desk -- env TM07_RUNS_DIR="$STUDY" +  "$PY" -B -m timemachine.tm07_isolation_probe serve +  --port "$PORT" --receipt "$RECEIPT" --key-file "$KEY"
+nice -n 10 "$PY" -B -m timemachine.tm07_isolation_probe launch \
+  --root "$STUDY" --registration "$REG" --key-file "$KEY" --port "$PORT" \
+  --session "$SESSION" --stage screen --audit "$AUDIT"
 ```
 
-Start registered workers only after explicit approval. `serve_desk` verifies the receipt seal, registration binding, service uid, mode-0700 root, release, sudo log identity and stage. Old receipts are not accepted. The screen receipt permits only the three screen weeks, not the diagnostic or any extension week. Rerun the probe after a release, account, study-root, or sudo-log change. Never share the rehearsal credentials; discard them after the rehearsal.
+The launcher makes a random nonce, starts a fresh toy listener as the service user on the intended port, tests the toy routes and file permissions as uid 2000, then shuts it down. The transcript contains results, not toy bearers. Permission checks do not read file contents. Missing files and readable files both fail, for different reasons.
+
+The launcher makes and seals a receipt in memory, then sends it over a private pipe to the service process. No reusable receipt is written. The receipt is tied to the nonce, registration and session, study-root device and inode, service uid, port, stage, release, and fresh sudo checkpoint. It expires 10 minutes after the launch begins. The server consumes it atomically before listening; a replay or failed bind requires a fresh launch. The screen listener refuses out-of-stage routes before looking at week files. The receipt expiry is a startup limit, not a session duration limit.
 
 ## Check every session and lock the extension
 
-Immediately before briefing any worker, confirm sudo is still logging with a known operator marker, inspect the root-owned log, and record its inode, byte offset and prefix hash. Keep your own time and exact sudo command record. After the session, inspect the new records and verify the original prefix before the session can count. For example, from the root shell:
+Immediately before starting the registered listener, the launcher runs a harmless sudo command as uid 2000 with the launch nonce. It checks that the root-owned mode-0600 log grew, retained its prefix, and contains the exact new command. An empty log after that command or a missing line stops the launch. The launcher writes the pre-session size and SHA-256 hash to AUDIT before starting the listener. Brief workers only after explicit approval and the "Registered desk ready" line. When the session is done, stop the foreground launcher with Ctrl-C. It stops the listener and writes the post-session size and hash to the matching after file, checking the earlier prefix.
 
 ```sh
-# Before the briefing, after the separately issued operator marker:
-stat -c '%d:%i %s %U %a' "$LOG"
+less "$AUDIT"
+less "$AUDIT.after.json"
 less "$LOG"
-OFFSET=$(stat -c '%s' "$LOG")
-PREFIX=$(head -c "$OFFSET" "$LOG" | sha256sum)
-# After the worker finishes, before treating the session as valid:
-stat -c '%d:%i %s %U %a' "$LOG"
-test "$(head -c "$OFFSET" "$LOG" | sha256sum)" = "$PREFIX"
-tail -c "+$((OFFSET+1))" "$LOG"
 ```
 
-Retain the checks with the private session records. Any unrecognized command, missing marker, changed prefix or log identity, truncated log, or unexplained gap blocks or invalidates the session. Matching entries to the operator's record is a human check, not identity attribution. Do not authorize concurrent privileged work by other people or agents.
+Keep your own time and exact sudo command record. Review the log before and after every session; do not count or score the session until this review and both audit files are complete. Any unrecognized command, changed prefix or log identity, truncated log, or unexplained gap blocks or invalidates the session. Matching entries to your record is a human check, not identity attribution. Whether anyone deliberately used sudo and edited the log as root remains UNKNOWN. Do not authorize concurrent privileged work by other people or agents.
 
 **Fixed extension gate:** In addition to the existing 3/3 screen gate, every raw bar source or copy for the 17 extension weeks must be unreadable by uid 2000 without sudo throughout extension sessions. The screen may leave raw bars under `/home/user/workspace/rig` readable, as in TM06. Before issuing an extension receipt, inventory all host copies and put them behind a non-traversable directory outside any uid-2000-writable parent, or otherwise deny that uid access. One way to protect an inventoried directory after arranging lawful relocation and any required backups is `chown root:root "$PRIVATE_RAW"; chmod 0700 "$PRIVATE_RAW"`. Do not leave readable originals, caches, alternate exports, or overlapping tables. If a file mixes screen and extension bars, protect the whole file. Keep the week's service copy under `$STUDY`. Directory and file paths must be real and present; review completeness independently.
 
-Repeat the rehearsal with unused extension paths and a new receipt filename. Replace the collect command with the following, passing each independent restricted directory or file. Seal and serve as above, with the new transcript and receipt. An extension receipt permits only the 17 extension weeks.
+For an extension session, set the protected inventory path PRIVATE_RAW and use the extension launch below. Repeat the raw-bar argument for each additional independent protected file or directory. The same launch checks access as uid 2000 immediately before starting the registered listener and again after stopping it. It refuses a readable path by name, opening and closing without reading any bytes. An extension launch permits only the 17 extension weeks.
 
 ```sh
-nice -n 10 "$PY" -B -m timemachine.tm07_isolation_probe collect +  --ready "$READY" --root "$STUDY" --registration "$REG" +  --stage extension --raw-bar "$PRIVATE_RAW" --transcript "$TRANSCRIPT"
-nice -n 10 "$PY" -B -m timemachine.tm07_isolation_probe check-raw --receipt "$RECEIPT" --key-file "$KEY"
+nice -n 10 "$PY" -B -m timemachine.tm07_isolation_probe launch \
+  --root "$STUDY" --registration "$REG" --key-file "$KEY" --port "$PORT" \
+  --session "$SESSION" --stage extension --audit "$AUDIT" --raw-bar "$PRIVATE_RAW"
 ```
 
-Run `check-raw` immediately before and after every extension session from the root shell, in addition to reviewing sudo. These checks sample access at their times. The operator must keep access denied between checks; do not restore access until all extension workers have stopped. A missing copy from the inventory, failed check, or unreadability that cannot be maintained blocks or invalidates the extension. Do not substitute weeks or make a claim using an unverified extension.
+These checks sample access at their times. The operator must keep access denied between checks; do not restore access until all extension workers have stopped. A missing copy from the inventory, failed check, or unreadability that cannot be maintained blocks or invalidates the extension. Do not substitute weeks or make a claim using an unverified extension.

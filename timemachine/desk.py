@@ -63,27 +63,35 @@ def claim_tokens(root,sid,tokens):
             raise ValueError("a role token is already assigned") from exc
 
 
-def validate_worker_boundary(key,proof,signature,root,*,service_uid):
-    """Require a sealed sample of the actual same-host service-account profile."""
+def validate_worker_boundary(key,proof,signature,root,*,service_uid,launch):
+    """Require a sealed sample for this exact launch. Consumption is separate."""
     from timemachine import tm07_isolation_probe as probe
     verify_seal(key,"worker-boundary",proof,signature)
     if proof.get("scope") != probe.SCOPE:
         raise ValueError("worker boundary receipt must be scoped to the sampled service-account rehearsal")
     stage,raw = proof.get("stage"),proof.get("raw_paths")
-    expected = probe.CHECKS | ({probe.EXTENSION_CHECK} if stage == "extension" else set())
     hash_ok = lambda s:isinstance(s,str) and re.fullmatch(r"[0-9a-f]{64}",s)
+    now = probe.time.time()
     if (proof.get("version") != probe.VERSION or proof.get("root") != str(Path(root).resolve())
             or stage not in probe.STAGES or not isinstance(raw,dict) or bool(raw) != (stage == "extension")
             or any(not Path(p).is_absolute() or k not in ("file","dir") for p,k in raw.items())
             or type(service_uid) is not int or service_uid in (0,probe.WORKER_UID)
             or proof.get("service_uid") != service_uid or proof.get("worker_uid") != probe.WORKER_UID
-            or proof.get("sudo_log_reviewed") is not True
             or not hash_ok(proof.get("release_digest"))
             or not hash_ok(proof.get("registration")) or not hash_ok(proof.get("probe_transcript_digest"))
-            or proof.get("passed") != sorted(expected)):
+            or proof.get("passed") != sorted(probe.CHECKS)
+            or not hash_ok(proof.get("nonce")) or not SID.fullmatch(proof.get("session",""))
+            or any(proof.get(k) != launch.get(k) for k in ("nonce","port","stage","session"))
+            or type(proof.get("issued_at")) is not int or type(proof.get("expires_at")) is not int
+            or proof["expires_at"] != proof["issued_at"]+probe.LAUNCH_TTL
+            or not proof["issued_at"] <= now < proof["expires_at"]
+            or proof.get("raw_checked") is not (stage == "extension")
+            or not probe.valid_log_checkpoint(proof.get("sudo_log"),proof["nonce"])):
         raise ValueError("worker boundary has missing isolation probes")
-    probe.private_root(root,service_uid)
-    if proof.get("release_digest") != probe.release_fingerprint() or proof.get("sudo_log") != probe.sudo_log_state():
+    if proof.get("root_id") != probe.private_root(root,service_uid):
+        raise ValueError("worker boundary study root changed")
+    if (proof.get("release_digest") != probe.release_fingerprint()
+            or proof["sudo_log"]["id"] != probe.sudo_log_state()):
         raise ValueError("worker boundary release or sudo log changed")
 
 
