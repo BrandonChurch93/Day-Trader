@@ -189,6 +189,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/97_replay_21_odd_lot_tenders.md` | Replay 21 cash tenders did not pass, 4 of 6 marks: 14 placements, +11.80% mean net and t 1.688. Documents the refused acquisition and transport-only refreeze; no fill data tracked | CURRENT |
 | `docs/research/98_kraken_and_coinbase_short_access.md` | STATED / MEASURED / UNKNOWN: Kraken US perps and Bitnomial spot margin, Coinbase Financial Markets perpetual-style futures, and what a small Idaho account can short by API | CURRENT |
 | `docs/research/99_round_24_forced_flow_and_shortable_coins.md` | Round 24: dated forced-flow events for a $500 US account (next 60 days priority; queues rows 86 and 87) and events on the 29 US-shortable non-BTC/ETH coins (0 new rows) | CURRENT |
+| `docs/research/100_round_25_too_small_for_big_money.md` | Round 25: edges too small for big money ($300 to $500 US account); 6 candidates counted from SEC EDGAR 2016 to 2026 (queues rows 88 and 89 count-first; drops 4 to skip list) | CURRENT |
 | `docs/research/38_ideas_round_4_checked.md` | Checked avoid signals, risk controls, four proposed tests, and five AI fund filings. Reading only, no test | CURRENT |
 
 Results of our own tests. `research_rig/README.md` has the plan, script and output for each.
