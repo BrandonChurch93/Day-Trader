@@ -4,7 +4,7 @@ from itertools import groupby
 from math import isfinite, sqrt
 import random
 import re
-from statistics import fmean, stdev
+from statistics import fmean, stdev, variance
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
@@ -138,7 +138,13 @@ def summary(xs):
     return {"count": len(xs), "mean": fmean(xs), "t": t_value(xs), "positive": sum(x > 0 for x in xs)}
 
 
-def judge(net, proxy_net, controls, is_non_december, cfg):
+def shown_gap(quarters, controls):
+    difference = fmean(quarters) - fmean(controls)
+    se_squared = variance(quarters) / len(quarters) + variance(controls) / len(controls)
+    return {"net_mean_difference": difference, "welch_t": difference / sqrt(se_squared) if se_squared else None}
+
+
+def panel(net, proxy_net, controls, is_non_december, cfg):
     m = cfg["marks"]
     floor, t = m["strict_floor"], m["minimum_t"]
     plain, credit, other = summary(net), summary(proxy_net), summary(controls)
@@ -153,10 +159,29 @@ def judge(net, proxy_net, controls, is_non_december, cfg):
         "above_non_quarter_month_ends": plain["mean"] > other["mean"],
         "trimmed_net": trim > floor,
         "non_december_net": non_dec > floor,
-        "positive_quarters": plain["positive"] * breadth["denominator"] >= len(net) * breadth["numerator"],
     }
-    return {"marks": marks, "supported": all(marks.values()), "net": plain, "proxy_net": credit,
-            "controls_net": other, "trimmed_net_mean": trim, "non_december_net_mean": non_dec}
+    breadth_marks = {
+        "sixty_percent": plain["positive"] * breadth["denominator"] >= len(net) * breadth["numerator"],
+        "strict_majority": plain["positive"] > len(net) - plain["positive"],
+    }
+    return {"net": plain, "proxy_net": credit, "controls_net": other,
+            "trimmed_net_mean": trim, "non_december_net_mean": non_dec}, marks, breadth_marks
+
+
+def apply_marks(marks, breadth_marks, raw_t_required, breadth):
+    active = dict(marks)
+    if not raw_t_required:
+        del active["t_net"]
+    if breadth != "none":
+        active["positive_quarters"] = breadth_marks[breadth]
+    return active
+
+
+def judge(net, proxy_net, controls, is_non_december, cfg):
+    metrics, base, breadth = panel(net, proxy_net, controls, is_non_december, cfg)
+    m = cfg["marks"]
+    marks = apply_marks(base, breadth, m["raw_t_required"], m["breadth"])
+    return metrics | {"marks": marks, "supported": all(marks.values())}
 
 
 def window_return(entry_close, exit_close, payouts, f):
@@ -182,20 +207,27 @@ def evaluate(spans, prices, cash, cfg):
                            "proxy_net": credit, "net_usd": raw * cfg["budget_usd"]})
         book[group] = events
     q = book["quarters"]
-    verdict = judge([e["net"] for e in q], [e["proxy_net"] for e in q],
-                    [e["net"] for e in book["controls"]], [e["entry"][5:7] != "12" for e in q], cfg)
-    return {"judged": verdict, "events": book}
+    raw, controls = [e["net"] for e in q], [e["net"] for e in book["controls"]]
+    verdict = judge(raw, [e["proxy_net"] for e in q], controls, [e["entry"][5:7] != "12" for e in q], cfg)
+    return {"judged": verdict, "events": book, "shown_only": {"quarter_minus_control_net": shown_gap(raw, controls)}}
+
+
+def upper_wilson(hits, n, z):
+    p = hits / n
+    return (p + z*z / (2*n) + z * sqrt(p*(1-p)/n + z*z/(4*n*n))) / (1 + z*z/n)
 
 
 def calibrate(cfg):
-    """Synthetic basket-level daily noise; no vendor data or external access."""
+    """Synthetic model grid on common draws; never a candidate search on real data."""
     a = cfg["calibration"]
     rng = random.Random(a["seed"])
     widths = cfg["held_sessions"]
     f = cfg["cost_bps_per_side"] / BPS
     edges = a["edge_bps"]
-    hits = dict.fromkeys(edges, 0)
-    by_mark = {edge: {} for edge in edges}
+    variants = [(raw, breadth) for raw in (True, False)
+                for breadth in ("sixty_percent", "strict_majority", "none")]
+    worlds = ("quarter_only", "all_month_ends")
+    hits = {(raw, breadth, world, edge): 0 for raw, breadth in variants for world in worlds for edge in edges}
     dates = [(y, m) for y in range(cfg["judged_first_year"], cfg["judged_last_year"] + 1) for m in range(1, 13)]
     non_dec = [m != 12 for _, m in dates if m % 3 == 0]
     for _ in range(a["worlds"]):
@@ -211,11 +243,31 @@ def calibrate(cfg):
         for edge in edges:
             net = [window_return(1, 1 + proxy + credit + edge / BPS, 0, f) for proxy, credit in q]
             residual = [n - p for n, (p, _) in zip(net, q, strict=True)]
-            grid = judge(net, residual, control, non_dec, cfg)
-            hits[edge] += grid["supported"]
-            for k, v in grid["marks"].items():
-                by_mark[edge][k] = by_mark[edge].get(k, 0) + v
-    return {"synthetic_only": True, "assumptions": a, "observations": cfg["expected"],
-            "scenarios": [{"planted_gross_edge_bps": edge, "all_marks_pass_count": hits[edge],
-                           "all_marks_pass_rate": hits[edge] / a["worlds"], "mark_pass_counts": by_mark[edge]}
-                          for edge in edges]}
+            metrics, base, breadth_marks = panel(net, residual, control, non_dec, cfg)
+            shift = (edge / BPS) * ((1-f)/(1+f))
+            shared_base = base | {"above_non_quarter_month_ends":
+                                  metrics["net"]["mean"] > metrics["controls_net"]["mean"] + shift}
+            for raw, breadth in variants:
+                plain = apply_marks(base, breadth_marks, raw, breadth)
+                shared = apply_marks(shared_base, breadth_marks, raw, breadth)
+                hits[raw, breadth, "quarter_only", edge] += all(plain.values())
+                hits[raw, breadth, "all_month_ends", edge] += all(shared.values())
+
+    n, rows = a["worlds"], []
+    for raw, breadth in variants:
+        scenarios = {}
+        for world in worlds:
+            scenarios[world] = {str(edge): {"count": hits[raw, breadth, world, edge],
+                                            "rate": hits[raw, breadth, world, edge] / n}
+                                for edge in edges}
+        null = scenarios["quarter_only"]["0"]
+        upper = upper_wilson(null["count"], n, a["one_sided_normal_z"])
+        rows.append({"raw_t_required": raw, "breadth": breadth, "scenarios": scenarios,
+                     "null_upper_wilson": upper,
+                     "eligible": null["rate"] <= a["null_rate_cap"] and upper <= a["null_upper_cap"]})
+    # Rows are strictest-first for ties; max returns the first maximizer.
+    eligible = [row for row in rows if row["eligible"]]
+    need(eligible, "NO_CALIBRATION_CANDIDATE")
+    winner = max(eligible, key=lambda row: row["scenarios"]["quarter_only"][str(a["power_target_bps"])]["count"])
+    return {"synthetic_only": True, "assumptions": a, "observations": cfg["expected"], "variants": rows,
+            "selected": {k: winner[k] for k in ("raw_t_required", "breadth")}}

@@ -19,7 +19,7 @@ INPUTS, RUN = DATA / "plan52_inputs", DATA / "replay_52"
 PLAN = "research_rig/PREREG_52_quarter_end_dealer_rebound.md"
 PINS = "research_rig/PINNED_52.json"
 APPROVAL = "research_rig/APPROVAL_52.md"
-CALENDARS = ["research_rig/calendar_26.json", "research_rig/calendar_25.json"]
+CALENDARS = ["research_rig/calendar_25.json"]
 ENGINE = "research_rig/common_52.py"
 CONFIG = "config/thresholds.yaml"
 CALIBRATION = "research_rig/CALIBRATION_52.json"
@@ -112,6 +112,8 @@ def read_config(blob):
                           "cost_bps_per_side max_identical_ohlc_run_exclusive expected marks calibration resources").split())
          and len(cfg["funds"]) == len(set(cfg["funds"])) and set(cfg["funds"]) == set(cfg["proxies"])
          and not (set(cfg["funds"]) & set(cfg["proxies"].values())), "CONFIG")
+    m = cfg["marks"]
+    need(type(m["raw_t_required"]) is bool and m["breadth"] in {"sixty_percent", "strict_majority", "none"}, "CONFIG")
     return cfg
 
 
@@ -135,6 +137,10 @@ def authorize(approval, freeze_pin, input_pin, actions_pin):
     need(all(b == git("show", f"{freeze}:{name}") for name, b in blobs.items()), "FREEZE")
     need([s for s in blobs[PLAN].splitlines() if s.startswith(b"Status ")] == [b"Status FROZEN."], "FREEZE")
     cfg = read_config(blobs[CONFIG])
+    cal = parse(blobs[CALIBRATION])
+    need(cal["synthetic_only"] is True and cal["assumptions"] == cfg["calibration"]
+         and cal["observations"] == cfg["expected"]
+         and cal["selected"] == {k: cfg["marks"][k] for k in ("raw_t_required", "breadth")}, "CALIBRATION")
     ref = b"`" + PLAN.encode() + b"`"
     for name, row, code in (("research_rig/TRIAL_LEDGER.md", cfg["ledger_row"], "LEDGER"),
                             ("docs/QUEUE.md", cfg["queue_row"], "QUEUE")):

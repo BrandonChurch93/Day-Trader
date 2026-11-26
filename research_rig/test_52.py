@@ -43,8 +43,8 @@ def fixture():
 
 class Engine(unittest.TestCase):
     def test_clock(self):
-        self.assertEqual(str(SPANS["quarters"][0][0]), "2015-03-31")
-        self.assertEqual(str(SPANS["quarters"][0][1][-1]), "2015-04-06")
+        self.assertEqual(str(SPANS["quarters"][0][0]), "2016-03-31")
+        self.assertEqual(str(SPANS["quarters"][0][1][-1]), "2016-04-05")
         self.assertEqual(str(SPANS["quarters"][-1][1][-1]), "2026-01-06")
         self.assertEqual(str(SPANS["shown"][-1][1][-1]), "2026-10-05")
         self.assertEqual(str(next(held[-1] for e, held in SPANS["controls"] if str(e) == "2019-04-30")), "2019-05-03")
@@ -65,7 +65,7 @@ class Engine(unittest.TestCase):
 
     def test_bad_bars(self):
         closes, _ = fixture()
-        examples = [("BAR_CLOCK", "t", "2015-01-02T06:00:00Z"), ("BAR_VALUES", "v", 0),
+        examples = [("BAR_CLOCK", "t", "2016-01-04T06:00:00Z"), ("BAR_VALUES", "v", 0),
                     ("BAR_VALUES", "c", True), ("BAR_VALUES", "h", 90), ("BAR_FIELDS", "extra", 1)]
         for error, key, value in examples:
             with self.subTest(key=key, value=value):
@@ -99,12 +99,25 @@ class Engine(unittest.TestCase):
         n = len(labels)
         varied = [0.02 + (i % 2) * 0.001 for i in range(n)]
         self.assertTrue(C.judge(varied, varied, [0], labels, CFG)["supported"])
-        self.assertFalse(C.judge([0.02] * n, varied, [0], labels, CFG)["marks"]["t_net"])
+        strict = CFG | {"marks": CFG["marks"] | {"raw_t_required": True, "breadth": "sixty_percent"}}
+        self.assertFalse(C.judge([0.02] * n, varied, [0], labels, strict)["marks"]["t_net"])
+        selected = C.judge([0.02] * n, varied, [0], labels, CFG)
+        self.assertIsNone(selected["net"]["t"])
+        self.assertEqual("t_net" in selected["marks"], CFG["marks"]["raw_t_required"])
+        self.assertEqual("positive_quarters" in selected["marks"], CFG["marks"]["breadth"] != "none")
+        self.assertFalse(C.judge(varied, [0.02] * n, [0], labels, CFG)["marks"]["t_proxy_net"])
+        self.assertFalse(C.judge(varied, varied, varied, labels, CFG)["marks"]["above_non_quarter_month_ends"])
         only_best = [0] * n
         only_best[:CFG["marks"]["drop_best"]] = [1] * CFG["marks"]["drop_best"]
         self.assertFalse(C.judge(only_best, varied, [0], labels, CFG)["marks"]["trimmed_net"])
         december_only = [-0.001 if keep else 0.04 for keep in labels]
         self.assertFalse(C.judge(december_only, varied, [0], labels, CFG)["marks"]["non_december_net"])
+
+    def test_shown_gap(self):
+        shown = C.shown_gap([2, 4], [0, 2])
+        self.assertEqual(shown["net_mean_difference"], 2)
+        self.assertAlmostEqual(shown["welch_t"], 2**0.5)
+        self.assertIsNone(C.shown_gap([5, 5], [0, 0])["welch_t"])
 
     def test_claim_survives_failure(self):
         with TemporaryDirectory() as d:
@@ -187,7 +200,14 @@ class CLI(unittest.TestCase):
 
             synthetic_cal = cli("--calibrate")
             self.assertEqual(synthetic_cal.stdout, (BASE / S.CALIBRATION).read_bytes())
-            self.assertTrue(json.loads(synthetic_cal.stdout)["synthetic_only"])
+            calibrated = json.loads(synthetic_cal.stdout)
+            self.assertTrue(calibrated["synthetic_only"])
+            self.assertEqual(len(calibrated["variants"]), 6)
+            self.assertEqual(calibrated["selected"], {k: CFG["marks"][k] for k in ("raw_t_required", "breadth")})
+            for row in calibrated["variants"]:
+                quarter, both = (row["scenarios"][k] for k in ("quarter_only", "all_month_ends"))
+                self.assertEqual(quarter["0"], both["0"])
+                self.assertTrue(all(both[x]["count"] <= quarter[x]["count"] for x in quarter))
             self.assertEqual(cli("--go", ok=False).stderr, b"P52_ARGUMENTS\n")
             self.assertEqual(cli("--go", *flags(), ok=False).stderr, b"P52_APPROVAL\n")
             write(repo, S.APPROVAL, template)
@@ -218,6 +238,7 @@ class CLI(unittest.TestCase):
             self.assertEqual(cli("--go", *flags()).stdout, b"P52_RESULT_WRITTEN\n")
             output = (run / "results_52.json").read_bytes()
             self.assertIn("judged", json.loads(output))
+            self.assertIn("welch_t", json.loads(output)["shown_only"]["quarter_minus_control_net"])
             self.assertEqual(cli("--go", *flags(), ok=False).stderr, b"P52_CONSUMED_OR_NOT_EMPTY\n")
             self.assertEqual((run / "results_52.json").read_bytes(), output)
 
