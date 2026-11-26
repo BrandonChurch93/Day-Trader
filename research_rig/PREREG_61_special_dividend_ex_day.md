@@ -1,6 +1,6 @@
 # Plan 61: one-session special-dividend ex-day replay
 
-Status DRAFT.
+Status FROZEN.
 
 Queue 105, ledger 203, from [idea round 33, rank 2](../docs/127_idea_round_33.md). This is a new return window, not a revision of Replay 60. STATED: we know the paired and stock returns over the earlier announcement-clock hold in aggregate and know its shown-only yield groups. In [Replay 60](../docs/research/126_replay_60_special_dividends.md), the group whose ex-date fell inside the hold averaged +1.94% stock net over the full hold; the shown yield bands below 1%, from 1% to below 3%, and 3% or more averaged +3.56%, +2.59% and +0.86%, respectively. No one has computed a Plan 61 target ex-day return. The separately approved pre-freeze observations below are placebo dispersion only. No yield bucket may select events.
 
