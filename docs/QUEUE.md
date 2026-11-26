@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-26 21:04 UTC
+Last changed: 2026-11-26 21:11 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -147,6 +147,7 @@ The idea scout's full write-up of 23 ideas, each with sources and the way it cou
 | Watch only (round 52, second-checked): buy an earnings gap up on high volume in a stock that had been flat, hold 20 to 60 sessions. The one after-cost test found by the scout lost; no count stage until a source shows a matching after-cost edge. It would share Plan 74's filing and bar set | [doc 175](research/175_idea_round_52_swing_events.md) |
 | Watch only (round 53, second-checked): year-end tax-loss rebound in single small stocks, Dec 31 to Jan 15. About ten usable year-turns, so no historical test; an optional pretend-money watch this year-end, labeled untested | [doc 176](research/176_idea_round_53_forced_flows.md) |
 | Watch only (round 54, second-checked): Kalshi earnings-call mention contracts, buying NO under 50 cents. STATED edge has no spread, depth or queue model; needs the owner's Kalshi account and a reading of its data terms before any collection. Also read the leveraged single-stock fund follow-up study when it ends in 2027 | [doc 177](research/177_idea_round_54_new_market_structure.md) |
+| Watch only (round 55, second-checked): a web-searching agent making daily stock calls (STATED +18.4 hundredths of a percent a day before costs over nine months, unnamed model, tables disagree). Revisit after TM09's noise stage, which measures whether our own desk can tell such a signal from luck | [doc 178](research/178_idea_round_55_language_model_signals.md) |
 | Watch only (round 51, second-checked): company insiders' open-market purchases in stocks already rising, and clusters of insider buying with an upbeat outlook. Both rest on unreviewed sources; no count stage on those sources | [doc 174](research/174_idea_round_51_larger_swing_edges.md) |
 
 ## Looked at and dropped before testing
