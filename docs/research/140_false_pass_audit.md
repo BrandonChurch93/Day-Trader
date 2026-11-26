@@ -1,17 +1,17 @@
-# 140. False-pass audit: how many of our 3 passes could be luck
+# 140. False-pass audit: how many of our 4 passes could be luck
 
-Written 2026-11-26 13:24 UTC by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.
+Written 2026-11-26 21:34 UTC by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.
 
-Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's own pre-run file. MEASURED, one mark means only one of the marks was counted that way, so the all-mark rate is lower. NOMINAL means no rate was measured; the figure is the textbook tail of the plan's mark (a one-sided normal tail for a t of 2, or a percentile tail), worked out here, not measured. STATED means taken from a plan or results page as written. UNKNOWN means not on the repo.
+Labels: MEASURED means a no-edge pass rate counted on made-up data and recorded in a plan file or audit record. MEASURED, one mark means only one of the marks was counted that way, so the all-mark rate is lower. NOMINAL means no rate was measured; the figure is the textbook tail of the plan's mark (a one-sided normal tail for a t of 2, or a percentile tail), worked out here, not measured. STATED means taken from a plan or results page as written. INFERENCE means a reading of the evidence. UNKNOWN means not on the repo.
 
 ## Headline
 
-- Expected passes by luck across all 44 scored tests: low 0.68, high 4.13. Counted passes: 3.
-- About half of the high figure comes from the 9 AI time-machine tests (0.32 to 2.03). Their marks were loose (a model above the 80th or 90th percentile of its own twins), but a clearing there is reported as shown, never as a counted pass, so they cannot explain the 3.
-- Expected luck passes in the 34 trading tests that could give a counted pass: low 0.36, high 2.09. Against 3 seen, that is 1.4 to 8.2 times what luck alone gives.
-- Chance of 3 or more passes by luck alone in those 34: 0.49% on the low figures, 34.92% on the high figures (independent tests assumed; the month-end tests share windows, which widens this).
-- Rates: 13 tests have a measured all-mark no-edge rate, 8 have one measured mark only, 20 have no measured rate (UNKNOWN) and are bracketed by the nominal tail of their own t or percentile mark as the high and a stated low of 0.005 per test, and 3 could not pass at all (design only, inconclusive by design, a cost gate).
-- Ideas closed before any return on count, power, cost, coverage, validation or feasibility: 35 (7 on count, 13 on power). They had no chance to pass by luck, so they add nothing to the luck figure.
+- Expected passes by luck across all 45 scored tests: low 0.72, high 4.20. Counted passes: 4.
+- About half of the high figure comes from the 9 AI time-machine tests (0.32 to 2.03). Their marks were loose (a model above the 80th or 90th percentile of its own twins), but a clearing there is reported as shown, never as a counted pass, so they cannot explain the 4 counted passes.
+- Expected luck passes in the 35 trading tests that could give a counted pass: low 0.40, high 2.17. The 4 seen is 1.8 to 10.1 times what luck alone gives.
+- Chance of 4 or more passes by luck alone in those 35: 0.05% on the low figures, 16.38% on the high figures (independent tests assumed; the month-end tests share windows).
+- Rates: 14 tests have a measured all-mark no-edge rate, 8 have one measured mark only, 20 have no measured rate (UNKNOWN) and are bracketed by the nominal tail of their own t or percentile mark as the high and a stated low of 0.005 per test, and 3 could not pass at all (design only, inconclusive by design, a cost gate).
+- Ideas closed before any return on count, power, cost, coverage, validation or feasibility: 39 (8 on count, 14 on power). They had no chance to pass by luck, so they add nothing to the luck figure.
 
 ## Assumptions, stated
 
@@ -20,7 +20,7 @@ Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's
 - High bracket for a measured count: the one-sided 95% upper limit for that count. A 0 of 20 calibration still allows up to 13.91% by this rule, which is why those tests have wide highs.
 - Tests are summed as if independent. Several are not (Replays 25, 31, 41 and 65 share month-end windows; Replays 48 and 53 share dates). Dependence does not change the expected count; it makes clusters of luck passes or misses more likely.
 
-## The 44 tests
+## The 45 tests
 
 | # | Test | Family | Result (doc 95) | Label | Low | High | Where the figure comes from | Note |
 |---:|---|---|---|---|---:|---:|---|---|
@@ -68,18 +68,19 @@ Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's
 | 42 | Replay 62 | event | Did not pass (1 of 5 marks) | MEASURED for plan 61, STATED for 62 | 1.37% | 1.64% | `research_rig/POWER_61.json`: full.by_placement.0.8.counts.1.5.winsor_t at 0 bp (82 of 6000) | plan 62 reuses plan 61's power run (`research_rig/PREREG_62_special_dividend_ex_day_v2.md`); high is the one-sided 95% upper limit for that count |
 | 43 | Replay 22 | momentum | Did not pass (1 of 5 marks) | MEASURED | 5.00% | 21.61% | `research_rig/calibration_22.json`: edges_pct.0.pass_share = 0.05 (1 of 20) | high is the one-sided 95% upper limit for that count |
 | 44 | Replay 65 | forced flow | Did not pass (3 of 5 marks) | NOMINAL | 0.50% | 2.28% | `research_rig/PREREG_65_stock_bond_rebalance_spread.md`: clustered t mark at 2 | `research_rig/POWER_65.json` has no zero-edge row (lowest Sharpe 0.3), so no measured rate; one-sided normal tail of the t mark alone; not measured; the other marks can only lower it, fat tails or overlap can raise it |
-| | Total, all 44 | | | | 0.68 | 4.13 | | |
-| | Total, 34 trading tests that could give a counted pass | | | | 0.36 | 2.09 | | |
+| 45 | Plan 75 | momentum | Passed (4 of 4 marks) | MEASURED | 3.25% | 7.47% | `docs/research/181_plan_75_heldback_result.md`: 13 of 400 with no drift, 21 of 400 with 15% yearly drift | high is the one-sided 95% upper limit on the drift count; the edge model and coverage in those worlds are the auditor's assumptions |
+| | Total, all 45 | | | | 0.72 | 4.20 | | |
+| | Total, 35 trading tests that could give a counted pass | | | | 0.40 | 2.17 | | |
 
 Results are copied from `docs/research/95_where_we_stand_after_32_tests.md`. Results pages are those cited there.
 
-## How that compares with 3
+## How that compares with 4
 
-- MEASURED and NOMINAL together: luck alone would give about 0.36 to 2.09 counted passes, so 3 is more than luck predicts even on the high figures.
-- It is not far more. On the high figures 3 or more by luck happens 34.92% of the time. One of the three being luck is quite possible; all three being luck is unlikely.
-- Three other results met their own marks and were not counted: Replay 13 Rule A (Relative marks met, not counted pass); TM06-P six models (Shown by its marks, not counted pass); TM06-P-g / TM06-R (Mixed / did not repeat). Counting every result that met its marks, {3 + len(met_marks)} of 44 cleared, against a luck figure of 0.68 to 4.13. Read that way the scoreboard is close to what luck gives.
+- MEASURED and NOMINAL together: luck alone would give about 0.40 to 2.17 counted passes, compared with 4 observed.
+- INFERENCE: on the high figures 4 or more by luck happens 16.38% of the time if tests are independent. That is not the probability any specific pass was luck.
+- 3 other results met their own marks and were not counted: Replay 13 Rule A (Relative marks met, not counted pass); TM06-P six models (Shown by its marks, not counted pass); TM06-P-g / TM06-R (Mixed / did not repeat). Counting those too, 7 of 45 cleared, against 0.72 to 4.20 expected by luck.
 
-## The three passes
+## The 4 counted passes
 
 ### Replay 25, TLT over the last three sessions of the month
 
@@ -98,7 +99,7 @@ Results are copied from `docs/research/95_where_we_stand_after_32_tests.md`. Res
 
 - Relatives that did not pass (MEASURED): Replay 31: Failed (2/10 marks); Replay 33: Failed (3/11 marks, placement only); Replay 41: Failed (4/8 marks); Replay 52: Did not pass (0 of 6 marks); Replay 65: Did not pass (3 of 5 marks). Measurement 34 (TMF, UBT) used the same windows and is not new evidence; Replay 26 (2002 to 2015) was blocked at input validation and never scored. So 1 of 6 scored month-end and bond-flow tests passed.
 - Overlap with the source sample (STATED, `docs/research/74_round_10_forced_flow_ideas.md`): Hartley and Schwarz cover 1990 to 2018 Treasuries, so 2016 to 2018 of the 2016 to 2026 window overlap; the rest does not.
-- Forward log (STATED, `practice/traders/E01_tlt_month_end_close.md`): E01 records the same window each month from December 2026. MEASURED: no E01 record yet (forward logs on the repo: E07_log.json).
+- Forward log (STATED, `practice/traders/E01_tlt_month_end_close.md`): E01 records the same window each month from December 2026. MEASURED: no E01 record yet (forward logs on the repo: E07_log.json, E09_log.json).
 - Trust today: a modest pass with no measured null, sitting among 5 failed relatives, so treat it as a lead that E01 must confirm, not as a found edge.
 
 ### Replay 48, muni closed-end fund losers into January
@@ -118,7 +119,7 @@ Results are copied from `docs/research/95_where_we_stand_after_32_tests.md`. Res
 - Relatives (MEASURED): Replay 53: Did not pass (5 of 7 marks). Its yearly results had a correlation of +0.802 with Replay 48 (`docs/research/122_replay_53_taxable_fund_january_rebound.md`), so it is a near copy that failed on breadth. Three more tax-loss relatives (preferreds, BDCs, Plan 54) were closed on power before prices.
 - Overlap with the source sample (STATED, `research_rig/PREREG_48_muni_cef_tax_loss.md`): Turns 2016 to 2019 overlap the Carrion and Zhang sample; turns 2020 to 2025 do not overlap either paper.
 - Forward log (STATED, `practice/traders/E04_muni_cef_january_watch.md`): E04, pretend entry Thu 2026-12-31, judged Fri 2027-01-29. MEASURED: no E04 record yet.
-- Trust today: the best-founded of the three (a measured null near 4%, six of ten turns outside the paper), but ten turns at the edge of its breadth mark and a near copy that failed; one more January is the next real evidence.
+- Trust today: well founded on a measured null near 4% and six of ten turns outside the paper, but ten turns at the edge of its breadth mark and a near copy that failed; one more January is the next real evidence.
 
 ### Replay 20, short after an Upbit listing red day
 
@@ -134,18 +135,26 @@ Results are copied from `docs/research/95_where_we_stand_after_32_tests.md`. Res
 - Relatives that did not pass (MEASURED): Replay 21: Did not pass (4 of 6 marks); Replay 46 Leg A: Did not pass (3 of 6 marks); Replay 46 Leg B: Did not pass (5 of 6 marks); Replay 60: Did not pass (6 of 7 marks); Replay 62: Did not pass (1 of 5 marks). Crypto short rules: Replay 17: Failed (0/3 marks).
 - Overlap with the source (STATED, plan): "All dates have already been viewed." "The author selected the hold after viewing results and tried other variants." The source's own sample period is UNKNOWN on the repo. The window is wholly inside what the source author looked at.
 - Forward log (STATED): no pretend-money log; the desk roster says "It does not place short sales" (`practice/traders/ROSTER.md`). Queue row 49: Upbit KRW listing forward watcher, live since 2026-11-26: polls Upbit notices and logs point-in-time US shortable overlap off repo; it logs listings, not returns.
-- Trust today: least of the three; the null was low but the dates were already seen, the rule was picked by its author after viewing results, most of the gain is from one partial year, and there is no US-reachable forward check.
+- Trust today: low for a new market; the null was low but the dates were already seen, the rule was picked by its author after viewing results, most of the gain is from one partial year, and there is no US-reachable forward check.
+
+### Plan 75, coin trends with a rising stop
+
+- No-edge pass rate: MEASURED, 3.25% (upper 7.47%) in the independent audit's made-up worlds (`docs/research/181_plan_75_heldback_result.md`).
+- MEASURED (`docs/research/181_plan_75_heldback_result.md`): all four frozen marks passed, but the rule made money in only one of three calendar years. At 145 bp a side, shown only, net was -3.90%.
+- MEASURED: the independent recompute also passed every mark. An ambiguity about when to start tracking the signal explains about one percentage point of the difference; the two net figures were 1.08 points apart.
+- STATED (`docs/research/181_plan_75_heldback_result.md`): Binance USDT bars stood in for a US venue, and the coins were picked with hindsight. E10 is being built to log live US venue quotes with pretend money; no forward check yet.
+- INFERENCE, trust today: the thinnest pass by size. The sign changes at higher costs, so measure live costs and order sizes before taking the gain at face value.
 
 ## Ideas closed before a return
 
-MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE.md`, one count per idea (queue rows already in the ledger are not counted twice): 35 ideas closed before any return was computed.
+MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE.md`, one count per idea (queue rows already in the ledger are not counted twice): 39 ideas closed before any return was computed.
 
 - cost: 1
-- count: 7
-- coverage: 1
+- count: 8
+- coverage: 3
 - feasibility: 4
 - other, before prices: 6
-- power: 13
+- power: 14
 - validation: 3
 
 - ledger 163: research_rig/PREREG_26_treasury_month_end_early.md, closed on validation
@@ -165,16 +174,20 @@ MEASURED from `research_rig/TRIAL_LEDGER.md` and the Done section of `docs/QUEUE
 - ledger 209: research_rig/COUNT_107_dividend_month_coverage.md, closed on count
 - ledger 210: research_rig/PREREG_66_third_friday_settlement.md, closed on power
 - ledger 211: research_rig/PREREG_67_rsi2_pullback.md, closed on power
+- ledger 212: research_rig/COUNT_55_cef_rights_offerings.md, closed on count
 - ledger 213: research_rig/PREREG_68_earnings_drift_plain.md (screen page only; no plan was frozen), closed on other, before prices
 - ledger 214: none yet (screen first; a plan only if it clears), closed on other, before prices
 - ledger 215: none yet (screen first; plans only if a row clears), closed on other, before prices
 - ledger 216: none yet (screen first; a plan only if it clears), closed on other, before prices
+- queue 118: Buy large stocks that fell hardest in the three days before a schedule, closed on power
 - queue 48: Plan 28, US-reachable Upbit listing short version: data scouting compl, closed on other, before prices
 - queue 59: Plan 42, marketed non-overnight seasoned equity offerings, closed on feasibility
 - queue 61: Blocked. Plan 37, US DoD daily contract awards: long-only, 3 to 5 trad, closed on other, before prices
 - queue 62: Plan 38, going-private Schedule 13E-3 first filings, long-only post-an, closed on feasibility
 - queue 74: Plan 43, declaration drift: `research_rig/PREREG_43_special_dividends., closed on validation
 - queue 30: Dip entries against breakout entries for the AI crypto trader: the sam, closed on power
+- queue 104: Equity closed-end fund periodic and special distribution ex-date disco, closed on coverage
+- queue 102: Closed-end fund activist Schedule 13D discount mean reversion, long-on, closed on coverage
 - queue 67: Overnight versus intraday return gap in SPY and QQQ, as a low-frequenc, closed on power
 - queue 68: Option expiry week in SPY, closed on power
 - queue 69: Municipal bond month-end index extension and June, July, December rein, closed on power
@@ -195,4 +208,4 @@ What that does to the reading:
 
 - The all-mark no-edge rate for every NOMINAL row; only the t or percentile mark was used.
 - How correlated the month-end tests are with each other.
-- Any forward month for E01 or E04; none has happened yet.
+- Any forward result for E01, E04 or E10; none is on record yet.

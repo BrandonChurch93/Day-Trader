@@ -1,7 +1,7 @@
 """Doc 140: false-pass audit of the scoreboard, from repo files only.
 
-Reads each scored test's own pre-run files (plan, calibration or power JSON,
-thresholds) for the rate at which a rule with no edge would pass all its marks,
+Reads the plans, calibration and power files, thresholds, and results records
+for the rate at which a rule with no edge would pass all its marks,
 then writes docs/research/140_false_pass_audit.md. It runs no scorer, opens no
 price or result file off the repo and computes no return. Every number in the
 page is read here from a repo file or computed here from such a number.
@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RR = ROOT / "research_rig"
 OUT = ROOT / "docs" / "research" / "140_false_pass_audit.md"
 SCORECARD = "docs/research/95_where_we_stand_after_32_tests.md"
+PLAN75_RESULT = "docs/research/181_plan_75_heldback_result.md"
 
 # Stated assumptions, used only where the repo has no measured figure.
 LOW_ASSUME = 0.005   # low bracket: other marks cut a nominal tail well below itself
@@ -105,13 +106,13 @@ def tm_method(n, p_top, need_top, need_median):
     return tot
 
 
-# ---------------------------------------------------------------- the 44 tests
+# ---------------------------------------------------------------- scored tests
 def doc95_rows():
     scorecard = text(SCORECARD)
-    totals = re.findall(r"^\| Total \| (\d+) \|", scorecard, re.M)
+    totals = re.findall(r"^\| Total \| (\d+) \| (\d+) \|", scorecard, re.M)
     if len(totals) != 1:
         sys.exit(f"{SCORECARD}: expected one scored-test Total row, found {len(totals)}")
-    expected = int(totals[0])
+    expected, expected_passes = map(int, totals[0])
     rows = []
     for line in scorecard.splitlines():
         m = re.match(r"\| (\d+) \| ([^|]+) \| [^|]+ \| ([^|]+) \| [^|]+ \| ([^|]+) \| (.+) \|$", line)
@@ -122,7 +123,14 @@ def doc95_rows():
     numbers = [row["n"] for row in rows]
     if numbers != list(range(1, expected + 1)):
         sys.exit(f"{SCORECARD}: Total says {expected} scored tests, but parsed {len(rows)} rows with IDs {numbers}")
+    actual_passes = counted_passes(rows)
+    if actual_passes != expected_passes:
+        sys.exit(f"{SCORECARD}: Total says {expected_passes} counted passes, but found {actual_passes}")
     return rows
+
+
+def counted_passes(rows):
+    return sum(r["result"].casefold().startswith("passed") for r in rows)
 
 
 def spec(n):
@@ -304,6 +312,15 @@ def spec(n):
         d = nominal_t("research_rig/PREREG_65_stock_bond_rebalance_spread.md", r"\| Evidence \| t at least (\d)", what="clustered t mark at")
         d["note"] = f"`research_rig/POWER_65.json` has no zero-edge row (lowest Sharpe {lowest}), so no measured rate; " + d["note"]
         return d
+    if n == 45:
+        pattern = (r"^## How much a pass like this proves\n\n"
+                   r"- MEASURED by the independent auditor on made-up price worlds with no edge, same code and same four marks: "
+                   r"(\d+) of (\d+) worlds passed \([0-9.]+%\); with a (\d+%) yearly upward drift in coin prices, (\d+) of (\d+)")
+        lo_k, lo_n, hi_k, hi_n = (int(find(PLAN75_RESULT, pattern, group, re.M)) for group in (1, 2, 4, 5))
+        drift = find(PLAN75_RESULT, pattern, 3, re.M)
+        return dict(label="MEASURED", low=lo_k / lo_n, high=cp_upper(hi_k, hi_n),
+                    src=f"`{PLAN75_RESULT}`: {lo_k} of {lo_n} with no drift, {hi_k} of {hi_n} with {drift} yearly drift",
+                    note="high is the one-sided 95% upper limit on the drift count; the edge model and coverage in those worlds are the auditor's assumptions")
     sys.exit(f"no spec for test {n}")
 
 
@@ -365,7 +382,7 @@ def closed_before_prices():
     return [(k, v[0], kind(v[1])) for k, v in list(found.items()) + list(extra.items())]
 
 
-# --------------------------------------------------------------- the three passes
+# --------------------------------------------------------------- counted passes
 def pass_marks(rel):
     out = []
     for line in text(rel).splitlines():
@@ -384,6 +401,7 @@ def main():
     ai = [r for r in rows if r["family"].startswith("AI")]
     nopass = [r for r in rows if r["high"] == 0.0]
     counted_pool = [r for r in rows if r not in ai and r not in nopass]
+    n_pass = counted_passes(rows)
     lo_all, hi_all = sum(r["low"] for r in rows), sum(r["high"] for r in rows)
     lo_c, hi_c = sum(r["low"] for r in counted_pool), sum(r["high"] for r in counted_pool)
     lo_ai, hi_ai = sum(r["low"] for r in ai), sum(r["high"] for r in ai)
@@ -392,14 +410,14 @@ def main():
     n_nom = sum(1 for r in rows if r["label"] == "NOMINAL")
     n_stated0 = len(nopass)
 
-    # chance of 3 or more passes by luck in the counted pool, Poisson-binomial
+    # Chance of at least the recorded count by luck in the counted pool, Poisson-binomial.
     def p_at_least(ps, k):
         dist = [1.0]
         for p in ps:
             dist = [a * (1 - p) + (dist[i - 1] * p if i else 0) for i, a in enumerate(dist)] + [dist[-1] * p]
         return sum(dist[k:])
-    p3_lo = p_at_least([r["low"] for r in counted_pool], 3)
-    p3_hi = p_at_least([r["high"] for r in counted_pool], 3)
+    tail_lo = p_at_least([r["low"] for r in counted_pool], n_pass)
+    tail_hi = p_at_least([r["high"] for r in counted_pool], n_pass)
 
     closed = closed_before_prices()
     kinds = {}
@@ -419,6 +437,9 @@ def main():
     yrs48_got = find("docs/research/103_replay_48_muni_cef_january.md", r"Positive years \| at least (\d+ of \d+) above zero \| (\d+ of \d+)", 2)
     t20 = float(find("docs/research/71_replay_20_upbit_listing_short.md", r"Per-trade t at least 2\.0 \| ([0-9.]+)"))
     share26 = find("docs/research/71_replay_20_upbit_listing_short.md", r"2026 averaged [^.]*\.\d% and supplied (\d+)% of the summed net returns")
+    yrs75 = find(PLAN75_RESULT, r"MEASURED: ([Oo]ne of three) calendar years was positive").lower()
+    harsh75 = find(PLAN75_RESULT, r"At 145 bp a side: (-[0-9.]+%) and -[0-9.]+%")
+    spread75 = find(PLAN75_RESULT, r"the two differ by ([0-9.]+) percentage points on the net return", flags=re.I)
     corr53 = find("docs/research/122_replay_53_taxable_fund_january_rebound.md", r"Pearson correlation with the \[Replay 48[^)]*\)\s*was ([+0-9.]+)")
     hs = find("docs/research/74_round_10_forced_flow_ideas.md", r"Hartley and Schwarz cover (\d{4} to \d{4}) Treasuries")
     ov48 = find("research_rig/PREREG_48_muni_cef_tax_loss.md", r"(Turns 2016 to 2019 overlap[^.]*\.)")
@@ -441,18 +462,18 @@ def main():
 
     L = []
     w = L.append
-    w("# 140. False-pass audit: how many of our 3 passes could be luck")
+    w(f"# 140. False-pass audit: how many of our {n_pass} passes could be luck")
     w("")
     w(f"Written {clock} by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.")
     w("")
-    w("Labels: MEASURED means a no-edge pass rate counted on made-up data by the plan's own pre-run file. MEASURED, one mark means only one of the marks was counted that way, so the all-mark rate is lower. NOMINAL means no rate was measured; the figure is the textbook tail of the plan's mark (a one-sided normal tail for a t of 2, or a percentile tail), worked out here, not measured. STATED means taken from a plan or results page as written. UNKNOWN means not on the repo.")
+    w("Labels: MEASURED means a no-edge pass rate counted on made-up data and recorded in a plan file or audit record. MEASURED, one mark means only one of the marks was counted that way, so the all-mark rate is lower. NOMINAL means no rate was measured; the figure is the textbook tail of the plan's mark (a one-sided normal tail for a t of 2, or a percentile tail), worked out here, not measured. STATED means taken from a plan or results page as written. INFERENCE means a reading of the evidence. UNKNOWN means not on the repo.")
     w("")
     w("## Headline")
     w("")
-    w(f"- Expected passes by luck across all {len(rows)} scored tests: low {lo_all:.2f}, high {hi_all:.2f}. Counted passes: 3.")
-    w(f"- About half of the high figure comes from the {len(ai)} AI time-machine tests ({lo_ai:.2f} to {hi_ai:.2f}). Their marks were loose (a model above the 80th or 90th percentile of its own twins), but a clearing there is reported as shown, never as a counted pass, so they cannot explain the 3.")
-    w(f"- Expected luck passes in the {len(counted_pool)} trading tests that could give a counted pass: low {lo_c:.2f}, high {hi_c:.2f}. Against 3 seen, that is {3 / hi_c:.1f} to {3 / lo_c:.1f} times what luck alone gives.")
-    w(f"- Chance of 3 or more passes by luck alone in those {len(counted_pool)}: {pct(p3_lo)} on the low figures, {pct(p3_hi)} on the high figures (independent tests assumed; the month-end tests share windows, which widens this).")
+    w(f"- Expected passes by luck across all {len(rows)} scored tests: low {lo_all:.2f}, high {hi_all:.2f}. Counted passes: {n_pass}.")
+    w(f"- About half of the high figure comes from the {len(ai)} AI time-machine tests ({lo_ai:.2f} to {hi_ai:.2f}). Their marks were loose (a model above the 80th or 90th percentile of its own twins), but a clearing there is reported as shown, never as a counted pass, so they cannot explain the {n_pass} counted passes.")
+    w(f"- Expected luck passes in the {len(counted_pool)} trading tests that could give a counted pass: low {lo_c:.2f}, high {hi_c:.2f}. The {n_pass} seen is {n_pass / hi_c:.1f} to {n_pass / lo_c:.1f} times what luck alone gives.")
+    w(f"- Chance of {n_pass} or more passes by luck alone in those {len(counted_pool)}: {pct(tail_lo)} on the low figures, {pct(tail_hi)} on the high figures (independent tests assumed; the month-end tests share windows).")
     w(f"- Rates: {n_meas} tests have a measured all-mark no-edge rate, {n_one} have one measured mark only, {n_nom} have no measured rate (UNKNOWN) and are bracketed by the nominal tail of their own t or percentile mark as the high and a stated low of {LOW_ASSUME} per test, and {n_stated0} could not pass at all (design only, inconclusive by design, a cost gate).")
     w(f"- Ideas closed before any return on count, power, cost, coverage, validation or feasibility: {len(closed)} ({kinds.get('count', 0)} on count, {kinds.get('power', 0)} on power). They had no chance to pass by luck, so they add nothing to the luck figure.")
     w("")
@@ -476,15 +497,15 @@ def main():
     w("")
     w(f"Results are copied from `{SCORECARD}`. Results pages are those cited there.")
     w("")
-    w("## How that compares with 3")
+    w(f"## How that compares with {n_pass}")
     w("")
-    w(f"- MEASURED and NOMINAL together: luck alone would give about {lo_c:.2f} to {hi_c:.2f} counted passes, so 3 is more than luck predicts even on the high figures.")
-    w(f"- It is not far more. On the high figures 3 or more by luck happens {pct(p3_hi)} of the time. One of the three being luck is quite possible; all three being luck is unlikely.")
+    w(f"- MEASURED and NOMINAL together: luck alone would give about {lo_c:.2f} to {hi_c:.2f} counted passes, compared with {n_pass} observed.")
+    w(f"- INFERENCE: on the high figures {n_pass} or more by luck happens {pct(tail_hi)} of the time if tests are independent. That is not the probability any specific pass was luck.")
     met_marks = [by[k] for k in (11, 33, 31)]
-    w("- Three other results met their own marks and were not counted: " + "; ".join(f"{r['test']} ({r['result']})" for r in met_marks) + ". Counting every result that met its marks, {3 + len(met_marks)} of 44 cleared, against a luck figure of "
-      f"{lo_all:.2f} to {hi_all:.2f}. Read that way the scoreboard is close to what luck gives.")
+    w(f"- {len(met_marks)} other results met their own marks and were not counted: " + "; ".join(f"{r['test']} ({r['result']})" for r in met_marks)
+      + f". Counting those too, {n_pass + len(met_marks)} of {len(rows)} cleared, against {lo_all:.2f} to {hi_all:.2f} expected by luck.")
     w("")
-    w("## The three passes")
+    w(f"## The {n_pass} counted passes")
     w("")
     w("### Replay 25, TLT over the last three sessions of the month")
     w("")
@@ -511,7 +532,7 @@ def main():
     w(f"- Relatives (MEASURED): {fam([40])}. Its yearly results had a correlation of {corr53} with Replay 48 (`docs/research/122_replay_53_taxable_fund_january_rebound.md`), so it is a near copy that failed on breadth. Three more tax-loss relatives (preferreds, BDCs, Plan 54) were closed on power before prices.")
     w(f"- Overlap with the source sample (STATED, `research_rig/PREREG_48_muni_cef_tax_loss.md`): {ov48}")
     w(f"- Forward log (STATED, `practice/traders/E04_muni_cef_january_watch.md`): E04, pretend entry {e04_entry}, judged {e04_exit}. MEASURED: no E04 record yet.")
-    w("- Trust today: the best-founded of the three (a measured null near 4%, six of ten turns outside the paper), but ten turns at the edge of its breadth mark and a near copy that failed; one more January is the next real evidence.")
+    w("- Trust today: well founded on a measured null near 4% and six of ten turns outside the paper, but ten turns at the edge of its breadth mark and a near copy that failed; one more January is the next real evidence.")
     w("")
     w("### Replay 20, short after an Upbit listing red day")
     w("")
@@ -524,7 +545,15 @@ def main():
     w(f"- Relatives that did not pass (MEASURED): {fam([35, 36, 37, 41, 42])}. Crypto short rules: {fam([15])}.")
     w(f"- Overlap with the source (STATED, plan): \"{viewed20}\" \"{sel20}\" The source's own sample period is UNKNOWN on the repo. The window is wholly inside what the source author looked at.")
     w(f"- Forward log (STATED): no pretend-money log; the desk roster says \"{noshort}\" (`practice/traders/ROSTER.md`). Queue row 49: {q49}; it logs listings, not returns.")
-    w("- Trust today: least of the three; the null was low but the dates were already seen, the rule was picked by its author after viewing results, most of the gain is from one partial year, and there is no US-reachable forward check.")
+    w("- Trust today: low for a new market; the null was low but the dates were already seen, the rule was picked by its author after viewing results, most of the gain is from one partial year, and there is no US-reachable forward check.")
+    w("")
+    w("### Plan 75, coin trends with a rising stop")
+    w("")
+    w(f"- No-edge pass rate: {by[45]['label']}, {pct(by[45]['low'])} (upper {pct(by[45]['high'])}) in the independent audit's made-up worlds (`{PLAN75_RESULT}`).")
+    w(f"- MEASURED (`{PLAN75_RESULT}`): all four frozen marks passed, but the rule made money in only {yrs75} calendar years. At 145 bp a side, shown only, net was {harsh75}.")
+    w(f"- MEASURED: the independent recompute also passed every mark. An ambiguity about when to start tracking the signal explains about one percentage point of the difference; the two net figures were {spread75} points apart.")
+    w(f"- STATED (`{PLAN75_RESULT}`): Binance USDT bars stood in for a US venue, and the coins were picked with hindsight. E10 is being built to log live US venue quotes with pretend money; no forward check yet.")
+    w("- INFERENCE, trust today: the thinnest pass by size. The sign changes at higher costs, so measure live costs and order sizes before taking the gain at face value.")
     w("")
     w("## Ideas closed before a return")
     w("")
@@ -547,11 +576,11 @@ def main():
     w("")
     w("- The all-mark no-edge rate for every NOMINAL row; only the t or percentile mark was used.")
     w("- How correlated the month-end tests are with each other.")
-    w("- Any forward month for E01 or E04; none has happened yet.")
+    w("- Any forward result for E01, E04 or E10; none is on record yet.")
     w("")
     OUT.write_text("\n".join(L).rstrip() + "\n", encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}: all{len(rows)} {lo_all:.3f}-{hi_all:.3f}, pool{len(counted_pool)} {lo_c:.3f}-{hi_c:.3f}, "
-          f"p3 {p3_lo:.4f}-{p3_hi:.4f}, measured {n_meas}, one-mark {n_one}, nominal {n_nom}, nopass {n_stated0}, closed {len(closed)} {kinds}")
+          f"p(at least {n_pass}) {tail_lo:.4f}-{tail_hi:.4f}, measured {n_meas}, one-mark {n_one}, nominal {n_nom}, nopass {n_stated0}, closed {len(closed)} {kinds}")
 
 
 if __name__ == "__main__":
