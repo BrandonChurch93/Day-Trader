@@ -347,6 +347,7 @@ Working papers.
 | `timemachine/PLAN_TM03_bitcoin_dial.md` | Plan for the third AI replays: each model sets once a day how much bitcoin to hold, starting fully invested. Marks fixed before any session | CURRENT |
 | `timemachine/PLAN_TM04_stock_basket.md` | Plan for the fourth AI replays: each model names once a week eight of 38 stocks to hold. Marks fixed before any session | CURRENT |
 | `timemachine/PLAN_TM06_hot_coin_swing.md` | Plan for the owner's method in two parts tested apart: a daily picker of hot coins and an hourly swing trader, with a control run of the futures book first. Marks fixed before any session | CURRENT |
+| `timemachine/TM06R_addendum.md` | Addendum to plan TM06 that repeats the Claude Fable 5.2 picker twice more on the same eight months, with the marks for repeats, did not repeat and mixed fixed before the sessions | CURRENT |
 | `timemachine/tm06_fix_weeks.py` | Works out once, from daily bars, the four test weeks and the five coins of each swing session in plan TM06 | CURRENT |
 | `timemachine/tm06.py` | Plan TM06's tools: the fast tape's funding and open interest as of the wake, picker sessions (part P), swing sessions (part S), the 15-minute reversal control, and their yardsticks, twins and carried leverage | CURRENT |
 | `timemachine/score_tm06.py`, `timemachine/results_tm06.json` | Scores plan TM06 from the finished TM06 sessions: each at every fee level, its yardsticks, its twins' percentile, trades, time in market and forced close-outs; swing sessions also at 2x and 3x. The JSON is its stored output | CURRENT |
