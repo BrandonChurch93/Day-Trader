@@ -8,6 +8,7 @@ setup "$@"
 [ $# = 7 ] || usage
 NONCE=$5; SIB=$6; BEARER=$7
 [[ $NONCE =~ ^[0-9a-f]{32}$ ]] || usage
+bearer_file "$BEARER"
 stop_listener
 ops probe stopped "$SESSION" "$PORT" "$NONCE" "$SIB" "$BEARER"
 ops entries "$SESSION" "$PORT" "$NONCE"

@@ -14,7 +14,7 @@ worker probe run here through runuser is host-uid evidence, not proof of the hos
   probe PHASE SID PORT NONCE SIBLING BEARER            root: isolation probe as the worker uid, four canaries
   new-go-id                                            root, once: id for the lead's one TM09_GO line (lead ruling)
   approve-build|approve-run AUTH_ID FIELDS_JSON        root, once per stage: fixture-build or run capsule, only if the pinned release
-                                                       ledger row 222 ends exactly TM09_GO=AUTH_ID |, records the ledger
+                                                       ledger row 222 final cell ends with the lead's approval wording and TM09_GO=AUTH_ID (engine parser), records the ledger
                                                        sha256; A or B also needs the engine's signed Stage 1 check
                                                        naming that branch (no second go line, same release)
   preflight MODE [RUN_CAPSULE EXPORT_DIR]              root: canaries exist; production: signed stage file set matches
@@ -288,7 +288,7 @@ def main(argv):
                 OPS/f"{sid}-{nonce}-launch.json")
     elif cmd == "probe":
         phase,sid,port,nonce,sibling,bearer = a[0],a[1],int(a[2]),a[3],a[4],a[5]
-        if phase not in ("live","stopped") or not NONCE.fullmatch(nonce):
+        if phase not in ("live","stopped") or not NONCE.fullmatch(nonce) or not Path(bearer).is_absolute():
             raise ValueError("bad probe arguments")
         launch_sha256 = h(read_private(OPS/f"{sid}-{nonce}-launch.json"))
         run = subprocess.run(["/usr/sbin/runuser","-u",WORKER,"--","env","-i","PATH=/usr/bin:/bin","/usr/bin/python3.14","-B",
@@ -361,7 +361,7 @@ def main(argv):
         stopped_raw = read_private(OPS/f"{sid}-{nonce}-stopped-probe.json")
         capsule("ledger-222-tm09-review",dict(session=sid,port=port,nonce=nonce,control_sha256=fingerprint(control),
                 post_stop_probe_sha256=h(stopped_raw),sudo_review_sha256=h(raw),sudo_allowlist_reviewed=True,
-                raw_copies_denied=True,listener_stopped=True),OPS/f"{sid}-{nonce}-review.json")
+                raw_copies_denied=True,listener_stopped=True,void=False),OPS/f"{sid}-{nonce}-review.json")
     else:
         raise SystemExit(__doc__)
 

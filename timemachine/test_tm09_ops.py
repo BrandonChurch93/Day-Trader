@@ -4,6 +4,7 @@ Invented log lines, nonces, sessions and files only. No sudo, no host path is wr
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 from tempfile import TemporaryDirectory
 import unittest
@@ -91,6 +92,14 @@ class OperatorMatch(unittest.TestCase):
 
     def m(self, lines, recs, canaries=None):
         return om.match(lines, recs, canaries or {}, is_file=is_file)
+
+    def test_review_capsule_states_void_false_only_after_the_refusal(self):
+        src = (TM / 'tm09_ops_sudo.py').read_text()
+        refuse = src.index('if result["void"]:\n            raise ValueError("unlisted sudo entries: not signing a review boundary")')
+        sign = src.index('capsule("ledger-222-tm09-review"')
+        self.assertLess(refuse, sign)
+        self.assertEqual(src.count('capsule("ledger-222-tm09-review"'), 1)
+        self.assertIn('listener_stopped=True,void=False)', src[sign:sign + 400])
 
     def test_exact_argv_full_path_and_run_as(self):
         rec = [{'time': '17:50:00', 'argv': ['-u', 'tm09desk', 'kill', '-TERM', '4376']}]
@@ -403,6 +412,8 @@ class Shell(unittest.TestCase):
         (d / 'oplog').write_text('')
         (d / 'oplog').chmod(0o600)
         (d / 'sudo.log').write_text('')
+        self.bearer = str(d / 'b')
+        (d / 'b').write_text('{}')
         free = socket.socket()
         free.bind(('127.0.0.1', 0))
         self.free_port = free.getsockname()[1]
@@ -427,14 +438,22 @@ class Shell(unittest.TestCase):
         calls = (d / 'calls').read_text().splitlines() if (d / 'calls').exists() else []
         return r, calls
 
+    def test_bearer_must_be_absolute_before_any_side_effect(self):
+        for bad in ('b', 'wk/b.json', str(self.d / 'missing')):
+            for script, args in (('tm09_launch.sh', ('price_scout', SID, '8801', SIB, bad)),
+                                 ('tm09_review.sh', ('price_scout', SID, '8801', N1, SIB, bad))):
+                r, calls = self.run_sh(script, *args)
+                self.assertEqual((r.returncode, calls), (2, []), (script, bad, r.stderr))
+                self.assertIn('BEARER_FILE must be an absolute path', r.stderr)
+
     def test_mode_must_be_named(self):
         for mode in (None, '', 'study', '--rehearsal'):
-            r, calls = self.run_sh('tm09_launch.sh', 'price_scout', SID, '8801', SIB, '/tmp/b', mode=mode)
+            r, calls = self.run_sh('tm09_launch.sh', 'price_scout', SID, '8801', SIB, self.bearer, mode=mode)
             self.assertEqual((r.returncode, calls), (2, []), mode)
 
     def test_production_needs_approval_and_export_for_every_role(self):
         for role in ('price_scout', 'boss m P1', 'news_scout'):
-            r, calls = self.run_sh('tm09_launch.sh', role, SID, '8801', SIB, '/tmp/b', mode='production',
+            r, calls = self.run_sh('tm09_launch.sh', role, SID, '8801', SIB, self.bearer, mode='production',
                                    extra=dict(TM09_APPROVAL='/var/lib/tm09/ops-v2/run.json'))
             self.assertEqual((r.returncode, calls), (2, []), role)
 
@@ -445,24 +464,27 @@ class Shell(unittest.TestCase):
         s.bind(('127.0.0.1', self.free_port))
         s.listen()
         self.addCleanup(s.close)
-        for script, args in (('tm09_launch.sh', ('price_scout', SID, '8801', SIB, '/tmp/b')),
-                             ('tm09_review.sh', ('price_scout', SID, '8801', N1, SIB, '/tmp/b'))):
+        for script, args in (('tm09_launch.sh', ('price_scout', SID, '8801', SIB, self.bearer)),
+                             ('tm09_review.sh', ('price_scout', SID, '8801', N1, SIB, self.bearer))):
             r, calls = self.run_sh(script, *args)
             self.assertEqual((r.returncode, calls), (3, []), script)
 
     def test_roles_and_arms(self):
         for args in (('--role price_scout', SID, '8801'), ('boss m', SID, '8801'), ('boss m X', SID, '8801'), ('boss m P4', SID, '8801'),
                      ('price_scout', 'TM07-x', '8801'), ('price_scout', SID, '8781')):
-            r, calls = self.run_sh('tm09_launch.sh', *args, SIB, '/tmp/b')
+            r, calls = self.run_sh('tm09_launch.sh', *args, SIB, self.bearer)
             self.assertEqual((r.returncode, calls), (2, []), args)
         for arm in ('P1', 'P2', 'P3', 'N', 'N1', 'N2', 'N3'):
             (self.d / 'calls').unlink(missing_ok=True)
-            r, calls = self.run_sh('tm09_launch.sh', 'boss m ' + arm, SID, '8801', SIB, '/tmp/b')
+            shutil.rmtree(self.d / 'logs', ignore_errors=True)   # no ready line left from the previous arm
+            r, calls = self.run_sh('tm09_launch.sh', 'boss m ' + arm, SID, '8801', SIB, self.bearer)
             self.assertEqual(r.returncode, 0, arm + r.stderr)
-            self.assertIn('--arm ' + arm + ' ', calls[2])
+            launches = [c for c in calls if ' launch ' in c]
+            self.assertEqual(len(launches), 1, arm)
+            self.assertIn('--arm ' + arm + ' ', launches[0])
 
     def test_launch_wiring(self):
-        r, calls = self.run_sh('tm09_launch.sh', 'boss claude_fable_5_2 N', SID, '8803', SIB, '/tmp/b')
+        r, calls = self.run_sh('tm09_launch.sh', 'boss claude_fable_5_2 N', SID, '8803', SIB, self.bearer)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(calls[0].startswith('env -i ') and calls[0].endswith('tm09_ops_sudo.py preflight rehearsal'))
         self.assertTrue(calls[1].endswith(f'tm09_ops_sudo.py checkpoint {SID} 8803'))
@@ -470,36 +492,36 @@ class Shell(unittest.TestCase):
                          f'--port 8803 --boundary /var/lib/tm09/ops-v2/{SID}-{N1}-launch.json --canary-proof /var/lib/tm09/ops-v2/{SID}-{N1}-proof.json '
                          f'--rehearsal --root /var/lib/tm09 --key-file /var/lib/tm09/operator.key '
                          f'--approval /var/lib/tm09/ops-v2/rehearsal-approval.json --week 2026-09-07')
-        self.assertTrue(calls[3].endswith(f'probe live {SID} 8803 {N1} {SIB} /tmp/b'))
+        self.assertTrue(calls[3].endswith(f'probe live {SID} 8803 {N1} {SIB} {self.bearer}'))
         self.assertIn('ready, live probe passed', r.stdout)
 
     def test_failed_live_probe_stops_only_this_generation(self):
         (self.d / 'probe_fails').touch()
-        r, calls = self.run_sh('tm09_launch.sh', 'price_scout', SID, '8801', SIB, '/tmp/b')
+        r, calls = self.run_sh('tm09_launch.sh', 'price_scout', SID, '8801', SIB, self.bearer)
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual(calls[-1], 'kill -TERM 4242')
         self.assertIn(f'--boundary /var/lib/tm09/ops-v2/{SID}-{N1}-launch.json', (self.d / 'pgrep_calls').read_text())
 
     def test_production_wiring_has_no_live_probe(self):
         x = dict(TM09_APPROVAL='/var/lib/tm09/ops-v2/run.json', TM09_EXPORT_DIR='/var/lib/tm09/export')
-        r, calls = self.run_sh('tm09_launch.sh', 'news_scout', SID, '8802', SIB, '/tmp/b', mode='production', extra=x)
+        r, calls = self.run_sh('tm09_launch.sh', 'news_scout', SID, '8802', SIB, self.bearer, mode='production', extra=x)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(calls[0].endswith('preflight production /var/lib/tm09/ops-v2/run.json /var/lib/tm09/export'))
         self.assertIn('launch --role news_scout --export-dir /var/lib/tm09/export --port 8802', calls[2])
         self.assertNotIn('--rehearsal', calls[2])
         self.assertFalse(any(' probe ' in c for c in calls))
         (self.d / 'calls').unlink()
-        r, calls = self.run_sh('tm09_review.sh', 'news_scout', SID, '8802', N1, SIB, '/tmp/b', mode='production', extra=x)
+        r, calls = self.run_sh('tm09_review.sh', 'news_scout', SID, '8802', N1, SIB, self.bearer, mode='production', extra=x)
         self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
         self.assertTrue(any(c.endswith(f'review production {SID} 8802 {N1} /var/lib/tm09/TM09-2026-09-07-news_scout '
                                        f'/var/lib/tm09/control/{SID}-{N1}-operator-sudo.json') for c in calls))
 
     def test_review_wiring(self):
-        r, calls = self.run_sh('tm09_review.sh', 'boss m P1', SID, '8804', N1, SIB, '/tmp/b')
+        r, calls = self.run_sh('tm09_review.sh', 'boss m P1', SID, '8804', N1, SIB, self.bearer)
         self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
         self.assertEqual(calls[0], 'kill -TERM 4242')
         self.assertIn(f'--port 8804 --boundary /var/lib/tm09/ops-v2/{SID}-{N1}-launch.json', (self.d / 'pgrep_calls').read_text())
-        self.assertTrue(calls[1].endswith(f'probe stopped {SID} 8804 {N1} {SIB} /tmp/b'))
+        self.assertTrue(calls[1].endswith(f'probe stopped {SID} 8804 {N1} {SIB} {self.bearer}'))
         self.assertTrue(calls[2].endswith(f'entries {SID} 8804 {N1}'))
         self.assertEqual(calls[3], f'cat /var/lib/tm09/control/{SID}-{N1}.entries.json')
         self.assertTrue(calls[4].endswith('canaries'))
@@ -514,8 +536,8 @@ class Shell(unittest.TestCase):
     def test_whole_session_sudo_lines_all_listed_by_the_real_matcher(self):
         """launch then review through the real scripts; the sudo log lines they cause, cut from the checkpoint up to the
         entries step, all match the real matcher's records and the real TM07-derived review, so nothing voids."""
-        for script, args in (('tm09_launch.sh', ('boss claude_fable_5_2 N2', SID, '8803', SIB, '/tmp/b')),
-                             ('tm09_review.sh', ('boss claude_fable_5_2 N2', SID, '8803', N1, SIB, '/tmp/b'))):
+        for script, args in (('tm09_launch.sh', ('boss claude_fable_5_2 N2', SID, '8803', SIB, self.bearer)),
+                             ('tm09_review.sh', ('boss claude_fable_5_2 N2', SID, '8803', N1, SIB, self.bearer))):
             r, _ = self.run_sh(script, *args)
             self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
         listed = json.loads((self.d / 'logs' / f'review-{SID}-{N1}' / 'operator-sudo.json').read_text())
