@@ -700,6 +700,7 @@ Working papers.
 | `practice/forward/M133_log.json` | Measurement 133 public count and aggregate status | RECORD |
 | `practice/measure_134.py`, `practice/test_measure_134.py` | Measurement 134 recorder and invented-data checks | CURRENT |
 | `practice/forward/M134_log.json` | Measurement 134 public counts and status only | RECORD |
+| `practice/measure_135.py`, `practice/test_measure_135.py` | Ledger 236 once-only Binance.US USD book-cost spot check and invented-book tests | CURRENT |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 
