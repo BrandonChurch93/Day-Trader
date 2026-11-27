@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-27 00:01 UTC
+Last updated: 2026-11-27 00:03 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- 2026-11-26 5:03 PM MT: the [data source terms audit](research/194_data_source_terms_audit.md) is in, second-checked by a different helper who re-opened all 36 cited pages and made five verdicts harder. Barred without consent for our use: Coinbase market data, Kalshi, CoinMarketCap, Polymarket for US users. Allowed for private use with no passing on of raw data: Kraken, Gemini, Alpaca. Bitstamp allows statistics based on its data. Binance.US is UNKNOWN in full: only commercial use is barred on the pages that opened, and its full terms did not open. This is a reading of the pages, not legal advice. The lead agent paused the practice desk on GitHub's timer (it publishes Alpaca prices and order records to a public branch every ten minutes); the workflow is disabled and can be turned back on.
 - 2026-11-26 5:00 PM MT: the fourth rehearsal of the news-reading time machine (TM09, made-up data) was ruled CLEAR by the independent auditor, for the rehearsal only (ledger 222). A real run is not authorized: the auditor still requires a shown no-web boundary for hosted workers, provider terms on training and logging, data rights (written clearance from Alpaca for hosted use of its headlines) and a signed docket.
 - 2026-11-26 4:58 PM MT, the lead agent: a file of 427 raw order book quote rows from Binance.US, Kraken and Gemini (an early sample behind research document 09) was taken out of the current version of the repo and kept privately, under the rule that raw data is never published. Earlier versions in the repo history still hold it; the history is not rewritten. The summary figures in document 09 stay.
 - 2026-11-26 4:57 PM MT, the lead agent: the two roster watchers that are off the repo were changed and restarted. The product-status watcher now reads Kraken only (Coinbase leg removed). The Upbit forward watcher no longer checks Coinbase or Kalshi product lists when a listing appears (Kraken only). Replacements for the stopped loggers are registered and being built on Binance.US data only: card E12 (ledger 230), card E13 (ledger 231), Measurement 133 (ledger 232). No quote has been read for them.
