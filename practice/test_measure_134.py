@@ -2,8 +2,10 @@
 
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+import fcntl
 import io
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -101,6 +103,25 @@ def current(p):
     return bx.read_log(p)[-1]
 
 
+def scratch_transport(lab, clock, opener, *, pace=None, raw_clock=None):
+    gate = m.TimedGate(lab.parent / "scratch_gate" / "cooldown.json", clock=clock)
+    assert gate.check_start() == 0
+    pages = bx.PublicPages(gate=gate, opener=opener, clock=raw_clock or clock,
+                          sleep=pace or clock.sleep, monotonic=clock.mono)
+    return pages, gate
+
+
+def reply(data, status=200):
+    response = io.BytesIO(json.dumps(data).encode())
+    response.status, response.headers = status, {}
+    return response
+
+
+def pair_metadata():
+    return {"symbols": [{"baseAsset": coin, "quoteAsset": "USD", "symbol": coin + "USD", "status": "TRADING"}
+                        for coin in bx.COINS]}
+
+
 def test_inherits_133_without_reading_its_log():
     _, st = m.settings()
     assert st["sizes_usd"] == [25, 250] and st["coins"] == bx.COINS and len(st["coins"]) == 20
@@ -164,6 +185,65 @@ def test_all_window_busy_counts_all_books_lost(lab):
     assert len(result["books"][bx.VENUE]) == len(bx.COINS)
     assert {b["status"] for b in result["books"][bx.VENUE].values()} <= {"shared_gate_busy", "wake_window_elapsed"}
     assert m.summarize(bx.read_log(lab))["wake_counts"]["partial"] == 1
+
+
+def test_real_gate_late_admission_does_not_cut_off_reply(lab):
+    clock = Clock()
+    observed = []
+
+    class Wire:
+        def open(self, req, **_kw):
+            if "exchangeInfo" in req.full_url:
+                sent = clock.elapsed
+                clock.sleep(0.5)
+                observed.append((sent, clock.elapsed))
+                return reply(pair_metadata())
+            if "klines" in req.full_url:
+                return reply(candle_rows(H))
+            return reply(depth())
+
+    pages, gate = scratch_transport(lab, clock, Wire())
+    lock = gate.cooldown_path.parent / ".gate.lock"
+    with os.fdopen(bx.private_open(lock, os.O_RDWR), "rb") as fd:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        waited = []
+
+        def permit(seconds):
+            waited.append(seconds)
+            clock.sleep(19.75)
+            fcntl.flock(fd, fcntl.LOCK_UN)
+
+        tick(lab, pages, clock, permit)
+    assert waited == [0.25] and observed == [(19.75, 20.25)]
+    rows = bx.read_log(lab)
+    inventory = next(r for r in rows if r["kind"] == "pairs")
+    assert inventory["status"] == "ok" and inventory["pairs"] == statuses()
+    assert m.summarize(rows)["book_counts"][bx.VENUE]["ok"] == len(bx.COINS)
+
+
+def test_accepted_clock_edge_discards_actual_path_reply(lab):
+    clock = Clock()
+    sent = []
+
+    def transport_sample():
+        if not sent:
+            # PublicPages takes its own clock sample after the guarded gate
+            # yields. Shift that UTC clock before the synthetic opener runs.
+            clock.utc = H + timedelta(seconds=435)
+        return clock()
+
+    class Wire:
+        def open(self, req, **_kw):
+            sent.append(clock())
+            return reply(pair_metadata())
+
+    pages, gate = scratch_transport(lab, clock, Wire(), raw_clock=transport_sample)
+    tick(lab, pages, clock)
+    assert sent == [H + timedelta(seconds=435)]
+    assert not (gate.cooldown_path.parent / bx.INFLIGHT).exists()
+    rows = bx.read_log(lab)
+    assert rows[-2]["status"] == "untrusted_utc_clock" and rows[-2]["pairs"] == {}
+    assert rows[-1]["reason"] == "pair_inventory_unavailable"
 
 
 def test_first_inventory_exhausted_is_never_replaced(lab):
@@ -261,6 +341,26 @@ def test_timeout_bad_reply_and_http_failure_are_book_losses(lab):
     tick(lab, Pages(clock, book_response=invented), clock)
     out = current(lab)["books"][bx.VENUE]
     assert [out[c]["status"] for c in bx.COINS[:4]] == ["transport_failure", "bad book", "no_usd_book", "ok"]
+
+
+def test_every_http_500_book_is_counted_and_wake_is_partial(lab):
+    clock = Clock()
+    tick(lab, Pages(clock), clock)
+    clock = Clock(1)
+
+    class Wire:
+        def open(self, req, **_kw):
+            if "klines" in req.full_url:
+                return reply(candle_rows(H + bx.HOUR))
+            assert "depth" in req.full_url
+            return reply({}, 500)
+
+    pages, _ = scratch_transport(lab, clock, Wire())
+    tick(lab, pages, clock)
+    status = m.summarize(bx.read_log(lab))
+    assert status["book_counts"][bx.VENUE]["http_500"] == len(bx.COINS)
+    assert status["wake_counts"]["wake"] == 2
+    assert status["wake_counts"]["partial"] == status["wake_counts"]["no_valid_books"] == 1
 
 
 @pytest.mark.parametrize("fault", [bx.GateStorage, bx.GateUncertain, bx.GateGeneration])

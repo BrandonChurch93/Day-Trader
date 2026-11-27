@@ -14,7 +14,7 @@ from pathlib import Path
 import yaml
 
 import venue_binance_us as bx
-from forward_e14 import TimedGate, WakeClock, literal_git, request, require_go
+from forward_e14 import TimedGate, WakeClock, literal_git, require_go
 from venue_binance_us import (
     ROOT, COINS, HOUR, VENUE, Blocked, Failure, PublicPages, Refuse,
     anchor_state, append, atomic_json, checked_dir, closed_klines,
@@ -32,6 +32,50 @@ GROUPS = ("all", "midnight_utc", "btc_drop")
 
 PINNED = ("practice/measure_134.py", "practice/forward_e14.py", "practice/venue_binance_us.py", "config/thresholds.yaml",
           "docs/research/202_measurement_134_binance_us_cost.md", "research_rig/GRID_70.json")
+
+
+def request(pages, fetch, start_at, close, timing, sleep, busy_s, *, stamped=False):
+    """Cap unsent admission separately from the shared HTTP receipt deadline."""
+    _, began = timing.sample()
+    busy = False
+    gate = getattr(pages, "gate", None)
+
+    def admission():
+        now, elapsed = timing.sample()
+        if now < start_at:
+            raise Failure("wake_window_not_open")
+        if now >= close:
+            raise Failure("shared_gate_busy" if busy else "wake_window_elapsed")
+        remaining = busy_s - (elapsed - began)
+        if remaining <= 0:
+            raise Failure("shared_gate_busy")
+        return now, remaining
+
+    try:
+        while True:
+            admission()
+            # TimedGate checks admission during acquisition and under the
+            # mutex. Once admitted, the HTTP timer retains the receipt window.
+            pages.deadline = close
+            if isinstance(gate, TimedGate):
+                gate.before_send = admission
+            try:
+                data = fetch()
+            except Failure as exc:
+                if exc.reason != "shared_gate_busy":
+                    raise
+                busy = True
+                now, remaining = admission()
+                sleep(min(0.25, remaining, (close - now).total_seconds()))
+            else:
+                received, _ = timing.sample()
+                if not start_at <= received <= close:
+                    raise Failure("late book" if received > close else "wake_window_not_open")
+                return (data, received) if stamped else data
+    finally:
+        if isinstance(gate, TimedGate):
+            gate.before_send = None
+        pages.deadline = None
 
 
 def settings():
@@ -183,8 +227,7 @@ def record_locked(off, pages, clock, rows=None, *, sleep=time.sleep, monotonic=t
         append(off, rows, kind="begin", wake=stamp, made_utc=iso(claim_time))
 
         def fetch(fn, *, stamped=False):
-            return request(pages, fn, limit, clock, sleep, st["busy_wait_s"], not_before=wake,
-                           stamped=stamped, timing=timing)
+            return request(pages, fn, wake, limit, timing, sleep, st["busy_wait_s"], stamped=stamped)
 
         if pairs is None:
             try:
@@ -279,12 +322,11 @@ def summarize(rows, *, full=False):
             continue
         signal = row["bitcoin"]
         btc_counts[signal["status"]] += 1
-        missed = {"wake_window_elapsed", "late book", "shared_cooldown", "shared_gate_busy", "untrusted_utc_clock",
-                  "transport_failure", "bad book", "invalid_candle"}
-        if (signal["status"] in missed
-                or any(b["status"] in missed
-                       for books in row["books"].values() for b in books.values())):
+        usable = sum(book["status"] == "ok" for books in row["books"].values() for book in books.values())
+        if signal["status"] != "ok" or usable < len(st["coins"]):
             wake_counts["partial"] += 1
+        if usable == 0:
+            wake_counts["no_valid_books"] += 1
         groups = ["all"]
         if parse(row["wake"]).hour == 0:
             groups.append("midnight_utc")
