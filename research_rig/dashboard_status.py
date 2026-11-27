@@ -183,3 +183,23 @@ def scoreboard(markdown, findings, gh):
     latest = dated + [row for row in reversed(base) if row not in dated]
     return dict(tests=tests, passed=len(passes), did_not_pass=tests - len(passes),
                 passes=passes, latest=latest[:5])
+
+
+TM_HOLD = re.compile(r"^ {0,3}- HOLD by the lead agent, (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT): the time machine study (TM\d+) "
+                     r"stops after week (\d+) round (\w+) \(ledger (\d+)\)\. Its price tape is Coinbase candles\b.*?"
+                     r"Coinbase's terms bar using its market data to benchmark an agent without written consent", re.M)
+
+
+def tm_hold(markdown):
+    """The time machine hold note from a STATUS.md "HOLD by the lead agent" bullet, in plain words, with no weekly figure.
+    None when no such bullet exists; refuses a HOLD bullet about a time machine study that no longer fits the words."""
+    m = TM_HOLD.search(markdown)
+    if not m:
+        if re.search(r"^ {0,3}- HOLD by the lead agent\b.*\bthe time machine study TM\d+", markdown, re.M):
+            raise ValueError("STATUS.md: a time machine HOLD bullet no longer fits the dashboard's words")
+        return None
+    when, study, week, rnd, ledger = m.groups()
+    return dict(id=study, when=when, ledger=ledger, title=f"{study}, the desk test: on hold",
+                text=(f"{study} is on hold after week {week}, round {rnd} (since {when}, ledger {ledger}). "
+                      "Its price data comes from Coinbase, whose terms bar this use without written consent. "
+                      "No weekly result is shown."))

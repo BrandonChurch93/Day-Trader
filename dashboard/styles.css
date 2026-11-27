@@ -509,3 +509,9 @@ table.cols thead th { color: var(--muted); font-weight: 600; font-size: 14px; pa
 table.cols tbody th { color: var(--muted); font-weight: 400; }
 table.cols .n { text-align: right; white-space: nowrap; font-weight: 600; }
 table.cols thead .n { font-weight: 600; }
+
+/* Running now: the state of a row that is stopped, on hold or only registered. */
+.running-state { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 4px; font-size: 13px; font-weight: 600;
+  background: var(--unknown-bg); color: var(--unknown-fg); }
+.running-state.running-stopped { background: var(--mixed-bg); color: var(--mixed-fg); }
+.tm-hold .test-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }

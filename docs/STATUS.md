@@ -355,7 +355,7 @@ On 2026-11-25:
 
 - The data key, saved in the secure form. MEASURED at 16:23 UTC: it returns minute and daily prices for the whole US stock market back to 2016, the bid and ask at any past moment, and dated stock news from 2026-04-29 on and nothing older.
 - The practice account key, added to the repo's secrets at 16:31 UTC. The practice desk ran at 16:31 UTC and its first order filled.
-- He made the repo private at about 16:30 UTC and public again at about 16:40 UTC. The desk's timer is back to every ten minutes and the owner's screen reads the practice records live.
+- He made the repo private at about 16:30 UTC and public again at about 16:40 UTC. The desk's timer went back to every ten minutes then; the lead agent paused the desk on 2026-11-26 at 5:03 PM MT (research document 194).
 
 ## Keeping this page true
 
