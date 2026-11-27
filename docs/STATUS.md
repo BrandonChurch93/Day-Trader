@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-27 00:42 UTC
+Last updated: 2026-11-27 00:48 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- Decision page for the owner ([doc 198](research/198_what_each_unlock_would_open.md), second-checked against the repo's own records: 12 claims confirmed, 22 corrected, 3 not found), 2026-11-26 5:48 PM MT: of the things only he can change, written Coinbase consent is the one that opens real work (finishing time machine TM07 from week 8, new cards on the largest US venue); a private repo does not cure the Alpaca or GitHub terms problems; a futures or margin account does not make the Upbit listing short tradable from the US (1 of 205 notices in 2024 to 2026 had a coin a US account could short at the time) and no short idea has cleared US futures costs; paid data and more capital add no tested edge at this size.
 - Three forward loggers started on Binance.US data, 2026-11-26 5:39 PM MT (pretend money, no account, no order): card E12 (dip-buy rules, ledger 230), card E13 (the Plan 75 trend rule, ledger 231) and Measurement 133 (hourly cost of a small trade for 30 days, ledger 232). They replace E09, E10, E11 and Measurement 132, which were closed unread on Coinbase's data terms; nothing carries over. The independent auditor returned NOT CLEAR four times before CLEAR on build `08ea6cc`; each fault was about behaving well toward the venue or keeping the record honest (one stored slow-down and stop shared by all three, no late fills, a venue stop that an earlier run can never outlive, every retry journaled). MEASURED: 84 made-up tests pass; no result exists yet. Binance.US pages read: the Trading Rules carry no limit on storing market data, the market history page bars services that profit from the data, the API pages mark these endpoints as free to use; the full Terms of Use opened only to its preamble (UNKNOWN in full), so the loggers stop at once if it bars this use.
 - Plan 76 venue decided on time stamps only, 2026-11-26 5:37 PM MT (ledger 229): Bitstamp. MEASURED: 11 of Plan 75's 20 coins have every hourly stamp in 2022 and 2023 there (AAVE, ADA, BCH, BTC, ETH, HBAR, LINK, LTC, SHIB, XLM, XRP); the floor was 10. The other 9 are out for every stage. Fewer coins means fewer signals, so the count stage decides whether the rule can be judged at all. No price has been read.
 - Plan 74 inputs failed their custody audit, 2026-11-26 5:28 PM MT (ledger 226): NOT CLEAR. MEASURED by the independent auditor on 52 companies checked against SEC records: 6 carried another company's bars or the wrong stretch (5 of the 10 sampled reused tickers), because bars were asked for by what a ticker means today. One repair round is under way; a fresh sample of 60 must show at most 2 wrong or the plan closes on data quality. No count, no score, no price read by the scorer.
@@ -351,6 +352,8 @@ Asked 2026-11-26 5:02 PM MT, no rush:
 
 - Whether to ask Coinbase for written consent to use its market data in this project. Without it, the time machine study TM07 stays stopped at week 8 or starts again from zero on another venue's prices as a new study.
 - What to do with Coinbase-based figures already in the public repo (the Plan 73 result and the short logs of E09, E10, E11 and Measurement 132).
+- Optional, asked 2026-11-26 5:12 PM MT: save the full Binance.US Terms of Use as a PDF from his browser; from here it opens only as far as its preamble.
+- A ranked page of what each thing only he can change would open, and what it would not: [doc 198](research/198_what_each_unlock_would_open.md) (second-checked). Its order: ask Coinbase for scoped written consent; keep the repo public and ask Alpaca only for narrow rights if the rebuilt practice desk needs them; put off a Binance.US account until the forward loggers are judged. Futures or margin accounts, paid data and more capital open nothing tested today.
 
 Real money, and the limits for it, are his when that day comes (`docs/DECISIONS.md`, "Not decided yet").
 
