@@ -16,7 +16,8 @@ pick a later roster.
 Walk a fresh post-decision ask for a pretend $250 and sell the resulting base
 amount into the exit bid. The judged line voids missing, refused, late
 (over 120 seconds from the hour) or thin books; keep the slot until its fixed
-exit. Taker fees are STATED at 2 bp per side (BNB/USD 1 bp). Judge once,
+exit. A late first book cannot seed a shown fill, resting bid or trade-page
+request. Taker fees are STATED at 2 bp per side (BNB/USD 1 bp). Judge once,
 at 150 closed valid 70-102 trades or the final wake on November 30, 2027:
 positive net mean, UTC entry-day clustered t of at least 2.0, and positive
 mean omitting the best two trades. Below 60, report too few to judge.
@@ -35,3 +36,5 @@ on row 230 in committed local main. Use `start` to create the private header,
 then `loop` from the frozen worktree. Readout needs a separate `E12_SCORE`
 for the same build. Public output contains counts, timing and cost aggregates
 only; detail is kept in `/home/user/workspace/rig/data/forward_e12`.
+All project Binance.US collectors share a durable cooldown after HTTP 429 and
+a durable stop after HTTP 418, 401, 403 or 451. Never backfill missed slots.

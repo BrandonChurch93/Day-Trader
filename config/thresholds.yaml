@@ -1234,6 +1234,13 @@ forward_e10_binance_us:
   source: https://www.binance.us/fees
   note: Doc 180 spot USD schedule, no maker fills, discount, account or trading assumed.
 
+binance_us_gate:
+  value:
+    cooldown_path: /home/user/workspace/rig/data/binance_us_gate/cooldown.json
+  status: STATED
+  note: One shared private durable throttle and stop for Binance.US forward collectors.
+  source: research_rig/TRIAL_LEDGER.md (rows 230-232)
+
 forward_e12:
   value:
     protocol_ref: forward_e11
@@ -1642,5 +1649,5 @@ measure_133:
     wake_offset_s: 10
     window_s: 120
   status: STATED
-  note: Ledger 232. Inherit the length, sizes and decision line only; Binance.US exact USD instruments.
+  note: Ledger 232. The wake offset and inclusive window end are measured from the top of the UTC hour. Inherit the length, sizes and decision line only; Binance.US exact USD instruments.
   source: docs/research/195_measurement_133_binance_us_cost.md

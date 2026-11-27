@@ -61,15 +61,16 @@ class Recorder(unittest.TestCase):
         temp = tempfile.TemporaryDirectory(dir="/tmp")
         self.addCleanup(temp.cleanup)
         self.off = Path(temp.name) / "e12"
+        self.gate = e.bx.Gate(Path(temp.name) / "gate" / "cooldown.json")
         self.venue = Pages()
         self.cfg, self.fees, _, _ = e.settings()
 
     def approve(self):
-        return patch.object(e.m133, "git", return_value=f"| 230 | E12_START=<frozen build hash> E12_START={FREEZE} |")
+        return patch.object(e.bx, "git", return_value=f"| 230 | E12_START=<frozen build hash> E12_START={FREEZE} |")
 
     def start(self):
-        with self.approve(), patch.object(e.m133, "checked_build", return_value=FREEZE):
-            h = e.start(T - timedelta(minutes=10), self.off)
+        with self.approve(), patch.object(e.bx, "checked_build", return_value=FREEZE):
+            h = e.start(T - timedelta(minutes=10), self.off, gate=self.gate)
         self.assertEqual(h["first_wake"], e.iso(T))
         self.assertEqual(self.venue.calls, [])
 
@@ -78,15 +79,15 @@ class Recorder(unittest.TestCase):
         return e.record(clock(), self.venue, self.off, clock=clock, sleep=clock.sleep)
 
     def rows(self):
-        return e.m133.read_log(self.off)
+        return e.bx.read_log(self.off)
 
     def test_no_approval_means_no_venue_no_start_and_no_resume(self):
-        with patch.object(e.m133, "checked_build", return_value=FREEZE), patch.object(e.m133, "git", return_value=""):
+        with patch.object(e.bx, "checked_build", return_value=FREEZE), patch.object(e.bx, "git", return_value=""):
             with self.assertRaises(e.Refuse):
                 e.start(T, self.off)
         self.assertFalse(self.off.exists())
         self.start()
-        with patch.object(e.m133, "git", return_value=f"| 230 | E12_SCORE={FREEZE} |"):
+        with patch.object(e.bx, "git", return_value=f"| 230 | E12_SCORE={FREEZE} |"):
             with self.assertRaises(e.Refuse):
                 self.record()
         self.assertEqual(self.venue.calls, [])
@@ -125,16 +126,83 @@ class Recorder(unittest.TestCase):
 
     def test_block_is_terminal_in_first_wake(self):
         self.start()
-        self.venue.pair_error = e.Blocked(e.m133.HOST, 451)
+        self.venue.pair_error = e.Blocked(e.bx.HOST, 451)
         with self.approve():
             self.assertEqual(self.record()["http_status"], 451)
             self.assertEqual(self.record(T + e.HOUR)["kind"], "stopped")
         self.assertEqual(self.venue.calls, [("pairs",)])
 
+    def test_418_after_frozen_roster_stops_and_refuses_restart(self):
+        self.start()
+        with self.approve():
+            self.record()
+            original = self.venue.depth
+
+            def banned(coin):
+                self.venue.calls.append(("banned", coin))
+                with self.gate.attempt():
+                    self.gate.http_error(418)
+                return original(coin)
+
+            self.venue.depth = banned
+            self.assertEqual(self.record(T + e.HOUR)["http_status"], 418)
+            before = self.venue.calls[:]
+            self.assertEqual(self.record(T + 2 * e.HOUR)["kind"], "stopped")
+            self.assertEqual(self.venue.calls, before)
+        with self.approve(), patch.object(e.bx, "checked_build", return_value=FREEZE), self.assertRaises(e.Refuse):
+            e.start(T - timedelta(minutes=10), self.off.parent / "restart",
+                    gate=e.bx.Gate(self.gate.cooldown_path))
+        self.assertFalse((self.off.parent / "restart").exists())
+
+    def test_candles_end_at_121_no_first_depth_no_shown_slot_still_voids(self):
+        self.start()
+        clock = Clock(T + timedelta(seconds=5))
+        candles = self.venue.candles
+
+        def slow(coin, wake):
+            result = candles(coin, wake)
+            if coin == "ETH":
+                clock.now = T + timedelta(seconds=121)
+            return result
+
+        self.venue.candles = slow
+        with self.approve():
+            r = e.record(clock(), self.venue, self.off, clock=clock, sleep=clock.sleep)
+            self.assertEqual(r["entry_books"]["ETH"]["status"], "late book")
+            self.assertNotIn("midpoint", r["entry_books"]["ETH"])
+            self.assertFalse(any(c[0] in {"agg", "depth"} for c in self.venue.calls))
+            self.assertFalse(any(row["kind"] in {"follow", "rest"} for row in self.rows()))
+            self.venue.candles = candles
+            self.venue.candle_error = "ETH"
+            self.record(T + e.HOUR)
+            self.record(T + 2 * e.HOUR)
+        public = e.alive(self.off)
+        self.assertEqual(public["slots_open"], 0)
+        self.assertEqual(public["judged_void_reasons"], {"late book": 1})
+        self.assertEqual(public["judged_trades"], 0)
+
+    def test_first_book_completing_at_121_keeps_only_late_status(self):
+        self.start()
+        clock = Clock(T + timedelta(seconds=5))
+        depth = self.venue.depth
+
+        def slow(coin):
+            self.assertEqual(self.venue.deadline, T + timedelta(seconds=120))
+            clock.now = T + timedelta(seconds=121)
+            return depth(coin)
+
+        self.venue.depth = slow
+        with self.approve():
+            r = e.record(clock(), self.venue, self.off, clock=clock, sleep=clock.sleep)
+        self.assertEqual(r["entry_books"]["ETH"]["status"], "late book")
+        self.assertNotIn("bid", r["entry_books"]["ETH"])
+        self.assertEqual(sum(c[0] == "depth" for c in self.venue.calls), 1)
+        self.assertNotIn(("agg", "ETH"), self.venue.calls)
+
     def test_stale_claim_not_retried(self):
         self.start()
-        with e.m133.locked(self.off):
-            e.m133.append(self.off, self.rows(), kind="claim", wake=e.iso(T))
+        with e.bx.locked(self.off):
+            e.bx.append(self.off, self.rows(), kind="claim", wake=e.iso(T))
         with self.approve():
             self.assertEqual(self.record()["kind"], "stop")
         self.assertEqual(self.venue.calls, [])
@@ -195,7 +263,7 @@ class Calculations(unittest.TestCase):
         self.assertIsNone(e.decide(T, bars, rules[e.JUDGED], ("BTC",)))
 
     def book(self, raw=DEPTH, seconds=10):
-        return e.m133.ticket(raw, e.BINANCE, (), 0) | raw | {
+        return e.bx.ticket(raw, e.BINANCE, (), 0) | raw | {
             "received": e.iso(T + timedelta(seconds=seconds)), "taken_s": seconds}
 
     def test_depth_walk_hard_window_thin_and_stated_fee(self):
@@ -227,7 +295,7 @@ class Calculations(unittest.TestCase):
 
     def test_score_preflight_count_or_date_plus_separate_go_and_once(self):
         h = {"freeze": FREEZE}
-        with patch.object(e.m133, "git", return_value=f"| 230 | E12_SCORE={FREEZE} |"):
+        with patch.object(e.bx, "git", return_value=f"| 230 | E12_SCORE={FREEZE} |"):
             self.assertTrue(e.score_gate([], h, T, 150, self.cfg)[0])
             with self.assertRaises(e.Refuse):
                 e.score_gate([], h, T, 149, self.cfg)
@@ -235,7 +303,7 @@ class Calculations(unittest.TestCase):
             self.assertFalse(e.score_gate([], h, close, 0, self.cfg)[0])
             with self.assertRaises(e.Refuse):
                 e.score_gate([{"kind": "score"}], h, close, 150, self.cfg)
-        with patch.object(e.m133, "git", return_value=f"| 230 | E12_START={FREEZE} |"):
+        with patch.object(e.bx, "git", return_value=f"| 230 | E12_START={FREEZE} |"):
             with self.assertRaises(e.Refuse):
                 e.score_gate([], h, T, 150, self.cfg)
         self.assertEqual(e.judge([], self.cfg)["verdict"], "too few to judge")

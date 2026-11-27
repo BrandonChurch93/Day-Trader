@@ -19,10 +19,10 @@ BOOK = {"bids": [["99.99", "100"]], "asks": [["100.01", "100"]]}
 
 
 def klines(wake, closes):
-    end = m.epoch_ms(m.hour(wake))
-    return [[stamp, p, p, p, p, "1", stamp + m.HOUR_MS - 1, "0", 1, "0", "0", "0"]
+    end = m.bx.epoch_ms(m.hour(wake))
+    return [[stamp, p, p, p, p, "1", stamp + m.bx.HOUR_MS - 1, "0", 1, "0", "0", "0"]
             for j, value in enumerate(closes)
-            for stamp, p in [(end - (len(closes) - j) * m.HOUR_MS, str(value))]]
+            for stamp, p in [(end - (len(closes) - j) * m.bx.HOUR_MS, str(value))]]
 
 
 class FakePages:
@@ -42,7 +42,7 @@ class FakePages:
     def book(self, venue, coin):
         self.calls.append((venue, coin))
         if self.block:
-            raise m.Blocked(m.HOST, 403)
+            raise m.Blocked(m.bx.HOST, 403)
         return BOOK
 
 
@@ -52,6 +52,7 @@ class Recorder(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.off = Path(temp.name) / "m133"
         self.pages = FakePages()
+        self.gate = m.bx.Gate(Path(temp.name) / "gate" / "cooldown.json")
         self.now = T
 
     def clock(self):
@@ -59,16 +60,16 @@ class Recorder(unittest.TestCase):
 
     def start_mock(self):
         with patch.object(m, "checked_build", return_value=FREEZE), self.approve():
-            h = m.start(self.off, self.pages, self.clock)
+            h = m.start(self.off, self.pages, self.clock, gate=self.gate)
         self.assertEqual(self.pages.calls, [])
         self.first = m.parse(h["first_wake"])
         return h
 
     def approve(self):
-        return patch.object(m, "git", return_value=f"| 232 | M133_START=<frozen build hash> M133_START={FREEZE} |")
+        return patch.object(m.bx, "git", return_value=f"| 232 | M133_START=<frozen build hash> M133_START={FREEZE} |")
 
     def test_start_without_approval_leaves_no_private_path(self):
-        with patch.object(m, "checked_build", return_value=FREEZE), patch.object(m, "git", return_value=""):
+        with patch.object(m, "checked_build", return_value=FREEZE), patch.object(m.bx, "git", return_value=""):
             with self.assertRaises(m.Refuse):
                 m.start(self.off, self.pages, self.clock)
         self.assertEqual(self.pages.calls, [])
@@ -81,7 +82,7 @@ class Recorder(unittest.TestCase):
         self.assertEqual(stat.S_IMODE(self.off.stat().st_mode), 0o700)
         self.assertEqual(stat.S_IMODE((self.off / "log.jsonl").stat().st_mode), 0o600)
         self.now = self.first
-        with patch.object(m, "git", return_value=f"| 232 | M133_READ={FREEZE} |"):
+        with patch.object(m.bx, "git", return_value=f"| 232 | M133_READ={FREEZE} |"):
             with self.assertRaises(m.Refuse):
                 m.record(self.off, self.pages, self.clock)
         self.assertEqual(self.pages.calls, [])
@@ -120,6 +121,62 @@ class Recorder(unittest.TestCase):
                 m.record(self.off, self.pages, self.clock)
         self.assertEqual(self.pages.calls, calls)
         self.assertEqual(m.read_log(self.off)[-1]["http_status"], 403)
+
+    def test_418_after_inventory_refuses_next_book_and_restart(self):
+        self.start_mock()
+        self.now = self.first
+        with self.approve():
+            m.record(self.off, self.pages, self.clock)
+        self.pages.calls.clear()
+        self.now += m.HOUR
+
+        def banned(venue, coin):
+            self.pages.calls.append((venue, coin))
+            with self.gate.attempt():
+                self.gate.http_error(418)
+
+        self.pages.book = banned
+        with self.approve(), self.assertRaises(m.Refuse):
+            m.record(self.off, self.pages, self.clock)
+        calls = self.pages.calls[:]
+        self.assertEqual(calls, ["BTC", (m.VENUE, m.COINS[0])])
+        self.assertEqual(m.read_log(self.off)[-1]["http_status"], 418)
+        self.now += m.HOUR
+        with self.approve(), self.assertRaises(m.Refuse):
+            m.record(self.off, self.pages, self.clock)
+        self.assertEqual(self.pages.calls, calls)
+        with self.approve(), patch.object(m, "checked_build", return_value=FREEZE), self.assertRaises(m.Refuse):
+            m.start(self.off.parent / "restart", clock=self.clock, gate=m.bx.Gate(self.gate.cooldown_path))
+        self.assertFalse((self.off.parent / "restart").exists())
+
+    def test_exact_receipt_window_plus_9_10_120_121(self):
+        self.start_mock()
+        for i, seconds in enumerate((9, 10, 120, 121)):
+            with self.subTest(seconds=seconds), m.locked(self.off):
+                rows = m.read_log(self.off)
+                wake = self.first + i * m.HOUR
+                self.now = wake
+                pages = FakePages()
+
+                def book(venue, coin):
+                    self.now = m.hour(wake) + timedelta(seconds=seconds)
+                    return BOOK
+
+                pages.book = book
+                m.collect(self.off, rows, rows[0]["settings"], {"BTC": "TRADING"}, pages, wake, self.clock)
+                observed = rows[-1]["books"][m.VENUE]["BTC"]
+                self.assertEqual(observed["status"], "ok" if seconds in (10, 120) else "missed_book_window")
+                self.assertEqual("sizes" in observed, seconds in (10, 120))
+
+    def test_record_does_not_fetch_before_open_or_after_cutoff(self):
+        self.start_mock()
+        with self.approve():
+            self.now = m.hour(self.first) + timedelta(seconds=9)
+            self.assertIsNone(m.record(self.off, self.pages, self.clock))
+            self.now = m.hour(self.first) + timedelta(seconds=121)
+            self.assertIsNone(m.record(self.off, self.pages, self.clock))
+        self.assertEqual(self.pages.calls, [])
+        self.assertEqual(m.read_log(self.off)[-1]["kind"], "void")
 
     def test_rollback_denied(self):
         self.start_mock()
@@ -191,7 +248,10 @@ class InputsAndMath(unittest.TestCase):
                     raise HTTPError(req.full_url, 403, "", None, io.BytesIO())
                 return io.BytesIO(b"[]")
         opener = Opener()
-        pages = m.PublicPages(opener=opener, sleep=lambda _: None)
+        temp = tempfile.TemporaryDirectory(dir="/tmp")
+        self.addCleanup(temp.cleanup)
+        gate = m.bx.Gate(Path(temp.name) / "gate" / "cooldown.json")
+        pages = m.PublicPages(opener=opener, sleep=lambda _: None, gate=gate)
         self.assertEqual(pages.klines("BTC", T, 2), [])
         with self.assertRaises(m.Blocked):
             pages.book(m.VENUE, "BNB")
@@ -200,8 +260,8 @@ class InputsAndMath(unittest.TestCase):
                 pages.get(m.VENUE, bad)
         self.assertEqual(len(opener.calls), 2)
         candle, book = map(urlsplit, opener.calls)
-        self.assertEqual((candle.hostname, book.hostname), (m.HOST, m.HOST))
-        self.assertEqual(parse_qs(candle.query)["endTime"], [str(m.epoch_ms(T) - 1)])
+        self.assertEqual((candle.hostname, book.hostname), (m.bx.HOST, m.bx.HOST))
+        self.assertEqual(parse_qs(candle.query)["endTime"], [str(m.bx.epoch_ms(T) - 1)])
         self.assertEqual(parse_qs(book.query)["symbol"], ["BNBUSD"])
 
     def test_approval_token_exact_same_row_build_and_action(self):
@@ -215,15 +275,15 @@ class InputsAndMath(unittest.TestCase):
 
     def test_read_preflight_requires_elapsed_window_separate_go_and_once(self):
         h = {"last_wake": m.iso(T), "settings": {"window_s": 120}, "freeze": FREEZE}
-        with patch.object(m, "git", return_value=f"| 232 | M133_READ={FREEZE} |"):
-            with self.assertRaises(m.Refuse):
-                m.read_gate([], h, T + timedelta(seconds=119))
-            m.read_gate([], h, T + timedelta(seconds=120))
-            with self.assertRaises(m.Refuse):
-                m.read_gate([{"kind": "read"}], h, T + timedelta(seconds=120))
-        with patch.object(m, "git", return_value=f"| 232 | M133_START={FREEZE} |"):
+        with patch.object(m.bx, "git", return_value=f"| 232 | M133_READ={FREEZE} |"):
             with self.assertRaises(m.Refuse):
                 m.read_gate([], h, T + timedelta(seconds=120))
+            m.read_gate([], h, T + timedelta(seconds=121))
+            with self.assertRaises(m.Refuse):
+                m.read_gate([{"kind": "read"}], h, T + timedelta(seconds=121))
+        with patch.object(m.bx, "git", return_value=f"| 232 | M133_START={FREEZE} |"):
+            with self.assertRaises(m.Refuse):
+                m.read_gate([], h, T + timedelta(seconds=121))
 
 
 if __name__ == "__main__":

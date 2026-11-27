@@ -679,6 +679,7 @@ Working papers.
 | `practice/forward_e12.py`, `practice/test_forward_e12.py` | E12 recorder and invented-data checks | CURRENT |
 | `practice/forward/E12_log.json` | E12 public count and aggregate status | RECORD |
 | `practice/measure_133.py`, `practice/test_measure_133.py` | Measurement 133 recorder and invented-data checks | CURRENT |
+| `practice/venue_binance_us.py`, `practice/test_venue_binance_us.py` | Shared Binance.US transport, gate, custody and approval helpers; invented HTTP tests | CURRENT |
 | `practice/forward/M133_log.json` | Measurement 133 public count and aggregate status | RECORD |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |

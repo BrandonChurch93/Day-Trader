@@ -6,8 +6,9 @@ keys or account access. Observe the original 20 candidates, with no
 replacement or denominator reduction for missing or nontrading USD pairs.
 No profits, return series, account recommendation or rescore.
 
-For 30 days, wake ten seconds after each UTC hour and accept observations
-only in the 120-second window after that wake. For $25 and $250, walk either
+For 30 days, wake ten seconds after each UTC hour. A book counts only if
+received from +10 through +120 seconds after the top of that UTC hour,
+both ends included; earlier or later is missed. For $25 and $250, walk either
 side by dollar amount, compare the resulting average fill to the midpoint,
 then add the STATED taker fee once per side (2 bp; BNB/USD 1 bp). Unavailable,
 refused, crossed, late and thin books do not contribute a fill. Classify
@@ -26,3 +27,5 @@ on row 232 in committed local main, then uses `start` and `loop` from the
 frozen worktree. Readout needs a separate `M133_READ` for the same build.
 Use `/home/user/workspace/rig/data/measure_133` for private observations.
 The public file carries pooled costs and counts, not prices or per-wake rows.
+All project Binance.US collectors share a durable cooldown after HTTP 429 and
+a durable stop after HTTP 418, 401, 403 or 451. Never backfill missed slots.

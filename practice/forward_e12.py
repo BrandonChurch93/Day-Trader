@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 import numpy as np
 import yaml
 
-import measure_133 as m133
+import venue_binance_us as bx
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD = "practice/traders/E12_dip_buy_binance_us.md"
@@ -25,19 +25,19 @@ PUBLIC = ROOT / "practice/forward/E12_log.json"
 sys.path.insert(0, str(ROOT / "research_rig"))
 import sweep_70
 
-PINNED = (CARD, "practice/forward_e12.py", "practice/measure_133.py",
+PINNED = (CARD, "practice/forward_e12.py", "practice/venue_binance_us.py",
           "research_rig/sweep_70.py", "research_rig/coverage_70.py",
           "research_rig/sweep_71.py", "research_rig/GRID_70.json", "research_rig/GRID_71.json")
-HOUR = m133.HOUR
+HOUR = bx.HOUR
 UTC = timezone.utc
-BINANCE = m133.VENUE
-COINS = tuple(m133.COINS)
+BINANCE = bx.VENUE
+COINS = tuple(bx.COINS)
 JUDGED = "70-102"
 ARMS = (JUDGED, "71-013", "71-035")
 AGG_LIMIT = 1000  # wire endpoint maximum
-Refuse, Failure, Blocked = m133.Refuse, m133.Failure, m133.Blocked
-need = m133.need
-floor_hour = m133.hour
+Refuse, Failure, Blocked = bx.Refuse, bx.Failure, bx.Blocked
+need = bx.need
+floor_hour = bx.hour
 
 
 def iso(t):
@@ -56,22 +56,22 @@ def settings():
             "resting_window_s", "resting_page_cap", "judging_count", "judging_floor", "last_wake_utc")}
     cfg.update({key: own[key] for key in ("follow_offsets_s", "t_mark", "trim_best", "maker_fee_bp")})
     cfg["wake_window_s"] = max(cfg["follow_offsets_s"])
-    roots = m133.private_roots()
+    roots = bx.private_roots()
     return cfg, raw[own["fee_ref"]]["value"], roots, {
-        key: m133.digest(m133.enc(raw[key]).encode()) for key in
-        ("forward_e12", own["protocol_ref"], own["fee_ref"], "measure_133")}
+        key: bx.digest(bx.enc(raw[key]).encode()) for key in
+        ("forward_e12", own["protocol_ref"], own["fee_ref"], "binance_us_gate")}
 
 
 def frozen(cfg, fee, block_pins):
     return {"config": cfg, "fees": fee, "rule": rules(), "config_sha256": block_pins,
-            "file_sha256": {p: m133.digest((ROOT / p).read_bytes()) for p in PINNED}}
+            "file_sha256": {p: bx.digest((ROOT / p).read_bytes()) for p in PINNED}}
 
 
 def check_storage(off, cfg_roots, create=False):
     off = Path(off)
     resolved = off.resolve()
     need(any(root in resolved.parents for root in cfg_roots), "outside private storage root")
-    return m133.checked_dir(off, create=create)
+    return bx.checked_dir(off, create=create)
 
 
 def header(rows, fz):
@@ -81,22 +81,23 @@ def header(rows, fz):
     return h
 
 
-def start(now, off=OFF):
+def start(now, off=OFF, *, gate=None):
     cfg, fee, roots, pins = settings()
-    commit = m133.checked_build((*PINNED, "config/thresholds.yaml"))
-    m133.require_go(230, "E12_START", commit)
+    commit = bx.checked_build((*PINNED, "config/thresholds.yaml"))
+    bx.require_go(230, "E12_START", commit)
+    bx.check_start(gate)
     path = check_storage(off, roots, create=True)
-    with m133.locked(path) as path:
-        rows = m133.read_log(path)
+    with bx.locked(path) as path:
+        rows = bx.read_log(path)
         need(not rows, "already started")
         first = floor_hour(now) + HOUR
         need(first <= parse(cfg["last_wake_utc"]), "first wake outside dates")
-        m133.write_anchor(path, m133.anchor_state(rows))
-        m133.append(path, rows, kind="header", freeze=commit, first=iso(first), frozen=frozen(cfg, fee, pins))
+        bx.write_anchor(path, bx.anchor_state(rows))
+        bx.append(path, rows, kind="header", freeze=commit, first=iso(first), frozen=frozen(cfg, fee, pins))
         return {"first_wake": iso(first), "freeze": commit}
 
 
-class Pages(m133.PublicPages):
+class Pages(bx.PublicPages):
     """Use the pinned public REST pace, wall budget, block handling and no redirects."""
     def candles(self, coin, wake):
         return self.klines(coin, wake, 3)
@@ -122,7 +123,7 @@ def collect_candles(pages, wake, coins):
     bars, failed = {}, {}
     for coin in coins:
         try:
-            one = m133.closed_klines(pages.candles(coin, wake), wake, 3)
+            one = bx.closed_klines(pages.candles(coin, wake), wake, 3)
             converted = {stamp // 1000: tuple(float(x) for x in values) for stamp, values in one.items()}
             if not all(math.isfinite(x) for values in converted.values() for x in values):
                 raise ValueError
@@ -185,22 +186,33 @@ def picks(wake, bars, free, rules, last, roster):
     return entries
 
 
-def book_now(pages, pair_states, coin, wake, clock):
+def book_now(pages, pair_states, coin, wake, clock, *, first_until=None):
+    def observed(detail, at):
+        if first_until is not None and not wake <= at <= first_until:
+            detail = {"status": "late book"}
+        return detail | {"received": iso(at), "taken_s": (at - wake).total_seconds()}
+
+    before = clock()
+    if first_until is not None and not wake <= before <= first_until:
+        return observed({"status": "late book"}, before)
     state = pair_states.get(coin, "NO_USD_PAIR")
     if state != "TRADING":
         detail = {"status": state if state in ("NO_USD_PAIR", "pair page unavailable") else "pair not trading"}
     else:
         try:
             raw = pages.depth(coin)
-            detail = m133.ticket(raw, BINANCE, (), 0)
+            at = clock()
+            if first_until is not None and not wake <= at <= first_until:
+                return observed({"status": "late book"}, at)
+            detail = bx.ticket(raw, BINANCE, (), 0)
             if detail["status"] == "ok":
                 detail.update(bids=raw["bids"], asks=raw["asks"])
+            return observed(detail, at)
         except Blocked:
             raise
         except (Failure, OSError, ValueError, TypeError, KeyError, ArithmeticError) as exc:
             detail = {"status": "book page unavailable", "reason": private_error(exc)}
-    at = clock()
-    return detail | {"received": iso(at), "taken_s": (at - wake).total_seconds()}
+    return observed(detail, clock())
 
 
 def walk(levels, amount, *, buy):
@@ -267,7 +279,7 @@ def epoch_ms(t):
 
 def resting(pages, coin, first_book, cfg):
     """Post-window, bounded, forward-only paging. No coverage means no no-fill claim."""
-    if not usable(first_book):
+    if leg_reason(first_book, cfg["first_book_limit_s"]):
         return {"status": "UNKNOWN", "reason": "limit book missing", "pages": []}
     then = parse(first_book["received"])
     start_ms = epoch_ms(then) + 1
@@ -289,7 +301,7 @@ def resting(pages, coin, first_book, cfg):
                     raise ValueError
                 if last_id is not None and (a != last_id + 1 or t < last_t):
                     raise ValueError
-                px = m133.price(p)
+                px = bx.price(p)
                 parsed.append((a, t, px))
                 last_id, last_t = a, t
         except Blocked:
@@ -343,10 +355,17 @@ def evaluate(closed, books, cfg, fees):
         result = {}
         for offset in (0, *cfg["follow_offsets_s"]):
             first, last = books.get((w, coin, "entry", offset)), books.get((exit_wake, coin, "exit", offset))
+            invalid_reference = offset and (
+                leg_reason(books.get((w, coin, "entry", 0)), cfg["first_book_limit_s"])
+                or leg_reason(books.get((exit_wake, coin, "exit", 0)), cfg["first_book_limit_s"]))
             for size in cfg["sizes_usd"].values():
                 key = f"{size}:{offset}"
-                result[key] = (settle(first, last, size, charge, limit=cfg["first_book_limit_s"] if not offset else None)
-                               if exit_kind == "wake" else {"reason": "exit wake void"})
+                if exit_kind != "wake":
+                    result[key] = {"reason": "exit wake void"}
+                elif invalid_reference:
+                    result[key] = {"reason": invalid_reference}
+                else:
+                    result[key] = settle(first, last, size, charge, limit=cfg["first_book_limit_s"] if not offset else None)
         lines.append({"entry": entry, "exit": exit_wake, "exit_kind": exit_kind, "lines": result})
     return lines
 
@@ -360,7 +379,7 @@ def judged_trades(lines, cfg):
 def finish_void(path, rows, wake, opens, reason):
     w = iso(wake)
     due = [a for a, e in opens.items() if e["due"] == w]
-    m133.append(path, rows, kind="void", wake=w, reason=reason, entries=[], exits=due)
+    bx.append(path, rows, kind="void", wake=w, reason=reason, entries=[], exits=due)
     for a in due:
         del opens[a]
 
@@ -371,6 +390,7 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx, r
     due = [a for a, e in opens.items() if e["due"] == w]
     free = [a for a in ARMS if a not in opens or a in due]
     live_until = wake + timedelta(seconds=cfg["wake_window_s"])
+    first_until = wake + timedelta(seconds=cfg["first_book_limit_s"])
     last = parse(cfg["last_wake_utc"])
     coins_due = {opens[arm]["coin"] for arm in due}
     exit_books, entry_books = {}, {}
@@ -378,6 +398,9 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx, r
     pages.deadline = live_until
 
     def read_pairs():
+        if clock() > first_until:
+            return {}
+        pages.deadline = first_until
         try:
             states = pages.pairs()
             if not isinstance(states, dict):
@@ -393,7 +416,8 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx, r
     if coins_due:
         pair_states = read_pairs()
         for coin in sorted(coins_due):
-            exit_books[coin] = book_now(pages, pair_states, coin, wake, clock)
+            exit_books[coin] = book_now(pages, pair_states, coin, wake, clock, first_until=first_until)
+    pages.deadline = live_until
     can_enter = any(wake + timedelta(hours=rules[a]["hold_hours"]) <= last for a in free)
     bars, failed = collect_candles(pages, wake, roster) if can_enter else ({}, {})
     proposed = picks(wake, bars, free, rules, last, roster) if can_enter and not failed else []
@@ -409,28 +433,28 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx, r
         pair_states = read_pairs()
     # An entry cannot use a book sampled before its decision, even on a coin
     # that already has an exit book from this wake.
+    pages.deadline = first_until
     for coin in sorted({e["coin"] for e in proposed}):
-        entry_books[coin] = book_now(pages, pair_states, coin, wake, clock)
+        entry_books[coin] = book_now(pages, pair_states, coin, wake, clock, first_until=first_until)
     pair_states = pair_states or {}
-    m133.append(path, rows, kind="wake", wake=w, entries=proposed, exits=due,
+    bx.append(path, rows, kind="wake", wake=w, entries=proposed, exits=due,
                 entry_books=entry_books, exit_books=exit_books,
                 entries_void=bool(failed), candle_failures=failed,
                 busy=[a for a in ARMS if a not in free],
                 pair_states={c: pair_states.get(c, "NO_USD_PAIR") for c in sorted(entry_books.keys() | exit_books.keys())},
-                closed_bar_sha256=m133.digest(m133.enc(bars).encode()), signal_bars=bars if proposed else {})
+                closed_bar_sha256=bx.digest(bx.enc(bars).encode()), signal_bars=bars if proposed else {})
     wake_row = rows[-1]
     tasks = []
     for side, first in (("entry", entry_books), ("exit", exit_books)):
         for coin, b in first.items():
+            if leg_reason(b, cfg["first_book_limit_s"]):
+                continue
             btime = parse(b["received"])
             if pair_states.get(coin) == "TRADING":
                 for offset in cfg["follow_offsets_s"]:
                     tasks.append((btime + timedelta(seconds=offset), 0, coin, side, offset))
             if side == "entry":
-                if usable(b):
-                    tasks.append((btime + timedelta(seconds=cfg["resting_window_s"], milliseconds=1), 1, coin, side, 0))
-                else:
-                    m133.append(path, rows, kind="rest", wake=w, coin=coin, resting=resting(pages, coin, b, cfg))
+                tasks.append((btime + timedelta(seconds=cfg["resting_window_s"], milliseconds=1), 1, coin, side, 0))
     for when, kind, coin, side, offset in sorted(tasks):
         sleep(max(0, (when - clock()).total_seconds()))
         if clock() >= wake + HOUR:
@@ -438,9 +462,9 @@ def capture_wake(path, rows, pages, wake, clock, sleep, cfg, fees, rules, idx, r
         pages.deadline = wake + HOUR
         if kind == 0:
             book = book_now(pages, pair_states, coin, wake, clock)
-            m133.append(path, rows, kind="follow", wake=w, coin=coin, side=side, offset_s=offset, book=book)
+            bx.append(path, rows, kind="follow", wake=w, coin=coin, side=side, offset_s=offset, book=book)
         else:
-            m133.append(path, rows, kind="rest", wake=w, coin=coin, resting=resting(pages, coin, entry_books[coin], cfg))
+            bx.append(path, rows, kind="rest", wake=w, coin=coin, resting=resting(pages, coin, entry_books[coin], cfg))
     return wake_row
 
 
@@ -454,17 +478,17 @@ def freeze_roster(path, rows, pages, wake, clock, cfg):
     roster = [c for c in COINS if states[c] != "NO_USD_PAIR"]
     if "BTC" not in roster:
         raise Failure("first-wake roster lacks BTC/USD")
-    m133.append(path, rows, kind="roster", wake=iso(wake), coins=roster, states=states)
+    bx.append(path, rows, kind="roster", wake=iso(wake), coins=roster, states=states)
     return roster
 
 
-def record(now, pages=None, off=OFF, clock=m133.now_utc, sleep=time.sleep):
+def record(now, pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep):
     cfg, fees, roots, pins = settings()
     path = check_storage(off, roots)
-    with m133.locked(path) as path:
-        rows = m133.read_log(path, recover=True, clock=clock)
+    with bx.locked(path) as path:
+        rows = bx.read_log(path, recover=True, clock=clock)
         start_row = header(rows, frozen(cfg, fees, pins))
-        m133.require_go(230, "E12_START", start_row["freeze"])
+        bx.require_go(230, "E12_START", start_row["freeze"])
         if any(r["kind"] == "stop" for r in rows):
             return {"kind": "stopped"}
         idx = index_log(rows)
@@ -482,7 +506,7 @@ def record(now, pages=None, off=OFF, clock=m133.now_utc, sleep=time.sleep):
             w = iso(current)
             if roster is None and (current > first_wake or w in claims or
                                    now >= first_wake + timedelta(seconds=cfg["first_book_limit_s"])):
-                m133.append(path, rows, kind="stop", wake=iso(first_wake), reason="first-wake roster not frozen",
+                bx.append(path, rows, kind="stop", wake=iso(first_wake), reason="first-wake roster not frozen",
                             made_utc=iso(clock()))
                 finish_void(path, rows, first_wake, opens, "first-wake roster not frozen")
                 return {"kind": "stop"}
@@ -493,7 +517,7 @@ def record(now, pages=None, off=OFF, clock=m133.now_utc, sleep=time.sleep):
             elif now >= current + timedelta(seconds=cfg["wake_window_s"]):
                 finish_void(path, rows, current, opens, "wake missed")
             elif current == wake and now >= wake + timedelta(seconds=cfg["wake_delay_s"]):
-                m133.append(path, rows, kind="claim", wake=w, made_utc=iso(clock()))
+                bx.append(path, rows, kind="claim", wake=w, made_utc=iso(clock()))
                 try:
                     source = pages if pages is not None else Pages()
                     if roster is None:
@@ -502,13 +526,13 @@ def record(now, pages=None, off=OFF, clock=m133.now_utc, sleep=time.sleep):
                         except Blocked:
                             raise
                         except (Failure, OSError, ValueError, TypeError, KeyError) as exc:
-                            m133.append(path, rows, kind="stop", wake=w, reason=private_error(exc), made_utc=iso(clock()))
+                            bx.append(path, rows, kind="stop", wake=w, reason=private_error(exc), made_utc=iso(clock()))
                             finish_void(path, rows, wake, opens, "first-wake roster not frozen")
                             return {"kind": "stop"}
                     return capture_wake(path, rows, source, wake, clock, sleep,
                                         cfg, fees, start_row["frozen"]["rule"], idx, roster)
                 except Blocked as exc:
-                    m133.append(path, rows, kind="stop", wake=w, reason=exc.reason,
+                    bx.append(path, rows, kind="stop", wake=w, reason=exc.reason,
                                 host=exc.host, http_status=exc.status, made_utc=iso(clock()))
                     blocked = rows[-1]
                     if not any(r.get("wake") == w and r["kind"] in ("wake", "void") for r in rows):
@@ -532,7 +556,7 @@ def rest_marks(entry, books, rest, cfg):
     for offset in cfg["follow_offsets_s"]:
         later = books.get((w, coin, "entry", offset))
         marker = {"phase": "UNKNOWN", "move_bp": None}
-        if usable(first) and usable(later):
+        if not leg_reason(first, cfg["first_book_limit_s"]) and usable(later):
             if rest["status"] == "FILLED":
                 marker["phase"] = "BEFORE_FILL" if parse(later["received"]) < parse(rest["fill"]) else "AFTER_FILL"
             else:
@@ -586,8 +610,8 @@ def summary(rows, cfg, fees):
             "void_wakes": sum(r["kind"] == "void" for r in visits.values()),
             "entry_void_wakes": sum(bool(r.get("entries_void")) for r in visits.values()),
             "claimed_unresolved_wakes": len(claims - visits.keys()),
-            "late_wakes": len({w for (w, _, _, offset), b in books.items() if not offset and usable(b)
-                               and b["taken_s"] > cfg["first_book_limit_s"]}),
+            "late_wakes": len({w for (w, _, _, offset), b in books.items()
+                               if not offset and leg_reason(b, cfg["first_book_limit_s"]) == "late book"}),
             "book_status": dict(book_status), "seconds_after_hour": {k: stats(v) for k, v in clock_samples.items()},
             "cost_per_side_bp": {n: {s: stats(v) for s, v in sides.items()} for n, sides in costs.items()},
             "signals_by_arm": {a: sum(e["arm"] == a for e in entries) for a in ARMS},
@@ -601,15 +625,15 @@ def alive(off=OFF):
     cfg, fee, roots, pins = settings()
     if not Path(off).exists() and not Path(off).is_symlink():
         return summary([], cfg, fee)
-    with m133.locked(check_storage(off, roots), write=False) as path:
-        rows = m133.read_log(path)
+    with bx.locked(check_storage(off, roots), write=False) as path:
+        rows = bx.read_log(path)
         header(rows, frozen(cfg, fee, pins))
         return summary(rows, cfg, fee)
 
 
 def publish(off=OFF, target=PUBLIC):
     out = alive(off)
-    m133.atomic_json(target, out)
+    bx.atomic_json(target, out, public=target == PUBLIC)
     return out
 
 
@@ -662,7 +686,7 @@ def shown_results(visits, finished, books, rests, cfg, fees, cut):
                         coin = e["coin"]
                         b0 = books.get((e["wake"], coin, "entry", 0))
                         b1 = books.get((r["exit"], coin, "exit", 0))
-                        why = leg_reason(b1, cfg["first_book_limit_s"])
+                        why = leg_reason(b0, cfg["first_book_limit_s"]) or leg_reason(b1, cfg["first_book_limit_s"])
                         maker = {"reason": why} if why else settle(b0, b1, main, fee_bp(fees, e["coin"]), maker_bp=cfg["maker_fee_bp"])
                     if "net" in maker:
                         resting_values.append(maker["net"])
@@ -694,14 +718,14 @@ def score_gate(rows, h, now, n, cfg):
     last = parse(cfg["last_wake_utc"])
     hit = n >= cfg["judging_count"]
     need(hit or now >= last + timedelta(seconds=cfg["wake_window_s"]), "not yet: judging point has not arrived")
-    m133.require_go(230, "E12_SCORE", h["freeze"])
+    bx.require_go(230, "E12_SCORE", h["freeze"])
     return hit, last
 
 
 def score(now, off=OFF):
     cfg, fees, roots, pins = settings()
-    with m133.locked(check_storage(off, roots)) as path:
-        rows = m133.read_log(path, recover=True, clock=lambda: now)
+    with bx.locked(check_storage(off, roots)) as path:
+        rows = bx.read_log(path, recover=True, clock=lambda: now)
         h = header(rows, frozen(cfg, fees, pins))
         _, _, visits, books, rests, closed = index_log(rows)
         finished = evaluate(closed, books, cfg, fees)
@@ -710,21 +734,22 @@ def score(now, off=OFF):
         cut = valid[cfg["judging_count"] - 1]["entry"]["wake"] if hit else iso(last)
         out = {"card": "E12", "judged_arm": JUDGED, "cutoff": "trade count" if hit else "end date",
                "judged": judge(valid, cfg), "shown": shown_results(visits, finished, books, rests, cfg, fees, cut)}
-        m133.append(path, rows, kind="score", result_sha256=m133.digest(m133.enc(out).encode()),
+        bx.append(path, rows, kind="score", result_sha256=bx.digest(bx.enc(out).encode()),
                     made_utc=iso(now))
         return out
 
 
-def loop(off=OFF, clock=m133.now_utc, sleep=time.sleep):
+def loop(off=OFF, clock=bx.now_utc, sleep=time.sleep):
     cfg, _, roots, _ = settings()
+    pages = Pages()
+    bx.check_start(pages.gate)
     path = check_storage(off, roots)
-    fd = m133.private_open(path / ".loop.lock", os.O_RDWR | os.O_CREAT)
+    fd = bx.private_open(path / ".loop.lock", os.O_RDWR | os.O_CREAT)
     with os.fdopen(fd, "rb") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise Refuse("a loop is already running") from None
-        pages = Pages()
         delay = timedelta(seconds=cfg["wake_delay_s"])
         last = parse(cfg["last_wake_utc"])
         while True:
@@ -744,7 +769,7 @@ def main():
     cmd = cli.parse_args().command
     os.umask(0o077)
     try:
-        now = m133.now_utc()
+        now = bx.now_utc()
         if cmd == "plan":
             cfg, fees, _, pins = settings()
             out = frozen(cfg, fees, pins)
