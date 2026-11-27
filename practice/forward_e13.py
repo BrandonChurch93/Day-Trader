@@ -356,13 +356,22 @@ class BinanceUS:
         self.generation = generation
         self.sleep = sleep if sleep is not None else time.sleep
         self.retry_delay_s = 0.
+        self.retry_sink = None
         self.opener = request.build_opener(request.ProxyHandler({}), NoRedirect())
 
-    def get(self, endpoint, **query):
+    def log_retry(self, event):
+        try:
+            need(self.retry_sink is not None, 'no durable retry journal')
+            return self.retry_sink(event)
+        except (OSError, Refuse, ValueError, TypeError) as exc:
+            raise Blocked('could not durably record venue retry') from exc
+
+    def get(self, endpoint, *, coin=None, validate=None, **query):
         self.retry_delay_s = 0.
         need(endpoint in ENDPOINTS, 'invalid public endpoint')
         url = HOST + endpoint + ('?' + parse.urlencode(query) if query else '')
         req = request.Request(url, headers={'User-Agent': 'e13-forward/1', 'Accept': 'application/json'}, method='GET')
+        prior_no_status_at = None
         for attempt in range(self.f['request_attempts']):
             pause = max(0, self.last + self.f['request_gap_s'] - time.monotonic())
             if self.deadline is not None and self.clock() + timedelta(seconds=pause) >= self.deadline:
@@ -371,6 +380,8 @@ class BinanceUS:
                 self.sleep(pause)
             delay = 2 ** attempt
             no_status = False
+            retry, retry_at, wait_until, attempted = None, None, None, None
+            status, body_error, outcome = None, None, 'INTERRUPTED'
             try:
                 with self.gate.attempt(self.deadline, generation=self.generation):
                     self.last = time.monotonic()
@@ -380,10 +391,27 @@ class BinanceUS:
                     if timeout <= 0:
                         self.gate.cancel_unsent()
                         raise bx.Failure('wake_window_elapsed')
+                    if prior_no_status_at is not None:
+                        retry_at = self.clock()
+                        try:
+                            retry = self.log_retry(dict(kind='retry', endpoint=endpoint, coin=coin,
+                                                        first_attempt_at=iso(prior_no_status_at), retry_at=iso(retry_at),
+                                                        delay_s=(retry_at - prior_no_status_at).total_seconds(),
+                                                        outcome='PENDING'))
+                        except Blocked:
+                            self.gate.cancel_unsent()
+                            raise
+                        timeout = min(timeout, (self.deadline - self.clock()).total_seconds())
+                        if timeout <= 0:
+                            self.gate.cancel_unsent()
+                            outcome = 'NOT_SENT_WINDOW_ELAPSED'
+                            raise bx.Failure('wake_window_elapsed')
+                    prior_no_status_at = None
                     replied = False
-                    status, retry_after, body_error = None, None, None
+                    retry_after = None
                     try:
                         with bx.wall_budget(timeout, timeout < self.f['timeout_s']):
+                            attempted = self.clock()
                             inp = self.opener.open(req, timeout=timeout)
                             replied = True
                             try:
@@ -424,23 +452,58 @@ class BinanceUS:
                 if self.deadline is not None and self.clock() >= self.deadline:
                     raise bx.Failure('wake_window_elapsed')
                 need(len(data) <= self.f['response_max_bytes'], 'public response too large')
-                return json.loads(data)
+                decoded = json.loads(data)
+                value = decoded if validate is None else validate(decoded)
+                outcome = 'SUCCESS'
+                return value
             except bx.Cooldown as exc:
+                outcome = 'NO_HTTP_STATUS' if no_status else f'HTTP_{status}' if status else 'SHARED_COOLDOWN'
                 if not no_status or self.deadline is None or exc.not_before >= self.deadline or attempt + 1 >= self.f['request_attempts']:
                     raise
-                began = self.clock()
-                self.sleep(max(0., (exc.not_before - began).total_seconds()))
-                self.retry_delay_s += max(0., (self.clock() - began).total_seconds())
-                continue
+                prior_no_status_at, wait_until = attempted, exc.not_before
+            except bx.Blocked as exc:
+                outcome = f'HTTP_{status}' if status else 'SHARED_STOP'
+                raise
+            except bx.GateTerminal as exc:
+                outcome = exc.reason.upper()
+                raise
+            except bx.Failure as exc:
+                if outcome != 'NOT_SENT_WINDOW_ELAPSED':
+                    outcome = exc.reason.upper()
+                raise
             except PublicStatus as exc:
+                outcome = f'HTTP_{exc.code}'
                 if 300 <= exc.code < 400:
                     raise Blocked('public endpoint redirected') from None
                 if not 500 <= exc.code < 600:
                     raise Refuse('public request refused') from None
+            except Refuse:
+                outcome = 'BODY_UNAVAILABLE' if body_error is not None else 'INVALID_PAGE'
+                raise
             except ValueError:
-                pass
+                outcome = 'INVALID_PAGE'
             except OSError:
+                outcome = 'GATE_STORAGE'
                 raise Blocked('shared venue gate I/O failed; refusing further requests') from None
+            except (KeyError, TypeError):
+                outcome = 'INVALID_PAGE'
+                raise
+            except Exception:
+                outcome = 'FAILED'
+                raise
+            finally:
+                if retry is not None:
+                    actual = attempted or retry_at
+                    self.log_retry(dict(kind='retry_outcome', endpoint=endpoint, coin=coin,
+                                        first_attempt_at=retry['first_attempt_at'], retry_at=iso(actual),
+                                        delay_s=(actual - clock_at(retry['first_attempt_at'])).total_seconds(),
+                                        outcome=outcome, http_status=status if type(status) is int else None,
+                                        retry_sha256=retry['sha256']))
+            if wait_until is not None:
+                began = self.clock()
+                self.sleep(max(0., (wait_until - began).total_seconds()))
+                self.retry_delay_s += max(0., (self.clock() - began).total_seconds())
+                continue
             if attempt + 1 < self.f['request_attempts']:
                 if self.deadline is not None and self.clock() + timedelta(seconds=delay) >= self.deadline:
                     raise bx.Failure('wake_window_elapsed')
@@ -448,7 +511,10 @@ class BinanceUS:
         raise Refuse('public page unavailable')
 
     def products(self, names):
-        raw = self.get('/api/v3/exchangeInfo')
+        return self.get('/api/v3/exchangeInfo', validate=lambda raw: self.parse_products(raw, names))
+
+    @staticmethod
+    def parse_products(raw, names):
         need(isinstance(raw, dict) and isinstance(raw.get('symbols'), list), 'invalid pair directory')
         out = {}
         for pair in raw['symbols']:
@@ -465,7 +531,11 @@ class BinanceUS:
         step = self.f['day_s'] * 1000
         limit = (stop - start) // step
         need(0 < limit <= self.f['candle_page_days'], 'invalid candle page')
-        raw = self.get('/api/v3/klines', symbol=coin + 'USD', interval='1d', startTime=start, endTime=stop-1, limit=limit)
+        return self.get('/api/v3/klines', coin=coin, symbol=coin + 'USD', interval='1d', startTime=start, endTime=stop-1,
+                        limit=limit, validate=lambda raw: self.parse_candles(raw, start, stop, step, limit))
+
+    @staticmethod
+    def parse_candles(raw, start, stop, step, limit):
         need(isinstance(raw, list) and len(raw) <= limit, 'invalid candle page')
         out = {}
         for row in raw:
@@ -479,8 +549,9 @@ class BinanceUS:
         return out
 
     def book(self, coin):
-        raw = self.get('/api/v3/depth', symbol=coin + 'USD', limit=self.f['depth_limit'])
-        return normalize_book(raw, self.f['depth_limit'])
+        limit = self.f['depth_limit']
+        return self.get('/api/v3/depth', coin=coin, symbol=coin + 'USD', limit=limit,
+                        validate=lambda raw: normalize_book(raw, limit))
 
 
 def pair_state(pair):
@@ -825,6 +896,23 @@ def capture(fd, log, wake, observed, venue, clock, f, rule, fees, closing, deadl
     return row
 
 
+@contextmanager
+def retry_journal(venue, fd, rows, wake, phase, offset=None):
+    # The caller holds writer.lock for all writes made through this callback.
+    if not isinstance(venue, BinanceUS):
+        yield
+        return
+    prior = venue.retry_sink
+    context = dict(wake=iso(wake), phase=phase)
+    if offset is not None:
+        context['offset'] = offset
+    venue.retry_sink = lambda event: append(fd, rows, context | event)
+    try:
+        yield
+    finally:
+        venue.retry_sink = prior
+
+
 def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep):
     f, rule, fees = settings()
     with private(folder) as fd, lock(fd, 'observer.lock'):
@@ -870,7 +958,8 @@ def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep):
             frozen(f['rule_source_sha256'])
             append(fd, rows, dict(kind='claim', wake=iso(wake), claimed=iso(clock())))
             try:
-                row = capture(fd, rows, wake, now, venue, clock, f, rule, fees, closing=wake == end, deadline=deadline)
+                with retry_journal(venue, fd, rows, wake, 'CLOSE' if wake == end else 'PRIMARY'):
+                    row = capture(fd, rows, wake, now, venue, clock, f, rule, fees, closing=wake == end, deadline=deadline)
             except (Blocked, bx.Blocked, bx.GateTerminal, bx.Refuse) as exc:
                 append(fd, rows, {'kind': 'blocked', 'wake': iso(wake), 'reason': terminal_reason(exc)})
                 raise Blocked(str(exc)) from None
@@ -892,15 +981,15 @@ def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep):
             diagnostic_end = target + timedelta(seconds=f['timeout_s'])
             if isinstance(venue, BinanceUS):
                 venue.deadline = diagnostic_end
-            try:
-                books, failures = snapshots(venue, row['follow'], wake, clock, diagnostic_end)
-            except (Blocked, bx.Blocked, bx.GateTerminal, bx.Refuse) as exc:
-                with lock(fd, 'writer.lock', blocking=True):
-                    append(fd, rows, {'kind': 'blocked', 'reason': terminal_reason(exc)})
-                raise Blocked('venue stopped during diagnostics') from None
-            except bx.Failure as exc:
-                books, failures = {}, {c: str(exc.reason).upper() for c in row['follow']}
             with lock(fd, 'writer.lock', blocking=True):
+                try:
+                    with retry_journal(venue, fd, rows, wake, 'DIAGNOSTIC', offset):
+                        books, failures = snapshots(venue, row['follow'], wake, clock, diagnostic_end)
+                except (Blocked, bx.Blocked, bx.GateTerminal, bx.Refuse) as exc:
+                    append(fd, rows, {'kind': 'blocked', 'reason': terminal_reason(exc)})
+                    raise Blocked('venue stopped during diagnostics') from None
+                except bx.Failure as exc:
+                    books, failures = {}, {c: str(exc.reason).upper() for c in row['follow']}
                 append(fd, rows, dict(kind='follow', wake=iso(wake), offset=offset, depth=books, depth_failures=failures))
         return row
 

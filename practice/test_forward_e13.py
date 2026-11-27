@@ -487,6 +487,76 @@ class Tests(unittest.TestCase):
         self.assertEqual(fill['side'], 'buy')
         self.assertEqual(fill['delay_s'], 60.)
 
+    def test_private_journal_records_all_retry_endpoints_and_failed_second_look(self):
+        endpoints = ('/api/v3/exchangeInfo', '/api/v3/klines', '/api/v3/depth')
+        fixture_root = self.temp
+        for failed_depth in (False, True):
+            with self.subTest(failed_depth=failed_depth):
+                self.temp = fixture_root / f'retries-{failed_depth}'
+                self.temp.mkdir()
+                self.folder = self.temp / 'run'
+                clock = FakeClock(T)
+                self.start()
+                venue = e.BinanceUS(self.f, self.gate(clock), clock, sleep=clock.sleep)
+                source = Venue()
+                calls = {path: [] for path in endpoints}
+                day_ms = self.f['day_s'] * 1000
+
+                class Reply(io.BytesIO):
+                    status = 200
+
+                class FailedBody(Reply):
+                    def read(self, size):
+                        raise RuntimeError('invented failed retry body')
+
+                def invented(req, **_):
+                    url = urlsplit(req.full_url)
+                    calls[url.path].append(clock())
+                    number = len(calls[url.path])
+                    if number == 1:
+                        raise URLError('invented no-status disconnect')
+                    if number == 2:
+                        pending = [r for r in self.rows() if r['kind'] == 'retry' and r['endpoint'] == url.path]
+                        self.assertEqual(len(pending), 1)
+                        self.assertEqual(pending[0]['outcome'], 'PENDING')
+                        self.assertEqual(pending[0]['first_attempt_at'], e.iso(calls[url.path][0]))
+                    if url.path == endpoints[0]:
+                        body = {'symbols': [pair() | {'symbol': 'BTCUSD', 'baseAsset': 'BTC', 'quoteAsset': 'USD'}]}
+                    elif url.path == endpoints[1]:
+                        query = parse_qs(url.query)
+                        lo = datetime.fromtimestamp(int(query['startTime'][0]) / 1000, e.UTC)
+                        hi = datetime.fromtimestamp((int(query['endTime'][0]) + 1) / 1000, e.UTC)
+                        body = []
+                        for day, price in source.candles('BTC', lo, hi).items():
+                            opening = int(datetime.fromisoformat(day).replace(tzinfo=e.UTC).timestamp()) * 1000
+                            body.append([opening, '1', '1', '1', str(price), '1', opening + day_ms - 1])
+                    elif number == 2 and failed_depth:
+                        return FailedBody()
+                    else:
+                        body = BOOK
+                    return Reply(json.dumps(body).encode())
+
+                with patch.object(venue.opener, 'open', side_effect=invented):
+                    row = e.record(clock(), venue, self.folder, clock, clock.sleep)
+                results = [r for r in self.rows() if r['kind'] == 'retry_outcome']
+                self.assertEqual([r['endpoint'] for r in results], list(endpoints))
+                self.assertEqual([r['coin'] for r in results], [None, 'BTC', 'BTC'])
+                self.assertEqual([r['outcome'] for r in results], ['SUCCESS', 'SUCCESS', 'BODY_UNAVAILABLE' if failed_depth else 'SUCCESS'])
+                self.assertEqual([r['http_status'] for r in results], [200, 200, 200])
+                for result in results:
+                    first, retry = calls[result['endpoint']][:2]
+                    self.assertEqual(result['first_attempt_at'], e.iso(first))
+                    self.assertEqual(result['retry_at'], e.iso(retry))
+                    self.assertEqual(result['delay_s'], (retry - first).total_seconds())
+                    self.assertGreaterEqual(result['delay_s'], 60.)
+                    self.assertTrue(any(r['kind'] == 'retry' and r['sha256'] == result['retry_sha256'] for r in self.rows()))
+                if failed_depth:
+                    self.assertEqual(row['depth_failures'], {'BTC': 'PAGE_UNAVAILABLE'})
+                    self.assertFalse(row['books']['main']['fills'])
+                else:
+                    self.assertEqual(row['books']['main']['fills'][0]['delay_s'], 60.)
+                self.assertNotIn('retry_outcome', json.dumps(e.alive(self.folder)))
+
     def test_unknown_status_process_interruption_still_requires_resolution(self):
         clock = FakeClock(T)
         venue = e.BinanceUS(self.f, self.gate(clock), clock)
