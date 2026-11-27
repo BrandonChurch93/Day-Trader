@@ -1,0 +1,130 @@
+{
+ "break_even_all_marks_bp": 61.08029603760224,
+ "break_even_bp": 92.94268592025796,
+ "coins": 11,
+ "design": {
+  "delayed_coin": "XRP",
+  "delayed_in": "2020-12-28 23:00 UTC",
+  "delayed_out": "2023-07-14 00:00 UTC",
+  "main": 0.021460110850333256,
+  "trades": 56,
+  "trimmed_main": -0.020672420712545096
+ },
+ "e14": {
+  "last": "2028-11-30",
+  "ledger": "233",
+  "queue": "138",
+  "state": "Registered 2026-11-26 6:01 PM MT, before any quote",
+  "trades": 60
+ },
+ "gross_mean": 0.01876292484715303,
+ "ledger_row": 229,
+ "lines": {
+  "cheap": {
+   "beaten": 998,
+   "books": 999,
+   "bp": 15,
+   "marks": {
+    "beats_random": true,
+    "enough_trades": true,
+    "positive": true,
+    "positive_trimmed": true
+   },
+   "mean_net": 0.015711213639423252,
+   "met": 4,
+   "trades": 83,
+   "trimmed": 0.009258808902657687
+  },
+  "main": {
+   "beaten": 998,
+   "books": 999,
+   "bp": 75,
+   "marks": {
+    "beats_random": true,
+    "enough_trades": true,
+    "positive": true,
+    "positive_trimmed": false
+   },
+   "mean_net": 0.0035952386211408577,
+   "met": 3,
+   "trades": 83,
+   "trimmed": -0.002780198200385907
+  }
+ },
+ "outcome": "forward card on Binance.US books, not a counted pass",
+ "page": "docs/research/200_plan_76_heldback_result.md",
+ "passed": false,
+ "passes_counted": 4,
+ "plan": 76,
+ "recompute": {
+  "by_year": {
+   "2024": {
+    "cheap": 0.0371,
+    "trades": 42
+   },
+   "2025": {
+    "cheap": -0.0044,
+    "trades": 25
+   },
+   "2026": {
+    "cheap": -0.0091,
+    "trades": 16
+   }
+  },
+  "finished_utc": "2026-11-27 01:04 UTC",
+  "sha256": "ce70a457aa66f7890350f4fe2a0470dc9e3e6d68f519e0d52c121148e58fd19e",
+  "shib": {
+   "cheap": 0.0819,
+   "trades": 11
+  },
+  "thin": {
+   "cheap": 0.028999999999999998,
+   "main": 0.0167,
+   "rest": 29,
+   "rest_cheap": -0.0089,
+   "rest_main": -0.0208,
+   "trades": 54
+  },
+  "thin_coins": [
+   "AAVE",
+   "SHIB",
+   "HBAR",
+   "LINK"
+  ],
+  "verdict": "AGREES",
+  "without_shib": {
+   "cheap": 0.005600000000000001,
+   "main": -0.0064,
+   "trades": 72
+  }
+ },
+ "shown_only": {
+  "drop_3_5": {
+   "cheap": 0.010520077141054844,
+   "main": -0.001533975079402612,
+   "trades": 204
+  },
+  "entry_1h_late": {
+   "cheap": 0.016494414258308946,
+   "main": 0.004369096782243976,
+   "trades": 83
+  },
+  "hold_12h": {
+   "cheap": 0.008912892135246707,
+   "main": -0.0031219886779065378,
+   "trades": 98
+  }
+ },
+ "source": "Bitstamp US dollar hourly bars",
+ "source_url": "https://www.bitstamp.net/api/",
+ "tests_scored": 46,
+ "trades_by_year": {
+  "2024": 42,
+  "2025": 25,
+  "2026": 16
+ },
+ "window": [
+  "2024-01-01",
+  "2026-11-26"
+ ]
+}

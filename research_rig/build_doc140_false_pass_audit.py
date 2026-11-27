@@ -321,6 +321,17 @@ def spec(n):
         return dict(label="MEASURED", low=lo_k / lo_n, high=cp_upper(hi_k, hi_n),
                     src=f"`{PLAN75_RESULT}`: {lo_k} of {lo_n} with no drift, {hi_k} of {hi_n} with {drift} yearly drift",
                     note="high is the one-sided 95% upper limit on the drift count; the edge model and coverage in those worlds are the auditor's assumptions")
+    if n == 46:
+        rel = "research_rig/PREREG_76_washout_rebound.md"
+        worlds = int(find(rel, r"Each scenario uses ([\d,]+) worlds").replace(",", ""))
+        rows = {int(c): float(r) / 100 for c, r in re.findall(r"^\| (\d+) \| 5% \| ([0-9.]+)% / [0-9.]+% \|", text(rel), re.M)}
+        if sorted(rows) != [64, 96, 144]:
+            sys.exit(f"{rel}: expected the 64, 96 and 144 trade rows of the 5% arm")
+        k_hi = round(rows[64] * worlds)
+        return dict(label="MEASURED", low=min(rows.values()), high=cp_upper(k_hi, worlds),
+                    src=(f"`{rel}`: invented-data power table, 5% arm, no edge, main cost: "
+                         + ", ".join(f"{100 * v:.2f}% at {c} trades" for c, v in sorted(rows.items())) + f", {worlds:,} worlds each"),
+                    note="made-up returns; low is the 144-trade row, high the one-sided 95% upper limit on the 64-trade row; the run had 83 trades")
     sys.exit(f"no spec for test {n}")
 
 

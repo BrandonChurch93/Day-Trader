@@ -1,16 +1,16 @@
 # 140. False-pass audit: how many of our 4 passes could be luck
 
-Written 2026-11-26 21:34 UTC by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.
+Written 2026-11-27 01:08 UTC by `research_rig/build_doc140_false_pass_audit.py`, which reads every figure below from repo files. No scorer was run, no price or result file off the repo was opened, and no return was computed.
 
 Labels: MEASURED means a no-edge pass rate counted on made-up data and recorded in a plan file or audit record. MEASURED, one mark means only one of the marks was counted that way, so the all-mark rate is lower. NOMINAL means no rate was measured; the figure is the textbook tail of the plan's mark (a one-sided normal tail for a t of 2, or a percentile tail), worked out here, not measured. STATED means taken from a plan or results page as written. INFERENCE means a reading of the evidence. UNKNOWN means not on the repo.
 
 ## Headline
 
-- Expected passes by luck across all 45 scored tests: low 0.72, high 4.20. Counted passes: 4.
+- Expected passes by luck across all 46 scored tests: low 0.72, high 4.21. Counted passes: 4.
 - About half of the high figure comes from the 9 AI time-machine tests (0.32 to 2.03). Their marks were loose (a model above the 80th or 90th percentile of its own twins), but a clearing there is reported as shown, never as a counted pass, so they cannot explain the 4 counted passes.
-- Expected luck passes in the 35 trading tests that could give a counted pass: low 0.40, high 2.17. The 4 seen is 1.8 to 10.1 times what luck alone gives.
-- Chance of 4 or more passes by luck alone in those 35: 0.05% on the low figures, 16.38% on the high figures (independent tests assumed; the month-end tests share windows).
-- Rates: 14 tests have a measured all-mark no-edge rate, 8 have one measured mark only, 20 have no measured rate (UNKNOWN) and are bracketed by the nominal tail of their own t or percentile mark as the high and a stated low of 0.005 per test, and 3 could not pass at all (design only, inconclusive by design, a cost gate).
+- Expected luck passes in the 36 trading tests that could give a counted pass: low 0.40, high 2.17. The 4 seen is 1.8 to 10.1 times what luck alone gives.
+- Chance of 4 or more passes by luck alone in those 36: 0.05% on the low figures, 16.47% on the high figures (independent tests assumed; the month-end tests share windows).
+- Rates: 15 tests have a measured all-mark no-edge rate, 8 have one measured mark only, 20 have no measured rate (UNKNOWN) and are bracketed by the nominal tail of their own t or percentile mark as the high and a stated low of 0.005 per test, and 3 could not pass at all (design only, inconclusive by design, a cost gate).
 - Ideas closed before any return on count, power, cost, coverage, validation or feasibility: 39 (8 on count, 14 on power). They had no chance to pass by luck, so they add nothing to the luck figure.
 
 ## Assumptions, stated
@@ -20,7 +20,7 @@ Labels: MEASURED means a no-edge pass rate counted on made-up data and recorded 
 - High bracket for a measured count: the one-sided 95% upper limit for that count. A 0 of 20 calibration still allows up to 13.91% by this rule, which is why those tests have wide highs.
 - Tests are summed as if independent. Several are not (Replays 25, 31, 41 and 65 share month-end windows; Replays 48 and 53 share dates). Dependence does not change the expected count; it makes clusters of luck passes or misses more likely.
 
-## The 45 tests
+## The 46 tests
 
 | # | Test | Family | Result (doc 95) | Label | Low | High | Where the figure comes from | Note |
 |---:|---|---|---|---|---:|---:|---|---|
@@ -69,16 +69,17 @@ Labels: MEASURED means a no-edge pass rate counted on made-up data and recorded 
 | 43 | Replay 22 | momentum | Did not pass (1 of 5 marks) | MEASURED | 5.00% | 21.61% | `research_rig/calibration_22.json`: edges_pct.0.pass_share = 0.05 (1 of 20) | high is the one-sided 95% upper limit for that count |
 | 44 | Replay 65 | forced flow | Did not pass (3 of 5 marks) | NOMINAL | 0.50% | 2.28% | `research_rig/PREREG_65_stock_bond_rebalance_spread.md`: clustered t mark at 2 | `research_rig/POWER_65.json` has no zero-edge row (lowest Sharpe 0.3), so no measured rate; one-sided normal tail of the t mark alone; not measured; the other marks can only lower it, fat tails or overlap can raise it |
 | 45 | Plan 75 | momentum | Passed (4 of 4 marks) | MEASURED | 3.25% | 7.47% | `docs/research/181_plan_75_heldback_result.md`: 13 of 400 with no drift, 21 of 400 with 15% yearly drift | high is the one-sided 95% upper limit on the drift count; the edge model and coverage in those worlds are the auditor's assumptions |
-| | Total, all 45 | | | | 0.72 | 4.20 | | |
-| | Total, 35 trading tests that could give a counted pass | | | | 0.40 | 2.17 | | |
+| 46 | Plan 76 | chart pattern | Did not pass (3 of 4 marks) | MEASURED | 0.00% | 0.46% | `research_rig/PREREG_76_washout_rebound.md`: invented-data power table, 5% arm, no edge, main cost: 0.20% at 64 trades, 0.05% at 96 trades, 0.00% at 144 trades, 2,000 worlds each | made-up returns; low is the 144-trade row, high the one-sided 95% upper limit on the 64-trade row; the run had 83 trades |
+| | Total, all 46 | | | | 0.72 | 4.21 | | |
+| | Total, 36 trading tests that could give a counted pass | | | | 0.40 | 2.17 | | |
 
 Results are copied from `docs/research/95_where_we_stand_after_32_tests.md`. Results pages are those cited there.
 
 ## How that compares with 4
 
 - MEASURED and NOMINAL together: luck alone would give about 0.40 to 2.17 counted passes, compared with 4 observed.
-- INFERENCE: on the high figures 4 or more by luck happens 16.38% of the time if tests are independent. That is not the probability any specific pass was luck.
-- 3 other results met their own marks and were not counted: Replay 13 Rule A (Relative marks met, not counted pass); TM06-P six models (Shown by its marks, not counted pass); TM06-P-g / TM06-R (Mixed / did not repeat). Counting those too, 7 of 45 cleared, against 0.72 to 4.20 expected by luck.
+- INFERENCE: on the high figures 4 or more by luck happens 16.47% of the time if tests are independent. That is not the probability any specific pass was luck.
+- 3 other results met their own marks and were not counted: Replay 13 Rule A (Relative marks met, not counted pass); TM06-P six models (Shown by its marks, not counted pass); TM06-P-g / TM06-R (Mixed / did not repeat). Counting those too, 7 of 46 cleared, against 0.72 to 4.21 expected by luck.
 
 ## The 4 counted passes
 
@@ -99,7 +100,7 @@ Results are copied from `docs/research/95_where_we_stand_after_32_tests.md`. Res
 
 - Relatives that did not pass (MEASURED): Replay 31: Failed (2/10 marks); Replay 33: Failed (3/11 marks, placement only); Replay 41: Failed (4/8 marks); Replay 52: Did not pass (0 of 6 marks); Replay 65: Did not pass (3 of 5 marks). Measurement 34 (TMF, UBT) used the same windows and is not new evidence; Replay 26 (2002 to 2015) was blocked at input validation and never scored. So 1 of 6 scored month-end and bond-flow tests passed.
 - Overlap with the source sample (STATED, `docs/research/74_round_10_forced_flow_ideas.md`): Hartley and Schwarz cover 1990 to 2018 Treasuries, so 2016 to 2018 of the 2016 to 2026 window overlap; the rest does not.
-- Forward log (STATED, `practice/traders/E01_tlt_month_end_close.md`): E01 records the same window each month from December 2026. MEASURED: no E01 record yet (forward logs on the repo: E07_log.json, E09_log.json).
+- Forward log (STATED, `practice/traders/E01_tlt_month_end_close.md`): E01 records the same window each month from December 2026. MEASURED: no E01 record yet (forward logs on the repo: E07_log.json, E09_log.json, E10_log.json, E11_log.json, E12_log.json, E13_log.json, M132_log.json, M133_log.json).
 - Trust today: a modest pass with no measured null, sitting among 5 failed relatives, so treat it as a lead that E01 must confirm, not as a found edge.
 
 ### Replay 48, muni closed-end fund losers into January
