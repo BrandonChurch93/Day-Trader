@@ -351,6 +351,90 @@ def e10_card(gh, log_path=None):
                          f"reaches a {legs[0]}, {legs[1]} or {legs[2]} day high, sell when the close drops under a stop that only moves up. "
                          + stop_sentence(when, new)))
 
+# ------------------------------------------------------------------ E12, E13 and Measurement 133: running, no result yet
+LEDGER = "research_rig/TRIAL_LEDGER.md"
+RUNNING_RE = re.compile(r"^Running since (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) \(first (hourly|daily) wake ([^)]*?)\)")
+
+
+def ledger_row(n):
+    rows = [l for l in read(LEDGER).splitlines() if l.startswith(f"| {n} |")]
+    if len(rows) != 1:
+        raise ValueError(f"ledger row {n} not found once")
+    return [c.strip() for c in rows[0].strip().strip("|").split("|")]
+
+
+def one_file(folder, prefix):
+    names = sorted(n for n in os.listdir(os.path.join(ROOT, folder)) if n.startswith(prefix) and n.endswith(".md"))
+    if len(names) != 1:
+        raise ValueError(f"expected one {prefix}*.md in {folder}, found {len(names)}")
+    return f"{folder}/{names[0]}"
+
+
+def running_card(gh, *, id_, name, queue_row, ledger_n, start_key, what, read_rule, link, money="Pretend money, no account at any venue."):
+    """A plain card for a forward log that is running and has no result yet. Every state word is read from its queue row
+    and its ledger row; the export stops if either no longer says running and started."""
+    step = queue_step(queue_row)
+    m = RUNNING_RE.match(step)
+    led = ledger_row(ledger_n)
+    status = led[-1]
+    if not m or not re.search(rf"START GO \(lead agent, [^)]*\): .*`{start_key}=[^`]+`", status) or "CLEAR" not in status:
+        raise ValueError(f"{name} card: queue row {queue_row} or ledger row {ledger_n} no longer says running with a start go")
+    if read_rule not in step:
+        raise ValueError(f"{name} card: queue row {queue_row} no longer states when it is read")
+    since, kind, first = m.groups()
+    return dict(id=id_, title=f"{name}: running on Binance.US data", date=None, verdict="Running, no result yet", tone="info",
+                numbers=[], links=[[f"{name} plan", gh + link], ["Queue row", gh + QUEUE + "#running-now"]],
+                basis=f"STATED in the queue page, row {queue_row}, and the trial ledger, row {ledger_n}. {money}",
+                summary=(what + f" Running since {since}; first {kind} wake {first}. "
+                         + read_rule + " No result exists yet, so no figure is shown."))
+
+
+def e12_card(gh):
+    led = ledger_row("230")[-1] + " " + " ".join(ledger_row("230")[:-1])
+    rule = re.search(r"card E09's three dip-buy rules \(([^)]+)\)", dict((c[0], c[1]) for c in queue_rows())["133"])
+    size = re.search(r"pretend (\$\d[\d,]*) not compounded", led)
+    if not (rule and size):
+        raise ValueError("E12 card: the rule or the trade size is no longer stated")
+    m = re.search(r"Judged at (\d+) trades or (\d{4}-\d{2}-\d{2})\.", queue_step("135"))
+    if not m:
+        raise ValueError("E12 card: queue row 135 no longer states when it is judged")
+    return running_card(gh, id_="e12", name="E12", queue_row="135", ledger_n="230", start_key="E12_START",
+                        what=(f"Card E09's dip-buy rules rebuilt on Binance.US data only, with pretend money: {rule[1]}, "
+                              f"at a pretend {size[1]} a trade. It measures whether the judged rule makes money after real "
+                              f"spreads and fees on that venue."),
+                        read_rule=m[0], link=one_file("practice/traders", "E12_"))
+
+
+def e13_card(gh):
+    led = " ".join(ledger_row("231"))
+    card = read(E10_CARD)
+    coins = re.search(r"Read the (\d+) Plan 70 coins", card)[1]
+    legs = re.search(r"Use the Plan 75 primary book for decisions: (\d+)-, (\d+)- and (\d+)-day legs", card).groups()
+    size = re.search(r"pretend (\$\d[\d,]*) with the (\$\d[\d,]*) line shown", led)
+    if not size or "score not before 365 days after the first wake" not in led:
+        raise ValueError("E13 card: the size or the scoring rule is no longer stated in ledger row 231")
+    return running_card(gh, id_="e13", name="E13", queue_row="136", ledger_n="231", start_key="E13_START",
+                        what=(f"The Plan 75 trend rule rebuilt on Binance.US data only, with pretend money: buy one of up to {coins} "
+                              f"large coins when its daily close reaches a {legs[0]}, {legs[1]} or {legs[2]} day high, sell when the "
+                              f"close drops under a stop that only moves up, at a pretend {size[1]}. It measures the real spread, "
+                              f"whether orders are placeable at that size, and after a year the profit line as a record."),
+                        read_rule="Read once, a year after the first wake.", link=one_file("practice/traders", "E13_"))
+
+
+def m133_card(gh):
+    led = " ".join(ledger_row("232"))
+    m = re.search(r"the same (\d+) coins where it lists them in US dollars, one wake 10 seconds after every UTC hour for (\d+) days", led)
+    sizes = re.search(r"the cost to buy and to sell (\$\d+) and (\$\d+) walking the book", led)
+    end = re.search(r"\d+ hourly wakes to (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT)", queue_step("137"))
+    if not (m and sizes and end):
+        raise ValueError("Measurement 133 card: ledger row 232 or queue row 137 no longer states the coins, sizes or end")
+    return running_card(gh, id_="m133", name="Measurement 133", queue_row="137", ledger_n="232", start_key="M133_START",
+                        what=(f"What a small trade really costs on Binance.US, with no profit claim: every hour for {m[2]} days, "
+                              f"the cost to buy and to sell {sizes[1]} and {sizes[2]} on each of {m[1]} coins, walking the order book."),
+                        read_rule="Read once at the end.", link=one_file("docs/research", "195_measurement_133"),
+                        money="Public order books only, no trade and no account at any venue.")
+
+
 # ------------------------------------------------------------------ Running now strip
 def first_sentence(text):
     text = re.sub(r"\s*\((?:[^()]*`[^()]*)\)", "", text)                       # parentheses that only point at files
@@ -407,4 +491,4 @@ def running_now():
     return [[c[0], first_sentence(c[1]), row_state(c[-1]) if len(c) >= 3 else None] for c in queue_rows()]
 
 def cards(gh):
-    return [plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh)]
+    return [plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh), e12_card(gh), e13_card(gh), m133_card(gh)]

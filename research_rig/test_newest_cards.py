@@ -247,7 +247,7 @@ def test_e10_card_is_stopped_and_shows_wakes_only(tmp_path):
         assert c["numbers"] == [["Wakes recorded before the stop", wakes]] and "columns" not in c
         assert not re.search(r"bp|cost|spread|fill|order|\$", json.dumps(c), re.I)
         assert [l[0] for l in c["links"]] == ["E10 card", "Log counts"]
-    assert [x["id"] for x in NC.cards("GH/")][-2:] == ["e09", "e10"]
+    assert [x["id"] for x in NC.cards("GH/")][-5:] == ["e09", "e10", "e12", "e13", "m133"]
     assert "Standing chore" not in open(NC.__file__).read()
 
 
@@ -269,3 +269,59 @@ def test_e10_refuses_a_log_of_another_shape(tmp_path, change):
     path.write_text(json.dumps(log))
     with pytest.raises(ValueError, match="E10 card"):
         NC.e10_card("GH/", path)
+
+
+RUNNING = {"e12": ("135", "230", "Judged at 150 trades or 2027-11-30."),
+           "e13": ("136", "231", "Read once, a year after the first wake."),
+           "m133": ("137", "232", "Read once at the end.")}
+
+
+def test_running_cards_from_the_real_queue_and_ledger():
+    got = {c["id"]: c for c in NC.cards("GH/")}
+    for id_, (qrow, lrow, read_rule) in RUNNING.items():
+        c = got[id_]
+        assert c["verdict"] == "Running, no result yet" and c["tone"] == "info"
+        assert c["numbers"] == [] and "columns" not in c and "bars" not in c
+        assert "Running since 2026-11-26 5:39 PM MT" in c["summary"] and read_rule in c["summary"]
+        assert c["summary"].endswith("No result exists yet, so no figure is shown.")
+        assert f"row {qrow}" in c["basis"] and f"row {lrow}" in c["basis"]
+        assert "Binance.US data only" in c["summary"] or "on Binance.US" in c["summary"]
+        assert not re.search(r"\bbp\b|%|profit of|net ", c["summary"])
+        assert c["links"][1] == ["Queue row", "GH/docs/QUEUE.md#running-now"]
+        assert os.path.exists(os.path.join(NC.ROOT, c["links"][0][1][3:]))
+    assert "at a pretend $250 a trade" in got["e12"]["summary"]
+    assert "first daily wake 2026-11-27 5:00 PM MT" in got["e13"]["summary"]
+    assert "$25 and $250 on each of 20 coins" in got["m133"]["summary"] and "720 hourly wakes to 2026-12-26 5:00 PM MT" in got["m133"]["summary"]
+
+
+def ledger_with(monkeypatch, row, old, new):
+    text = NC.read(NC.LEDGER)
+    assert old in text
+    lines = [l.replace(old, new) if l.startswith(f"| {row} |") else l for l in text.splitlines()]
+    real = NC.read
+    monkeypatch.setattr(NC, "read", lambda path: "\n".join(lines) if path == NC.LEDGER else real(path))
+
+
+@pytest.mark.parametrize("id_", list(RUNNING))
+def test_running_cards_refuse_when_the_queue_row_changes(monkeypatch, id_):
+    qrow = RUNNING[id_][0]
+    step = NC.queue_step(qrow)
+    queue_with(monkeypatch, qrow, step.replace("Running since", "Registered"))
+    with pytest.raises(ValueError):
+        getattr(NC, id_ + "_card")("GH/")
+
+
+@pytest.mark.parametrize("id_", list(RUNNING))
+def test_running_cards_refuse_without_a_start_go(monkeypatch, id_):
+    lrow = RUNNING[id_][1]
+    ledger_with(monkeypatch, lrow, "START GO (lead agent", "START HELD (lead agent")
+    with pytest.raises(ValueError, match="no longer says running"):
+        getattr(NC, id_ + "_card")("GH/")
+
+
+@pytest.mark.parametrize("id_", list(RUNNING))
+def test_running_cards_refuse_when_the_read_rule_changes(monkeypatch, id_):
+    qrow, _, read_rule = RUNNING[id_]
+    queue_with(monkeypatch, qrow, NC.queue_step(qrow).replace(read_rule, "Read whenever."))
+    with pytest.raises(ValueError):
+        getattr(NC, id_ + "_card")("GH/")
