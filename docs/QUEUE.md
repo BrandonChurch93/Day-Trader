@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-27 07:09 UTC
+Last changed: 2026-11-27 07:12 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -152,6 +152,8 @@ The table lists current work and deferred scoring. Completed time-machine runs a
 Ruling by the lead agent, 2026-11-26 7:35 PM MT, told to the owner the same evening: broad idea rounds are paused after five rounds in a row (68 to 72) registered nothing. No helper is kept on new ideas until E14's cost-only reading or Measurement 134's read is in, or the owner asks for a round. The forward loggers keep running. This replaces the standing line that one helper always looks for new ideas.
 
 Ruling by the lead agent, 2026-11-27 12:02 AM MT: the owner asked whether the work had stopped. The pause above is lifted in part: one helper runs one narrow round at a time (round 73: trading systems run by AI models and career traders with dated public live records in crypto, and whether any stated method can be rebuilt as fixed rules and tested on data we may use). Broad anomaly rounds stay off. Also started: Measurement 135 (queue 140) and a plan for a live pretend-money desk on Binance.US where scouts propose and the criteria gate decides (queue 125 follow-up, card E15 if it is registered).
+
+Round 73 result (2026-11-27 12:12 AM MT): nothing registered ([doc 204](research/204_round_73_ai_and_trader_live_records_in_crypto.md), second-checked). If a daily average-rotation rule is ever looked at again after E13 ends, a count of crossovers and whipsaws on permitted daily bars comes first. Next narrow round is chosen by the lead agent after Measurement 135 reports.
 
 The idea scout's full write-up of 23 ideas, each with sources and the way it could fool us, is on the research machine and goes into `docs/research/` when its sources have been checked.
 
