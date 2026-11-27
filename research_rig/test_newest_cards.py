@@ -215,7 +215,7 @@ def test_plan75_refuses_a_changed_pinned_copy(tmp_path, which):
 def test_plan75_missing_files_fall_back_quietly(tmp_path):
     c = NC.plan75_card("GH/", tmp_path / "nope.out", tmp_path / "nope.json")
     assert c["id"] == "plan75" and c["verdict"] == "Figures not on this computer" and c["numbers"] == [] and "bars" not in c
-    assert NC.cards("GH/")[0]["id"] == "plan75"
+    assert [c["id"] for c in NC.cards("GH/")][:2] == ["plan76", "plan75"]
 
 
 # ---- E10 forward log: shape from forward_e10.py publish, made-up logs only through its test helpers in a temp folder
@@ -247,7 +247,7 @@ def test_e10_card_is_stopped_and_shows_wakes_only(tmp_path):
         assert c["numbers"] == [["Wakes recorded before the stop", wakes]] and "columns" not in c
         assert not re.search(r"bp|cost|spread|fill|order|\$", json.dumps(c), re.I)
         assert [l[0] for l in c["links"]] == ["E10 card", "Log counts"]
-    assert [x["id"] for x in NC.cards("GH/")][-5:] == ["e09", "e10", "e12", "e13", "m133"]
+    assert [x["id"] for x in NC.cards("GH/")][-6:] == ["e09", "e10", "e12", "e13", "m133", "e14"]
     assert "Standing chore" not in open(NC.__file__).read()
 
 
@@ -325,3 +325,43 @@ def test_running_cards_refuse_when_the_read_rule_changes(monkeypatch, id_):
     queue_with(monkeypatch, qrow, NC.queue_step(qrow).replace(read_rule, "Read whenever."))
     with pytest.raises(ValueError):
         getattr(NC, id_ + "_card")("GH/")
+
+
+# ---- Plan 76 result card and E14, from the public summary and the queue and ledger rows
+def test_plan76_card_reads_the_summary():
+    f = json.loads(NC.read(NC.P76_SUMMARY))
+    c = NC.plan76_card("GH/")
+    assert c["verdict"] == "Did not pass" and c["tone"] == "fail"
+    assert "All marks met at 15 bp a side, practice card E14 follows" in c["summary"] and "not a counted pass" in c["summary"]
+    assert dict(c["numbers"])["Mean net a trade at 75 bp a side"] == NC.signed(f["lines"]["main"]["mean_net"])
+    assert dict(c["numbers"])["Cost a side where the mean reaches zero"] == f"{f['break_even_bp']:.1f} bp"
+    assert [r[1] for r in c["bars"]["rows"]] == [round(100 * v["cheap"], 2) for _, v in sorted(f["recompute"]["by_year"].items())]
+    assert "INFERENCE" in c["summary"] and "SHIB" in c["summary"] and "blind recompute" in c["basis"]
+    assert c["links"][0] == ["Plan 76 result", "GH/" + NC.D200]
+
+
+def test_plan76_card_missing_and_refusal(tmp_path):
+    c = NC.plan76_card("GH/", str(tmp_path / "nope.json"))
+    assert c["verdict"] == "Figures not on this computer" and c["numbers"] == []
+    f = json.loads(NC.read(NC.P76_SUMMARY))
+    f["lines"]["main"]["met"] = 4
+    bad = tmp_path / "s.json"
+    bad.write_text(json.dumps(f))
+    with pytest.raises(ValueError, match="Plan 76 card"):
+        NC.plan76_card("GH/", str(bad))
+    f = json.loads(NC.read(NC.P76_SUMMARY))
+    f["recompute"] = None
+    bad.write_text(json.dumps(f))
+    c = NC.plan76_card("GH/", str(bad))
+    assert c["summary"].endswith("Blind recompute: pending.") and "bars" not in c
+
+
+def test_e14_card_registered_with_no_figure(monkeypatch):
+    c = NC.e14_card("GH/")
+    assert c["verdict"] == "Registered, not started" and c["tone"] == "info" and c["numbers"] == []
+    assert "Registered 2026-11-26 6:01 PM MT" in c["summary"] and "60 trades or 2028-11-30" in c["summary"]
+    assert "pretend $250" in c["summary"] and "11 coins" in c["summary"]
+    assert c["summary"].endswith("No result exists yet, so no figure is shown.")
+    queue_with(monkeypatch, "138", "Paused for a rebuild.")
+    with pytest.raises(ValueError, match="E14 card"):
+        NC.e14_card("GH/")

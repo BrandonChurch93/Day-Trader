@@ -370,7 +370,7 @@ def one_file(folder, prefix):
     return f"{folder}/{names[0]}"
 
 
-def running_card(gh, *, id_, name, queue_row, ledger_n, start_key, what, read_rule, link, money="Pretend money, no account at any venue."):
+def running_card(gh, *, id_, name, queue_row, ledger_n, start_key, what, read_rule, link, money="Pretend money, no account at any venue.", rule_in_step=True):
     """A plain card for a forward log that is running and has no result yet. Every state word is read from its queue row
     and its ledger row; the export stops if either no longer says running and started."""
     step = queue_step(queue_row)
@@ -379,7 +379,7 @@ def running_card(gh, *, id_, name, queue_row, ledger_n, start_key, what, read_ru
     status = led[-1]
     if not m or not re.search(rf"START GO \(lead agent, [^)]*\): .*`{start_key}=[^`]+`", status) or "CLEAR" not in status:
         raise ValueError(f"{name} card: queue row {queue_row} or ledger row {ledger_n} no longer says running with a start go")
-    if read_rule not in step:
+    if rule_in_step and read_rule not in step:
         raise ValueError(f"{name} card: queue row {queue_row} no longer states when it is read")
     since, kind, first = m.groups()
     return dict(id=id_, title=f"{name}: running on Binance.US data", date=None, verdict="Running, no result yet", tone="info",
@@ -433,6 +433,83 @@ def m133_card(gh):
                               f"the cost to buy and to sell {sizes[1]} and {sizes[2]} on each of {m[1]} coins, walking the order book."),
                         read_rule="Read once at the end.", link=one_file("docs/research", "195_measurement_133"),
                         money="Public order books only, no trade and no account at any venue.")
+
+
+# ------------------------------------------------------------------ Plan 76, the held-back run
+D200 = "docs/research/200_plan_76_heldback_result.md"
+P76_SUMMARY = "research_rig/RESULT_76_summary.json"
+
+
+def plan76_card(gh, path=P76_SUMMARY):
+    """Reads the public summary that research_rig/report_76.py writes; types no figure in."""
+    title = "Plan 76: buy after an hourly fall, the sealed years"
+    links = [["Plan 76 result", gh + D200], ["Practice card E14 row", gh + QUEUE + "#running-now"]]
+    try:
+        f = json.loads(read(path))
+    except (FileNotFoundError, NotADirectoryError) as e:
+        return missing("plan76", title, "A rule that buys a coin after a sharp one-hour fall, run once on years it had never seen.", links, e)
+    m, ch, r = f["lines"]["main"], f["lines"]["cheap"], f.get("recompute")
+    if f["passed"] or m["met"] == 4 or ch["met"] != 4 or f["outcome"] != "forward card on Binance.US books, not a counted pass":
+        raise ValueError("Plan 76 card: the summary no longer shows a miss at the main cost with all marks met at the cheap one")
+    text = (f"Buys the coin that fell most when one of {f['coins']} coins drops 5% or more in an hour, and sells a day later. "
+            f"It was run once on {f['window'][0]} to {f['window'][1]}, years it had never seen. It did not pass: after {m['bp']} bp a side, "
+            f"{m['met']} of 4 marks were met, because without each year's best trade it lost money. "
+            f"All marks met at {ch['bp']} bp a side, practice card E14 follows, on Binance.US order books with pretend money. "
+            f"It is not a counted pass.")
+    if r:
+        th = r["thin"]
+        yrs = ", ".join(f"{y} {signed(v['cheap'])} ({v['trades']} trades)" for y, v in sorted(r["by_year"].items()))
+        text += (f" A blind recompute agrees on every mark. By entry year at {ch['bp']} bp a side: {yrs}. SHIB made "
+                 f"{signed(r['shib']['cheap'])} a trade over {r['shib']['trades']} trades, and without it the other {r['without_shib']['trades']} "
+                 f"averaged {signed(r['without_shib']['cheap'])} at {ch['bp']} bp and {signed(r['without_shib']['main'])} at {m['bp']} bp. The {len(r['thin_coins'])} pairs with the most hours of no price change "
+                 f"({', '.join(r['thin_coins'])}) carry {th['trades']} of {m['trades']} trades at {signed(th['cheap'])}; the other {th['rest']} average "
+                 f"{signed(th['rest_cheap'])} at {ch['bp']} bp. Reading (INFERENCE): it rests on 2024 and thin pairs, so it earns a forward card only.")
+    else:
+        text += " Blind recompute: pending."
+    card = dict(id="plan76", title=title, date=None, verdict="Did not pass", tone="fail", links=links,
+                basis=(f"MEASURED in the one run on the sealed years, read from {os.path.basename(path)}, which research_rig/report_76.py writes "
+                       f"from the pinned stage results. bp is a hundredth of a percent."
+                       + (" The by-year and by-coin lines are from the independent auditor's blind recompute report; the results hold no "
+                          "per-trade rows." if r else "")),
+                summary=text,
+                numbers=[[f"Mean net a trade at {m['bp']} bp a side", signed(m["mean_net"])],
+                         [f"Without each year's best trade, {m['bp']} bp", signed(m["trimmed"])],
+                         [f"Mean net a trade at {ch['bp']} bp a side", signed(ch["mean_net"])],
+                         ["Trades", f"{m['trades']:,}"],
+                         ["Random books beaten", f"{m['beaten']} of {m['books']}"],
+                         ["Cost a side where the mean reaches zero", f"{f['break_even_bp']:.1f} bp"]])
+    if r:
+        card["bars"] = dict(unit="%", label=f"Mean net a trade by entry year at {ch['bp']} bp a side, in percent (blind recompute).",
+                            rows=[[f"{y} ({v['trades']} trades)", round(100 * v["cheap"], 2)] for y, v in sorted(r["by_year"].items())])
+    return card
+
+
+def e14_card(gh):
+    """E14 from queue row 138 and ledger row 233: registered, or running once both say so. No figure."""
+    step = queue_step("138")
+    what = dict((c[0], c[1]) for c in queue_rows())["138"]
+    led = ledger_row("233")
+    rule = re.search(r"\((buy the largest one-hour faller of 5% or more, hold 24 hours)\) on Binance\.US order books at a pretend (\$\d+), "
+                     r"judged at (\d+) trades or (\d{4}-\d{2}-\d{2})", what)
+    coins = re.search(r"coins are those of Plan 76's (\d+) \(", " ".join(led))
+    if not (rule and coins):
+        raise ValueError("E14 card: queue row 138 or ledger row 233 no longer states the rule, the size or the coins")
+    measures = (f"Plan 76's rule rebuilt on Binance.US data only, with pretend money: {rule[1]}, on those of Plan 76's {coins[1]} coins that "
+                f"Binance.US lists, at a pretend {rule[2]} a trade. It measures the real cost of buying in the hour after a fall and whether "
+                f"the rule still makes money after it.")
+    read_rule = f"Judged once at {rule[3]} trades or {rule[4]}, whichever comes first."
+    reg = re.match(r"Registered (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT), before any quote\.", step)
+    if reg and led[-1].startswith("REGISTERED ") and "START GO" not in led[-1]:
+        return dict(id="e14", title="E14: buy after an hourly fall, on Binance.US data", date=None, verdict="Registered, not started",
+                    tone="info", numbers=[], links=[["Queue row", gh + QUEUE + "#running-now"], ["Trial ledger", gh + LEDGER]],
+                    basis="STATED in the queue page, row 138, and the trial ledger, row 233. Pretend money, no account at any venue.",
+                    summary=(measures + f" Registered {reg[1]}, before any quote; not started yet. " + read_rule
+                             + " No result exists yet, so no figure is shown."))
+    if RUNNING_RE.match(step):
+        card = one_file("practice/traders", "E14_")
+        return running_card(gh, id_="e14", name="E14", queue_row="138", ledger_n="233", start_key="E14_START",
+                            what=measures, read_rule=read_rule, link=card, rule_in_step=False)
+    raise ValueError("E14 card: queue row 138 or ledger row 233 is neither registered nor running")
 
 
 # ------------------------------------------------------------------ Running now strip
@@ -491,4 +568,5 @@ def running_now():
     return [[c[0], first_sentence(c[1]), row_state(c[-1]) if len(c) >= 3 else None] for c in queue_rows()]
 
 def cards(gh):
-    return [plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh), e12_card(gh), e13_card(gh), m133_card(gh)]
+    return [plan76_card(gh), plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh), e12_card(gh), e13_card(gh),
+            m133_card(gh), e14_card(gh)]

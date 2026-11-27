@@ -1,10 +1,10 @@
-# Where We Stand After 45 Scored Tests
+# Where We Stand After 46 Scored Tests
 
 Last changed: 2026-11-26 MT. Plain synthesis for the owner. Figures come from `research_rig/TRIAL_LEDGER.md`, `docs/STATUS.md`, `docs/QUEUE.md`, and the named repo files, including drafts where noted; no return was recomputed. Claims are labeled MEASURED (from runs), STATED (from plans, schedules, or other records), INFERENCE (a reading of the evidence), or UNKNOWN (not yet measured).
 
 ## 1. Every Scored Test So Far
 
-MEASURED: Forty-five scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample, as counted below. Four passed their frozen marks: Replays 25, 48 and 20, and Plan 75. STATED: Replays 25 and 48 are US $500 reachable. Plan 75 is reachable in principle, but the test used a proxy feed rather than US venue prices. Replay 20 is not US-reachable. Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
+MEASURED: Forty-six scored tests (trading replays, AI time-machine evaluations, and the opening-range fill gate that killed a strategy before replay) have been completed or scored on a design sample, as counted below. Four passed their frozen marks: Replays 25, 48 and 20, and Plan 75. STATED: Replays 25 and 48 are US $500 reachable. Plan 75 is reachable in principle, but the test used a proxy feed rather than US venue prices. Replay 20 is not US-reachable. Diagnostic measurements on already-tested windows (Measurement 27 TLT closing cross in `docs/research/70_measure_27_tlt_closing_cross.md`; Measurement 34 TMF/UBT leverage check in `docs/research/82_measurement_34_tmf_ubt_month_end.md`) and non-trial descriptive looks (Alex Becker calls in `docs/research/46_becker_calls_measured.md`, attention feed in `docs/research/45_attention_feed_measured.md`, governance votes in `docs/research/49_governance_votes_look.md`, and the peak-signal look in `docs/research/61_look_after_the_peak_signal.md`) are not counted as separate strategy trials here.
 
 | # | Test | What it tested (6 words) | Family | US $500? | Result (MEASURED) | Headline net number and source |
 |---|---|---|---|---|---|---|
@@ -53,22 +53,23 @@ MEASURED: Forty-five scored tests (trading replays, AI time-machine evaluations,
 | 43 | Replay 22 | Range-break rule from Fable 5.2 picker's notes, no AI | momentum | Yes | Did not pass (1 of 5 marks) | +275.40% against +274.25% for holding the same coins, 2020 to March 2026 at 12 bp; daily Sharpe 0.67 against a mark of 1.0, largest fall 79.40% against 40%, 57% of 500 random-entry twins at or above it, 3 of 7 years positive; -11.14% without its best 3 trades (`docs/research/137_replay_22_fable_rule_a.md`) |
 | 44 | Replay 65 | Trade against stock-bond rebalancing flow, SPY against IEF, weight set daily at the close (NBER w33554) | forced flow | Yes | Did not pass (3 of 5 marks) | 2,614 sessions, +1.01 bp mean net a session, weekly clustered t 1.04 against a mark of 2, -1.76 bp without its best 27 sessions, 7 of 11 years positive; net yearly Sharpe 0.35 against about 1 stated in the paper; -0.07 bp without March 2020 (`docs/research/139_replay_65_stock_bond_rebalancing.md`) |
 | 45 | Plan 75 | Coin trends with a rising stop | momentum | Yes | Passed (4 of 4 marks) | At 75 bp a side, +9.04% net over 34 months vs +6.40% for Bitcoin at matched volatility; 2024 +18.78%, 2025 -4.62%, 2026 through October -3.75%. Shown only at 145 bp a side: -3.90%. Tested on a US venue proxy (`docs/research/181_plan_75_heldback_result.md`) |
+| 46 | Plan 76 | Buy a coin after one-hour fall | chart pattern | Yes | Did not pass (3 of 4 marks) | At 75 bp a side +0.36% net a trade over 83 trades, -0.28% without each year's best trade; all four marks met at 15 bp a side (+1.57%), which earns forward card E14 on Binance.US books, not a counted pass. Tested on a US venue proxy: Bitstamp bars, not Binance.US books (`docs/research/200_plan_76_heldback_result.md`) |
 
 ## 2. Count by Family
 
-MEASURED from the 45 scored tests in Section 1:
+MEASURED from the 46 scored tests in Section 1:
 
 | Family | Tested | Counted passes | Notes |
 |---|---:|---:|---|
 | momentum | 10 | 1 | Plan 75 is a thin pass: all the gain came in 2024 and the result went negative at 145 bp a side. STATED limits: Binance USDT bars stood in for a US venue, and the coins were picked with hindsight. Replay 13 Rule A is not a counted pass; Replay 22 could not be told apart from random entries |
 | AI discretionary | 9 | 0 | TM06 picker met its marks on months that may lie inside the models' memory and is not a counted pass; Replay 11 held-back (2,146 releases) is still open; TM02 met its headlines-help sub-mark only |
 | forced flow | 10 | 2 | Replay 25 passed (9/9 marks) and Replay 48 passed (7 of 7 marks); both US $500 reachable. Replays 52, 53 and 65 did not pass; Replay 65 (daily stock-bond rebalancing) had a positive mean that sat in March 2020 |
-| chart pattern | 5 | 0 | All five failed, including Measurement 15 fill gate |
+| chart pattern | 6 | 0 | All six failed, including Measurement 15 fill gate. Plan 76 (buy after a one-hour fall) met all marks only at 15 bp a side and earns forward card E14, not a counted pass |
 | carry | 2 | 0 | Both cross-coin and same-coin funding carry failed after costs |
 | calendar | 2 | 0 | Replay 39 (IWM pre-holiday) missed both t marks at 1.91 and 1.82 |
 | event | 6 | 1 | Replay 20 passed (5/5 marks), but uses Binance.com perpetuals (not US-reachable); Replay 21, both legs of Replay 46, Replay 60 and Replay 62 did not pass |
 | copy-trading | 1 | 0 | Replay 12 (Congress disclosures) lagged SPY by 1.0%/yr on held-back data |
-| Total | 45 | 4 | 3 US $500 reachable in principle: Replay 25, Replay 48 and Plan 75. Plan 75 was tested on a proxy feed; live US costs and order sizes are not verified. Replay 20 is offshore only |
+| Total | 46 | 4 | 3 US $500 reachable in principle: Replay 25, Replay 48 and Plan 75. Plan 75 was tested on a proxy feed; live US costs and order sizes are not verified. Replay 20 is offshore only |
 
 ## 3. What the Passes Have in Common and Their Dollar Size
 
