@@ -150,8 +150,8 @@
 
   // ---------- section 2 ----------
   var TONE_MARK = { fail: '\u00d7', mixed: '~', unknown: '?', info: 'i' };
-  // Keep a date such as 2024-01-01, or 2026-11-26 17:00 MT, on one line, so a narrow screen does not split it at a hyphen.
-  function keepDates(html) { return html.replace(/\b(\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2} MT)?|\d{2}:\d{2} MT)(?![\w:])/g, '<span class="nowrap">$1</span>'); }
+  // Keep a date such as 2024-01-01, 2026-11-26 17:00 MT or 2026-11-26 5:39 PM MT, on one line, so a narrow screen does not split it at a hyphen.
+  function keepDates(html) { return html.replace(/\b(\d{4}-\d{2}-\d{2}(?: \d{1,2}:\d{2}(?: [AP]M)? MT)?|\d{1,2}:\d{2}(?: [AP]M)? MT)(?![\w:])/g, '<span class="nowrap">$1</span>'); }
 
   // A small bar chart drawn in plain HTML, so it reads on a phone. Each bar has its value written beside it.
   function barsHtml(b) {
@@ -1191,7 +1191,10 @@
       });
     }
     window.addEventListener('scroll', function () { if (!ticking) { ticking = true; setTimeout(update, 50); } }, { passive: true });
-    window.addEventListener('resize', update);
+    // The tab row can wrap to two lines on wide screens, so a jump to a section clears the real height of the bar.
+    function pad() { document.documentElement.style.scrollPaddingTop = Math.ceil(document.querySelector('.topbar').getBoundingClientRect().height + 16) + 'px'; }
+    window.addEventListener('resize', function () { pad(); update(); });
+    pad();
     update();
     state.updateNav = update;
   }

@@ -117,6 +117,13 @@ p, li, dd { text-wrap: pretty; }
   mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
 }
 .sectionnav::-webkit-scrollbar { display: none; }
+/* Wider than a phone: the tabs wrap onto a second line so every label shows whole; no fade, no scroll */
+@media (min-width: 561px) {
+  .sectionnav {
+    flex-wrap: wrap; overflow-x: visible; padding: 0 12px;
+    -webkit-mask-image: none; mask-image: none;
+  }
+}
 .sectionnav a {
   flex: none; color: var(--muted); text-decoration: none;
   padding: 10px 8px; font-size: 14px; white-space: nowrap;
