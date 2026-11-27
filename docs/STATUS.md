@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-27 01:35 UTC
+Last updated: 2026-11-27 02:09 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- Broken and being replaced, found 2026-11-26 7:09 PM MT: Measurement 133 stopped at its second wake (7:00 PM MT) on a build fault. MEASURED: its loop ended with an unhandled error when E12 was holding the shared request gate at the start of the wake; one wake was recorded, nothing was read. The lead agent closed it unread (ledger 232) and registered Measurement 134 (ledger 234, queue 139): the same measurement eight minutes after each hour, where no other logger is scheduled, with a busy gate counted as a lost book and never a crash. Queue row 137 still reads as running until the status page code is changed in the same step that marks it stopped. E12, E13 and E14 are running; E14's first wake at 7:03 PM MT froze its 11 pairs with no error. E12 has the same unhandled case at the start of a wake and is being checked before E13's first wake on 2026-11-27 at 5:00 PM MT.
 - Idea round 71, aimed at the Plan 76 lead (resting bids in thin pairs after a fall): [doc 201](research/201_round_71_washout_follow_up.md), second-checked, 10 sources confirmed, 3 corrected. Nothing registered. STATED by the papers read: short-term reversal in coins sits in small, illiquid coins and does not survive venue fees, and resting bids fill exactly when price keeps falling. Both draft plans were turned down by the second checker and the lead agent. The line now waits, with no requests, on E14's cost-only reading and Measurement 133's read, with stop lines fixed in the queue page.
 - Practice card E14 started 2026-11-26 6:20 PM MT, first wake 7:03 PM MT: Plan 76's rule (buy the largest one-hour faller of 5% or more, hold 24 hours) on live Binance.US order books with a pretend $250. The first build failed its independent audit on four points; the repaired build `e8248e9` is CLEAR with one accepted limit, written on ledger row 233. It answers the question Plan 76 left open: what buying in the hour after a fall really costs. One cost-only reading after 20 signals; judged at 60 trades or 2028-11-30. No reading has been taken.
 - Plan 76 result page: [the held-back run in full](research/200_plan_76_heldback_result.md), with the breakdown by year and coin near the top and the cost the rule can stand (mean reaches zero at 92.9 bp a side; the failed mark at 61.1 bp a side, both MEASURED from the run's two cost lines).

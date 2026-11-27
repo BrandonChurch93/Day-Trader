@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-27 01:35 UTC
+Last changed: 2026-11-27 02:09 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -99,6 +99,7 @@ The table lists current work and deferred scoring. Completed time-machine runs a
 | 136 | Practice card E13: the Plan 75 trend card rebuilt on Binance.US data only, replacing E10, closed unjudged on data terms | ledger 231 | Running since 2026-11-26 5:39 PM MT (first daily wake 2026-11-27 5:00 PM MT) from the frozen build `08ea6cc` after independent audit CLEAR. Binance.US public endpoints only; detail off the repo. Read once, a year after the first wake. |
 | 137 | Measurement 133: hourly cost of a small trade on Binance.US only, replacing Measurement 132, closed unread on data terms | ledger 232 | Running since 2026-11-26 5:39 PM MT (first hourly wake 6:00 PM MT, 720 hourly wakes to 2026-12-26 5:00 PM MT) from the frozen build `08ea6cc` after independent audit CLEAR. Binance.US public endpoints only; detail off the repo. Read once at the end. |
 | 138 | Practice card E14: Plan 76's rule (buy the largest one-hour faller of 5% or more, hold 24 hours) on Binance.US order books at a pretend $250, judged at 60 trades or 2028-11-30; one early cost-only reading after 20 signals | ledger 233 | Running since 2026-11-26 6:20 PM MT (first hourly wake 7:03 PM MT) from the frozen build `e8248e9` after independent audit CLEAR with one accepted limit (ledger 233). Binance.US public endpoints only; detail off the repo. Wakes 3 minutes 15 seconds after each hour, after E12 and Measurement 133. Judged at 60 trades or 2028-11-30; one cost-only reading after 20 signals, on its own go. |
+| 139 | Measurement 134: hourly cost of a small trade on Binance.US, eight minutes after each hour, replacing Measurement 133, which stopped on a build fault at its second wake and is closed unread | ledger 234 | Registered 2026-11-26 7:09 PM MT, before any quote. Builder is repairing the Measurement 133 code; then tests, independent audit, start. |
 
 ## Next, in order
 
