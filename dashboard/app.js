@@ -501,6 +501,36 @@
     }).join('');
   }
 
+  // ---------- live desk, card E15 (fields written by practice/desk_e15.py publish; local only) ----------
+  function renderDesk(d) {
+    var k = d.desk_e15;
+    if (!k) { $('desk-body').innerHTML = '<p class="meta">The live desk has not been published yet.</p>'; return; }
+    function mt(s) { return s ? mtFromUtc(s) : '-'; }
+    function pct(x) { return isNum(x) ? (x * 100).toFixed(2).replace('-', '\u2212') + '%' : '-'; }
+    function kv(o) { return Object.keys(o || {}).map(function (x) { return esc(x) + ' ' + esc(o[x]); }).join(', ') || 'none'; }
+    var h = '<p><strong>' + esc(k.status) + '</strong>' + (k.stop ? ', stopped: ' + esc(k.stop.reason) : '') +
+      '. Gate: ' + esc(k.gate) + '. Last wake ' + esc(mt(k.last_wake_utc)) + ', next ' + esc(mt(k.next_wake_utc)) +
+      '. Scout calls ' + esc(k.scout_calls) + ' (' + kv(k.scout_status) + ').</p>';
+    ['W', 'F'].forEach(function (c) {
+      var x = k[c] || {};
+      h += '<h3>Card ' + c + ': ' + esc(x.label) + '</h3><p>Signals ' + esc(x.signals) + '. Open by line: ' + kv(x.open_by_line) +
+        '. Closed pairs: ' + kv(x.closed_pairs) + ' of ' + esc(x.judging_count) + '. Entries: ' + kv(x.entries_by_line_and_status) + '.</p>';
+    });
+    var s = k.S || {};
+    h += '<h3>Card S</h3><p class="meta">' + esc(s.label) + '</p>';
+    h += '<p>' + Object.keys(s.gap || {}).map(function (l) { var g = s.gap[l];
+      return esc(l) + ' (' + esc(g.model) + '): ' + esc(g.pairs) + ' paired scans, running gap against random ' + pct(g.running_gap_sum) + ' summed, ' + pct(g.running_gap_mean) + ' a scan'; }).join('; ') + '.</p>';
+    h += '<h4>Open pretend positions</h4><ul>' + ((s.open || []).map(function (o) {
+      return '<li>' + esc(o.line) + ' ' + esc(o.coin) + ', in ' + esc(mt(o.entry_utc)) + ', exit due ' + esc(mt(o.exit_due_utc)) + '</li>'; }).join('') || '<li>None</li>') + '</ul>';
+    h += '<h4>Last proposals</h4><ul>' + ((s.last_proposals || []).map(function (p) {
+      return '<li>' + esc(mt(p.wake_utc)) + ' ' + esc(p.line) + ': ' + esc(p.choice || 'no reply') + (p.tags && p.tags.length ? ' [' + esc(p.tags.join(', ')) + ']' : '') +
+        ', ' + esc(p.outcome || '-') + (p.reason && p.reason !== 'ok' ? ' (' + esc(p.reason) + ')' : '') + '</li>'; }).join('') || '<li>None yet</li>') + '</ul>';
+    var closed = (s.closed || []).slice().reverse();   // every closed pretend trade, newest exit first
+    h += '<h4>Closed pretend trades</h4><ul>' + (closed.map(function (c) {
+      return '<li>' + esc(c.line) + ' ' + esc(c.coin) + ', ' + esc(mt(c.entry_utc)) + ' to ' + esc(mt(c.exit_utc)) + ': ' + (c.status === 'ok' ? pct(c.net) : esc(c.status)) + '</li>'; }).join('') || '<li>None yet</li>') + '</ul>';
+    $('desk-body').innerHTML = h;
+  }
+
   // ---------- practice account ----------
   // The practice desk's summary.json (practice/trader.py, Run.summary). The copy in data.json is shown first,
   // then the page quietly asks practice_live_url for a newer one. Nothing here can place or change an order.
@@ -1218,6 +1248,7 @@
         try { renderNewest(d); } catch (e) { $('newest-list').innerHTML = '<p class="meta">The newest results could not be shown.</p>'; }
         renderScoreboard(d);
         initPractice(d);
+        try { renderDesk(d); } catch (e) { $('desk-body').innerHTML = '<p class="meta">The live desk could not be shown.</p>'; }
         try { renderBelieved(d); } catch (e) { $('believed-body').innerHTML = '<p class="meta">The findings could not be shown.</p>'; }
         renderStatus(d);
         try { renderTimeMachine(d); } catch (e) { $('timemachine-body').innerHTML = '<div class="empty"><h3>The replay results could not be shown</h3><p>The results in data.json are not in the expected shape.</p></div>'; }

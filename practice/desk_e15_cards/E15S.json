@@ -1,0 +1,59 @@
+{
+ "id": "E15S",
+ "status": "DESK_E15",
+ "registered": false,
+ "tradable": false,
+ "title": "Card E15 S, scout scan among liquid coins. The gate checks bar history; the walked-cost limit is checked by the desk from its own book. Desk card, run by practice/desk_e15.py only.",
+ "trader": "E15S",
+ "ledger_row": null,
+ "market": {
+  "kind": "crypto",
+  "symbols": [
+   "AAVE/USD",
+   "ADA/USD",
+   "AVAX/USD",
+   "BCH/USD",
+   "BNB/USD",
+   "BTC/USD",
+   "DOGE/USD",
+   "DOT/USD",
+   "ETH/USD",
+   "HBAR/USD",
+   "LINK/USD",
+   "LTC/USD",
+   "NEAR/USD",
+   "PEPE/USD",
+   "SHIB/USD",
+   "SOL/USD",
+   "SUI/USD",
+   "XLM/USD",
+   "XRP/USD",
+   "ZEC/USD"
+  ]
+ },
+ "candidate": {
+  "events": [
+   "liquid_scan"
+  ],
+  "max_age_minutes": "practice_e15_max_age_minutes"
+ },
+ "timeframe": "1Hour",
+ "entry": [
+  {
+   "check": "enough_bars",
+   "bars": "practice_e15_s_min_bars"
+  }
+ ],
+ "size": {
+  "rule": "fixed_usd",
+  "usd": "practice_e15_size_usd"
+ },
+ "exit": {
+  "hold_minutes": "practice_e15_s_hold_minutes"
+ },
+ "costs": {
+  "fee_bps_per_side": "practice_e15_fee_bps_per_side",
+  "slippage_bps_per_side": "practice_e15_slippage_bps_per_side"
+ },
+ "pick_life_minutes": "practice_e15_pick_life_minutes"
+}
