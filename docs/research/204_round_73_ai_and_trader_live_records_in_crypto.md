@@ -18,7 +18,7 @@ Nothing to register. Across every new or unchecked real-money AI crypto contest 
 
 ### Nof1 Alpha Arena: on-chain fill audit and Season 2 status
 
-Doc 18 reported only press headline returns for Alpha Arena Season 1 and Season 1.5. An October 29, 2026 on-chain reconstruction from Hyperliquid public fill and funding history audited all 38 real-money accounts ($10,000 starting capital each) and found that 31 of 38 accounts lost money (MEASURED from [TradingAgentStack](https://tradingagentstack.com/alpha-arena-results/)).
+Doc 18 reported only press headline returns for Alpha Arena Season 1 and Season 1.5. An October 29, 2026 third-party on-chain reconstruction (last updated November 23, 2026) by TradingAgentStack (author metadata: Ahsen Rajab; no company named; independent of Nof1) from Hyperliquid public fill and funding history audited all 38 real-money accounts ($10,000 starting capital each) and found that 31 of 38 accounts lost money (STATED by [TradingAgentStack](https://tradingagentstack.com/alpha-arena-results/), noting open-end marks use 4-hour candle interpolation that can shift returns by a point or two).
 
 Season 1 (crypto perpetuals on Hyperliquid, ended November 3, 2025, six models at $10,000 each) recomputed results (MEASURED from [TradingAgentStack](https://tradingagentstack.com/alpha-arena-results/)):
 
@@ -46,7 +46,7 @@ What remains missing and whether trade logs can still be opened:
 
 This is a new real-money AI crypto contest not covered in Doc 18. WEEX ran "AI Wars: WEEX Alpha Awakens" with a January 12 to February 2, 2026 preliminary round featuring 788 teams starting with 1,000 USDT each, followed by Dubai finals starting January 30, 2026 (STATED in [AP News / GlobeNewswire](https://apnews.com/press-release/globenewswire-mobile/weex-global-ai-trading-hackathon-enters-final-sprint-of-preliminary-round-as-788-teams-battle-for-finals-qualification-8a07108fc34d2771d2f9556900f38f0c)).
 
-Finals results reported by WEEX on February 26 and March 9, 2026 (STATED in [WEEX finals summary](https://www.weex.com/news/detail/how-weex-ai-trading-hackathon-tested-real-market-ai-strategies-349019) and [WEEX champions notice](https://www.weex.com/news/detail/weex-ai-hackathon-champions-crowned-revealing-future-of-ai-trading-362100)):
+Finals results self-reported by WEEX (`By: weex`, exchange's own promotional news posts, not an independent audit; the February 26 post explicitly notes the leaderboard was unreviewed at the time of writing) on February 26 and March 9, 2026 (STATED in [WEEX finals summary](https://www.weex.com/news/detail/how-weex-ai-trading-hackathon-tested-real-market-ai-strategies-349019) and [WEEX champions notice](https://www.weex.com/news/detail/weex-ai-hackathon-champions-crowned-revealing-future-of-ai-trading-362100)):
 
 - Only 8 of 37 finalists ended the 15-day finals in profit (21.6%).
 - Top five final ROIs were 100.27%, 91.97%, 74.08%, 43.86%, and 28.44%.
@@ -66,11 +66,11 @@ Key constraints and unknowns (STATED in [Bybit WSOT 2026 announcement](https://a
 
 ### TradeRank Seasons 9 to 11 update (paper control, not real money)
 
-Doc 18 covered TradeRank through Season 8. TradeRank uses $10,000 of simulated capital per model on live crypto and US stocks, so it is a paper control rather than a real-money record, but its multi-season persistence test is directly relevant (MEASURED from [TradeRank](https://www.traderank.ai/llm-for-trading)):
+Doc 18 covered TradeRank through Season 8. TradeRank (operator unnamed, no independent audit stated; site's own simulated benchmark) uses $10,000 of simulated capital per model on live crypto and US stocks, so it is a paper control rather than a real-money record, but its multi-season persistence test is directly relevant (STATED by [TradeRank](https://www.traderank.ai/llm-for-trading)):
 
-- Across 11 completed seasons (78 LLM competitors, 3,131 total trades, 131 settled model-seasons in Seasons 0 to 6 and 8 to 10), only 38.9% of model-seasons finished profitable.
+- Across 11 completed seasons (78 LLM competitors, 3,131 total trades; 131 model-seasons, with settled-season persistence findings drawn from 10 settled seasons, Seasons 0 to 6 and 8 to 10), only 38.9% of model-seasons finished profitable.
 - Across 8 consecutive-season transitions, pooled rank correlation was +0.054 (interval -0.2 to +0.3), and a top-half finish was followed by another top-half finish 17 times in 39 tries versus 18.15 expected by chance.
-- In Season 11 (refreshed November 26, 2026), only 1 of 22 live models was in profit, at +0.24% (MEASURED from [TradeRank Leaderboard](https://www.traderank.ai/ai-trading-leaderboard)).
+- In Season 11 (refreshed November 26, 2026), only 1 of 22 live paper models was in profit, at +0.24% (STATED by [TradeRank Leaderboard](https://www.traderank.ai/ai-trading-leaderboard)).
 
 ## Verified crypto fund, contest, and API-linked trader records
 
@@ -86,7 +86,7 @@ Stated fixed-rule design in SEC Form 485BPOS filed April 30, 2026 (MEASURED from
 - Net annual operating expense ratios after contractual fee waivers (effective until May 1, 2027) are 0.88% for `BITC` and `BTOP` and 0.89% for `AETH` (0.85% management fee).
 - Exact crossover buffer or confirmation threshold, exact conversion date to Trendwise, exact trade count, and holding times are UNKNOWN from the prospectus (SEC portfolio turnover is reported as 0% because short-term Treasuries and futures contracts are excluded from statutory securities turnover).
 
-Audited full-year 2025 live results in SEC Form N-CSR filed March 9, 2026 (MEASURED from [SEC Form N-CSR](https://www.sec.gov/Archives/edgar/data/1928561/000119312526098141/d87694dncsr.htm)):
+Audited full-year 2025 live results in SEC Form N-CSR filed March 9, 2026 (independently audited by KPMG LLP, opinion dated February 27, 2026; MEASURED from [SEC Form N-CSR](https://www.sec.gov/Archives/edgar/data/1928561/000119312526098141/d87694dncsr.htm)):
 
 - `BITC`: -20.56% total return in 2025, underperforming its spot bitcoin benchmark by 14.00%.
 - `BTOP`: -16.00% total return in 2025, underperforming its equal-weighted BTC/ETH benchmark by 12.27%.
@@ -98,9 +98,9 @@ Bybit's flagship real-money derivatives contest runs November 13 to December 2, 
 
 ### ChainRated read-only API exchange verification
 
-ChainRated verifies live exchange accounts via read-only API keys computed strictly from closed trades and enforces all-or-nothing publication so a trader cannot hide a losing stretch once published, while warning plainly that opting in is voluntary so losing traders can remain unlisted (MEASURED from [ChainRated](https://chainrated.com/track/)).
+ChainRated (operator entity unnamed on page; third-party API-verification site) verifies live exchange accounts via read-only API keys computed strictly from closed trades and enforces all-or-nothing publication so a trader cannot hide a losing stretch once published, while warning plainly that opting in is voluntary so losing traders can remain unlisted (STATED by [ChainRated](https://chainrated.com/track/)).
 
-The sole published live crypto account on the page as of November 24, 2026 (`tahtrade` on Bybit, verified from July 1, 2025 across 338 days) illustrates why headline win rates mislead (MEASURED from [ChainRated](https://chainrated.com/track/)):
+The sole published live crypto account on the page as of November 24, 2026 (`tahtrade` on Bybit, verified from July 1, 2025 across 338 days) illustrates why headline win rates mislead (STATED by [ChainRated](https://chainrated.com/track/)):
 
 - 24,641 closed trades, 88.1% win rate, 60 liquidations, profit factor 0.81, -70.2% total return, and 79% maximum drawdown.
 
@@ -125,7 +125,7 @@ Only two methods in the entire set are stated clearly enough to write as fixed r
 Cost baseline we must clear:
 
 - Kraken Pro entry-tier spot fees are 0.40% maker and 0.80% taker (80 bp to 160 bp round trip before spread) (MEASURED from [Kraken Pro fees](https://www.kraken.com/pro/fees)).
-- Binance.US entry-tier spot fees are 0.00% maker and 0.02% taker on Tier I pairs (0 bp to 4 bp round trip in exchange fees before book spread and slippage, with real book cost still unmeasured until Measurement 133 completes) (MEASURED from [Binance.US fees](https://www.binance.us/fees)).
+- Binance.US entry-tier spot fees are 0.00% maker and 0.02% taker on Tier I pairs (0 bp to 4 bp round trip in exchange fees before book spread and slippage, with real book cost still unmeasured until Measurement 134 completes; Measurement 133 stopped unread and was replaced) (MEASURED from [Binance.US fees](https://www.binance.us/fees)).
 
 Permitted data per `docs/research/194_data_source_terms_audit.md`:
 
@@ -145,12 +145,12 @@ Rank 1: Daily 10-day and 20-day EMA long-only cash-rotation rule (from Bitwise T
 
 Rank 2: Low-turnover cooldown / turnover cap ("Monk Mode" deterministic filter from Alpha Arena Season 1.5, [TradingAgentStack](https://tradingagentstack.com/alpha-arena-results/))
 
-- Fixed rule: in Alpha Arena Season 1.5, the only prompt change that materially cut losses across all eight models was forcing fewer trades ("Monk Mode" -9.5% combined vs "Situational Awareness" -41.8%, cutting fees from $2,291-$3,257 down to $197-$1,286 per $10k account). Written deterministically, this is not a standalone signal; it is a minimum holding-time / trade-count cap layered onto an existing entry rule.
+- Fixed rule: in Alpha Arena Season 1.5, the only prompt change that materially cut losses across all eight models was forcing fewer trades ("Monk Mode" -9.5% combined vs "Situational Awareness" -41.8%, cutting fees from $508 to $3,257 per $10k account in Situational Awareness down to $197 to $1,286 in Monk Mode). Written deterministically, this is not a standalone signal; it is a minimum holding-time / trade-count cap layered onto an existing entry rule.
 - Holding period: multi-day to multi-week to keep fee drag below 100 bp/month.
 - Cost survival needed: on Kraken Pro (80 to 160 bp round trip), any rule firing more than once or twice a week is mathematically dead without a multi-percent per-trade edge; on Binance.US (4 bp taker fee plus unmeasured spread), turnover still binds through spread and adverse selection.
-- Permitted data: Kraken downloadable OHLCVT (`assets.kraken.com`) or Binance.US public quotes once Measurement 133 reports real book spread.
+- Permitted data: Kraken downloadable OHLCVT (`assets.kraken.com`) or Binance.US public quotes once Measurement 134 reports real book spread.
 - Repo overlap and verdict: do not register. Cutting turnover reduces losses on bad signals but does not create a positive edge where none exists (Monk Mode still lost money in 7 of 8 accounts).
-- Count-first step: none standalone; only measure fill-count reduction inside an already-registered forward card after Measurement 133 finishes.
+- Count-first step: none standalone; only measure fill-count reduction inside an already-registered forward card after Measurement 134 finishes.
 
 Rank 3: Exchange-contest AI bots (WEEX AI Hackathon, Bybit WSOT AI Showdown) and high-win-rate leveraged grid/scalping (`tahtrade` on ChainRated)
 
@@ -161,4 +161,13 @@ Rank 3: Exchange-contest AI bots (WEEX AI Hackathon, Bybit WSOT AI Showdown) and
 
 ## Verdict
 
-Nothing to register. Do not open a new plan or queue row from Round 73. Keep `E13` and Measurement 133 running unchanged on Binance.US.
+Nothing to register. Do not open a new plan or queue row from Round 73. Keep `E13` and Measurement 134 running unchanged on Binance.US (Measurement 133 is closed unread; `E12` and `E14` also continue unchanged).
+
+## Second Check
+
+Checked 2026-11-27 by directly re-opening all 12 external URLs and checking our live card status in `docs/QUEUE.md`. Zero pages were blocked, zero barred news sites in `AGENTS.md` are cited, and no market prices or returns were pulled.
+
+Tally across 13 checks (12 outside URLs plus 1 repo card-status check): 10 CONFIRMED, 3 CORRECTED, 0 NOT FOUND.
+
+- CONFIRMED: AP/GlobeNewswire WEEX preliminary (788 teams, 1,000 USDT), WEEX finals summary (8 of 37 profitable, top 5 ROIs, 20,251 API calls, +$12,662 trade, $21,977 max drawdown; self-reported by WEEX and marked unreviewed at publication), WEEX champions (`todd`, Bentley package), Bybit WSOT 2026 (1M AI / 3.2M Squad / 2M Individual pools, 1+6 UTA accounts), TradeRank Season 11 leaderboard (1 of 22 at +0.24%), Bitwise SEC Form 485BPOS (10d/20d EMA cash-rotation rule, 0.88%/0.89% net expenses, 0% turnover), Bitwise SEC Form N-CSR (KPMG LLP audited 2025 returns: `BITC` -20.56% / -14.00% vs BTC, `BTOP` -16.00% / -12.27% vs BTC/ETH, `AETH` -0.05% / +11.00% vs ETH), ChainRated `tahtrade` (-70.2%, 24,641 trades, 88.1% win rate, 60 liquidations, 0.81 PF, 79% max DD), Kraken Pro fees (0.40%/0.80%), and Binance.US fees (0.00%/0.02% Tier I).
+- CORRECTED (fixed in place above): (1) TradingAgentStack Season 1.5 Situational Awareness fees were $508 to $3,257 per $10k account (not $2,291 to $3,257), while all 31-of-38, Season 1, and Season 1.5 totals are confirmed; (2) TradeRank's settled-seasons wording does not state all 131 model-seasons came strictly from the 10 settled seasons (Seasons 0 to 6 and 8 to 10), and TradeRank and ChainRated figures were relabeled STATED with operator/independence caveats; (3) all four stale "Measurement 133" references were updated to Measurement 134 (Measurement 133 is closed unread). Round 73's no-registration verdict stands.
