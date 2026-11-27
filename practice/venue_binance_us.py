@@ -33,10 +33,31 @@ HOUR = timedelta(hours=1)
 PUBLIC_ENDPOINTS = frozenset({"/api/v3/depth", "/api/v3/klines", "/api/v3/exchangeInfo", "/api/v3/aggTrades"})
 HOUR_MS = int(HOUR.total_seconds() * 1000)
 BLOCKS = (418, 401, 403, 451)
+INFLIGHT = "inflight.json"
+GENERATION = "stop_generation.json"
+GENERATION_WITNESS = "generation_initialized.json"
 
 
 class Refuse(Exception):
     pass
+
+
+class GateTerminal(Refuse):
+    """A gate failure is never a missing market page or a retriable error."""
+    def __init__(self):
+        super().__init__(self.reason)
+
+
+class GateStorage(GateTerminal):
+    reason = "gate_storage"
+
+
+class GateUncertain(GateTerminal):
+    reason = "gate_inflight"
+
+
+class GateGeneration(GateTerminal):
+    reason = "gate_generation"
 
 
 class Failure(Exception):
@@ -105,7 +126,7 @@ def git(*args):
         raise Refuse("cannot read committed approval or frozen build") from None
 
 
-def require_go(row, key, commit, *, ledger=None):
+def require_go(row, key, commit, *, ledger=None, generation=0):
     need(re.fullmatch(r"[a-f0-9]{40}", commit), "invalid frozen build")
     body = git("show", f"{APPROVAL_REF}:{LEDGER}") if ledger is None else ledger
     rows = re.findall(rf"^\|[ \t]*{row}[ \t]*\|[^\r\n]*$", body, re.M)
@@ -113,6 +134,9 @@ def require_go(row, key, commit, *, ledger=None):
     approvals = re.findall(marker + r"=([a-f0-9]{40})(?=[\s`|]|$)", rows[0]) if len(rows) == 1 else []
     need(approvals == [commit],
          f"{key} missing or mismatched on committed ledger row {row}")
+    if generation:
+        gens = re.findall(marker + r"_GENERATION=([0-9]+)(?=[\s`|]|$)", rows[0])
+        need(gens == [str(generation)], f"{key}_GENERATION missing or mismatched on committed ledger row {row}")
 
 
 def checked_build(pins):
@@ -341,14 +365,23 @@ def retry_until(now, hint):
 class Gate:
     """One private, persistent venue gate. Its lock spans the HTTP response."""
     def __init__(self, cooldown_path=None, clock=now_utc):
-        self.cooldown_path = Path(cooldown_path) if cooldown_path is not None else configured_gate_path()
+        self.cooldown_path = Path(cooldown_path) if cooldown_path is not None else self.io(configured_gate_path)
         self.clock = clock
         self.held = None
+        self.held_generation = None
+        self.completed = False
+
+    @staticmethod
+    def io(fn, *args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except OSError:
+            raise GateStorage() from None
 
     @contextmanager
     def mutex(self, deadline=None):
-        directory = checked_dir(self.cooldown_path.parent, create=True)
-        with os.fdopen(private_open(directory / ".gate.lock", os.O_RDWR | os.O_CREAT), "rb") as fd:
+        directory = self.io(checked_dir, self.cooldown_path.parent, create=True)
+        with os.fdopen(self.io(private_open, directory / ".gate.lock", os.O_RDWR | os.O_CREAT), "rb") as fd:
             until = time.monotonic() + 0.5
             while True:
                 try:
@@ -360,6 +393,8 @@ class Gate:
                     if time.monotonic() >= until:
                         raise Failure("shared_gate_busy") from None
                     time.sleep(0.025)
+                except OSError:
+                    raise GateStorage() from None
             yield directory
 
     @staticmethod
@@ -389,7 +424,7 @@ class Gate:
                 Path(f.name).unlink(missing_ok=True)
 
     def check_stop(self, directory):
-        stop = self.read(directory / "stop.json")
+        stop = self.io(self.read, directory / "stop.json")
         if stop is not None:
             need(set(stop) == {"host", "http_status", "stopped_utc"} and stop["host"] == HOST
                  and type(stop["http_status"]) is int and stop["http_status"] in BLOCKS,
@@ -398,20 +433,64 @@ class Gate:
             raise Blocked(HOST, stop["http_status"])
 
     def not_before(self, directory):
-        state = self.read(directory / self.cooldown_path.name)
+        state = self.io(self.read, directory / self.cooldown_path.name)
         if state is None:
             return None
         need(set(state) == {"not_before_utc"}, "invalid shared Binance.US cooldown")
         return gate_time(state["not_before_utc"])
 
-    def check_start(self):
+    def check_inflight(self, directory):
+        try:
+            (directory / INFLIGHT).lstat()
+        except FileNotFoundError:
+            return
+        except OSError:
+            raise GateStorage() from None
+        # Under the shared lock, this cannot be another active guarded request.
+        # Never infer safety from the stored PID, clock, or elapsed time.
+        raise GateUncertain()
+
+    def current_generation(self, directory, expected=None, *, initialize=False):
+        if expected is not None and (type(expected) is not int or expected < 0):
+            raise GateStorage()
+        try:
+            state = self.io(self.read, directory / GENERATION)
+            witness = self.io(self.read, directory / GENERATION_WITNESS)
+        except Refuse:
+            raise GateStorage() from None
+        if state is None and witness is None and initialize and expected is None:
+            # A failed initialization cannot be mistaken for a fresh zero.
+            self.io(self.write, directory / GENERATION_WITNESS, {"initialized": True})
+            self.io(self.write, directory / GENERATION, {"generation": 0})
+            return 0
+        if (witness is None or set(witness) != {"initialized"} or witness["initialized"] is not True
+                or state is None or set(state) != {"generation"}
+                or type(state["generation"]) is not int or state["generation"] < 0):
+            raise GateStorage()
+        generation = state["generation"]
+        if expected is not None and expected != generation:
+            raise GateGeneration()
+        return generation
+
+    def check_start(self, *, reject_cooldown=False, generation=None):
         with self.mutex() as directory:
+            self.check_inflight(directory)
+            current = None
+            if generation is not None:
+                current = self.current_generation(directory, generation)
             self.check_stop(directory)
-            self.not_before(directory)  # Validate custody; cooling down does not cancel a future schedule.
+            until = self.not_before(directory)
+            if reject_cooldown and until is not None and self.clock() < until:
+                raise Cooldown(until)
+            return self.current_generation(directory, initialize=True) if current is None else current
 
     @contextmanager
-    def attempt(self, deadline=None):
+    def attempt(self, deadline=None, *, generation):
         with self.mutex(deadline) as directory:
+            self.check_inflight(directory)
+            if generation is None:
+                raise GateStorage()
+            current = self.current_generation(directory, generation)
             self.check_stop(directory)
             not_before = self.not_before(directory)
             now = self.clock()
@@ -419,27 +498,59 @@ class Gate:
                 raise Failure("wake_window_elapsed")
             if not_before is not None and now < not_before:
                 raise Cooldown(not_before)
-            self.held = directory
+            marker = directory / INFLIGHT
+            self.io(self.write, marker, {"host": HOST, "pid": os.getpid(),
+                                         "generation": generation, "started_utc": precise_utc(now)})
+            self.held, self.held_generation = directory, current
+            self.completed = False
             try:
-                yield
+                try:
+                    yield self
+                except GateTerminal:
+                    raise
+                except Exception:
+                    if not self.completed:
+                        raise GateUncertain() from None
+                    raise
+                else:
+                    if not self.completed:
+                        raise GateUncertain()
             finally:
-                self.held = None
+                try:
+                    if self.completed:
+                        self.io(marker.unlink)
+                        self.io(fsync_dir, directory)
+                finally:
+                    self.held, self.held_generation, self.completed = None, None, False
+
+    def reply_received(self):
+        """A non-policy HTTP status is known; retain the lock until exit."""
+        need(self.held is not None, "venue acknowledgement requires the request lock")
+        self.completed = True
+
+    def cancel_unsent(self):
+        """Disarm only when the caller knows it has not opened HTTP."""
+        self.reply_received()
 
     def http_error(self, status, retry_after=None):
         need(self.held is not None, "venue gate update requires the request lock")
         if status in BLOCKS:
-            self.write(self.held / "stop.json",
-                       {"host": HOST, "http_status": status, "stopped_utc": precise_utc(self.clock())})
+            self.io(self.write, self.held / GENERATION, {"generation": self.held_generation + 1})
+            self.io(self.write, self.held / "stop.json",
+                    {"host": HOST, "http_status": status, "stopped_utc": precise_utc(self.clock())})
+            self.reply_received()
             raise Blocked(HOST, status)
         if status == 429:
             until = retry_until(self.clock(), retry_after)
-            self.write(self.held / self.cooldown_path.name, {"not_before_utc": precise_utc(until)})
+            self.io(self.write, self.held / self.cooldown_path.name, {"not_before_utc": precise_utc(until)})
+            self.reply_received()
             raise Cooldown(until)
+        self.reply_received()
 
 
-def check_start(gate=None):
+def check_start(gate=None, **kwargs):
     try:
-        (gate if gate is not None else Gate()).check_start()
+        return (gate if gate is not None else Gate()).check_start(**kwargs)
     except Failure as exc:
         raise Refuse(exc.reason) from None
 
@@ -461,12 +572,19 @@ def wall_budget(seconds, window_limited):
 
 
 class PublicPages:
-    def __init__(self, opener=None, sleep=time.sleep, monotonic=time.monotonic, *, gate=None, clock=now_utc):
+    def __init__(self, opener=None, sleep=time.sleep, monotonic=time.monotonic, *,
+                 gate=None, clock=now_utc, generation=None):
         self.opener = opener or urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
         self.sleep, self.monotonic = sleep, monotonic
         self.gate, self.clock = gate if gate is not None else Gate(clock=clock), clock
         self.last = {}
-        self.deadline = None
+        self.deadline, self.generation = None, generation
+
+    def bind_run(self, generation):
+        if type(generation) is not int or generation < 0:
+            raise GateStorage()
+        self.gate.check_start(generation=generation)
+        self.generation = generation
 
     def get(self, venue, path):
         route = urllib.parse.urlsplit(path)
@@ -476,15 +594,17 @@ class PublicPages:
         req = urllib.request.Request(f"https://{host}{path}", headers={
             "User-Agent": "usd-public-forward/1.0", "Accept": "application/json"})
         self.sleep(max(0.0, self.last.get(host, float("-inf")) + 0.4 - self.monotonic()))
-        with self.gate.attempt(self.deadline):
+        with self.gate.attempt(self.deadline, generation=self.generation):
             remaining = (self.deadline - self.clock()).total_seconds() if self.deadline else 5
             if remaining <= 0:
+                self.gate.cancel_unsent()
                 raise Failure("wake_window_elapsed")
             self.last[host] = self.monotonic()
             try:
                 budget = min(5, remaining)
                 with wall_budget(budget, self.deadline is not None and remaining <= 5):
                     with self.opener.open(req, timeout=5) as response:
+                        self.gate.reply_received()
                         raw = response.read(8 * 1024 * 1024 + 1)
                     if len(raw) > 8 * 1024 * 1024:
                         raise Failure("response_too_large")
@@ -496,7 +616,10 @@ class PublicPages:
                     self.gate.http_error(exc.code, exc.headers.get("Retry-After") if exc.headers else None)
                     raise Failure(f"http_{exc.code}") from None
                 finally:
-                    exc.close()
+                    try:
+                        exc.close()
+                    except OSError:
+                        pass  # Socket cleanup cannot mask a gate-storage failure.
             except urllib.error.URLError as exc:
                 reason = self.timeout_status(exc.reason) if isinstance(exc.reason, TimeoutError) else "network_failure"
                 raise Failure(reason) from None

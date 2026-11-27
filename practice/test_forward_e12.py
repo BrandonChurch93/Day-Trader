@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import forward_e12 as e
 from test_measure_133 import FREEZE, klines
+from test_venue_binance_us import Opener
 
 T = datetime(2027, 2, 1, 4, tzinfo=e.UTC)
 DEPTH = {"bids": [["99", "10"]], "asks": [["101", "10"]]}
@@ -140,7 +141,7 @@ class Recorder(unittest.TestCase):
 
             def banned(coin):
                 self.venue.calls.append(("banned", coin))
-                with self.gate.attempt():
+                with self.gate.attempt(generation=0):
                     self.gate.http_error(418)
                 return original(coin)
 
@@ -153,6 +154,22 @@ class Recorder(unittest.TestCase):
             e.start(T - timedelta(minutes=10), self.off.parent / "restart",
                     gate=e.bx.Gate(self.gate.cooldown_path))
         self.assertFalse((self.off.parent / "restart").exists())
+
+    def test_old_run_records_generation_stop_even_no_current_start_go(self):
+        self.start()
+        clock = Clock(T + timedelta(seconds=5))
+        issuer = e.bx.PublicPages(opener=Opener((403, {})), sleep=lambda _: None,
+                                  gate=self.gate, clock=clock, generation=0)
+        with self.assertRaises(e.Blocked):
+            issuer.book(e.BINANCE, "BTC")
+        (self.gate.cooldown_path.parent / "stop.json").unlink()
+        opener = Opener()
+        sibling = e.Pages(opener=opener, sleep=clock.sleep, gate=self.gate, clock=clock)
+        with patch.object(e.bx, "git", return_value=""):
+            result = e.record(clock(), sibling, self.off, clock=clock, sleep=clock.sleep)
+        self.assertEqual(result["reason"], "gate_generation")
+        self.assertEqual(self.rows()[-1]["kind"], "stop")
+        self.assertEqual(opener.calls, [])
 
     def test_candles_end_at_121_no_first_depth_no_shown_slot_still_voids(self):
         self.start()

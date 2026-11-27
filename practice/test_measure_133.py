@@ -12,6 +12,7 @@ from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlsplit
 
 import measure_133 as m
+from test_venue_binance_us import Opener
 
 FREEZE = "1" * 40
 T = datetime(2026, 11, 27, tzinfo=timezone.utc)
@@ -52,7 +53,7 @@ class Recorder(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.off = Path(temp.name) / "m133"
         self.pages = FakePages()
-        self.gate = m.bx.Gate(Path(temp.name) / "gate" / "cooldown.json")
+        self.gate = m.bx.Gate(Path(temp.name) / "gate" / "cooldown.json", clock=self.clock)
         self.now = T
 
     def clock(self):
@@ -132,7 +133,7 @@ class Recorder(unittest.TestCase):
 
         def banned(venue, coin):
             self.pages.calls.append((venue, coin))
-            with self.gate.attempt():
+            with self.gate.attempt(generation=0):
                 self.gate.http_error(418)
 
         self.pages.book = banned
@@ -148,6 +149,58 @@ class Recorder(unittest.TestCase):
         with self.approve(), patch.object(m, "checked_build", return_value=FREEZE), self.assertRaises(m.Refuse):
             m.start(self.off.parent / "restart", clock=self.clock, gate=m.bx.Gate(self.gate.cooldown_path))
         self.assertFalse((self.off.parent / "restart").exists())
+
+    def test_cooldown_persistence_failure_is_terminal_not_missing_page(self):
+        self.start_mock()
+        self.now = self.first
+        opener = Opener((429, {"Retry-After": "60"}))
+        pages = m.PublicPages(opener=opener, sleep=lambda _: None, gate=self.gate, clock=self.clock)
+        original = m.bx.Gate.write
+
+        def fault(path, value):
+            if path == self.gate.cooldown_path:
+                raise OSError("invented storage failure")
+            original(path, value)
+
+        with self.approve(), patch.object(self.gate, "write", side_effect=fault), \
+                self.assertRaisesRegex(m.Refuse, "gate_storage"):
+            m.record(self.off, pages, self.clock)
+        self.assertEqual(len(opener.calls), 1)
+        self.assertEqual([r["kind"] for r in m.read_log(self.off)], ["header", "begin", "stop"])
+        self.assertEqual(m.read_log(self.off)[-1]["reason"], "gate_storage")
+        self.assertTrue((self.gate.cooldown_path.parent / m.bx.INFLIGHT).exists())
+
+    def test_clearing_stop_never_revives_prior_sibling_and_new_go_can_start(self):
+        self.start_mock()
+        self.now = self.first
+        directory = self.gate.cooldown_path.parent
+        sibling = Opener()
+        pages = m.PublicPages(opener=sibling, sleep=lambda _: None, gate=self.gate, clock=self.clock)
+        issuer = m.PublicPages(opener=Opener((418, {})), sleep=lambda _: None, gate=self.gate,
+                               clock=self.clock, generation=0)
+        with self.assertRaises(m.Blocked):
+            issuer.book(m.VENUE, "BTC")
+        self.assertEqual(json.loads((directory / m.bx.GENERATION).read_text()), {"generation": 1})
+        (directory / "stop.json").unlink()
+        with self.approve(), self.assertRaisesRegex(m.Refuse, "gate_generation"):
+            m.record(self.off, pages, self.clock)
+        self.assertEqual(sibling.calls, [])
+        self.assertEqual(m.read_log(self.off)[-1]["reason"], "gate_generation")
+        new = self.off.parent / "new-run"
+        with patch.object(m, "checked_build", return_value=FREEZE):
+            with self.approve(), self.assertRaisesRegex(m.Refuse, "M133_START_GENERATION"):
+                m.start(new, clock=self.clock, gate=self.gate)
+            self.assertFalse(new.exists())
+            new_go = f"| 232 | M133_START={FREEZE} M133_START_GENERATION=1 |"
+            with patch.object(m.bx, "git", return_value=new_go):
+                h = m.start(new, clock=self.clock, gate=self.gate)
+        self.assertEqual(h["venue_generation"], 1)
+        self.assertEqual(m.read_log(new)[0]["venue_generation"], 1)
+        fresh = Opener((200, {}))
+        bound = m.PublicPages(opener=fresh, sleep=lambda _: None, gate=self.gate, clock=self.clock)
+        bound.bind_run(h["venue_generation"])
+        self.assertEqual(bound.book(m.VENUE, "BTC"), [])
+        self.assertEqual(len(fresh.calls), 1)
 
     def test_exact_receipt_window_plus_9_10_120_121(self):
         self.start_mock()
@@ -251,7 +304,7 @@ class InputsAndMath(unittest.TestCase):
         temp = tempfile.TemporaryDirectory(dir="/tmp")
         self.addCleanup(temp.cleanup)
         gate = m.bx.Gate(Path(temp.name) / "gate" / "cooldown.json")
-        pages = m.PublicPages(opener=opener, sleep=lambda _: None, gate=gate)
+        pages = m.PublicPages(opener=opener, sleep=lambda _: None, gate=gate, generation=gate.check_start())
         self.assertEqual(pages.klines("BTC", T, 2), [])
         with self.assertRaises(m.Blocked):
             pages.book(m.VENUE, "BNB")

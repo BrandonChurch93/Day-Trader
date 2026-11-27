@@ -38,3 +38,7 @@ for the same build. Public output contains counts, timing and cost aggregates
 only; detail is kept in `/home/user/workspace/rig/data/forward_e12`.
 All project Binance.US collectors share a durable cooldown after HTTP 429 and
 a durable stop after HTTP 418, 401, 403 or 451. Never backfill missed slots.
+A stop invalidates every run bound to the old gate generation, even if the
+lead clears the active stop. A new run above generation zero additionally
+needs `E12_START_GENERATION=<n>` on the same committed ledger row. An in-flight
+marker with no live lease blocks all requests until the lead inspects it.

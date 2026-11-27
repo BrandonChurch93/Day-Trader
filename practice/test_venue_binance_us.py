@@ -3,16 +3,25 @@ from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
 import io
 import json
+from multiprocessing import get_context
+import os
 from pathlib import Path
 import stat
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
+from urllib.error import URLError
 from urllib.error import HTTPError
 
 import venue_binance_us as bx
 
 T = datetime(2027, 1, 1, tzinfo=timezone.utc)
+
+
+def crash_during_request(path, generation):
+    with bx.Gate(path).attempt(generation=generation):
+        os._exit(0)
 
 
 class Opener:
@@ -34,6 +43,7 @@ class SharedGate(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.path = Path(tmp.name) / "gate" / "cooldown.json"
         self.now = T
+        self.generation = self.gate().check_start()
 
     def clock(self):
         return self.now
@@ -42,7 +52,8 @@ class SharedGate(unittest.TestCase):
         return bx.Gate(self.path, clock=self.clock)
 
     def pages(self, opener):
-        return bx.PublicPages(opener=opener, sleep=lambda _: None, gate=self.gate(), clock=self.clock)
+        return bx.PublicPages(opener=opener, sleep=lambda _: None, gate=self.gate(), clock=self.clock,
+                              generation=self.generation)
 
     def test_429_next_endpoint_other_collector_restart_and_deadline(self):
         opener = Opener((429, {"Retry-After": "75"}), (200, {}))
@@ -92,6 +103,7 @@ class SharedGate(unittest.TestCase):
                 stop = self.path.parent / "stop.json"
                 stop.unlink(missing_ok=True)
                 self.now = T
+                self.generation = self.gate().check_start()
                 opener = Opener((code, {}))
                 with self.assertRaises(bx.Blocked):
                     self.pages(opener).book(bx.VENUE, "BTC")
@@ -101,7 +113,7 @@ class SharedGate(unittest.TestCase):
                 self.now += timedelta(days=45)
                 with self.assertRaises(bx.Refuse):
                     bx.check_start(self.gate())
-                with self.assertRaises(bx.Blocked):
+                with self.assertRaises(bx.GateGeneration):
                     self.pages(opener).klines("ETH", T, 3)
                 self.assertEqual(len(opener.calls), 1)
 
@@ -112,12 +124,14 @@ class SharedGate(unittest.TestCase):
         def next_collector():
             entered.set()
             try:
-                with self.gate().attempt():
+                gate = self.gate()
+                with gate.attempt(generation=self.generation):
                     outcome.append("sent")
+                    gate.reply_received()
             except bx.Cooldown:
                 outcome.append("paused")
 
-        with self.assertRaises(bx.Cooldown), first.attempt():
+        with self.assertRaises(bx.Cooldown), first.attempt(generation=self.generation):
             other = threading.Thread(target=next_collector)
             other.start()
             self.assertTrue(entered.wait(1))
@@ -133,6 +147,92 @@ class SharedGate(unittest.TestCase):
         with self.assertRaises(bx.Refuse):
             self.pages(opener).book(bx.VENUE, "BTC")
         self.assertEqual(opener.calls, [])
+
+    def test_marker_write_failure_does_not_send(self):
+        opener = Opener()
+        pages = self.pages(opener)
+        original = bx.Gate.write
+
+        def fault(path, value):
+            if path.name == bx.INFLIGHT:
+                raise OSError("invented disk error")
+            original(path, value)
+
+        with patch.object(pages.gate, "write", side_effect=fault), self.assertRaises(bx.GateStorage) as caught:
+            pages.book(bx.VENUE, "BTC")
+        self.assertEqual(caught.exception.reason, "gate_storage")
+        self.assertEqual(opener.calls, [])
+
+    def test_429_write_failure_keeps_marker_and_is_terminal(self):
+        opener = Opener((429, {"Retry-After": "75"}))
+        pages = self.pages(opener)
+        original = bx.Gate.write
+
+        def fault(path, value):
+            if path == self.path:
+                raise OSError("invented disk error")
+            original(path, value)
+
+        with patch.object(pages.gate, "write", side_effect=fault), self.assertRaises(bx.GateStorage):
+            pages.book(bx.VENUE, "BTC")
+        marker = self.path.parent / bx.INFLIGHT
+        self.assertEqual(json.loads(marker.read_text())["generation"], self.generation)
+        self.assertEqual(stat.S_IMODE(marker.stat().st_mode), 0o600)
+        with self.assertRaises(bx.GateUncertain):
+            self.pages(opener).klines("ETH", T, 3)
+        with self.assertRaises(bx.GateUncertain):
+            self.gate().check_start()
+        self.assertEqual(len(opener.calls), 1)
+
+    def test_crashed_process_marker_blocks_sibling_and_restart_even_much_later(self):
+        process = get_context("fork").Process(target=crash_during_request, args=(self.path, self.generation))
+        process.start()
+        process.join(5)
+        self.assertEqual(process.exitcode, 0)
+        marker = self.path.parent / bx.INFLIGHT
+        self.assertEqual(json.loads(marker.read_text())["pid"], process.pid)
+        self.now += timedelta(days=30)
+        opener = Opener()
+        with self.assertRaises(bx.GateUncertain):
+            self.pages(opener).book(bx.VENUE, "ETH")
+        with self.assertRaises(bx.GateUncertain):
+            self.gate().check_start()
+        self.assertEqual(opener.calls, [])
+
+    def test_unknown_reply_is_terminal_but_explicitly_unsent_is_safe(self):
+        gate = self.gate()
+        with gate.attempt(generation=self.generation):
+            gate.cancel_unsent()
+        self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+        pages = self.pages(Opener())
+        with patch.object(pages.opener, "open", side_effect=URLError("invented no headers")), \
+                self.assertRaises(bx.GateUncertain):
+            pages.book(bx.VENUE, "ETH")
+        self.assertTrue((self.path.parent / bx.INFLIGHT).exists())
+
+    def test_lost_generation_cannot_initialize_zero_even_on_restart(self):
+        counter = self.path.parent / bx.GENERATION
+        counter.unlink()
+        opener = Opener()
+        with self.assertRaises(bx.GateStorage):
+            self.pages(opener).book(bx.VENUE, "ETH")
+        with self.assertRaises(bx.GateStorage):
+            self.gate().check_start()
+        self.assertFalse(counter.exists())
+        self.assertEqual(opener.calls, [])
+
+    def test_gate_io_during_policy_read_is_terminal_before_request(self):
+        pages = self.pages(Opener())
+        original = bx.Gate.read
+
+        def fault(path):
+            if path.name == bx.GENERATION:
+                raise PermissionError("invented gate read fault")
+            return original(path)
+
+        with patch.object(pages.gate, "read", side_effect=fault), self.assertRaises(bx.GateStorage):
+            pages.book(bx.VENUE, "BTC")
+        self.assertEqual(pages.opener.calls, [])
 
 
 if __name__ == "__main__":

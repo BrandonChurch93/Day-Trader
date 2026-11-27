@@ -63,8 +63,10 @@ def candle_signal(rows, wake, threshold):
 
 
 def terminal(off, rows, exc, *, phase, now, wake=None):
-    append(off, rows, kind="stop", phase=phase, at=iso(now), wake=iso(wake) if wake else None,
-           host=exc.host, http_status=exc.status)
+    event = {"host": bx.HOST, "reason": exc.reason}
+    if isinstance(exc, Blocked):
+        event["http_status"] = exc.status
+    append(off, rows, kind="stop", phase=phase, at=iso(now), wake=iso(wake) if wake else None, **event)
     raise Refuse(exc.reason)
 
 
@@ -72,7 +74,9 @@ def start(off, pages=None, clock=now_utc, *, gate=None):
     # Start creates a private frozen header; all observation starts at first_wake.
     commit = checked_build(PINNED)
     require_go(232, "M133_START", commit)
-    bx.check_start(gate)
+    generation = bx.check_start(gate)
+    if generation:
+        require_go(232, "M133_START", commit, generation=generation)
     with locked(off, create=True) as off:
         rows = read_log(off, recover=True, clock=clock)
         need(not rows, "log already started")
@@ -83,9 +87,9 @@ def start(off, pages=None, clock=now_utc, *, gate=None):
             first += HOUR
         last = first + (fixed["settings"]["days"] * 24 - 1) * HOUR
         write_anchor(off, anchor_state(rows))
-        append(off, rows, kind="header", **fixed, freeze=commit, made_utc=iso(now),
+        append(off, rows, kind="header", **fixed, freeze=commit, venue_generation=generation, made_utc=iso(now),
                first_wake=iso(first), last_wake=iso(last))
-        return {"freeze": commit, "first_wake": iso(first), "last_wake": iso(last)}
+        return {"freeze": commit, "first_wake": iso(first), "last_wake": iso(last), "venue_generation": generation}
 
 
 def header(rows):
@@ -107,6 +111,11 @@ def record_locked(off, pages, clock, rows=None):
     h = header(rows)
     need(not any(r["kind"] == "stop" for r in rows), "logger already stopped; see alive for host/status")
     need(all(h[k] == v for k, v in frozen().items()), "plan, logger or resolved settings changed")
+    if isinstance(pages, PublicPages):
+        try:
+            pages.bind_run(h.get("venue_generation"))
+        except (Blocked, bx.GateTerminal) as exc:
+            terminal(off, rows, exc, phase="preflight", now=clock())
     require_go(232, "M133_START", h["freeze"])
     st = h["settings"]
     pairs = next((r["pairs"] for r in rows if r["kind"] == "pairs"), None)
@@ -136,7 +145,7 @@ def record_locked(off, pages, clock, rows=None):
                                 or any(not isinstance(x, str) for x in pairs.values())
                                 or not wake <= clock() <= limit):
                             raise Failure("invalid_or_late_pair_metadata")
-                    except Blocked as exc:
+                    except (Blocked, bx.GateTerminal) as exc:
                         terminal(off, rows, exc, phase="exchangeInfo", now=clock(), wake=wake)
                     except (Failure, OSError, KeyError, TypeError, ValueError) as exc:
                         append(off, rows, kind="pairs", status=getattr(exc, "reason", "invalid_pair_metadata"), pairs={})
@@ -192,7 +201,7 @@ def collect(off, rows, st, pairs, pages, wake, clock):
                 if status == "TRADING" and not wake <= received <= limit:
                     out = {"status": "missed_book_window"}
                 books[venue][coin] = dict(out, observed_utc=bx.precise_utc(received))
-    except Blocked as exc:
+    except (Blocked, bx.GateTerminal) as exc:
         terminal(off, rows, exc, phase="wake", now=clock(), wake=wake)
     finally:
         if isinstance(pages, PublicPages):
@@ -220,7 +229,7 @@ def summarize(rows, *, full=False):
         kind = row["kind"]
         wake_counts[kind] += 1
         if kind == "stop":
-            stop = {k: row[k] for k in ("host", "http_status")}
+            stop = {k: row[k] for k in ("host", "http_status", "reason") if k in row}
         if kind == "pairs":
             pair_counts.update(row["pairs"].values())
             if row["status"] != "ok":
@@ -257,7 +266,7 @@ def summarize(rows, *, full=False):
                         if full:
                             for group in groups:
                                 detailed[coin, venue, size, group, side].append(value)
-    out = {"status": "BLOCKED" if stop else "STARTED",
+    out = {"status": ("BLOCKED" if "http_status" in stop else "STOPPED") if stop else "STARTED",
            "wake_counts": dict(wake_counts), "scheduled_wakes": st["days"] * 24,
            "book_counts": book_counts, "side_counts": side_counts,
            "bitcoin_candle_counts": dict(btc_counts), "binance_pair_status_counts": dict(pair_counts),
@@ -325,7 +334,6 @@ def finish_schedule(off, rows, h, now):
 def loop(off, pages, clock=now_utc):
     # A distinct lifetime lock keeps observers available between wakes. A one-shot
     # record shares the operation lock and is idempotent under the same schedule.
-    bx.check_start(pages.gate)
     off = checked_dir(off)
     with os.fdopen(private_open(off / ".loop.lock", os.O_RDWR | os.O_CREAT), "rb") as loop_lock:
         try:

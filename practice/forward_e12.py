@@ -85,7 +85,9 @@ def start(now, off=OFF, *, gate=None):
     cfg, fee, roots, pins = settings()
     commit = bx.checked_build((*PINNED, "config/thresholds.yaml"))
     bx.require_go(230, "E12_START", commit)
-    bx.check_start(gate)
+    generation = bx.check_start(gate)
+    if generation:
+        bx.require_go(230, "E12_START", commit, generation=generation)
     path = check_storage(off, roots, create=True)
     with bx.locked(path) as path:
         rows = bx.read_log(path)
@@ -93,8 +95,9 @@ def start(now, off=OFF, *, gate=None):
         first = floor_hour(now) + HOUR
         need(first <= parse(cfg["last_wake_utc"]), "first wake outside dates")
         bx.write_anchor(path, bx.anchor_state(rows))
-        bx.append(path, rows, kind="header", freeze=commit, first=iso(first), frozen=frozen(cfg, fee, pins))
-        return {"first_wake": iso(first), "freeze": commit}
+        bx.append(path, rows, kind="header", freeze=commit, first=iso(first),
+                  venue_generation=generation, frozen=frozen(cfg, fee, pins))
+        return {"first_wake": iso(first), "freeze": commit, "venue_generation": generation}
 
 
 class Pages(bx.PublicPages):
@@ -482,15 +485,31 @@ def freeze_roster(path, rows, pages, wake, clock, cfg):
     return roster
 
 
+def record_gate_stop(path, rows, exc, clock, wake=None):
+    event = {"host": bx.HOST, "reason": exc.reason, "made_utc": iso(clock())}
+    if wake is not None:
+        event["wake"] = iso(wake)
+    if isinstance(exc, Blocked):
+        event["http_status"] = exc.status
+    bx.append(path, rows, kind="stop", **event)
+    return rows[-1]
+
+
 def record(now, pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep):
     cfg, fees, roots, pins = settings()
     path = check_storage(off, roots)
     with bx.locked(path) as path:
         rows = bx.read_log(path, recover=True, clock=clock)
         start_row = header(rows, frozen(cfg, fees, pins))
-        bx.require_go(230, "E12_START", start_row["freeze"])
         if any(r["kind"] == "stop" for r in rows):
             return {"kind": "stopped"}
+        source = pages if pages is not None else Pages(clock=clock)
+        if isinstance(source, bx.PublicPages):
+            try:
+                source.bind_run(start_row.get("venue_generation"))
+            except (Blocked, bx.GateTerminal) as exc:
+                return record_gate_stop(path, rows, exc, clock)
+        bx.require_go(230, "E12_START", start_row["freeze"])
         idx = index_log(rows)
         opens, claims, visits, books, _, closed = idx
         if len(judged_trades(evaluate(closed, books, cfg, fees), cfg)) >= cfg["judging_count"]:
@@ -519,7 +538,6 @@ def record(now, pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep):
             elif current == wake and now >= wake + timedelta(seconds=cfg["wake_delay_s"]):
                 bx.append(path, rows, kind="claim", wake=w, made_utc=iso(clock()))
                 try:
-                    source = pages if pages is not None else Pages()
                     if roster is None:
                         try:
                             roster = freeze_roster(path, rows, source, wake, clock, cfg)
@@ -531,10 +549,8 @@ def record(now, pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep):
                             return {"kind": "stop"}
                     return capture_wake(path, rows, source, wake, clock, sleep,
                                         cfg, fees, start_row["frozen"]["rule"], idx, roster)
-                except Blocked as exc:
-                    bx.append(path, rows, kind="stop", wake=w, reason=exc.reason,
-                                host=exc.host, http_status=exc.status, made_utc=iso(clock()))
-                    blocked = rows[-1]
+                except (Blocked, bx.GateTerminal) as exc:
+                    blocked = record_gate_stop(path, rows, exc, clock, wake)
                     if not any(r.get("wake") == w and r["kind"] in ("wake", "void") for r in rows):
                         finish_void(path, rows, wake, opens, "host stopped before the wake completed")
                     return blocked
@@ -741,8 +757,7 @@ def score(now, off=OFF):
 
 def loop(off=OFF, clock=bx.now_utc, sleep=time.sleep):
     cfg, _, roots, _ = settings()
-    pages = Pages()
-    bx.check_start(pages.gate)
+    pages = Pages(clock=clock)
     path = check_storage(off, roots)
     fd = bx.private_open(path / ".loop.lock", os.O_RDWR | os.O_CREAT)
     with os.fdopen(fd, "rb") as lock:
@@ -777,7 +792,7 @@ def main():
             out = start(now)
         elif cmd == "record":
             r = record(now)
-            out = {k: r[k] for k in ("kind", "wake", "host", "http_status") if k in r}
+            out = {k: r[k] for k in ("kind", "wake", "host", "http_status", "reason") if k in r}
         elif cmd == "loop":
             out = loop()
         elif cmd == "alive":
