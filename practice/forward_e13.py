@@ -9,7 +9,7 @@ import re
 import stat
 import subprocess
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -48,6 +48,12 @@ class Refuse(Exception):
 
 class Blocked(Refuse):
     pass
+
+
+class PublicStatus(Exception):
+    def __init__(self, code):
+        super().__init__(code)
+        self.code = code
 
 
 def need(ok, reason):
@@ -375,34 +381,46 @@ class BinanceUS:
                         self.gate.cancel_unsent()
                         raise bx.Failure('wake_window_elapsed')
                     replied = False
+                    status, retry_after, body_error = None, None, None
                     try:
                         with bx.wall_budget(timeout, timeout < self.f['timeout_s']):
                             inp = self.opener.open(req, timeout=timeout)
                             replied = True
                             try:
-                                data = inp.read(self.f['response_max_bytes'] + 1)
+                                status = getattr(inp, 'status', None)
+                                if status is None and callable(getattr(inp, 'getcode', None)):
+                                    status = inp.getcode()
+                                if status == 429:
+                                    headers = getattr(inp, 'headers', None)
+                                    retry_after = headers.get('Retry-After') if headers is not None else None
+                                if status is None or (type(status) is int and 200 <= status < 300):
+                                    data = inp.read(self.f['response_max_bytes'] + 1)
                             finally:
                                 inp.close()
-                    except error.HTTPError as exc:
-                        try:
-                            self.gate.http_error(exc.code, exc.headers.get('Retry-After') if exc.headers else None)
-                            raise
-                        finally:
-                            exc.close()
-                    except (OSError, HTTPException) as exc:
-                        if not replied:
+                    except Exception as exc:
+                        if replied:
+                            body_error = exc
+                        elif isinstance(exc, error.HTTPError):
+                            status = exc.code
+                            with suppress(Exception):
+                                retry_after = exc.headers.get('Retry-After') if exc.headers is not None else None
+                            with suppress(Exception):
+                                exc.close()
+                        elif isinstance(exc, (OSError, HTTPException)):
                             no_status = True
                             self.gate.no_status()
-                        self.gate.reply_received()
+                        else:
+                            raise
+                    if type(status) is int and not 200 <= status < 300:
+                        self.gate.http_error(status, retry_after)
+                        raise PublicStatus(status)
+                    self.gate.reply_received()
+                    if status is not None and type(status) is not int:
+                        raise Refuse('invalid public HTTP status')
+                    if body_error is not None:
                         if self.deadline is not None and self.clock() >= self.deadline:
                             raise bx.Failure('wake_window_elapsed') from None
-                        raise Refuse('public response body unavailable') from exc
-                    except Exception:
-                        if replied:
-                            self.gate.reply_received()
-                        raise
-                    else:
-                        self.gate.reply_received()
+                        raise Refuse('public response body unavailable') from body_error
                 if self.deadline is not None and self.clock() >= self.deadline:
                     raise bx.Failure('wake_window_elapsed')
                 need(len(data) <= self.f['response_max_bytes'], 'public response too large')
@@ -414,7 +432,7 @@ class BinanceUS:
                 self.sleep(max(0., (exc.not_before - began).total_seconds()))
                 self.retry_delay_s += max(0., (self.clock() - began).total_seconds())
                 continue
-            except error.HTTPError as exc:
+            except PublicStatus as exc:
                 if 300 <= exc.code < 400:
                     raise Blocked('public endpoint redirected') from None
                 if not 500 <= exc.code < 600:
