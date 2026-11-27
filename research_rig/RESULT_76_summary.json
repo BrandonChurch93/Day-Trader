@@ -14,7 +14,7 @@
   "last": "2028-11-30",
   "ledger": "233",
   "queue": "138",
-  "state": "Registered 2026-11-26 6:01 PM MT, before any quote",
+  "state": "Running since 2026-11-26 6:20 PM MT (first hourly wake 7:03 PM MT) from the frozen build `e8248e9` after independent audit CLEAR with one accepted limit (ledger 233)",
   "trades": 60
  },
  "gross_mean": 0.01876292484715303,

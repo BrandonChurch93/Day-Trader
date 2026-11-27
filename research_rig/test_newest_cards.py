@@ -356,10 +356,10 @@ def test_plan76_card_missing_and_refusal(tmp_path):
     assert c["summary"].endswith("Blind recompute: pending.") and "bars" not in c
 
 
-def test_e14_card_registered_with_no_figure(monkeypatch):
+def test_e14_card_running_with_no_figure(monkeypatch):
     c = NC.e14_card("GH/")
-    assert c["verdict"] == "Registered, not started" and c["tone"] == "info" and c["numbers"] == []
-    assert "Registered 2026-11-26 6:01 PM MT" in c["summary"] and "60 trades or 2028-11-30" in c["summary"]
+    assert c["verdict"] == "Running, no result yet" and c["tone"] == "info" and c["numbers"] == []
+    assert "Running since 2026-11-26 6:20 PM MT" in c["summary"] and "60 trades or 2028-11-30" in c["summary"]
     assert "pretend $250" in c["summary"] and "11 coins" in c["summary"]
     assert c["summary"].endswith("No result exists yet, so no figure is shown.")
     queue_with(monkeypatch, "138", "Paused for a rebuild.")
