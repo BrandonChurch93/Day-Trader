@@ -1,6 +1,6 @@
 """Checks for the newest screen cards (newest_cards.py): figures read from the pinned summary files, refusals when the
 files stop fitting, the E09 "no signal yet" case, and the Running now strip. Run: python3 -m pytest research_rig/test_newest_cards.py"""
-import json, os, shutil, sys
+import json, os, re, shutil, sys
 import pytest
 import yaml
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -105,39 +105,63 @@ def test_missing_custody_shows_no_figure(tmp_path):
         assert c["verdict"] == "Figures not on this computer" and c["numbers"] == [] and "bars" not in c
 
 
-def test_e09_card_and_no_log(monkeypatch, tmp_path):
+STOP_WORDS = ("Stopped 2026-11-26 4:47 PM MT because the price source's terms bar this use.", "Closed unjudged")
+
+
+def test_e09_card_is_stopped(monkeypatch, tmp_path):
     c = NC.e09_card("GH/")
-    assert "No profit figure before 150 judged trades or 2027-11-30." in c["summary"]
-    assert "Live since 2026-11-26 07:20 MT" in c["summary"]
+    assert c["title"] == "E09: dip-buy rule, stopped on data terms" and c["verdict"] == "Stopped, closed unjudged"
+    assert all(w in c["summary"] for w in STOP_WORDS) and "Replaced by E12 on Binance.US data." in c["summary"]
+    assert [r[0] for r in c["numbers"]] in ([], ["Wake-ups recorded before the stop"])
+    assert [l[0] for l in c["links"]] == ["E09 card", "Log counts"]
+    assert not re.search(r"Signal|Judged|bp|spread|\$", json.dumps(c))
     monkeypatch.setattr(NC, "E09_LOG", str(tmp_path / "absent.json"))
-    c = NC.e09_card("GH/")
-    assert c["verdict"] == "No signal yet" and c["numbers"] == [] and "No signal yet." in c["summary"]
+    assert NC.e09_card("GH/")["numbers"] == []
 
 
-def test_e09_counts_from_log(monkeypatch, tmp_path):
+def test_e09_wake_count_only(monkeypatch, tmp_path):
     log = json.load(open(os.path.join(NC.ROOT, "practice/forward/E09_log.json")))
-    log.update(started=True, recorded=7, written_utc="2026-12-01T20:05:00Z")
+    log.update(started=True, recorded=7)
     log["arms"]["70-102"].update(signals=2, trades_closed=1, trades_judged_ok=1)
-    log["arms"]["71-013"]["signals"] = 3
     p = tmp_path / "E09_log.json"; p.write_text(json.dumps(log))
     monkeypatch.setattr(NC, "E09_LOG", str(p))
-    c = NC.e09_card("GH/"); rows = dict(c["numbers"])
-    assert c["verdict"] == "Running"
-    assert rows["Wake-ups recorded"] == "7" and rows["Signals, rule 70-102"] == "2"
-    assert rows["Signals, the two shown rules (71-013, 71-035)"] == "3"
-    assert rows["Judged trades, rule 70-102 (of 150 needed)"] == "1"
-    assert rows["Counts written"] == "2026-12-01 13:05 MT"
+    assert NC.e09_card("GH/")["numbers"] == [["Wake-ups recorded before the stop", "7"]]
+
+
+def queue_with(monkeypatch, row, step):
+    text = NC.read(NC.QUEUE)
+    lines = [l if not l.startswith(f"| {row} |") else "|".join(l.split("|")[:-2] + [f" {step} ", ""]) for l in text.splitlines()]
+    real = NC.read
+    monkeypatch.setattr(NC, "read", lambda path: "\n".join(lines) if path == NC.QUEUE else real(path))
+
+
+def test_practice_pause(monkeypatch):
+    assert NC.practice_pause() == {"when": "2026-11-26 5:03 PM MT"}
+    queue_with(monkeypatch, "-", "2026-11-25 16:31 UTC")
+    assert NC.practice_pause() is None
+
+
+def test_stopped_cards_refuse_when_the_queue_no_longer_says_stopped(monkeypatch):
+    queue_with(monkeypatch, "131", "2026-11-26 2:53 PM MT: live.")
+    with pytest.raises(ValueError, match="E10 card: queue row 131"):
+        NC.e10_card("GH/")
 
 
 def test_running_now_strip(monkeypatch):
     rows = NC.running_now()
-    assert rows and all(len(r) == 2 and r[1].endswith((".", ".)")) for r in rows)
-    assert ["9b", "The earnings release reader."] in rows
+    assert rows and all(len(r) == 3 and r[1].endswith((".", ".)")) for r in rows)
+    assert ["9b", "The earnings release reader.", None] in rows
+    state = {r[0]: r[2] for r in rows}
+    assert all(state[n] == "Stopped 2026-11-26 4:47 PM MT on data terms" for n in ("114", "131", "132", "133"))
+    assert all(state[n] == "Registered 2026-11-26 4:55 PM MT, not started" for n in ("135", "136", "137"))
+    assert state["-"] == "Paused 2026-11-26 5:03 PM MT"
+    assert NC.row_state("HOLD since 2026-11-26 4:54 PM MT after week 8") == "On hold since 2026-11-26 4:54 PM MT"
+    assert NC.row_state("2026-11-26 08:40 MT: stopped. More.") == "Stopped 2026-11-26 08:40 MT"
     assert all("`" not in r[1] and "](" not in r[1] for r in rows)
     text = ("# Q\n## Running now\n\nNote.\n\n| # | What | Inputs | Step |\n|---|---|---|---|\n"
             "| 7 | Plan 9 (`docs/x.md`). Second sentence. | a | b |\n| - | Et al. style, Smith et al. 2020 found it. More. | a | b |\n## Done\n")
     monkeypatch.setattr(NC, "read", lambda path: text if path == NC.QUEUE else open(os.path.join(NC.ROOT, path)).read())
-    assert NC.running_now() == [["7", "Plan 9."], ["-", "Et al. style, Smith et al. 2020 found it."]]
+    assert NC.running_now() == [["7", "Plan 9.", None], ["-", "Et al. style, Smith et al. 2020 found it.", None]]
     monkeypatch.setattr(NC, "read", lambda path: "# Q\n## Done\n")
     with pytest.raises(ValueError, match="no Running now section"):
         NC.running_now()
@@ -209,39 +233,21 @@ def e10_log(tmp_path, days=4, block_at=None):
     return out
 
 
-def test_e10_placeholder_is_not_started(tmp_path):
-    # The repo's public file changes once the real log runs, so the not-started state is built here from an empty folder.
+def test_e10_card_is_stopped_and_shows_wakes_only(tmp_path):
     sys.path.insert(0, os.path.join(NC.ROOT, "practice"))
     import forward_e10 as fe
-    out = tmp_path / "E10_log.json"
-    fe.publish(tmp_path / "empty", out)
-    assert json.load(open(out))["coinbase"]["status"] == "NOT_STARTED"
-    c = NC.e10_card("GH/", out)
-    assert c["id"] == "e10" and c["title"] == "E10: coin trend rule, running forward"
-    assert c["verdict"] == "Not started, no wakes yet" and c["numbers"] == [] and "columns" not in c
-    for words in ("pretend $500", "midnight UTC", "Coinbase quotes at a 60 bp fee", "Binance.US quotes at its stated 2 bp fee",
-                  "the first wake is 2026-11-26 17:00 MT", "365 days after the first wake", "a record, not a verdict"):
-        assert words in c["summary"]
+    empty = tmp_path / "E10_empty.json"
+    fe.publish(tmp_path / "empty", empty)
+    (tmp_path / "b").mkdir()
+    for path, wakes in ((empty, "0"), (e10_log(tmp_path), "4"), (e10_log(tmp_path / "b", block_at=3), "4")):
+        c = NC.e10_card("GH/", path)
+        assert c["title"] == "E10: coin trend rule, stopped on data terms" and c["verdict"] == "Stopped, closed unjudged"
+        assert all(w in c["summary"] for w in STOP_WORDS) and "Replaced by E13 on Binance.US data." in c["summary"]
+        assert c["numbers"] == [["Wakes recorded before the stop", wakes]] and "columns" not in c
+        assert not re.search(r"bp|cost|spread|fill|order|\$", json.dumps(c), re.I)
+        assert [l[0] for l in c["links"]] == ["E10 card", "Log counts"]
     assert [x["id"] for x in NC.cards("GH/")][-2:] == ["e09", "e10"]
-
-
-def test_e10_populated_made_up_log(tmp_path):
-    c = NC.e10_card("GH/", e10_log(tmp_path))
-    assert c["verdict"] == "Running" and c["columns"]["head"] == ["", "Coinbase", "Binance.US"]
-    rows = {r[0]: r[1:] for r in c["columns"]["rows"]}
-    assert rows["State"] == ["Running", "Running"] and rows["Wakes recorded"] == ["4", "4"]
-    assert rows["Orders"] == ["1", "1"] and rows["Fills"] == ["1", "1"] and rows["Voided buys"] == ["0", "0"]
-    assert rows["Median cost a side, buys (we assumed 75 bp)"] == ["65.0 bp", "7.0 bp"]
-    assert rows["Median cost a side, sells (we assumed 75 bp)"] == ["none yet", "none yet"]
-    text = json.dumps(c)
-    assert "$" not in text.replace("pretend $500", "").replace("the $500 book", "") and "profit is shown" in c["summary"]
-
-
-def test_e10_stopped_venue(tmp_path):
-    c = NC.e10_card("GH/", e10_log(tmp_path, block_at=3))
-    rows = {r[0]: r[1:] for r in c["columns"]["rows"]}
-    assert c["verdict"] == "Running, Binance.US stopped" and c["tone"] == "mixed"
-    assert rows["State"] == ["Running", "Stopped"] and "Binance.US refused" in c["summary"]
+    assert "Standing chore" not in open(NC.__file__).read()
 
 
 @pytest.mark.parametrize("change", ["drop", "extra", "text", "status", "costs"])

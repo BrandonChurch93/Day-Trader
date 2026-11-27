@@ -173,7 +173,8 @@
     var rows = d.running_now || [];
     $('running-body').innerHTML = rows.length
       ? '<ol class="running-list">' + rows.map(function (r) {
-          return '<li><span class="running-num">' + (r[0] === '-' ? 'No number' : 'Row ' + esc(r[0])) + '</span><span class="running-what">' + esc(mtStampsIn(r[1])) + '</span></li>';
+          return '<li><span class="running-num">' + (r[0] === '-' ? 'No number' : 'Row ' + esc(r[0])) + '</span><span class="running-what">' + esc(mtStampsIn(r[1])) +
+            (r[2] ? ' <span class="running-state' + (/^Stopped|^On hold/.test(r[2]) ? ' running-stopped' : '') + '">' + keepDates(esc(r[2])) + '</span>' : '') + '</span></li>';
         }).join('') + '</ol>' + (d.running_link ? '<p class="links"><a href="' + esc(d.running_link) + '" target="_blank" rel="noopener">Open the queue page</a></p>' : '')
       : '<p class="meta">Nothing is listed as running.</p>';
   }
@@ -685,11 +686,15 @@
     var body = $('timemachine-body');
     if (!body) return;
     var tm = d.timemachine;
+    // A study on hold is said plainly at the top, with no weekly figure.
+    var hold = d.tm_hold ? '<div class="card pr-block tm-plan tm-hold" data-testid="tm-hold-' + esc(d.tm_hold.id) + '"><div class="test-head"><h3 class="h3">' +
+      esc(d.tm_hold.title) + '</h3><span class="badge badge-unknown"><span class="mark" aria-hidden="true">' + TONE_MARK.unknown + '</span>On hold</span></div>' +
+      '<p>' + keepDates(esc(d.tm_hold.text)) + '</p></div>' : '';
     if (!tm || !tm.plans || !tm.plans.length) {
-      body.innerHTML = '<div class="empty"><h3>No replay has finished yet</h3><p>Results show here when the first sessions are scored.</p></div>';
+      body.innerHTML = hold + '<div class="empty"><h3>No replay has finished yet</h3><p>Results show here when the first sessions are scored.</p></div>';
       return;
     }
-    var html = '';
+    var html = hold;
     tm.plans.forEach(function (pl) {
       if (pl.kind === 'dial') { html += tmDial(pl, tm); return; }
       if (pl.kind === 'basket') { html += tmBasket(pl, tm); return; }
@@ -741,13 +746,17 @@
     var s = practice.summary;
     var status = s && PR_STATE[s.status] ? s.status : 'waiting_for_key';
     var st = PR_STATE[status];
+    // A pause written in the queue page wins over the desk's own last word, which was written while its timer still ran.
+    var paused = practice.pause && s && status !== 'waiting_for_key';
+    if (paused) st = { label: 'Paused', cls: 'badge-mixed', mark: '~' };
     var waiting = !s || status === 'waiting_for_key';
     var html = '';
 
     // 1. one line of state
     html += '<div class="pr-status" data-testid="practice-status"><span class="badge ' + st.cls + '">' +
       (st.mark ? '<span class="mark" aria-hidden="true">' + st.mark + '</span>' : '') + esc(st.label) + '</span>' +
-      (s && s.status_text ? '<p>' + esc(s.status_text) + '</p>' : '') + '</div>' +
+      (paused ? '<p>Paused ' + keepDates(esc(practice.pause.when)) + ' by the lead agent. The desk\u2019s timer is off, so nothing new is bought or sold. Last record ' + timeTag(s.made_utc) + '.</p>'
+        : (s && s.status_text ? '<p>' + esc(s.status_text) + '</p>' : '')) + '</div>' +
       '<p class="meta pr-records">' + (s && s.last_check_utc ? 'Last check ' + timeTag(s.last_check_utc) + '. ' : '') +
       '<span id="practice-records">' + recordsLine(s) + '</span></p>';
 
@@ -764,7 +773,7 @@
     var closed = isNum(t.closed_trades) ? t.closed_trades : 0;
     if (!waiting) {
       html += '<div class="pr-kpis">' +
-        kpi('Pretend value now', esc(money2(a.value_usd)), gainHtml(a.gain_usd, a.gain_pct) + ' since the start of ' + esc(money2(a.pretend_start_usd)), ' pr-kpi-main') +
+        kpi(practice.pause ? 'Pretend value at the last record' : 'Pretend value now', esc(money2(a.value_usd)), gainHtml(a.gain_usd, a.gain_pct) + ' since the start of ' + esc(money2(a.pretend_start_usd)), ' pr-kpi-main') +
         kpi('Wins', esc(int(t.wins)), closed ? '' : 'No closed trades yet') +
         kpi('Losses', esc(int(t.losses)), closed ? '' : 'No closed trades yet') +
         kpi('Win rate', isNum(t.win_rate) ? esc(pct(t.win_rate, 0)) : '<span class="pr-kpi-none">None yet</span>',
@@ -820,7 +829,7 @@
     if (t.halted) return '<span class="badge badge-fail"><span class="mark" aria-hidden="true">\u00d7</span>Stopped</span>' +
       '<span class="pr-halt-reason">' + esc(t.halt_reason || 'No reason was recorded.') + '</span>';
     if (t.started === false) return '<span class="pr-muted">Waiting for its first check</span>';
-    return 'Trading';
+    return practice.pause ? 'Paused' : 'Trading';
   }
   function traderRows(t) {
     var id = String(t.id), rid = 'pr-t-' + id.replace(/[^A-Za-z0-9_-]/g, '_');
@@ -1151,6 +1160,7 @@
   function initPractice(d) {
     practice.summary = d.practice && typeof d.practice === 'object' ? d.practice : null;
     practice.source = 'baked'; practice.check = 'none';
+    practice.pause = d.practice_pause && d.practice_pause.when ? d.practice_pause : null;
     practice.ghBase = d.status_link ? String(d.status_link).replace(/docs\/STATUS\.md$/, '') : '';
     try { initPracticeEvents(); } catch (e) { /* the section still shows */ }
     try { renderPractice(); } catch (e) {

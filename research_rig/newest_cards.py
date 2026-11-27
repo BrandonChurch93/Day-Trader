@@ -237,36 +237,55 @@ def plan75_card(gh, run_path=P75_RUN, recompute_path=P75_RECOMPUTE):
 
 
 # ------------------------------------------------------------------ E09 forward log
+def queue_step(row):
+    """The Current step cell of a row in the Running now table of docs/QUEUE.md."""
+    for cells in queue_rows():
+        if cells[0] == row:
+            return cells[-1]
+    raise ValueError(f"queue row {row} not found in the Running now table")
+
+
+STOP_RE = re.compile(r"^STOPPED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) on data terms \(Coinbase market data\)\. "
+                     r"Closed unjudged;.*?Replaced by (E\d+) \(queue (\d+)\)\.")
+
+
+def stopped_on_terms(row, card_name):
+    """A forward card stopped on data terms: read the stop time and the replacement from its queue row, refuse otherwise."""
+    m = STOP_RE.search(queue_step(row))
+    if not m:
+        raise ValueError(f"{card_name} card: queue row {row} no longer starts with STOPPED on data terms and a replacement")
+    when, new, new_row = m.groups()
+    reg = queue_step(new_row)
+    if not reg.startswith("Registered ") or "Binance.US data only" not in dict((c[0], c[1]) for c in queue_rows())[new_row]:
+        raise ValueError(f"{card_name} card: replacement {new} (queue {new_row}) is not a registered Binance.US-only row")
+    return when, new
+
+
+def stop_sentence(when, new):
+    return (f"Stopped {when} because the price source's terms bar this use. Closed unjudged; nothing is scored. "
+            f"Replaced by {new} on Binance.US data.")
+
+
+E09_ROW = "114"
+
+
 def e09_card(gh):
     card = read(E09_CARD)
-    n_judged, last_day = re.search(r"first (\d+) judged trades .*? last wake on (\d{4}-\d{2}-\d{2})", card).groups()
-    started = re.search(r"Standing chore at every wake-up \(lead agent, (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) MT\): the E09 forward log", read(QUEUE))
     what = re.search(r"^# E09: Forward log of rule 70-102, (.+)$", card, re.M)[1]
-    fixed = f"No profit figure before {n_judged} judged trades or {last_day}."
+    when, new = stopped_on_terms(E09_ROW, "E09")
     links = [["E09 card", gh + E09_CARD], ["Log counts", gh + E09_LOG]]
-    base = dict(id="e09", title="Forward log E09", date=None, links=links)
-    since = f"Live since {started[1]} MT" if started else "Start time not found in the queue page"
     path = os.path.join(ROOT, E09_LOG)
     log = json.load(open(path)) if os.path.exists(path) else None
-    if not log or not log.get("started"):
-        return dict(base, verdict="No signal yet", tone="unknown", basis="STATED by the E09 card and the queue page.",
-                    summary=f"Follows rule 70-102, {what}, forward on live prices with pretend money. {since}. No signal yet. {fixed}",
-                    numbers=[])
-    arm = log["arms"]["70-102"]
-    signals = sum(a["signals"] for a in log["arms"].values())
-    nums = [["Wake-ups recorded", str(log["recorded"])],
-            ["Signals, rule 70-102", str(arm["signals"])],
-            ["Signals, the two shown rules (71-013, 71-035)", str(signals - arm["signals"])],
-            [f"Judged trades, rule 70-102 (of {n_judged} needed)", str(arm["trades_judged_ok"])],
-            ["Counts written", mt(log["written_utc"])]]
-    if any(k not in log for k in ("recorded", "wakes_closed", "written_utc")) or arm["trades_judged_ok"] > arm["trades_closed"]:
-        raise ValueError("E09 card: the log counts do not fit")
-    return dict(base, verdict="Running" + (", no signal yet" if signals == 0 else ""), tone="unknown",
-                basis=f"MEASURED counts read from {os.path.basename(E09_LOG)}. Start time STATED in the queue page. Pretend money, no real account.",
-                summary=(f"Follows rule 70-102, {what}, forward on live prices with pretend money. {since}. "
-                         + ("No signal yet. " if signals == 0 else "") + fixed),
-                numbers=nums)
-
+    nums = []
+    if log and log.get("started"):
+        if not (isinstance(log.get("recorded"), int) and log["recorded"] >= 0):
+            raise ValueError("E09 card: the log counts do not fit")
+        nums = [["Wake-ups recorded before the stop", f"{log['recorded']:,}"]]
+    return dict(id="e09", title="E09: dip-buy rule, stopped on data terms", date=None, links=links,
+                verdict="Stopped, closed unjudged", tone="unknown", numbers=nums,
+                basis=(f"STATED in the queue page, row {E09_ROW}. " + (f"The wake-up count is read from {os.path.basename(E09_LOG)}. " if nums else "")
+                       + "Pretend money, no real account."),
+                summary=f"Followed rule 70-102, {what}, forward on live prices with pretend money. " + stop_sentence(when, new))
 
 # ------------------------------------------------------------------ E10 forward log
 E10_VENUES = (("coinbase", "Coinbase"), ("binance_us", "Binance.US"))
@@ -312,61 +331,25 @@ def e10_checked(log):
     return log
 
 
+E10_ROW = "131"
+
+
 def e10_card(gh, log_path=None):
     card = read(E10_CARD)
-    raw = yaml.safe_load(read("config/thresholds.yaml"))
-    f = raw["forward_e10"]["value"]
-    base_key, field = f["spot_taker"]
-    fee_cb, fee_bn = raw[base_key]["value"][field], raw[f["second_fee_key"]]["value"]["default_taker_bp"]
     coins = re.search(r"Read the (\d+) Plan 70 coins", card)[1]
     legs = re.search(r"Use the Plan 75 primary book for decisions: (\d+)-, (\d+)- and (\d+)-day legs", card).groups()
-    started = re.search(r"Standing chore at every wake-up \(lead agent, (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M) MT\): the E10 forward log", read(QUEUE))
-    if not started or "The first scheduled wake is the next UTC date after start" not in card:
-        raise ValueError("E10 card: start time or wake rule not found in the queue page or the card")
-    start = datetime.datetime.strptime(started[1], "%Y-%m-%d %I:%M %p").replace(tzinfo=MT).astimezone(datetime.timezone.utc)
-    first = datetime.datetime.combine(start.date() + datetime.timedelta(days=1), datetime.time(), datetime.timezone.utc)
-    now = datetime.datetime.now(datetime.timezone.utc)
-    nxt = datetime.datetime.combine(now.date() + datetime.timedelta(days=1), datetime.time(), datetime.timezone.utc)
-    at = nxt.astimezone(MT).strftime("%H:%M")
+    when, new = stopped_on_terms(E10_ROW, "E10")
     log = e10_checked(json.load(open(log_path or os.path.join(ROOT, E10_LOG))))
-    cb, bn = log["coinbase"], log["binance_us"]
-    what = (f"Follows the Plan 75 rule forward with pretend money: it buys one of {coins} large coins when its daily close reaches a "
-            f"{legs[0]}, {legs[1]} or {legs[2]} day high and sells when the close drops under a stop that only moves up. "
-            f"It decides once a day at midnight UTC ({at} MT) with a pretend $"
-            f"{f['bankroll_usd']['main']:,}, priced two ways side by side: Coinbase quotes at a {fee_cb:g} bp fee a side and "
-            f"Binance.US quotes at its stated {fee_bn:g} bp fee. A bp is a hundredth of a percent. ")
-    fixed = (f"No profit is shown until {f['score_days']} days after the first wake, and then it is a record, not a verdict. "
-             "No prices are shown.")
+    wakes = log["coinbase"]["wakes"]
     links = [["E10 card", gh + E10_CARD], ["Log counts", gh + E10_LOG]]
-    base = dict(id="e10", title="E10: coin trend rule, running forward", date=None, links=links)
-    if cb["status"] == "NOT_STARTED":
-        return dict(base, verdict="Not started, no wakes yet", tone="unknown", numbers=[],
-                    basis=f"STATED by the E10 card and the queue page. {os.path.basename(E10_LOG)} is still the not-started placeholder.",
-                    summary=what + f"Live since {mt(start.isoformat())}; the first wake is {mt(first.isoformat())}. No wakes recorded yet. " + fixed)
-    word = {"STARTED": "Running", "BLOCKED": "Stopped", "NO_DECISION_FEED": "Stopped"}
-    def cost(c):
-        return "none yet" if c["n"] == 0 else f"{c['median_bp']:.1f} bp"
-    pick = lambda fn: [fn(log[key]) for key, _ in E10_VENUES]
-    line = f"{cb['flat_reference_bp']:g} bp"
-    rows = [["State"] + pick(lambda v: word[v["status"]]),
-            ["Wakes recorded"] + pick(lambda v: f"{v['wakes']:,}"),
-            ["Orders"] + pick(lambda v: f"{v['placeability']['main']['orders']:,}"),
-            ["Fills"] + pick(lambda v: f"{v['placeability']['main']['fills']:,}"),
-            ["Voided buys"] + pick(lambda v: f"{v['placeability']['main']['void_buys']:,}"),
-            [f"Median cost a side, buys (we assumed {line})"] + pick(lambda v: cost(v["all_in_cost_by_side"]["buy"])),
-            [f"Median cost a side, sells (we assumed {line})"] + pick(lambda v: cost(v["all_in_cost_by_side"]["sell"]))]
-    stopped = [name for key, name in E10_VENUES if log[key]["status"] != "STARTED"]
-    if cb["status"] == "BLOCKED":
-        verdict, tone, state = "Stopped", "fail", "Coinbase, which feeds every decision, refused our requests, so both books have stopped. "
-    elif stopped:
-        verdict, tone, state = "Running, Binance.US stopped", "mixed", "Binance.US refused our quote requests, so that book has stopped. Coinbase continues. "
-    else:
-        verdict, tone, state = "Running", "unknown", ""
-    return dict(base, verdict=verdict, tone=tone, numbers=[], columns=dict(head=[""] + [n for _, n in E10_VENUES], rows=rows),
-                basis=(f"MEASURED counts read from {os.path.basename(E10_LOG)}, the ${f['bankroll_usd']['main']:,} book. Start time STATED in the queue page. "
-                       "Pretend money, no account at either venue."),
-                summary=what + f"First wake {mt(first.isoformat())}. " + state + fixed)
-
+    return dict(id="e10", title="E10: coin trend rule, stopped on data terms", date=None, links=links,
+                verdict="Stopped, closed unjudged", tone="unknown",
+                numbers=[["Wakes recorded before the stop", f"{wakes:,}"]],
+                basis=(f"STATED in the queue page, row {E10_ROW}. The wake count is read from {os.path.basename(E10_LOG)}. "
+                       "Pretend money, no account at any venue."),
+                summary=(f"Followed the Plan 75 rule forward with pretend money: buy one of {coins} large coins when its daily close "
+                         f"reaches a {legs[0]}, {legs[1]} or {legs[2]} day high, sell when the close drops under a stop that only moves up. "
+                         + stop_sentence(when, new)))
 
 # ------------------------------------------------------------------ Running now strip
 def first_sentence(text):
@@ -376,20 +359,49 @@ def first_sentence(text):
     return (text[:m.start() + 1] if m else text.rstrip(".") + ".").strip()
 
 
-def running_now():
-    """Rows of the "Running now" table in docs/QUEUE.md: [row number, first sentence of What]."""
+def queue_rows():
+    """Cells of each row of the "Running now" table in docs/QUEUE.md."""
     body = re.search(r"^## Running now[ \t]*\n(.*?)(?=^## |\Z)", read(QUEUE), re.M | re.S)
     if not body:
         raise ValueError("running strip: docs/QUEUE.md has no Running now section")
     lines = [l for l in body[1].splitlines() if l.startswith("|")]
     if len(lines) < 3 or [c.strip() for c in lines[0].strip("|").split("|")][:2] != ["#", "What"]:
         raise ValueError("running strip: the Running now table no longer starts with # and What")
-    rows = []
-    for l in lines[2:]:
-        cells = [c.strip() for c in l.strip().strip("|").split("|")]
-        rows.append([cells[0], first_sentence(cells[1])])
-    return rows
+    return [[c.strip() for c in l.strip().strip("|").split("|")] for l in lines[2:]]
 
+
+def row_state(step):
+    """A short plain state for a row whose step says it is stopped or only registered; None otherwise."""
+    m = re.match(r"STOPPED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)( on data terms)?", step)
+    if m:
+        return f"Stopped {m[1]}" + (" on data terms" if m[2] else "")
+    m = re.match(r"PAUSED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)", step)
+    if m:
+        return f"Paused {m[1]}"
+    m = re.match(r"(?:ON HOLD|HOLD) (?:since )?(\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)", step)
+    if m:
+        return f"On hold since {m[1]}"
+    m = re.match(r"(\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT): stopped\b", step)
+    if m:
+        return f"Stopped {m[1]}"
+    m = re.match(r"Registered (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)\.", step)
+    if m:
+        return f"Registered {m[1]}, not started"
+    return None
+
+
+def practice_pause():
+    """The practice desk's pause, from its row in the Running now table: {"when": ...} or None when the row does not say PAUSED."""
+    rows = [c for c in queue_rows() if c[0] == "-" and "practice desk" in c[1]]
+    if len(rows) != 1:
+        raise ValueError("practice pause: the practice desk row is not in the Running now table once")
+    m = re.match(r"PAUSED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) by the lead agent", rows[0][-1])
+    return dict(when=m[1]) if m else None
+
+
+def running_now():
+    """Rows of the "Running now" table in docs/QUEUE.md: [row number, first sentence of What, state or None]."""
+    return [[c[0], first_sentence(c[1]), row_state(c[-1]) if len(c) >= 3 else None] for c in queue_rows()]
 
 def cards(gh):
     return [plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh)]

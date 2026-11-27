@@ -1,6 +1,6 @@
 import unittest
 
-from research_rig.dashboard_status import parse_status, scoreboard, validate_status_runs
+from research_rig.dashboard_status import parse_status, scoreboard, tm_hold, validate_status_runs
 
 
 GH = "https://example.test/blob/main/"
@@ -87,3 +87,21 @@ class DashboardStatusTests(unittest.TestCase):
         self.assertEqual([row["label"] for row in score["latest"][:2]], ["Replay 46 Leg A", "Replay 46 Leg B"])
         self.assertEqual([row["verdict"] for row in score["latest"][:2]],
                          ["Did not pass (3 of 6 marks)", "Did not pass (5 of 6 marks)"])
+
+
+class TmHoldTests(unittest.TestCase):
+    BULLET = ("- HOLD by the lead agent, 2026-11-26 4:54 PM MT: the time machine study TM07 stops after week 8 round one (ledger 198). "
+              "Its price tape is Coinbase candles (STATED by the operator), and Coinbase's terms bar using its market data to "
+              "benchmark an agent without written consent (MEASURED on its page). No round-two session is created.\n")
+
+    def test_hold_note_in_plain_words(self):
+        h = tm_hold("# Status\n## Latest results\n\n" + self.BULLET)
+        self.assertEqual(h["id"], "TM07")
+        self.assertIn("on hold after week 8, round one (since 2026-11-26 4:54 PM MT, ledger 198)", h["text"])
+        self.assertIn("terms bar this use", h["text"])
+        self.assertNotRegex(h["text"], r"\$|%|bp|gain|loss")
+
+    def test_no_bullet_no_note_and_changed_bullet_refused(self):
+        self.assertIsNone(tm_hold("# Status\n- Nothing on hold.\n"))
+        with self.assertRaises(ValueError):
+            tm_hold(self.BULLET.replace("Coinbase candles", "Kraken candles"))

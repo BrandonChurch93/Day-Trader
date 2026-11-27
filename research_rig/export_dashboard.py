@@ -23,7 +23,7 @@ import report_34 as M34
 import replay_cards as RC
 import newest_cards as NC
 from rules import RULES
-from dashboard_status import SCORECARD_PATH, parse_status, scoreboard, validate_status_runs
+from dashboard_status import SCORECARD_PATH, parse_status, scoreboard, tm_hold, validate_status_runs
 
 GH = "https://github.com/BrandonChurch93/Day-Trader/blob/main/"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -523,7 +523,9 @@ PR = practice()
 findings, research_scoreboard = findings_and_scoreboard()
 pr_on = bool(PR) and PR.get("status") in ("running", "halted")
 pr_n = PR["totals"]["orders"] if pr_on else 0
-pr_card = (dict(id="practice", label="Practice account", trades=pr_n, state="Running" if PR["status"] == "running" else "Stopped, needs you",
+PR_PAUSE = NC.practice_pause()  # a pause written in the queue page wins over the desk's own last status
+pr_card = (dict(id="practice", label="Practice account", trades=pr_n,
+                state=f"Paused {PR_PAUSE['when']}" if PR_PAUSE else "Running" if PR["status"] == "running" else "Stopped, needs you",
                 why="Pretend money. Several traders, some fixed rules and some AI, share one practice account. A plain program checks and places every order. They are listed at the top of this page.") if pr_on else
            dict(id="practice", label="Practice account", trades=0, state="Not connected", why="Needs the practice key from you."))
 out = dict(
@@ -534,8 +536,8 @@ out = dict(
                    why=f"Pretend trades on old prices, in the {len(S)} comparisons below. Not real money.")],
     headline=[("No real trade has been made. " + (f"The practice account has sent {pr_n} pretend-money order" + ("" if pr_n == 1 else "s") + "." if pr_n else "The practice desk is running and has sent no order yet.")) if pr_on
               else "No real or practice trade has been made."],
-    practice=PR, practice_live_url=PRACTICE_LIVE,
-    timemachine=timemachine(),
+    practice=PR, practice_live_url=PRACTICE_LIVE, practice_pause=PR_PAUSE,
+    timemachine=timemachine(), tm_hold=tm_hold(open(STATUS, encoding="utf-8").read()),
     believed=findings, scoreboard=research_scoreboard,
     status_rows=status_rows(), status_link=GH + "docs/STATUS.md",
     newest=NC.cards(GH), running_now=NC.running_now(), running_link=GH + "docs/QUEUE.md#running-now",
