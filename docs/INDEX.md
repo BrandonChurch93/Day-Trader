@@ -265,6 +265,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/180_round_57_cost_as_the_binding_limit.md` | Idea round 57: cost audit of all 44 scored tests (3 passed, 3 killed by costs, 23 lost before costs, 15 gross not printed), US retail ($500 to $2,000) published venue fee and API comparison for 20 large coins plus repo stock/CEF costs, and 4 ranked forward-only cost measurements | CURRENT |
 | `docs/research/181_plan_75_heldback_result.md`, `research_rig/build_doc181_plan75_vault.py` | Plan 75 result of the one held-back run, 2024-01-01 to 2026-10-31: the four marks, net by year, both cost lines, shown-only legs, the blind recompute and the traced warm-up ambiguity, no-edge pass rate on made-up worlds; built from four pinned aggregate files | RECORD |
 | `docs/research/182_measurement_132_venue_cost.md` | Ledger 227 forward USD spot cost logger design for Coinbase Exchange and Binance.US, with no profit claim | CURRENT |
+| `docs/research/195_measurement_133_binance_us_cost.md` | Ledger 232 forward Binance.US-only USD spot cost measurement, with no profit claim | DRAFT |
 | `docs/research/183_round_58_thin_edges_at_low_cost.md` | Idea round 58: audit of thin 0 to 150 bp/RT rules across our repo record (Plans 70/71 and scored tests) and 6 ranked open-access academic leads (1 to 30 day holds) that die at 50 to 75 bp/side and might live at 5 to 25 bp/side on Binance.US | CURRENT |
 | `docs/research/184_round_59_dated_flows_next_eight_weeks.md` | Idea round 59: forced, publicly dated flows in the next eight weeks (2026-11-27 to 2027-01-22) for a $500 to $2,000 long-only US retail account, checked against `docs/QUEUE.md` and scored tests, with 6 ranked forward-watch leads and primary-source calendars | CURRENT |
 | `docs/research/185_round_60_using_the_cost_finding.md` | Idea round 60: honest use of Measurement 132 before and after its 30-day readout; Binance.US public API/archive history and 18-month USD gap, CS/AR/EDGE spread estimators and zero-tuning validation, re-test map of all pre-cost positive coin tests (second look vs clean first look), and 4 ranked clean next tests with pre-fixed two-branch rules | CURRENT |
@@ -677,8 +678,17 @@ Working papers.
 | `practice/traders/E11_dip_buy_cheap_venue.md` | Ledger 228, E09 dip-buy rules on Binance.US USD depth with a shown resting-bid line; pretend money and audit before start | DRAFT |
 | `practice/forward_e11.py`, `practice/test_forward_e11.py` | E11 forward recorder, E09 signal reuse, depth walking and bounded resting-bid evidence, anchored private log, and invented-data tests | CURRENT |
 | `practice/forward/E11_log.json` | E11 public counts, book clocks and cost aggregates only, no prices or profit; not started | RECORD |
+| `practice/traders/E13_coin_trend_ratchet_binance_us.md` | Ledger 231, the frozen Plan 75 daily rule on Binance.US USD and pretend depth-walk fills; audit and start authorization required | DRAFT |
+| `practice/forward_e13.py`, `practice/test_forward_e13.py` | E13 logger, frozen rule extraction, private hash chain and invented candle and depth tests | CURRENT |
+| `practice/forward/E13_log.json` | E13 public aggregate counts, spread and cost statistics only; not started | RECORD |
 | `practice/measure_132.py`, `practice/test_measure_132.py` | Measurement 132 forward-only taker cost logger, private hash-chained observations, and network-free made-up book checks | CURRENT |
 | `practice/forward/M132_log.json` | Measurement 132 public state; once published, counts and pooled costs only, no prices or returns. Not started | RECORD |
+| `practice/traders/E12_dip_buy_binance_us.md` | Ledger 230 forward dip-buy rules on Binance.US USD candles and books | DRAFT |
+| `practice/forward_e12.py`, `practice/test_forward_e12.py` | E12 recorder and invented-data checks | CURRENT |
+| `practice/forward/E12_log.json` | E12 public count and aggregate status | RECORD |
+| `practice/measure_133.py`, `practice/test_measure_133.py` | Measurement 133 recorder and invented-data checks | CURRENT |
+| `practice/venue_binance_us.py`, `practice/test_venue_binance_us.py` | Shared Binance.US transport, gate, custody and approval helpers; invented HTTP tests | CURRENT |
+| `practice/forward/M133_log.json` | Measurement 133 public count and aggregate status | RECORD |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 
