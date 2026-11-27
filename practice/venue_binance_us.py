@@ -36,6 +36,8 @@ BLOCKS = (418, 401, 403, 451)
 INFLIGHT = "inflight.json"
 GENERATION = "stop_generation.json"
 GENERATION_WITNESS = "generation_initialized.json"
+NO_STATUS_STREAK = "no_status_streak.json"
+NO_STATUS_LONG_AT = 3
 
 
 class Refuse(Exception):
@@ -510,11 +512,11 @@ class Gate:
                     raise
                 except Exception:
                     if not self.completed:
-                        raise GateUncertain() from None
+                        self.no_status()
                     raise
                 else:
                     if not self.completed:
-                        raise GateUncertain()
+                        self.no_status()
             finally:
                 try:
                     if self.completed:
@@ -524,13 +526,38 @@ class Gate:
                     self.held, self.held_generation, self.completed = None, None, False
 
     def reply_received(self):
-        """A non-policy HTTP status is known; retain the lock until exit."""
+        """A known HTTP status resets the shared streak before marker removal."""
         need(self.held is not None, "venue acknowledgement requires the request lock")
+        if self.no_status_streak():
+            self.io(self.write, self.held / NO_STATUS_STREAK, {"consecutive": 0})
         self.completed = True
 
     def cancel_unsent(self):
         """Disarm only when the caller knows it has not opened HTTP."""
-        self.reply_received()
+        need(self.held is not None, "venue cancellation requires the request lock")
+        self.completed = True
+
+    def no_status_streak(self):
+        try:
+            state = self.io(self.read, self.held / NO_STATUS_STREAK)
+        except Refuse:
+            raise GateStorage() from None
+        if state is None:
+            return 0
+        if (set(state) != {"consecutive"} or type(state["consecutive"]) is not int
+                or not 0 <= state["consecutive"] <= NO_STATUS_LONG_AT):
+            raise GateStorage()
+        return state["consecutive"]
+
+    def no_status(self):
+        """Durably throttle a live attempt that ended without an HTTP status."""
+        need(self.held is not None and not self.completed, "no-status checkpoint requires a pending request")
+        count = min(self.no_status_streak() + 1, NO_STATUS_LONG_AT)
+        until = self.clock() + timedelta(seconds=900 if count >= NO_STATUS_LONG_AT else 60)
+        self.io(self.write, self.held / NO_STATUS_STREAK, {"consecutive": count})
+        self.io(self.write, self.held / self.cooldown_path.name, {"not_before_utc": precise_utc(until)})
+        self.completed = True
+        raise Cooldown(until) from None
 
     def http_error(self, status, retry_after=None):
         need(self.held is not None, "venue gate update requires the request lock")
@@ -600,17 +627,13 @@ class PublicPages:
                 self.gate.cancel_unsent()
                 raise Failure("wake_window_elapsed")
             self.last[host] = self.monotonic()
+            status_seen = False
             try:
                 budget = min(5, remaining)
                 with wall_budget(budget, self.deadline is not None and remaining <= 5):
                     with self.opener.open(req, timeout=5) as response:
-                        self.gate.reply_received()
+                        status_seen = True
                         raw = response.read(8 * 1024 * 1024 + 1)
-                    if len(raw) > 8 * 1024 * 1024:
-                        raise Failure("response_too_large")
-                    if self.deadline and self.clock() > self.deadline:
-                        raise Failure("wake_window_elapsed")
-                    return json.loads(raw, parse_float=Decimal)
             except urllib.error.HTTPError as exc:
                 try:
                     self.gate.http_error(exc.code, exc.headers.get("Retry-After") if exc.headers else None)
@@ -621,12 +644,25 @@ class PublicPages:
                     except OSError:
                         pass  # Socket cleanup cannot mask a gate-storage failure.
             except urllib.error.URLError as exc:
+                if status_seen:
+                    self.gate.reply_received()
                 reason = self.timeout_status(exc.reason) if isinstance(exc.reason, TimeoutError) else "network_failure"
                 raise Failure(reason) from None
             except TimeoutError as exc:
+                if status_seen:
+                    self.gate.reply_received()
                 raise Failure(self.timeout_status(exc)) from None
             except OSError:
+                if status_seen:
+                    self.gate.reply_received()
                 raise Failure("network_failure") from None
+            self.gate.reply_received()
+            if len(raw) > 8 * 1024 * 1024:
+                raise Failure("response_too_large")
+            if self.deadline and self.clock() > self.deadline:
+                raise Failure("wake_window_elapsed")
+            try:
+                return json.loads(raw, parse_float=Decimal)
             except (ValueError, RecursionError):
                 raise Failure("invalid_json") from None
 

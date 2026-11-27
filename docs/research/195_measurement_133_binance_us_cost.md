@@ -32,3 +32,5 @@ a durable stop after HTTP 418, 401, 403 or 451. Never backfill missed slots.
 Clearing the active stop never revives an old run. A new run above generation
 zero needs `M133_START_GENERATION=<n>` on the same committed ledger row.
 An unresolved in-flight marker requires lead inspection before any request.
+A live network failure with no HTTP status imposes a shared 60-second cooldown.
+At three consecutive failures it is 15 minutes; any HTTP reply resets the count.

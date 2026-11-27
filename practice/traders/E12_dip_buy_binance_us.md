@@ -42,3 +42,5 @@ A stop invalidates every run bound to the old gate generation, even if the
 lead clears the active stop. A new run above generation zero additionally
 needs `E12_START_GENERATION=<n>` on the same committed ledger row. An in-flight
 marker with no live lease blocks all requests until the lead inspects it.
+A live network failure with no HTTP status waits 60 seconds across collectors;
+the third consecutive failure waits 15 minutes until an HTTP reply resets the count.

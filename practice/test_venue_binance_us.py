@@ -199,16 +199,95 @@ class SharedGate(unittest.TestCase):
             self.gate().check_start()
         self.assertEqual(opener.calls, [])
 
-    def test_unknown_reply_is_terminal_but_explicitly_unsent_is_safe(self):
+    def test_explicitly_unsent_does_not_checkpoint_or_reset(self):
         gate = self.gate()
+        self.no_reply(TimeoutError("invented"), self.pages(Opener()))
+        self.now += timedelta(seconds=60)
         with gate.attempt(generation=self.generation):
             gate.cancel_unsent()
         self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+        self.assertEqual(self.read_streak(), 1)
+
+    def no_reply(self, error, pages):
+        with patch.object(pages.opener, "open", side_effect=error) as send, self.assertRaises(bx.Cooldown) as caught:
+            pages.book(bx.VENUE, "ETH")
+        send.assert_called_once()
+        return caught.exception.not_before
+
+    def read_streak(self):
+        return json.loads((self.path.parent / bx.NO_STATUS_STREAK).read_text())["consecutive"]
+
+    def test_no_status_timeout_cools_then_sibling_proceeds_without_stale_marker(self):
+        failing = self.pages(Opener())
+        failing.deadline = T + timedelta(seconds=20)
+        until = self.no_reply(TimeoutError("invented before headers"), failing)
+        self.assertEqual(until, T + timedelta(seconds=60))
+        self.assertEqual(json.loads(self.path.read_text()), {"not_before_utc": bx.precise_utc(until)})
+        self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+        self.assertEqual(self.read_streak(), 1)
+        self.assertEqual(self.gate().check_start(), self.generation)
+        opener = Opener((200, {}))
+        sibling = self.pages(opener)
+        self.now = until - timedelta(microseconds=1)
+        with self.assertRaises(bx.Cooldown):
+            sibling.book(bx.VENUE, "BTC")
+        self.assertEqual(opener.calls, [])
+        self.now = until
+        with self.assertRaisesRegex(bx.Failure, "wake_window_elapsed"):
+            failing.book(bx.VENUE, "ETH")
+        self.assertEqual(sibling.book(bx.VENUE, "BTC"), [])
+        self.assertEqual(self.read_streak(), 0)
+
+    def test_third_shared_no_status_is_fifteen_minutes_then_http_reply_resets(self):
+        for i, (err, seconds) in enumerate((
+            (TimeoutError("invented timeout"), 60),
+            (URLError("invented DNS"), 60),
+            (ConnectionResetError("invented reset"), 900),
+            (TimeoutError("invented subsequent timeout"), 900),
+        )):
+            with self.subTest(attempt=i):
+                until = self.no_reply(err, self.pages(Opener()))
+                self.assertEqual((until - self.now).total_seconds(), seconds)
+                self.assertEqual(self.read_streak(), min(i + 1, 3))
+                self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+                self.now = until
+        # A non-success status is still an HTTP reply.
+        pages = self.pages(Opener((404, {})))
+        with self.assertRaisesRegex(bx.Failure, "http_404"):
+            pages.book(bx.VENUE, "BTC")
+        self.assertEqual(self.read_streak(), 0)
+        until = self.no_reply(TimeoutError("invented after reset"), self.pages(Opener()))
+        self.assertEqual((until - self.now).total_seconds(), 60)
+
+    def test_known_http_status_with_body_timeout_resets_streak(self):
+        class TimeoutBody(io.BytesIO):
+            def read(self, *_):
+                raise TimeoutError("invented after headers")
+
+        self.now = self.no_reply(TimeoutError("invented before headers"), self.pages(Opener()))
         pages = self.pages(Opener())
-        with patch.object(pages.opener, "open", side_effect=URLError("invented no headers")), \
-                self.assertRaises(bx.GateUncertain):
+        with patch.object(pages.opener, "open", return_value=TimeoutBody()), \
+                self.assertRaisesRegex(bx.Failure, "^timeout$"):
+            pages.book(bx.VENUE, "ETH")
+        self.assertEqual(self.read_streak(), 0)
+        self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+
+    def test_no_status_cooldown_write_failure_is_terminal_and_retains_marker(self):
+        pages = self.pages(Opener())
+        original = bx.Gate.write
+
+        def fault(path, value):
+            if path == self.path:
+                raise OSError("invented cooldown persistence failure")
+            original(path, value)
+
+        with patch.object(pages.gate, "write", side_effect=fault), \
+                patch.object(pages.opener, "open", side_effect=TimeoutError("invented live fault")), \
+                self.assertRaises(bx.GateStorage):
             pages.book(bx.VENUE, "ETH")
         self.assertTrue((self.path.parent / bx.INFLIGHT).exists())
+        with self.assertRaises(bx.GateUncertain):
+            self.gate().check_start()
 
     def test_lost_generation_cannot_initialize_zero_even_on_restart(self):
         counter = self.path.parent / bx.GENERATION
