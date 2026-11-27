@@ -358,6 +358,66 @@ class Tests(unittest.TestCase):
             self.assertEqual(send.call_count, 1)
         self.assertTrue((self.temp / 'shared' / 'inflight.json').exists())
 
+    def test_known_200_body_errors_are_failed_pages_not_http_policy(self):
+        clock = FakeClock(T)
+        venue = e.BinanceUS(self.f, self.gate(clock), clock, sleep=clock.sleep)
+        class Reply(io.BytesIO):
+            status = 200
+
+        for failure in (RuntimeError('invented parser failure'), ValueError('invented read failure'),
+                        HTTPError('', 429, '', {'Retry-After': '900'}, io.BytesIO()),
+                        HTTPError('', 451, '', {}, io.BytesIO())):
+            if isinstance(failure, HTTPError):
+                self.addCleanup(failure.close)
+            with self.subTest(failure=failure):
+                response = Reply()
+                with patch.object(response, 'read', side_effect=failure), \
+                     patch.object(venue.opener, 'open', return_value=response) as send:
+                    with self.assertRaisesRegex(e.Refuse, 'public response body unavailable'):
+                        venue.book('BTC')
+                    self.assertEqual(send.call_count, 1)
+                for name in ('inflight.json', 'cooldown.json', 'stop.json'):
+                    self.assertFalse((self.temp / 'shared' / name).exists(), name)
+        with patch.object(venue.opener, 'open', return_value=io.BytesIO(json.dumps(BOOK).encode())):
+            self.assertEqual(venue.book('BTC'), BOOK)
+
+    def test_policy_applies_to_status_on_ordinary_response_objects(self):
+        clock = FakeClock(T)
+        venue = e.BinanceUS(self.f, self.gate(clock), clock, sleep=clock.sleep)
+        class Reply(io.BytesIO):
+            headers = {'Retry-After': '63'}
+
+            def __init__(self, status):
+                super().__init__()
+                self.code = status
+
+            def getcode(self):
+                return self.code
+
+            def read(self, size):
+                raise AssertionError('policy status should not need a body')
+
+            def close(self):
+                if not self.closed:
+                    super().close()
+                    raise RuntimeError('invented close error')
+
+        for status in (429, 403):
+            response = Reply(status)
+            with patch.object(response, 'read', wraps=response.read) as read, \
+                 patch.object(venue.opener, 'open', return_value=response) as send:
+                if status == 429:
+                    with self.assertRaises(e.bx.Cooldown) as refused:
+                        venue.book('BTC')
+                    self.assertEqual(refused.exception.not_before, clock() + timedelta(seconds=63))
+                else:
+                    with self.assertRaises(e.bx.Blocked) as refused:
+                        venue.book('BTC')
+                    self.assertEqual(refused.exception.status, 403)
+                self.assertEqual(send.call_count, 1)
+                read.assert_not_called()
+            clock.sleep(63)
+
     def test_no_status_failures_hold_shared_60_then_900_second_cooldowns(self):
         clock = FakeClock(T)
         for seconds in (60, 60, 900):
