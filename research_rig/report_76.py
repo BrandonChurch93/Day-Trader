@@ -202,6 +202,20 @@ def yes(b):
     return "yes" if b else "no"
 
 
+def cost_logger(q137):
+    """The hourly cost logger on Binance.US: Measurement 133 while it runs, Measurement 134 once queue row 137 says it stopped."""
+    step = q137[-1]
+    stop = re.match(r"STOPPED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) on a build fault at its second wake; closed unread \(ledger 232\)\. "
+                    r"Replaced by Measurement 134, row (\d+)\.$", step)
+    if stop:
+        q = queue_cells(stop[2])
+        wakes = one(r"(\d+) hourly wakes from the first wake", ledger_row(234), "Measurement 134 wakes")
+        return dict(stopped=f"stopped {stop[1]} on a build fault at its second wake and is closed unread.", queue=stop[2],
+                    wakes=int(wakes), state=q[-1].split(". ")[0].rstrip(".").split(" (")[0])
+    m = one(r"(\d+) hourly wakes to (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT)", step, "Measurement 133 end")
+    return dict(stopped=None, queue="137", wakes=int(m[0]), last=m[1], state=step.split(" (")[0])
+
+
 # ------------------------------------------------------------------ the figures
 def figures(res, rec=None):
     c = cfg()
@@ -251,7 +265,7 @@ def figures(res, rec=None):
     q138 = queue_cells("138")
     e14 = one(r"judged at (\d+) trades or (\d{4}-\d{2}-\d{2})", q138[1], "E14 judging rule")
     q137 = queue_cells("137")
-    m133 = one(r"(\d+) hourly wakes to (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT)", q137[-1], "Measurement 133 end")
+    cost = cost_logger(q137)
     f = dict(
         plan=76, ledger_row=229, page=PAGE, outcome=outcome, passed=False,
         source="Bitstamp US dollar hourly bars", source_url=BITSTAMP_API,
@@ -272,7 +286,7 @@ def figures(res, rec=None):
                     delayed_coin=xrp[0], delayed_in=xrp[1] + " UTC", delayed_out=xrp[2] + " UTC", delayed_days=held_days),
         tests_scored=int(total[0]), passes_counted=int(total[1]),
         e14=dict(queue="138", ledger="233", trades=int(e14[0]), last=e14[1], state=q138[-1].split(".")[0]),
-        m133=dict(queue="137", wakes=int(m133[0]), last=m133[1], state=q137[-1].split(" (")[0]),
+        cost=cost,
         sha256=pins(), recompute=None)
     if rec:
         check_recompute(rec, lines, hb["trades_by_utc_entry_year"], c["control"]["draws"])
@@ -380,10 +394,15 @@ def page(f):
     a("")
     a("## What happens next")
     a("")
-    a(f"- STATED: practice card E14 (queue {f['e14']['queue']}, ledger {f['e14']['ledger']}) is to run this rule forward on Binance.US books with pretend money, "
+    a(f"- STATED: practice card E14 (queue {f['e14']['queue']}, ledger {f['e14']['ledger']}) {'runs' if f['e14']['state'].startswith('Running') else 'is to run'} this rule forward on Binance.US books with pretend money, "
       f"judged at {f['e14']['trades']} trades or {f['e14']['last']}. Now: {f['e14']['state']}.")
-    a(f"- STATED: Measurement 133 (queue {f['m133']['queue']}) records the cost of a small trade on Binance.US every hour, "
-      f"{f['m133']['wakes']} wakes to {f['m133']['last']}. Now: {f['m133']['state']}.")
+    k = f["cost"]
+    if k["stopped"]:
+        a(f"- STATED: Measurement 133 (queue 137), the hourly cost of a small trade on Binance.US, {k['stopped']} "
+          f"Its replacement, Measurement 134 (queue {k['queue']}, ledger 234), {'records' if k['state'].startswith('Running') else 'is to record'} the same cost every hour for {k['wakes']} wakes. Now: {k['state']}.")
+    else:
+        a(f"- STATED: Measurement 133 (queue 137) records the cost of a small trade on Binance.US every hour, "
+          f"{k['wakes']} wakes to {k['last']}. Now: {k['state']}.")
     if r is None:
         a("- Blind recompute: pending. A helper who has not read the scorer will compute the marks again from the plan text alone.")
     else:

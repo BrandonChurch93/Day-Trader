@@ -153,7 +153,8 @@ def test_running_now_strip(monkeypatch):
     assert ["9b", "The earnings release reader.", None] in rows
     state = {r[0]: r[2] for r in rows}
     assert all(state[n] == "Stopped 2026-11-26 4:47 PM MT on data terms" for n in ("114", "131", "132", "133"))
-    assert all(state[n] == "Running since 2026-11-26 5:39 PM MT" for n in ("135", "136", "137"))
+    assert all(state[n] == "Running since 2026-11-26 5:39 PM MT" for n in ("135", "136"))
+    assert state["137"] == "Stopped 2026-11-26 7:00 PM MT" and state["139"] == "Registered 2026-11-26 7:09 PM MT, not started"
     assert NC.row_state("Registered 2026-11-26 4:55 PM MT. Builder assigned.") == "Registered 2026-11-26 4:55 PM MT, not started"
     assert state["-"] == "Paused 2026-11-26 5:03 PM MT"
     assert NC.row_state("HOLD since 2026-11-26 4:54 PM MT after week 8") == "On hold since 2026-11-26 4:54 PM MT"
@@ -247,7 +248,7 @@ def test_e10_card_is_stopped_and_shows_wakes_only(tmp_path):
         assert c["numbers"] == [["Wakes recorded before the stop", wakes]] and "columns" not in c
         assert not re.search(r"bp|cost|spread|fill|order|\$", json.dumps(c), re.I)
         assert [l[0] for l in c["links"]] == ["E10 card", "Log counts"]
-    assert [x["id"] for x in NC.cards("GH/")][-6:] == ["e09", "e10", "e12", "e13", "m133", "e14"]
+    assert [x["id"] for x in NC.cards("GH/")][-7:] == ["e09", "e10", "e12", "e13", "m133", "m134", "e14"]
     assert "Standing chore" not in open(NC.__file__).read()
 
 
@@ -272,8 +273,7 @@ def test_e10_refuses_a_log_of_another_shape(tmp_path, change):
 
 
 RUNNING = {"e12": ("135", "230", "Judged at 150 trades or 2027-11-30."),
-           "e13": ("136", "231", "Read once, a year after the first wake."),
-           "m133": ("137", "232", "Read once at the end.")}
+           "e13": ("136", "231", "Read once, a year after the first wake.")}
 
 
 def test_running_cards_from_the_real_queue_and_ledger():
@@ -291,7 +291,6 @@ def test_running_cards_from_the_real_queue_and_ledger():
         assert os.path.exists(os.path.join(NC.ROOT, c["links"][0][1][3:]))
     assert "at a pretend $250 a trade" in got["e12"]["summary"]
     assert "first daily wake 2026-11-27 5:00 PM MT" in got["e13"]["summary"]
-    assert "$25 and $250 on each of 20 coins" in got["m133"]["summary"] and "720 hourly wakes to 2026-12-26 5:00 PM MT" in got["m133"]["summary"]
 
 
 def ledger_with(monkeypatch, row, old, new):
@@ -365,3 +364,51 @@ def test_e14_card_running_with_no_figure(monkeypatch):
     queue_with(monkeypatch, "138", "Paused for a rebuild.")
     with pytest.raises(ValueError, match="E14 card"):
         NC.e14_card("GH/")
+
+
+# ---- Measurement 133 stopped on a build fault; Measurement 134 registered, then running
+def test_m133_stopped_card_reads_queue_and_ledger():
+    c = NC.m133_card("GH/")
+    assert c["verdict"] == "Stopped, closed unread" and c["tone"] == "unknown" and c["numbers"] == []
+    assert "second wake, 2026-11-26 7:00 PM MT" in c["summary"] and "E12, held the shared request gate" in c["summary"]
+    assert "One wake (6:00 PM MT) was recorded and nothing was read" in c["summary"] and "Measurement 134 (queue 139)" in c["summary"]
+    assert not re.search(r"\$|%|\bbp\b|\d+ of \d+", c["summary"])
+    assert NC.row_state(NC.queue_step("137")) == "Stopped 2026-11-26 7:00 PM MT"
+
+
+@pytest.mark.parametrize("where", ["queue", "ledger", "time"])
+def test_m133_card_refuses_when_rows_disagree(monkeypatch, where):
+    if where == "queue":
+        queue_with(monkeypatch, "137", "Running since 2026-11-26 5:39 PM MT (first hourly wake 6:00 PM MT). Read once at the end.")
+    elif where == "ledger":
+        ledger_with(monkeypatch, "232", "CLOSED UNREAD on a build fault", "RESTARTED after a build fault")
+    else:
+        queue_with(monkeypatch, "137", NC.queue_step("137").replace("7:00 PM MT", "8:00 PM MT"))
+    with pytest.raises(ValueError, match="Measurement 133 card"):
+        NC.m133_card("GH/")
+
+
+def test_m134_card_registered_then_running(monkeypatch):
+    c = NC.m134_card("GH/")
+    assert c["verdict"] == "Registered, not started" and c["tone"] == "info" and c["numbers"] == []
+    assert "Registered 2026-11-26 7:09 PM MT" in c["summary"] and "8 minutes after the hour" in c["summary"]
+    assert "$25 and $250 on each of 20 coins" in c["summary"] and "720 hourly wakes" in c["summary"]
+    assert c["links"][0] == ["Trial ledger", "GH/" + NC.LEDGER] or c["links"][0][0] == "Measurement 134 plan"
+    queue_with(monkeypatch, "139", "Running since 2026-11-27 9:08 AM MT (first hourly wake 10:08 AM MT). Read once at the end.")
+    with pytest.raises(ValueError, match="no longer says running"):
+        NC.m134_card("GH/")
+    ledger_with(monkeypatch, "234", "then a start value for the frozen build on this row.",
+                "then a start value for the frozen build on this row. Audit CLEAR. START GO (lead agent, 2026-11-27 9:00 AM MT): `M134_START=abc1234`.")
+    c = NC.m134_card("GH/")
+    assert c["verdict"] == "Running, no result yet" and c["numbers"] == []
+    assert "Running since 2026-11-27 9:08 AM MT; first hourly wake 10:08 AM MT" in c["summary"]
+    assert c["links"][0][0] in ("Trial ledger", "Measurement 134 plan")
+
+
+def test_m134_links_the_one_202_plan_when_it_exists(monkeypatch):
+    real = NC.os.listdir
+    monkeypatch.setattr(NC.os, "listdir", lambda d: real(d) + ["202_measurement_134_binance_us_cost.md"] if d.endswith("docs/research") else real(d))
+    assert NC.m134_card("GH/")["links"][0] == ["Measurement 134 plan", "GH/docs/research/202_measurement_134_binance_us_cost.md"]
+    monkeypatch.setattr(NC.os, "listdir", lambda d: real(d) + ["202_a.md", "202_b.md"] if d.endswith("docs/research") else real(d))
+    with pytest.raises(ValueError, match="more than one"):
+        NC.m134_card("GH/")
