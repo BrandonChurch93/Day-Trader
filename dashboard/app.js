@@ -525,7 +525,7 @@
     h += '<h4>Last proposals</h4><ul>' + ((s.last_proposals || []).map(function (p) {
       return '<li>' + esc(mt(p.wake_utc)) + ' ' + esc(p.line) + ': ' + esc(p.choice || 'no reply') + (p.tags && p.tags.length ? ' [' + esc(p.tags.join(', ')) + ']' : '') +
         ', ' + esc(p.outcome || '-') + (p.reason && p.reason !== 'ok' ? ' (' + esc(p.reason) + ')' : '') + '</li>'; }).join('') || '<li>None yet</li>') + '</ul>';
-    var closed = (s.closed || []).slice(-25).reverse();
+    var closed = (s.closed || []).slice().reverse();   // every closed pretend trade, newest exit first
     h += '<h4>Closed pretend trades</h4><ul>' + (closed.map(function (c) {
       return '<li>' + esc(c.line) + ' ' + esc(c.coin) + ', ' + esc(mt(c.entry_utc)) + ' to ' + esc(mt(c.exit_utc)) + ': ' + (c.status === 'ok' ? pct(c.net) : esc(c.status)) + '</li>'; }).join('') || '<li>None yet</li>') + '</ul>';
     $('desk-body').innerHTML = h;

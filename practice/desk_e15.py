@@ -88,9 +88,15 @@ CARD_TEXT = {
 
 
 class Stop(Exception):
-    def __init__(self, reason, status=None):
+    def __init__(self, reason, status=None, detail=None):
         super().__init__(reason)
-        self.reason, self.status = reason, status
+        self.reason, self.status, self.detail = reason, status, detail
+
+
+class Halt:
+    """A stop found on the request path that is not a venue Blocked or GateTerminal."""
+    def __init__(self, reason, status=None, detail=None):
+        self.reason, self.status, self.detail = reason, status, detail
 
 
 # ------------------------------------------------------------------ settings, freeze and start
@@ -99,6 +105,8 @@ def settings():
     cfg = json.loads(json.dumps(raw["forward_e15"]["value"]))
     fees = raw[cfg["fee_ref"]]["value"]
     cfg.update(fee_bp=fees["default_taker_bp"], fee_overrides=fees.get("taker_overrides_bp", {}))
+    # the shared gate custody block the unchanged venue module reads per request (cooldown path and friends)
+    cfg["gate_custody"] = json.loads(json.dumps(raw["binance_us_gate"]["value"]))
     return cfg
 
 
@@ -120,8 +128,16 @@ def models(cfg):
             ("S", "scout_small"): cfg["small_model"], ("S", "scout_second"): cfg["second_model"]}
 
 
-def frozen(cfg):
-    return {"config": cfg, "models": {f"{c}/{l}": m for (c, l), m in models(cfg).items()},
+GATE_EXTRA = ("practice_pick_max_life_hours", "practice_pick_max_actions")
+
+
+def gate_frozen(gcfg):
+    """Every gate setting the desk's cards or gate.decide read: the practice_e15_* keys and the pick limits."""
+    return {k: gcfg[k] for k in sorted(gcfg) if k.startswith("practice_e15_") or k in GATE_EXTRA}
+
+
+def frozen(cfg, gcfg=None):
+    return {"config": cfg, "gate_settings": gate_frozen(gate.settings() if gcfg is None else gcfg), "models": {f"{c}/{l}": m for (c, l), m in models(cfg).items()},
             "prompt_sha256": {c: prompt_sha(c) for c in CARDS},
             "source_sha256": {p: bx.digest((ROOT / p).read_bytes()) for p in PINNED if p != "config/thresholds.yaml"}}
 
@@ -140,9 +156,10 @@ def checked_build():
     return commit
 
 
-def header(rows, cfg):
+def header(rows, cfg, gcfg=None):
+    """The frozen inputs, checked against the values this run actually uses (cfg and the gate settings gcfg)."""
     bx.need(rows and rows[0]["kind"] == "header", "not started")
-    bx.need(rows[0]["frozen"] == frozen(cfg), "frozen inputs changed")
+    bx.need(rows[0]["frozen"] == frozen(cfg, gcfg), "frozen inputs changed")
     return rows[0]
 
 
@@ -477,7 +494,9 @@ def paired(ix, card, pair, count=None):
             continue
         if xb["status"] != "ok":
             continue
-        if ea is None or ea["status"] in ("pass", "scout_refused"):
+        if ea is None:
+            continue
+        if ea["status"] in ("pass", "scout_refused"):
             va = 0.0
         elif ea["status"] == "ok":
             xa = closed.get((card, a, wake))
@@ -540,6 +559,11 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, caller, timing
         except (bx.Blocked, bx.GateTerminal) as exc:
             terminal = exc
             raise bx.Failure("gate_stopped") from None
+        except bx.Refuse as exc:
+            # a present but unreadable shared stop or cooldown file, or any other refusal on the request path:
+            # the desk stops and writes its own stop record instead of crashing past it
+            terminal = Halt("gate_refused", None, str(exc)[:200])
+            raise bx.Failure("gate_stopped") from None
 
     books = {}
 
@@ -553,11 +577,19 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, caller, timing
     for (card, line), tickets in sorted(ix["open"].items()):
         for t in tickets:
             if bx.parse(t["due"]) <= wake:
-                res = e14.leave(t, fresh(exit_books, t["coin"]), fee_for(cfg, t["coin"]))
                 attempt = t.get("attempts", 0) + 1
-                final = res["status"] == "ok" or attempt >= cfg["exit_retry_wakes"]
-                exits.append(res | {"card": card, "line": line, "entry_wake": t["wake"], "attempt": attempt,
-                                    "final": final, "exit_wake": stamp})
+                base = {"coin": t["coin"], "card": card, "line": line, "entry_wake": t["wake"], "attempt": attempt,
+                        "exit_wake": stamp}
+                if wake > last_exit(cfg, card):
+                    exits.append(base | {"status": "past_last_exit_wake", "final": True})
+                    continue
+                if terminal is not None:
+                    # the terminal fence: nothing is priced after a stop, not even from a book already in hand
+                    exits.append(base | {"status": "gate_stopped", "final": False})
+                    continue
+                res = e14.leave(t, fresh(exit_books, t["coin"]), fee_for(cfg, t["coin"]))
+                final = res["status"] == "ok" or exit_final(cfg, card, attempt, wake)
+                exits.append(res | base | {"final": final})
     for coin, b in exit_books.items():
         books[f"exit:{coin}"] = {k: b.get(k) for k in ("status", "bid", "ask", "midpoint", "received", "bids", "asks") if k in b}
 
@@ -652,11 +684,12 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, caller, timing
                 now, _ = timing.sample()
                 left = (until - now).total_seconds() - cfg["entry_reserve_s"]
                 budget = min(cfg["scout_timeout_s"], left)
-                for row in call_rows:
-                    bx.append(path, rows, kind="scout_call", wake=stamp, made_utc=bx.precise_utc(now), **row)
                 if budget < cfg["scout_min_s"]:
+                    # no model is called, so no scout_call row is written and nothing counts toward the repair stop
                     scout_results = {j[0]: {"status": "no_time"} for j in jobs}
                 else:
+                    for row in call_rows:
+                        bx.append(path, rows, kind="scout_call", wake=stamp, made_utc=bx.precise_utc(now), **row)
                     scout_results = run_scouts(jobs, caller, budget, cfg["scout_max_tokens"])
                 timing.sample()
             # 5 and 6. choices for every line, then the gate (nothing new after a gate stop)
@@ -679,7 +712,8 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, caller, timing
                     coin = choice[line]
                     res = scout_results.get(f"{stamp}/{card}/{line}") if line in SCOUT_LINES[card] else None
                     if line in SCOUT_LINES[card] and (res is None or res.get("status") != "ok"):
-                        signals[card]["entries"][line] = {"status": "scout_failed"}
+                        why = "scout_no_time" if res is not None and res.get("status") == "no_time" else "scout_failed"
+                        signals[card]["entries"][line] = {"status": why}
                         continue
                     if coin == "pass":
                         signals[card]["entries"][line] = {"status": "pass"}
@@ -708,6 +742,10 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, caller, timing
                 for line, ent in sig["entries"].items():
                     if ent["status"] != "chosen":
                         continue
+                    if terminal is not None:
+                        # the terminal fence: no ticket after a stop, not even from a cached entry book
+                        sig["entries"][line] = {"status": "gate_stopped", "coin": ent["coin"]}
+                        continue
                     b = fresh(entry_books, ent["coin"])
                     got = e14.enter(ent["coin"], wake, due, b, cfg["size_usd"])
                     got["book_id"] = f"{stamp}/entry/{ent['coin']}"
@@ -721,18 +759,30 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, caller, timing
               filters={k: {x: y for x, y in v.items() if x != "scan_costs"} for k, v in filt.items()},
               scout_results=scout_results, signals=signals, exits=exits, books=books, pre_books=pre_books)
     if terminal is not None:
-        raise Stop(terminal.reason, getattr(terminal, "status", None))
+        raise Stop(terminal.reason, getattr(terminal, "status", None),
+                   getattr(terminal, "detail", None))
     return rows[-1]
 
 
-def stop(path, rows, reason, clock, wake=None, status=None):
+def stop(path, rows, reason, clock, wake=None, status=None, detail=None):
     fields = {"reason": reason, "made_utc": bx.precise_utc(clock())}
+    if detail:
+        fields["detail"] = detail
     if status is not None:
         fields.update(host=bx.HOST, http_status=status)
     if wake is not None:
         fields["wake"] = bx.iso(wake)
     bx.append(path, rows, kind="stop", **fields)
     return rows[-1]
+
+
+def last_exit(cfg, card):
+    return bx.parse(cfg["cards"][card]["last_wake_utc"])
+
+
+def exit_final(cfg, card, attempt, wake):
+    """An unpriced exit is final (void) after exit_retry_wakes attempts or at the card's last exit wake."""
+    return attempt >= cfg["exit_retry_wakes"] or wake >= last_exit(cfg, card)
 
 
 def void_wake(path, rows, wake, reason, ix, cfg):
@@ -743,7 +793,8 @@ def void_wake(path, rows, wake, reason, ix, cfg):
             if bx.parse(t["due"]) <= wake:
                 attempt = t.get("attempts", 0) + 1
                 exits.append({"status": reason, "coin": t["coin"], "card": card, "line": line, "entry_wake": t["wake"],
-                              "attempt": attempt, "final": attempt >= cfg["exit_retry_wakes"], "exit_wake": stamp})
+                              "attempt": attempt, "final": wake > last_exit(cfg, card) or exit_final(cfg, card, attempt, wake),
+                              "exit_wake": stamp})
     bx.append(path, rows, kind="void", wake=stamp, reason=reason, exits=exits)
 
 
@@ -758,7 +809,7 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
     caller = caller or sdk_call
     with bx.locked(Path(off)) as path:
         rows = bx.read_log(path, recover=True, clock=clock)
-        h = header(rows, cfg)
+        h = header(rows, cfg, gcfg)
         if any(r["kind"] == "stop" for r in rows):
             return {"kind": "stopped"}
         ix = state(rows, cfg)
@@ -795,12 +846,19 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
             try:
                 out = capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, caller, timing)
             except Stop as exc:
-                return stop(path, rows, exc.reason, clock, wake, exc.status)
+                return stop(path, rows, exc.reason, clock, wake, exc.status, exc.detail)
             except (bx.Blocked, bx.GateTerminal) as exc:
                 event = stop(path, rows, exc.reason, clock, wake, getattr(exc, "status", None))
                 void_wake(path, rows, wake, "gate_stopped", ix, cfg)
                 return event
             ix = state(rows, cfg)
+            try:
+                same = frozen(settings(), gate.settings()) == h["frozen"]
+            except Exception:
+                same = False
+            if not same:
+                # an input changed during the wake: the wake is kept as recorded and the desk stops
+                return stop(path, rows, "frozen_inputs_changed", clock, wake)
             bad, n = failed_calls(ix, cfg["repair_window_calls"])
             if bad > cfg["repair_max_failed"]:
                 return stop(path, rows, "scout_repair", clock, wake)
@@ -901,8 +959,9 @@ def dashboard(rows, cfg, now):
             break
     s_open = [{"line": l, "coin": t["coin"], "entry_utc": t["wake"], "exit_due_utc": t["due"]}
               for l in LINES["S"] for t in ix["open"].get(("S", l), ())]
-    s_closed = [{"line": l, "coin": x["coin"], "entry_utc": x["entry_wake"], "exit_utc": x["exit_wake"],
-                 "status": x["status"], "net": x.get("net")} for l in LINES["S"] for x in ix["closed"].get(("S", l), ())]
+    s_closed = sorted(({"line": l, "coin": x["coin"], "entry_utc": x["entry_wake"], "exit_utc": x["exit_wake"],
+                        "status": x["status"], "net": x.get("net")} for l in LINES["S"] for x in ix["closed"].get(("S", l), ())),
+                      key=lambda x: (x["exit_utc"], x["entry_utc"], LINES["S"].index(x["line"])))
     gaps = {}
     for a, b in PAIRS["S"]:
         ps = paired(ix, "S", (a, b))

@@ -23,8 +23,11 @@ STATED. Pretend money, forward in real time, Binance.US public data only. There 
   - At the due wake, sell the same base amount into a fresh exit book's bids.
   - Taker fee `practice_e15_fee_bps_per_side` (2 bp) on each leg, BNB 1 bp (`forward_e10_binance_us`).
   - Net is a fraction of the $250.
-  - Missing, late, thin or busy books void the entry, which takes no slot. An exit that does not fill retries at each later wake, up to `exit_retry_wakes`, and is then closed as void. It is never filled at an assumed price.
+  - Missing, late, thin or busy books void the entry, which takes no slot. An exit that does not fill retries at each later wake, up to `exit_retry_wakes` or the card's last exit wake, whichever comes first, and is then closed as void. Nothing is requested for a card after its last exit wake. An exit is never filled at an assumed price.
+  - Terminal fence. After a gate stop inside a wake, no further entry or exit is priced, even from a book already fetched. Entries and exits priced before the stop stay on record as they were.
 - Missed or interrupted wakes are void and never fetched later.
+- Frozen inputs are the `forward_e15` block, its fee row, the shared gate custody block `binance_us_gate`, every `practice_e15_*` gate setting and the pick limits, the prompts and the pinned source files. They are checked before each wake against the values the wake uses, and again after it. A change stops the desk.
+- Accepted limit (lead's waiver, same as E14 and Measurement 134): a wall-clock step back between the last guarded time check and the transport's own clock read could send a request early. Its reply is discarded. The host needs synchronized UTC.
 
 ## The three cards
 
@@ -67,7 +70,7 @@ Card S, scout scan.
 
 - A plain script calls the models directly through the sandbox SDK. One structured call per scout line per triggered wake, with no tools and no retries (`grpc_max_retries=0`, one round).
 - Cards W and F call only when their filter finds qualifiers. Card S calls at each scan with qualifiers.
-- Each call is capped at `scout_timeout_s` and `scout_max_tokens`. It is cut shorter when the window needs `entry_reserve_s` for entry books, and skipped when less than `scout_min_s` is left.
+- Each call is capped at `scout_timeout_s` and `scout_max_tokens`. It is cut shorter when the window needs `entry_reserve_s` for entry books, and skipped when less than `scout_min_s` is left. A skipped call is not a call: it is recorded as `scout_no_time`, voids that pair, and does not count toward the repair stop.
 - `finish_reason` must be end of turn. The reply has exactly `choice` (a qualifier or `pass`), `tags` (from the fixed list in the code) and `facts` (1 to 1,000 characters). Anything else is a failed reply.
 - The scout sees only the packet: returns, volume ratios, 24 relative closes and volumes for the qualifiers, and book summaries. All of it comes from closed candles before the wake and books in this window. It sees no news text and no rule or random choice.
 - Small model: `gpt5_mini`. MEASURED on 2026-11-27 with this desk's prompt, schema and packet code, on five made-up packets (cards W, F, S, W, S):
@@ -119,7 +122,8 @@ Rules for every card:
 - `start` writes a once-only receipt under `/home/user/workspace/rig/data/desk_e15_authorizations`, so the same key cannot start a second run. Only the lead runs `start`.
 - Then `python3 practice/desk_e15.py loop` from the frozen tree.
 - `alive` prints counts only. `publish` writes the counts-only public file `practice/forward/E15_log.json` and the private dashboard fields to `/home/user/workspace/rig/data/desk_e15/dashboard.json`.
-- On the dashboard, W and F show counts only until judging. S shows each closed pretend trade's net and the running scout-minus-random gap for both scout lines, under the fixed label "not judged yet; nothing about this card changes before its judging count".
+- On the dashboard, W and F show counts only until judging. S shows every closed pretend trade's net, newest exit first, and the running scout-minus-random gap for both scout lines, under the fixed label "not judged yet; nothing about this card changes before its judging count". The gaps come from the same pairing function the judging will use.
+- Judging is not in this build. `judge()` is tested but not called. The judging read is a separate build with its own audit and once-only key.
 - Books, candles, packets, replies, fills and decisions stay in the private anchored log `/home/user/workspace/rig/data/desk_e15` (0700 folder, 0600 files). Nothing raw goes in the repo.
 
 UNKNOWN: Binance.US's full Terms of Use (doc 194), how often each card will signal on Binance.US, and every forward outcome.

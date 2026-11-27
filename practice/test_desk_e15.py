@@ -408,3 +408,129 @@ def test_gate_stop_mid_wake_makes_no_scout_call(lab):
     assert out["kind"] == "stop" and out["http_status"] == 418
     assert scout.seen == []
     assert not any(k == "book" for k, _, _ in pages.calls)
+
+
+def test_unreadable_shared_file_refusal_stops_with_record(lab):
+    clock = at(1)
+    pages = Pages(clock, fail={("pairs", None): lambda: bx.Refuse("cooldown file is not valid JSON")})
+    out = run(lab, pages, clock, Scout(pages, clock))
+    assert out["kind"] == "stop" and out["reason"] == "gate_refused"
+    assert rows(lab)[-1]["kind"] == "stop"
+
+
+def test_stop_during_entry_books_voids_cached_fills(lab):
+    clock = at(1)
+    pages = Pages(clock, last={"ETH": "94", "ADA": "92"}, fail={("book", "ADA"): lambda: bx.Blocked(bx.HOST, 418)})
+    n = {"k": 0}
+    orig = pages._hit
+
+    def hit(kind, coin=None):
+        if kind == "book":
+            n["k"] += 1
+            if n["k"] <= 2:                   # the pre-decision books work
+                pages.calls.append((kind, coin, clock()))
+                return
+        orig(kind, coin)
+    pages._hit = hit
+    out = run(lab, pages, clock, Scout(pages, clock, picks={("W", SMALL): "ETH"}))
+    assert out["kind"] == "stop"
+    sig = [r for r in rows(lab) if r["kind"] == "wake"][-1]["signals"]["W"]
+    # processed in line order: scout (ETH, book before the stop) stays a committed entry, rule (ADA) hits the
+    # stop, random is fenced even though an ETH book is already in hand
+    assert sig["choices"]["scout"] == "ETH" and sig["entries"]["scout"]["status"] == "ok"
+    assert sig["entries"]["rule"]["status"] != "ok"
+    assert sig["entries"]["random"]["status"] == "gate_stopped"
+
+
+def test_stop_during_exit_books_keeps_tickets_open(lab):
+    clock = at(1)
+    pages = Pages(clock, last={"ETH": "94"})
+    run(lab, pages, clock, Scout(pages, clock))
+    clock = at(25)
+    pages = Pages(clock, fail={("book", "ETH"): lambda: bx.Blocked(bx.HOST, 403)})
+    out = run(lab, pages, clock, Scout(pages, clock))
+    assert out["kind"] == "stop"
+    assert not any(k == "pairs" for k, _, _ in pages.calls)
+    w = [r for r in rows(lab) if r["kind"] == "wake"][-1]
+    assert w["exits"] and all(x["status"] == "gate_stopped" and not x["final"] for x in w["exits"])
+
+
+def test_changed_gate_setting_is_refused_after_start(lab, monkeypatch):
+    import gate
+    real = gate.settings
+
+    def changed(*a, **k):
+        g = real(*a, **k)
+        g["practice_e15_w_min_fall"] = 0.09
+        return g
+    monkeypatch.setattr(gate, "settings", changed)
+    clock = at(1)
+    pages = Pages(clock)
+    with pytest.raises(bx.Refuse):
+        run(lab, pages, clock, Scout(pages, clock))
+    assert pages.calls == []
+
+
+def test_no_time_is_not_a_call_and_not_a_failure(lab):
+    clock = at(1, 1430)                       # 60 s to the cutoff: less than entry reserve plus scout_min_s
+    pages = Pages(clock, last={"ETH": "94"})
+    scout = Scout(pages, clock)
+    run(lab, pages, clock, scout)
+    assert scout.seen == []
+    r = rows(lab)
+    assert not any(x["kind"] == "scout_call" for x in r)
+    ix = d.state(r, lab[1])
+    assert d.failed_calls(ix, 20) == (0, 0)
+    assert [x for x in r if x["kind"] == "wake"][-1]["signals"]["W"]["entries"]["scout"]["status"] == "scout_no_time"
+
+
+def test_exit_retry_capped_at_last_exit_wake(tmp_path, monkeypatch):
+    monkeypatch.setattr(bx, "private_roots", lambda: (tmp_path,))
+    monkeypatch.setattr(e14, "require_go", lambda *a, **k: None)
+    real = d.settings
+
+    def short():
+        c = real()
+        c["ledger_row"] = 999
+        c["cards"]["S"]["cost_limit_bp"] = 20
+        c["not_before_utc"] = "2026-01-01T00:00:00Z"
+        c["cards"]["W"]["last_wake_utc"] = bx.iso(T0 + timedelta(hours=25))
+        return c
+    monkeypatch.setattr(d, "settings", short)
+    p = tmp_path / "lab"
+    p.mkdir(mode=0o700)
+    with bx.locked(p) as path:
+        r = []
+        bx.write_anchor(path, bx.anchor_state(r))
+        bx.append(path, r, kind="header", first=bx.iso(T0), venue_generation=0, freeze="<test>", frozen=d.frozen(short()))
+    lab = (p, short())
+    clock = at(1)
+    pages = Pages(clock, last={"ETH": "94"})
+    run(lab, pages, clock, Scout(pages, clock))
+    clock = at(25)                                      # the last exit wake: a lost exit book is final and void
+    pages = Pages(clock, fail={("book", "ETH"): bx.Failure("shared_cooldown")})
+    out = run(lab, pages, clock, Scout(pages, clock))
+    assert out["exits"] and all(x["final"] and x["status"] != "ok" for x in out["exits"])
+    clock = at(26)
+    pages = Pages(clock)
+    out = run(lab, pages, clock, Scout(pages, clock))
+    assert not any(k == "book" and c == "ETH" for k, c, _ in pages.calls)
+    assert not d.state(rows(lab), lab[1])["open"].get(("W", "rule"))
+
+
+def test_frozen_input_changed_during_wake_stops(lab, monkeypatch):
+    import gate
+    real = gate.settings
+    n = {"k": 0}
+
+    def drift(*a, **k):
+        n["k"] += 1
+        g = real(*a, **k)
+        if n["k"] > 1:
+            g["practice_e15_w_min_fall"] = 0.09
+        return g
+    monkeypatch.setattr(gate, "settings", drift)
+    clock = at(1)
+    pages = Pages(clock)
+    out = run(lab, pages, clock, Scout(pages, clock))
+    assert out["kind"] == "stop" and out["reason"] == "frozen_inputs_changed"
