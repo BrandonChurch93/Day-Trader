@@ -1,282 +1,60 @@
 # 198: What Each Owner Unlock Would Open
 
-Date: 2026-11-26. Purpose: a plain decision page for the owner. After 45 scored tests (`docs/research/95_where_we_stand_after_32_tests.md`) and 13 idea rounds since Survey 187 (`docs/research/187_data_sources_for_an_ai_desk.md`), almost every remaining block is not a missing idea. Most ideas failed on the data itself (`lost before costs` or `too few events`), while a smaller set is parked behind gates only the owner can open: data-terms consent, repo visibility, a cheap US spot account, a derivatives or margin account, or more capital. Every figure below comes from a named repo document. Claims are labeled MEASURED (from repo runs or live public endpoint checks), STATED (from published papers, venue pages, or repo plans), INFERENCE (reading across repo records), or UNKNOWN (not established in the repo).
-
-## Headline
-
-- MEASURED (`docs/research/95_where_we_stand_after_32_tests.md`, `docs/research/180_round_57_cost_as_the_binding_limit.md`): Across 45 scored tests, 4 passed (Replay 25 TLT month-end, Replay 48 muni CEFs in January, Plan 75 coin trend ratchet on a proxy feed, and Replay 20 Upbit listing short offshore only). In the 44-test cost audit (`doc 180`), 23 lost before costs and only 3 were killed by costs alone (Replays 01, 03, and 07).
-- INFERENCE: Most owner unlocks do not open a hidden pile of winning strategies. Paying for data feeds, opening stock margin, or opening a Kalshi account opens little or nothing with verified net edge today.
-- INFERENCE: Only three owner actions have a clear payoff per unit of effort and risk right now: (1) switching the repo to private or getting written Alpaca publication clearance so the practice desk and TM09 can run cleanly, (2) asking Coinbase for written market-data consent so TM07 and the live crypto cost/dip cards can finish, and (3) opening a small ($500 to $1,000) Idaho Binance.US spot account only after Measurement 133 and the E11/E12/E13 forward logs confirm real cheap fills and the owner accepts the doc 186 venue-risk gate.
-- MEASURED (`docs/research/71_replay_20_upbit_listing_short.md`, `docs/QUEUE.md` row 48): Opening a US crypto futures or margin account does **not** unlock our one short-side pass (Replay 20, Upbit listing short). Only 1 of 205 Upbit KRW notices in 2024 to 2026 had a US-reachable retail short listed at notice time (CRV on Kraken US spot margin).
-
-## 1. Binding Reason for Every Dropped or Watched Idea
-
-Every dropped, closed, or watched idea across `docs/QUEUE.md`, `docs/STATUS.md`, `docs/research/95_where_we_stand_after_32_tests.md`, `docs/research/180_round_57_cost_as_the_binding_limit.md`, `docs/research/194_data_source_terms_audit.md`, and Rounds 57 to 69 is classified by its single binding constraint among ten classes: `lost before costs`, `cost`, `too few events`, `direction`, `data rights`, `data does not exist with first-public times`, `venue access`, `account size`, `needs speed we do not have`, and `duplicate of something tested`.
-
-### Scored Fails, Pre-Price Closes, and Active Watches
-
-| Idea or test | Repo source | Binding class | Short factual basis |
-|---|---|---|---|
-| Replay 01 BTC/ETH daily trend (P1, P2, S50, D20) | `docs/research/16_rig_audit.md`, `doc 180` | cost | MEASURED: passed 5/5 at 7 bp/side (Binance.US) on Kraken feed (knife-edge PBO 0.2409 vs 0.4205 Bitstamp), failed at Alpaca (30 bp) and Kraken (43 to 85 bp). |
-| Replay 03 BTC/ETH hourly intraday | `docs/research/15_replay_03_intraday_crypto.md`, `doc 180` | cost | MEASURED: 7/8 positive gross (up to +36.3 bp/RT), 0/80 pass net; break-even vs hold only 0.1 to 7.5 bp/side. |
-| Replay 07 SPY/QQQ 1-minute intraday | `docs/research/27_replay_07_intraday_spy_qqq.md`, `doc 180` | cost | MEASURED: QQQ N2 Sharpe 1.21 at 0.5 bp/side vs 1.03 hold; break-even 0.90 bp/side vs hold; lost after Jul 2026 even at 0.5 bp. |
-| Plan 58 BTC 21:00 to 23:00 UTC window | `docs/research/123_measure_59_bitcoin_evening_window_costs.md` | cost | MEASURED: IBIT modeled RT cost 8.13 bp vs 3.50 bp limit; STATED BIP fixed fee + 1 tick is 5.76 bp (`doc 120`). |
-| Plan 70/71 overextension dip-buy (70-102, 71-013, 71-035) | `docs/research/152_plan_70_coin_sweep_search.md`, `doc 154`, `doc 157`, `doc 180` | cost | MEASURED: +56.5 to +84.1 bp net at modeled futures cost, negative at 35 to 95 bp US spot fees; half lost in first minute (+75.6 to +39.4 bp in Plan 73); forward on E09/E11/E12. |
-| Replays 04, 05, 06, 09, 13A/B, 14, 16, 17, 18, 19, 22, 23, 24, 31, 33, 35, 39, 41, 52, 53, 65 | `docs/research/95_where_we_stand_after_32_tests.md`, `doc 180` | lost before costs | MEASURED: all 22 failed core return, excess, or regime marks even before full retail costs (or lost at 0 to 2 bp/side). |
-| Replays 12, 46A/B, 60, 62; TM01, TM02, TM03, TM04, TM06-P/S/R | `docs/research/95_where_we_stand_after_32_tests.md`, `doc 180` | lost before costs | MEASURED: failed frozen marks against SPY, BTC, IWM, or random twins (TM06-P met min counts on Apr to Jun only and lost Jul to Nov). |
-| Measurement 15 opening-range breakout fills | `docs/research/66_measure_15_breakout_fills.md` | cost | MEASURED: entry + stop-exit slippage was 0.2089 of stop distance (0.2719 with odd lots) vs 0.05 limit. |
-| Measurement 121 CEF resting bids (and standalone market making) | `docs/research/170_m121_result.md`, `doc 186` | lost before costs | MEASURED: 7.56% fill rate, -26.6 bp 5-minute adverse selection; STATED Albers et al. 2025 loses -0.43 bp/trade even with -0.5 bp rebate. |
-| Replay 21 odd-lot cash tenders (E03 watch) | `docs/research/97_replay_21_odd_lot_tenders.md` | too few events | MEASURED: +11.80% mean net (t 1.688) on only 14 placed trades from 106 filings, below 30-trade floor. |
-| Plan 50 CEF liquidations and open-endings | `docs/QUEUE.md` row 88 | too few events | MEASURED: 22 strict documentary candidates in 10 years vs 30 required. |
-| Queue 82 EDGAR altcoin treasury plans | `docs/QUEUE.md` row 82 | too few events | MEASURED: 29 eligible events vs 30 required. |
-| Queue 89 going-private reverse-split cash-outs | `docs/QUEUE.md` row 89 | too few events | MEASURED: 8 verified events in 2016 to 2026 vs 30 required; 0 promised equal street-name treatment. |
-| Plan 10 negative funding 1-day spot buy | `docs/QUEUE.md` Done | too few events | MEASURED: 1 to 11 triggers per rule across 4 design years. |
-| Plans 51, 54, 55, 56, 66, 67, 68; Queues 11, 13, 18, 55, 67, 68, 69, 91, 92, 97, 107, 110, 118; TM08 | `docs/QUEUE.md` Done, `doc 95` | too few events | MEASURED on counts and synthetic power: all closed before prices under the 33% or 50% power line (small edge vs noise or too few independent dates). |
-| Replay 20 Upbit KRW listing short (Plan 28) | `docs/research/71_replay_20_upbit_listing_short.md`, `docs/QUEUE.md` row 48 | venue access | MEASURED: +3.2088% net over 139 trades on Binance.com perps (offshore only); only 1 of 205 notices in 2024 to 2026 had a US-shortable retail contract at notice time. |
-| Offshore perp venues (Binance.com, Bybit, Deribit, Hyperliquid, dYdX, Drift, Lighter, Aster) | `docs/research/40_leverage_venues_checked.md`, `doc 193`, `doc 194` | venue access | STATED: US persons explicitly barred by CFTC order or venue Terms of Service. |
-| Polymarket US / global prediction markets | `docs/research/194_data_source_terms_audit.md` | venue access | STATED: US Restricted Persons barred under Terms of Service. |
-| TM07 AI desk study, E06, E09, E10, E11, Measurement 132 | `docs/research/194_data_source_terms_audit.md`, `docs/STATUS.md` | data rights | STATED: Coinbase Market Data Terms (Aug 7, 2026 s3) bar AI/agent/algorithm benchmarking and Derived Works redistribution without written consent. |
-| Practice desk GitHub Actions auto-run (E01, E04, E07) and TM09 hosted headlines | `docs/research/194_data_source_terms_audit.md`, `docs/STATUS.md` | data rights | STATED: Alpaca Terms bar republishing market data or order history in a public repo; TM09 real run needs written Alpaca clearance for hosted headlines. |
-| Russell 2000, S&P 600, CRSP, MSCI, Nasdaq-100 index pro-forma additions/deletions | `docs/STATUS.md` line 215, `docs/QUEUE.md` line 201 | data rights | STATED: FTSE Russell, S&P DJI, CRSP, MSCI, and Nasdaq Terms prohibit storing or reproducing pro-forma lists without a paid licence. |
-| Kalshi earnings-call mentions (NO under 50c) and Kalshi 5 p.m. BTC maker queues (22, 44, 53) | `docs/research/177_idea_round_54_new_market_structure.md`, `doc 194` | data rights | STATED: Kalshi Developer Agreement s3.1 bars storing API data for research or AI/ML and bars sharing without written approval; also needs an owner Kalshi account. |
-| FINRA short interest, Senate eFD disclosures, CoinMarketCap, Bitnomial funding archive | `docs/research/187_data_sources_for_an_ai_desk.md`, `doc 193`, `doc 194` | data rights | STATED: publisher Terms restrict automated collection, strategy development, or AI/ML redistribution. |
-| Queue 12 earnings call Q&A transcripts | `docs/QUEUE.md` Done row 12 | data rights | MEASURED: only 482 calls in 1 quarter (2025 Q4) available free; multi-year transcript sets are paid. |
-| Plan 37 DoD daily contract awards | `docs/QUEUE.md` Done row 61 | data rights | MEASURED: official DoD archive index returned HTTP 403 to automated reading; 30 bp gross vs UNKNOWN spreads. |
-| Plans 32, 36, 40, 42, 44, 45, 63B, 64; Queue 95 (ETF liquidation payouts), Queue 101 (earnings date advancers), Queue 102 | `docs/QUEUE.md` Done, `docs/STATUS.md`, `doc 114` | data does not exist with first-public times | MEASURED: free feeds lacked complete point-in-time rosters, verified UTC publication minutes, payout dates (only 12/40 in Row 95), or symbol continuity at both ends of windows. |
-| DeFi hacks, token unlock calendars, social attention (X, Reddit, Google Trends, Wikipedia), SEC enforcement crypto shorts | `docs/QUEUE.md` line 190, `doc 45`, `doc 192`, `doc 197` | data does not exist with first-public times | MEASURED/STATED: no free dated first-word archive; AlphaGrowth has no dated unlock history; Wikipedia/Google Trends show no lead (`doc 45`, `doc 192`). |
-| BTC lower-tail funding 24h rebound (Watch) | `docs/research/193_round_67_leveraged_crowd_as_a_signal.md` | data does not exist with first-public times | STATED: +50.6 bp gross in Memon et al. 2026 (Binance BTC), but no complete permitted US archive with verified first-public settlement timestamps; Perpys starts 2026-10-09 and regenerates files. |
-| Reverse-side late-Jan CEF short, CEF rights-offering short, leveraged ETF reverse-split short, intraday sector/stock pairs, single-stock leveraged ETF two-sided close flow | `docs/QUEUE.md` lines 200 to 201, `doc 156`, `doc 177` | direction | STATED: main documented move is on the short or hedged side, unreachable on a $500 US cash account; stock pairs also lost in later years (`doc 156`). |
-| Crypto shorting top gainers, new listings Day 0, small-cap hype pops, funding-rate upper tail | `docs/research/192_round_66_crypto_hype_and_reversal.md`, `doc 193` | direction | MEASURED/STATED: only ~35 large coins are US-shortable (0 new listings/small-cap gainers); on liquid shortable coins, Replay 17 lost 7/7 years and Plan 71 mirror shorts lost 34/38. |
-| Daily long-short crypto volume-conditioned reversal (Watch: long-only add-on) and CTREND long-short | `docs/research/196_idea_round_68_thin_venue_edges.md` | direction | STATED: published spreads are long-short; Binance global low-volume reversal was -21.3 bp/day net EW and -34.1 bp/day net VW (`Bianchi et al. 2022`). |
-| Two-venue US crypto inventory arbitrage (Binance.US vs Coinbase/Kraken) | `docs/research/186_round_61_thin_cheap_venue.md` | account size | STATED: dear-venue Tier 1 fees (40 to 80+ bp/side), 7-day ACH holds, $25 wire fees, and per-wallet IRS basis rules kill it at $500 to $2,000. |
-| MLPs (K-1 friction), Tradovate API ($1,000 min + $25/mo), IBKR crypto ($1.75 min = 35 bp on $500), Coinbase CFM overnight ZEC/NEAR | `docs/QUEUE.md` line 200, `doc 40`, `doc 98`, `doc 180` | account size | STATED/MEASURED: fixed fees, minimums, or overnight initial margin ($748 ZEC, $860 NEAR) exceed a $300 to $500 sleeve. |
-| Cross-venue stale-quote taking, quarter-hour order imbalance, 15-minute crypto reversal, sub-second market making | `docs/research/120_round_31_cfm_futures_cost_rescreen.md`, `doc 186`, `doc 188`, `doc 196` | needs speed we do not have | STATED: 500 ms to 1 s lead-lag (`arXiv:2108.09750`), 0.51 to 1.3 bp gross edges, and adverse selection require colocation and VIP rebates. |
-| Round 62 operating-company liquidations, Round 62 Kalshi BTC taker blend, Round 66 6h to 24h drop rebound, Round 67 liquidation bounces, Round 69 depeg/unlock/ETF-flow repeats | `docs/research/188_round_62_career_winners_by_mechanism.md`, `doc 192`, `doc 193`, `doc 197` | duplicate of something tested | MEASURED/STATED: overlap existing Queue rows (22, 28, 36, 44, 53), prior skip lists, or tested replays (Replays 18, 24, 35, 46, Plan 50, Plan 70/71). |
-
-## 2. What Each Owner-Only Unlock Would Reopen
-
-Each section below covers one concrete action only the owner can take, using only figures recorded in the repo.
-
-### Unlock A: Switch the Repo to Private or Get Written Alpaca Publication Consent
-
-What it reopens:
-
-- The paused GitHub Actions practice desk cron (`docs/STATUS.md` line 10, `docs/research/194_data_source_terms_audit.md`) for all US-stock and ETF forward cards: E01 (Replay 25 TLT month-end, MEASURED +0.2562% net/window over 130 windows, t 2.36, 12 windows/yr, ~$15.37/yr on $500 in `doc 149`), E04 (Replay 48 muni CEFs in January, MEASURED +1.39% net/turn over 10 turns, 1 turn/yr, ~$6.96/yr on $500 in `doc 149`), E02 (IWM pre-holiday watch), E03 (odd-lot tender watch), and E07 (ETF closure payout watch).
-- TM09 (stock-desk noise and hosted-headline real run), which needs written Alpaca permission if hosted headlines are used or a private non-redistribution setup (`doc 194`).
-
-Events per year:
-
-- STATED (`doc 149`, `doc 95`): 12 monthly windows for E01, 1 yearly turn for E04, plus infrequent E03/E07 events.
-
-Cost and risk to the owner:
-
-- Money: $0.
-- Time and forms: 1 minute to toggle the GitHub repo to private (already done once on 2026-11-25 per `docs/STATUS.md` line 360), or one short email to Alpaca requesting written permission to publish practice-desk summary logs.
-- Risk: None. `docs/DECISIONS.md` already plans to make the repo private when real money goes in.
-
-What still stands in the way afterward:
-
-- STATED (`doc 149`): E01 needs at least 12 forward months (earliest after 2027-11-30) and E04 needs multiple turns before real money. Neither has any completed forward record yet.
-
-### Unlock B: Written Consent from Coinbase for Market Data
-
-What it reopens:
-
-- TM07 (AI desk with scouts vs AI alone), currently stopped after week 8 round 1 (`docs/STATUS.md` line 349, `doc 194`). Without consent, TM07 stays stopped or restarts from zero on another venue's prices.
-- Live and historical crypto cards paused by Coinbase Market Data Terms (Aug 7, 2026 s3, `doc 194`): E06 (hot-coin forward rules), E09 (overextension dip-buy 70-102, 71-013, 71-035 on Coinbase quotes; MEASURED +56.5 to +84.1 bp in search at futures cost, +39.4 bp at 1 minute in Plan 73 `doc 157`), E10 (Plan 75 coin trend ratchet; MEASURED +9.04% over 34 months at 75 bp/side on proxy feed `doc 181`), E11 (cheap-venue dip-buy paired check), and Measurement 132 (30-day Coinbase vs Binance.US cost and gap readout).
-- Clean resolution of Coinbase-based figures already in the public repo (`docs/STATUS.md` line 350).
-
-Events per year:
-
-- STATED (`doc 95`, `doc 152`, `doc 181`): TM07 runs 20 paired weeks; E09/E11 dip-buy fires roughly 100 to 170 trades/yr across 20 coins (691 trades over 4 years in Plan 70 `doc 152`); Plan 75 holds a median of 8 days (`doc 95`).
-
-Cost and risk to the owner:
-
-- Money: $0 to ask; licence fee if Coinbase requires a commercial contract is UNKNOWN (`doc 187`).
-- Time and forms: One short email to Coinbase asking for written personal/research consent covering automated local capture and AI/algorithm benchmarking (with repo private if needed).
-- Risk: Low. Coinbase may say no or ignore the request, in which case we already have the fallback (Kraken/Binance.US via Measurement 133, E12, and E13, and restarting TM07 on Kraken).
-
-What still stands in the way afterward:
-
-- MEASURED (`doc 157`, `doc 180`, `doc 181`): Consent fixes data rights, not trading costs. Coinbase retail spot fees (60 bp+ taker per `doc 60` and `doc 180`) still kill E09/Plan 70/71 and push Plan 75 toward its negative 145 bp/side mark (-3.90% in `doc 95`). Live trading of crypto rules still needs a cheaper venue or verified lower fees.
-
-### Unlock C: Binance.US Spot Account (Idaho, 0% Maker and 0.02% Taker)
-
-What it reopens:
-
-- Low-cost US spot execution for the only crypto rules sitting on a cost boundary (`doc 180`, `doc 185`, `doc 186`):
-- Plan 75 (coin trend ratchet, E10/E13): MEASURED +9.04% over 34 months at 75 bp/side on proxy feed, negative (-3.90%) at 145 bp/side (`doc 95`, `doc 181`). Binance.US charges STATED 0.00% maker and 0.02% taker (0.01% on BNBUSD), with MEASURED $1.00 minNotional on all 20 Plan 70 USD pairs (`doc 180`, `doc 186`).
-- Plan 70/71 overextension dip-buy (70-102, 71-013, 71-035; E11/E12): MEASURED +56.5 bp to +84.1 bp net at modeled futures cost, negative at 35 to 95 bp US spot fees (`doc 152`, `doc 154`, `doc 180`).
-- Replay 01 BTC daily trend (P1, P2, S50, D20): MEASURED passed 5/5 at 7 bp/side (Binance.US) on Kraken prices (knife-edge PBO 0.2409 vs 0.4205 Bitstamp), failed at Alpaca 30 bp and Kraken 43 to 85 bp (`doc 16`, `doc 180`).
-- Watch-only thin-venue ideas (`doc 186`, `doc 196`): 0% `LIMIT_MAKER` resting-bid execution overlay (tested forward in E11/E12) and buying a clean single-venue Binance.US USD discount when both venues are healthy.
-
-Events per year:
-
-- MEASURED/STATED (`doc 152`, `doc 180`, `doc 181`): roughly 100 to 170 dip-buy signals/yr (Plan 70/71), median 8-day trend holds (Plan 75), and roughly 10 to 30 switches over multi-year spans (Replay 01 `doc 120`).
-
-Cost and risk to the owner:
-
-- Money: $0 account fee, $0 ACH deposit/withdrawal, $25 wire withdrawal ($100 min), $500 to $1,000 test capital (`doc 186`).
-- Time and forms: Standard KYC + Plaid or micro-deposit bank link (Idaho is eligible with USD per `doc 180`).
-- Risk (STATED/MEASURED in `doc 186` and `doc 194`): High venue risk compared with a regulated broker. Binance.US has no cryptographic or CPA proof of reserves (only SOC 2 / ISO IT audits), does not name its USD custodial banks (FDIC pass-through UNKNOWN), enforces an unwaivable 7-day ACH hold on deposits and crypto bought with them, had an 18-month USD pair outage from June 2023 to February 2025, and its full API/data Terms of Service could not be read (`doc 194`, UNKNOWN).
-
-What still stands in the way afterward:
-
-- MEASURED (`doc 157`, `doc 186`, `doc 196`): Thin altcoin books can turn a 2 bp fee into a 25 to 95 bp spread (e.g., RENDER/USD 94.0 bp snapshot in `doc 60`). Plan 73 showed half of the dip-buy gain disappears in the first minute (+75.6 bp to +39.4 bp; worst-of-minute -28.1 bp). Plan 75 made all of its gain in 2024 and lost in 2025 (-4.62%) and 2026 (-3.75%). Do not fund an account until Measurement 133 and the E11/E12/E13 forward logs prove executable spreads and net gains.
-
-### Unlock D: US Crypto Derivatives or Spot-Margin Account (Coinbase CFM, Kraken Pro `:BTNL`, Kraken Derivatives US, Robinhood Perps)
-
-What it reopens:
-
-- Shorting and leverage on roughly 35 large US-listed coins total: MEASURED 24 perpetual-style contracts on Coinbase CFM, 29 USD pairs (28 coins + USDC) on Kraken Pro US spot margin `:BTNL`, 32 unique symbols together, expanding to about 35 coins with Kalshi (19), Kraken US fractional perps (17), Robinhood perps (8), and Crypto.com US perps (9) (`doc 60`, `doc 98`, `doc 192`).
-- Lower stated per-side fees than retail spot on BTC and a few majors: STATED $0.15/contract clearing + variable fee on Coinbase CFM (5.76 bp RT floor on BIP, 10.83 bp median across 24 contracts before variable commission, spread, and hourly funding in `doc 120`), or ~1 bp/side promo through 2026-12-31 on Robinhood perps (8 coins, no perp order API in `doc 40`, `doc 60`).
-
-Blunt check of the outside and repo evidence:
-
-- MEASURED (`doc 120`): Round 31 re-screened all 14 cost-dropped and cost-failed crypto ideas at Coinbase CFM costs. **Zero of 14** cleared the pre-data power screen of 4.
-- MEASURED (`doc 57`, `doc 154`, `doc 192`): On US-shortable liquid coins, shorting pops lost badly. Replay 17 lost in 7 of 7 years on the US-shortable roster at 38 and 80 bp. Plan 71 mirror shorts were negative in 34 of 38 rules. 15-minute reversal peaks at 1.3 bp gross (`doc 192`).
-- MEASURED (`doc 65`, `doc 68`): Both funding-carry tests failed (Replay 18 lost -44.61% net; Replay 24 made +0.036%/yr).
-- MEASURED (`doc 39`): Replaying TM03 at 2x, 3x, and 5x multiplied losses; every model that made money at 1x lost money at 5x.
-- MEASURED (`docs/QUEUE.md` row 48): Does **not** unlock Replay 20 (only 1 of 205 Upbit notices was on a US-shortable coin at notice time).
-
-Events per year:
-
-- Zero tested passing rules today; only potentially relevant as a cheaper execution rail for Plan 70/71 dip-buy longs on the 20 large coins if Binance.US spot is rejected and Coinbase CFM's real signed-in taker fee + spread proves lower than spot.
-
-Cost and risk to the owner:
-
-- Money: $0 application; Kraken US spot margin carries general Pro fees of 0.40% maker and 0.80% taker per side plus opening and 4-hour rollover fees (`doc 60`, `doc 98`). Coinbase CFM whole-contract overnight initial margin exceeds $300 on AAVE, BNB, HYPE, PEPE, ZEC, and NEAR, and exceeds $500 on ZEC ($748) and NEAR ($860) (`doc 98`).
-- Time and forms: Identity verification, futures/margin suitability forms, and FCM onboarding.
-- Risk (STATED in `doc 40`, `doc 98`): Automatic liquidation without prior notice, liquidation fees ($10 to $50 on Kraken Derivatives US; 2% index spread + 1.5% to 5% conversion on Kraken spot margin), and **liability for negative account deficits** on Coinbase CFM, Kraken, Kalshi, and Robinhood Derivatives. No verified matching retail paper API on Coinbase CFM (static mock only) or Kraken `:BTNL` (`doc 98`).
-
-What still stands in the way afterward:
-
-- No passing US-executable short strategy exists in the repo. Even on the long side, exact signed-in Coinbase CFM retail taker fees, real altcoin perp spreads, and historical CDE funding rates are UNKNOWN (`doc 98`, `doc 120`).
-
-### Unlock E: More Capital ($2,000 to $25,000+)
-
-What it reopens:
-
-- Dollar scale on our two verified US-reachable passes (`doc 95`, `doc 149`): Replay 25 (TLT month-end) earned MEASURED +3.07%/yr simple (+$15.37/yr on $500, or +$153.72/yr on $5,000; partial 2026 worst year -$27.51 on $500 or -$275.05 on $5,000). Replay 48 (muni CEFs in January) earned MEASURED +1.39%/yr (+$6.96/yr on $500, or +$69.60/yr on $5,000; worst turn -5.06%).
-- At $2,000+: clears Alpaca's $2,000 equity floor for 2x stock margin and short selling (`doc 40` line 121), clears Tradovate's $1,000 live API floor (`doc 40` line 111), makes Coinbase CFM overnight contracts (ZEC $748, NEAR $860) fit without exhausting cash (`doc 98`), and shrinks IBKR's $1.75 minimum crypto fee from 35 bp on $500 down to 18 bp at $1,000+ (`doc 180`).
-- At $25,000+: removes Pattern Day Trader limits on US equities (not currently binding on any passing rule, since Replay 25 holds 3 sessions and Replay 48 holds 1 month).
-
-Blunt check:
-
-- INFERENCE: More capital scales dollar payoff linearly on Replay 25 and Replay 48, but it does **not** create a new passing strategy. Neither Replay 25 nor Replay 48 has completed its forward practice test yet (`doc 149`), and both together sit idle roughly 79% of trading sessions (`doc 149`). Adding money before forward proof only raises the dollar cost of a false pass.
-
-Cost and risk to the owner:
-
-- Money: $1,500 to $24,500+ additional personal capital at risk.
-- Risk: Scales worst-year losses linearly (e.g., Replay 25 partial 2026 was -5.50% unlevered and -15.85% on 3x TMF in `doc 149`; Replay 48 worst turn was -5.06%).
-
-What still stands in the way afterward:
-
-- STATED (`doc 149`, `AGENTS.md`): Forward practice proof comes first (E01 needs 12 forward months, earliest after 2027-11-30).
-
-### Unlock F: Stock Margin and Short Locates ($2,000+ Equity + Margin Approval)
-
-What it reopens:
-
-- Short-only or hedged stock/CEF ideas dropped on `direction`: reverse-side late-January CEF short, early-January winner tax-gain-selling short, CEF rights-offering shorts (343 transferable / 97 non-transferable filings 2016 to 2026 in `doc 111`), leveraged/inverse ETF reverse-split shorts (297 filings in `doc 111`), intraday sector/stock pairs (`doc 156`), and regular dividend-month long-short spreads (`doc 132`).
-
-Blunt check:
-
-- MEASURED/STATED (`doc 111`, `doc 132`, `doc 139`, `doc 156`): None of these has a passing net-of-cost repo test. Replay 65 (stock-bond rebalancing SPY/IEF) already assumed full shorting and still failed 3 of 5 marks (+1.01 bp/session, t 1.04, -0.07 bp without March 2020 in `doc 139`). Intraday stock pairs lost money in later years (`doc 156`). Dividend-month hedged spreads failed on count (78 usable months vs 120 needed in `doc 132`). CEF rights offerings and leveraged ETF reverse splits carry hard-to-borrow fees, buy-in risk, and thin books that are not priced in the cited papers (`doc 111`).
-
-Cost and risk to the owner:
-
-- Money: Minimum $2,000 equity on Alpaca (`doc 40`), plus variable hard-to-borrow fees (UNKNOWN for small CEFs and reverse-split ETFs) and margin interest.
-- Risk: Unlimited theoretical loss on short squeezes, forced buy-ins, and dividend-in-lieu payments. Also sits outside the owner's stated main track (crypto, `docs/DECISIONS.md`).
-
-What still stands in the way afterward:
-
-- No free historical borrow-rate or locate-availability archive exists in the repo, so none of these short-stock rules can be honestly backtested net of real borrow costs.
-
-### Unlock G: Kalshi Account (Plus Written Data/Research Consent)
-
-What it reopens:
-
-- Event-contract watches (`doc 53`, `doc 177`, `docs/QUEUE.md` rows 22, 44, 53): Kalshi earnings-call mention contracts (STATED Barbosa 2026: +16 cents/contract on earnings NO when YES VWAP < 50% using a retrospective 2-hour-before-last-trade clock, no spread/depth/queue model, eligible count UNKNOWN), and patient maker orders on Kalshi 5 p.m. BTC threshold contracts.
-- Kalshi crypto perpetuals (`doc 40`, `doc 60`): 19 crypto markets (including VVV, not on Coinbase CFM or Kraken margin) at STATED 5 bp maker / 12 bp taker exchange fee (retail broker markup UNKNOWN).
-
-Blunt check:
-
-- STATED (`doc 53`, `doc 177`, `doc 188`, `doc 194`): Takers lose heavily on Kalshi (-31.46% in GWU 2021 to Apr 2025; -16.0% to -30.8% across six AI models in 57 days; 0 of 527 ForecastBench entries beat market prices). The earnings-mention figure uses a retrospective clock with no fill model. An owner account alone does **not** authorize research data collection or AI/ML use because Kalshi Developer Agreement s3.1 bars storing API data except for one's own trading and bars sharing without written approval (`doc 177`, `doc 194`).
-
-Cost and risk to the owner:
-
-- Money: $0 to open; taker fee formula `0.07 * C * P * (1 - P)` (`doc 177`); perp retail FCM markup UNKNOWN (`doc 60`).
-- Time and forms: KYC, suitability form, tutorial for perps, plus a separate written email to Kalshi for data/research permission.
-- Risk: Negative balance liability on perps (`doc 40`); thin event-contract liquidity and cancellation/settlement rules.
-
-What still stands in the way afterward:
-
-- Even with an account and written consent, no historical order-book archive exists (`doc 53`), so every Kalshi maker rule requires months of forward book logging before any verdict.
-
-### Unlock H: Paid Data Keys (Index Pro-Forma Lists, Funding/Liquidation Archives, Corporate Actions, Transcripts)
-
-What it reopens:
-
-- Index pro-forma lists (FTSE Russell, S&P DJI, CRSP, MSCI): small-cap index additions/deletions (`doc 111`, `doc 184`).
-- Historical perp funding, OI, and liquidation archives (CoinGlass, Velo, Tardis, Tokenomist, DefiLlama Pro): BTC lower-tail funding 24h rebound (`doc 193`), cliff token unlocks (`doc 197`), and order-book microstructure (`doc 187`).
-- Paid equity corporate-actions, earnings transcripts, and point-in-time delisted rosters (EODHD, ThetaData, commercial transcript vendors): Queue 12 earnings call Q&A, Queue 95 ETF liquidation payouts, Queue 101 earnings date advancers, Plan 40 point-in-time small-cap losers, and Plan 63B/64 CEF identity continuity (`docs/QUEUE.md` Done, `doc 187`).
-
-Blunt check:
-
-- STATED (`doc 187`): Survey 187 explicitly grouped Tokenomist, DefiLlama Pro, EODHD, CoinGlass, Velo, and Tardis under **Paid and not worth it at this size**.
-- MEASURED/STATED (`doc 111`, `doc 145`, `doc 193`, `doc 197`): On a $500 to $2,000 account, even a $50 to $200/month data subscription ($600 to $2,400/yr) exceeds the entire expected annual profit of every passing rule we have. Enterprise index pro-forma licences cost far more. Worse, most paid feeds still do not solve the core edge problem: Albiez 2026 found no detectable 3-day abnormal return across 913 cliff unlocks (`docs/QUEUE.md` line 200); MarketTrace found +0.04% median 72h BTC return on lower-tail funding (`doc 193`); and Queue 12 earnings-call Q&A had only 16.29% synthetic power even if spread across years (`doc 145`).
-
-Cost and risk to the owner:
-
-- Money: Recurring monthly or annual fees that dwarf a $500 to $2,000 test balance.
-- Risk: Sunk cost with no demonstrated net edge after costs.
-
-What still stands in the way afterward:
-
-- Most vendor archives still lack verified first-public receipt timestamps (`doc 187`) and many strategies still fail power or retail execution costs even with clean data.
-
-### Unlock I: Offshore Crypto Perpetuals (Not an Owner Unlock)
-
-- STATED (`doc 40`, `doc 71`, `doc 193`, `doc 194`): Binance.com, Bybit, Deribit, Hyperliquid, dYdX, Drift, Lighter, and Aster all exclude US residents and forbid bypassing geofencing. Under `AGENTS.md` and `doc 71`, we do not go around US legal restrictions. This is listed only for completeness because it is the binding wall on Replay 20.
-
-## 3. Our One Pass That Needs a Short: Replay 20 (Upbit Listing Short)
-
-MEASURED (`docs/research/71_replay_20_upbit_listing_short.md`): Replay 20 is our strongest historical pass by raw per-trade return. It met 5 of 5 frozen marks on viewed dates:
-
-- Rule: after the first Upbit KRW listing notice for a coin, wait for the first red UTC day among the notice day and the next two days, short at 01:00 UTC the next day, cover at the prior high (capped at 25% above entry) or after 72 hours.
-- Return: +3.2088% mean net per trade across 139 trades at 15 bp/side plus funding (mean funding -0.887%), median +2.522%, 64.7% win rate, per-trade t 2.839, positive (+2.537%) without the best 3 trades. At 30 bp/side it still averaged +2.915% net.
-- Scale and concentration: 139 trades over ~6.8 years (~20.4 trades/yr, equal-notional ~$321/yr on $500 per trade in `doc 95`), with 99 of 139 trades in 2025 to 2026 and 69% of summed net returns from 2026 alone. Worst single trade lost -28.768% (-$143.84 on $500) unlevered.
-
-What is missing to trade it from Idaho:
-
-- MEASURED (`docs/QUEUE.md` row 48, `docs/STATUS.md` Plan 28 closure): Binance.com perpetuals are barred to US accounts. Plan 28 checked every one of the 205 first Upbit KRW notices in 2024 to 2026 (203 through Replay 20's cutoff) against every US-legal retail short venue. Only **1 of 205** coins had a US-reachable retail short contract already listed at notice time: CRV, on Kraken US spot margin (`:BTNL`, general Pro fees 40 bp maker / 80 bp taker per side plus opening and 4-hour rollover debits).
-- MEASURED (`doc 71`, `doc 95`): Even using today's US-shortable list with hindsight (not point-in-time), only 15 of the 139 trades overlapped across ~6.8 years (~2.2 trades/yr, +2.003% mean on Binance prices, ~$22/yr on $500 before US spreads and higher Kraken fees).
-- INFERENCE: Nothing the owner can sign today unlocks Replay 20. Opening Coinbase CFM and Kraken margin gives access to roughly 35 already-large coins, whereas Upbit's KRW listing pop happens on mid-cap and newer tokens that US CFTC venues do not list for shorting until much later, if ever. Until US regulated venues expand short listings to hundreds of mid-cap coins (tracked passively by Queue row 49), Replay 20 stays unexecutable from Idaho.
-
-## 4. Blunt Ranking of All Unlocks
-
-Ranked by tested or well-evidenced edge opened per unit of owner effort, cash cost, and risk.
-
-| Rank | Owner unlock | Edge opened (repo basis) | Effort, cost, and risk | Blunt verdict |
-|---|---|---|---|---|
-| 1 | Switch repo to private (or get written Alpaca publication consent) | Unblocks forward practice proof for both verified US passes: Replay 25 (+$15.37/yr on $500, `doc 149`) and Replay 48 (+$6.96/yr on $500, `doc 149`), plus TM09 and E07. | 1 minute, $0, zero risk. | Do now. Highest return per minute of effort. |
-| 2 | Ask Coinbase for written market-data consent | Unblocks TM07 (after week 8) and the paused crypto cards (E06, E09, E10, E11, Measurement 132) without throwing away completed work. | One email, $0 to ask, low risk (worst case: no reply, we use Kraken/Binance.US). | Do now. Already sitting in `docs/STATUS.md` waiting on owner. |
-| 3 | Open a small ($500 to $1,000) Idaho Binance.US spot account (gated on Measurement 133 and E11/E12/E13) | Only US spot venue under 10 bp maker (0% maker, 0.02% taker, `doc 180`). Needed if Plan 75 (+9.04% at 75 bp proxy, `doc 181`), Plan 70/71 dip-buy (+56.5 to +84.1 bp futures proxy, `doc 152`/`154`), or Replay 01 BTC trend ever goes live. | KYC + bank link, $500 to $1,000 capital, meaningful venue risk (no audited proof of reserves, unnamed banks, 7-day ACH hold, prior 18-month USD outage, `doc 186`). | Wait for Measurement 133 and E11/E12/E13 forward readouts first, then fund small if they pass. |
-| 4 | Add more capital ($5,000+) to proven rules | Scales Replay 25 (~$154/yr on $5,000) and Replay 48 (~$70/yr on $5,000) linearly (`doc 95`, `doc 149`), but adds zero new edges. | $4,500+ personal cash at risk; scales drawdowns linearly (-5.5% to -15.9% in 2026). | Wait until E01 and E04 finish forward practice proof. Premature today. |
-| 5 | Open US crypto derivatives or spot-margin account (Coinbase CFM / Kraken `:BTNL`) | Opens ~35 shortable large coins, but 0 of 14 crypto ideas cleared Coinbase CFM costs (`doc 120`), US-shortable peak shorts lost 7/7 years (`doc 57`), and Replay 20 stays blocked (1 of 205 coins, `docs/QUEUE.md` row 48). | Suitability forms, margin/liquidation risk, negative-balance deficit liability (`doc 40`, `doc 98`). | Skip for now. Revisit only if a new US-executable rule passes on the 24 CFM coins and beats Binance.US spot after real fees. |
-| 6 | Open Kalshi account + request written data consent | Only reopens untested watches (earnings mentions with retrospective clock, 5 p.m. BTC maker queues); takers lost -16% to -31.5% (`doc 53`, `doc 177`). | KYC + written consent email + months of forward book logging with no historical archive. | Skip unless the owner specifically wants to test prediction-market making from scratch. |
-| 7 | Stock margin and short locates ($2,000+ equity) | Opens zero passing rules; Replay 65 failed even with shorting (`doc 139`), stock pairs lost in later years (`doc 156`), and borrow costs are unmeasured. | $2,000+ cash, borrow fees, short-squeeze risk, off the crypto main track. | Skip. Nothing worth having here. |
-| 8 | Buy paid data keys (index pro-forma, funding/liquidation, transcripts, corporate actions) | Annual subscription cost ($600 to $2,400+) exceeds total expected profit at $500 to $2,000; most feeds still lack first-public clocks or fail power (`doc 187`). | Recurring cash burn with no verified net edge. | Skip. Do not buy data at this account size. |
-| 9 | Offshore crypto perpetuals | Would open Replay 20 (+3.21%/trade, 139 trades, `doc 71`), but is legally barred to a US resident in Idaho (`doc 40`, `doc 71`). | Legally prohibited; not an option. | Off the table. |
-
-## 5. Three Unlocks Most Worth Action and the First Test for Each
-
-1. Switch the repo to private (or obtain written Alpaca consent to publish practice summaries).
-First test the day it is granted: resume the GitHub Actions practice-desk cron so E01 (Replay 25 TLT month-end), E04 (Replay 48 muni CEFs, first forward entry at December 2026 close), and E07 (ETF closure payouts) log on-time forward pretend fills without interruption, and clear TM09's stock-desk noise run on hosted headlines (`docs/STATUS.md`, `doc 149`, `doc 194`).
-
-2. Email Coinbase to request written market-data consent for private automated research and AI/algorithm benchmarking.
-First test the day it is granted: unpause and finish TM07 from week 8 round 2 through week 20 under its frozen registration (`docs/STATUS.md` line 349, `doc 95`), and complete the 30-day Measurement 132 paired Coinbase-versus-Binance.US spread and gap readout (`doc 186`).
-
-3. Prepare (after Measurement 133 and E11/E12/E13 readouts, not before) a capped $500 to $1,000 Idaho Binance.US spot account.
-First test the day it is granted: run a small live ACH deposit-and-withdrawal round-trip check to confirm banking rails and the 7-day hold (`doc 186`), then execute tiny live $25 to $50 orders on the first E13 (Plan 75) or E12 (overextension dip-buy) signals that pass forward practice marks, comparing actual filled price against the logged paper fill before scaling to $500 (`doc 180`, `doc 186`).
+Second check, November 26, 2026 Mountain Time. The original top ranking does not hold: making the repo private does not clear data rights or the timer. Ask Coinbase for scoped written consent first. Ask Alpaca for specific rights only if the private practice setup or a hosted TM09 run needs them. Keep Binance.US funding third and conditional. Nothing here authorizes a deposit, trade, disclosure, or workflow restart.
+
+## Decisions in order
+
+1. **Ask Coinbase for written consent.** This is the best owner-only action now, not a promise to finish TM07. Ask explicitly about keeping and using the existing snapshot and derived work to finish and score the study, private automated collection and AI and algorithm benchmarking, and separate permission for any past or future derived material that would be shared. While waiting, the owner still has to decide how to handle material already public. If the answer is no, keep TM07 stopped or register a new study on a cleared tape from scratch. A different venue cannot be spliced into week 8.
+2. **Keep GitHub public and seek narrow Alpaca clearance if needed.** This ranks second as a specific permission request, not as a visibility change. Separate the builder's work, moving the pretend desk to a permitted runtime and retaining private records, from the owner's choice to ask for written permission for specific public outputs or hosted headline use. Do not turn the hosted cron back on just because a vendor says yes. If local private use and the public output format are already permitted, publication permission is not needed just to keep private pretend fills. Do not ask for a broad right the desk does not need.
+3. **Defer a small Binance.US spot account.** This is an option for actual spot fills, not a prerequisite to E12, E13 or Measurement 133. Wait for judged forward evidence, the cost readout, custody and USD-rail review, and the owner's explicit approval of amount and limits. [DECISIONS](../DECISIONS.md) says about $300 to $500 for first real-money test capital, not an approved $500 to $1,000 deposit. The higher amount was a scout's cap, not the owner's choice. If approved later, test a small ACH deposit and withdrawal before any separately authorized, narrowly capped trade; do not park idle savings there.
+4. **More capital:** too early. This scales historical arithmetic, not the chance a rule works. Two historical US-reachable passes still need forward proof, and they compete for the same cash at January month-end. Do not add their estimates as if both use the whole account independently.
+5. **US crypto derivatives or spot margin:** rated too high if described as a way to revive the Upbit short or the losing peak shorts. It opens a different, limited roster with suitability, actual-fee, funding and liquidation gates. Revisit only for a specific new reachable rule that clears its marks and is cheaper after all costs than spot. No account now.
+6. **Kalshi account plus research consent:** skip. An account is not data permission. The only plausible reopenings are unproven watches, with no relevant historical book established and no known fill or fee edge. Keep event contracts separate from crypto perps.
+7. **Stock margin and locates:** skip. This supplies direction, not a net edge or a locate for a particular security. It is out of the new-work crypto focus. Nothing here justifies borrowing.
+8. **Paid data:** skip buying. The original ranking is fair as a spending decision, not as a claim that data never helps. A licensed sample might solve a specific measured data gap; use that to establish rights, clocks and coverage first, then check whether the idea is still powered and placeable.
+9. **Offshore perpetuals:** not an owner option. The venue that supplied Replay 20 excludes US clients. Do not bypass access controls. Keep the US listing watcher as research, not as a route to trade the replay.
+
+## Permission and launch checks
+
+One result per numbered bundle. CONFIRMED means the named repo record supports it, not that a vendor promise was independently verified here. CORRECTED gives the narrower or different claim the record supports. NOT FOUND means the original claim was not established in the repo. MEASURED identifies logged results or direct checks reported in the repo; STATED identifies rules, third-party results and recommendations; UNKNOWN marks the unresolved part. No prices, held-back outputs or off-repo files were opened. Audit totals: 12 CONFIRMED, 22 CORRECTED, 3 NOT FOUND.
+
+- A01 CONFIRMED, MEASURED: [Scorecard 95](95_where_we_stand_after_32_tests.md) and [STATUS](../STATUS.md), top. 45 scored tests, four counted passes: Replay 25 and Replay 48 reachable in principle from the US, Plan 75 on a proxy with a pretend-money follow-up, and Replay 20 offshore. No real-money trade is cleared. [Doc 180](180_round_57_cost_as_the_binding_limit.md), Bottom Line, audits an earlier 44 tests: 23 lost before costs, 3 were classified as killed by costs (01, 03, 07), 3 passed and 15 lacked a printed gross read. The buckets do not say every failure would pass with cheap fees.
+- A02 NOT FOUND, UNKNOWN: [Survey 187](187_data_sources_for_an_ai_desk.md) and [STATUS](../STATUS.md) do not establish the draft's count of 13 subsequent rounds or that every dropped/watched idea was exhaustively assigned to one binding class. Remove both claims. The examples below show multiple barriers on individual ideas.
+- A03 CORRECTED, STATED: [DECISIONS](../DECISIONS.md), Nov 26 public-repo decision, and [STATUS](../STATUS.md), Done by the owner. The owner had briefly toggled visibility on Nov 25 and then chose public while the money is pretend on Nov 26. Going private now would reverse that decision. The recorded real-account/key contingency and changes to the timer and waiting job before a switch are separate. A private repo is not a zero-risk, one-minute authorization.
+- A04 CORRECTED, STATED: [Doc 194](194_data_source_terms_audit.md), Alpaca and GitHub Actions rows and flags. Alpaca limits use to personal, noncommercial purposes and bars republishing, uploading, posting or publicly displaying its Content without written permission. Content includes quotes, positions, transactions and order history. Private visibility reduces public exposure, but does not grant rights to upload or share restricted Content. GitHub's hosted-runner dev/test and disproportionate-burden wording is separate and not cured by private visibility or Alpaca permission. Whether the 24/7 timer falls outside allowed use is the repo's reading, not a GitHub ruling. Use a permitted runtime with no restricted Content published.
+- A05 CORRECTED, STATED: [Ledger 222](../../research_rig/TRIAL_LEDGER.md) and [STATUS](../STATUS.md). TM09 rehearsal four cleared on made-up data only. Real launch still needs demonstrated no-web and no-outside-tools isolation for hosted workers; provider no-training and no-logging terms; all data rights including written Alpaca clearance for hosted headline use; arm-independent ordering; a signed docket and the lead's separate go. Its first real stage is five price-only weeks and a blinded noise gate that chooses whether and how to proceed before news treatment. Neither a private repo nor a publication-only consent clears this.
+- A06 CORRECTED, STATED: [Ledger 198](../../research_rig/TRIAL_LEDGER.md), [TM07 registration](../../timemachine/TM07_REGISTRATION.md) and [STATUS](../STATUS.md), Waiting on the owner. Week 8 round one closed; round two and all later work are on hold, not scored or read. Consent covering only new pulls or generic research does not suffice. To resume, the lead must issue a ruling on row 198 covering the frozen Coinbase spot tape and permitted prior work. Keep the same audited engine, cost and roster pins, Kraken funding with its own applicable rights, matched arms, sealed common scout stream and host isolation and session audit rules. Changing bars would change the weekly baskets and experiment; start a new study, do not splice.
+- A07 CORRECTED, STATED: [Doc 194](194_data_source_terms_audit.md), Coinbase row, [STATUS](../STATUS.md) and [ledgers 227 to 232](../../research_rig/TRIAL_LEDGER.md). Coinbase's Aug 7, 2026 terms separately restrict AI/agent or algorithm use and passing derived work to third parties. E09, E10, E11 and M132 are closed unjudged/unread and do not resume upon consent. A new Coinbase card or paired cost study needs its own registration and go, without reopening old records. E06 is stopped; it is not one of those four recorded closures or counted here as cleared to resume. Prior publication remains a separate decision unless specifically covered by consent.
+- A08 CORRECTED, STATED: [Ledger rows 230 to 232](../../research_rig/TRIAL_LEDGER.md), as of repo commit `886f244`, record the independent CLEAR on merged build `08ea6cc` at 5:35 PM MT and the lead's START GO at 5:37 PM MT. E12, E13 and M133 no longer wait for audit, funding or Coinbase consent. They are starting on documented Binance.US public endpoints, with details off repo, shared stop and cooldown, and a stop if full terms bar the purpose. First wake completion is UNKNOWN here. M133 reads one venue for 30 days, walking books at $25 and $250; it cannot finish M132's paired comparison and does not measure profit. E12 and E13 have separately registered scoring rules.
+- A09 CONFIRMED, STATED: [Ledger 229](../../research_rig/TRIAL_LEDGER.md), venue decision at `886f244`. Plan 76 is its own washout test, not an account unlock. Bitstamp met the time-stamp coverage rule for 11 of 20 coins versus a floor of 10, with no price decoded. Only those 11 are eligible; extract preparation is allowed, not count, design or scored runs. [Ledger 226](../../research_rig/TRIAL_LEDGER.md) separately records Plan 74's failed first delivery custody check and one repair. Neither private visibility nor payment fixes wrong-company bars, missing coverage or split identity by itself.
+
+## Trading and cost checks
+
+- A10 CONFIRMED, MEASURED: [Doc 149](149_what_the_passes_are_worth.md), headline and §§1 to 2, and [doc 95](95_where_we_stand_after_32_tests.md), owner sizing. Replay 25: +0.2562% per monthly window over 130 windows, t = 2.36, about +3.07% per 12-window year, $15.37 on $500 or $153.72 on $5,000. Partial 2026 was -5.50%, roughly -$28 or -$275 respectively. Replay 48: +1.39% per annual turn across 10 turns, $6.96 on $500 or about $70 on $5,000 by scaling; worst turn -5.06%. These are separate historical, pre-tax illustrations, not forecasts or proof of $5,000 fills.
+- A11 CORRECTED, STATED: [Doc 149](149_what_the_passes_are_worth.md), forward proof and idle cash. E01 needs 12 forward months, earliest after Nov 30, 2027. E04 has no fixed numeric turn requirement; one turn alone proves nothing. About 79% idle assumes skipping the January TLT window in favor of Replay 48, not a measured combined portfolio. Exact paired returns are UNKNOWN. The -15.85% partial-2026 figure is from the separate 3x TMF measurement that failed its tracking mark, not a loss bound for either 1x pass.
+- A12 CORRECTED, MEASURED: [Docs 16](16_rig_audit.md), [120](120_round_31_cfm_futures_cost_rescreen.md) and [180](180_round_57_cost_as_the_binding_limit.md), Replay 01. The 7 bp/side Binance.US cost was modeled on other venues' prices. The 5/5 low-cost sensitivity is not a counted pass; risk of overfit on the Bitcoin Kraken sample was 0.2409 versus 0.4205 on aligned Bitstamp and 0.2645 with the alternate Kraken alignment, against 0.25. Alpaca and Kraken higher-cost cases did not rescue it. Low fee or more capital alone does not reopen this trial.
+- A13 CONFIRMED, MEASURED: [Docs 15](15_replay_03_intraday_crypto.md), [16](16_rig_audit.md), [27](27_replay_07_intraday_spy_qqq.md) and [180](180_round_57_cost_as_the_binding_limit.md). Replay 03 had seven of eight rules positive gross on both coins, up to +36.3 bp/round trip, 0/80 passing variants in the cost audit, and post-fix break-even versus holding only 0.1 to 4.2 bp/side on BTC and 0.4 to 7.5 on ETH. Replay 07 QQQ N2 at 0.5 bp/side had Sharpe 1.21 against 1.03 for holding on the cited comparison, break-even 0.90 bp/side versus holding, and lost in the later slice even at the cheaper cost. These are sensitivities, not usable passes.
+- A14 CONFIRMED, MEASURED: [Doc 123](123_measure_59_bitcoin_evening_window_costs.md), results. The IBIT 21:00 to 23:00 UTC modeled cost was 8.13 bp round trip versus a strict 3.50 bp limit; [doc 120](120_round_31_cfm_futures_cost_rescreen.md) gives 5.76 bp round trip for BIP fixed clearing plus one tick at its reference, before variable fees and funding.
+- A15 CORRECTED, MEASURED: [Plan 70 search](152_plan_70_coin_sweep_search.md), [Plan 71 search](154_plan_71_second_coin_grid.md), [Plan 73 timing diagnosis](157_plan_73_first_minute_diagnosis.md) and [doc 180](180_round_57_cost_as_the_binding_limit.md). +56.5 to +84.1 bp are selected search means at modeled futures costs, not final or US spot results; spot-fee comparisons were negative. Plan 73 shows +75.6 to +39.4 bp one minute later and -28.1 bp at the worst price in the minute on the same 182 trades with all clocks. Plan 70 prints 691 search trades for 70-102; it does not establish 100 to 170 per year for future E12.
+- A16 CONFIRMED, MEASURED: [Doc 181](181_plan_75_heldback_result.md), published result, not underlying data. Plan 75 net +9.04% over 34 months on a proxy at 75 bp/side, -3.90% shown at 145 bp, and median hold 8 days. Official slices: +18.78% in 2024, -4.62% in 2025 and -3.75% in partial 2026. Not proof for Binance.US fills; E13 is forward only.
+- A17 CORRECTED, STATED: [Docs 60](60_us_venue_costs_checked.md), [180](180_round_57_cost_as_the_binding_limit.md) and [186](186_round_61_thin_cheap_venue.md). Among venues surveyed, Binance.US has the entry-tier 0% maker and 2 bp taker rate (1 bp BNB/USD); Idaho was listed as supported. Doc 186 checked $1 minimum notional and post-only support for the 20 configured USD pairs at that time. A 94 bp RENDER/USD snapshot in doc 60 is a full spread before fees, not a typical per-side fill. The separate Coinbase Exchange fee schedule is not a verified signed-in Coinbase Advanced rate. E12 carries a shown-only resting-bid check; no fill claim follows from a touch. A clean discount is still a separate watch needing a cleared synchronized reference ([doc 196](196_idea_round_68_thin_venue_edges.md)).
+- A18 CORRECTED, STATED: [Docs 186](186_round_61_thin_cheap_venue.md), [185](185_round_60_using_the_cost_finding.md), [194](194_data_source_terms_audit.md) and [196](196_idea_round_68_thin_venue_edges.md), banking/terms. The venue states $0 ACH fees and a non-waivable 7-day hold on ACH funds and crypto bought with them, plus $25 wire withdrawal and $100 minimum. The Trust page did not provide a public reserve attestation or name the custodial banks; neither reserve adequacy nor pass-through FDIC for a particular USD balance was established. SOC 2 and ISO are control audits, not solvency audits. The measured gap in USD pair history is Aug 2023 through Jan 2025 (18 months); most USD pairs were removed June 26, 2023 and USD services returned for most states Feb 19, 2025. Neither establishes a total freeze for the whole interval. The full Binance.US terms remain UNKNOWN.
+- A19 CONFIRMED, MEASURED: [Round 31, doc 120](120_round_31_cfm_futures_cost_rescreen.md), bottom line and table. 0 of 14 ideas cleared the pre-data power score of 4 at the modeled Coinbase CFM costs. BIP's 5.76 bp and the cross-contract 10.83 bp median are cost floors in that study, not binding retail quotes. Actual retail variable fees, depth and funding can make the trade dearer.
+- A20 CONFIRMED, MEASURED: [Replay 17, doc 57](57_replay_17_short_the_peak.md), Rule S 1x tier table, and [Plan 71, doc 154](154_plan_71_second_coin_grid.md). Replay 17's US-shortable roster lost in all seven year rows at both 38 and 80 bp/side; it used a later roster and offshore prices/funding, not US execution. Plan 71 mirror shorts lost in 34 of 38 variants. [Docs 65](65_replay_18_funding_carry.md) and [68](68_replay_24_same_coin_carry.md) also show carry failures, -44.61% total for Replay 18 and +0.036% annually on Replay 24, which still missed its marks.
+- A21 CORRECTED, STATED: [Docs 40](40_leverage_venues_checked.md), [60](60_us_venue_costs_checked.md), [98](98_kraken_and_coinbase_short_access.md) and [192](192_round_66_crypto_hype_and_reversal.md). Point-in-time current-roster check: 24 CFM crypto roots plus 29 Kraken US margin pairs (28 coins plus USDC), 32 symbols in their union, about 35 coins only across the wider venues. Funds and approval do not guarantee a borrow, an Idaho CFM account, a matching paper API, or cheap shorting. The documented Kraken general entry fee is 40/80 bp maker/taker plus opening and 4-hour rollover; dated whole-lot overnight examples were about $748 ZEC and $860 NEAR on CFM. Liquidation, fee and deficit rules are venue-specific. [Doc 39](39_leverage_replay_tm03.md) illustrates leverage risk; use its carried-account column for a continuing account, not a sum of separately reset months or a universal rule.
+- A22 CONFIRMED, MEASURED: [Replay 20, doc 71](71_replay_20_upbit_listing_short.md), five marks, sensitivities and recompute. +3.2088% net per trade across 139 on viewed dates, with 15 bp/side and funding (mean -0.887%); median +2.522%, 64.7% wins, t = 2.839, +2.537% without the best three, +2.915% at 30 bp/side. Worst actual trade -28.768%. 99 trades were in 2025 and partial 2026; 69% of summed net returns in 2026. [Doc 95](95_where_we_stand_after_32_tests.md) shows about 20.4 trades/year and about $321/year on $500 per trade as equal-notional arithmetic, not compounded account returns.
+- A23 CONFIRMED, MEASURED: [QUEUE](../QUEUE.md), row 48, cross-checked against doc 71's US-today diagnostic. Only 1 of 205 **notices** in 2024 to 2026 (1 of 203 through the replay cutoff) had a US retail short already listed when the notice arrived: CRV on Kraken US spot margin. The hindsight filter is different: 15 of 139 on Binance pricing, +2.003% mean, about 2.2/year and $22/year by doc 95 arithmetic before actual US execution costs. Do not turn that filter into a US placement count.
+- A24 CORRECTED, STATED: [Docs 40](40_leverage_venues_checked.md), [156](156_round_45_sources_checked.md) and [180](180_round_57_cost_as_the_binding_limit.md). Alpaca's $2,000 threshold is not a guaranteed short locate; Tradovate's $1,000 live balance and $25/month API condition are not validated new edges. IBKR's $1.75 minimum is 35 bp on a $500 order, not a promise all trades from a $1,000 account cost 18 bp. Remove the blanket $25,000 day-trading claim: doc 156 records the FINRA transition and broker-specific adoption. No passing strategy here is gated by that threshold.
+- A25 CORRECTED, MEASURED: [Docs 111](111_round_27_higher_payoff_forced_flows.md), [132](132_count_107_dividend_month_coverage.md), [139](139_replay_65_stock_bond_rebalancing.md) and [156](156_round_45_sources_checked.md). The 343 transferable, 97 non-transferable and 297 reverse-split numbers are search hits, not verified executable shorts. Dividend month had 78 usable months against 120. Replay 65 **met** three of five marks and did not pass (+1.01 bp/session, t 1.04, -0.07 bp excluding March 2020). The cited pairs literature shows later degradation, not a scored repo net result on these proposed pairs. Historical executable locates and borrow rates are UNKNOWN.
+- A26 CORRECTED, STATED: [Docs 53](53_prediction_markets_checked.md) and [177](177_idea_round_54_new_market_structure.md) and [doc 194](194_data_source_terms_audit.md), Kalshi. -31.46% of stake is the GWU study's aggregate taker figure for 2021 to Apr 2025. -16.0% to -30.8% are separate 57-day losses for six Prediction Arena models, fee treatment UNKNOWN, not a pooled Kalshi taker interval. 0 of 527 ForecastBench entries beat the shown market price clear of chance; not 527 live Kalshi books. The roughly +16 cents earnings NO figure uses a retrospective two-hour clock, no execution model, and no known qualifying count. The default taker fee before rounding is `0.07 * C * P * (1-P)` subject to its schedule; doc 60's separate perp fees are 5/12 bp across the venue's listed products, with broker markup UNKNOWN. A permitted forward capture would still have to measure executable liquidity.
+- A27 CORRECTED, STATED: [Survey 187](187_data_sources_for_an_ai_desk.md), [doc 193](193_round_67_leveraged_crowd_as_a_signal.md) and [doc 197](197_idea_round_69_dated_crypto_events.md). Survey 187 does put Tokenomist, DefiLlama Pro, EODHD, CoinGlass, Velo and Tardis in its paid/poor-fit group, but keys do not guarantee rights, eligible samples or first-public clock proof. The +50.6 bp 24-hour lower-tail funding result is gross on Binance BTC; a different 72-hour vendor study reports +0.04% median. The 913 cliff unlocks do not show detectable 3-day abnormal return. These are different study designs, not a joint trade estimate. The draft's $50 to $200/month is an example ($600 to $2,400/year), not a verified price range or expected profit comparison.
+- A28 NOT FOUND, UNKNOWN: No blanket licence finding covers every pro-forma index, no paid vendor named in the draft is demonstrated to fix all matching and first-public requirements for Plans 63/64 or Plan 74, and current official terms do not follow from an old blocked endpoint. [QUEUE](../QUEUE.md), [STATUS](../STATUS.md), [doc 187](187_data_sources_for_an_ai_desk.md) and ledger 226 document the individual gaps. Data identity, lawful use, availability, clock coverage and a prewritten test are separate.
+- A29 CONFIRMED, MEASURED/STATED: [QUEUE](../QUEUE.md), rows 12, 48, 61, 82, 88, 89, 95 and Done Plan 10, [doc 145](145_screen_queue_11_12_13.md). Row 12 has 482 US full calls in 2025 Q4; 16.29% is synthetic power if spread across years, not a return. Plan 37 official archive index refused automation (403); ~30 bp is a stated gross proxy and spreads are UNKNOWN. Row 82 had 29 versus 30, Plan 50 had 22 strict candidates versus 30, row 89 had 8 versus 30 with none promising equal street-name treatment, row 95 verified 12 of 40 primary payouts and dates, and Plan 10 had 1 to 11 design triggers per version across four years.
+- A30 CONFIRMED, MEASURED: [Measurement 15](66_measure_15_breakout_fills.md), [Measurement 121](170_m121_result.md) and [Replay 21](97_replay_21_odd_lot_tenders.md). Breakout slippage was 0.2089 of stop distance (0.2719 in odd-lot comparison) against 0.05. Resting CEF bids filled 7.56% and marked -26.6 bp at the executable five-minute bid for the subset with that mark. The tender replay averaged +11.80% net with t 1.688 on 14 trades from 106 filings versus 30 minimum. [Doc 186](186_round_61_thin_cheap_venue.md) separately reports -0.4307 bp/trade on the cited naive perpetual maker strategy even with the 0.5 bp rebate; it is not the CEF result.
+- A31 CORRECTED, MEASURED/STATED: [Docs 95](95_where_we_stand_after_32_tests.md), [180](180_round_57_cost_as_the_binding_limit.md), [120](120_round_31_cfm_futures_cost_rescreen.md), [186](186_round_61_thin_cheap_venue.md) and [196](196_idea_round_68_thin_venue_edges.md). Do not collapse every unsuccessful replay or time machine into gross losses; some gross results are not printed and some rules failed marks or counts. The 0.51 bp and 1.3 bp gross estimates concern different short-horizon signals; they do not prove that every stale quote requires co-location. The -21.3/-34.1 bp/day in doc 196 are for a Binance global long-short low-volume sort, not a loss measured on a slow long-only Binance.US rule. The latter is a watch, not an account-dependent reopening.
+- A32 NOT FOUND, UNKNOWN: The draft's fixed account-opening prices, one-minute effort estimates, claim of zero risk, and a universal lack of historical books were not established by cited repo records. Doc 53 notes historical Kalshi transactions and candles, not a historical queue-quality archive for the proposed maker rules. Access gates and any live fees must be checked for the exact route; a product list, quote or proxy tape is not an order fill.
+- A33 CORRECTED, STATED: [Replay 20, doc 71](71_replay_20_upbit_listing_short.md), frozen rule. After the first down UTC day in the listing-notice day and next two days, short at 01:00 UTC the next day. Cover at the highest high from the notice candle through the last pre-entry candle, capped at 25% above entry, or after 72 hours. This is not simply the prior candle's high. [QUEUE](../QUEUE.md), rows 48 and 49, records the actual US access barrier and the watcher; it does not set a minimum number of future mid-cap listings that would unlock a replay.
+- A34 CORRECTED, MEASURED/STATED: [Doc 39](39_leverage_replay_tm03.md), What it shows. Every model with a positive carried result at 1x had a negative carried result at 5x. It is not true that every increase in leverage multiplied every loss: the carried Grok row was positive and higher at 2x than 1x. The verdict is against relying on borrowed size to fix a rule, not a claim that leverage always reduces any return.
+- A35 CORRECTED, STATED: [Doc 194](194_data_source_terms_audit.md), Polymarket, Kalshi and CoinMarketCap rows, and [doc 187](187_data_sources_for_an_ai_desk.md), blocked sources. The Polymarket finding applies to the audited global interface and API, not a blanket ruling about every separate US product. Kalshi's Developer Agreement limits API use to a member's own trading; its distinct Data Terms expressly prohibit ML/AI use. FINRA short interest and Senate disclosures were not cleared for this project; that is not the same as proving one common AI ban across all feeds. [Doc 193](193_round_67_leveraged_crowd_as_a_signal.md) records the short, regenerating Perpys history from Oct 9, 2026 and the missing first-public funding clock.
+- A36 CORRECTED, STATED: [QUEUE](../QUEUE.md), [STATUS](../STATUS.md) and [docs 188](188_round_62_career_winners_by_mechanism.md), [192](192_round_66_crypto_hype_and_reversal.md), [193](193_round_67_leveraged_crowd_as_a_signal.md) and [197](197_idea_round_69_dated_crypto_events.md). A pre-price close can be count, coverage or synthetic power, not a loss on a priced trade. A repeated idea is not always a scored duplicate: Round 66's plain washout became Plan 76, the liquidation-timed overlay stays a separate watch problem, and cliff-unlock monitoring stays in queue 36. Depeg and ETF flow ideas do not become reachable just because a paid key exists. The original blanket labels for pre-price closes and repeats are removed.
+- A37 CORRECTED, MEASURED/STATED: [Doc 45](45_attention_feed_measured.md) found no forward link in its Wikipedia or Reddit comparisons; Google Trends requests failed, so a Trends lead is UNKNOWN, not disproved. [Doc 184](184_round_59_dated_flows_next_eight_weeks.md) distinguishes narrow public index-list watches from unavailable point-in-time history. [Doc 114](114_row95_etf_liquidation_payout_feasibility.md) found that the free payout sample is incomplete and skewed; the [queue](../QUEUE.md) separately says row 101 lacks a reliable release-time count and row 102 closed on identity coverage. These are distinct blockers, not proof dated data never exists or a single paid key reopens all of them.
