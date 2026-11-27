@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-27 00:55 UTC
+Last updated: 2026-11-27 00:58 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- Idea round 70 ([doc 199](research/199_round_70_venue_first_ideas.md), second-checked: 8 claims confirmed, 3 corrected), 2026-11-26 5:58 PM MT: started from the one venue we can use, Binance.US, instead of from papers. Seven candidates, none ready for a profit test, nothing registered. Six dropped on speed, being picked off by faster traders, too few events, or repeating a finished test. One kept as watch: Binance.US asks sitting below Bitstamp at the hour; Measurement 133's single read can answer it with no extra requests.
 - Plan 76 design stage (ledger 229), 2026-11-26 5:55 PM MT: MEASURED, 56 trades in 2020 to 2023, mean +2.15% a trade after 75 bp a side, so by the registered rule it goes on to the held-back years. Not evidence for the rule: every trade was entered in 2020 or 2023, one position was held about two and a half years under the registered wait-for-trading rule and supplies the whole gain, and without each year's best trade the mean is -2.07%. The held-back years (2024 to 2026) cannot have that wait and decide the plan, once.
 - Plan 76 count stage (ledger 229), 2026-11-26 5:53 PM MT: MEASURED on Bitstamp hourly bars for the 11 covered coins, the 5% one-hour-fall rule gave 40, 53, 41 and 33 non-overlapping signals in 2020, 2021, 2022 and 2023, enough to judge the 5% arm. No return has been read. The design stage runs next, then the held-back years once.
 - Decision page for the owner ([doc 198](research/198_what_each_unlock_would_open.md), second-checked against the repo's own records: 12 claims confirmed, 22 corrected, 3 not found), 2026-11-26 5:43 PM MT: of the things only he can change, written Coinbase consent is the one that opens real work (finishing time machine TM07 from week 8, new cards on the largest US venue); a private repo does not cure the Alpaca or GitHub terms problems; a futures or margin account does not make the Upbit listing short tradable from the US (1 of 205 notices in 2024 to 2026 had a coin a US account could short at the time) and no short idea has cleared US futures costs; paid data and more capital add no tested edge at this size.
