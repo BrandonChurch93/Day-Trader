@@ -487,6 +487,7 @@ Working papers.
 | `research_rig/COUNT_55_cef_rights_offerings.md`, `research_rig/count_55.py`, `research_rig/count_55_events.csv` | Queue 55 and ledger 212: price-blind SEC count of US closed-end fund rights offerings 2016 to 2026, the per-event table with filing links (no prices), and the doc 117 screen on published figures | RECORD |
 | `research_rig/COUNT_107_dividend_month_coverage.md`, `research_rig/count_107.py` | Queue 107 and ledger 209: price-blind point-in-time SPY roster, seeded draw, regular cash ex-date counts and closure; raw data off-repo | RECORD |
 | `research_rig/COUNT_118_pre_earnings_reversal.md` | Queue 118: price-blind count of S&P 100 earnings report times 2016 to 2021 from SEC 8-K Item 2.02, date forecast and advance-notice checks, power sum; verdict close before prices | RECORD |
+| `research_rig/count_150_apify_store.py` | Queue 150 and ledger 240: one census of the public Apify Store listing (paid Actors, 30-day users, publisher concentration) with marks fixed before the run; raw rows stay off the repo | CURRENT. `run` is once only; `report` reads the private file |
 | `research_rig/count_118_pre_earnings.py` | Queue 118 counting script: NYSE calendar, report timing, dedupe, mechanical date forecast; raw data off-repo | RECORD |
 | `research_rig/count_118_fetch_notice.py` | Queue 118 advance-notice sample: reads 8-K Items 7.01/8.01 and prior releases for 60 seeded reports | RECORD |
 | `research_rig/count_118_write_doc.py` | Queue 118 doc writer: all figures in the count doc come from this script | RECORD |

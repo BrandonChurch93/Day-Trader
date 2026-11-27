@@ -1911,3 +1911,19 @@ measure_134:
   status: STATED
   note: Ledger 234. Inherit the prior measurement's roster, duration, sizes, fees, BTC control and decision line, not its timing or results.
   source: docs/research/202_measurement_134_binance_us_cost.md
+
+count_150_apify_store:
+  value:
+    ledger_row: 240
+    endpoint: "https://api.apify.com/v2/store"
+    page_size: 1000
+    max_pages: 200
+    seconds_between_requests: 2
+    user_agent: "day-trader-research-count/1 (one listing census)"
+    private_dir: /home/user/workspace/rig/data/count_150
+    users_floor: 10
+    top_publishers: 100
+    mark_share_min: 0.20
+    mark_publisher_median_min: 5
+    mark_top_share_max: 0.80
+  why: "Queue 150, ledger 240. One census of the public Apify Store listing, fixed before the run. A paid Actor is one whose pricing model is set and is not FREE. The store counts as bringing users to ordinary publishers only if all three marks are met: at least 20% of paid Actors had 10 or more active users in the last 30 days; the median publisher with a paid Actor had 5 or more 30-day users summed over its paid Actors; the top 100 publishers held at most 80% of those users. Users are not payers and not dollars."
