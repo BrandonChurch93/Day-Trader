@@ -1253,6 +1253,16 @@ forward_e12:
   note: Ledger 230. Execution and stopping settings inherited; frozen dip-buy rules use Binance.US closed USD candles only.
   source: practice/traders/E12_dip_buy_binance_us.md
 
+forward_e13:
+  value:
+    operations_ref: forward_e10
+    rule_source_sha256: ec9b270eb40d71c6ced5fb421d4b7fd908f5332a58984410ff6ef65af804c6d7
+    depth_limit: 100
+    response_max_bytes: 1048576
+  status: builder
+  note: Ledger 231. Reuse the E10 timing and bankroll keys, its frozen Plan 75 rule key and the separate Binance.US fee key. One USD venue, no keys or orders; audit and committed start authorization before collection.
+  source: practice/traders/E13_coin_trend_ratchet_binance_us.md
+
 replay_75_plan:
   value:
     repeat: ["2020-01-01", "2024-01-01"]
