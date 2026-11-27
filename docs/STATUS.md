@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-27 22:15 UTC
+Last updated: 2026-11-27 22:18 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
