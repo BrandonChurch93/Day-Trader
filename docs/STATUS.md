@@ -1,15 +1,15 @@
 # Status
 
-Last updated: 2026-11-27 00:00 UTC
+Last updated: 2026-11-27 00:01 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
 ## Where things stand
 
 - Passed: [45 scored tests, four counted passes](research/95_where_we_stand_after_32_tests.md). [Replay 25, TLT at month-end](research/69_replay_25_treasury_month_end.md) and [Replay 48, muni fund January rebound](research/103_replay_48_muni_cef_january.md) are reachable with a US $500 account. [Plan 75, coin trends](research/181_plan_75_heldback_result.md) is reachable in principle but tested on a proxy feed: thin, pretend-money forward card only. [Replay 20, Upbit listing short](research/71_replay_20_upbit_listing_short.md) is not US-reachable. None clears a real-money trade.
-- In work (2026-11-26 2:32 PM MT): Plan 75, a coin trend rule with a stop that only moves up, met its four marks on the one held-back run (ledger 225, result below); its only reward is practice card E10, a forward log on live US venue quotes with pretend money, live since 2026-11-26 2:52 PM MT on Coinbase and Binance.US quotes. Measurement 132 (ledger 227), the hourly cost of a small trade on both venues, is live since 2026-11-26 2:56 PM MT and reads out after 2026-12-26. Practice card E11 (ledger 228), card E09's dip-buy rules priced on Binance.US order books at a pretend $250 a trade, is live since 2026-11-26 3:43 PM MT; it is the same idea as E09 and counts once with it. Plan 74, two stock swing cards judged per signal (ledger 226), cleared its dead-company coverage line at 0.909 and its design inputs for 2016 to 2021 are being built by the data custodian. Time machine TM07 is in week 7 of 20. Idea round 57 looks at trading cost as the binding limit.
+- In work (2026-11-26 5:01 PM MT): the crypto forward loggers that read Coinbase data (E06, E09, E10, E11, Measurement 132) were stopped on 2026-11-26 at 4:47 PM MT because Coinbase's market data terms bar this use without written consent. E09, E10, E11 and Measurement 132 are closed unjudged and unread. Their replacements on Binance.US data only are registered and being built: card E12 (dip-buy rules, ledger 230), card E13 (the Plan 75 trend rule, ledger 231) and Measurement 133 (hourly cost of a small trade, ledger 232); no quote has been read. Time machine TM07 is on hold after week 8 round one of 20 for the same reason (ledger 198); its weekly results stay unread. Plan 76 (ledger 229), buying a coin after a one-hour fall of 5% or more and holding 24 hours at 75 bp a side, is built and in independent audit; no price has been read. Plan 74, two stock swing cards judged per signal (ledger 226), has its design inputs for 2016 to 2021 being built by the data custodian. The news-reading time machine TM09 passed its fourth rehearsal on made-up data; a real run is not authorized. Crypto is the main track for new ideas by the owner's direction of 2026-11-26.
 - Gated work: Plan 63 stopped before opening prices; its code is being rebuilt to check vendor evidence itself and needs a fresh placebo projection approval. Plan 64 has approval to pull placebo ranges only, sealed and undecoded (ledger 207); decoding and projection are not approved. Replay 11's held-back score waits on exit prices.
-- Owner: [nothing in current work waits on him](#waiting-on-the-owner). No real-money account, purchases or real trades.
+- Owner: [two decisions wait on him](#waiting-on-the-owner): whether to ask Coinbase for written consent, and what to do with Coinbase-based figures already in the public repo. No real-money account, purchases or real trades.
 
 ## Latest results
 
@@ -341,7 +341,10 @@ Only what someone using the tools needs to know. The longer account of each slip
 
 ## Waiting on the owner
 
-Nothing waits on him today.
+Asked 2026-11-26 5:02 PM MT, no rush:
+
+- Whether to ask Coinbase for written consent to use its market data in this project. Without it, the time machine study TM07 stays stopped at week 8 or starts again from zero on another venue's prices as a new study.
+- What to do with Coinbase-based figures already in the public repo (the Plan 73 result and the short logs of E09, E10, E11 and Measurement 132).
 
 Real money, and the limits for it, are his when that day comes (`docs/DECISIONS.md`, "Not decided yet").
 
