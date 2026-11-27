@@ -1,6 +1,6 @@
 # E15: the live desk, scouts propose and code decides
 
-STATED. Pretend money, forward in real time, Binance.US public data only. There is no account, no key, no real order and no compounding. The plan is `practice/PLAN_E15_live_desk_DRAFT.md`, and the lead agent's rulings of 2026-11-27 are the spec. The code is `practice/desk_e15.py` and the settings are `forward_e15` and `practice_e15_*` in `config/thresholds.yaml`. The ledger row is written by the lead. Its number goes in `forward_e15.ledger_row`.
+STATED. Pretend money, forward in real time, Binance.US public data only. There is no account, no key, no real order and no compounding. The plan is `practice/PLAN_E15_live_desk_DRAFT.md`, and the lead agent's rulings of 2026-11-27 are the spec. The code is `practice/desk_e15.py` and the settings are `forward_e15` and `practice_e15_*` in `config/thresholds.yaml`. The ledger row is 237, written by the lead (`forward_e15.ledger_row`).
 
 ## What runs
 
@@ -57,7 +57,7 @@ Card F, BTC-shock alt fade (rule 70-102, with E12).
 Card S, scout scan.
 
 - Scans at 00:20, 04:20, 08:20, 12:20, 16:20 and 20:20 UTC (`cards.S.scan_hours`).
-- Qualifiers: coins whose pair is TRADING, that have 24 closed hours, and whose walked $250 buy cost at the scan (before fee, against the midpoint) is at or below `cards.S.cost_limit_bp`. That limit is fixed by the lead after Measurement 135. While it is null, start and every wake refuse.
+- Qualifiers: coins whose pair is TRADING, that have 24 closed hours, and whose walked $250 buy cost at the scan (before fee, against the midpoint) is at or below `cards.S.cost_limit_bp`, 25 bp per side. The lead fixed it after Measurement 135 (ledger 236). That measurement covered two calm night hours. MEASURED: 15 of 20 coins were at or below 25 bp per side at $250, and the median across coins was 5.4 bp. 25 bp is also Measurement 134's line.
 - Lines:
   - scout_small: the small model.
   - scout_second: `claude_sonnet_5_5`.

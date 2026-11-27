@@ -1274,7 +1274,7 @@ forward_e14:
 
 forward_e15:
   value:
-    ledger_row: null
+    ledger_row: 237
     fee_ref: forward_e10_binance_us
     not_before_utc: "2026-11-28T01:00:00Z"
     window_open_s: 1200
@@ -1298,9 +1298,9 @@ forward_e15:
     cards:
       W: {coins: [AAVE, ADA, BCH, BTC, ETH, HBAR, LINK, LTC, SHIB, XLM, XRP], fall: 0.05, hold_hours: 24, max_open: 1, judging_count: 60, judging_floor: 30, last_wake_utc: "2028-11-30T23:00:00Z"}
       F: {lag: 2, threshold: 0.015, multiple: 2.0, hold_hours: 2, max_open: 1, judging_count: 150, judging_floor: 60, last_wake_utc: "2028-11-30T23:00:00Z"}
-      S: {scan_hours: [0, 4, 8, 12, 16, 20], cost_limit_bp: null, hold_hours: 24, max_open: 6, judging_count: 240, judging_floor: 120, last_wake_utc: "2027-03-31T20:00:00Z"}
+      S: {scan_hours: [0, 4, 8, 12, 16, 20], cost_limit_bp: 25, hold_hours: 24, max_open: 6, judging_count: 240, judging_floor: 120, last_wake_utc: "2027-03-31T20:00:00Z"}
   status: STATED
-  note: Card E15, the live desk (lead agent's rulings of 2026-11-27). ledger_row and cards.S.cost_limit_bp are fixed by the lead before start; start and every wake refuse while either is null. A changed model, prompt or setting after start is a new attempt.
+  note: Card E15, the live desk (lead agent's rulings of 2026-11-27), ledger row 237. cards.S.cost_limit_bp 25 bp per side at $250, fixed by the lead after Measurement 135 (ledger 236), MEASURED over two calm night hours with 15 of 20 coins at or below 25 bp and a median of 5.4 bp across coins; 25 bp is also Measurement 134's line. A changed model, prompt or setting after start is a new attempt.
   source: practice/traders/E15_live_desk.md
 
 practice_e15_max_age_minutes:

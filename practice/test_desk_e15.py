@@ -161,8 +161,15 @@ def test_first_wake_respects_not_before():
 
 def test_unset_required_settings_refuse():
     cfg = d.settings()
-    with pytest.raises(bx.Refuse):
-        d.required(cfg)
+    d.required(cfg)                           # the registered values (ledger row 237, S limit 25 bp) pass
+    assert cfg["ledger_row"] == 237 and cfg["cards"]["S"]["cost_limit_bp"] == 25
+    no_row = json.loads(json.dumps(cfg))
+    no_row["ledger_row"] = None
+    no_limit = json.loads(json.dumps(cfg))
+    no_limit["cards"]["S"]["cost_limit_bp"] = None
+    for bad in (no_row, no_limit):
+        with pytest.raises(bx.Refuse):
+            d.required(bad)
 
 
 # ------------------------------------------------------------------ card W, pairing and the gate
