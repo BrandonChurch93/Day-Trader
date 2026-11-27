@@ -23,6 +23,11 @@ from urllib import error, parse, request
 import numpy as np
 import yaml
 
+if __package__:
+    from . import venue_binance_us as bx
+else:
+    import venue_binance_us as bx
+
 ROOT = Path(__file__).resolve().parents[1]
 OFF = Path('/home/user/workspace/rig/data/forward_e13')
 PUBLIC = ROOT / 'practice/forward/E13_log.json'
@@ -30,7 +35,7 @@ CARD = 'practice/traders/E13_coin_trend_ratchet_binance_us.md'
 RULE_SOURCE = 'research_rig/score_75.py'
 CONFIG = 'config/thresholds.yaml'
 LEDGER = 'research_rig/TRIAL_LEDGER.md'
-PINNED = (CARD, 'practice/forward_e13.py', RULE_SOURCE, CONFIG)
+PINNED = (CARD, 'practice/forward_e13.py', RULE_SOURCE, CONFIG, 'practice/venue_binance_us.py')
 HOST = 'https://api.binance.us'
 ENDPOINTS = frozenset(('/api/v3/exchangeInfo', '/api/v3/klines', '/api/v3/depth'))
 UTC = timezone.utc
@@ -54,7 +59,7 @@ def settings():
     spec = raw['forward_e13']['value']
     inherited = raw[spec['operations_ref']]['value']
     used = ('bankroll_usd', 'day_s', 'wake_delay_s', 'quote_offsets_s', 'score_days', 'request_gap_s',
-            'timeout_s', 'request_attempts', 'candle_page_days', 'rate_backoff_s', 'rate_backoff_cap_s', 'reference_coin')
+            'timeout_s', 'request_attempts', 'candle_page_days', 'reference_coin')
     return ({k: inherited[k] for k in used} | spec, raw[inherited['rule_key']]['value'],
             raw[inherited['second_fee_key']]['value'])
 
@@ -85,7 +90,7 @@ def frozen(pin):
     need(all(play.count(s) == 1 for s in seams), 'frozen execution seam changed')
     signature, left, right, charge, cash, terminal = seams
     lo, hi = play.index(left), play.index(right)
-    play = play[:lo] + '        delta, net, charges = execution(d, delta, px, balance, queued)\n' + play[hi:]
+    play = play[:lo] + '        delta, net, charges = execution(d, delta, px, balance, queued, wanted, goal)\n' + play[hi:]
     play = (play.replace(signature, '*, execution, mode="trend", override=None, shift=0):')
             .replace(charge, 'float(charges[j])').replace(cash, 'balance -= net.sum() + charges.sum()')
             .replace(terminal, '        if False:  # no synthetic terminal sale'))
@@ -117,28 +122,61 @@ def digest(value):
     return sha256(blob(value).encode()).hexdigest()
 
 
-def pins():
-    return {path: sha256((ROOT / path).read_bytes()).hexdigest() for path in PINNED}
+def pins(commit=None):
+    result = {}
+    for path in PINNED:
+        raw = git('show', commit + ':' + path) if commit else (ROOT / path).read_bytes()
+        if path == CONFIG:
+            cfg = yaml.safe_load(raw)
+            e13 = cfg['forward_e13']['value']
+            ops = cfg[e13['operations_ref']]['value']
+            keep = ('forward_e13', e13['operations_ref'], ops['rule_key'], ops['second_fee_key'], 'binance_us_gate')
+            raw = blob({key: cfg[key] for key in keep}).encode()
+        result[path] = sha256(raw).hexdigest()
+    return result
 
 
 def git(*args):
-    offline = os.environ | {'GIT_ALLOW_PROTOCOL': '', 'GIT_NO_LAZY_FETCH': '1', 'GIT_TERMINAL_PROMPT': '0'}
-    return subprocess.check_output(('git', '-c', 'core.fsmonitor=false', *args), cwd=ROOT, env=offline, stderr=subprocess.DEVNULL)
+    offline = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+    offline.update(GIT_ALLOW_PROTOCOL='', GIT_NO_LAZY_FETCH='1', GIT_TERMINAL_PROMPT='0',
+                   GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL='/dev/null')
+    try:
+        return subprocess.check_output(('git', '--no-replace-objects', '-c', 'core.fsmonitor=false', *args),
+                                       cwd=ROOT, env=offline, stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        raise Refuse('local Git approval or release unavailable') from None
+
+
+def ledger_value(ledger, label, pattern):
+    token = rb'`' + label.encode() + rb'=(' + pattern + rb')`'
+    rows = [line for line in ledger.split(b'\n') if line.startswith(b'| 231 |')]
+    found = re.findall(token, ledger)
+    need(len(rows) == 1 and rows[0].endswith(b' |') and len(found) == 1
+         and re.findall(token, rows[0]) == found, 'lead go missing')
+    return found[0].decode()
 
 
 def ledger_go(ledger, label, value):
     need(label in {'E13_START', 'E13_SCORE_GO'}, 'invalid authorization type')
-    need(isinstance(value, str) and re.fullmatch(r'[a-z0-9-]{1,64}', value), 'lead go missing')
-    token = rb'`' + label.encode() + rb'=([a-z0-9-]{1,64})`'
-    rows = [line for line in ledger.split(b'\n') if line.startswith(b'| 231 |')]
-    need(len(rows) == 1 and rows[0].endswith(b' |') and re.findall(token, ledger) == [value.encode()]
-         and re.findall(token, rows[0]) == [value.encode()], 'lead go missing')
+    need(value is not None and ledger_value(ledger, label, rb'[a-z0-9-]{1,64}') == value, 'lead go missing')
 
 
-def committed_go(label, value):
-    head = git('rev-parse', 'HEAD').decode().strip()
-    ledger_go(git('show', head + ':' + LEDGER), label, value)
-    return head
+def committed_go(label, value, expected_release=None, expected_generation=None):
+    need(Path(os.fsdecode(git('rev-parse', '--show-toplevel').strip())).resolve() == ROOT, 'unexpected Git checkout')
+    main = git('rev-parse', '--verify', 'refs/heads/main^{commit}').decode().strip()
+    ledger = git('show', main + ':' + LEDGER)
+    ledger_go(ledger, label, value)
+    release = ledger_value(ledger, 'E13_RELEASE', rb'[0-9a-f]{40}')
+    if label == 'E13_START' and expected_generation:
+        generation = ledger_value(ledger, 'E13_START_GENERATION', rb'[0-9]+')
+        need(generation == str(expected_generation), 'lead go is for a different venue generation')
+    if expected_release is not None:
+        need(release == expected_release, 'audited release changed')
+    git('merge-base', '--is-ancestor', release, main)
+    need(not git('status', '--porcelain', '--', LEDGER, *PINNED), 'freeze files differ from HEAD')
+    need(pins() == pins(release) == pins(main) == pins('HEAD'), 'audited release pins differ')
+    need(git('rev-parse', '--verify', 'refs/heads/main^{commit}').decode().strip() == main, 'committed main moved')
+    return main, release
 
 
 @contextmanager
@@ -156,6 +194,8 @@ def private(folder, create=False):
                 os.mkdir(folder.name, mode=0o700, dir_fd=fd)
             except FileExistsError:
                 pass
+            else:
+                os.fsync(fd)
         child = os.open(folder.name, flags, dir_fd=fd)
         os.close(fd)
         fd = child
@@ -188,19 +228,32 @@ def lock(fd, name, blocking=False):
         yield
 
 
-def read_log(fd):
+def read_log(fd, recover=False):
     try:
-        with private_file(fd, 'log.jsonl', os.O_RDONLY) as file, os.fdopen(os.dup(file)) as inp:
+        with private_file(fd, 'tip', os.O_RDONLY) as tip:
+            expected = os.read(tip, 100).decode()
+        with private_file(fd, 'log.jsonl', os.O_RDWR if recover else os.O_RDONLY) as file, os.fdopen(os.dup(file), 'rb') as inp:
             rows, prior = [], None
-            for line in inp:
+            while line := inp.readline():
                 obj = json.loads(line)
                 current = obj.pop('sha256')
-                need(line.endswith('\n') and obj['prev'] == prior and digest(obj) == current, 'log chain broken')
+                need(line.endswith(b'\n') and obj['prev'] == prior and digest(obj) == current, 'log chain broken')
                 rows.append(obj | {'sha256': current})
                 prior = current
-            with private_file(fd, 'tip', os.O_RDONLY) as tip:
-                need(os.read(tip, 100).decode() == (prior or '') + '\n', 'log tip mismatch')
-            return rows
+                if current + '\n' == expected:
+                    offset = inp.tell()
+                    if offset != os.fstat(file).st_size:
+                        need(recover, 'uncommitted log tail')
+                        os.ftruncate(file, offset)
+                        os.fsync(file)
+                    if recover:
+                        try:
+                            os.unlink('tip.tmp', dir_fd=fd)
+                        except FileNotFoundError:
+                            pass
+                        os.fsync(fd)
+                    return rows
+            raise Refuse('log tip mismatch')
     except FileNotFoundError:
         for name in ('log.jsonl', 'tip', 'tip.tmp'):
             try:
@@ -233,18 +286,37 @@ def append(fd, rows, row):
 def checked(rows):
     need(rows and rows[0]['kind'] == 'header', 'log not started')
     need(rows[0]['pins'] == pins(), 'frozen files changed')
+    gen = rows[0].get('venue_generation')
+    need(type(gen) is int and gen >= 0, 'invalid private venue generation')
     return rows[0]
 
 
-def start(now, go, folder=OFF):
-    need(not git('status', '--porcelain', '--', *PINNED, LEDGER), 'freeze files differ from HEAD')
-    commit = committed_go('E13_START', go)
+def claim_start_id(folder, go):
+    custody = folder.with_name(folder.name + '_authorizations')
+    name = 'start-' + sha256(go.encode()).hexdigest()
+    with private(custody, create=True) as fd, lock(fd, 'writer.lock', blocking=True):
+        try:
+            with private_file(fd, name, os.O_WRONLY | os.O_CREAT | os.O_EXCL) as file:
+                os.fsync(file)
+            os.fsync(fd)
+        except FileExistsError:
+            raise Refuse('start ID was already used') from None
+
+
+def start(now, go, folder=OFF, gate=None):
+    commit, release = committed_go('E13_START', go)
+    generation = venue_gate(gate).check_start(reject_cooldown=True)
+    need(type(generation) is int and generation >= 0, 'invalid shared venue generation')
+    if generation:
+        commit, release = committed_go('E13_START', go, release, generation)
     f, _, _ = settings()
     frozen(f['rule_source_sha256'])
     with private(folder, create=True) as fd, lock(fd, 'writer.lock'):
         rows = read_log(fd)
         need(not rows, 'log already started')
-        return append(fd, rows, dict(kind='header', pins=pins(), freeze=commit, authorization=go,
+        claim_start_id(folder, go)
+        return append(fd, rows, dict(kind='header', pins=pins(), freeze=commit, release=release, authorization=go,
+                                     venue_generation=generation,
                                      first=iso(midnight(now) + timedelta(days=1)), started=iso(now)))
 
 
@@ -260,39 +332,81 @@ def positive(value):
 
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise Blocked('public endpoint redirected')
+        return None  # Let urllib report the known 3xx without following it.
+
+
+def venue_gate(gate=None, clock=now_utc):
+    if gate is not None:
+        return gate
+    spec = yaml.safe_load((ROOT / CONFIG).read_bytes())['binance_us_gate']['value']
+    return bx.Gate(cooldown_path=Path(spec['cooldown_path']), clock=clock)
 
 
 class BinanceUS:
-    def __init__(self, f):
+    def __init__(self, f, gate=None, clock=now_utc, generation=0):
         self.f, self.last = f, -math.inf
+        self.gate, self.clock, self.deadline = venue_gate(gate, clock), clock, None
+        self.generation = generation
         self.opener = request.build_opener(request.ProxyHandler({}), NoRedirect())
 
     def get(self, endpoint, **query):
         need(endpoint in ENDPOINTS, 'invalid public endpoint')
         url = HOST + endpoint + ('?' + parse.urlencode(query) if query else '')
+        req = request.Request(url, headers={'User-Agent': 'e13-forward/1', 'Accept': 'application/json'}, method='GET')
         for attempt in range(self.f['request_attempts']):
-            time.sleep(max(0, self.last + self.f['request_gap_s'] - time.monotonic()))
-            self.last = time.monotonic()
+            pause = max(0, self.last + self.f['request_gap_s'] - time.monotonic())
+            if self.deadline is not None and self.clock() + timedelta(seconds=pause) >= self.deadline:
+                raise bx.Failure('wake_window_elapsed')
+            if pause:
+                time.sleep(pause)
             delay = 2 ** attempt
             try:
-                req = request.Request(url, headers={'User-Agent': 'e13-forward/1', 'Accept': 'application/json'}, method='GET')
-                with self.opener.open(req, timeout=self.f['timeout_s']) as inp:
-                    data = inp.read(self.f['response_max_bytes'] + 1)
+                with self.gate.attempt(self.deadline, generation=self.generation):
+                    self.last = time.monotonic()
+                    timeout = self.f['timeout_s']
+                    if self.deadline is not None:
+                        timeout = min(timeout, (self.deadline - self.clock()).total_seconds())
+                    if timeout <= 0:
+                        self.gate.cancel_unsent()
+                        raise bx.Failure('wake_window_elapsed')
+                    replied = False
+                    try:
+                        with bx.wall_budget(timeout, timeout < self.f['timeout_s']):
+                            inp = self.opener.open(req, timeout=timeout)
+                            try:
+                                self.gate.reply_received()
+                                replied = True
+                                data = inp.read(self.f['response_max_bytes'] + 1)
+                            finally:
+                                inp.close()
+                    except error.HTTPError as exc:
+                        try:
+                            self.gate.http_error(exc.code, exc.headers.get('Retry-After') if exc.headers else None)
+                            raise
+                        finally:
+                            exc.close()
+                    except OSError as exc:
+                        if not replied:
+                            raise Blocked('unknown HTTP status; shared in-flight gate retained') from None
+                        if self.deadline is not None and self.clock() >= self.deadline:
+                            raise bx.Failure('wake_window_elapsed') from None
+                        raise Refuse('public response body unavailable') from exc
+                if self.deadline is not None and self.clock() >= self.deadline:
+                    raise bx.Failure('wake_window_elapsed')
                 need(len(data) <= self.f['response_max_bytes'], 'public response too large')
                 return json.loads(data)
             except error.HTTPError as exc:
-                exc.close()
-                if exc.code in (401, 403, 418, 451):
-                    raise Blocked(f'venue refused HTTP {exc.code}') from None
-                if exc.code == 429:
-                    delay = max(delay * self.f['rate_backoff_s'], positive(exc.headers.get('Retry-After')) or 0)
-                    need(delay <= self.f['rate_backoff_cap_s'], 'rate limit exceeds observation budget')
-                elif not 500 <= exc.code < 600:
+                if 300 <= exc.code < 400:
+                    raise Blocked('public endpoint redirected') from None
+                if not 500 <= exc.code < 600:
                     raise Refuse('public request refused') from None
-            except (error.URLError, OSError, ValueError):
+            except ValueError:
                 pass
+            except OSError:
+                raise Blocked('shared venue gate I/O failed; refusing further requests') from None
             if attempt + 1 < self.f['request_attempts']:
+                if self.deadline is not None and self.clock() + timedelta(seconds=delay) >= self.deadline:
+                    raise bx.Failure('wake_window_elapsed')
                 time.sleep(delay)
         raise Refuse('public page unavailable')
 
@@ -435,23 +549,40 @@ def make_tape(log, f, rule):
             active[d, j] = market if not row['outage'] else active[d - 1, j]
             if d == prefix:
                 active[d - 1, j] = active[d, j]
-            snapshot = row['depth'].get(coin)
-            # The prior close is only an indicative sizing mark if this wake has no book.
-            opens[d, j] = midpoint(snapshot) if snapshot else closes[d - 1, j]
-            sale[d, j] = bool(market and snapshot)
+            # Fix the decision on closed prices as known at this wake. An older
+            # mark lets a queued exit be sized; the core still requires d-1 for buys.
+            known = closes[:d, j]
+            finite = known[np.isfinite(known)]
+            opens[d, j] = finite[-1] if finite.size else np.nan
+            sale[d, j] = market
     return SimpleNamespace(days=days, names=tuple(names), opens=opens, closes=closes, eligible=active, sell=sale), rows, prefix
 
 
-def execution(tape, rows, size, f, fees, details):
+def execution(tape, rows, size, fees, details, label, decision_only):
     names = tape.names
 
-    def execute(d, delta, px, cash, queued):
+    def execute(d, delta, px, cash, queued, wanted, goal):
         row = rows[d]
-        result = {'attempts': {}, 'fills': [], 'queued_sells': []}
+        result = {'attempts': {}, 'fills': [], 'queued_sells': [], 'intent': {}}
         details[d] = result
         if row.get('kind') != 'wake':
             return np.zeros_like(delta), np.zeros(len(px)), np.zeros(len(px))
-        sells, buys = np.minimum(delta, 0), np.maximum(delta, 0)
+        fixed = delta.copy()
+        for j, coin in enumerate(names):
+            if not np.any(fixed[j]):
+                continue
+            ref = float(fixed[j].sum())
+            side = 'buy' if ref > 1e-14 else 'sell' if ref < -1e-14 else 'internal'
+            result['intent'][coin] = {'side': side, 'sleeve_target_weights': wanted[j].tolist(),
+                                      'sleeve_target_units': (goal[j] * size).tolist(),
+                                      'sleeve_targets_delta': fixed[j].tolist(),
+                                      'closed_mark': float(px[j]), 'units': abs(ref) * size / float(px[j])}
+            if side == 'buy' and coin in row['candle_failures']:
+                result['intent'][coin]['side'] = 'void_buy'
+                fixed[j] = 0
+        if decision_only == d:
+            return np.zeros_like(delta), np.zeros(len(px)), np.zeros(len(px))
+        need(row['intent'][label] == result['intent'], 'closed-bar intent changed on replay')
         exclude = set()
         depth = row['depth']
         state = row['states']
@@ -478,22 +609,22 @@ def execution(tape, rows, size, f, fees, details):
             result['attempts'].setdefault(names[j], []).append(reason)
             exclude.add(j)
 
-        gross_ref = delta.sum(axis=1)
+        gross_ref = fixed.sum(axis=1)
         for j in range(len(names)):
-            if not np.any(delta[j]):
-                continue
             coin = names[j]
-            book, market = depth.get(coin), state[coin]
-            if gross_ref[j] > 1e-14 and (coin in row['candle_failures'] or row['late'] or not book or not book['timely']):
-                result['attempts'].setdefault(coin, []).append('void_buy')
-                buys[j] = 0  # allow coincident net sales; never force a net buy
-            ref = (sells[j] + buys[j]).sum()
+            planned = result['intent'].get(coin)
+            if planned and planned['side'] == 'void_buy':
+                disabled(j, 'void_buy')
+            ref = gross_ref[j]
             if abs(ref) <= 1e-14:
                 continue
+            book, market = depth.get(coin), state[coin]
             if not market['market']:
                 disabled(j, 'pair_unavailable')
             elif not book:
-                disabled(j, 'book_missing')
+                disabled(j, 'book_late' if row['depth_failures'].get(coin) == 'WINDOW_ELAPSED' else 'book_missing')
+            elif not book['timely']:
+                disabled(j, 'book_late')
             elif not (market['base_min'] or market['usd_min']):
                 disabled(j, 'minimum_unknown')
             else:
@@ -502,7 +633,7 @@ def execution(tape, rows, size, f, fees, details):
                     disabled(j, reason)
 
         def candidate(scale):
-            proposed = sells + scale * buys
+            proposed = fixed * np.where(gross_ref > 1e-14, scale, 1.)[:, None]
             for j in exclude:
                 proposed[j] = 0
             return proposed
@@ -539,9 +670,6 @@ def execution(tape, rows, size, f, fees, details):
                 if not state[coin]['market'] or not depth.get(coin) or not (state[coin]['base_min'] or state[coin]['usd_min']):
                     disabled(j, 'unplaceable_after_cash_scaling')
                     continue
-                if ref > 0 and (row['late'] or not depth[coin]['timely'] or coin in row['candle_failures']):
-                    disabled(j, 'void_buy')
-                    continue
                 adjusted, net[j], charges[j], reason = fill_at(j, ref)
                 if reason:
                     disabled(j, reason)
@@ -553,24 +681,26 @@ def execution(tape, rows, size, f, fees, details):
         for j in np.flatnonzero(net):
             coin = names[j]
             result['attempts'].setdefault(coin, []).append('filled')
-            mark = float(final[j].sum() * size)
+            units = abs(float(final[j].sum() * size / px[j]))
+            mark = math.copysign(units * midpoint(depth[coin]), net[j])
             gross, charge = float(net[j] * size), float(charges[j] * size)
             cost_bp = ((gross - mark) + charge) / abs(mark) * 10000
             result['fills'].append(dict(coin=coin, side='buy' if gross > 0 else 'sell', gross=gross, fee=charge,
-                                        quantity=abs(mark) / px[j], cost_bp=cost_bp))
+                                        quantity=units, cost_bp=cost_bp))
         result['queued_sells'] = [names[j] for j in np.flatnonzero(queued.any(axis=1) & ~(final < -1e-14).any(axis=1))]
         return final, net, charges
 
     return execute
 
 
-def run_book(log, f, rule, fees, label):
+def run_book(log, f, rule, fees, label, decision_only=False):
     core = frozen(f['rule_source_sha256'])
     tape, rows, prefix = make_tape(log, f, rule)
     inp = core.indicators(tape, rule['lookbacks'], rule, rule['vault_annual_days'])
     roster = core.calendar(tape, inp[2])
     details = {}
-    hook = execution(tape, rows, f['bankroll_usd'][label], f, fees, details)
+    hook = execution(tape, rows, f['bankroll_usd'][label], fees, details, label,
+                     len(rows) - 1 if decision_only else None)
     book = core.play(tape, 0., rule, rule['cap'], inp, roster, execution=hook)
     return tape, prefix, book, details, inp[2]
 
@@ -578,37 +708,36 @@ def run_book(log, f, rule, fees, label):
 def page(fetch, failures, key, *args):
     try:
         return fetch(key, *args)
-    except Blocked:
+    except (Blocked, bx.Blocked, bx.GateTerminal, bx.Failure, bx.Refuse):
         raise
     except (Refuse, OSError, ValueError, KeyError, TypeError):
         failures[key] = 'PAGE_UNAVAILABLE'
         return None
 
 
-def snapshots(venue, coins, wake, clock, f):
+def snapshots(venue, coins, wake, clock, deadline):
     result, failed = {}, {}
     for coin in coins:
-        if midnight(clock()) != wake:
-            failed[coin] = 'OUTSIDE_OBSERVATION_DAY'
+        if clock() >= deadline:
+            failed[coin] = 'WINDOW_ELAPSED'
             continue
         book = page(venue.book, failed, coin)
         received = clock()
-        seconds = (received - wake).total_seconds()
-        if book and 0 <= seconds < f['day_s']:
-            result[coin] = book | {'received': iso(received), 'timely': seconds <= f['quote_offsets_s'][-1]}
+        if book and wake <= received < deadline:
+            result[coin] = book | {'received': iso(received), 'timely': True}
         else:
-            failed.setdefault(coin, 'DEPTH_UNAVAILABLE')
+            failed.setdefault(coin, 'WINDOW_ELAPSED' if received >= deadline else 'DEPTH_UNAVAILABLE')
     return result, failed
 
 
-def capture(log, wake, observed, venue, clock, f, rule, fees, closing):
+def capture(fd, log, wake, observed, venue, clock, f, rule, fees, closing, deadline):
     first = clock_at(log[0]['first'])
     before = [row for row in log if row['kind'] == 'wake']
     names = frozen(f['rule_source_sha256']).NAMES
     roster = before[0]['roster'] if before else None
     pairs = venue.products(names)
     if roster is None:
-        need(wake == first and 0 <= (clock() - midnight(first)).total_seconds() <= f['quote_offsets_s'][-1] and pairs,
+        need(wake == first and midnight(first) <= clock() < deadline and pairs,
              'first wake roster unavailable')
         roster = [coin for coin in names if coin in pairs]
         need(roster, 'first wake roster unavailable')
@@ -624,14 +753,30 @@ def capture(log, wake, observed, venue, clock, f, rule, fees, closing):
             continue
         cursor = since
         while cursor < wake:
+            if clock() >= deadline:
+                raise bx.Failure('wake_window_elapsed')
             until = min(wake, cursor + timedelta(days=f['candle_page_days']))
             bars = page(venue.candles, row['candle_failures'], coin, cursor, until)
+            if clock() >= deadline:
+                raise bx.Failure('wake_window_elapsed')
             if bars is not None:
                 row['candles'].setdefault(coin, {}).update(bars)
             cursor = until
     if not closing:
-        row['depth'], row['depth_failures'] = snapshots(venue, [c for c in roster if states[c]['market']], wake, clock, f)
-        row['late'] = not any(q['timely'] for q in row['depth'].values())
+        intents, selected = {}, set()
+        for label in f['bankroll_usd']:
+            tape, _, _, details, warm = run_book(log + [row], f, rule, fees, label, decision_only=True)
+            intents[label] = details[len(tape.days) - 1]['intent']
+            selected.update(c for c, intent in intents[label].items() if intent['side'] in ('buy', 'sell'))
+        if not before and f['reference_coin'] in roster:
+            selected.add(f['reference_coin'])  # first-wake benchmark only; cannot create a trade
+        order_coins = [c for c in roster if c in selected and states[c]['market']]
+        decision = append(fd, log, dict(kind='decision', wake=iso(wake), fixed=iso(clock()), intent=intents,
+                                        roster=roster, order_coins=order_coins, candle_sha256=digest(row['candles'])))
+        row['intent'] = decision['intent']
+        row['decision_sha256'] = decision['sha256']
+        row['depth'], row['depth_failures'] = snapshots(venue, order_coins, wake, clock, deadline)
+        row['late'] = any(reason == 'WINDOW_ELAPSED' for reason in row['depth_failures'].values())
         row['books'], follow = {}, set()
         for label in f['bankroll_usd']:
             tape, _, _, details, warm = run_book(log + [row], f, rule, fees, label)
@@ -646,40 +791,57 @@ def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep):
     f, rule, fees = settings()
     with private(folder) as fd, lock(fd, 'observer.lock'):
         with lock(fd, 'writer.lock'):
-            rows = read_log(fd)
+            rows = read_log(fd, recover=True)
             header = checked(rows)
             need(not any(r['kind'] == 'blocked' for r in rows), 'venue or first wake blocked; recording stopped')
             visits = [r for r in rows if r['kind'] in MARKET_ROWS]
-            if visits and visits[-1]['kind'] == 'close':
-                return None
             first = clock_at(header['first'])
             end = first + timedelta(days=f['score_days'])
+            claims = [r for r in rows if r['kind'] == 'claim']
+            if claims and (not visits or claims[-1]['wake'] > visits[-1]['wake']):
+                unfinished = claims[-1]['wake']
+                if not any(r['kind'] == 'wake' for r in visits):
+                    append(fd, rows, dict(kind='blocked', wake=unfinished, reason='FIRST_WAKE_INTERRUPTED'))
+                    raise Blocked('first wake interrupted; roster not frozen')
+                return append(fd, rows, dict(kind='void', wake=unfinished, reason='WAKE_INTERRUPTED'))
+            if visits and clock_at(visits[-1]['wake']) >= end:
+                return None
             wake = min(midnight(now), end)
+            deadline = midnight(wake) + timedelta(seconds=f['quote_offsets_s'][-1])
             next_day = clock_at(visits[-1]['wake']) + timedelta(days=1) if visits else first
             if wake < next_day or now < wake + timedelta(seconds=f['wake_delay_s']):
                 return None
-            if not visits and (wake != first or (now - midnight(first)).total_seconds() > f['quote_offsets_s'][-1]):
-                append(fd, rows, {'kind': 'blocked', 'reason': 'FIRST_WAKE_MISSED'})
+            if not visits and (wake != first or now >= deadline):
+                append(fd, rows, {'kind': 'blocked', 'wake': iso(first), 'reason': 'FIRST_WAKE_MISSED'})
                 raise Blocked('first wake missed; roster not frozen')
             while next_day < wake:
                 append(fd, rows, dict(kind='void', wake=iso(next_day), reason='MISSED_WAKE'))
                 next_day += timedelta(days=1)
-            # Check the original committed authorization again before constructing any client.
-            ledger_go(git('show', header['freeze'] + ':' + LEDGER), 'E13_START', header['authorization'])
+            if now >= deadline:
+                return append(fd, rows, dict(kind='void', wake=iso(wake), reason='LATE_WAKE'))
+            venue = venue if venue is not None else BinanceUS(f, clock=clock)
+            if isinstance(venue, BinanceUS):
+                venue.deadline = deadline
+                venue.generation = header['venue_generation']
+                try:
+                    preflight(venue.gate, venue.generation)
+                except (bx.GateTerminal, bx.Blocked, bx.Refuse) as exc:
+                    append(fd, rows, {'kind': 'blocked', 'wake': iso(wake), 'reason': terminal_reason(exc)})
+                    raise Blocked(str(exc)) from None
+            committed_go('E13_START', header['authorization'], header['release'], header['venue_generation'])
             frozen(f['rule_source_sha256'])
-            venue = venue if venue is not None else BinanceUS(f)
+            append(fd, rows, dict(kind='claim', wake=iso(wake), claimed=iso(clock())))
             try:
-                row = capture(rows, wake, now, venue, clock, f, rule, fees, closing=wake == end)
-            except Blocked:
-                append(fd, rows, {'kind': 'blocked', 'reason': 'VENUE_REFUSED'})
-                raise
-            except (Refuse, OSError, ValueError, TypeError, KeyError):
+                row = capture(fd, rows, wake, now, venue, clock, f, rule, fees, closing=wake == end, deadline=deadline)
+            except (Blocked, bx.Blocked, bx.GateTerminal, bx.Refuse) as exc:
+                append(fd, rows, {'kind': 'blocked', 'wake': iso(wake), 'reason': terminal_reason(exc)})
+                raise Blocked(str(exc)) from None
+            except (Refuse, bx.Failure, OSError, ValueError, TypeError, KeyError) as exc:
+                reason = str(getattr(exc, 'reason', '')).upper() if isinstance(exc, bx.Failure) else 'WAKE_UNAVAILABLE'
                 if not any(r['kind'] == 'wake' for r in visits):
-                    append(fd, rows, {'kind': 'blocked', 'reason': 'FIRST_WAKE_UNAVAILABLE'})
+                    append(fd, rows, {'kind': 'blocked', 'wake': iso(wake), 'reason': 'FIRST_WAKE_UNAVAILABLE', 'cause': reason})
                     raise Blocked('first wake roster not frozen') from None
-                if wake == end:
-                    raise Refuse('closing observation unavailable') from None
-                return append(fd, rows, dict(kind='void', wake=iso(wake), reason='WAKE_UNAVAILABLE'))
+                return append(fd, rows, dict(kind='void', wake=iso(wake), reason=reason))
             row = append(fd, rows, row)
         for offset in f['quote_offsets_s']:
             if not row.get('follow'):
@@ -689,12 +851,17 @@ def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep):
             if delay < 0:
                 continue
             sleep(delay)
+            diagnostic_end = target + timedelta(seconds=f['timeout_s'])
+            if isinstance(venue, BinanceUS):
+                venue.deadline = diagnostic_end
             try:
-                books, failures = snapshots(venue, row['follow'], wake, clock, f)
-            except Blocked:
+                books, failures = snapshots(venue, row['follow'], wake, clock, diagnostic_end)
+            except (Blocked, bx.Blocked, bx.GateTerminal, bx.Refuse) as exc:
                 with lock(fd, 'writer.lock', blocking=True):
-                    append(fd, rows, {'kind': 'blocked', 'reason': 'VENUE_REFUSED'})
-                raise
+                    append(fd, rows, {'kind': 'blocked', 'reason': terminal_reason(exc)})
+                raise Blocked('venue stopped during diagnostics') from None
+            except bx.Failure as exc:
+                books, failures = {}, {c: str(exc.reason).upper() for c in row['follow']}
             with lock(fd, 'writer.lock', blocking=True):
                 append(fd, rows, dict(kind='follow', wake=iso(wake), offset=offset, depth=books, depth_failures=failures))
         return row
@@ -714,11 +881,18 @@ def summary(rows, f):
     result = {'card': 'E13', 'status': status, 'wakes': len(wakes),
               'missed_wakes': sum(r['kind'] == 'void' and r['reason'] == 'MISSED_WAKE' for r in rows),
               'unavailable_wakes': sum(r['kind'] == 'void' and r['reason'] == 'WAKE_UNAVAILABLE' for r in rows),
-              'late_wakes': sum(w['late'] for w in wakes), 'roster_count': len(wakes[0]['roster']) if wakes else None,
+              'interrupted_wakes': sum(r.get('reason') in ('FIRST_WAKE_INTERRUPTED', 'WAKE_INTERRUPTED') for r in rows),
+              'cooldown_void_wakes': sum('SHARED_COOLDOWN' in (r.get('reason'), r.get('cause')) for r in rows),
+              'other_gate_void_wakes': sum(r.get('reason') in ('SHARED_GATE_BUSY', 'WAKE_WINDOW_ELAPSED') or
+                                           r.get('cause') in ('SHARED_GATE_BUSY', 'WAKE_WINDOW_ELAPSED') for r in rows),
+              'late_wakes': sum(w['late'] for w in wakes) + sum(r.get('reason') == 'LATE_WAKE' for r in rows),
+              'roster_count': len(wakes[0]['roster']) if wakes else None,
               'not_ready_coin_wakes': sum(len(w['not_ready']) for w in wakes),
               'candle_page_refusals': sum(len(w['candle_failures']) for w in wakes),
               'book_unavailable_coin_wakes': sum(len(w['depth_failures']) for w in wakes),
-              'follow_observations': sum(len(r['depth']) for r in follow), 'lines': {}}
+              'follow_observations': sum(len(r['depth']) for r in follow),
+              'cooldown_void_follow_coin_slots': sum(reason == 'SHARED_COOLDOWN' for r in follow
+                                                    for reason in r['depth_failures'].values()), 'lines': {}}
     midcost = [(book['asks'][0][0] - book['bids'][0][0]) / (2 * midpoint(book)) * 10000
                for w in wakes for book in w['depth'].values()]
     result['displayed_half_spread'] = stats(midcost)
@@ -728,7 +902,7 @@ def summary(rows, f):
         result['lines'][label] = {'attempts': sum(len(entry['attempts']) for entry in entries), 'fills': len(fills),
                                   'queued_sell_coin_wakes': sum(len(entry['queued_sells']) for entry in entries),
                                   'attempt_flags': {name: sum(name in flags for entry in entries for flags in entry['attempts'].values())
-                                                    for name in ('void_buy', 'pair_unavailable', 'book_missing', 'minimum_unknown',
+                                                    for name in ('void_buy', 'pair_unavailable', 'book_missing', 'book_late', 'minimum_unknown',
                                                                  'insufficient_depth', 'under_minimum', 'over_maximum',
                                                                  'unplaceable_after_cash_scaling')},
                                   'all_in_cost_by_side': {side: stats([fill['cost_bp'] for fill in fills if fill['side'] == side])
@@ -827,15 +1001,48 @@ def score(now, go, folder=OFF):
         header = checked(rows)
         first = score_gate(rows, now, f['score_days'])
         need(go != header['authorization'], 'score needs its separate lead go')
-        authorization = committed_go('E13_SCORE_GO', go)
+        authorization, _ = committed_go('E13_SCORE_GO', go, header['release'])
         result = {'label': 'RECORD_NOT_VERDICT', 'lines': {k: private_metrics(rows, first, f, rule, fees, k) for k in f['bankroll_usd']}}
         append(fd, rows, dict(kind='score', read=iso(now), authorization_commit=authorization, result_sha256=digest(result)))
         return result
 
 
+def terminal_reason(exc):
+    return exc.reason if isinstance(exc, bx.GateTerminal) else 'VENUE_REFUSED'
+
+
+def preflight(gate, generation):
+    try:
+        gate.check_start(generation=generation)
+    except bx.Blocked:
+        raise
+    except bx.Failure as exc:
+        if exc.reason != 'shared_gate_busy':
+            raise
+        # No request in this check; the actual attempt still enforces the gate
+        # and books the slot as void if it cannot acquire the lock in time.
+
+
+def resume(folder=OFF, gate=None):
+    with private(folder) as fd, lock(fd, 'writer.lock'):
+        rows = read_log(fd, recover=True)
+        header = checked(rows)
+        need(not any(r['kind'] == 'blocked' for r in rows), 'venue or first wake blocked; recording stopped')
+        try:
+            preflight(venue_gate(gate), header['venue_generation'])
+        except (bx.GateTerminal, bx.Blocked, bx.Refuse) as exc:
+            append(fd, rows, {'kind': 'blocked', 'reason': terminal_reason(exc)})
+            raise Blocked(str(exc)) from None
+
+
 def loop(folder=OFF):
     f, _, _ = settings()
     with private(folder) as fd, lock(fd, 'loop.lock'):
+        try:
+            resume(folder)
+        except Blocked:
+            publish(folder)
+            raise
         while True:
             try:
                 row = record(now_utc(), folder=folder)
@@ -846,10 +1053,13 @@ def loop(folder=OFF):
                 publish(folder)
             with lock(fd, 'writer.lock', blocking=True):
                 rows = read_log(fd)
-                checked(rows)
-                if any(r['kind'] == 'close' for r in rows):
+                header = checked(rows)
+                end = clock_at(header['first']) + timedelta(days=f['score_days'])
+                if any(r['kind'] in MARKET_ROWS and clock_at(r['wake']) >= end for r in rows):
                     return
             t = now_utc()
+            if row and clock_at(row['wake']) < midnight(t):
+                continue
             next_wake = midnight(t) + timedelta(seconds=f['wake_delay_s'])
             if t >= next_wake:
                 next_wake += timedelta(days=1)
@@ -883,7 +1093,7 @@ def main():
             out = score(now_utc(), args.go)
         print(json.dumps(out, sort_keys=True, allow_nan=False))
         return 0
-    except (Refuse, OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as exc:
+    except (Refuse, bx.Blocked, bx.GateTerminal, bx.Failure, bx.Refuse, OSError, ValueError, KeyError, TypeError) as exc:
         print('REFUSED ' + (str(exc) if isinstance(exc, Refuse) else type(exc).__name__))
         return 2
     finally:

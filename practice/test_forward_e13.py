@@ -1,14 +1,16 @@
 """Invented candles, books, clocks, authorization and filesystem only. No scorer runs."""
 import io
 import json
+import os
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 
 from practice import forward_e13 as e
@@ -16,6 +18,7 @@ from practice import forward_e13 as e
 T = datetime(2030, 1, 6, tzinfo=e.UTC)
 START_ID = 'invented-start'
 SCORE_ID = 'invented-score'
+FAKE_RELEASE = 'b' * 40
 LEDGER = (b'| 231 | `E13_START=<id>` and `E13_SCORE_GO=<id>` are syntax only. '
           b'`E13_START=invented-start` and `E13_SCORE_GO=invented-score` |\n')
 BOOK = {'bids': [[99., 12.], [97., 100.]], 'asks': [[101., 1.], [110., 8.]]}
@@ -71,17 +74,26 @@ class Tests(unittest.TestCase):
         network = patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('no live networking in tests'))
         self.addCleanup(network.stop)
         network.start()
-        git = patch.object(e, 'git', side_effect=self.git)
-        self.addCleanup(git.stop)
-        git.start()
+        auth = patch.object(e, 'committed_go', side_effect=self.authority)
+        self.auth = auth.start()
+        self.real_authority = auth.temp_original
+        self.addCleanup(auth.stop)
         self.f, self.rule, self.fees = e.settings()
 
-    def git(self, command, *args):
-        self.assertIn(command, ('status', 'rev-parse', 'show'))
-        return {'status': b'', 'rev-parse': b'a' * 40 + b'\n', 'show': LEDGER}[command]
+    def authority(self, label, value, release=None, generation=None):
+        e.ledger_go(LEDGER, label, value)
+        self.assertIn(release, (None, FAKE_RELEASE))
+        return 'a' * 40, FAKE_RELEASE
+
+    def gate(self, clock=None):
+        directory = self.temp / 'shared'
+        gate = e.bx.Gate(cooldown_path=directory / 'cooldown.json', clock=clock or FakeClock(T))
+        if not directory.exists():
+            gate.check_start()
+        return gate
 
     def start(self):
-        return e.start(T - timedelta(days=1), START_ID, self.folder)
+        return e.start(T - timedelta(days=1), START_ID, self.folder, gate=self.gate())
 
     def observe(self, day=T, venue=None, offset=10):
         c = FakeClock(day, offset)
@@ -106,7 +118,7 @@ class Tests(unittest.TestCase):
         e.ledger_go(LEDGER, 'E13_START', START_ID)
         e.ledger_go(LEDGER, 'E13_SCORE_GO', SCORE_ID)
         with self.assertRaisesRegex(e.Refuse, 'lead go missing'):
-            e.start(T - timedelta(days=1), SCORE_ID, self.folder)
+            e.start(T - timedelta(days=1), SCORE_ID, self.folder, gate=self.gate())
         self.assertFalse(self.folder.exists())
         self.assertEqual(e.clock_at(self.start()['first']), T)
 
@@ -114,7 +126,7 @@ class Tests(unittest.TestCase):
         self.start()
         venue = Venue()
         self.assertIsNone(self.observe(venue=venue, offset=9))
-        with patch.object(e, 'git', return_value=b'| 231 | No authorization |\n'):
+        with patch.object(e, 'committed_go', side_effect=e.Refuse('lead go missing')):
             with self.assertRaisesRegex(e.Refuse, 'lead go missing'):
                 self.observe(venue=venue)
         self.assertEqual(venue.product_calls, 0)
@@ -182,9 +194,17 @@ class Tests(unittest.TestCase):
         self.start()
         venue = Venue(depth=None)
         self.observe(venue=venue)
-        row = self.observe(T + timedelta(days=1), offset=901)
+        later = T + timedelta(days=1)
+        clock = FakeClock(later)
+        venue = Venue()
+        def delayed(_):
+            clock.sleep(891)
+            return BOOK
+        with patch.object(venue, 'book', side_effect=delayed):
+            row = e.record(clock(), venue, self.folder, clock, clock.sleep)
         self.assertEqual(row['books']['main']['fills'], [])
-        self.assertIn('void_buy', row['books']['main']['attempts']['BTC'])
+        self.assertEqual(row['depth_failures']['BTC'], 'WINDOW_ELAPSED')
+        self.assertEqual(row['books']['main']['attempts']['BTC'], ['book_late'])
         venue = Venue()
         with patch.object(venue, 'candles', side_effect=TimeoutError):
             row = self.observe(T + timedelta(days=2), venue)
@@ -200,7 +220,19 @@ class Tests(unittest.TestCase):
         wait = self.observe(T + timedelta(days=1), blocked)
         self.assertEqual(wait['books']['main']['fills'], [])
         self.assertIn('BTC', wait['books']['main']['queued_sells'])
-        later = self.observe(T + timedelta(days=2), venue, offset=901)
+        clock = FakeClock(T + timedelta(days=2))
+        def at_boundary(_):
+            clock.sleep(890)
+            return BOOK
+        with patch.object(venue, 'book', side_effect=at_boundary):
+            late = e.record(clock(), venue, self.folder, clock, clock.sleep)
+        self.assertEqual(late['books']['main']['fills'], [])
+        self.assertEqual(late['books']['main']['attempts']['BTC'], ['book_late'])
+        self.assertIn('BTC', late['books']['main']['queued_sells'])
+        missed = Venue()
+        self.assertEqual(self.observe(T + timedelta(days=3), missed, offset=900)['reason'], 'LATE_WAKE')
+        self.assertEqual(missed.product_calls, 0)
+        later = self.observe(T + timedelta(days=4), venue)
         fills = later['books']['main']['fills']
         self.assertEqual([(fill['coin'], fill['side']) for fill in fills], [('BTC', 'sell')])
         self.assertAlmostEqual(fills[0]['gross'], -fills[0]['quantity'] * 99)
@@ -215,7 +247,7 @@ class Tests(unittest.TestCase):
             self.observe(T + timedelta(days=1))
 
     def test_transport_hosts_paths_and_completed_kline_validation(self):
-        venue = e.BinanceUS(self.f)
+        venue = e.BinanceUS(self.f, gate=self.gate())
         day_ms = self.f['day_s'] * 1000
         opening = int((T - timedelta(days=1)).timestamp()) * 1000
         kline = [opening, '100', '102', '99', '101', '9', opening + day_ms - 1]
@@ -240,16 +272,248 @@ class Tests(unittest.TestCase):
             with self.assertRaisesRegex(e.Refuse, 'invalid public endpoint'):
                 venue.get('//elsewhere.invalid/data')
 
-    def test_redirects_blocked_and_429_backoff_then_refusal(self):
-        venue = e.BinanceUS(self.f)
-        with self.assertRaises(e.Blocked):
-            e.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://elsewhere.invalid')
-        replies = [HTTPError('', 429, '', {'Retry-After': '7'}, io.BytesIO()), HTTPError('', 451, '', {}, io.BytesIO())]
-        with patch.object(venue.opener, 'open', side_effect=replies) as opener, patch.object(e.time, 'sleep') as sleep:
-            with self.assertRaisesRegex(e.Blocked, '451'):
+    def test_redirects_cross_endpoint_cooldown_restart_and_terminal_stop(self):
+        clock = FakeClock(T)
+        venue = e.BinanceUS(self.f, self.gate(clock), clock)
+        self.assertIsNone(e.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://elsewhere.invalid'))
+        with patch.object(venue.opener, 'open', side_effect=HTTPError('', 429, '', {'Retry-After': '60'}, io.BytesIO())) as send:
+            with self.assertRaises(e.bx.Cooldown):
                 venue.products(('BTC',))
-        self.assertEqual(opener.call_count, 2)
-        self.assertIn(unittest.mock.call(7.), sleep.call_args_list)
+        self.assertEqual(send.call_count, 1)
+        restarted = e.BinanceUS(self.f, self.gate(clock), clock)
+        with patch.object(restarted.opener, 'open', side_effect=AssertionError('suppressed call')) as send:
+            with self.assertRaises(e.bx.Cooldown):
+                restarted.book('BTC')
+            with self.assertRaises(e.bx.Cooldown):
+                e.start(T - timedelta(days=1), START_ID, self.folder, gate=self.gate(clock))
+            send.assert_not_called()
+        clock.sleep(60)
+        restarted.deadline = clock()
+        with self.assertRaises(e.bx.Failure):
+            restarted.book('BTC')
+        restarted.deadline = None
+        with patch.object(restarted.opener, 'open', side_effect=HTTPError('', 418, '', {}, io.BytesIO())) as send:
+            with self.assertRaises(e.bx.Blocked):
+                restarted.book('BTC')
+            self.assertEqual(send.call_count, 1)
+        clock.sleep(900)
+        self.assertTrue((self.temp / 'shared' / 'stop.json').exists())
+        with self.assertRaises(e.bx.GateGeneration):
+            e.BinanceUS(self.f, self.gate(clock), clock).products(('BTC',))
+
+    def test_gate_generation_mismatch_stops_old_run_and_burned_id_survives_archive(self):
+        self.assertEqual(self.start()['venue_generation'], 0)
+        self.observe()
+        clock = FakeClock(T + timedelta(days=1))
+        gate = self.gate(clock)
+        gate.write(self.temp / 'shared' / 'stop_generation.json', {'generation': 1})
+        venue = e.BinanceUS(self.f, gate, clock)
+        with patch.object(venue.opener, 'open', side_effect=AssertionError('old run attempted request')) as send, \
+             patch.object(e, 'committed_go', side_effect=AssertionError('retired approval should not be consulted')):
+            with self.assertRaises(e.Blocked):
+                e.record(clock(), venue, self.folder, clock, clock.sleep)
+            send.assert_not_called()
+        self.assertEqual(self.rows()[-1]['reason'], 'gate_generation')
+        self.folder.rename(self.temp / 'old-run')
+        with self.assertRaisesRegex(e.Refuse, 'start ID was already used'):
+            self.start()
+        with patch.object(e, 'committed_go', return_value=('a' * 40, FAKE_RELEASE)) as auth:
+            self.assertEqual(e.start(T, 'new-invented-start', self.folder, gate=gate)['venue_generation'], 1)
+            self.assertIn(unittest.mock.call('E13_START', 'new-invented-start', FAKE_RELEASE, 1), auth.call_args_list)
+
+    def test_missing_gate_generation_is_terminal_on_resume(self):
+        self.start()
+        (self.temp / 'shared' / 'stop_generation.json').unlink()
+        with self.assertRaises(e.Blocked):
+            e.resume(self.folder, self.gate())
+        self.assertEqual(self.rows()[-1]['reason'], 'gate_storage')
+
+    def test_cooldown_voids_wake_and_cannot_recapture_same_day_after_expiry(self):
+        self.start()
+        self.observe()
+        clock = FakeClock(T + timedelta(days=1))
+        venue = e.BinanceUS(self.f, self.gate(clock), clock)
+        with patch.object(venue.opener, 'open', side_effect=HTTPError('', 429, '', {'Retry-After': '60'}, io.BytesIO())) as send:
+            row = e.record(clock(), venue, self.folder, clock, clock.sleep)
+            self.assertEqual(row['reason'], 'SHARED_COOLDOWN')
+            self.assertEqual(send.call_count, 1)
+        clock.sleep(60)
+        restart = e.BinanceUS(self.f, self.gate(clock), clock)
+        self.assertIsNone(e.record(clock(), restart, self.folder, clock, clock.sleep))
+        self.assertEqual(e.alive(self.folder)['cooldown_void_wakes'], 1)
+
+    def test_gate_persistence_failure_does_not_retry_http(self):
+        clock = FakeClock(T)
+        venue = e.BinanceUS(self.f, self.gate(clock), clock)
+        response = HTTPError('', 429, '', {'Retry-After': '60'}, io.BytesIO())
+        original = venue.gate.write
+        def fault(path, body):
+            if path.name == 'cooldown.json':
+                raise OSError('invented disk fault')
+            return original(path, body)
+        with patch.object(venue.gate, 'write', side_effect=fault), \
+             patch.object(venue.opener, 'open', side_effect=response) as send:
+            with self.assertRaises(e.bx.GateStorage):
+                venue.products(('BTC',))
+            self.assertEqual(send.call_count, 1)
+        self.assertTrue((self.temp / 'shared' / 'inflight.json').exists())
+
+    def test_unknown_http_status_blocks_other_endpoints_and_start_after_restart(self):
+        clock = FakeClock(T)
+        venue = e.BinanceUS(self.f, self.gate(clock), clock)
+        with patch.object(venue.opener, 'open', side_effect=URLError('invented disconnect')) as send:
+            with self.assertRaises((e.Blocked, e.bx.GateUncertain)):
+                venue.products(('BTC',))
+            self.assertEqual(send.call_count, 1)
+        self.assertTrue((self.temp / 'shared' / 'inflight.json').exists())
+        restarted = e.BinanceUS(self.f, self.gate(clock), clock)
+        with patch.object(restarted.opener, 'open', side_effect=AssertionError('suppressed call')) as send:
+            with self.assertRaises(e.bx.GateUncertain):
+                restarted.book('BTC')
+            with self.assertRaises(e.bx.GateUncertain):
+                e.start(T - timedelta(days=1), START_ID, self.folder, gate=self.gate(clock))
+            send.assert_not_called()
+
+    def test_committed_closed_bar_decision_precedes_all_books_and_does_not_change(self):
+        decisions = []
+        for i, book in enumerate((BOOK, {'asks': [[155., 100.]], 'bids': [[150., 100.]]})):
+            self.folder = self.temp / f'case-{i}'
+            self.start()
+            venue = Venue(coins=('BTC', 'ETH'), short=('ETH',))
+            seen = []
+            def verify(coin):
+                rows = self.rows()
+                decision = next(r for r in rows if r['kind'] == 'decision')
+                self.assertEqual(decision['order_coins'], ['BTC'])
+                self.assertEqual(decision['intent']['main']['BTC']['side'], 'buy')
+                self.assertEqual(coin, 'BTC')
+                seen.append(decision)
+                return book
+            with patch.object(venue, 'book', side_effect=verify):
+                row = self.observe(venue=venue)
+            self.assertTrue(seen)
+            self.assertEqual(row['decision_sha256'], seen[0]['sha256'])
+            self.assertEqual(row['intent'], seen[0]['intent'])
+            self.assertEqual(row['books']['main']['fills'][0]['side'], 'buy')
+            decisions.append(row['intent'])
+        self.assertEqual(*decisions)
+
+    def test_durable_claim_stops_first_on_either_side_of_inventory_or_book(self):
+        for stage in ('products', 'candles', 'book', 'before_finalize'):
+            with self.subTest(stage=stage):
+                self.folder = self.temp / stage
+                self.start()
+                venue = Venue()
+                def crash(*_):
+                    self.assertIn('claim', [r['kind'] for r in self.rows()])
+                    raise KeyboardInterrupt
+                original = e.append
+                def finalize(fd, rows, row):
+                    if row['kind'] == 'wake':
+                        crash()
+                    return original(fd, rows, row)
+                hook = patch.object(e, 'append', side_effect=finalize) if stage == 'before_finalize' else patch.object(venue, stage, side_effect=crash)
+                with hook, self.assertRaises(KeyboardInterrupt):
+                    self.observe(venue=venue)
+                restart = Venue()
+                with self.assertRaisesRegex(e.Blocked, 'first wake interrupted'):
+                    self.observe(venue=restart)
+                self.assertEqual(restart.product_calls, 0)
+                self.assertEqual(self.rows()[-1]['reason'], 'FIRST_WAKE_INTERRUPTED')
+
+    def test_later_torn_final_commit_is_void_and_not_replayed(self):
+        self.start()
+        self.observe()
+        tomorrow = T + timedelta(days=1)
+        original = e.os.replace
+        def crash(src, dst, *args, **kwargs):
+            if src == 'tip.tmp' and (self.folder / 'log.jsonl').read_text().splitlines()[-1].find('"kind":"wake"') >= 0:
+                raise KeyboardInterrupt
+            return original(src, dst, *args, **kwargs)
+        with patch.object(e.os, 'replace', side_effect=crash), self.assertRaises(KeyboardInterrupt):
+            self.observe(tomorrow)
+        restart = Venue()
+        self.assertEqual(self.observe(tomorrow, restart)['reason'], 'WAKE_INTERRUPTED')
+        self.assertIsNone(self.observe(tomorrow, restart))
+        self.assertEqual(restart.product_calls, 0)
+        self.assertEqual(e.alive(self.folder)['interrupted_wakes'], 1)
+
+    def test_committed_local_main_action_release_pins_and_git_overrides(self):
+        target = self.temp / 'repo'
+        target.mkdir()
+        clean = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+        def local(*args):
+            return subprocess.check_output(('git', *args), cwd=target, env=clean, stderr=subprocess.DEVNULL).decode().strip()
+        local('init', '-b', 'main')
+        local('config', 'user.name', 'Invented')
+        local('config', 'user.email', 'invented@example.invalid')
+        local('config', 'commit.gpgsign', 'false')
+        for path in e.PINNED + (e.LEDGER,):
+            fixture = target / path
+            fixture.parent.mkdir(parents=True, exist_ok=True)
+            fixture.write_text('invented\n')
+        (target / e.CONFIG).write_text('''forward_e13: {value: {operations_ref: operations}}
+operations: {value: {rule_key: rule, second_fee_key: fee}}
+rule: {value: {}}
+fee: {value: {}}
+binance_us_gate: {value: {}}
+''')
+        ledger = target / e.LEDGER
+        placeholder = '| 231 | `E13_START=<id>` `E13_RELEASE=<hash>` `E13_SCORE_GO=<id>` |\n'
+        ledger.write_text(placeholder)
+        def commit():
+            local('add', '.')
+            local('commit', '-m', 'invented local fixture')
+            return local('rev-parse', 'HEAD')
+        audited = commit()
+        good = f'| 231 | `E13_RELEASE={audited}` `E13_START={START_ID}` `E13_SCORE_GO={SCORE_ID}` |\n'
+        start = lambda: self.real_authority('E13_START', START_ID)
+        with patch.object(e, 'ROOT', target):
+            local('switch', '-c', 'wrong')
+            ledger.write_text(good)
+            commit()
+            with patch.dict(os.environ, {'GIT_DIR': str(target / '.git'), 'GIT_NAMESPACE': 'wrong',
+                                          'GIT_CONFIG_COUNT': '1', 'GIT_CONFIG_KEY_0': 'core.worktree',
+                                          'GIT_CONFIG_VALUE_0': str(self.temp / 'elsewhere')}):
+                with self.assertRaisesRegex(e.Refuse, 'lead go missing'):
+                    start()
+            local('switch', 'main')
+            ledger.write_text(good)
+            with self.assertRaisesRegex(e.Refuse, 'lead go missing'):
+                start()
+            for invalid in (good.replace('| 231 |', '| 230 |'), good.replace(f'`E13_START={START_ID}`',
+                                                                          f'`E13_START={START_ID}` `E13_START=other`')):
+                ledger.write_text(invalid)
+                commit()
+                with self.assertRaisesRegex(e.Refuse, 'lead go missing'):
+                    start()
+            ledger.write_text(good)
+            approval = commit()
+            self.assertEqual(start(), (approval, audited))
+            with self.assertRaisesRegex(e.Refuse, 'lead go missing'):
+                self.real_authority('E13_START', START_ID, audited, 1)
+            ledger.write_text(good.replace(' |\n', ' `E13_START_GENERATION=1` |\n'))
+            approval = commit()
+            self.assertEqual(self.real_authority('E13_START', START_ID, audited, 1), (approval, audited))
+            with self.assertRaisesRegex(e.Refuse, 'different venue generation'):
+                self.real_authority('E13_START', START_ID, audited, 2)
+            with patch.dict(os.environ, {'GIT_DIR': str(self.temp / 'wrong.git'), 'GIT_WORK_TREE': '/' }):
+                self.assertEqual(start(), (approval, audited))
+            self.assertEqual(self.real_authority('E13_SCORE_GO', SCORE_ID, audited), (approval, audited))
+            with self.assertRaisesRegex(e.Refuse, 'lead go missing'):
+                self.real_authority('E13_SCORE_GO', START_ID, audited)
+            with self.assertRaisesRegex(e.Refuse, 'audited release changed'):
+                self.real_authority('E13_SCORE_GO', SCORE_ID, FAKE_RELEASE)
+            ledger.write_text(placeholder)
+            with self.assertRaisesRegex(e.Refuse, 'freeze files differ'):
+                start()
+            local('restore', str(ledger.relative_to(target)))
+            local('switch', '--detach', audited)
+            self.assertEqual(start(), (approval, audited))
+            (target / e.PINNED[0]).write_text('not audited\n')
+            commit()
+            with self.assertRaisesRegex(e.Refuse, 'audited release pins'):
+                start()
 
     def test_public_summary_only_and_private_hash_chain(self):
         self.assertEqual(json.loads(e.PUBLIC.read_text()), e.summary([], self.f))
