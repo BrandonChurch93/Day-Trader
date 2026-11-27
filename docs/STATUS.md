@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-26 23:54 UTC
+Last updated: 2026-11-27 00:00 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- 2026-11-26 5:00 PM MT: the fourth rehearsal of the news-reading time machine (TM09, made-up data) was ruled CLEAR by the independent auditor, for the rehearsal only (ledger 222). A real run is not authorized: the auditor still requires a shown no-web boundary for hosted workers, provider terms on training and logging, data rights (written clearance from Alpaca for hosted use of its headlines) and a signed docket.
 - 2026-11-26 4:58 PM MT, the lead agent: a file of 427 raw order book quote rows from Binance.US, Kraken and Gemini (an early sample behind research document 09) was taken out of the current version of the repo and kept privately, under the rule that raw data is never published. Earlier versions in the repo history still hold it; the history is not rewritten. The summary figures in document 09 stay.
 - 2026-11-26 4:57 PM MT, the lead agent: the two roster watchers that are off the repo were changed and restarted. The product-status watcher now reads Kraken only (Coinbase leg removed). The Upbit forward watcher no longer checks Coinbase or Kalshi product lists when a listing appears (Kraken only). Replacements for the stopped loggers are registered and being built on Binance.US data only: card E12 (ledger 230), card E13 (ledger 231), Measurement 133 (ledger 232). No quote has been read for them.
 - HOLD by the lead agent, 2026-11-26 4:54 PM MT: the time machine study TM07 stops after week 8 round one (ledger 198). Its price tape is Coinbase candles (STATED by the operator from build notes), and Coinbase's terms bar using its market data to benchmark an agent without written consent (MEASURED on its page). No round-two session is created until a ruling after the owner's decision. The made-up-data rehearsal for TM09 is not affected. A first read of other providers' own pages (full record to come as research document 194): Kraken allowed with limits for private personal use, Binance.US allowed on the pages that opened with its full terms unread, Bitstamp the most open and expressly allows statistics based on its data, Gemini allowed for personal analysis with no passing on of its data.
