@@ -1272,6 +1272,44 @@ forward_e14:
   note: Ledger 233, queue 138. Plan 76 decline and hold, stated USD fees, flat size and shared gate.
   source: practice/traders/E14_washout_rebound_binance_us.md
 
+forecast_bot:
+  value:
+    ledger_row: 239
+    start_key: B01_START
+    test_key: B01_TEST
+    network_allowed: false
+    api_base: "https://www.metaculus.com"
+    token_env: METACULUS_TOKEN
+    targets: [minibench]
+    testing_target: bot-testing-area
+    poll_minutes: 15
+    page_limit: 50
+    max_pages: 10
+    http_timeout_s: 30
+    max_attempts_per_post: 12
+    min_minutes_left: 6
+    research_model: claude_sonnet_5_5
+    research_web_search: true
+    research_timeout_s: 240
+    research_max_tokens: 6000
+    runs: [claude_sonnet_5_5, claude_sonnet_5_5, claude_sonnet_5_5, gpt_5_4, gpt_5_4]
+    min_valid_runs: 3
+    run_timeout_s: 180
+    question_budget_s: 480
+    max_model_calls_per_pass: 60
+    max_model_calls_per_day: 600
+    run_max_tokens: 6000
+    asknews_enabled: false
+    binary_clip: [0.02, 0.98]
+    mc_floor: 0.005
+    cdf_uniform_mix: 0.02
+    cdf_open_bound_mass: 0.002
+    comment_max_chars: 6000
+    private_dir: /home/user/workspace/rig/data/forecast_bot
+  status: STATED
+  note: Plan B01, our forecasting bot for the Metaculus FutureEval bot rounds (lead agent's queue 147). network_allowed stays false until the owner has made the bot account and the lead says so. The bot submits only behind B01_START=<frozen build hash> on ledger row 239 in committed local main (B01_TEST for the unscored testing area). targets lists tournament project slugs in order; minibench first, fall-futureeval-2026 second. The token is read from the environment variable named by token_env at request time only. A change to models, runs, prompts or any setting after start is a new attempt.
+  source: practice/PLAN_B01_forecast_bot_DRAFT.md
+
 forward_e15:
   value:
     ledger_row: 237
