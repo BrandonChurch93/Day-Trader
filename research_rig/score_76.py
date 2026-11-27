@@ -131,6 +131,8 @@ def next_sale(opens):
 
 
 def fill(tape, sales, coin, entry, hold):
+    if not np.isfinite(tape.open[entry + hold, coin]):
+        return None
     avail = sales[coin]
     i = avail.searchsorted(entry + hold)
     if i < len(avail):
@@ -140,7 +142,7 @@ def fill(tape, sales, coin, entry, hold):
 
 
 def tickets(tape, drop, hold, opens, sales):
-    traded, no_entry, refused, unresolved, free = [], 0, 0, 0, 0
+    traded, no_entry, no_exit, refused, unresolved, free = [], 0, 0, 0, 0, 0
     for e, j in signals(tape, drop):
         if e < free:
             continue
@@ -150,13 +152,18 @@ def tickets(tape, drop, hold, opens, sales):
         if not opens[e, j]:
             no_entry += 1
             continue
+        if not np.isfinite(tape.open[e + hold, j]):
+            no_exit += 1
+            free = e + hold
+            continue
         t = fill(tape, sales, j, e, hold)
         if t is None:
             unresolved = 1
             break
         free = t.exit
         traded.append(t)
-    return traded, {"missing_selected_open": no_entry, "refused_at_fence": refused, "unresolved_at_fence": unresolved,
+    return traded, {"void_missing_entry_bar": no_entry, "void_missing_exit_bar": no_exit,
+                    "refused_at_fence": refused, "unresolved_at_fence": unresolved,
                     "delayed_sales": sum(t.exit > t.entry + hold for t in traded)}
 
 
@@ -379,16 +386,24 @@ def snapshot(fd, stage, pin, cfg):
     need(is_hash(pin) and digest(manifest) == pin, "REFUSE_PIN")
     m = object_from(manifest)
     need(set(m) == {"schema", "stage", "start", "stop_exclusive", "names", "hours", "bars_sha256",
-                    "source_receipt_sha256", "prior_result_sha256"}, "REFUSE_MANIFEST")
+                    "source_receipt_sha256", "coverage_receipt_sha256", "prior_result_sha256", "source_release",
+                    "source_release_end_exclusive", "covered_names"}, "REFUSE_MANIFEST")
     names = tuple(sorted(cfg["admissions"]))
     need(type(m["schema"]) is int and m["schema"] == cfg["schema"] and m["stage"] == stage
          and m["names"] == list(names), "REFUSE_MANIFEST")
-    need(is_hash(m["bars_sha256"]) and is_hash(m["source_receipt_sha256"])
+    covered = m["covered_names"]
+    need(isinstance(covered, list) and all(isinstance(c, str) and c in names for c in covered)
+         and covered == sorted(set(covered)) and len(covered) >= cfg["source_coverage"]["min_coins"], "REFUSE_COVERAGE")
+    need(all(is_hash(m[k]) for k in ("bars_sha256", "source_receipt_sha256", "coverage_receipt_sha256"))
          and (is_hash(m["prior_result_sha256"]) if stage in PREVIOUS else m["prior_result_sha256"] is None),
          "REFUSE_MANIFEST")
-    first, stop = m["start"], m["stop_exclusive"]
-    need(all(isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) for d in (first, stop)), "REFUSE_FENCE")
+    release = m["source_release"]
+    need(isinstance(release, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", release), "REFUSE_MANIFEST")
+    first, stop, release_end = m["start"], m["stop_exclusive"], m["source_release_end_exclusive"]
+    need(all(isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d)
+             for d in (first, stop, release_end)), "REFUSE_FENCE")
     need(first == cfg["heldback_start"] if stage == "heldback" else [first, stop] == cfg["design"], "REFUSE_FENCE")
+    need(utc(stop) == utc(release_end) if stage == "heldback" else utc(stop) <= utc(release_end), "REFUSE_RELEASE_END")
     start = utc(first)
     hours = (utc(stop) - start) // HOUR
     need(type(m["hours"]) is int and m["hours"] == hours and cfg["hold_hours"]["primary"] + 2 < hours
@@ -407,7 +422,7 @@ def snapshot(fd, stage, pin, cfg):
 
 
 def read_bars(m, payload, cfg):
-    """The only decoder for the venue-neutral custodian tape."""
+    """Decode the custodian's canonical tape, not either venue's native format."""
     names = tuple(m["names"])
     start = utc(m["start"])
     hours = m["hours"]
@@ -416,7 +431,9 @@ def read_bars(m, payload, cfg):
     need(bool(np.all(np.isnan(a) | ((a > 0) & np.isfinite(a)))), "REFUSE_PRICE_ENCODING")
     if not count:
         need(bool(np.array_equal(np.isnan(a[:, :, 0]), np.isnan(a[:, :, 1]))), "REFUSE_PRICE_ENCODING")
-    return Tape(start, names, a[:, :, -1], eligibility(start, hours, names, cfg), None if count else a[:, :, 0])
+    full = eligibility(start, hours, names, cfg)
+    full[:, [name not in m["covered_names"] for name in names]] = False
+    return Tape(start, names, a[:, :, -1], full, None if count else a[:, :, 0])
 
 
 def carry_in(path, stage, manifest, ledger, cfg):
@@ -427,7 +444,12 @@ def carry_in(path, stage, manifest, ledger, cfg):
     with open_folder(path / prev) as fd:
         cap = cfg["custody"]["metadata_max_bytes"]
         need(read_file(fd, "RUN.lock", cap) == (prev_pin + "\n").encode(), "REFUSE_PREVIOUS_LOCK")
+        prior_manifest = read_file(fd, "manifest.json", cap)
+        need(digest(prior_manifest) == prev_pin, "REFUSE_PREVIOUS_MANIFEST")
         blob = read_file(fd, "result.json", cap)
+    prior = object_from(prior_manifest)
+    need(all(prior.get(k) == manifest[k] for k in ("coverage_receipt_sha256", "covered_names")),
+         "REFUSE_SOURCE_CHANGE")
     need(digest(blob) == manifest["prior_result_sha256"], "REFUSE_PREVIOUS_RESULT")
     previous = object_from(blob)
     expected = "advance to design" if stage == "design" else "advance to held-back"

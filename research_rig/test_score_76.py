@@ -61,13 +61,12 @@ class Tests(unittest.TestCase):
         trades, gaps = s.tickets(t, .05, 24, s.executable(t), s.next_sale(s.executable(t)))
         self.assertEqual([(x.coin, x.entry, x.exit) for x in trades], [(0, 7, 31), (1, 31, 55)])
         self.assertAlmostEqual(trades[0].gross, .20)
-        self.assertEqual(gaps["missing_selected_open"], 1)
+        self.assertEqual(gaps["void_missing_entry_bar"], 1)
 
     def test_delayed_sale_and_unresolved_block_new_entries(self):
         t = tape()
         t.close[3, 0] = 90
-        t.open[28, 0] = np.nan
-        t.full[29, 0] = False
+        t.full[28:30, 0] = False
         t.open[30, 0] = 120
         t.close[28, 1] = 90  # busy until bar 30
         t.close[49, 0] = 80
@@ -76,8 +75,22 @@ class Tests(unittest.TestCase):
         opens = s.executable(t)
         trades, gaps = s.tickets(t, .05, 24, opens, s.next_sale(opens))
         self.assertEqual([(x.entry, x.exit) for x in trades], [(4, 30)])
-        self.assertEqual(gaps, {"missing_selected_open": 0, "delayed_sales": 1,
+        self.assertEqual(gaps, {"void_missing_entry_bar": 0, "void_missing_exit_bar": 0, "delayed_sales": 1,
                                "refused_at_fence": 0, "unresolved_at_fence": 1})
+
+    def test_missing_exit_is_counted_and_missing_close_does_not_bridge(self):
+        t = tape()
+        t.close[3, 0] = 90
+        t.open[28, 0] = np.nan
+        t.close[20, 1] = 90  # locked through the scheduled exit
+        t.close[30, 0] = np.nan
+        t.close[31, 0] = 50  # must not compare across the absent hourly close
+        t.close[35, 1] = 85
+        valid = s.executable(t)
+        trades, gaps = s.tickets(t, .05, 24, valid, s.next_sale(valid))
+        self.assertEqual([(q.coin, q.entry, q.exit) for q in trades], [(1, 36, 60)])
+        self.assertEqual(gaps["void_missing_exit_bar"], 1)
+        self.assertIsNone(s.fill(t, s.next_sale(valid), 0, 4, 24))
 
     def test_admission_full_trading_windows_and_exact_flags(self):
         names = ("BTC", "XRP", "ZEC", "DOT", "BNB")
@@ -159,12 +172,15 @@ class Tests(unittest.TestCase):
         self.assertEqual(output.getvalue().splitlines(), ["REFUSE_LEDGER_GO"] * len(s.MODES))
 
     def test_opaque_pin_decode_and_one_shot_lock_on_invented_files(self):
-        c = self.cfg | {"design": ["2022-12-30", "2023-01-02"], "admissions": {"A": [["2020-01-01", None]]}}
+        c = self.cfg | {"design": ["2022-12-30", "2023-01-02"], "admissions": {"A": [["2020-01-01", None]]},
+                        "source_coverage": {"min_coins": 1}}
         t = tape(72, coins=("A",))
         price_blob = t.close.astype("<f8").tobytes()
         source_blob = b"made-up separate custodian"
         m = {"schema": 1, "stage": "count", "start": "2022-12-30", "stop_exclusive": "2023-01-02",
-             "names": ["A"], "hours": 72, "bars_sha256": s.digest(price_blob),
+             "names": ["A"], "covered_names": ["A"], "hours": 72, "bars_sha256": s.digest(price_blob),
+             "source_release": "invented", "source_release_end_exclusive": "2023-01-02",
+             "coverage_receipt_sha256": s.digest(b"made-up coverage"),
              "source_receipt_sha256": s.digest(source_blob), "prior_result_sha256": None}
         manifest_blob = json.dumps(m).encode()
         pin = s.digest(manifest_blob)
@@ -197,8 +213,45 @@ class Tests(unittest.TestCase):
                 with self.assertRaisesRegex(s.Refusal, "REFUSE_OUTPUT_EXISTS"):
                     s.execute(fd, "count", pin, manifest, payload, None, c)
 
+    def test_heldback_release_end_is_pinned_and_decoder_is_venue_blind(self):
+        c = self.cfg | {"admissions": dict.fromkeys(("A", "B"), [["2020-01-01", None]]),
+                        "source_coverage": {"min_coins": 1}}
+        # Two native layouts from invented sources normalize to the same tape.
+        object_bar = {"timestamp": "1704067200", "open": "98", "close": "99"}
+        row_bar = [1704067200, "98", "101", "97", "99", "4", "2"]
+        fixture = (
+            ("invented-object-source", (float(object_bar["open"]), float(object_bar["close"]))),
+            ("invented-row-source", (float(row_bar[1]), float(row_bar[4]))),
+        )
+        meta = {"schema": 1, "stage": "heldback", "start": "2024-01-01", "stop_exclusive": "2024-01-03",
+                "source_release_end_exclusive": "2024-01-03", "names": ["A", "B"], "covered_names": ["A"], "hours": 48,
+                "coverage_receipt_sha256": s.digest(b"made-up coverage"),
+                "source_receipt_sha256": s.digest(b"invented"), "prior_result_sha256": "0" * 64}
+        for release, bar in fixture:
+            payload = np.full((48, 2, 2), np.nan, dtype="<f8")
+            payload[0] = bar
+            m = meta | {"source_release": release, "bars_sha256": s.digest(payload.tobytes())}
+            decoded = s.read_bars(m, payload.tobytes(), c)
+            self.assertEqual((decoded.open[0, 0], decoded.close[0, 0]), (98, 99))
+            self.assertTrue(np.isnan(decoded.open[1:, 0]).all())
+            self.assertFalse(decoded.full[:, 1].any())  # present source bar, but not covered
+        m["source_release_end_exclusive"] = "2024-01-04"
+        raw_manifest = json.dumps(m).encode()
+        with patch.object(s, "read_file", return_value=raw_manifest) as read:
+            with self.assertRaisesRegex(s.Refusal, "REFUSE_RELEASE_END"):
+                s.snapshot(None, "heldback", s.digest(raw_manifest), c)
+        self.assertEqual(read.call_count, 1)  # refuse before any tape read
+        m["covered_names"] = []
+        raw_manifest = json.dumps(m).encode()
+        with patch.object(s, "read_file", return_value=raw_manifest) as read:
+            with self.assertRaisesRegex(s.Refusal, "REFUSE_COVERAGE"):
+                s.snapshot(None, "heldback", s.digest(raw_manifest), c)
+        self.assertEqual(read.call_count, 1)
+
     def test_carry_forward_only_for_pinned_advancing_predecessor(self):
-        pin = "f" * 64
+        choice = {"coverage_receipt_sha256": s.digest(b"made-up coverage"), "covered_names": ["A"]}
+        prior_manifest = json.dumps(choice).encode()
+        pin = s.digest(prior_manifest)
         ledger = "| 229 | P76_" + f"COUNT_GO={pin} |"
         result = {"stage": "count", "manifest_sha256": pin, "selected": "alternate",
                   "outcome": "advance to design"}
@@ -208,12 +261,15 @@ class Tests(unittest.TestCase):
             path.mkdir(mode=0o700)
             with s.open_folder(path) as fd:
                 s.new_file(fd, "RUN.lock", (pin + "\n").encode(), "REFUSE_LOCK")
+                s.new_file(fd, "manifest.json", prior_manifest, "REFUSE_PREVIOUS_MANIFEST")
                 body = json.dumps(result).encode()
                 s.new_file(fd, "result.json", body, "REFUSE_OUTPUT_EXISTS")
-            manifest = {"prior_result_sha256": s.digest(body)}
+            manifest = choice | {"prior_result_sha256": s.digest(body)}
             self.assertEqual(s.carry_in(root, "design", manifest, ledger, self.cfg), "alternate")
             with self.assertRaisesRegex(s.Refusal, "REFUSE_PREVIOUS_RESULT"):
-                s.carry_in(root, "design", {"prior_result_sha256": "a" * 64}, ledger, self.cfg)
+                s.carry_in(root, "design", manifest | {"prior_result_sha256": "a" * 64}, ledger, self.cfg)
+            with self.assertRaisesRegex(s.Refusal, "REFUSE_SOURCE_CHANGE"):
+                s.carry_in(root, "design", manifest | {"coverage_receipt_sha256": "a" * 64}, ledger, self.cfg)
 
     def test_power_stable_and_not_a_real_count(self):
         cfg = deepcopy(self.cfg)

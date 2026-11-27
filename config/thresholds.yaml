@@ -1637,6 +1637,14 @@ plan_76:
       XRP: [["2020-01-01", "2020-12-29"], ["2023-07-14", null]]
       ZEC: [["2020-05-07", "2023-09-09"]]
     all_closed_dates: ["2026-05-08"]
+    source_coverage:
+      min_coins: 10
+      first_on_or_before_utc: "2022-01-01T00:00:00Z"
+      last_strictly_after_utc: "2023-12-31T23:00:00Z"
+      hours_per_year: 8760
+      min_hour_share_each_year: 0.95
+      max_gap_hours: 72
+      report_gap_over_hours: 6
     custody: {root: /home/user/workspace/rig/data/plan_76, max_hours: 40000, metadata_max_bytes: 16384, disk_floor_gib: 3}
     power:
       seed: 760076
@@ -1650,7 +1658,7 @@ plan_76:
       residual_t_df: 5
       residual_bound: 0.8
   status: builder
-  note: Plan 76 ledger 229 and doc 172, price-free; controls and power assumptions frozen before input. No source approval and no go.
+  note: Plan 76 ledger 229 and doc 172, price-free; source order, controls and power assumptions frozen before input. Source selection requires the custodian's timestamp-only count. No go.
   source: research_rig/PREREG_76_washout_rebound.md
 
 measure_132:
