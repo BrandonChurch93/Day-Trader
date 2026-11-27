@@ -688,6 +688,9 @@ Working papers.
 | `practice/traders/E12_dip_buy_binance_us.md` | Ledger 230 forward dip-buy rules on Binance.US USD candles and books | DRAFT |
 | `practice/forward_e12.py`, `practice/test_forward_e12.py` | E12 recorder and invented-data checks | CURRENT |
 | `practice/forward/E12_log.json` | E12 public count and aggregate status | RECORD |
+| `practice/traders/E14_washout_rebound_binance_us.md` | Ledger 233 forward washout rule, timing, shown lines and separate read permissions | DRAFT |
+| `practice/forward_e14.py`, `practice/test_forward_e14.py` | E14 recorder and invented-data checks | CURRENT |
+| `practice/forward/E14_log.json` | E14 public counts and status only | RECORD |
 | `practice/measure_133.py`, `practice/test_measure_133.py` | Measurement 133 recorder and invented-data checks | CURRENT |
 | `practice/venue_binance_us.py`, `practice/test_venue_binance_us.py` | Shared Binance.US transport, gate, custody and approval helpers; invented HTTP tests | CURRENT |
 | `practice/forward/M133_log.json` | Measurement 133 public count and aggregate status | RECORD |

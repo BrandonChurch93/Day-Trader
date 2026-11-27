@@ -1,0 +1,22 @@
+{
+  "at_judging_point": false,
+  "busy_wakes_by_arm": {},
+  "candle_error_counts": {},
+  "card": "E14",
+  "claimed_unresolved_wakes": 0,
+  "first_primary_books": 0,
+  "frozen_pairs": null,
+  "ranking_void_wakes": 0,
+  "status": "NOT_STARTED",
+  "stop": null,
+  "valid_closes": {},
+  "valid_entries": {},
+  "void_tickets": {
+    "alternate": {},
+    "delayed": {},
+    "primary": {},
+    "small": {}
+  },
+  "wake_counts": {},
+  "wake_void_reasons": {}
+}

@@ -1253,6 +1253,25 @@ forward_e12:
   note: Ledger 230. Execution and stopping settings inherited; frozen dip-buy rules use Binance.US closed USD candles only.
   source: practice/traders/E12_dip_buy_binance_us.md
 
+forward_e14:
+  value:
+    rule_ref: plan_76
+    size_ref: forward_e11
+    mark_ref: forward_e12
+    fee_ref: forward_e10_binance_us
+    coins: [AAVE, ADA, BCH, BTC, ETH, HBAR, LINK, LTC, SHIB, XLM, XRP]
+    min_pairs: 6
+    wake_offset_s: 195
+    book_cutoff_s: 290
+    busy_wait_s: 20
+    judging_count: 60
+    judging_floor: 30
+    cost_books: 20
+    last_wake_utc: "2028-11-30T23:00:00Z"
+  status: STATED
+  note: Ledger 233, queue 138. Plan 76 decline and hold, stated USD fees, flat size and shared gate.
+  source: practice/traders/E14_washout_rebound_binance_us.md
+
 forward_e13:
   value:
     operations_ref: forward_e10
