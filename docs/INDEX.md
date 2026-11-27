@@ -266,6 +266,7 @@ Reading reports. Open one when a playbook line or the status page points to it.
 | `docs/research/181_plan_75_heldback_result.md`, `research_rig/build_doc181_plan75_vault.py` | Plan 75 result of the one held-back run, 2024-01-01 to 2026-10-31: the four marks, net by year, both cost lines, shown-only legs, the blind recompute and the traced warm-up ambiguity, no-edge pass rate on made-up worlds; built from four pinned aggregate files | RECORD |
 | `docs/research/182_measurement_132_venue_cost.md` | Ledger 227 forward USD spot cost logger design for Coinbase Exchange and Binance.US, with no profit claim | CURRENT |
 | `docs/research/195_measurement_133_binance_us_cost.md` | Ledger 232 forward Binance.US-only USD spot cost measurement, with no profit claim | DRAFT |
+| `docs/research/202_measurement_134_binance_us_cost.md` | Ledger 234 replacement for Measurement 133: hourly Binance.US book costs at eight minutes past the hour | DRAFT |
 | `docs/research/183_round_58_thin_edges_at_low_cost.md` | Idea round 58: audit of thin 0 to 150 bp/RT rules across our repo record (Plans 70/71 and scored tests) and 6 ranked open-access academic leads (1 to 30 day holds) that die at 50 to 75 bp/side and might live at 5 to 25 bp/side on Binance.US | CURRENT |
 | `docs/research/184_round_59_dated_flows_next_eight_weeks.md` | Idea round 59: forced, publicly dated flows in the next eight weeks (2026-11-27 to 2027-01-22) for a $500 to $2,000 long-only US retail account, checked against `docs/QUEUE.md` and scored tests, with 6 ranked forward-watch leads and primary-source calendars | CURRENT |
 | `docs/research/185_round_60_using_the_cost_finding.md` | Idea round 60: honest use of Measurement 132 before and after its 30-day readout; Binance.US public API/archive history and 18-month USD gap, CS/AR/EDGE spread estimators and zero-tuning validation, re-test map of all pre-cost positive coin tests (second look vs clean first look), and 4 ranked clean next tests with pre-fixed two-branch rules | CURRENT |
@@ -696,6 +697,8 @@ Working papers.
 | `practice/measure_133.py`, `practice/test_measure_133.py` | Measurement 133 recorder and invented-data checks | CURRENT |
 | `practice/venue_binance_us.py`, `practice/test_venue_binance_us.py` | Shared Binance.US transport, gate, custody and approval helpers; invented HTTP tests | CURRENT |
 | `practice/forward/M133_log.json` | Measurement 133 public count and aggregate status | RECORD |
+| `practice/measure_134.py`, `practice/test_measure_134.py` | Measurement 134 recorder and invented-data checks | CURRENT |
+| `practice/forward/M134_log.json` | Measurement 134 public counts and status only | RECORD |
 | `practice/PROPOSAL_E01_paper_order_leg.md` | Proposal only: a practice-account market-on-close leg for E01, the broker change it needs, the key names, and why a practice fill is not the auction price | DRAFT |
 | `.github/workflows/practice-trader.yml` | The timer: runs the checks, then the desk, and saves the records to the `practice-records` branch | CURRENT |
 
