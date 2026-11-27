@@ -534,3 +534,33 @@ def test_frozen_input_changed_during_wake_stops(lab, monkeypatch):
     pages = Pages(clock)
     out = run(lab, pages, clock, Scout(pages, clock))
     assert out["kind"] == "stop" and out["reason"] == "frozen_inputs_changed"
+
+
+def test_gate_in_use_must_be_the_frozen_gate(lab):
+    clock = at(1)
+    pages = Pages(clock)
+    pages.gate = type("G", (), {"cooldown_path": "/tmp/some/other/cooldown.json"})()
+    with pytest.raises(bx.Refuse):
+        run(lab, pages, clock, Scout(pages, clock))
+    assert pages.calls == []
+    pages = Pages(clock)
+    pages.gate = type("G", (), {"cooldown_path": lab[1]["gate_custody"]["cooldown_path"]})()
+    assert run(lab, pages, clock, Scout(pages, clock))["kind"] == "wake"
+
+
+def test_fenced_exit_is_final_at_last_exit_wake(lab, monkeypatch):
+    cfg = dict(lab[1])
+    cfg["cards"] = {k: dict(v) for k, v in cfg["cards"].items()}
+    cfg["cards"]["W"]["last_wake_utc"] = bx.iso(T0 + timedelta(hours=25))
+    assert d.exit_final(cfg, "W", 1, T0 + timedelta(hours=25))
+    clock = at(1)
+    pages = Pages(clock, last={"ETH": "94", "ADA": "92"})
+    run(lab, pages, clock, Scout(pages, clock))
+    # a stop on the first exit book fences the rest; with the cap reached they must be final
+    monkeypatch.setattr(d, "exit_final", lambda c, card, a, w: True)
+    clock = at(25)
+    pages = Pages(clock, fail={("book", "ADA"): lambda: bx.Blocked(bx.HOST, 418)})
+    run(lab, pages, clock, Scout(pages, clock))
+    w = [r for r in rows(lab) if r["kind"] == "wake"][-1]
+    assert any(x["status"] == "gate_stopped" for x in w["exits"])
+    assert all(x["final"] for x in w["exits"])

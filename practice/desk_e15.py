@@ -584,8 +584,9 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, caller, timing
                     exits.append(base | {"status": "past_last_exit_wake", "final": True})
                     continue
                 if terminal is not None:
-                    # the terminal fence: nothing is priced after a stop, not even from a book already in hand
-                    exits.append(base | {"status": "gate_stopped", "final": False})
+                    # the terminal fence: nothing is priced after a stop, not even from a book already in hand;
+                    # at the retry cap or the last exit wake the exit is final and void
+                    exits.append(base | {"status": "gate_stopped", "final": exit_final(cfg, card, attempt, wake)})
                     continue
                 res = e14.leave(t, fresh(exit_books, t["coin"]), fee_for(cfg, t["coin"]))
                 final = res["status"] == "ok" or exit_final(cfg, card, attempt, wake)
@@ -837,7 +838,13 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
             if claim_time >= until:
                 continue
             pages = pages if pages is not None else bx.PublicPages(
-                clock=clock, sleep=sleep, monotonic=monotonic, gate=e14.TimedGate(clock=clock))
+                clock=clock, sleep=sleep, monotonic=monotonic,
+                gate=e14.TimedGate(cooldown_path=h["frozen"]["config"]["gate_custody"]["cooldown_path"], clock=clock))
+            g = getattr(pages, "gate", None)
+            if g is not None:
+                # the gate in use must be the frozen shared gate, not one built from a separate settings read
+                bx.need(Path(g.cooldown_path) == Path(h["frozen"]["config"]["gate_custody"]["cooldown_path"]),
+                        "gate in use differs from the frozen shared gate")
             if isinstance(pages, bx.PublicPages):
                 generation = h.get("venue_generation")
                 bx.need(type(generation) is int and generation >= 0, "invalid shared gate generation")
@@ -868,7 +875,7 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
 def loop(off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=time.monotonic, caller=None, pages=None):
     cfg = settings()
     required(cfg)
-    pages = pages or bx.PublicPages(clock=clock, sleep=sleep, monotonic=monotonic, gate=e14.TimedGate(clock=clock))
+    # pages stay None here: record() builds them from the verified frozen settings at each wake
     path = bx.checked_dir(Path(off))
     fd = bx.private_open(path / ".loop.lock", os.O_RDWR | os.O_CREAT)
     with os.fdopen(fd, "rb") as lock:
