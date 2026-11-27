@@ -1,0 +1,82 @@
+# 205. Deep dive: legal ways for agents to make money outside trading
+
+What this is: the ranked summary of nine research pages (205a to 205i), written by the lead agent on 2026-11-27 after an independent second check of 72 claims (51 confirmed, 18 corrected, 3 not supported; the corrections are listed below and stand over the lane pages). It answers the owner's question below for one person in Nampa, Idaho with a few hundred dollars, who works in software, design, 3D and film.
+
+Owner's words (2026-11-27 12:24 AM MT): "Maybe trading is a dead end for agents. What if there's another legal way to make money similar to this, like sports betting, horse race betting, or anything else that might actually generate money by utilizing agents. Wanna look into it? Even outside of what I mentioned, I'd love for you to just do a deep dive. Surely there has to be some way on the internet for agents to generate money"
+
+Labels: MEASURED (opened primary source or official record), STATED (said by an operator, vendor or study without independent audit), INFERENCE (the lead agent's reasoning from those), UNKNOWN (not published or not found). Where the list says UNKNOWN for dollars, the second check found no source that supports a range for a newcomer. Nothing here was tried: no account, sign-up, bet, purchase, post or submission was made.
+
+## Short answer
+
+- INFERENCE: No field we checked shows an agent left alone turning a few hundred dollars into reliable income within weeks. That includes the two the owner named.
+- INFERENCE: Betting is the weakest group, not the strongest. Idaho bans sportsbooks, the horse pools keep about a fifth of the money, the books and tracks ban bots, and no public record shows a small account winning after costs.
+- INFERENCE: Money does reach people who use agents, in three shapes. First, one-time cash and savings that an agent can find and track and the owner collects (rows 1 to 3). Second, pay for work the owner sells, where agents do most of the labor (rows 4 to 6). Third, two places that pay for agent work on purpose and publish who was paid: a forecasting bot tournament and bug bounties (rows 7 and 8).
+- INFERENCE: Only rows 4 and 5 can grow into steady income, and they are a small business built on the owner's own skill. No source gave a dependable dollar figure for a newcomer in either.
+- INFERENCE: Row 7 is the only place found where an agent works with no human in the loop, a payer pays, and the results are public. The typical bot gets $0 and prizes arrive months later.
+- INFERENCE: The pattern across all nine pages: in every case that made money a human picked the target, checked the output or held the account. Platforms allow AI help when it is disclosed and punish volume, which is the thing agents do most cheaply.
+
+## Ranked list, best first
+
+Order used by the lead agent: how sure it is that real dollars arrive, then how soon, then how much the agent adds, then legal and terms risk. Rows 1 to 3 are sure but small and mostly one-time. Rows 4 to 6 are larger and unsure.
+
+| # | What | Who pays and why | Dollars | Money needed | Time to first dollar | Evidence | What the agent adds | Risk | Needs the owner | Cheapest test |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Bank checking sign-up bonus ([205f](205f_offers_and_resale_arbitrage.md)) | A bank pays to win a direct deposit | MEASURED offers: $500 at [Wells Fargo](https://accountoffers.wellsfargo.com/welcomebonus/) for $1,000 of qualifying deposits in 90 days; $425, $600 or $900 at [Chase](https://www.chase.com/personal/offers/checking-tier) for $2,500, $5,000 or $10,000 of direct deposits in 90 days. One-time, taxed as interest; a monthly figure is not supported | $25 to open | About 45 to 120 days | Strong that the offers exist; his eligibility UNKNOWN | Some: checks terms, fee waivers, deadlines and waiting periods | Low | Opens the account himself and moves a paycheck deposit | Check one live offer against his pay schedule before opening anything |
+| 2 | His own claims: Idaho unclaimed property, class actions he qualifies for, refunds owed ([205f](205f_offers_and_resale_arbitrage.md)) | Money already owed to him | UNKNOWN for him; one-time. MEASURED in an [FTC study](https://www.ftc.gov/system/files/documents/reports/consumers-class-actions-retrospective-analysis-settlement-campaigns/class_action_fairness_report_0.pdf): $69 median payout per settlement among those who filed | $0 | Days to file; the state has up to 90 days to rule on a complete claim ([Idaho Code](https://legislature.idaho.gov/statutesrules/idstat/Title14/T14CH5/SECT14-5-904/)) | Strong that the money exists in general | Some: finds, lists and drafts | Low, own real claims only | Confirms each claim is his and files it | One hour: the state's [free search](https://yourmoney.idaho.gov/app/claim-search) and his own purchase history |
+| 3 | Bills, insurance and subscriptions review ([205f](205f_offers_and_resale_arbitrage.md)) | Savings, not income | UNKNOWN until his bills are listed | $0 | 1 to 14 days | Some | Some | Low | Makes the calls and switches | List every recurring charge; price two alternatives on like-for-like cover |
+| 4 | Fixed-price work the owner sells directly (software, design, 3D, film), built mostly by agents ([205h](205h_agent_services.md), [205g](205g_crypto_non_trading_income.md), [205c](205c_prediction_markets_and_forecasting.md)) | A business pays for a finished thing it can check | UNKNOWN for a newcomer; the lane's range was not supported by the second check. STATED by one [survey](https://www.bankrate.com/press-releases/fewer-americans-have-a-side-hustle-in-2025/): $200 a month median for people with side work | Under $100 | UNKNOWN; weeks if a buyer already exists | Some | Large: most of the build hours | Low, if his employer's rules allow it | The offer, the buyer talks, the signature, the invoice | Show one sample to a few people he already knows and ask for one paid, tightly scoped pilot; judge by a deposit, not replies |
+| 5 | One small paid tool, engine plugin or asset kit he builds with agents ([205e](205e_content_and_digital_products.md), [205h](205h_agent_services.md)) | Buyers on Fab, Unity or direct | UNKNOWN; most launches earn close to nothing. STATED by a [vendor](https://www.revenuecat.com/state-of-subscription-apps-2026/) for subscription apps: median about $72 a month one year after launch | Under $50 | A sale can come in weeks; Fab pays about 30 days after month end once $100 is owed ([Fab guide](https://dev.epicgames.com/documentation/en-us/fab/publisher-get-started-in-fab)) | Some | Large for code and documents | Low with honest AI labels | Picks the niche, finishes and publishes under his name | A private demo of one tool to a few likely users; build more only on a real promise to buy |
+| 6 | Fixed-price code jobs assigned in writing before the work ([205d](205d_bounties_and_competitions.md)) | A company pays for an accepted fix | UNKNOWN; plan $0. Example: $250 a job, said paid by the company twice ([April thread](https://github.com/Expensify/App/issues/85987), [November thread](https://github.com/Expensify/App/issues/101616)) | $0 | UNKNOWN; no sooner than 7 days after the fix ships | Some | Some | Low when disclosed | Applies, is hired, understands and tests the fix | One week, no posting: find one funded, unassigned job that fits |
+| 7 | Forecasting bot tournament, Metaculus ([205c](205c_prediction_markets_and_forecasting.md), [205i](205i_verified_agent_earners.md)) | A forecasting site pays prizes to bots; free to enter; a skill contest, not a bet | Typical $0. MEASURED: 19 of 96 ranked bots shared $30,000 in the [2025 table](https://www.metaculus.com/aib/2025/q2/) and the top 10 took $24,881.73 | $0 to model costs | Months: paid after a season of about four months resolves | Strong on who was paid | Large: the rules require no human in the loop | Low as a labeled bot | An account, identity check and tax form if a prize is won | Two-week private scorecard on closed questions, no account |
+| 8 | Bug bounties found by an agent and confirmed by a person ([205d](205d_bounties_and_competitions.md), [205i](205i_verified_agent_earners.md)) | A company pays for a valid finding | UNKNOWN; the best-known operator says its bounties earned less than its computing cost ([CyberScoop](https://cyberscoop.com/is-xbows-success-the-beginning-of-the-end-of-human-led-bug-hunting-not-yet/)) | $0 | UNKNOWN | Some | Some | Medium: scope rules and report quality | Confirms each finding by hand and submits it | Count hand-confirmed findings on two programs that allow it; not started |
+| 9 | Horse racing pools through a licensed Idaho betting account ([205b](205b_horse_racing_and_pools.md)) | Other bettors, after the track's cut | UNKNOWN; plan $0 | $0 on paper | UNKNOWN | Weak for a small account | Some on paper; betting by script is banned by the platforms checked | Low on paper, high with bots | Any account and every bet | Paper check of mandatory-payout days only; no bets |
+| 10 | Prediction-market trading and quoting rewards ([205c](205c_prediction_markets_and_forecasting.md)) | Other traders or a venue subsidy | UNKNOWN; losses possible | $0 on paper | UNKNOWN | Weak for a newcomer | Some | Medium; high for sports in Idaho | Any account, and consent for data we are barred from | None now; our data bar stands |
+| 11 | Sports betting ([205a](205a_sports_betting.md)) | A sportsbook, which limits winners | $0 from Nampa | None | None | Strong against | None; books ban bots | High in Idaho | Nothing | A free paper check of closing prices at most |
+
+## Ruled out
+
+- Sports betting from Idaho: MEASURED, state law bans retail and online sportsbooks and paid fantasy contests ([Idaho statute](https://legislature.idaho.gov/statutesrules/idstat/Title18/T18CH38/SECT18-3801/)); see [205a](205a_sports_betting.md).
+- Ticket buying bots, shopping bots on eBay, reselling digital files: against federal law or the site's rules; see [205f](205f_offers_and_resale_arbitrage.md).
+- Agents answering paid surveys, user tests or small tasks: banned by the sites; see [205f](205f_offers_and_resale_arbitrage.md).
+- Mass AI sites, faceless video channels, AI books in volume, AI stock images and AI music uploads: the platforms remove or bar them; see [205e](205e_content_and_digital_products.md).
+- AI songs played by bot listeners: a crime; one operator was sentenced to 18 months ([US Attorney, SDNY](https://www.justice.gov/usao-sdny/pr/north-carolina-man-sentenced-18-months-prison-super-intelligence-assisted-music)); see [205i](205i_verified_agent_earners.md).
+- "Give an agent a budget and tell it to earn", "AI runs your company" services, custom assistant stores, auto-bidding on freelance sites: $0 or losses in every record opened; see [205i](205i_verified_agent_earners.md) and [205h](205h_agent_services.md).
+- Crypto node running, liquidity providing, liquidations, quests: negative or UNKNOWN at this size; see [205g](205g_crypto_non_trading_income.md).
+
+## Corrections from the second check
+
+These stand over the lane pages. Two independent checkers re-opened the primary source for 72 claims.
+
+- [205a](205a_sports_betting.md), [205b](205b_horse_racing_and_pools.md), [205c](205c_prediction_markets_and_forecasting.md): 24 of 24 confirmed.
+- [205g](205g_crypto_non_trading_income.md): 7 confirmed, 1 corrected. The 30-day count of announced awards on one bounty board is now 16 awards and $66,710, not 24 and $70,640.
+- [205i](205i_verified_agent_earners.md): 7 confirmed, 1 corrected. The study confirms 2.5% of freelance projects done to standard at launch and 15.8% for the best model later, but does not name which agent held the 2.5%.
+- [205d](205d_bounties_and_competitions.md): 5 confirmed, 3 corrected. The $250 job payments are the company's own statements, not receipts. The Firebase contest's last request for extra free quota closed on Nov 25, so it only suits a prototype that is nearly ready. A benchmark figure was attached to the wrong table.
+- [205e](205e_content_and_digital_products.md): 3 confirmed, 4 corrected, 1 not supported. The app figure is 17.3% reaching $1,000 a month within two years, among subscription apps that passed the vendor's screen ([RevenueCat](https://www.revenuecat.com/state-of-subscription-apps-2026/)). The Fab and Etsy averages are totals divided by counts, not what a newcomer earns. The YouTube threshold change applies to new applicants only. Not supported: the $0 to $500 a month range for small tools and the idea of building two or three at once.
+- [205f](205f_offers_and_resale_arbitrage.md): 3 confirmed, 4 corrected, 1 not supported. Idaho has up to 90 days to rule on a complete claim. The class-action and airline refund figures have conditions the page left out. Not supported: $100 to $300 a month from bank bonuses; the offers are real but one-time and depend on his deposits.
+- [205h](205h_agent_services.md): 2 confirmed, 5 corrected, 1 not supported. Upwork's fee to the freelancer is 0% to 15%, not 18% or more. The Fiverr and Apify figures are estimates, not observed income. Not supported: $500 to $3,000 a month, a first sale in 14 to 45 days, and 30 cold messages as the test.
+
+## What each page found
+
+- [205a sports betting](205a_sports_betting.md): no usable method from Nampa. MEASURED: New Jersey books kept 9.5% of $12.246 billion staked on completed 2025 events ([NJ annual report](https://www.nj.gov/casinos/about/reports/pdf/2025_ccc_annual_report.pdf)).
+- [205b horse racing and pools](205b_horse_racing_and_pools.md): legal through a licensed account, but no audited record of a small account winning after the pool's cut; the known winners are large teams with rebates the owner cannot get.
+- [205c prediction markets and paid forecasting](205c_prediction_markets_and_forecasting.md): the bot tournament pays, but the median bot gets $0. MEASURED: 19 of 96 ranked bots were paid from $30,000 in the 2025 table ([Metaculus prize table](https://www.metaculus.com/aib/2025/q2/)).
+- [205d bounties and competitions](205d_bounties_and_competitions.md): published totals are not what a newcomer earns; the one concrete lead is fixed-price code work that is assigned in writing before it is built.
+- [205e content and digital products](205e_content_and_digital_products.md): best base rate in the lane, STATED by a vendor: 17.3% of screened new subscription apps reach $1,000 a month within two years ([RevenueCat](https://www.revenuecat.com/state-of-subscription-apps-2026/)).
+- [205f offers and resale](205f_offers_and_resale_arbitrage.md): the only strong-evidence quick cash, and it is one-time. MEASURED live offers of $425 to $900 per checking account, each tied to a deposit amount ([Wells Fargo](https://accountoffers.wellsfargo.com/welcomebonus/), [Chase](https://www.chase.com/personal/offers/checking-tier)).
+- [205g crypto income that is not trading](205g_crypto_non_trading_income.md): nothing showed first-month income for one operator; a spare-disk storage node models at about -$1 to +$2 a month.
+- [205h agents selling services](205h_agent_services.md): the route with the most room to grow; it rests on the owner's skill and his employer's rules, not on the agent alone, and its dollar range did not survive the second check.
+- [205i verified agent earners](205i_verified_agent_earners.md): two repeating, independently recorded payers for agent work (the bot tournament and bug bounties); everything else was one-off, unprofitable, or a seller's claim.
+
+## What the lead agent does next
+
+- Builds a private scorecard for the forecasting bot idea on closed questions, after reading the site's data terms. It reuses the time machine: the bot sees nothing after each question's deadline. No account and no entry until the owner decides.
+- Leaves betting, prediction-market trading and crypto operations closed.
+- Keeps the running crypto cards and Measurement 134 going unchanged.
+
+## Waiting on the owner
+
+- Whether his employment terms allow side work and side products, and whether work made with an employer's tools belongs to the employer. Rows 4, 5, 6 and 8 depend on it.
+- Whether he wants rows 1 to 3 at all. They are his accounts and his claims; the agent can only prepare the list.
+- Whether to open a bot account for row 7 if the private scorecard looks good.
+
+This is research and analysis only, not personalized financial, legal or tax advice.

@@ -4,6 +4,12 @@ Brandon's own words, with the date he wrote them, and what each one settles. New
 
 The rules that follow from these are in `AGENTS.md`. This page is the evidence for them.
 
+## 2026-11-27
+
+| His words | What it settles |
+|---|---|
+| "Maybe trading is a dead end for agents. What if there's another legal way to make money similar to this, like sports betting, horse race betting, or anything else that might actually generate money by utilizing agents. Wanna look into it? Even outside of what I mentioned, I'd love for you to just do a deep dive. Surely there has to be some way on the internet for agents to generate money" | Written 2026-11-27 12:24 AM MT. The project's question widens from trading to any legal way for agents to earn money. The lead agent's reading: a deep dive across fields (research documents 205a to 205i and a summary 205), judged by the same evidence standard as the trading work; the running trading tests stay on. Nothing illegal, nothing against a platform's terms, no real money or account without his written word. |
+
 ## 2026-11-26
 
 | His words | What it settles |
