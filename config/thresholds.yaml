@@ -1741,3 +1741,14 @@ measure_133:
   status: STATED
   note: Ledger 232. The wake offset and inclusive window end are measured from the top of the UTC hour. Inherit the length, sizes and decision line only; Binance.US exact USD instruments.
   source: docs/research/195_measurement_133_binance_us_cost.md
+
+measure_134:
+  value:
+    protocol_ref: measure_133
+    roster_ref: practice/venue_binance_us.py:COINS
+    wake_offset_s: 480
+    window_s: 600
+    busy_wait_s: 20
+  status: STATED
+  note: Ledger 234. Inherit the prior measurement's roster, duration, sizes, fees, BTC control and decision line, not its timing or results.
+  source: docs/research/202_measurement_134_binance_us_cost.md
