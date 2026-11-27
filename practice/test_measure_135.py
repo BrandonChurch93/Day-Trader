@@ -119,20 +119,20 @@ def test_refuses_outside_request_minutes_without_opening(minute):
 
 
 def test_no_late_catch_up_even_inside_the_global_window():
-    clock = FakeClock(H + timedelta(minutes=21))
+    clock = FakeClock(H + timedelta(minutes=23))
     opener = FakeOpener(clock)
-    with pytest.raises(m.Refuse, match="scheduled snapshot minute"):
+    with pytest.raises(m.Refuse, match="scheduled snapshot slot"):
         client(clock, opener).book("BTC", H + timedelta(minutes=20))
     assert not opener.calls
 
 
 def test_clock_checked_again_after_pacing_delay():
-    clock = FakeClock(H + timedelta(minutes=20, seconds=59.5))
+    clock = FakeClock(H + timedelta(minutes=22, seconds=59.5))
     opener = FakeOpener(clock)
     c = client(clock, opener)
     slot = H + timedelta(minutes=20)
     c.book("BTC", slot)
-    with pytest.raises(m.Refuse, match="scheduled snapshot minute"):
+    with pytest.raises(m.Refuse, match="scheduled snapshot slot"):
         c.book("ETH", slot)
     assert len(opener.calls) == 1
 

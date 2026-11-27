@@ -25,6 +25,7 @@ SIZES = (25, 250, 1000)
 SIDES = ("buy", "sell")
 MINUTES = (20, 30, 40, 50)
 WINDOW = (18, 56)
+SLOT_MINUTES = 3
 FEE_BP = 2
 HEADLINE_BP = 25
 DEPTH = 100
@@ -75,8 +76,11 @@ def in_window(when):
 def check_window(when, slot):
     if not in_window(when):
         raise Refuse("outside the UTC minute 18 to 56 request window")
-    if not slot <= utc(when) < slot + timedelta(minutes=1):
-        raise Refuse("outside the scheduled snapshot minute; no catch-up")
+    # Lead agent, before the first request: a snapshot of 20 books at one a
+    # second may run past one minute on a slow link; three minutes still ends
+    # by minute 53, inside the 18 to 56 window of ledger 236.
+    if not slot <= utc(when) < slot + timedelta(minutes=SLOT_MINUTES):
+        raise Refuse("outside the scheduled snapshot slot; no catch-up")
 
 
 def wait_for(slot, clock, sleep):
