@@ -256,8 +256,8 @@ def stopped_on_terms(row, card_name):
         raise ValueError(f"{card_name} card: queue row {row} no longer starts with STOPPED on data terms and a replacement")
     when, new, new_row = m.groups()
     reg = queue_step(new_row)
-    if not reg.startswith("Registered ") or "Binance.US data only" not in dict((c[0], c[1]) for c in queue_rows())[new_row]:
-        raise ValueError(f"{card_name} card: replacement {new} (queue {new_row}) is not a registered Binance.US-only row")
+    if not reg.startswith(("Registered ", "Running since ")) or "Binance.US data only" not in dict((c[0], c[1]) for c in queue_rows())[new_row]:
+        raise ValueError(f"{card_name} card: replacement {new} (queue {new_row}) is not a registered or running Binance.US-only row")
     return when, new
 
 
@@ -371,7 +371,7 @@ def queue_rows():
 
 
 def row_state(step):
-    """A short plain state for a row whose step says it is stopped or only registered; None otherwise."""
+    """A short plain state for a row whose step says it is stopped, held, only registered or newly running; None otherwise."""
     m = re.match(r"STOPPED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)( on data terms)?", step)
     if m:
         return f"Stopped {m[1]}" + (" on data terms" if m[2] else "")
@@ -387,6 +387,9 @@ def row_state(step):
     m = re.match(r"Registered (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)\.", step)
     if m:
         return f"Registered {m[1]}, not started"
+    m = re.match(r"Running since (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)", step)
+    if m:
+        return f"Running since {m[1]}"
     return None
 
 

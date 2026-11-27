@@ -153,7 +153,8 @@ def test_running_now_strip(monkeypatch):
     assert ["9b", "The earnings release reader.", None] in rows
     state = {r[0]: r[2] for r in rows}
     assert all(state[n] == "Stopped 2026-11-26 4:47 PM MT on data terms" for n in ("114", "131", "132", "133"))
-    assert all(state[n] == "Registered 2026-11-26 4:55 PM MT, not started" for n in ("135", "136", "137"))
+    assert all(state[n] == "Running since 2026-11-26 5:39 PM MT" for n in ("135", "136", "137"))
+    assert NC.row_state("Registered 2026-11-26 4:55 PM MT. Builder assigned.") == "Registered 2026-11-26 4:55 PM MT, not started"
     assert state["-"] == "Paused 2026-11-26 5:03 PM MT"
     assert NC.row_state("HOLD since 2026-11-26 4:54 PM MT after week 8") == "On hold since 2026-11-26 4:54 PM MT"
     assert NC.row_state("2026-11-26 08:40 MT: stopped. More.") == "Stopped 2026-11-26 08:40 MT"
