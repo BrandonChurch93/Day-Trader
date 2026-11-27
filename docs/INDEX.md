@@ -647,6 +647,7 @@ Working papers.
 |---|---|---|
 | `practice/README.md` | Start here for the practice desk: what it is, the files, how to work on it, where its records are | CURRENT |
 | `practice/PLAN_02_ai_desk.md` | The plan in force: how a decision becomes an order, what is written down, when a trader stops, what the desk cannot do yet, what would count | CURRENT |
+| `practice/PLAN_E15_live_desk_DRAFT.md` | DRAFT plan for a live pretend-money desk on Binance.US public data: cheap scouts propose from a code-built packet, `practice/gate.py` recomputes the checks, code fills at the walked book and exits on time; scout lines compared trade for trade with rule-only and random twins. Not registered, not built | DRAFT |
 | `practice/trader.py` | The program that places orders for every trader, keeps each inside its pretend budget, enforces exits and writes the records | CURRENT |
 | `practice/picks.py` | The form an AI trader's pick must take, and the check that it does | CURRENT |
 | `practice/books.py` | Works out each trader's cash, holdings, closed trades, wins and losses from the broker's order list | CURRENT |
