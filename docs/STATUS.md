@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-27 01:13 UTC
+Last updated: 2026-11-27 01:20 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- Practice card E14 started 2026-11-26 6:20 PM MT, first wake 7:03 PM MT: Plan 76's rule (buy the largest one-hour faller of 5% or more, hold 24 hours) on live Binance.US order books with a pretend $250. The first build failed its independent audit on four points; the repaired build `e8248e9` is CLEAR with one accepted limit, written on ledger row 233. It answers the question Plan 76 left open: what buying in the hour after a fall really costs. One cost-only reading after 20 signals; judged at 60 trades or 2028-11-30. No reading has been taken.
 - Plan 76 result page: [the held-back run in full](research/200_plan_76_heldback_result.md), with the breakdown by year and coin near the top and the cost the rule can stand (mean reaches zero at 92.9 bp a side; the failed mark at 61.1 bp a side, both MEASURED from the run's two cost lines).
 - Plan 76 second check, 2026-11-26 6:05 PM MT: an independent rebuild from the plan text AGREES with every figure of the held-back result. Its breakdown weakens the reading. MEASURED at 15 bp a side: 2024 made +3.71% a trade (42 trades), 2025 lost 0.44% (25) and 2026 lost 0.91% (16). SHIB alone made +8.19% over 11 trades; without it the other 72 average +0.56% at 15 bp and -0.64% at 75 bp. The four most thinly traded pairs on Bitstamp (AAVE, SHIB, HBAR, LINK) carry 54 of 83 signals and average +2.90%; the other 29 average -0.89%. INFERENCE: the result rests on one year and on pairs whose hourly prices are least likely to be real fills. Practice card E14 stays as registered; this is why it is a live-book check and not a pass. Report kept outside the repo; ledger row 229.
 - Plan 76 held-back result (ledger 229), 2026-11-26 6:01 PM MT: DID NOT PASS at the main cost, and it is the closest miss so far on a rule that trades in days. MEASURED on Bitstamp hourly bars, 11 coins, 2024-01-01 to 2026-11-26, run once: buying the largest one-hour faller of 5% or more and holding 24 hours made 83 trades, +0.36% a trade after 75 bp a side, better than 99.9% of 999 matched random books, but -0.28% without each year's best trade, so one of four marks failed. At 15 bp a side all four marks were met: +1.57% a trade, +0.93% without each year's best. Before costs about +1.9% a trade; the mean stays above zero up to about 90 bp a side. UNKNOWN and the whole question now: what a $250 order really costs in the hour after such a fall on Binance.US. Practice card E14 (ledger 233) measures exactly that with pretend money; Measurement 133 gives hourly costs within 30 days. Limits: one test of 46, bars from one venue, and a 5% hourly move on a thin pair can be one stale print. Blind recompute ordered.
