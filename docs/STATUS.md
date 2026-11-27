@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-27 00:58 UTC
+Last updated: 2026-11-27 01:01 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- Plan 76 held-back result (ledger 229), 2026-11-26 6:01 PM MT: DID NOT PASS at the main cost, and it is the closest miss so far on a rule that trades in days. MEASURED on Bitstamp hourly bars, 11 coins, 2024-01-01 to 2026-11-26, run once: buying the largest one-hour faller of 5% or more and holding 24 hours made 83 trades, +0.36% a trade after 75 bp a side, better than 99.9% of 999 matched random books, but -0.28% without each year's best trade, so one of four marks failed. At 15 bp a side all four marks were met: +1.57% a trade, +0.93% without each year's best. Before costs about +1.9% a trade; the mean stays above zero up to about 90 bp a side. UNKNOWN and the whole question now: what a $250 order really costs in the hour after such a fall on Binance.US. Practice card E14 (ledger 233) measures exactly that with pretend money; Measurement 133 gives hourly costs within 30 days. Limits: one test of 46, bars from one venue, and a 5% hourly move on a thin pair can be one stale print. Blind recompute ordered.
 - Idea round 70 ([doc 199](research/199_round_70_venue_first_ideas.md), second-checked: 8 claims confirmed, 3 corrected), 2026-11-26 5:58 PM MT: started from the one venue we can use, Binance.US, instead of from papers. Seven candidates, none ready for a profit test, nothing registered. Six dropped on speed, being picked off by faster traders, too few events, or repeating a finished test. One kept as watch: Binance.US asks sitting below Bitstamp at the hour; Measurement 133's single read can answer it with no extra requests.
 - Plan 76 design stage (ledger 229), 2026-11-26 5:55 PM MT: MEASURED, 56 trades in 2020 to 2023, mean +2.15% a trade after 75 bp a side, so by the registered rule it goes on to the held-back years. Not evidence for the rule: every trade was entered in 2020 or 2023, one position was held about two and a half years under the registered wait-for-trading rule and supplies the whole gain, and without each year's best trade the mean is -2.07%. The held-back years (2024 to 2026) cannot have that wait and decide the plan, once.
 - Plan 76 count stage (ledger 229), 2026-11-26 5:53 PM MT: MEASURED on Bitstamp hourly bars for the 11 covered coins, the 5% one-hour-fall rule gave 40, 53, 41 and 33 non-overlapping signals in 2020, 2021, 2022 and 2023, enough to judge the 5% arm. No return has been read. The design stage runs next, then the held-back years once.
