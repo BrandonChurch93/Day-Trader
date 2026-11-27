@@ -13,6 +13,7 @@ No human in the loop: once armed, the bot reads, forecasts and submits by itself
 import argparse
 import hashlib
 import json
+import os
 import socket
 import sys
 import tempfile
@@ -77,8 +78,9 @@ def payload(post, items, text):
             "comments": [{"on_post": post["id"], "text": text, "is_private": True, "included_forecast": True}]}
 
 
-def validate(post, items, body, cfg, token=None):
-    """Refuse a payload that breaks the public API's rules or holds a secret."""
+def validate(post, items, body, cfg, leaks=None):
+    """Refuse a payload that breaks the public API's rules or holds a secret. `leaks` is the client's own check
+    (Client.holds_token), so the token value itself never has to leave the client module."""
     settings.need(type(post.get("id")) is int, "post id")
     for (q, v), f in zip(items, body["forecasts"]):
         settings.need(f["question"] == q["id"], "question id")
@@ -92,17 +94,27 @@ def validate(post, items, body, cfg, token=None):
             cdf.check(v, q)
     settings.need(len(body["comments"]) == 1 and body["comments"][0]["is_private"] is True, "one private comment")
     text = json.dumps(body)
-    settings.need(metaculus.redact(text) == text and (not token or token not in text), "payload holds a token")
+    settings.need(metaculus.redact(text) == text and not (leaks and leaks(text)), "payload holds a token")
     return True
 
 
+def close_time(q):
+    return questions.parse_time(q.get("actual_close_time") or q.get("scheduled_close_time"))
+
+
+FAR = datetime(9999, 1, 1, tzinfo=UTC)
+
+
 # ------------------------------------------------------------------ one pass
-def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None):
-    now = now or datetime.now(UTC)
-    pass_id = now.strftime("%Y%m%dT%H%M%SZ")
+def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, clock=None):
+    """One pass. `now` fixes the clock (tests); otherwise the clock is read fresh before each post."""
+    clock = clock or ((lambda: now) if now else (lambda: datetime.now(UTC)))
+    start = clock()
+    pass_id = start.strftime("%Y%m%dT%H%M%S%fZ")
     ix = state.index(log.rows())
     log.add(kind="pass_start", pass_id=pass_id, targets=targets, dry=dry)
     counts = {}
+    leaks = getattr(client, "holds_token", None)
 
     def outcome(post_id, status, **extra):
         counts[status] = counts.get(status, 0) + 1
@@ -117,8 +129,9 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None):
             counts["list_failed"] = counts.get("list_failed", 0) + 1
             continue
         for p in rows:
-            pid = p.get("id")
+            pid = p.get("id") if isinstance(p, dict) else None
             if type(pid) is not int:
+                outcome(None, "bad_post_id", target=slug)
                 continue
             if pid in seen:
                 outcome(pid, "duplicate_in_pass", target=slug)
@@ -129,37 +142,53 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None):
     plan = []
     for slug, p in posts:
         try:
-            ts = questions.tasks(p, now)
+            ts = questions.tasks(p, start)
         except questions.Skip as exc:
             outcome(p["id"], f"skipped:{exc}", target=slug)
+            continue
+        except questions.NotReady as exc:
+            outcome(p["id"], f"not_ready:{exc}", target=slug)
             continue
         if not ts:
             outcome(p["id"], "no_open_question", target=slug)
             continue
-        plan.append((slug, p, ts))
+        plan.append((min(close_time(q) or FAR for q, _ in ts), slug, p, ts))
+    plan.sort(key=lambda x: (x[0], x[2]["id"]))            # soonest close first
 
-    qids = sorted({q["id"] for _, _, ts in plan for q, _ in ts} | {i for c in ix["open_claims"].values()
-                                                                    for i in c["question_ids"]})
+    qids = sorted({q["id"] for *_, ts in plan for q, _ in ts} | {i for c in ix["open_claims"].values()
+                                                               for i in c["question_ids"]})
     try:
         remote = client.my_forecasts(qids)
     except metaculus.ApiError as exc:
-        for slug, p, _ in plan:                         # never submit without the guard
+        for _, slug, p, _ in plan:                       # never submit without the guard
             outcome(p["id"], "deferred_guard_unavailable", target=slug, http=str(exc.status))
         log.add(kind="pass_end", pass_id=pass_id, counts=counts)
         return counts
 
-    for cid, c in list(ix["open_claims"].items()):
-        if all(remote.get(i, 0) > 0 for i in c["question_ids"]):
-            outcome(c["post_id"], "submitted_confirmed_later", claim_id=cid, question_ids=c["question_ids"])
-            ix["submitted"].update(c["question_ids"])
-        else:
-            outcome(c["post_id"], "claim_not_on_site", claim_id=cid, question_ids=c["question_ids"])
+    for cid, c in list(ix["open_claims"].items()):       # settle claims left open by a crash or an unknown outcome
+        ids = c["question_ids"]
+        if all(remote.get(i, 0) > 0 for i in ids):
+            log.add(kind="settle", pass_id=pass_id, post_id=c["post_id"], claim_id=cid, question_ids=ids,
+                    status="submitted_confirmed_later")
+            ix["submitted"].update(ids)
+            ix["open_claims"].pop(cid)
+        elif all(remote.get(i) == 0 for i in ids):       # every id reported, none with a forecast: nothing was saved
+            log.add(kind="settle", pass_id=pass_id, post_id=c["post_id"], claim_id=cid, question_ids=ids,
+                    status="claim_not_on_site")
+            ix["open_claims"].pop(cid)
+        else:                                            # an id omitted, or mixed: cannot tell; the claim stays open
+            log.add(kind="settle", pass_id=pass_id, post_id=c["post_id"], question_ids=ids, status="claim_cannot_check")
+    held = {i for c in ix["open_claims"].values() for i in c["question_ids"]}
 
-    for slug, p, ts in plan:
+    for _, slug, p, ts in plan:
         pid = p["id"]
+        now_p = clock()
         pending = [(q, ctx) for q, ctx in ts if q["id"] not in ix["submitted"] and remote.get(q["id"], 0) == 0]
         if not pending:
             outcome(pid, "already_answered", target=slug)
+            continue
+        if any(q["id"] in held for q, _ in pending):    # an unsettled claim: never send twice
+            outcome(pid, "claim_still_open", target=slug)
             continue
         unseen = [q["id"] for q, _ in pending if q["id"] not in remote]
         if unseen:                                      # the site did not report these: cannot rule out a forecast
@@ -168,41 +197,49 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None):
         if ix["attempts"].get(pid, 0) >= cfg["max_attempts_per_post"]:
             outcome(pid, "gave_up_after_attempts", target=slug)
             continue
-        closes = min(questions.parse_time(q.get("scheduled_close_time")) or now + timedelta(days=1) for q, _ in pending)
-        if closes - now < timedelta(minutes=cfg["min_minutes_left"]):
+        closes = min(close_time(q) or FAR for q, _ in pending)
+        if closes - now_p < timedelta(minutes=cfg["min_minutes_left"]):
             outcome(pid, "no_time", target=slug)
             continue
         log.add(kind="attempt", pass_id=pass_id, post_id=pid, target=slug)
         ix["attempts"][pid] = ix["attempts"].get(pid, 0) + 1
         q0, ctx0 = pending[0]
-        brief, rstat = models.research(caller, cfg, questions.packet(p, q0, ctx0, now))
-        items, records, failed = [], [], []
-        for q, ctx in pending:
-            beliefs, recs = models.forecast_question(caller, cfg, q, questions.packet(p, q, ctx, now), brief)
+        jobs = [(q, questions.packet(p, q, ctx, now_p)) for q, ctx in pending]
+        try:
+            brief, rstat, results = models.forecast_post(caller, cfg, questions.packet(p, q0, ctx0, now_p), jobs)
+        except models.OverBudget:
+            outcome(pid, "failed_budget", target=slug, budget_s=cfg["question_budget_s"])
+            continue
+        items, records, failed, no_dist = [], [], [], []
+        for q, beliefs, recs in results:
             records.append((q["id"], recs))
             if len(beliefs) < cfg["min_valid_runs"]:
                 failed.append(q["id"])
                 continue
             try:
                 items.append((q, method.aggregate(q, beliefs, cfg)))
-            except (cdf.CdfError, ValueError):
+            except cdf.CdfError as exc:
+                (no_dist if str(exc) == "no_valid_distribution" else failed).append(q["id"])
+            except ValueError:
                 failed.append(q["id"])
         run_log = [{"question_id": i, "runs": [{k: v for k, v in r.items() if k != "reasons"} for r in recs]}
                    for i, recs in records]
-        if failed:
-            outcome(pid, "failed_runs", target=slug, question_ids=failed, research=rstat["status"], runs=run_log)
+        if failed or no_dist:
+            outcome(pid, "no_valid_distribution" if no_dist and not failed else "failed_runs", target=slug,
+                    question_ids=failed + no_dist, research=rstat["status"], runs=run_log)
             continue
         text = comment(cfg, items, records, models.sources(brief), rstat["status"])
         body = payload(p, items, text)
         try:
-            validate(p, items, body, cfg)
+            validate(p, items, body, cfg, leaks)
         except (settings.Refuse, cdf.CdfError) as exc:
             outcome(pid, "failed_build", target=slug, reason=str(exc), runs=run_log)
             continue
         qids_p = [q["id"] for q, _ in items]
         hashes = {q["id"]: state.text_hash(q, ctx) for q, ctx in pending}
         if dry:
-            outcome(pid, "dry_run", target=slug, question_ids=qids_p, text_sha256=hashes, payload=body)
+            outcome(pid, "dry_run", target=slug, question_ids=qids_p, text_sha256=hashes, payload=body,
+                    research=rstat["status"], runs=run_log)
             if out is not None:
                 out.append(body)
             continue
@@ -216,6 +253,7 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None):
                 outcome(pid, f"failed_http_{exc.status}", target=slug, claim_id=cid, question_ids=qids_p)
             else:                                       # unknown outcome: the claim stays open for the next pass
                 outcome(pid, "unknown_outcome", target=slug, http=str(exc.status), question_ids=qids_p)
+                held.update(qids_p)
             continue
         outcome(pid, "submitted", target=slug, claim_id=cid, question_ids=qids_p, http=status, runs=run_log,
                 research=rstat["status"])
@@ -246,29 +284,57 @@ def header(log, cfg, commit, mode):
                   "the build or a setting changed since the log began: that is a new attempt with a new log folder")
 
 
+def log_for(cfg, mode):
+    return state.Log(cfg["private_dir"] if mode == "tournament" else cfg["private_dir"] + "_testing")
+
+
 def armed_pass(cfg, mode, caller=None):
     commit = arm(cfg, mode)
     client = metaculus.Client(cfg, armed=True)
-    log = state.Log(cfg["private_dir"] if mode == "tournament" else cfg["private_dir"] + "_testing")
+    log = log_for(cfg, mode)
     with log.locked():
         header(log, cfg, commit, mode)
         targets = cfg["targets"] if mode == "tournament" else [cfg["testing_target"]]
         return run_pass(client, caller or models.sdk_call, log, cfg, targets)
 
 
-def loop(cfg, caller=None, sleep=time.sleep, clock=lambda: datetime.now(UTC)):
-    period = cfg["poll_minutes"] * 60
-    while True:
+def loop(cfg, caller=None, sleep=time.sleep, clock=lambda: datetime.now(UTC), one_pass=None, passes=None):
+    """Passes every poll_minutes until stopped. A changed build or setting (settings.Refuse) stops it: that would be a
+    new attempt. Anything else (no token, a refused client, an HTTP failure, a crash inside a pass) is recorded and
+    the loop goes on to the next pass, so it needs nobody."""
+    one_pass = one_pass or (lambda: armed_pass(cfg, "tournament", caller))
+    period, n = cfg["poll_minutes"] * 60, 0
+    while passes is None or n < passes:
+        n += 1
+        row = {"pass_utc": clock().isoformat()}
         try:
-            counts = armed_pass(cfg, "tournament", caller)
-            print(json.dumps({"pass_utc": clock().isoformat(), "counts": counts}), flush=True)
-        except settings.Refuse as exc:                 # a changed build, a lost key or a setting: stop, do not guess
-            print(json.dumps({"stopped": str(exc)}), flush=True)
+            row["counts"] = one_pass()
+        except settings.Refuse as exc:
+            row["stopped"] = str(exc)
+            record_error(cfg, row)
             return 2
-        except RuntimeError as exc:                    # another pass holds the lock
-            print(json.dumps({"skipped": str(exc)}), flush=True)
+        except (metaculus.Refuse, metaculus.ApiError) as exc:
+            row["error"] = f"{type(exc).__name__}: {exc}"
+        except RuntimeError as exc:                    # another pass holds the lock, or a crash inside the pass
+            row["error"] = f"RuntimeError: {metaculus.redact(exc)}"
+        except Exception as exc:                       # recorded by type only; never stop for one bad pass
+            row["error"] = type(exc).__name__
+        if "error" in row:
+            record_error(cfg, row)
+        print(json.dumps(row), flush=True)
         now = clock().timestamp()
         sleep(period - now % period + 5)
+    return 0
+
+
+def record_error(cfg, row):
+    """Append a loop-level row to the private log without the pass lock (it is one O_APPEND write)."""
+    try:
+        log = log_for(cfg, "tournament")
+        log.ensure()
+        log.add(kind="loop", **row)
+    except OSError:
+        pass
 
 
 # ------------------------------------------------------------------ dry run and selfcheck
@@ -340,15 +406,42 @@ async def fake_caller(kind, model, prompt, schema, timeout, max_tokens):
     return {"text": json.dumps(r), "finish_ok": True, "secs": 0.0}
 
 
-def dry_run(cfg, live_models=False, posts=None, folder=None):
-    out = []
+def dry_run(cfg, live_models=False, posts=None, folder=None, caller=None):
+    out, calls = [], {"research": 0, "run": 0}
+    base = caller or (models.sdk_call if live_models else fake_caller)
+
+    async def counted(kind, *a):
+        calls[kind] += 1
+        return await base(kind, *a)
+    t0 = time.monotonic()
     with tempfile.TemporaryDirectory() as tmp:
         log = state.Log(folder or tmp)
         with log.locked():
-            run_pass(OfflineClient(posts or SAMPLES), models.sdk_call if live_models else fake_caller, log, cfg,
-                     ["made-up"], dry=True, out=out)
+            run_pass(OfflineClient(posts or SAMPLES), counted, log, cfg, ["made-up"], dry=True, out=out)
             rows = [r for r in log.rows() if r.get("kind") == "outcome"]
-    return out, rows
+    summary = {"made_utc": datetime.now(UTC).isoformat(timespec="seconds"), "live_models": live_models,
+               "prompt_sha256": method.prompt_hash(), "posts": len(rows),
+               "questions": sum(len(r.get("question_ids") or []) for r in rows), "calls": calls,
+               "seconds": round(time.monotonic() - t0, 1), "outcomes": {}, "research": {}, "runs": {}}
+    for r in rows:
+        summary["outcomes"][r["status"]] = summary["outcomes"].get(r["status"], 0) + 1
+        summary["research"][r.get("research")] = summary["research"].get(r.get("research"), 0) + 1
+        for q in r.get("runs") or []:
+            for run in q["runs"]:
+                key = f"{run['model']}:{run['status']}"
+                summary["runs"][key] = summary["runs"].get(key, 0) + 1
+    return out, rows, summary
+
+
+def save_summary(cfg, summary):
+    """Counts only (no model text, no question text) under the private folder, for the plan page to cite."""
+    folder = state.Log(cfg["private_dir"] + "_dry_runs")
+    folder.ensure()
+    path = folder.dir / f"live_dry_{summary['made_utc'].replace(':', '').replace('+0000', 'Z')}.json"
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(summary, f, indent=1, sort_keys=True)
+    return str(path)
 
 
 class NoNetwork:
@@ -427,9 +520,10 @@ def main(argv=None):
             print(json.dumps({"selfcheck": "pass" if ok else "FAIL", "checks": checks}, indent=1))
             return 0 if ok else 1
         if args.command == "dry-run":
-            out, rows = dry_run(cfg, live_models=args.live_models)
-            print(json.dumps({"would_submit": out, "outcomes": [{k: r[k] for k in ("post_id", "status")} for r in rows]},
-                             indent=1))
+            out, rows, summary = dry_run(cfg, live_models=args.live_models)
+            if args.live_models:
+                summary["saved_to"] = save_summary(cfg, summary)
+            print(json.dumps({"would_submit": out, "summary": summary}, indent=1))
             return 0
         if args.command == "loop":
             return loop(cfg)

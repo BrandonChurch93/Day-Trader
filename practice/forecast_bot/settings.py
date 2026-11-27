@@ -21,7 +21,7 @@ PINNED = tuple(f"practice/forecast_bot/{n}" for n in (
 KEYS = ("ledger_row", "start_key", "test_key", "network_allowed", "api_base", "token_env", "targets", "testing_target",
         "poll_minutes", "page_limit", "max_pages", "http_timeout_s", "max_attempts_per_post", "min_minutes_left",
         "research_model", "research_web_search", "research_timeout_s", "research_max_tokens", "runs",
-        "min_valid_runs", "run_timeout_s", "run_max_tokens", "asknews_enabled", "binary_clip", "mc_floor",
+        "min_valid_runs", "run_timeout_s", "question_budget_s", "run_max_tokens", "asknews_enabled", "binary_clip", "mc_floor",
         "cdf_uniform_mix", "cdf_open_bound_mass", "comment_max_chars", "private_dir")
 
 
@@ -49,6 +49,10 @@ def required(cfg):
     lo, hi = cfg["binary_clip"]
     need(0 < lo < 0.5 < hi < 1, "binary_clip must stay away from 0 and 1")
     need(cfg["asknews_enabled"] is False, "AskNews is not built in this version")
+    need(cfg["api_base"] == "https://www.metaculus.com", "api_base must be https://www.metaculus.com")
+    need(cfg["question_budget_s"] >= cfg["research_timeout_s"] + cfg["run_timeout_s"],
+         "question_budget_s must cover one research call and one run")
+    need(cfg["max_attempts_per_post"] * cfg["poll_minutes"] >= 180, "retries must be allowed to last the whole window")
     return cfg
 
 
@@ -58,25 +62,35 @@ def frozen(cfg):
             "source_sha256": {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest() for p in PINNED}}
 
 
-def literal_git(*args):
-    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+ENV_ALLOW = ("PATH", "HOME", "LANG", "LC_ALL", "TZ")
+
+
+def child_env():
+    """The environment for a child process: an allowlist only, so no token or key variable can reach it."""
+    env = {k: os.environ[k] for k in ENV_ALLOW if k in os.environ}
     env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, GIT_NO_REPLACE_OBJECTS="1")
+    return env
+
+
+def literal_git(*args, root=None):
     try:
-        return subprocess.check_output(("git", "--no-replace-objects", "-c", "core.fsmonitor=false", *args), cwd=ROOT,
-                                       env=env, text=True, stderr=subprocess.DEVNULL)
+        return subprocess.check_output(("git", "--no-replace-objects", "-c", "core.fsmonitor=false", *args),
+                                       cwd=root or ROOT, env=child_env(), text=True, stderr=subprocess.DEVNULL)
     except (OSError, subprocess.CalledProcessError):
         raise Refuse("cannot read the committed build or ledger") from None
 
 
-def checked_build():
+def checked_build(root=None):
     """The HEAD commit, after checking that every pinned file and the config are tracked, clean and equal to HEAD."""
+    root = Path(root or ROOT)
     files = (*PINNED, "config/thresholds.yaml")
-    tracked = set(literal_git("ls-files", "-z", "--", *files).split("\0")) - {""}
+    tracked = set(literal_git("ls-files", "-z", "--", *files, root=root).split("\0")) - {""}
     need(tracked == set(files), "frozen inputs are not all tracked")
-    need(not literal_git("status", "--porcelain", "--untracked-files=no", "--", *files), "frozen inputs are not clean")
-    commit = literal_git("rev-parse", "--verify", "HEAD^{commit}").strip()
+    need(not literal_git("status", "--porcelain", "--untracked-files=no", "--", *files, root=root),
+         "frozen inputs are not clean")
+    commit = literal_git("rev-parse", "--verify", "HEAD^{commit}", root=root).strip()
     for p in files:
-        need(literal_git("show", f"{commit}:{p}") == (ROOT / p).read_text(), "a frozen input differs from HEAD")
+        need(literal_git("show", f"{commit}:{p}", root=root) == (root / p).read_text(), "a frozen input differs from HEAD")
     return commit
 
 

@@ -6,6 +6,7 @@ credential or Metaculus token is ever put into a prompt (the prompt is built onl
 returning {"text", "finish_ok", "secs"}; tests pass a fake that never touches the network."""
 import asyncio
 import time
+import urllib.parse
 
 from . import method
 
@@ -32,50 +33,32 @@ async def sdk_call(kind, model, prompt, schema, timeout, max_tokens):
             "secs": round(time.monotonic() - t0, 2)}
 
 
-def forecast_question(caller, cfg, q, pkt, brief):
-    """Runs the configured models once each, at the same time, on the same packet and brief.
-    Returns (valid beliefs, run records). A run that errors, times out, is cut off or breaks the form is recorded
-    and left out; the question is forecast only if at least min_valid_runs are valid."""
-    prompt = method.run_prompt(q["type"], pkt, brief)
-    form = method.schema(q["type"])
-
-    async def one(i, model):
-        rec = {"run": i, "model": model}
-        try:
-            got = await caller("run", model, prompt, form, cfg["run_timeout_s"], cfg["run_max_tokens"])
-        except asyncio.TimeoutError:
-            return rec | {"status": "timeout"}, None
-        except Exception as exc:                          # recorded by type only; messages may echo request data
-            return rec | {"status": "call_error", "error": type(exc).__name__}, None
-        if not got.get("finish_ok"):
-            return rec | {"status": "incomplete"}, None
-        try:
-            belief, reasons = method.check_reply(got["text"], q)
-        except method.BadReply as exc:
-            return rec | {"status": f"bad_reply:{exc}"}, None
-        return rec | {"status": "ok", "secs": got.get("secs"), "reasons": reasons[:600]}, belief
-
-    async def all_runs():
-        return await asyncio.gather(*(one(i, m) for i, m in enumerate(cfg["runs"])))
-    results = asyncio.run(all_runs())
-    records = [r for r, _ in results]
-    for (r, b) in results:
-        if b is not None:
-            r["belief"] = b if q["type"] != "multiple_choice" else {k: round(v, 4) for k, v in b.items()}
-    beliefs = [b for _, b in results if b is not None]
-    return beliefs, records
+async def run_one(caller, cfg, q, prompt, form, i, model):
+    rec = {"run": i, "model": model}
+    try:
+        got = await caller("run", model, prompt, form, cfg["run_timeout_s"], cfg["run_max_tokens"])
+    except asyncio.TimeoutError:
+        return rec | {"status": "timeout"}, None
+    except Exception as exc:                          # recorded by type only; messages may echo request data
+        return rec | {"status": "call_error", "error": type(exc).__name__}, None
+    if not got.get("finish_ok"):
+        return rec | {"status": "incomplete"}, None
+    try:
+        belief, reasons = method.check_reply(got["text"], q)
+    except method.BadReply as exc:
+        return rec | {"status": f"bad_reply:{exc}"}, None
+    rec = rec | {"status": "ok", "secs": got.get("secs"), "reasons": reasons[:600]}
+    rec["belief"] = belief if q["type"] != "multiple_choice" else {k: round(v, 4) for k, v in belief.items()}
+    return rec, belief
 
 
-def research(caller, cfg, pkt):
+async def research_step(caller, cfg, pkt):
     """One research call with web search. A failure leaves the brief empty and the runs go ahead on knowledge alone."""
     if not cfg["research_web_search"]:
         return "", {"status": "off"}
-
-    async def go():
-        return await caller("research", cfg["research_model"], method.research_prompt(pkt), None,
-                            cfg["research_timeout_s"], cfg["research_max_tokens"])
     try:
-        got = asyncio.run(go())
+        got = await caller("research", cfg["research_model"], method.research_prompt(pkt), None,
+                           cfg["research_timeout_s"], cfg["research_max_tokens"])
     except asyncio.TimeoutError:
         return "", {"status": "timeout"}
     except Exception as exc:
@@ -85,12 +68,51 @@ def research(caller, cfg, pkt):
     return got["text"][:6000], {"status": "ok", "secs": got.get("secs")}
 
 
+class OverBudget(Exception):
+    """research plus runs for one post took longer than question_budget_s."""
+
+
+def forecast_post(caller, cfg, research_packet, tasks):
+    """tasks: [(q, packet)] for the open, unanswered questions of one post.
+    One research call, then every run for every question at the same time, all under one hard wall-clock budget
+    (question_budget_s). Returns (brief, research record, [(q, valid beliefs, run records)]). Raises OverBudget."""
+    async def go():
+        brief, rstat = await research_step(caller, cfg, research_packet)
+        jobs = []
+        for q, pkt in tasks:
+            prompt, form = method.run_prompt(q["type"], pkt, brief), method.schema(q["type"])
+            jobs.append(asyncio.gather(*(run_one(caller, cfg, q, prompt, form, i, m) for i, m in enumerate(cfg["runs"]))))
+        results = await asyncio.gather(*jobs)
+        out = []
+        for (q, _), res in zip(tasks, results):
+            out.append((q, [b for _, b in res if b is not None], [r for r, _ in res]))
+        return brief, rstat, out
+
+    async def bounded():
+        try:
+            return await asyncio.wait_for(go(), cfg["question_budget_s"])
+        except asyncio.TimeoutError:
+            raise OverBudget() from None
+    return asyncio.run(bounded())
+
+
+def research(caller, cfg, pkt):
+    return asyncio.run(research_step(caller, cfg, pkt))
+
+
+BARRED_HOSTS = ("metaculus.com", "manifold.markets", "polymarket.com", "kalshi.com", "predictit.org",
+                "goodjudgment.com", "gjopen.com")
+
+
 def sources(brief, limit=8):
     """URLs listed after SOURCES: in the brief (https only), for the comment."""
     out = []
     tail = brief.split("SOURCES:", 1)[1] if "SOURCES:" in brief else ""
     for line in tail.splitlines():
         u = line.strip().lstrip("-*0123456789. ").strip()
+        host = (urllib.parse.urlsplit(u).hostname or "") if u.startswith("https://") else ""
+        if any(host == h or host.endswith("." + h) for h in BARRED_HOSTS):
+            continue
         if u.startswith("https://") and " " not in u and u not in out:
             out.append(u[:300])
         if len(out) >= limit:

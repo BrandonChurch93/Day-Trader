@@ -19,6 +19,16 @@ class Skip(Exception):
     """A post or question this bot does not forecast, with the reason recorded in the pass log."""
 
 
+class NotReady(Exception):
+    """A question whose text came back hidden (null). Recorded and tried again next pass; never forecast blind."""
+
+
+def field(q, name):
+    """A question field, read from the top level or, when that is missing or null, from `scaling`."""
+    v = q.get(name)
+    return v if v is not None else (q.get("scaling") or {}).get(name)
+
+
 def parse_time(s):
     if not s:
         return None
@@ -50,7 +60,7 @@ def tasks(post, now):
         out = [(q, None)] if is_open(q, now) else []
     else:
         raise Skip("no_question")
-    for q, _ in out:
+    for q, ctx in out:
         if q.get("type") not in SUPPORTED:
             raise Skip(f"type_not_supported:{q.get('type')}")
         if type(q.get("id")) is not int:
@@ -61,8 +71,12 @@ def tasks(post, now):
             s = q.get("scaling") or {}
             if s.get("range_min") is None or s.get("range_max") is None:
                 raise Skip("scaling_missing")
+            if type(field(q, "open_lower_bound")) is not bool or type(field(q, "open_upper_bound")) is not bool:
+                raise Skip("bounds_missing")
         if not q.get("title") and not post.get("title"):
             raise Skip("text_missing")
+        if q.get("resolution_criteria") is None and (ctx or {}).get("resolution_criteria") is None:
+            raise NotReady("resolution_criteria_hidden")
     return out
 
 
@@ -79,8 +93,9 @@ def packet(post, q, ctx, now):
     """What a model is shown for one question: fixed fields only, plus today's date."""
     p = {"today_utc": now.strftime("%Y-%m-%d"), "post_title": post.get("title")}
     for k in PACKET_FIELDS:
-        if q.get(k) is not None:
-            p[k] = q[k]
+        v = field(q, k) if k in ("open_lower_bound", "open_upper_bound") else q.get(k)
+        if v is not None:
+            p[k] = v
     if ctx:
         p["group"] = {k: v for k, v in ctx.items() if v is not None}
     if q.get("type") in ("numeric", "discrete", "date"):

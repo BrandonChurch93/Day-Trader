@@ -1,7 +1,9 @@
 """Plan B01 forecast bot on made-up questions, a fake model and fake Metaculus pages. No network, no model, no key."""
 import copy
 import json
+import socket
 import urllib.error
+import urllib.parse
 from datetime import datetime, timezone
 
 import pytest
@@ -11,6 +13,14 @@ from forecast_bot import bot, cdf, method, metaculus, models, questions, setting
 NOW = datetime(2027, 3, 1, 12, 0, tzinfo=timezone.utc)
 TOKEN = "tok_" + "a1B2c3D4e5F6g7H8i9J0" * 2
 CFG = settings.load()
+
+
+@pytest.fixture(autouse=True)
+def no_held_token():
+    forget = getattr(metaculus, "forget_token", lambda cfg: None)
+    forget(CFG)
+    yield
+    forget(CFG)
 
 
 def numeric(lo=0.0, hi=100.0, lo_open=False, hi_open=False, n=200, zp=None, qtype="numeric", qid=1):
@@ -85,8 +95,14 @@ def test_cdf_percentiles_outside_the_range():
 
 def test_cdf_closed_bounds_put_no_mass_outside():
     q = numeric()
-    c = cdf.build([run([150, 160, 170, 180, 190, 200, 210])], q)
+    c = cdf.build([run([80, 90, 100, 110, 120, 130, 140])], q)
     assert c[0] == 0.0 and c[-1] == 1.0 and cdf.check(c, q)
+
+
+@pytest.mark.parametrize("vals", [[150, 160, 170, 180, 190, 200, 210], [-90, -80, -70, -60, -50, -40, -30]])
+def test_cdf_all_belief_beyond_a_closed_bound_is_refused(vals):
+    with pytest.raises(cdf.CdfError, match="no_valid_distribution"):
+        cdf.build([run(vals)], numeric())
 
 
 def test_cdf_log_scaling_median_lands_where_asked():
@@ -236,7 +252,8 @@ def test_packet_never_holds_the_community_prediction():
 
 
 def test_tasks_types_and_skips():
-    assert len(questions.tasks(post_with({"id": 1, "type": "binary", "status": "open", "title": "t"}), NOW)) == 1
+    assert len(questions.tasks(post_with({"id": 1, "type": "binary", "status": "open", "title": "t",
+                                          "resolution_criteria": "r"}), NOW)) == 1
     assert questions.tasks(post_with({"id": 1, "type": "binary", "status": "closed", "title": "t"}), NOW) == []
     with pytest.raises(questions.Skip):
         questions.tasks({"id": 2, "conditional": {}}, NOW)
@@ -472,8 +489,11 @@ def test_lock_refuses_a_second_pass(tmp_path):
 def test_dry_run_sends_nothing_and_has_no_submit():
     assert not hasattr(bot.OfflineClient([]), "submit")
     with bot.NoNetwork() as guard:
-        out, rows = bot.dry_run(CFG)
+        out, rows, summary = bot.dry_run(CFG)
     assert guard.tries == 0 and len(out) == 5 and {r["status"] for r in rows} == {"dry_run"}
+    assert summary["calls"] == {"research": 5, "run": 30} and summary["questions"] == 6
+    assert summary["runs"] == {"claude_sonnet_5_5:ok": 18, "gpt_5_4:ok": 12}
+    assert "Made-up" not in json.dumps(summary) and "reasons" not in json.dumps(summary)
 
 
 # ------------------------------------------------------------------ secrets
@@ -619,3 +639,308 @@ def test_header_refuses_a_changed_setting(tmp_path):
 def test_sources_are_https_only():
     brief = "facts\nSOURCES:\n- https://a.example/x\n- http://b.example\n2. https://c.example/y\njunk"
     assert models.sources(brief) == ["https://a.example/x", "https://c.example/y"]
+
+
+# ------------------------------------------------------------------ audit round 1 (each failed before its fix)
+import asyncio
+import http.client
+import os
+import shutil
+import subprocess
+from datetime import timedelta
+from pathlib import Path
+
+
+class SeqOpener(FakeOpener):
+    """Answers each request with the next body in turn."""
+    def __init__(self, bodies, exc=None):
+        super().__init__(exc=exc)
+        self.bodies = list(bodies)
+
+    def open(self, req, timeout):
+        self.reqs.append(req)
+        if self.exc:
+            raise self.exc
+        return _Resp(200, self.bodies.pop(0))
+
+
+def armed_client(monkeypatch, opener, cfg=None):
+    monkeypatch.setenv("METACULUS_TOKEN", TOKEN)
+    return metaculus.Client((cfg or CFG) | {"network_allowed": True}, armed=True, opener=opener)
+
+
+def test_posts_query_asks_for_descriptions(monkeypatch):                     # blocker 1
+    opener = FakeOpener()
+    armed_client(monkeypatch, opener).open_posts("minibench")
+    q = urllib.parse.parse_qs(urllib.parse.urlsplit(opener.reqs[0].full_url).query)
+    assert q == {"tournaments": ["minibench"], "statuses": ["open"], "include_descriptions": ["true"],
+                 "limit": [str(CFG["page_limit"])], "offset": ["0"]}
+
+
+def test_hidden_resolution_criteria_is_not_forecast(tmp_path):                # blocker 1
+    q = dict(bot.SAMPLES[0]["question"], resolution_criteria=None)
+    pages, log = Pages([post_with(q)]), state.Log(tmp_path)
+    do_pass(pages, log)
+    assert pages.sent == [] and outcomes(log) == {50: "not_ready:resolution_criteria_hidden"}
+    assert state.index(log.rows())["attempts"] == {}                         # not counted: tried again next pass
+    with pytest.raises(questions.NotReady):
+        questions.tasks(post_with(q), NOW)
+
+
+def test_group_criteria_cover_hidden_subquestion_criteria():
+    g = copy.deepcopy(bot.SAMPLES[4])
+    assert len(questions.tasks(g, NOW)) == 2                                   # subquestions have none; group has
+    g["group_of_questions"]["resolution_criteria"] = None
+    with pytest.raises(questions.NotReady):
+        questions.tasks(g, NOW)
+
+
+def test_git_children_get_an_allowlisted_environment(monkeypatch):           # blocker 2
+    monkeypatch.setenv("METACULUS_TOKEN", TOKEN)
+    monkeypatch.setenv("ALPACA_PAPER_SECRET_KEY", "x" * 20)
+    seen = []
+    monkeypatch.setattr(subprocess, "check_output", lambda *a, **k: seen.append(k["env"]) or "")
+    settings.literal_git("status")
+    env = seen[0]
+    assert TOKEN not in json.dumps(env) and "ALPACA_PAPER_SECRET_KEY" not in env
+    assert set(env) <= {"PATH", "HOME", "LANG", "LC_ALL", "TZ", "GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_GLOBAL",
+                        "GIT_NO_REPLACE_OBJECTS"}
+
+
+def test_token_leaves_the_process_environment_once_read(monkeypatch):        # blocker 2
+    c = armed_client(monkeypatch, FakeOpener())
+    assert "METACULUS_TOKEN" not in os.environ
+    assert TOKEN not in json.dumps(vars(c), default=str)
+    c.open_posts("minibench")                                                  # still works from the held value
+    assert c.opener.reqs[0].get_header("Authorization") == "Token " + TOKEN
+
+
+def test_omitted_id_keeps_a_claim_open(tmp_path):                             # blocker 3
+    pages, log = Pages(bot.SAMPLES[:1], fail={"submit": 502}), state.Log(tmp_path)
+    do_pass(pages, log)
+    pages.fail = {}
+    pages.my_forecasts = lambda qids: {}                                       # the site omits the id
+    do_pass(pages, log, now=NOW + timedelta(minutes=15))
+    assert pages.sent == [] and len(state.index(log.rows())["open_claims"]) == 1
+    settles = [r["status"] for r in log.rows() if r["kind"] == "settle"]
+    assert settles == ["claim_cannot_check"]
+    pages.my_forecasts = lambda qids: {i: 0 for i in qids}                     # now reported, with none
+    do_pass(pages, log, now=NOW + timedelta(minutes=30))
+    assert state.index(log.rows())["open_claims"] == {} and len(pages.sent) == 1
+
+
+def test_environment_proxy_is_ignored(monkeypatch):                           # should fix 4
+    monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:9")
+    monkeypatch.setenv("https_proxy", "http://127.0.0.1:9")
+    monkeypatch.setenv("METACULUS_TOKEN", TOKEN)
+    c = metaculus.Client(CFG | {"network_allowed": True}, armed=True)
+    hosts = []
+    real = socket.getaddrinfo
+
+    def capture(host, *a, **k):
+        hosts.append(host)
+        raise OSError("blocked in test")
+    monkeypatch.setattr(socket, "getaddrinfo", capture)
+    with pytest.raises(metaculus.ApiError):
+        c.open_posts("minibench")
+    assert hosts and set(hosts) == {"www.metaculus.com"}
+    monkeypatch.setattr(socket, "getaddrinfo", real)
+
+
+@pytest.mark.parametrize("base", ["https://user:pw@www.metaculus.com", "https://www.metaculus.com:8443",
+                                  "https://www.metaculus.com/?x=1", "https://www.metaculus.com/#f",
+                                  "https://metaculus.com", "https://www.metaculus.com.evil.example",
+                                  "https://www.metaculus.com/api"])
+def test_api_base_is_pinned(base, monkeypatch):                               # should fix 4
+    monkeypatch.setenv("METACULUS_TOKEN", TOKEN)
+    with pytest.raises(metaculus.Refuse):
+        metaculus.Client(CFG | {"network_allowed": True, "api_base": base}, armed=True)
+    with pytest.raises(settings.Refuse):
+        settings.required(CFG | {"api_base": base})
+
+
+def test_http_exception_becomes_api_error(monkeypatch):                       # should fix 5
+    c = armed_client(monkeypatch, FakeOpener(exc=http.client.RemoteDisconnected("gone")))
+    with pytest.raises(metaculus.ApiError) as e:
+        c.open_posts("minibench")
+    assert e.value.__cause__ is None and "RemoteDisconnected" in str(e.value)
+
+
+def test_loop_survives_errors_and_stops_only_on_a_changed_build(tmp_path):   # should fix 5, test 10
+    cfg = CFG | {"private_dir": str(tmp_path / "bot")}
+    errors = iter([metaculus.Refuse("no usable bot token"), metaculus.ApiError(503, "GET x"), RuntimeError("lock"),
+                   KeyError("boom"), {"submitted": 1}, settings.Refuse("the build changed")])
+
+    def one():
+        e = next(errors)
+        if isinstance(e, BaseException):
+            raise e
+        return e
+    sleeps = []
+    rc = bot.loop(cfg, sleep=sleeps.append, clock=lambda: NOW, one_pass=one)
+    assert rc == 2 and len(sleeps) == 5
+    rows = state.Log(cfg["private_dir"]).rows()
+    assert [("error" in r, "stopped" in r) for r in rows] == [(True, False)] * 4 + [(False, True)]
+    assert rows[3]["error"] == "KeyError"
+
+
+def test_pass_goes_soonest_close_first_with_a_fresh_clock(tmp_path):        # should fix 6
+    late = post_with(dict(bot.SAMPLES[0]["question"], id=1, scheduled_close_time="2027-03-01T15:00:00Z"), pid=11)
+    soon = post_with(dict(bot.SAMPLES[0]["question"], id=2, scheduled_close_time="2027-03-01T12:30:00Z"), pid=12)
+    tight = post_with(dict(bot.SAMPLES[0]["question"], id=3, scheduled_close_time="2027-03-01T12:40:00Z"), pid=13)
+    ticks = iter([NOW, NOW, NOW + timedelta(minutes=36), NOW + timedelta(minutes=37)])
+    pages, log = Pages([late, tight, soon]), state.Log(tmp_path)
+    with log.locked():
+        bot.run_pass(pages, bot.fake_caller, log, CFG, ["minibench"], clock=lambda: next(ticks))
+    assert [b["comments"][0]["on_post"] for b in pages.sent] == [12, 11]
+    assert outcomes(log)[13] == "no_time"                                      # 4 minutes left by the fresh clock
+
+
+def test_log_scale_value_at_zero_point_is_a_bad_run():                       # should fix 7
+    q = numeric(lo=1, hi=1000, zp=0)
+    vals = {k: float(v) for (k, _), v in zip(method.PERCENTILES, [-5, 1, 2, 3, 4, 5, 6])} | {"reasons": "r"}
+    with pytest.raises(method.BadReply, match="percentile"):
+        method.check_reply(json.dumps(vals), q)
+
+
+def test_log_scale_bad_run_is_dropped_not_fatal(tmp_path):                   # should fix 7
+    q = dict(numeric(lo=1, hi=1000, zp=0, hi_open=True, qid=7), resolution_criteria="r")
+
+    async def one_bad(kind, model, prompt, schema, timeout, max_tokens):
+        if kind == "run" and model == "gpt_5_4":
+            return {"text": json.dumps({k: -1.0 for k, _ in method.PERCENTILES} | {"reasons": "r"}), "finish_ok": True}
+        return await bot.fake_caller(kind, model, prompt, schema, timeout, max_tokens)
+    pages, log = Pages([post_with(q)]), state.Log(tmp_path)
+    do_pass(pages, log, caller=one_bad)
+    assert outcomes(log) == {50: "submitted"}
+    runs = [r for r in log.rows() if r.get("status") == "submitted"][0]["runs"][0]["runs"]
+    assert [r["status"] for r in runs].count("bad_reply:percentile") == 2
+
+
+def test_bounds_read_from_scaling():                                          # should fix 8
+    q = numeric(lo_open=True, hi_open=False)
+    q["scaling"] |= {"open_lower_bound": True, "open_upper_bound": False}
+    q["open_lower_bound"] = q["open_upper_bound"] = None
+    assert cdf.bounds_open(q) == (True, False)
+    p = questions.packet(post_with(q), q, None, NOW)
+    assert p["open_lower_bound"] is True and p["open_upper_bound"] is False
+    del q["open_lower_bound"], q["open_upper_bound"]
+    assert cdf.bounds_open(q) == (True, False)
+
+
+def test_live_pass_checks_the_token_in_the_payload(tmp_path):                # note 9a
+    pages, log = Pages(bot.SAMPLES[:1]), state.Log(tmp_path)
+    pages.holds_token = lambda text: "Made-up" in text                        # stands in for Client.holds_token
+    do_pass(pages, log)
+    assert pages.sent == [] and outcomes(log) == {900001: "failed_build"}     # also covers failed_build (test 10)
+
+
+def test_client_holds_token_check(monkeypatch):
+    c = armed_client(monkeypatch, FakeOpener())
+    assert c.holds_token("x" + TOKEN) and not c.holds_token("plain text")
+
+
+def test_retries_cover_the_whole_window():                                   # note 9b
+    assert CFG["max_attempts_per_post"] * CFG["poll_minutes"] >= 180
+    with pytest.raises(settings.Refuse):
+        settings.required(CFG | {"max_attempts_per_post": 3})
+
+
+def test_research_is_told_to_keep_crowd_numbers_out():                       # note 9c
+    p = method.research_prompt({"title": "t"})
+    assert "metaculus.com" in p and "prediction market" in p
+    brief = ("x\nSOURCES:\nhttps://www.metaculus.com/questions/1/\nhttps://polymarket.com/e\n"
+             "https://manifold.markets/m\nhttps://www.bls.gov/cpi/\nhttps://kalshi.com/k")
+    assert models.sources(brief) == ["https://www.bls.gov/cpi/"]
+
+
+def test_all_runs_beyond_a_closed_bound_is_recorded(tmp_path):               # note 9d
+    q = dict(numeric(qid=8), resolution_criteria="r")
+
+    async def above(kind, model, prompt, schema, timeout, max_tokens):
+        if kind == "research":
+            return {"text": "b", "finish_ok": True}
+        return {"text": json.dumps({k: 500.0 + i for i, (k, _) in enumerate(method.PERCENTILES)} | {"reasons": "r"}),
+                "finish_ok": True}
+    pages, log = Pages([post_with(q)]), state.Log(tmp_path)
+    do_pass(pages, log, caller=above)
+    assert pages.sent == [] and outcomes(log) == {50: "no_valid_distribution"}
+
+
+def test_post_without_an_integer_id_is_recorded(tmp_path):                   # note 9e
+    pages, log = Pages([{"id": "x", "title": "t"}, {"title": "no id"}] + bot.SAMPLES[:1]), state.Log(tmp_path)
+    counts = do_pass(pages, log)
+    assert counts["bad_post_id"] == 2 and counts["submitted"] == 1
+
+
+def test_checked_build_on_a_real_repo(tmp_path):                              # test 10
+    root = tmp_path / "repo"
+    for p in (*settings.PINNED, "config/thresholds.yaml"):
+        (root / p).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(settings.ROOT / p, root / p)
+    g = lambda *a: subprocess.run(("git", "-C", str(root), *a), check=True, capture_output=True, env=settings.child_env()
+                                  | {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+                                     "GIT_COMMITTER_EMAIL": "t@t"})
+    g("init", "-q")
+    with pytest.raises(settings.Refuse, match="tracked"):
+        settings.checked_build(root)
+    g("add", "-A")
+    g("commit", "-q", "-m", "x")
+    head = subprocess.run(("git", "-C", str(root), "rev-parse", "HEAD"), capture_output=True, text=True).stdout.strip()
+    assert settings.checked_build(root) == head
+    f = root / "practice/forecast_bot/cdf.py"
+    f.write_text(f.read_text() + "\n# changed\n")
+    with pytest.raises(settings.Refuse, match="clean"):
+        settings.checked_build(root)
+
+
+def test_open_posts_follows_pages_and_stops_at_the_limit(monkeypatch):      # test 10
+    page = lambda ids, more: json.dumps({"results": [{"id": i} for i in ids], "next": "n" if more else None}).encode()
+    opener = SeqOpener([page([1, 2], True), page([3], False)])
+    assert [p["id"] for p in armed_client(monkeypatch, opener).open_posts("minibench")] == [1, 2, 3]
+    offsets = [urllib.parse.parse_qs(urllib.parse.urlsplit(r.full_url).query)["offset"] for r in opener.reqs]
+    assert offsets == [["0"], ["2"]]
+    metaculus.forget_token(CFG)
+    many = SeqOpener([page([i], True) for i in range(CFG["max_pages"])])
+    with pytest.raises(metaculus.ApiError, match="too_many_pages"):
+        armed_client(monkeypatch, many).open_posts("minibench")
+
+
+def test_timeouts_in_research_and_runs(tmp_path):                            # test 10
+    async def slow(kind, model, prompt, schema, timeout, max_tokens):
+        if kind == "research" or model == "gpt_5_4":
+            raise asyncio.TimeoutError()
+        return await bot.fake_caller(kind, model, prompt, schema, timeout, max_tokens)
+    pages, log = Pages(bot.SAMPLES[:1]), state.Log(tmp_path)
+    do_pass(pages, log, caller=slow)
+    row = [r for r in log.rows() if r.get("status") == "submitted"][0]
+    assert row["research"] == "timeout"
+    assert [r["status"] for r in row["runs"][0]["runs"]].count("timeout") == 2
+
+
+def test_wall_clock_budget_per_post(tmp_path):                               # the lead's design point
+    async def hang(kind, model, prompt, schema, timeout, max_tokens):
+        await asyncio.sleep(5)
+    pages, log = Pages(bot.SAMPLES[:1]), state.Log(tmp_path)
+    do_pass(pages, log, caller=hang, cfg=CFG | {"question_budget_s": 0.05})
+    assert pages.sent == [] and outcomes(log) == {900001: "failed_budget"}
+
+
+def test_crash_after_claim_before_outcome(tmp_path):                         # test 10
+    class Crash(BaseException):
+        pass
+    pages, log = Pages(bot.SAMPLES[:1]), state.Log(tmp_path)
+    real = pages.submit
+
+    def crash_after_saving(body):
+        real(body)
+        raise Crash()
+    pages.submit = crash_after_saving
+    with pytest.raises(Crash):
+        do_pass(pages, log)
+    assert len(state.index(log.rows())["open_claims"]) == 1
+    pages.submit = real
+    do_pass(pages, log, now=NOW + timedelta(minutes=15))
+    ix = state.index(log.rows())
+    assert ix["open_claims"] == {} and 910001 in ix["submitted"] and len(pages.sent) == 1
+    assert [r["status"] for r in log.rows() if r["kind"] == "settle"] == ["submitted_confirmed_later"]

@@ -30,8 +30,8 @@ def outcome_count(q):
 
 def bounds_open(q):
     s = q.get("scaling") or {}
-    lo = q.get("open_lower_bound", s.get("open_lower_bound"))
-    hi = q.get("open_upper_bound", s.get("open_upper_bound"))
+    lo = q.get("open_lower_bound") if q.get("open_lower_bound") is not None else s.get("open_lower_bound")
+    hi = q.get("open_upper_bound") if q.get("open_upper_bound") is not None else s.get("open_upper_bound")
     if type(lo) is not bool or type(hi) is not bool:
         raise CdfError("bound openness missing")
     return lo, hi
@@ -157,6 +157,8 @@ def standardize(raw, q, uniform_mix=0.02, open_mass=0.002):
     lo = min(max(f0, open_mass), 0.89) if lo_open else 0.0          # keep at least 0.1 inside the bounds
     hi = max(min(fn, 1.0 - open_mass), lo + 0.1) if hi_open else 1.0
     span = fn - f0
+    if span <= 1e-9 and ((f0 > 0.5 and not lo_open) or (fn < 0.5 and not hi_open)):
+        raise CdfError("no_valid_distribution")       # all belief sits beyond a closed bound: no honest CDF to send
     shape = [(r - f0) / span for r in raw] if span > 1e-9 else [i / n for i in range(n + 1)]
     shape = [min(1.0, max(0.0, v)) for v in shape]
     for i in range(1, n + 1):                             # make the shape non-decreasing (it is, up to rounding)

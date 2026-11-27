@@ -1,7 +1,8 @@
 """The only code that talks to Metaculus. Plain urllib, written from the public API description
 (Metaculus/metaculus docs/openapi.yml). Endpoints used:
 
-- GET  /api/posts/?tournaments=<slug>&statuses=open&limit=&offset=   list open posts of one tournament
+- GET  /api/posts/?tournaments=<slug>&statuses=open&include_descriptions=true&limit=&offset=   open posts of one
+  tournament, with description, resolution_criteria and fine_print (openapi.yml line 1409)
 - GET  /api/questions/bulk-forecast-read/?question_ids=1&question_ids=2   our own forecasts on those questions
   (questions we cannot view are left out of the reply; the pass treats a missing id as "cannot check", not as "none")
 - POST /api/questions/bulk-forecast-comment/ {"forecasts": [...], "comments": [...]}   forecast and private comment,
@@ -10,11 +11,14 @@
 Safety:
 - No request at all unless `forecast_bot.network_allowed` is true and the caller has passed the ledger key check
   (bot.arm). The constructor refuses otherwise, so nothing below can run by accident.
-- The token is read from the environment variable named by `token_env` at the moment a request is built. It is not
-  stored on the object, not logged, not put in an exception, and never reaches a model prompt.
-- Only https to the configured host; redirects are refused so the token cannot follow one to another host.
+- The token is taken out of the environment variable named by `token_env` the first time it is needed, so no child
+  process can inherit it, and is held in this module only. It is not stored on the client, not logged, not put in an
+  exception, and never reaches a model prompt.
+- Only https to www.metaculus.com; proxies from the environment are ignored and redirects are refused, so the token
+  cannot be sent anywhere else.
 - No automatic retry of a POST: an unknown outcome is settled on the next pass by reading our own forecasts.
 """
+import http.client
 import json
 import os
 import re
@@ -47,12 +51,46 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def read_token(cfg, environ=None):
+PINNED_HOST = "www.metaculus.com"
+_HELD = {}          # env name -> token, held in this process after it is taken out of the environment
+
+
+def take_token(cfg, environ=None):
+    """The bot token. The first call takes it out of the environment (so no child process can inherit it) and holds it
+    in this module; later calls return the held value. Refuses if there is no usable token."""
     env = os.environ if environ is None else environ
-    tok = env.get(cfg["token_env"], "")
-    if not tok or any(c.isspace() for c in tok) or len(tok) < 16:
-        raise Refuse(f"no usable bot token in the environment variable {cfg['token_env']}")
+    name = cfg["token_env"]
+    if name in env:
+        tok = env.pop(name)
+        if tok and not any(c.isspace() for c in tok) and len(tok) >= 16:
+            _HELD[name] = tok
+    tok = _HELD.get(name, "")
+    if not tok:
+        raise Refuse(f"no usable bot token in the environment variable {name}")
     return tok
+
+
+def forget_token(cfg):
+    _HELD.pop(cfg["token_env"], None)
+
+
+def check_base(api_base):
+    """api_base must be exactly https://www.metaculus.com: no userinfo, port, path, query or fragment."""
+    try:
+        base = urllib.parse.urlsplit(api_base)
+        port = base.port
+    except ValueError:
+        raise Refuse("api_base is not a valid URL") from None
+    if (base.scheme != "https" or base.hostname != PINNED_HOST or base.username is not None or base.password is not None
+            or port is not None or base.path not in ("", "/") or base.query or base.fragment
+            or api_base.rstrip("/") != "https://" + PINNED_HOST):
+        raise Refuse(f"api_base must be exactly https://{PINNED_HOST}")
+    return base.hostname
+
+
+def safe_opener():
+    """No proxy from the environment (HTTPS_PROXY cannot reroute the token) and no redirects."""
+    return urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
 
 class Client:
@@ -61,35 +99,35 @@ class Client:
             raise Refuse("network_allowed is false in config forecast_bot")
         if armed is not True:
             raise Refuse("not armed: the ledger key check has not passed")
-        base = urllib.parse.urlsplit(cfg["api_base"])
-        if base.scheme != "https" or not base.hostname or base.path not in ("", "/"):
-            raise Refuse("api_base must be a bare https origin")
-        self.cfg, self.host = cfg, base.hostname
-        self.base = f"https://{base.hostname}"
-        self.environ = environ
-        self.opener = opener or urllib.request.build_opener(NoRedirect())
-        read_token(cfg, environ)                       # fail early, without keeping the value
+        self.cfg, self.host = cfg, check_base(cfg["api_base"])
+        self.base = f"https://{self.host}"
+        self.opener = opener or safe_opener()
+        take_token(cfg, environ)                       # fail early; the value stays in the module holder
+
+    def holds_token(self, text):
+        """True if `text` holds the bot token or anything shaped like a token header. For the payload check."""
+        tok = _HELD.get(self.cfg["token_env"], "")
+        return bool(tok and tok in text) or redact(text) != text
 
     def _request(self, method, path, query=None, body=None):
         url = self.base + path + ("?" + urllib.parse.urlencode(query, doseq=True) if query else "")
         if urllib.parse.urlsplit(url).hostname != self.host:
             raise Refuse("request host differs from api_base")
-        token = read_token(self.cfg, self.environ)
+        token = take_token(self.cfg)
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(url, data=data, method=method, headers={
             "Authorization": "Token " + token, "Accept": "application/json",
             "User-Agent": "B01 forecast bot (Day-Trader repo, practice/forecast_bot)",
             **({"Content-Type": "application/json"} if data is not None else {})})
+        token = None
         where = f"{method} {path}"
         try:
             with self.opener.open(req, timeout=self.cfg["http_timeout_s"]) as resp:
                 status, raw = resp.status, resp.read(5_000_000)
         except urllib.error.HTTPError as exc:
             raise ApiError(exc.code, where) from None
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError, ValueError) as exc:
             raise ApiError(type(exc).__name__, where) from None
-        finally:
-            token = None
         if not 200 <= status < 300:
             raise ApiError(status, where)
         try:
@@ -102,6 +140,7 @@ class Client:
         out, offset = [], 0
         for _ in range(self.cfg["max_pages"]):
             _, page = self._request("GET", "/api/posts/", {"tournaments": slug, "statuses": "open",
+                                                           "include_descriptions": "true",
                                                            "limit": self.cfg["page_limit"], "offset": offset})
             rows = (page or {}).get("results") or []
             out.extend(r for r in rows if isinstance(r, dict))

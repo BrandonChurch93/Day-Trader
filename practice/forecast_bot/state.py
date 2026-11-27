@@ -79,7 +79,7 @@ def index(rows):
             attempts[r["post_id"]] = attempts.get(r["post_id"], 0) + 1
         elif kind == "claim":
             claims[r["claim_id"]] = r
-        elif kind == "outcome":
+        elif kind in ("outcome", "settle"):
             if r.get("claim_id"):
                 claims.pop(r["claim_id"], None)
             if r.get("status") in ("submitted", "submitted_confirmed_later"):

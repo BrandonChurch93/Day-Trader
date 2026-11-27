@@ -1286,7 +1286,7 @@ forecast_bot:
     page_limit: 50
     max_pages: 10
     http_timeout_s: 30
-    max_attempts_per_post: 3
+    max_attempts_per_post: 12
     min_minutes_left: 6
     research_model: claude_sonnet_5_5
     research_web_search: true
@@ -1295,6 +1295,7 @@ forecast_bot:
     runs: [claude_sonnet_5_5, claude_sonnet_5_5, claude_sonnet_5_5, gpt_5_4, gpt_5_4]
     min_valid_runs: 3
     run_timeout_s: 180
+    question_budget_s: 480
     run_max_tokens: 6000
     asknews_enabled: false
     binary_clip: [0.02, 0.98]

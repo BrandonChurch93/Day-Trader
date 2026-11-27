@@ -11,7 +11,9 @@ PERCENTILES = (("p05", 0.05), ("p10", 0.10), ("p25", 0.25), ("p50", 0.50), ("p75
 
 RESEARCH_PROMPT = """You are the research step of an autonomous forecasting bot. Search the web for current, dated facts
 that bear on the question below: the latest values of anything it measures, scheduled events before its close, base
-rates for similar events, and what official sources say. Do not give a forecast. Write a brief of at most 400 words with
+rates for similar events, and what official sources say. Do not give a forecast. Do not open, cite or report anything
+from metaculus.com, and do not report any crowd forecast, prediction market price or betting odds from any site
+(for example Metaculus, Manifold, Polymarket, Kalshi, PredictIt, Good Judgment or bookmakers). Write a brief of at most 400 words with
 dated facts, then a line SOURCES: followed by one URL per line (at most 8). If the search finds nothing useful, say so.
 
 QUESTION (JSON):
@@ -122,6 +124,8 @@ def check_reply(text, q):
             raise BadReply("percentile")
         try:
             x = cdf.nominal_value(v, qtype)
+            if not math.isfinite(cdf.to_internal(v, q)):   # e.g. at or below zero_point on a log scale
+                raise ValueError
         except (ValueError, TypeError):
             raise BadReply("percentile") from None
         if pts and x < pts[-1][2]:
