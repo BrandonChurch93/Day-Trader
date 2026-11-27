@@ -1,6 +1,7 @@
 """Ledger 233. Pretend-money washout observation, never orders or account data."""
 import argparse
 from collections import Counter, defaultdict
+from contextlib import contextmanager
 from datetime import timedelta
 from decimal import Decimal
 import fcntl
@@ -9,6 +10,8 @@ import json
 import math
 import os
 from pathlib import Path
+import re
+import subprocess
 import sys
 import time
 
@@ -26,6 +29,105 @@ ROW = 233
 PRIMARY, ALT, SMALL, LATE = "primary", "alternate", "small", "delayed"
 ARMS = (PRIMARY, ALT, SMALL, LATE)
 GATE_BLOB = "ccd1e045c705fbc4bfa2c221bed0015ac2ce8db0"
+CLOCK_TOLERANCE_S = 0.25
+
+
+def literal_git(*args, binary=False):
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, GIT_NO_REPLACE_OBJECTS="1")
+    try:
+        return subprocess.check_output(("git", "--no-replace-objects", "-c", "core.fsmonitor=false", *args),
+                                       cwd=ROOT, env=env, text=not binary, stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.CalledProcessError):
+        raise bx.Refuse("cannot read literal committed approval or build") from None
+
+
+def require_go(row, key, commit, *, generation=0):
+    bx.need(re.fullmatch(r"[a-f0-9]{40}", commit), "invalid frozen build")
+    body = literal_git("show", f"{bx.APPROVAL_REF}:{bx.LEDGER}")
+    rows = re.findall(rf"^\|[ \t]*{row}[ \t]*\|[^\r\n]*$", body, re.M)
+    bx.need(len(rows) == 1, f"committed ledger row {row} missing or repeated")
+
+    def exact(name, value):
+        marker = rf"(?<![A-Za-z0-9_]){name}"
+        assignments = re.findall(marker + r"[ \t]*=", rows[0])
+        good = re.findall(marker + rf"={value}(?=[\s`|]|$)", rows[0])
+        bx.need(len(assignments) == len(good) == 1,
+                f"{name} missing, repeated or mismatched on committed ledger row {row}")
+
+    exact(key, commit)
+    if generation:
+        exact(key + "_GENERATION", str(generation))
+
+
+def checked_build():
+    tracks = literal_git("ls-files", "-v", "-z", "--", *PINNED).split("\0")
+    bx.need({r[2:] for r in tracks if r.startswith("H ")} == set(PINNED)
+            and not literal_git("status", "--porcelain", "--untracked-files=no", "--", *PINNED),
+            "frozen inputs not tracked and clean")
+    commit = literal_git("rev-parse", "--verify", "HEAD^{commit}").strip()
+    for path in PINNED:
+        bx.need(literal_git("show", f"{commit}:{path}", binary=True) == (ROOT / path).read_bytes(),
+                "frozen input differs from literal build")
+    bx.need(literal_git("rev-parse", f"{commit}:{SHARED}").strip() == GATE_BLOB,
+            "shared gate differs from audited version")
+    return commit
+
+
+class WakeClock:
+    """Fail closed on clock steps; absolute UTC still requires a trusted host clock."""
+
+    def __init__(self, utc, monotonic):
+        self.utc, self.monotonic = utc, monotonic
+        self.first = self.previous = None
+        self.failed = False
+
+    def sample(self):
+        utc, elapsed = self.utc(), self.monotonic()
+        if (not hasattr(utc, "utcoffset") or utc.utcoffset() != timedelta(0)
+                or not math.isfinite(elapsed)):
+            self.failed = True
+        if not self.failed and self.first is not None:
+            t0, m0 = self.first
+            last_t, last_m = self.previous
+            if (utc < last_t or elapsed < last_m
+                    or abs((utc - t0).total_seconds() - (elapsed - m0)) > CLOCK_TOLERANCE_S):
+                self.failed = True
+        if self.failed:
+            raise bx.Failure("untrusted_utc_clock")
+        self.first = self.first or (utc, elapsed)
+        self.previous = utc, elapsed
+        return self.previous
+
+
+class TimedGate(bx.Gate):
+    """Keep the audited lock and recheck E14's clock immediately before wire I/O."""
+    before_send = None
+
+    @contextmanager
+    def mutex(self, deadline=None):
+        # While waiting unsent, enforce the elapsed fence even if UTC drifts.
+        # Restore actual UTC before any shared cooldown or generation policy.
+        venue_utc = self.clock
+        if self.before_send is not None:
+            self.clock = lambda: self.before_send()[0]
+        try:
+            with super().mutex(deadline) as directory:
+                self.clock = venue_utc
+                yield directory
+        finally:
+            self.clock = venue_utc
+
+    @contextmanager
+    def attempt(self, deadline=None, *, generation):
+        with super().attempt(deadline, generation=generation):
+            try:
+                if self.before_send is not None:
+                    self.before_send()
+            except bx.Failure:
+                self.cancel_unsent()
+                raise
+            yield self
 
 
 def settings():
@@ -57,17 +159,16 @@ def header(rows, cfg):
 
 
 def start_gate(commit, gate):
-    bx.require_go(ROW, "E14_START", commit)
+    require_go(ROW, "E14_START", commit)
     generation = bx.check_start(gate)
     if generation:
-        bx.require_go(ROW, "E14_START", commit, generation=generation)
+        require_go(ROW, "E14_START", commit, generation=generation)
     return generation
 
 
 def start(now, off=OFF, *, gate=None):
     cfg = settings()
-    commit = bx.checked_build(PINNED)
-    bx.need(bx.git("hash-object", SHARED).strip() == GATE_BLOB, "shared gate differs from audited version")
+    commit = checked_build()
     generation = start_gate(commit, gate)
     first = bx.hour(now)
     if now >= bound(first, cfg["wake_offset_s"]):
@@ -82,34 +183,53 @@ def start(now, off=OFF, *, gate=None):
     return {"first_wake": bx.iso(first), "freeze": commit, "venue_generation": generation}
 
 
-def request(pages, fetch, until, clock, sleep, busy_s, *, stamped=False):
+def request(pages, fetch, until, clock, sleep, busy_s, *, not_before=None, stamped=False,
+            timing=None):
     """Only a request that the shared gate did not send may retry for gate-busy."""
-    began, busy_until = clock(), None
-    active_until = until
+    timing = timing or WakeClock(clock, time.monotonic)
+    began, began_m = timing.sample()
+    busy = False
+    gate = getattr(pages, "gate", None)
+
+    def limits(*, received=False):
+        now, mono = timing.sample()
+        if not_before is not None and now < not_before:
+            raise bx.Failure("wake_window_not_open")
+        if now > until or (not received and now == until):
+            raise bx.Failure("late book" if received else "shared_gate_busy" if busy else "wake_window_elapsed")
+        left = busy_s - (mono - began_m)
+        if busy and (left < 0 or (not received and left == 0)):
+            raise bx.Failure("shared_gate_busy")
+        return now, min(until, began + timedelta(seconds=busy_s), bound(now, left)) if busy else until
+
     try:
-        while clock() < active_until:
+        while True:
+            attempt_at, active_until = limits()
+            if attempt_at >= active_until:
+                raise bx.Failure("shared_gate_busy" if busy else "wake_window_elapsed")
             pages.deadline = active_until
+            if isinstance(gate, TimedGate):
+                gate.before_send = limits
             try:
                 data = fetch()
-                arrived = clock()
-                if arrived > until:
-                    raise bx.Failure("late book")
-                if arrived > active_until:
-                    raise bx.Failure("shared_gate_busy")
-                return (data, arrived) if stamped else data
             except bx.Failure as exc:
                 if exc.reason != "shared_gate_busy":
-                    if busy_until is not None and exc.reason == "wake_window_elapsed" and clock() >= active_until:
+                    if busy and exc.reason == "wake_window_elapsed" and clock() >= active_until:
                         raise bx.Failure("shared_gate_busy") from None
                     raise
-                if busy_until is None:
-                    busy_until = bound(began, busy_s)
-                    active_until = min(until, busy_until)
-                left = (active_until - clock()).total_seconds()
+                busy = True
+                now, retry_until = limits()
+                left = (retry_until - now).total_seconds()
                 if left > 0:
                     sleep(min(0.25, left))
-        raise bx.Failure("shared_gate_busy" if busy_until is not None else "wake_window_elapsed")
+            else:
+                arrived, receive_until = limits(received=True)
+                if arrived > min(active_until, receive_until):
+                    raise bx.Failure("shared_gate_busy")
+                return (data, arrived) if stamped else data
     finally:
+        if isinstance(gate, TimedGate):
+            gate.before_send = None
         pages.deadline = until
 
 
@@ -227,35 +347,39 @@ def leave(entry, exit_book, fee_bp):
         return out | {"status": "invalid_book_arithmetic"}
 
 
+def apply_event(idx, r):
+    kind = r["kind"]
+    if kind == "claim":
+        idx["claims"].add(r["wake"])
+    if kind not in ("wake", "void"):
+        return
+    stamp = r["wake"]
+    idx["visits"].add(stamp)
+    for arm, item in r["exits"].items():
+        idx["closed"][arm].append(item)
+        if arm in (PRIMARY, ALT):
+            idx["open"].pop(arm)
+            if arm == PRIMARY:
+                idx["delayed"].pop(item["entry_wake"], None)
+        elif arm == SMALL:
+            idx["small"].pop(stamp)
+    for arm, item in r["entries"].items():
+        if arm == PRIMARY and item["book"]["status"] == "ok":
+            idx["books"].append(item)
+        if arm == LATE:
+            idx["delayed"][item["parent"]] = item
+        elif item["status"] == "ok":
+            if arm == SMALL:
+                idx["small"][item["due"]] = item
+            else:
+                idx["open"][arm] = item
+
+
 def state(rows):
     idx = {"open": {}, "small": {}, "delayed": {}, "claims": set(), "visits": set(),
            "books": [], "closed": defaultdict(list)}
     for r in rows:
-        kind = r["kind"]
-        if kind == "claim":
-            idx["claims"].add(r["wake"])
-        if kind not in ("wake", "void"):
-            continue
-        stamp = r["wake"]
-        idx["visits"].add(stamp)
-        for arm, item in r["exits"].items():
-            idx["closed"][arm].append(item)
-            if arm in (PRIMARY, ALT):
-                idx["open"].pop(arm)
-                if arm == PRIMARY:
-                    idx["delayed"].pop(item["entry_wake"], None)
-            elif arm == SMALL:
-                idx["small"].pop(stamp)
-        for arm, item in r["entries"].items():
-            if arm == PRIMARY and item["book"]["status"] == "ok":
-                idx["books"].append(item)
-            if arm == LATE:
-                idx["delayed"][item["parent"]] = item
-            elif item["status"] == "ok":
-                if arm == SMALL:
-                    idx["small"][item["due"]] = item
-                else:
-                    idx["open"][arm] = item
+        apply_event(idx, r)
     return idx
 
 
@@ -275,20 +399,23 @@ def due_delayed(idx, wake):
     return entry if entry and bx.parse(entry["wake"]) + bx.HOUR == wake else None
 
 
-def void_wake(path, rows, wake, reason):
-    ix, stamp = state(rows), bx.iso(wake)
+def void_wake(path, rows, wake, reason, ix):
+    stamp = bx.iso(wake)
     exits = {a: {"status": reason, "entry_wake": e["wake"]} for a, e in due_exits(ix, stamp).items()}
     entries = {}
     late = due_delayed(ix, wake)
     if late:
         entries[LATE] = enter(late["coin"], wake, late["due"], {"status": reason}, late["size"], parent=late["wake"])
     bx.append(path, rows, kind="void", wake=stamp, reason=reason, entries=entries, exits=exits)
+    apply_event(ix, rows[-1])
     return rows[-1]
 
 
-def capture(path, rows, pages, wake, roster, ix, cfg, clock, sleep):
+def capture(path, rows, pages, wake, roster, ix, cfg, clock, sleep, *, timing=None):
     stamp = bx.iso(wake)
+    opens_at = bound(wake, cfg["wake_offset_s"])
     until = bound(wake, cfg["book_cutoff_s"])
+    timing = timing or WakeClock(clock, time.monotonic)
     terminal = None
 
     def fetch(fn, *, stamped=False):
@@ -296,7 +423,8 @@ def capture(path, rows, pages, wake, roster, ix, cfg, clock, sleep):
         if terminal is not None:
             raise bx.Failure("gate_stopped")
         try:
-            return request(pages, fn, until, clock, sleep, cfg["busy_wait_s"], stamped=stamped)
+            return request(pages, fn, until, clock, sleep, cfg["busy_wait_s"],
+                           not_before=opens_at, stamped=stamped, timing=timing)
         except (bx.Blocked, bx.GateTerminal) as exc:
             terminal = exc
             raise bx.Failure("gate_stopped") from None
@@ -314,17 +442,18 @@ def capture(path, rows, pages, wake, roster, ix, cfg, clock, sleep):
         if e is not None:
             exits[arm] = leave(e, fresh(exit_books, e["coin"]), cfg["fee_bp"])
 
-    close(PRIMARY)
+    for arm in (PRIMARY, ALT, SMALL, LATE):
+        close(arm)
     hit = (sum(e["status"] == "ok" for e in ix["closed"][PRIMARY])
            + (exits.get(PRIMARY, {}).get("status") == "ok") >= cfg["judging_count"])
     last = bx.parse(cfg["last_wake_utc"])
     exit_when = wake + cfg["hold_hours"] * bx.HOUR
-    free = [arm for arm in (PRIMARY, ALT) if arm not in ix["open"] or arm in due]
+    free = [arm for arm in (PRIMARY, ALT) if arm not in ix["open"] or arm in exits]
     closes, errors, decisions = {}, {}, {}
     if not hit and free and exit_when <= last:
         closes, errors = candles(fetch, pages, wake, roster)
         if not errors:
-            for arm in (a for a in free if a != ALT or ALT not in due):
+            for arm in free:
                 coin = choose(closes, roster, cfg["drops"][arm])
                 if coin is not None:
                     decisions[arm] = coin
@@ -335,17 +464,9 @@ def capture(path, rows, pages, wake, roster, ix, cfg, clock, sleep):
         due_stamp = bx.iso(exit_when)
         entries[PRIMARY] = enter(coin, wake, due_stamp, first, cfg["sizes"]["judged"])
         entries[SMALL] = enter(coin, wake, due_stamp, first, cfg["sizes"]["shown"])
-    for arm in (ALT, SMALL, LATE):
-        close(arm)
-    if ALT in due and closes and not errors:
-        coin = choose(closes, roster, cfg["drops"][ALT])
-        if coin is not None:
-            decisions[ALT] = coin
     if ALT in decisions:
         coin = decisions[ALT]
-        # If the alternate decided after its exit, an earlier judged book
-        # cannot be the post-decision book for that alternate entry.
-        first = fresh({} if ALT in due else entry_books, coin)
+        first = fresh(entry_books, coin)
         entries[ALT] = enter(coin, wake, bx.iso(exit_when), first, cfg["sizes"]["judged"])
     delay = due_delayed(ix, wake)
     if delay and not hit:
@@ -369,72 +490,84 @@ def stop(path, rows, reason, clock, wake=None, status=None):
     return rows[-1]
 
 
-def record(now, pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep):
+def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=time.monotonic):
     cfg = settings()
     with bx.locked(off) as path:
         rows = bx.read_log(path, recover=True, clock=clock)
         h = header(rows, cfg)
-        if any(r["kind"] == "stop" for r in rows):
-            return {"kind": "stopped"}
-        pages = pages if pages is not None else bx.PublicPages(clock=clock, sleep=sleep)
+        stopped = any(r["kind"] == "stop" for r in rows)
+        scored = any(r["kind"] == "score" for r in rows)
         ix = state(rows)
-        if (any(r["kind"] == "score" for r in rows)
-                or sum(e["status"] == "ok" for e in ix["closed"][PRIMARY]) >= cfg["judging_count"]):
+        hit = sum(e["status"] == "ok" for e in ix["closed"][PRIMARY]) >= cfg["judging_count"]
+        if hit and PRIMARY not in ix["open"]:
             return {"kind": "judging point"}
-        first, last, hour = bx.parse(h["first"]), bx.parse(cfg["last_wake_utc"]), bx.hour(now)
-        until = bound(hour, cfg["book_cutoff_s"])
-        bind_void = None
-        if isinstance(pages, bx.PublicPages) and first <= hour <= last and (
-                bound(hour, cfg["wake_offset_s"]) <= now < until):
-            try:
-                request(pages, lambda: pages.bind_run(h.get("venue_generation")), until, clock, sleep, cfg["busy_wait_s"])
-            except (bx.Blocked, bx.GateTerminal) as exc:
-                return stop(path, rows, exc.reason, clock, status=getattr(exc, "status", None))
-            except bx.Failure as exc:
-                bind_void = exc.reason
-        bx.require_go(ROW, "E14_START", h["freeze"])
+        first, last = bx.parse(h["first"]), bx.parse(cfg["last_wake_utc"])
         wake = bx.parse(max(ix["visits"])) + bx.HOUR if ix["visits"] else first
         roster = next((r["coins"] for r in rows if r["kind"] == "roster"), None)
-        while wake <= min(last, hour):
+        timing = WakeClock(clock, monotonic)
+        new_stop = None
+        while wake <= last:
+            now, _ = timing.sample()
+            hour = bx.hour(now)
+            if wake > hour:
+                break
             stamp = bx.iso(wake)
+            opens_at = bound(wake, cfg["wake_offset_s"])
             until = bound(wake, cfg["book_cutoff_s"])
             started = stamp in ix["claims"]
+            if stopped or hit or scored:
+                if now < until:
+                    break
+                reason = "run_stopped" if stopped else "judging_point_reconciliation"
+                void_wake(path, rows, wake, reason, ix)
+                wake += bx.HOUR
+                continue
             if roster is None and (wake != first or started or now >= until):
-                event = stop(path, rows, "first_wake_roster_unavailable", clock, first)
-                void_wake(path, rows, first, "first_wake_roster_unavailable")
-                return event
+                new_stop = stop(path, rows, "first_wake_roster_unavailable", clock, first)
+                void_wake(path, rows, first, "first_wake_roster_unavailable", ix)
+                stopped = True
+                wake += bx.HOUR
+                continue
             if started or now >= until:
-                void_wake(path, rows, wake, "interrupted_wake" if started else "missed_wake")
-                ix = state(rows)
-            elif wake == hour and now >= bound(wake, cfg["wake_offset_s"]):
-                bx.append(path, rows, kind="claim", wake=stamp, made_utc=bx.precise_utc(clock()))
-                if bind_void is not None:
-                    if roster is None:
-                        result = stop(path, rows, bind_void, clock, wake)
-                        void_wake(path, rows, wake, bind_void)
-                        return result
-                    return void_wake(path, rows, wake, bind_void)
+                void_wake(path, rows, wake, "interrupted_wake" if started else "missed_wake", ix)
+            elif opens_at <= now < until:
+                require_go(ROW, "E14_START", h["freeze"])
+                claim_time, _ = timing.sample()
+                if claim_time >= until:
+                    void_wake(path, rows, wake, "missed_wake", ix)
+                    wake += bx.HOUR
+                    continue
+                bx.need(claim_time >= opens_at, "wake window not open")
+                pages = pages if pages is not None else bx.PublicPages(
+                    clock=clock, sleep=sleep, monotonic=monotonic, gate=TimedGate(clock=clock))
+                if isinstance(pages, bx.PublicPages):
+                    generation = h.get("venue_generation")
+                    bx.need(type(generation) is int and generation >= 0, "invalid shared gate generation")
+                    # The shared per-request attempt verifies generation and stop under its own mutex.
+                    pages.generation = generation
+                bx.append(path, rows, kind="claim", wake=stamp, made_utc=bx.precise_utc(claim_time))
                 try:
                     if roster is None:
                         try:
-                            fetch = lambda fn: request(pages, fn, until, clock, sleep, cfg["busy_wait_s"])
+                            fetch = lambda fn: request(pages, fn, until, clock, sleep, cfg["busy_wait_s"],
+                                                       not_before=opens_at, timing=timing)
                             roster = freeze_roster(fetch, pages, cfg["coins"], cfg["min_pairs"])
                         except bx.Blocked:
                             raise
                         except (bx.Failure, OSError, ValueError, TypeError, KeyError) as exc:
                             event = stop(path, rows, private_reason(exc), clock, wake)
-                            void_wake(path, rows, wake, "first_wake_roster_unavailable")
+                            void_wake(path, rows, wake, "first_wake_roster_unavailable", ix)
                             return event
                         bx.append(path, rows, kind="roster", wake=stamp, coins=roster)
-                    return capture(path, rows, pages, wake, roster, ix, cfg, clock, sleep)
+                    return capture(path, rows, pages, wake, roster, ix, cfg, clock, sleep, timing=timing)
                 except (bx.Blocked, bx.GateTerminal) as exc:
                     event = stop(path, rows, exc.reason, clock, wake, getattr(exc, "status", None))
-                    void_wake(path, rows, wake, "gate_stopped")
+                    void_wake(path, rows, wake, "gate_stopped", ix)
                     return event
             else:
                 break
             wake += bx.HOUR
-        return {"kind": "nothing due"}
+        return new_stop or {"kind": "stopped" if stopped else "nothing due"}
 
 
 def summary(rows):
@@ -451,7 +584,8 @@ def summary(rows):
                     voids[arm][e["status"]] += 1
     stopped = next((r for r in rows if r["kind"] == "stop"), None)
     cfg = rows[0]["frozen"]["config"] if rows else None
-    at_cut = cfg and (exits[PRIMARY] >= cfg["judging_count"] or cfg["last_wake_utc"] in ix["visits"])
+    at_cut = cfg and PRIMARY not in ix["open"] and (
+        exits[PRIMARY] >= cfg["judging_count"] or cfg["last_wake_utc"] in ix["visits"])
     return {"card": "E14", "status": "STOPPED" if stopped else "STARTED" if rows else "NOT_STARTED",
             "at_judging_point": bool(at_cut),
             "stop": {k: stopped[k] for k in ("reason", "host", "http_status") if k in stopped} if stopped else None,
@@ -535,12 +669,15 @@ def read_gate(rows, h, ix, cfg, mode, now):
     bx.need(not any(r["kind"] == mode for r in rows), mode + " already read")
     if mode == "cost":
         bx.need(len(ix["books"]) >= cfg["cost_books"], "not enough primary first books")
-        bx.require_go(ROW, "E14_COST", h["freeze"])
+        require_go(ROW, "E14_COST", h["freeze"])
     elif mode == "score":
         n = sum(r["status"] == "ok" for r in ix["closed"][PRIMARY])
         close = bound(bx.parse(cfg["last_wake_utc"]), cfg["book_cutoff_s"])
         bx.need(n >= cfg["judging_count"] or now > close, "judging point has not arrived")
-        bx.require_go(ROW, "E14_SCORE", h["freeze"])
+        bx.need(PRIMARY not in ix["open"], "judged ticket is unresolved")
+        bx.need(n >= cfg["judging_count"] or cfg["last_wake_utc"] in ix["visits"],
+                "final wake is unreconciled")
+        require_go(ROW, "E14_SCORE", h["freeze"])
     else:
         raise bx.Refuse("unknown read mode")
 
@@ -557,13 +694,17 @@ def readout(now, mode, off=OFF):
         else:
             out = {"judged": judge(ix["closed"][PRIMARY], cfg),
                    "shown": {a: line(ix["closed"][a]) for a in (ALT, SMALL, LATE)}}
-        bx.append(path, rows, kind=mode, made_utc=bx.precise_utc(now), result_sha256=bx.digest(bx.enc(out).encode()))
-        return out
+        return commit_readout(path, rows, mode, now, out)
 
 
-def loop(off=OFF, clock=bx.now_utc, sleep=time.sleep):
+def commit_readout(path, rows, mode, now, out):
+    bx.append(path, rows, kind=mode, made_utc=bx.precise_utc(now), result_sha256=bx.digest(bx.enc(out).encode()))
+    return out
+
+
+def loop(off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=time.monotonic):
     cfg = settings()
-    pages = bx.PublicPages(clock=clock, sleep=sleep)
+    pages = bx.PublicPages(clock=clock, sleep=sleep, monotonic=monotonic, gate=TimedGate(clock=clock))
     path = bx.checked_dir(Path(off))
     fd = bx.private_open(path / ".loop.lock", os.O_RDWR | os.O_CREAT)
     final = bound(bx.parse(cfg["last_wake_utc"]), cfg["book_cutoff_s"])
@@ -573,7 +714,7 @@ def loop(off=OFF, clock=bx.now_utc, sleep=time.sleep):
         except BlockingIOError:
             raise bx.Refuse("a loop is already running") from None
         while True:
-            out = record(clock(), pages, path, clock, sleep)
+            out = record(pages, path, clock, sleep, monotonic)
             now = clock()
             if out["kind"] in ("stop", "stopped", "judging point") or now >= final:
                 return {"status": out["kind"]}
@@ -597,15 +738,16 @@ def main():
         elif cmd == "start":
             out = start(now)
         elif cmd == "record":
-            row = record(now)
+            row = record()
             out = {k: row[k] for k in ("kind", "wake", "reason", "host", "http_status") if k in row}
         elif cmd in ("score", "cost"):
             out = readout(now, cmd)
         else:
             out = {"loop": loop, "alive": alive, "publish": publish}[cmd]()
         print(json.dumps(out, sort_keys=True, allow_nan=False))
-    except (bx.Refuse, OSError) as exc:
-        print("REFUSED " + (type(exc).__name__ if isinstance(exc, OSError) else str(exc)), file=sys.stderr)
+    except (bx.Refuse, bx.Failure, OSError) as exc:
+        reason = exc.reason if isinstance(exc, bx.Failure) else type(exc).__name__ if isinstance(exc, OSError) else str(exc)
+        print("REFUSED " + reason, file=sys.stderr)
         return 2
     return 0
 
