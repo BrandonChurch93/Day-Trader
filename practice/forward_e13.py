@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from functools import lru_cache
 from hashlib import sha256
+from http.client import HTTPException
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
@@ -343,13 +344,16 @@ def venue_gate(gate=None, clock=now_utc):
 
 
 class BinanceUS:
-    def __init__(self, f, gate=None, clock=now_utc, generation=0):
+    def __init__(self, f, gate=None, clock=now_utc, generation=0, sleep=None):
         self.f, self.last = f, -math.inf
         self.gate, self.clock, self.deadline = venue_gate(gate, clock), clock, None
         self.generation = generation
+        self.sleep = sleep if sleep is not None else time.sleep
+        self.retry_delay_s = 0.
         self.opener = request.build_opener(request.ProxyHandler({}), NoRedirect())
 
     def get(self, endpoint, **query):
+        self.retry_delay_s = 0.
         need(endpoint in ENDPOINTS, 'invalid public endpoint')
         url = HOST + endpoint + ('?' + parse.urlencode(query) if query else '')
         req = request.Request(url, headers={'User-Agent': 'e13-forward/1', 'Accept': 'application/json'}, method='GET')
@@ -358,8 +362,9 @@ class BinanceUS:
             if self.deadline is not None and self.clock() + timedelta(seconds=pause) >= self.deadline:
                 raise bx.Failure('wake_window_elapsed')
             if pause:
-                time.sleep(pause)
+                self.sleep(pause)
             delay = 2 ** attempt
+            no_status = False
             try:
                 with self.gate.attempt(self.deadline, generation=self.generation):
                     self.last = time.monotonic()
@@ -373,9 +378,8 @@ class BinanceUS:
                     try:
                         with bx.wall_budget(timeout, timeout < self.f['timeout_s']):
                             inp = self.opener.open(req, timeout=timeout)
+                            replied = True
                             try:
-                                self.gate.reply_received()
-                                replied = True
                                 data = inp.read(self.f['response_max_bytes'] + 1)
                             finally:
                                 inp.close()
@@ -385,16 +389,31 @@ class BinanceUS:
                             raise
                         finally:
                             exc.close()
-                    except OSError as exc:
+                    except (OSError, HTTPException) as exc:
                         if not replied:
-                            raise Blocked('unknown HTTP status; shared in-flight gate retained') from None
+                            no_status = True
+                            self.gate.no_status()
+                        self.gate.reply_received()
                         if self.deadline is not None and self.clock() >= self.deadline:
                             raise bx.Failure('wake_window_elapsed') from None
                         raise Refuse('public response body unavailable') from exc
+                    except Exception:
+                        if replied:
+                            self.gate.reply_received()
+                        raise
+                    else:
+                        self.gate.reply_received()
                 if self.deadline is not None and self.clock() >= self.deadline:
                     raise bx.Failure('wake_window_elapsed')
                 need(len(data) <= self.f['response_max_bytes'], 'public response too large')
                 return json.loads(data)
+            except bx.Cooldown as exc:
+                if not no_status or self.deadline is None or exc.not_before >= self.deadline or attempt + 1 >= self.f['request_attempts']:
+                    raise
+                began = self.clock()
+                self.sleep(max(0., (exc.not_before - began).total_seconds()))
+                self.retry_delay_s += max(0., (self.clock() - began).total_seconds())
+                continue
             except error.HTTPError as exc:
                 if 300 <= exc.code < 400:
                     raise Blocked('public endpoint redirected') from None
@@ -407,7 +426,7 @@ class BinanceUS:
             if attempt + 1 < self.f['request_attempts']:
                 if self.deadline is not None and self.clock() + timedelta(seconds=delay) >= self.deadline:
                     raise bx.Failure('wake_window_elapsed')
-                time.sleep(delay)
+                self.sleep(delay)
         raise Refuse('public page unavailable')
 
     def products(self, names):
@@ -686,7 +705,7 @@ def execution(tape, rows, size, fees, details, label, decision_only):
             gross, charge = float(net[j] * size), float(charges[j] * size)
             cost_bp = ((gross - mark) + charge) / abs(mark) * 10000
             result['fills'].append(dict(coin=coin, side='buy' if gross > 0 else 'sell', gross=gross, fee=charge,
-                                        quantity=units, cost_bp=cost_bp))
+                                        quantity=units, cost_bp=cost_bp, delay_s=depth[coin].get('retry_delay_s', 0.)))
         result['queued_sells'] = [names[j] for j in np.flatnonzero(queued.any(axis=1) & ~(final < -1e-14).any(axis=1))]
         return final, net, charges
 
@@ -724,7 +743,8 @@ def snapshots(venue, coins, wake, clock, deadline):
         book = page(venue.book, failed, coin)
         received = clock()
         if book and wake <= received < deadline:
-            result[coin] = book | {'received': iso(received), 'timely': True}
+            result[coin] = book | {'received': iso(received), 'timely': True,
+                                   'retry_delay_s': getattr(venue, 'retry_delay_s', 0.)}
         else:
             failed.setdefault(coin, 'WINDOW_ELAPSED' if received >= deadline else 'DEPTH_UNAVAILABLE')
     return result, failed
@@ -819,7 +839,7 @@ def record(now, venue=None, folder=OFF, clock=now_utc, sleep=time.sleep):
                 next_day += timedelta(days=1)
             if now >= deadline:
                 return append(fd, rows, dict(kind='void', wake=iso(wake), reason='LATE_WAKE'))
-            venue = venue if venue is not None else BinanceUS(f, clock=clock)
+            venue = venue if venue is not None else BinanceUS(f, clock=clock, sleep=sleep)
             if isinstance(venue, BinanceUS):
                 venue.deadline = deadline
                 venue.generation = header['venue_generation']

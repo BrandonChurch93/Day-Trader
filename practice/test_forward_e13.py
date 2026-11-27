@@ -358,11 +358,80 @@ class Tests(unittest.TestCase):
             self.assertEqual(send.call_count, 1)
         self.assertTrue((self.temp / 'shared' / 'inflight.json').exists())
 
-    def test_unknown_http_status_blocks_other_endpoints_and_start_after_restart(self):
+    def test_no_status_failures_hold_shared_60_then_900_second_cooldowns(self):
+        clock = FakeClock(T)
+        for seconds in (60, 60, 900):
+            venue = e.BinanceUS(self.f, self.gate(clock), clock)
+            with patch.object(venue.opener, 'open', side_effect=URLError('invented disconnect')) as send:
+                with self.assertRaises(e.bx.Cooldown) as refused:
+                    venue.products(('BTC',))
+                self.assertEqual(refused.exception.not_before, clock() + timedelta(seconds=seconds))
+                self.assertEqual(send.call_count, 1)
+            self.assertFalse((self.temp / 'shared' / 'inflight.json').exists())
+            restarted = e.BinanceUS(self.f, self.gate(clock), clock)
+            with patch.object(restarted.opener, 'open', side_effect=AssertionError('suppressed call')) as send:
+                with self.assertRaises(e.bx.Cooldown):
+                    restarted.book('BTC')
+                with self.assertRaises(e.bx.Cooldown):
+                    e.start(T - timedelta(days=1), START_ID, self.folder, gate=self.gate(clock))
+                send.assert_not_called()
+            clock.sleep(seconds)
+        # Receiving headers is a known HTTP reply even if reading the body fails.
+        class FailedBody(io.BytesIO):
+            def read(self, size):
+                raise TimeoutError('invented body timeout')
+        with patch.object(restarted.opener, 'open', return_value=FailedBody()):
+            with self.assertRaisesRegex(e.Refuse, 'response body unavailable'):
+                restarted.book('BTC')
+        with patch.object(restarted.opener, 'open', side_effect=TimeoutError('invented response timeout')):
+            with self.assertRaises(e.bx.Cooldown) as refused:
+                restarted.products(('BTC',))
+        self.assertEqual(refused.exception.not_before, clock() + timedelta(seconds=60))
+
+    def test_no_status_wait_crossing_deadline_voids_wake_without_local_stop(self):
+        self.start()
+        self.observe()
+        tomorrow = T + timedelta(days=1)
+        clock = FakeClock(tomorrow, 850)
+        venue = e.BinanceUS(self.f, self.gate(clock), clock)
+        with patch.object(venue.opener, 'open', side_effect=TimeoutError('invented response timeout')) as send:
+            row = e.record(clock(), venue, self.folder, clock, clock.sleep)
+            self.assertEqual(row['reason'], 'SHARED_COOLDOWN')
+            self.assertEqual(send.call_count, 1)
+        clock.sleep(60)
+        self.assertIsNone(e.record(clock(), venue, self.folder, clock, clock.sleep))
+        self.assertEqual(e.alive(self.folder)['status'], 'OBSERVING')
+        self.assertEqual(self.observe(tomorrow + timedelta(days=1))['kind'], 'wake')
+
+    def test_no_status_book_retry_within_window_records_delay_without_changing_intent(self):
+        self.start()
+        clock = FakeClock(T)
+        venue = e.BinanceUS(self.f, self.gate(clock), clock, sleep=clock.sleep)
+        source = Venue()
+        attempts = []
+        def look(req, **_):
+            self.assertEqual(urlsplit(req.full_url).path, '/api/v3/depth')
+            plan = next(r for r in self.rows() if r['kind'] == 'decision')
+            attempts.append((clock(), plan))
+            if len(attempts) == 1:
+                raise URLError('invented disconnect')
+            return io.BytesIO(json.dumps(BOOK).encode())
+        with patch.object(venue.opener, 'open', side_effect=look), \
+             patch.object(venue, 'products', side_effect=source.products), \
+             patch.object(venue, 'candles', side_effect=source.candles):
+            row = e.record(clock(), venue, self.folder, clock, clock.sleep)
+        self.assertGreaterEqual((attempts[1][0] - attempts[0][0]).total_seconds(), 60)
+        self.assertEqual(attempts[0][1], attempts[1][1])
+        self.assertEqual(row['intent'], attempts[0][1]['intent'])
+        fill = row['books']['main']['fills'][0]
+        self.assertEqual(fill['side'], 'buy')
+        self.assertEqual(fill['delay_s'], 60.)
+
+    def test_unknown_status_process_interruption_still_requires_resolution(self):
         clock = FakeClock(T)
         venue = e.BinanceUS(self.f, self.gate(clock), clock)
-        with patch.object(venue.opener, 'open', side_effect=URLError('invented disconnect')) as send:
-            with self.assertRaises((e.Blocked, e.bx.GateUncertain)):
+        with patch.object(venue.opener, 'open', side_effect=KeyboardInterrupt) as send:
+            with self.assertRaises(KeyboardInterrupt):
                 venue.products(('BTC',))
             self.assertEqual(send.call_count, 1)
         self.assertTrue((self.temp / 'shared' / 'inflight.json').exists())
