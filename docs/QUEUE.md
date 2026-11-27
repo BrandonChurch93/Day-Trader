@@ -6,7 +6,7 @@ Go to [Running now](#running-now), [Next, in order](#next-in-order) or [Done](#d
 
 Before adding an idea, [screen its event count, net edge and noise](research/117_power_screen_before_data.md); a weakly powered test stays out of the price queue.
 
-Last changed: 2026-11-27 04:15 UTC
+Last changed: 2026-11-27 07:02 UTC
 
 Skip list from Round 17 (`docs/research/87_round_17_what_the_replication_libraries_say.md`, no new monthly cross-sectional equity factor sorts queued): future rounds skip trading frictions/liquidity/microstructure, size (`SMB`), short-term reversal, low-leverage, calendar/seasonal effects, long-only idiosyncratic volatility and skewness/MAX, analyst revisions, standalone accruals, and intangibles.
 
@@ -104,6 +104,7 @@ The table lists current work and deferred scoring. Completed time-machine runs a
 | 137 | Measurement 133: hourly cost of a small trade on Binance.US only, replacing Measurement 132, closed unread on data terms | ledger 232 | STOPPED 2026-11-26 7:00 PM MT on a build fault at its second wake; closed unread (ledger 232). Replaced by Measurement 134, row 139. |
 | 138 | Practice card E14: Plan 76's rule (buy the largest one-hour faller of 5% or more, hold 24 hours) on Binance.US order books at a pretend $250, judged at 60 trades or 2028-11-30; one early cost-only reading after 20 signals | ledger 233 | Running since 2026-11-26 6:20 PM MT (first hourly wake 7:03 PM MT) from the frozen build `e8248e9` after independent audit CLEAR with one accepted limit (ledger 233). Binance.US public endpoints only; detail off the repo. Wakes 3 minutes 15 seconds after each hour, after E12. Judged at 60 trades or 2028-11-30; one cost-only reading after 20 signals, on its own go. |
 | 139 | Measurement 134: hourly cost of a small trade on Binance.US, eight minutes after each hour, replacing Measurement 133, which stopped on a build fault at its second wake and is closed unread | [plan](research/202_measurement_134_binance_us_cost.md), ledger 234 | Running since 2026-11-26 7:24 PM MT (first hourly wake 8:08 PM MT) from the frozen build `5f6a326` after independent audit CLEAR with one accepted limit (ledger 234); registered 2026-11-26 7:09 PM MT, before any quote. Binance.US public endpoints only; detail off the repo. 720 hourly wakes, last one 2026-12-26 7:08 PM MT; read once by the lead agent after that. A busy request gate is counted as a lost book and cannot end the loop. |
+| 140 | Measurement 135: a spot check of what a small order costs on Binance.US right now (eight book snapshots of the same 20 coins over two hours); indicative only, no pass mark, changes nothing on the running cards | ledger 236 | Registered 2026-11-27 12:02 AM MT; script being written, then checked by the lead agent before the first request |
 
 ## Next, in order
 
@@ -148,6 +149,8 @@ The table lists current work and deferred scoring. Completed time-machine runs a
 ## Ideas, not yet shaped into a test
 
 Ruling by the lead agent, 2026-11-26 7:35 PM MT, told to the owner the same evening: broad idea rounds are paused after five rounds in a row (68 to 72) registered nothing. No helper is kept on new ideas until E14's cost-only reading or Measurement 134's read is in, or the owner asks for a round. The forward loggers keep running. This replaces the standing line that one helper always looks for new ideas.
+
+Ruling by the lead agent, 2026-11-27 12:02 AM MT: the owner asked whether the work had stopped. The pause above is lifted in part: one helper runs one narrow round at a time (round 73: trading systems run by AI models and career traders with dated public live records in crypto, and whether any stated method can be rebuilt as fixed rules and tested on data we may use). Broad anomaly rounds stay off. Also started: Measurement 135 (queue 140) and a plan for a live pretend-money desk on Binance.US where scouts propose and the criteria gate decides (queue 125 follow-up, card E15 if it is registered).
 
 The idea scout's full write-up of 23 ideas, each with sources and the way it could fool us, is on the research machine and goes into `docs/research/` when its sources have been checked.
 
