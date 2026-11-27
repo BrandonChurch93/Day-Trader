@@ -1,6 +1,8 @@
 """Invented HTTP only. Gate files are always isolated under a temp directory."""
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
+from errno import EIO, ENOSPC
+from http.client import IncompleteRead
 import io
 import json
 from multiprocessing import get_context
@@ -271,6 +273,120 @@ class SharedGate(unittest.TestCase):
             pages.book(bx.VENUE, "ETH")
         self.assertEqual(self.read_streak(), 0)
         self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+
+    def test_any_body_failure_after_headers_resets_streak_without_new_cooldown(self):
+        for error in (IncompleteRead(b"partial", 20), RuntimeError("invented decoder failure"),
+                      HTTPError("https://api.binance.us/", 429, "", {"Retry-After": "160"}, io.BytesIO())):
+            with self.subTest(error=type(error).__name__):
+                self.now = self.no_reply(TimeoutError("invented before headers"), self.pages(Opener()))
+                prior_cooldown = self.path.read_bytes()
+
+                class BrokenBody(io.BytesIO):
+                    status, headers = 200, {}
+
+                    def read(self, *_):
+                        raise error
+
+                pages = self.pages(Opener())
+                with patch.object(pages.opener, "open", return_value=BrokenBody()), \
+                        self.assertRaisesRegex(bx.Failure, "^response_body_failure$"):
+                    pages.book(bx.VENUE, "ETH")
+                self.assertEqual(self.read_streak(), 0)
+                self.assertEqual(self.path.read_bytes(), prior_cooldown)
+                self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+
+    def test_policy_applies_to_recorded_status_even_when_response_body_is_unavailable(self):
+        class HeadersOnly(io.BytesIO):
+            def read(self, *_):
+                raise IncompleteRead(b"", 1)
+
+        for status in (429, 418):
+            with self.subTest(status=status):
+                self.now = self.no_reply(TimeoutError("invented earlier timeout"), self.pages(Opener()))
+                response = HeadersOnly()
+                response.status, response.headers = status, {"Retry-After": "75"}
+                pages = self.pages(Opener())
+                error = bx.Cooldown if status == 429 else bx.Blocked
+                with patch.object(pages.opener, "open", return_value=response), self.assertRaises(error) as got:
+                    pages.book(bx.VENUE, "ETH")
+                self.assertEqual(self.read_streak(), 0)
+                self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+                if status == 429:
+                    self.assertEqual(got.exception.not_before, self.now + timedelta(seconds=75))
+                    self.now = got.exception.not_before
+                else:
+                    self.assertEqual(got.exception.status, 418)
+                    self.assertEqual(json.loads((self.path.parent / "stop.json").read_text())["http_status"], 418)
+
+    def fail_first_cleanup_sync(self):
+        directory = self.path.parent
+        original, hit = bx.fsync_dir, []
+
+        def fault(path):
+            if path == directory and not hit and not (directory / bx.INFLIGHT).exists():
+                hit.append(path)
+                raise OSError(EIO, "invented post-unlink directory sync failure")
+            return original(path)
+
+        return patch.object(bx, "fsync_dir", side_effect=fault), hit
+
+    def test_cleanup_fsync_fault_latches_even_after_cooldown_expires(self):
+        opener = Opener((429, {"Retry-After": "60"}))
+        injected, hit = self.fail_first_cleanup_sync()
+        with injected, self.assertRaises(bx.GateStorage):
+            self.pages(opener).book(bx.VENUE, "BTC")
+        self.assertEqual(hit, [self.path.parent])
+        self.assertFalse((self.path.parent / bx.INFLIGHT).exists())
+        latch = self.path.parent / bx.STORAGE_FAULT
+        self.assertEqual(json.loads(latch.read_text()),
+                         {"host": bx.HOST, "fault_utc": bx.precise_utc(T), "step": "inflight_directory_fsync"})
+        self.assertEqual(stat.S_IMODE(latch.stat().st_mode), 0o600)
+        self.now += timedelta(minutes=5)
+        sibling = Opener()
+        with self.assertRaises(bx.GateStorage):
+            self.pages(sibling).klines("ETH", T, 3)
+        with self.assertRaises(bx.GateStorage):
+            self.gate().check_start()
+        self.assertEqual(len(opener.calls), 1)
+        self.assertEqual(sibling.calls, [])
+
+    def test_cleanup_latch_write_failure_restores_marker(self):
+        opener = Opener((200, {}))
+        pages = self.pages(opener)
+        original = bx.Gate.write
+
+        def fault(path, value):
+            if path.name == bx.STORAGE_FAULT:
+                raise OSError(ENOSPC, "invented latch write failure")
+            original(path, value)
+
+        injected, hit = self.fail_first_cleanup_sync()
+        with injected, patch.object(pages.gate, "write", side_effect=fault), self.assertRaises(bx.GateStorage):
+            pages.book(bx.VENUE, "BTC")
+        self.assertEqual(hit, [self.path.parent])
+        self.assertFalse((self.path.parent / bx.STORAGE_FAULT).exists())
+        self.assertTrue((self.path.parent / bx.INFLIGHT).exists())
+        sibling = Opener()
+        with self.assertRaises(bx.GateUncertain):
+            self.pages(sibling).book(bx.VENUE, "ETH")
+        self.assertEqual(sibling.calls, [])
+
+    def test_marker_unlink_failure_also_writes_storage_latch(self):
+        original = Path.unlink
+        marker = self.path.parent / bx.INFLIGHT
+
+        def fault(path, *args, **kwargs):
+            if path == marker:
+                raise OSError(EIO, "invented marker unlink failure")
+            return original(path, *args, **kwargs)
+
+        with patch.object(Path, "unlink", fault), self.assertRaises(bx.GateStorage):
+            self.pages(Opener((200, {}))).book(bx.VENUE, "BTC")
+        self.assertTrue(marker.exists())
+        latch = self.path.parent / bx.STORAGE_FAULT
+        self.assertEqual(json.loads(latch.read_text())["step"], "inflight_unlink")
+        with self.assertRaises(bx.GateStorage):
+            self.gate().check_start()
 
     def test_no_status_cooldown_write_failure_is_terminal_and_retains_marker(self):
         pages = self.pages(Opener())

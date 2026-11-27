@@ -1,4 +1,11 @@
-"""Binance.US public transport and private custody shared by the forward collectors."""
+"""Binance.US public transport and private custody shared by the forward collectors.
+
+If storage refuses both the cleanup-fault latch and restoration of the
+in-flight marker, the detecting run stops locally. With storage refusing every
+write, other collectors stop on their own first gate I/O error, rather than
+through a shared file. If storage recovers with neither file present, there is
+no durable shared evidence of that fault.
+"""
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -34,6 +41,7 @@ PUBLIC_ENDPOINTS = frozenset({"/api/v3/depth", "/api/v3/klines", "/api/v3/exchan
 HOUR_MS = int(HOUR.total_seconds() * 1000)
 BLOCKS = (418, 401, 403, 451)
 INFLIGHT = "inflight.json"
+STORAGE_FAULT = "storage_fault.json"
 GENERATION = "stop_generation.json"
 GENERATION_WITNESS = "generation_initialized.json"
 NO_STATUS_STREAK = "no_status_streak.json"
@@ -452,6 +460,33 @@ class Gate:
         # Never infer safety from the stored PID, clock, or elapsed time.
         raise GateUncertain()
 
+    def check_storage_fault(self, directory):
+        try:
+            (directory / STORAGE_FAULT).lstat()
+        except FileNotFoundError:
+            return
+        except OSError:
+            raise GateStorage() from None
+        # Any object at the latch path blocks. No collector clears it.
+        raise GateStorage()
+
+    def cleanup_marker(self, marker, marker_fields):
+        step = "inflight_unlink"
+        try:
+            self.io(marker.unlink)
+            step = "inflight_directory_fsync"
+            self.io(fsync_dir, marker.parent)
+        except GateStorage:
+            try:
+                self.io(self.write, marker.parent / STORAGE_FAULT,
+                        {"host": HOST, "fault_utc": precise_utc(self.clock()), "step": step})
+            except GateStorage:
+                try:
+                    self.io(self.write, marker, marker_fields)
+                except GateStorage:
+                    pass  # Neither durable signal was possible; this run still stops.
+            raise
+
     def current_generation(self, directory, expected=None, *, initialize=False):
         if expected is not None and (type(expected) is not int or expected < 0):
             raise GateStorage()
@@ -476,6 +511,7 @@ class Gate:
 
     def check_start(self, *, reject_cooldown=False, generation=None):
         with self.mutex() as directory:
+            self.check_storage_fault(directory)
             self.check_inflight(directory)
             current = None
             if generation is not None:
@@ -489,6 +525,7 @@ class Gate:
     @contextmanager
     def attempt(self, deadline=None, *, generation):
         with self.mutex(deadline) as directory:
+            self.check_storage_fault(directory)
             self.check_inflight(directory)
             if generation is None:
                 raise GateStorage()
@@ -501,8 +538,9 @@ class Gate:
             if not_before is not None and now < not_before:
                 raise Cooldown(not_before)
             marker = directory / INFLIGHT
-            self.io(self.write, marker, {"host": HOST, "pid": os.getpid(),
-                                         "generation": generation, "started_utc": precise_utc(now)})
+            marker_fields = {"host": HOST, "pid": os.getpid(),
+                             "generation": generation, "started_utc": precise_utc(now)}
+            self.io(self.write, marker, marker_fields)
             self.held, self.held_generation = directory, current
             self.completed = False
             try:
@@ -520,8 +558,7 @@ class Gate:
             finally:
                 try:
                     if self.completed:
-                        self.io(marker.unlink)
-                        self.io(fsync_dir, directory)
+                        self.cleanup_marker(marker, marker_fields)
                 finally:
                     self.held, self.held_generation, self.completed = None, None, False
 
@@ -613,6 +650,17 @@ class PublicPages:
         self.gate.check_start(generation=generation)
         self.generation = generation
 
+    def known_status(self, status, retry_after=None):
+        self.gate.http_error(status, retry_after)
+        if not 200 <= status < 300:
+            raise Failure(f"http_{status}")
+
+    @staticmethod
+    def response_headers(response):
+        status = getattr(response, "status", None) or 200
+        headers = getattr(response, "headers", None)
+        return status, headers.get("Retry-After") if headers else None
+
     def get(self, venue, path):
         route = urllib.parse.urlsplit(path)
         need(venue == VENUE and route.path in PUBLIC_ENDPOINTS and path.startswith(route.path)
@@ -627,36 +675,35 @@ class PublicPages:
                 self.gate.cancel_unsent()
                 raise Failure("wake_window_elapsed")
             self.last[host] = self.monotonic()
-            status_seen = False
+            response, status, retry_after = None, None, None
             try:
                 budget = min(5, remaining)
                 with wall_budget(budget, self.deadline is not None and remaining <= 5):
-                    with self.opener.open(req, timeout=5) as response:
-                        status_seen = True
-                        raw = response.read(8 * 1024 * 1024 + 1)
-            except urllib.error.HTTPError as exc:
+                    response = self.opener.open(req, timeout=5)
+                    status, retry_after = self.response_headers(response)
+                    with response:
+                        raw = response.read(8 * 1024 * 1024 + 1) if 200 <= status < 300 else b""
+            except Exception as exc:
                 try:
-                    self.gate.http_error(exc.code, exc.headers.get("Retry-After") if exc.headers else None)
-                    raise Failure(f"http_{exc.code}") from None
+                    # A body exception cannot overwrite the status from open.
+                    if status is None and response is not None:
+                        status, retry_after = self.response_headers(response)
+                    if status is not None:
+                        self.known_status(status, retry_after)
+                        if isinstance(exc, TimeoutError):
+                            raise Failure(self.timeout_status(exc)) from None
+                        raise Failure("response_body_failure") from None
+                    if isinstance(exc, urllib.error.HTTPError):
+                        self.known_status(exc.code, exc.headers.get("Retry-After") if exc.headers else None)
+                        raise Failure("response_body_failure") from None
+                    self.gate.no_status()
                 finally:
-                    try:
-                        exc.close()
-                    except OSError:
-                        pass  # Socket cleanup cannot mask a gate-storage failure.
-            except urllib.error.URLError as exc:
-                if status_seen:
-                    self.gate.reply_received()
-                reason = self.timeout_status(exc.reason) if isinstance(exc.reason, TimeoutError) else "network_failure"
-                raise Failure(reason) from None
-            except TimeoutError as exc:
-                if status_seen:
-                    self.gate.reply_received()
-                raise Failure(self.timeout_status(exc)) from None
-            except OSError:
-                if status_seen:
-                    self.gate.reply_received()
-                raise Failure("network_failure") from None
-            self.gate.reply_received()
+                    if isinstance(exc, urllib.error.HTTPError):
+                        try:
+                            exc.close()
+                        except Exception:
+                            pass  # Socket cleanup cannot mask a gate outcome.
+            self.known_status(status, retry_after)
             if len(raw) > 8 * 1024 * 1024:
                 raise Failure("response_too_large")
             if self.deadline and self.clock() > self.deadline:
