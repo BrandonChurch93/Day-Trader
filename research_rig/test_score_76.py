@@ -8,12 +8,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 
 import numpy as np
 
 import score_76 as s
 import power_76
+
+CLOCK = {"bar_clock": "opening", "bar_shift_hours": 0, "archive_endpoint_shared_clock": False,
+         "pair_map_sha256": "1" * 64}
 
 
 def tape(hours=130, start="2022-12-30", coins=("A", "B")):
@@ -49,6 +52,16 @@ class Tests(unittest.TestCase):
         self.assertEqual(out["counts_by_utc_entry_year"]["primary"]["2020"], 1)
         self.assertEqual(out["refused_at_fence"]["primary"], 2)
         self.assertIsNone(out["unresolved_at_fence"])
+
+    def test_final_closed_bucket_nomination_is_refused_never_priced(self):
+        t = tape(48)
+        t.close[-1, 0] = 90
+        self.assertEqual(list(s.signals(t, .05)), [(48, 0)])
+        valid = s.executable(t)
+        with patch.object(s, "fill", side_effect=AssertionError("out-of-fence order must not be priced")):
+            trades, gaps = s.tickets(t, .05, 24, valid, s.next_sale(valid))
+        self.assertEqual(trades, [])
+        self.assertEqual(gaps["refused_at_fence"], 1)
 
     def test_largest_first_tie_exact_boundary_and_no_substitution(self):
         t = tape()
@@ -181,7 +194,8 @@ class Tests(unittest.TestCase):
              "names": ["A"], "covered_names": ["A"], "hours": 72, "bars_sha256": s.digest(price_blob),
              "source_release": "invented", "source_release_end_exclusive": "2023-01-02",
              "coverage_receipt_sha256": s.digest(b"made-up coverage"),
-             "source_receipt_sha256": s.digest(source_blob), "prior_result_sha256": None}
+             "source_receipt_sha256": s.digest(source_blob), "prior_result_sha256": None, **CLOCK}
+        m.update(bar_clock="closing", bar_shift_hours=-1, archive_endpoint_shared_clock=True)
         manifest_blob = json.dumps(m).encode()
         pin = s.digest(manifest_blob)
         receipt_blob = json.dumps({"schema": 1, "stage": "count", "manifest_sha256": pin,
@@ -209,6 +223,7 @@ class Tests(unittest.TestCase):
                 with patch.object(s, "counts", side_effect=assert_locked):
                     body = json.loads(s.execute(fd, "count", pin, manifest, payload, None, c))
                 self.assertEqual(body["outcome"], "closed on count")
+                self.assertIn("share one clock", body["bar_clock_assumption"])
                 self.assertEqual((path / "RUN.lock").stat().st_mode & 0o777, 0o600)
                 with self.assertRaisesRegex(s.Refusal, "REFUSE_OUTPUT_EXISTS"):
                     s.execute(fd, "count", pin, manifest, payload, None, c)
@@ -226,7 +241,7 @@ class Tests(unittest.TestCase):
         meta = {"schema": 1, "stage": "heldback", "start": "2024-01-01", "stop_exclusive": "2024-01-03",
                 "source_release_end_exclusive": "2024-01-03", "names": ["A", "B"], "covered_names": ["A"], "hours": 48,
                 "coverage_receipt_sha256": s.digest(b"made-up coverage"),
-                "source_receipt_sha256": s.digest(b"invented"), "prior_result_sha256": "0" * 64}
+                "source_receipt_sha256": s.digest(b"invented"), "prior_result_sha256": "0" * 64, **CLOCK}
         for release, bar in fixture:
             payload = np.full((48, 2, 2), np.nan, dtype="<f8")
             payload[0] = bar
@@ -247,10 +262,21 @@ class Tests(unittest.TestCase):
             with self.assertRaisesRegex(s.Refusal, "REFUSE_COVERAGE"):
                 s.snapshot(None, "heldback", s.digest(raw_manifest), c)
         self.assertEqual(read.call_count, 1)
+        unclocked = meta | {"source_release": "invented", "bars_sha256": "0" * 64}
+        del unclocked["bar_clock"]
+        raw_manifest = json.dumps(unclocked).encode()
+        with patch.object(s, "read_file", return_value=raw_manifest) as read:
+            with self.assertRaisesRegex(s.Refusal, "REFUSE_BAR_CLOCK"):
+                s.snapshot(None, "heldback", s.digest(raw_manifest), c)
+        self.assertEqual(read.call_count, 1)
 
-    def test_carry_forward_only_for_pinned_advancing_predecessor(self):
-        choice = {"coverage_receipt_sha256": s.digest(b"made-up coverage"), "covered_names": ["A"]}
-        prior_manifest = json.dumps(choice).encode()
+    @contextmanager
+    def carry_fixture(self):
+        choice = {"coverage_receipt_sha256": s.digest(b"made-up coverage"), "covered_names": ["A"],
+                  "source_release": "invented", "source_release_end_exclusive": "2025-01-01", **CLOCK}
+        shape = {"names": ["A"], "hours": 3, "start": "2022-12-30", "stop_exclusive": "2022-12-31"}
+        close = np.array([100., np.nan, 101.], dtype="<f8")
+        prior_manifest = json.dumps(choice | shape | {"bars_sha256": s.digest(close.tobytes())}).encode()
         pin = s.digest(prior_manifest)
         ledger = "| 229 | P76_" + f"COUNT_GO={pin} |"
         result = {"stage": "count", "manifest_sha256": pin, "selected": "alternate",
@@ -262,14 +288,46 @@ class Tests(unittest.TestCase):
             with s.open_folder(path) as fd:
                 s.new_file(fd, "RUN.lock", (pin + "\n").encode(), "REFUSE_LOCK")
                 s.new_file(fd, "manifest.json", prior_manifest, "REFUSE_PREVIOUS_MANIFEST")
+                s.new_file(fd, "bars.f64", close.tobytes(), "REFUSE_TAPE_HASH")
                 body = json.dumps(result).encode()
                 s.new_file(fd, "result.json", body, "REFUSE_OUTPUT_EXISTS")
-            manifest = choice | {"prior_result_sha256": s.digest(body)}
-            self.assertEqual(s.carry_in(root, "design", manifest, ledger, self.cfg), "alternate")
+            manifest = choice | shape | {"prior_result_sha256": s.digest(body)}
+            design = np.stack((close, close), axis=1)
+            yield root, ledger, manifest, design
+
+    def test_carry_forward_only_for_pinned_advancing_predecessor(self):
+        with self.carry_fixture() as (root, ledger, manifest, design):
+            payload = design.tobytes()
+            self.assertEqual(s.carry_in(root, "design", manifest, payload, ledger, self.cfg), "alternate")
             with self.assertRaisesRegex(s.Refusal, "REFUSE_PREVIOUS_RESULT"):
-                s.carry_in(root, "design", manifest | {"prior_result_sha256": "a" * 64}, ledger, self.cfg)
+                s.carry_in(root, "design", manifest | {"prior_result_sha256": "a" * 64}, payload, ledger, self.cfg)
+
+    def test_carry_refuses_changed_release_release_end_clock_or_map(self):
+        with self.carry_fixture() as (root, ledger, manifest, design):
+            for change in ({"source_release": "swapped"}, {"source_release_end_exclusive": "2025-01-02"},
+                           {"coverage_receipt_sha256": "a" * 64}, {"pair_map_sha256": "a" * 64},
+                           {"bar_clock": "closing", "bar_shift_hours": -1},
+                           {"archive_endpoint_shared_clock": True}):
+                with self.subTest(change=change), self.assertRaisesRegex(s.Refusal, "REFUSE_SOURCE_CHANGE"):
+                    s.carry_in(root, "design", manifest | change, design.tobytes(), ledger, self.cfg)
+
+    def test_carry_refuses_changed_design_closes_and_unauthenticated_count_tape(self):
+        with self.carry_fixture() as (root, ledger, manifest, design):
+            new_design = design.copy()
+            new_design[0, 1] += 1
+            (root / "design").mkdir(mode=0o700)
+            with (patch.object(s, "config", return_value=self.cfg | {
+                    "custody": self.cfg["custody"] | {"root": str(root)}}),
+                  patch.object(s, "committed_ledger", return_value=ledger[:-1] + "P76_" + "DESIGN_GO=" + "4" * 64 + " |"),
+                  patch.object(s, "snapshot", return_value=(manifest, new_design.tobytes())),
+                  redirect_stdout(io.StringIO()) as output):
+                self.assertEqual(s.main(["--go-design"]), 2)
+            self.assertEqual(output.getvalue().strip(), "REFUSE_SOURCE_CHANGE")
+            self.assertFalse((root / "design" / "RUN.lock").exists())
+            # Even matching design closes cannot authorize tampered count bytes.
+            (root / "count" / "bars.f64").write_bytes(new_design[:, 1].tobytes())
             with self.assertRaisesRegex(s.Refusal, "REFUSE_SOURCE_CHANGE"):
-                s.carry_in(root, "design", manifest | {"coverage_receipt_sha256": "a" * 64}, ledger, self.cfg)
+                s.carry_in(root, "design", manifest, new_design.tobytes(), ledger, self.cfg)
 
     def test_power_stable_and_not_a_real_count(self):
         cfg = deepcopy(self.cfg)

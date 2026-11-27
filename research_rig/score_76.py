@@ -28,6 +28,8 @@ ROOT = Path(__file__).resolve().parents[1]
 LEDGER = "research_rig/TRIAL_LEDGER.md"
 MODES = {"--count": "count", "--go-design": "design", "--go-heldback": "heldback"}
 PREVIOUS = {"design": "count", "heldback": "design"}
+SOURCE_FIELDS = ("coverage_receipt_sha256", "covered_names", "source_release", "source_release_end_exclusive",
+                 "bar_clock", "bar_shift_hours", "archive_endpoint_shared_clock", "pair_map_sha256")
 HOUR = timedelta(hours=1)
 HASH = re.compile(r"[a-f0-9]{64}\Z")
 
@@ -87,6 +89,8 @@ def eligibility(start, hours, names, cfg):
 
 def signals(tape, drop):
     """At entry index e, inspect only closes e-2/e-1 and admission flags."""
+    # Keep the last closed bucket as a nomination solely so its next-open
+    # order is counted as refused at the fence, never priced.
     for e in range(2, len(tape.close) + 1):
         prior, now = tape.close[e - 2:e]
         admitted = tape.full[e - 2:e + 1].all(axis=0)
@@ -385,18 +389,22 @@ def snapshot(fd, stage, pin, cfg):
     manifest = read_file(fd, "manifest.json", cap)
     need(is_hash(pin) and digest(manifest) == pin, "REFUSE_PIN")
     m = object_from(manifest)
+    need("bar_clock" in m, "REFUSE_BAR_CLOCK")
     need(set(m) == {"schema", "stage", "start", "stop_exclusive", "names", "hours", "bars_sha256",
-                    "source_receipt_sha256", "coverage_receipt_sha256", "prior_result_sha256", "source_release",
-                    "source_release_end_exclusive", "covered_names"}, "REFUSE_MANIFEST")
+                    "source_receipt_sha256", "prior_result_sha256", *SOURCE_FIELDS}, "REFUSE_MANIFEST")
     names = tuple(sorted(cfg["admissions"]))
     need(type(m["schema"]) is int and m["schema"] == cfg["schema"] and m["stage"] == stage
          and m["names"] == list(names), "REFUSE_MANIFEST")
     covered = m["covered_names"]
     need(isinstance(covered, list) and all(isinstance(c, str) and c in names for c in covered)
          and covered == sorted(set(covered)) and len(covered) >= cfg["source_coverage"]["min_coins"], "REFUSE_COVERAGE")
-    need(all(is_hash(m[k]) for k in ("bars_sha256", "source_receipt_sha256", "coverage_receipt_sha256"))
+    need(all(is_hash(m[k]) for k in ("bars_sha256", "source_receipt_sha256", "coverage_receipt_sha256",
+                                    "pair_map_sha256"))
          and (is_hash(m["prior_result_sha256"]) if stage in PREVIOUS else m["prior_result_sha256"] is None),
          "REFUSE_MANIFEST")
+    clock, shift = m["bar_clock"], m["bar_shift_hours"]
+    need(type(shift) is int and (clock, shift) in (("opening", 0), ("closing", -1))
+         and type(m["archive_endpoint_shared_clock"]) is bool, "REFUSE_BAR_CLOCK")
     release = m["source_release"]
     need(isinstance(release, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", release), "REFUSE_MANIFEST")
     first, stop, release_end = m["start"], m["stop_exclusive"], m["source_release_end_exclusive"]
@@ -421,13 +429,17 @@ def snapshot(fd, stage, pin, cfg):
     return m, prices
 
 
+def bar_values(m, payload):
+    return np.frombuffer(payload, dtype="<f8").reshape(m["hours"], len(m["names"]), -1)
+
+
 def read_bars(m, payload, cfg):
     """Decode the custodian's canonical tape, not either venue's native format."""
     names = tuple(m["names"])
     start = utc(m["start"])
     hours = m["hours"]
     count = m["stage"] == "count"
-    a = np.frombuffer(payload, dtype="<f8").reshape(hours, len(names), -1)
+    a = bar_values(m, payload)
     need(bool(np.all(np.isnan(a) | ((a > 0) & np.isfinite(a)))), "REFUSE_PRICE_ENCODING")
     if not count:
         need(bool(np.array_equal(np.isnan(a[:, :, 0]), np.isnan(a[:, :, 1]))), "REFUSE_PRICE_ENCODING")
@@ -436,7 +448,7 @@ def read_bars(m, payload, cfg):
     return Tape(start, names, a[:, :, -1], full, None if count else a[:, :, 0])
 
 
-def carry_in(path, stage, manifest, ledger, cfg):
+def carry_in(path, stage, manifest, payload, ledger, cfg):
     if stage not in PREVIOUS:
         return None
     prev = PREVIOUS[stage]
@@ -446,15 +458,27 @@ def carry_in(path, stage, manifest, ledger, cfg):
         need(read_file(fd, "RUN.lock", cap) == (prev_pin + "\n").encode(), "REFUSE_PREVIOUS_LOCK")
         prior_manifest = read_file(fd, "manifest.json", cap)
         need(digest(prior_manifest) == prev_pin, "REFUSE_PREVIOUS_MANIFEST")
+        prior = object_from(prior_manifest)
+        need(all(prior.get(k) == manifest[k] for k in SOURCE_FIELDS), "REFUSE_SOURCE_CHANGE")
         blob = read_file(fd, "result.json", cap)
-    prior = object_from(prior_manifest)
-    need(all(prior.get(k) == manifest[k] for k in ("coverage_receipt_sha256", "covered_names")),
-         "REFUSE_SOURCE_CHANGE")
-    need(digest(blob) == manifest["prior_result_sha256"], "REFUSE_PREVIOUS_RESULT")
-    previous = object_from(blob)
-    expected = "advance to design" if stage == "design" else "advance to held-back"
-    need(previous.get("stage") == prev and previous.get("manifest_sha256") == prev_pin
-         and previous.get("outcome") == expected and previous.get("selected") in cfg["drops"], "REFUSE_PREVIOUS_RESULT")
+        need(digest(blob) == manifest["prior_result_sha256"], "REFUSE_PREVIOUS_RESULT")
+        previous = object_from(blob)
+        expected = "advance to design" if stage == "design" else "advance to held-back"
+        need(previous.get("stage") == prev and previous.get("manifest_sha256") == prev_pin
+             and previous.get("outcome") == expected and previous.get("selected") in cfg["drops"], "REFUSE_PREVIOUS_RESULT")
+        if stage == "design":
+            need(all(prior.get(k) == manifest[k] for k in ("names", "start", "stop_exclusive", "hours")),
+                 "REFUSE_SOURCE_CHANGE")
+            size = manifest["hours"] * len(manifest["names"]) * np.dtype("<f8").itemsize
+            try:
+                count_payload = read_file(fd, "bars.f64", size)
+            except (OSError, Refusal):
+                raise Refusal("REFUSE_SOURCE_CHANGE") from None
+            need(len(count_payload) == size and digest(count_payload) == prior.get("bars_sha256"),
+                 "REFUSE_SOURCE_CHANGE")
+            need(np.array_equal(bar_values(manifest, payload)[:, :, 1],
+                                bar_values(prior, count_payload)[:, :, 0], equal_nan=True),
+                 "REFUSE_SOURCE_CHANGE")
     return previous["selected"]
 
 
@@ -471,6 +495,8 @@ def execute(fd, stage, pin, manifest, payload, selected, cfg):
     new_file(fd, "RUN.lock", (pin + "\n").encode(), "REFUSE_LOCK")
     result = counts(tape, cfg) if stage == "count" else scored(tape, stage, selected, cfg)
     result.update(stage=stage, manifest_sha256=pin)
+    if manifest["archive_endpoint_shared_clock"]:
+        result["bar_clock_assumption"] = "STATED: The archive files and the live hourly endpoint share one clock."
     body = json.dumps(result, sort_keys=True, allow_nan=False).encode() + b"\n"
     new_file(fd, "result.json", body, "REFUSE_OUTPUT_EXISTS")
     return body.decode().rstrip()
@@ -494,7 +520,7 @@ def main(args):
             if validate:
                 result = "VALIDATED_NO_PRICE_DECODE"
             else:
-                selected = carry_in(path, stage, manifest, ledger, cfg)
+                selected = carry_in(path, stage, manifest, payload, ledger, cfg)
                 result = execute(fd, stage, pin, manifest, payload, selected, cfg)
         print(result)
         return 0
