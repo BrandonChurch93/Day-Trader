@@ -41,7 +41,7 @@ One pass over the public listing on 2026-11-27, 3:30 to 3:36 PM MT, 120 requests
 - MEASURED: 2,183 publishers had 10 or more 30-day users, 614 had 100 or more, 140 had 1,000 or more. So the store is not empty for everyone.
 - Limits written before the run: a user is not a payer and not a dollar; each count includes the publisher; the listing has no publish date, so new publishers cannot be split out; a user of two tools counts twice in a publisher's sum.
 - UNKNOWN: dollars per publisher. The only stated total is "more than $1.7 million per month" across "more than 4,500 independent developers and official partners" ([company notice, 2026-11-10](https://www.globenewswire.com/news-release/2026/11/10/3399579/0/en/apify-unveils-new-ai-agent-capabilities-and-server-actors-to-support-growing-demand.html)), with no count of people paid.
-- INFERENCE: most of the tools with real use read large social and shopping sites. This project does not go around a site's terms, so the busiest part of that store is closed to us anyway.
+- MEASURED, added after the run, description only: by the store's own category tags, 12.3% of paid tools tagged social media had 10 or more 30-day users, against 0.9% of the 18,868 tagged government and public data and 2.1% of the 5,996 tagged financial data. INFERENCE: the use is in reading large social sites. This project does not go around a site's terms, so the busy part of that store is closed to us, and the part open to us (public data) is the emptiest.
 
 ## Corrections the second check made to the lane pages
 

@@ -105,6 +105,11 @@ def report():
         "paid_share_with_at_most_1_user_30d": round(sum(r["u30"] <= 1 for r in paid) / n, 4),
         "paid_share_with_no_review": round(sum(r["reviews"] == 0 for r in paid) / n, 4),
     }
+    fl = CFG["users_floor"]
+    for cat in ("GOVERNMENT_AND_PUBLIC_DATA", "SOCIAL_MEDIA", "FINANCIAL_DATA"):
+        sub = [r for r in paid if cat in r["cats"]]
+        out["added_after_run"]["category_" + cat] = {
+            "paid_actors": len(sub), "share_with_floor_users": round(sum(r["u30"] >= fl for r in sub) / len(sub), 4)}
     print(json.dumps(out, indent=1))
 
 
