@@ -63,8 +63,8 @@ Built by `research_rig/report_76.py` from the three stage results, each pinned b
 
 ## What happens next
 
-- STATED: practice card E14 (queue 138, ledger 233) is to run this rule forward on Binance.US books with pretend money, judged at 60 trades or 2028-11-30. Now: Running since 2026-11-26 6:20 PM MT (first hourly wake 7:03 PM MT) from the frozen build `e8248e9` after independent audit CLEAR with one accepted limit (ledger 233).
-- STATED: Measurement 133 (queue 137) records the cost of a small trade on Binance.US every hour, 720 wakes to 2026-12-26 5:00 PM MT. Now: Running since 2026-11-26 5:39 PM MT.
+- STATED: practice card E14 (queue 138, ledger 233) runs this rule forward on Binance.US books with pretend money, judged at 60 trades or 2028-11-30. Now: Running since 2026-11-26 6:20 PM MT (first hourly wake 7:03 PM MT) from the frozen build `e8248e9` after independent audit CLEAR with one accepted limit (ledger 233).
+- STATED: Measurement 133 (queue 137), the hourly cost of a small trade on Binance.US, stopped 2026-11-26 7:00 PM MT on a build fault at its second wake and is closed unread. Its replacement, Measurement 134 (queue 139, ledger 234), is to record the same cost every hour for 720 wakes. Now: Registered 2026-11-26 7:09 PM MT, before any quote.
 - Blind recompute: done, stamped 2026-11-26 6:04 PM MT before the official result was opened, and it agrees on every mark. MEASURED, official then recompute: 83 and 83 trades; at 75 bp a side mean net +0.36% and +0.36%, without each year's best -0.28% and -0.28%; at 15 bp +1.57% and +1.57%.
 - STATED by the auditor: it had seen the pass and fail pattern in a commit subject before it started; its figures were blind.
 - UNKNOWN: whether the auditor's random draws match the scorer's call for call. The shares agree.

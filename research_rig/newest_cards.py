@@ -421,18 +421,63 @@ def e13_card(gh):
                         read_rule="Read once, a year after the first wake.", link=one_file("practice/traders", "E13_"))
 
 
+M133_STOP_RE = re.compile(r"^STOPPED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) on a build fault at its second wake; closed unread "
+                          r"\(ledger 232\)\. Replaced by (Measurement \d+), row (\d+)\.$")
+
+
 def m133_card(gh):
-    led = " ".join(ledger_row("232"))
-    m = re.search(r"the same (\d+) coins where it lists them in US dollars, one wake 10 seconds after every UTC hour for (\d+) days", led)
-    sizes = re.search(r"the cost to buy and to sell (\$\d+) and (\$\d+) walking the book", led)
-    end = re.search(r"\d+ hourly wakes to (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT)", queue_step("137"))
-    if not (m and sizes and end):
-        raise ValueError("Measurement 133 card: ledger row 232 or queue row 137 no longer states the coins, sizes or end")
-    return running_card(gh, id_="m133", name="Measurement 133", queue_row="137", ledger_n="232", start_key="M133_START",
-                        what=(f"What a small trade really costs on Binance.US, with no profit claim: every hour for {m[2]} days, "
-                              f"the cost to buy and to sell {sizes[1]} and {sizes[2]} on each of {m[1]} coins, walking the order book."),
-                        read_rule="Read once at the end.", link=one_file("docs/research", "195_measurement_133"),
-                        money="Public order books only, no trade and no account at any venue.")
+    """Measurement 133, stopped on a build fault and closed unread. Every state word is read from queue row 137 and
+    ledger row 232; the export stops if they disagree. No figure."""
+    m = M133_STOP_RE.match(queue_step("137"))
+    status = ledger_row("232")[-1]
+    led = re.search(r"STOPPED on a build fault, found .*?: the loop ended at its second wake \((\d{1,2}:\d{2} [AP]M MT)\)", status)
+    wake = re.search(r"One wake \((\d{1,2}:\d{2} [AP]M MT)[^)]*\) was recorded", status)
+    if not (m and led and wake and "E12 was holding the gate" in status and "No reading of any kind has been taken" in status
+            and "CLOSED UNREAD on a build fault" in status and f"replaced by {m[2]} (row " in status):
+        raise ValueError("Measurement 133 card: queue row 137 and ledger row 232 no longer agree that it stopped on a build fault, closed unread")
+    if not m[1].endswith(led[1]):
+        raise ValueError("Measurement 133 card: the stop time on queue row 137 and ledger row 232 differ")
+    return dict(id="m133", title="Measurement 133: stopped on a build fault", date=None, verdict="Stopped, closed unread", tone="unknown",
+                numbers=[], links=[["Measurement 133 plan", gh + one_file("docs/research", "195_measurement_133")],
+                                   ["Queue row", gh + QUEUE + "#running-now"]],
+                basis=f"STATED in the queue page, row 137, and the trial ledger, row 232. Public order books only, no trade and no account at any venue.",
+                summary=(f"Its logging loop ended at its second wake, {m[1]}, because another logger, E12, held the shared request gate "
+                         f"and the code treated the wait as a crash. One wake ({wake[1]}) was recorded and nothing was read; "
+                         f"it is closed unread and replaced by {m[2]} (queue {m[3]})."))
+
+
+def m134_card(gh):
+    """Measurement 134 from queue row 139 and ledger row 234: registered, or running once both say so. No figure."""
+    step = queue_step("139")
+    led = ledger_row("234")
+    body = " ".join(led)
+    m = re.search(r"the same (\d+) coins where it lists them in US dollars", body)
+    sizes = re.search(r"the cost to buy and to sell (\$\d+) and (\$\d+) walking the book", body)
+    wakes = re.search(r"(\d+) hourly wakes from the first wake", body)
+    late = re.search(r"the wake is (\d+) seconds after each UTC hour", body)
+    if not (m and sizes and wakes and late):
+        raise ValueError("Measurement 134 card: ledger row 234 no longer states the coins, sizes, wakes or wake time")
+    plans = sorted(n for n in os.listdir(os.path.join(ROOT, "docs/research")) if n.startswith("202_") and n.endswith(".md"))
+    if len(plans) > 1:
+        raise ValueError("Measurement 134 card: more than one docs/research/202_*.md")
+    plan = ["Measurement 134 plan", gh + "docs/research/" + plans[0]] if plans else ["Trial ledger", gh + LEDGER]
+    what = (f"What a small trade really costs on Binance.US, with no profit claim: every hour, {int(late[1]) // 60} minutes after the hour, "
+            f"the cost to buy and to sell {sizes[1]} and {sizes[2]} on each of {m[1]} coins, walking the order book, for {wakes[1]} hourly wakes. "
+            f"It replaces Measurement 133.")
+    read_rule = "Read once at the end."
+    reg = re.match(r"Registered (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT), before any quote\.", step)
+    if reg and led[-1].startswith("REGISTERED ") and "START GO" not in led[-1]:
+        return dict(id="m134", title="Measurement 134: cost of a small trade on Binance.US", date=None, verdict="Registered, not started",
+                    tone="info", numbers=[], links=[plan, ["Queue row", gh + QUEUE + "#running-now"]],
+                    basis="STATED in the queue page, row 139, and the trial ledger, row 234. Public order books only, no trade and no account at any venue.",
+                    summary=what + f" Registered {reg[1]}, before any quote; not started yet. " + read_rule + " No result exists yet, so no figure is shown.")
+    if RUNNING_RE.match(step) and step.split(" (first ")[1].startswith("hourly wake"):
+        card = running_card(gh, id_="m134", name="Measurement 134", queue_row="139", ledger_n="234", start_key="M134_START",
+                            what=what, read_rule=read_rule, link=plan[1].replace(gh, "", 1), rule_in_step=False,
+                            money="Public order books only, no trade and no account at any venue.")
+        card["links"][0][0] = plan[0]
+        return card
+    raise ValueError("Measurement 134 card: queue row 139 or ledger row 234 is neither registered nor running")
 
 
 # ------------------------------------------------------------------ Plan 76, the held-back run
@@ -545,7 +590,7 @@ def row_state(step):
     m = re.match(r"(\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT): stopped\b", step)
     if m:
         return f"Stopped {m[1]}"
-    m = re.match(r"Registered (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)\.", step)
+    m = re.match(r"Registered (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)[.,]", step)
     if m:
         return f"Registered {m[1]}, not started"
     m = re.match(r"Running since (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}(?: [AP]M)? MT)", step)
@@ -569,4 +614,4 @@ def running_now():
 
 def cards(gh):
     return [plan76_card(gh), plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh), e12_card(gh), e13_card(gh),
-            m133_card(gh), e14_card(gh)]
+            m133_card(gh), m134_card(gh), e14_card(gh)]
