@@ -1,5 +1,7 @@
 # 205h. Deep dive: agents selling work or a service
 
+Second check, 2026-11-27: 5 claims corrected and 1 not supported. The corrections are listed in [doc 205](205_deep_dive_beyond_trading.md#corrections-from-the-second-check) and stand over this page.
+
 What this is: a deep-dive lane (dated 2026-11-27 UTC) on legal ways one person in Nampa, Idaho, with software, design, 3D, and film skills plus an around-the-clock agent team, can earn money by selling work, services, tools, or data products rather than trading.
 
 Labels used here: MEASURED (read directly on an opened primary filing, statute, agency rule, platform policy, peer-reviewed paper, or empirical audit), STATED (vendor claim or unverified report), INFERENCE (reasoning from those facts), UNKNOWN (no verified figure published).

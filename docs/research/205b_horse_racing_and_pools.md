@@ -1,5 +1,7 @@
 # Horse racing and other pari-mutuel pools
 
+Second check, 2026-11-27: 8 of 8 claims confirmed. Ranked summary: [doc 205](205_deep_dive_beyond_trading.md).
+
 INFERENCE: **No reliable quick-money route for a few hundred dollars in Idaho.** The best thing to test on paper is a mandatory-payout pool with a real carryover and unusually little new money. Next is a manual model in pools that limit high-speed teams. Neither has verified small-account income. Betting every card, paying for a full data stack, chasing rebates, and trying to copy a professional syndicate are traps for this bankroll.
 
 ## Idaho access and platform rules

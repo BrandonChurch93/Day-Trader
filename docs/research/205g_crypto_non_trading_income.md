@@ -1,5 +1,7 @@
 # 205g. Crypto income that is not directional trading
 
+Second check, 2026-11-27: 1 claim corrected. The corrections are listed in [doc 205](205_deep_dive_beyond_trading.md#corrections-from-the-second-check) and stand over this page.
+
 2026-11-27, Nampa, Idaho. INFERENCE: First look for a fixed-price code, design, film or data job with a named payer and clear acceptance criteria. A milestone grant for work already underway is second; a paid API only makes sense if a real buyer wants its output. UNKNOWN: No published evidence here establishes reliable first-month net income for a new solo Idaho operator. Do not buy GPUs, stake or market-making inventory for this test. Automated quest farming, fake volume and using many identities to collect rewards are OUT. This does not reopen airdrops, funding carry or Ethena-style yields.
 
 ## Legal and measurement gates

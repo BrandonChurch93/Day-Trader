@@ -1,5 +1,7 @@
 # Paid bounties and competitions for an agent-assisted owner
 
+Second check, 2026-11-27: 3 claims corrected. The corrections are listed in [doc 205](205_deep_dive_beyond_trading.md#corrections-from-the-second-check) and stand over this page.
+
 INFERENCE: The best shot at a first dollar is one human-assigned software job with a fixed price and accepted payment route, not a bot racing to submit reports. Expensify is the clearest lead because it has an explicit AI-assistance policy and a defined payment process; even there, approval and production deployment come before the pay clock ([contributor guide](https://github.com/Expensify/App/blob/main/contributingGuides/CONTRIBUTING.md), [AI etiquette](https://github.com/Expensify/App/blob/main/contributingGuides/AI_ETIQUETTE.md)).
 
 INFERENCE: A Firebase prototype that doubles as a portfolio piece is a reasonable second experiment if already close to done. For a more technical project that can wait, Google's engineering-agent challenge is open into January and explicitly wants an agent, but it is still a three-winner tournament, not customer revenue ([Firebase official rules](https://firebasehybridaihackathon.devpost.com/rules), [Google engineering challenge](https://www.kaggle.com/competitions/physical-engineerings-last-exam)). UNKNOWN: No reliable positive monthly income for a new entrant in this lane. The planning assumption for month one is $0. Trap list: speculative bulk bounty reports, stale bounty badges, token stakes, and calling an investor's allocation or an advertised prize pool income.

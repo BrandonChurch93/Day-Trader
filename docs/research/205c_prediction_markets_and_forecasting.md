@@ -1,5 +1,7 @@
 # 205c. Prediction markets and paid forecasting
 
+Second check, 2026-11-27: 8 of 8 claims confirmed. Ranked summary: [doc 205](205_deep_dive_beyond_trading.md).
+
 Status: Public rules, filings and published results checked November 27, 2026, Mountain Time. This adds access, incentives, wallet-level evidence and non-trading income routes to [the earlier prediction-market reading](53_prediction_markets_checked.md). No market feeds, bets, accounts, submissions or payouts were touched.
 
 INFERENCE: The best shot at a first dollar is to sell one narrow, source-checked research brief, with the owner doing the selling and reviewing. The best fit for a mostly autonomous agent is a free, explicitly bot-eligible forecasting contest, but two weeks buys a score, not a paycheck. Reviewing contract wording for bounties is a plausible small side bet on time, not money. Retail trading and market-maker rebates are not reliable quick money. No route here has a defensible estimate of recurring income for a new Idaho entrant.

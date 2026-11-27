@@ -1,5 +1,7 @@
 # Deep Dive 205f: Offers, Rewards, and Buying-and-Reselling Outside Financial Markets
 
+Second check, 2026-11-27: 4 claims corrected and 1 not supported. The corrections are listed in [doc 205](205_deep_dive_beyond_trading.md#corrections-from-the-second-check) and stand over this page.
+
 Date: 2026-11-27. Scope: one individual residing in Nampa, Idaho, United States, starting with a few hundred dollars treated as already spent, seeking reliable near-term cash flow with 24/7 AI agent support (read, write, browse, code) where the owner handles all identity checks, accounts, contracts, and money movement.
 
 ## Bottom Line

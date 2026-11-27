@@ -1,3 +1,7 @@
+# 205a. Sports betting
+
+Second check, 2026-11-27: 8 of 8 claims confirmed. Ranked summary: [doc 205](205_deep_dive_beyond_trading.md).
+
 INFERENCE: No sports-betting method here is reliable quick income for a few hundred dollars in Nampa. Keep the bankroll and spend nothing on odds feeds, pick sellers or an automated betting app.
 INFERENCE: Best research-only leads: a no-money closing-line check; one promotion audit if already traveling to a legal sportsbook state. Neither earns money in a paper test.
 MEASURED: Idaho prohibits conventional retail and online sports wagers; an eligible adult can place personal wagers while physically in Oregon outside tribal lands under its Lottery rules ([Idaho statute](https://legislature.idaho.gov/statutesrules/idstat/Title18/T18CH38/SECT18-3801/), [Idaho Lottery](https://www.idaholottery.com/sites/default/files/2026-02/commissioner-minutes-5-16-19.pdf), [Oregon rules](https://secure.sos.state.or.us/oard/displayDivisionRules.action?selectedDivision=6940)).

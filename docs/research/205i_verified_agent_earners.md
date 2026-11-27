@@ -1,5 +1,7 @@
 # 205i: Who has verifiably made money with autonomous AI agents, 2024 to now, outside trading
 
+Second check, 2026-11-27: 1 claim corrected. The corrections are listed in [doc 205](205_deep_dive_beyond_trading.md#corrections-from-the-second-check) and stand over this page.
+
 Lane of deep dive 205. This is a cross-cut. It starts from documented cases where an AI agent, or a small team running agents, earned money, and it sorts them by mechanism (who paid and why). Trading is excluded, as the brief says. Read on 2026-11-27. Labels: MEASURED (read in a primary record or counted), STATED (someone's claim), INFERENCE (my reasoning), UNKNOWN.
 
 ## Bottom line

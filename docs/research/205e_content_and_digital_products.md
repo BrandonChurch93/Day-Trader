@@ -1,5 +1,7 @@
 # 205e. Content, digital products and small online businesses run mostly by agents
 
+Second check, 2026-11-27: 4 claims corrected and 1 not supported. The corrections are listed in [doc 205](205_deep_dive_beyond_trading.md#corrections-from-the-second-check) and stand over this page.
+
 Status: deep dive lane E, written 2026-11-27 by a helper. Not a test. Nothing was posted, listed, submitted or signed up for. Every link below was opened on 2026-11-27.
 
 Labels: MEASURED means read in a primary record (a filing, a platform's own report or rule page) or worked out by plain arithmetic from one. STATED means someone's claim, including surveys of self-reported income, vendors' datasets and press reports. INFERENCE is this page's reasoning. UNKNOWN means no source found.
