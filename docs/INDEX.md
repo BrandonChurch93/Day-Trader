@@ -696,6 +696,9 @@ Working papers.
 | `practice/traders/E14_washout_rebound_binance_us.md` | Ledger 233 forward washout rule, timing, shown lines and separate read permissions | DRAFT |
 | `practice/forward_e14.py`, `practice/test_forward_e14.py` | E14 recorder and invented-data checks | CURRENT |
 | `practice/forward/E14_log.json` | E14 public counts and status only | RECORD |
+| `practice/traders/E15_live_desk.md` | Card E15, the live desk: cards W, F and S, scout, rule and random lines, window, fills, marks, stops and operation (lead's rulings of 2026-11-27); not registered until the lead writes its ledger row | DRAFT |
+| `practice/desk_e15.py`, `practice/test_desk_e15.py` | E15 desk (start, loop, alive, publish) with direct SDK scout calls outside the shared gate, and its made-up data checks (fake clock, pages and model; needs pytest) | CURRENT |
+| `practice/desk_e15_cards/E15W.json`, `practice/desk_e15_cards/E15F.json`, `practice/desk_e15_cards/E15S.json` | E15 gate cards read only by `practice/desk_e15.py` through `practice/gate.py`; kept out of `practice/criteria` so trader.py never reads them | DRAFT |
 | `practice/measure_133.py`, `practice/test_measure_133.py` | Measurement 133 recorder and invented-data checks | CURRENT |
 | `practice/venue_binance_us.py`, `practice/test_venue_binance_us.py` | Shared Binance.US transport, gate, custody and approval helpers; invented HTTP tests | CURRENT |
 | `practice/forward/M133_log.json` | Measurement 133 public count and aggregate status | RECORD |
