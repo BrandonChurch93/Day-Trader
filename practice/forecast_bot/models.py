@@ -9,6 +9,7 @@ import time
 import urllib.parse
 
 from . import method
+from .metaculus import redact_held
 
 
 async def sdk_call(kind, model, prompt, schema, timeout, max_tokens):
@@ -46,7 +47,7 @@ async def run_one(caller, cfg, q, prompt, form, i, model):
     try:
         belief, reasons = method.check_reply(got["text"], q)
     except method.BadReply as exc:
-        return rec | {"status": f"bad_reply:{exc}"}, None
+        return rec | {"status": f"bad_reply:{redact_held(exc)}"}, None
     rec = rec | {"status": "ok", "secs": got.get("secs"), "reasons": reasons[:600]}
     rec["belief"] = belief if q["type"] != "multiple_choice" else {k: round(v, 4) for k, v in belief.items()}
     return rec, belief
@@ -72,16 +73,37 @@ class OverBudget(Exception):
     """research plus runs for one post took longer than question_budget_s."""
 
 
+IN_FLIGHT = 6        # model calls at once for one post, whatever its size
+
+
+def planned_calls(cfg, n_questions):
+    """Model calls one post will make: research (if on) plus every run for every open question."""
+    return (1 if cfg["research_web_search"] else 0) + len(cfg["runs"]) * n_questions
+
+
+def post_budget(cfg, n_questions):
+    """The hard wall-clock limit for one post: question_budget_s for the first wave of runs, plus run_timeout_s for
+    each further wave that the IN_FLIGHT cap makes a large group need."""
+    waves = -(-len(cfg["runs"]) * n_questions // IN_FLIGHT)
+    return cfg["question_budget_s"] + (waves - 1) * cfg["run_timeout_s"]
+
+
 def forecast_post(caller, cfg, research_packet, tasks):
     """tasks: [(q, packet)] for the open, unanswered questions of one post.
-    One research call, then every run for every question at the same time, all under one hard wall-clock budget
-    (question_budget_s). Returns (brief, research record, [(q, valid beliefs, run records)]). Raises OverBudget."""
+    One research call, then every run for every question, at most IN_FLIGHT calls at once, all under one hard
+    wall-clock limit (post_budget). Returns (brief, research record, [(q, valid beliefs, run records)]).
+    Raises OverBudget."""
     async def go():
-        brief, rstat = await research_step(caller, cfg, research_packet)
+        gate = asyncio.Semaphore(IN_FLIGHT)
+
+        async def gated(*a):
+            async with gate:
+                return await caller(*a)
+        brief, rstat = await research_step(gated, cfg, research_packet)
         jobs = []
         for q, pkt in tasks:
             prompt, form = method.run_prompt(q["type"], pkt, brief), method.schema(q["type"])
-            jobs.append(asyncio.gather(*(run_one(caller, cfg, q, prompt, form, i, m) for i, m in enumerate(cfg["runs"]))))
+            jobs.append(asyncio.gather(*(run_one(gated, cfg, q, prompt, form, i, m) for i, m in enumerate(cfg["runs"]))))
         results = await asyncio.gather(*jobs)
         out = []
         for (q, _), res in zip(tasks, results):
@@ -90,7 +112,7 @@ def forecast_post(caller, cfg, research_packet, tasks):
 
     async def bounded():
         try:
-            return await asyncio.wait_for(go(), cfg["question_budget_s"])
+            return await asyncio.wait_for(go(), post_budget(cfg, len(tasks)))
         except asyncio.TimeoutError:
             raise OverBudget() from None
     return asyncio.run(bounded())

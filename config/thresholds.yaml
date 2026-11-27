@@ -1296,6 +1296,8 @@ forecast_bot:
     min_valid_runs: 3
     run_timeout_s: 180
     question_budget_s: 480
+    max_model_calls_per_pass: 60
+    max_model_calls_per_day: 600
     run_max_tokens: 6000
     asknews_enabled: false
     binary_clip: [0.02, 0.98]

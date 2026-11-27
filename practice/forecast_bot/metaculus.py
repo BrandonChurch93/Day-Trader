@@ -70,6 +70,16 @@ def take_token(cfg, environ=None):
     return tok
 
 
+def redact_held(text):
+    """`text` with every held token (a bare string, not only a `Token ...` header) and anything token-shaped removed.
+    Used wherever exception text or a log line is written."""
+    text = str(text)
+    for tok in list(_HELD.values()):
+        if tok:
+            text = text.replace(tok, "[redacted]")
+    return redact(text)
+
+
 def forget_token(cfg):
     _HELD.pop(cfg["token_env"], None)
 

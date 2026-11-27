@@ -2,13 +2,17 @@
 
 One JSON line per event in <private_dir>/log.jsonl (folder 0700, file 0600, fsynced). Only our own data is kept:
 post and question ids, the question type, a hash of the question text (not the text: the site's terms bar storing a
-significant portion of its content), our forecasts, our comment's hash and every outcome.
+significant portion of its content), our forecasts, our comment's hash, model call counts and every outcome. Every
+line passes through metaculus.redact_held before it is written, so a held token can never reach the file.
 
 Duplicate guard:
 - a post is answered once: a `submitted` row for every question of the task, or our own forecast already on the site,
   means it is skipped and recorded as already answered;
-- before each submission a `claim` row is written; a claim without a result (a crash or an unknown HTTP outcome) is
-  settled next pass by reading our own forecasts on the site, never by sending again blind;
+- before each submission a `claim` row is written. A claim without a result (a crash or an unknown HTTP outcome) is
+  settled on a later pass by reading our own forecasts on the site, never by sending again blind. `settle` rows record
+  submitted_confirmed_later (every id shows a forecast) or claim_not_on_site (every id reported, none with a forecast);
+  both close the claim. claim_cannot_check (an id omitted) leaves it open and the post is not sent; after the claim
+  is 24 hours old that row is written once per UTC day, not once per pass;
 - every open post seen in a pass gets exactly one outcome row in that pass, so nothing is skipped silently.
 """
 import fcntl
@@ -17,6 +21,12 @@ import json
 import os
 from contextlib import contextmanager
 from pathlib import Path
+
+from .metaculus import redact_held
+
+
+class Busy(RuntimeError):
+    """Another pass holds the bot lock."""
 
 
 def text_hash(q, ctx=None):
@@ -45,7 +55,7 @@ class Log:
             try:
                 fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError:
-                raise RuntimeError("another pass holds the bot lock") from None
+                raise Busy("another pass holds the bot lock") from None
             yield self
         finally:
             os.close(fd)
@@ -60,7 +70,7 @@ class Log:
         return out
 
     def add(self, **row):
-        line = json.dumps(row, sort_keys=True, ensure_ascii=False, allow_nan=False)
+        line = redact_held(json.dumps(row, sort_keys=True, ensure_ascii=False, allow_nan=False))
         fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_NOFOLLOW)
         try:
             os.write(fd, (line + "\n").encode())
@@ -72,9 +82,13 @@ class Log:
 
 def index(rows):
     """What the log says: questions submitted, claims not yet settled, and tries per post."""
-    submitted, claims, attempts = set(), {}, {}
+    submitted, claims, attempts, calls, noted = set(), {}, {}, {}, {}
     for r in rows:
         kind = r.get("kind")
+        if kind == "calls":
+            calls[r["day"]] = calls.get(r["day"], 0) + r["n"]
+        if kind == "settle" and r.get("status") == "claim_cannot_check" and r.get("open_claim_id"):
+            noted.setdefault(r["open_claim_id"], set()).add(r.get("day"))
         if kind == "attempt":
             attempts[r["post_id"]] = attempts.get(r["post_id"], 0) + 1
         elif kind == "claim":
@@ -84,4 +98,5 @@ def index(rows):
                 claims.pop(r["claim_id"], None)
             if r.get("status") in ("submitted", "submitted_confirmed_later"):
                 submitted.update(r.get("question_ids") or [])
-    return {"submitted": submitted, "open_claims": claims, "attempts": attempts}
+    return {"submitted": submitted, "open_claims": claims, "attempts": attempts, "calls_by_day": calls,
+            "cannot_check_days": noted}

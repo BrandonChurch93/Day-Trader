@@ -108,7 +108,7 @@ All MEASURED in the tests on made-up questions; the field names are STATED in th
 - Each open post seen in a pass gets exactly one outcome row in that pass: `submitted`, `already_answered`,
   `duplicate_in_pass`, `bad_post_id` (no integer id), `skipped:<reason>`, `not_ready:<reason>`, `no_open_question`,
   `no_time`, `failed_runs`, `no_valid_distribution`, `failed_budget`, `failed_build`, `failed_http_<code>`,
-  `unknown_outcome`, `claim_still_open`, `guard_cannot_check`, `deferred_guard_unavailable` or
+  `unknown_outcome`, `claim_still_open`, `guard_cannot_check`, `deferred_guard_unavailable`, `deferred_call_cap` or
   `gave_up_after_attempts`. A failed list call writes `list_failed`. Nothing is skipped silently. MEASURED in tests.
 - A question is answered once. It is skipped when our log has a `submitted` row for it or the site shows our forecast
   on it. If the site read fails, no post is sent that pass.
@@ -116,24 +116,52 @@ All MEASURED in the tests on made-up questions; the field names are STATED in th
   A timeout, 5xx or crash leaves it open. The next pass reads our forecasts on the site and writes a `settle` row:
   `submitted_confirmed_later` when every id shows a forecast; `claim_not_on_site` only when every id is reported with
   none (then the post may be tried again); `claim_cannot_check` when an id is omitted, and then the claim stays open
-  and the post is recorded `claim_still_open` and not sent. No POST is ever retried blind. MEASURED in tests,
+  and the post is recorded `claim_still_open` and not sent. While the claim is 24 hours old or less, that row is
+  written every pass; after that, once per UTC day (`open_claim_id` and `day` on the row). No POST is ever retried
+  blind. MEASURED in tests,
   including a crash after the site saved the forecast but before the outcome row.
 - Retries last the whole window: `forecast_bot.max_attempts_per_post` (12) times `forecast_bot.poll_minutes` (15) is
   180 minutes, and `settings.required` refuses a smaller product. The real stop is `forecast_bot.min_minutes_left`
   before close. Worst case for one post that keeps failing: 12 tries of 6 calls, 72 model calls.
 
+## Model call caps
+
+- Two caps in the config block: `forecast_bot.max_model_calls_per_pass` (60) and `forecast_bot.max_model_calls_per_day`
+  (600, per UTC day, summed from `calls` rows in the private log, so a restart does not reset it). A post's calls are
+  counted before they are made: 1 research call (if `forecast_bot.research_web_search`) plus one per run per open
+  question, so 6 for a single question and 1 + 5k for a group with k open subquestions. If either cap would be passed,
+  the post is recorded `deferred_call_cap`, is not counted as a try, and is tried next pass or next day.
+  `settings.required` refuses caps that cannot fit one single-question post or a pass cap above the day cap. MEASURED
+  in tests.
+- Arithmetic for a normal busy day. STATED by the lead: about 60 MiniBench questions land over a few days. Taken as 3
+  days, that is about 20 questions a day, 20 x 6 = 120 calls on a normal day. A peak day of 40 questions is 240 calls.
+  The worst retry case above (one post failing 12 times, 72 calls) on top of a peak day is about 312. The day cap of 600
+  leaves room for two such posts plus a peak day; reaching it means something is wrong, and the rest wait for the next
+  UTC day.
+- Pass cap: 60 calls is 10 single-question posts, the busiest pass the time budget below was sized for. More than that
+  in one pass waits 15 minutes for the next pass; soonest close goes first, so the posts that wait close later.
+- INFERENCE: a group with more than 11 open subquestions (1 + 5 x 12 = 61 calls) would never fit the pass cap and would
+  be recorded `deferred_call_cap` every pass. Whether MiniBench has groups that large is UNKNOWN; `status` shows
+  deferred counts each hour, so it would be seen.
+
 ## Time budget per post
 
-- One post's research and runs run under one hard wall-clock limit, `forecast_bot.question_budget_s` (480 s). Research
-  comes first (the runs need its brief); then every run for every open subquestion goes at the same time. Over the
-  limit, the post is recorded `failed_budget` and tried again next pass. MEASURED in tests.
+- Posts are done one at a time. Within a post, model calls go through a semaphore of 6 (`models.IN_FLIGHT`), so at
+  most 6 model calls are in flight at any moment, for a single question or a group. MEASURED in tests (a group of 2
+  subquestions, 11 calls, peaks at 6).
+- Research comes first (the runs need its brief); then the runs for every open subquestion go through the semaphore.
+  One post's research and runs run under one hard wall-clock limit: `forecast_bot.question_budget_s` (480 s) plus
+  `forecast_bot.run_timeout_s` (180 s) for each extra wave the semaphore makes, where waves = ceil(5k / 6) for k open
+  subquestions (`models.post_budget`). Over the limit, the post is recorded `failed_budget` and tried again next pass.
+  MEASURED in tests.
 - Each call has its own limit as well: `forecast_bot.research_timeout_s` (240 s) and `forecast_bot.run_timeout_s`
-  (180 s). So one post needs at most 240 + 180 = 420 s, and never more than 480 s.
-- Worst case, arithmetic: ten posts open at once and every one hits the budget: 10 x 480 s = 4800 s = 80 minutes for
-  the pass, plus seconds of HTTP. The last post (soonest close first) still starts within 80 minutes and finishes
-  within 88 of the pass start, inside a 180-minute window, leaving room for the 15-minute wait before the pass and
-  one retry. Posts are done one at a time on purpose (at most 6 model calls in flight, within our limit of heavy
-  processes). INFERENCE: the measured dry run below is far below this.
+  (180 s). A single question is one wave: at most 240 + 180 = 420 s, never more than 480 s. A group of 2 is two waves:
+  at most 240 + 2 x 180 = 600 s, budget 660 s.
+- Worst case for a pass, arithmetic with the caps: the costliest posts per call are single questions, 480 s for 6
+  calls, 80 s a call (a group of 2 is 660 s for 11 calls, 60 s a call; larger groups are lower still). The pass cap of
+  60 calls therefore bounds the pass at 60 x 80 s = 4800 s = 80 minutes, plus seconds of HTTP. The last post (soonest
+  close first) starts within 80 minutes and finishes within 88 of the pass start, inside a 180-minute window, leaving
+  room for the 15-minute wait before the pass and one retry. INFERENCE: the measured dry run below is far below this.
 
 ## Which tournament
 
@@ -223,9 +251,18 @@ All MEASURED in the tests on made-up questions; the field names are STATED in th
   MEASURED.
 - `python3 -m forecast_bot.bot dry-run` prints what it would submit for the made-up sample posts with a fake model.
   `--live-models` uses real model calls on the same made-up posts. It never builds a Metaculus client.
-- The loop: a changed build or setting stops it (that would be a new attempt). Anything else (no token, a refused
-  client, an HTTP failure, a crash inside a pass) is written to the private log as a `loop` row and the loop goes on
-  to the next pass. MEASURED in tests.
+- The loop stops (exit code 2, a `loop` row if the log can be written, and a line on stderr either way) on: a changed
+  build or setting (that would be a new attempt); a corrupt private log (a line that is not JSON, so the duplicate
+  guard cannot be trusted); or 4 passes in a row that end in an unhandled exception or an OSError on the log. No
+  token, a refused client, an HTTP failure or another pass holding the lock (`state.Busy`) are written as `loop` rows
+  and the loop goes on; they do not count toward the 4. A good pass resets the count. MEASURED in tests.
+- Exception text goes through `metaculus.redact_held` wherever it is written (log rows, stdout, stderr), and the log
+  writer applies it to every line as well. It removes every held token as a bare string, not only after `Token `.
+  MEASURED in tests.
+- `python3 -m forecast_bot.bot status` prints counts only from the tournament log: passes, answered questions, failed
+  and deferred outcomes, open claims and their ages in hours, calls today and the two caps, loop errors, whether the
+  loop stopped, and the last pass id. No forecast, question text, comment or reason. No network, no arming; a missing
+  log prints zeros. MEASURED in tests.
 - Start, once the lead says so: set `forecast_bot.network_allowed` true and commit; write `B01_START=<that hash>` on
   ledger row 239 on local main; run `pass` once by hand, then `loop` detached. The private log is at
   `forecast_bot.private_dir` (folder 0700, file 0600), off the repo. It keeps ids, hashes of question text (not the

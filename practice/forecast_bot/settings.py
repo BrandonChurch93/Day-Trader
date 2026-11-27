@@ -21,7 +21,7 @@ PINNED = tuple(f"practice/forecast_bot/{n}" for n in (
 KEYS = ("ledger_row", "start_key", "test_key", "network_allowed", "api_base", "token_env", "targets", "testing_target",
         "poll_minutes", "page_limit", "max_pages", "http_timeout_s", "max_attempts_per_post", "min_minutes_left",
         "research_model", "research_web_search", "research_timeout_s", "research_max_tokens", "runs",
-        "min_valid_runs", "run_timeout_s", "question_budget_s", "run_max_tokens", "asknews_enabled", "binary_clip", "mc_floor",
+        "min_valid_runs", "run_timeout_s", "question_budget_s", "max_model_calls_per_pass", "max_model_calls_per_day", "run_max_tokens", "asknews_enabled", "binary_clip", "mc_floor",
         "cdf_uniform_mix", "cdf_open_bound_mass", "comment_max_chars", "private_dir")
 
 
@@ -53,6 +53,8 @@ def required(cfg):
     need(cfg["question_budget_s"] >= cfg["research_timeout_s"] + cfg["run_timeout_s"],
          "question_budget_s must cover one research call and one run")
     need(cfg["max_attempts_per_post"] * cfg["poll_minutes"] >= 180, "retries must be allowed to last the whole window")
+    per_post = (1 if cfg["research_web_search"] else 0) + len(cfg["runs"])
+    need(per_post <= cfg["max_model_calls_per_pass"] <= cfg["max_model_calls_per_day"], "model call caps do not fit")
     return cfg
 
 

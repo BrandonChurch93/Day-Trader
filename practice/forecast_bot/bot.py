@@ -7,6 +7,8 @@ Commands (python3 -m forecast_bot.bot <command>, run from practice/):
   pass        one armed pass over the configured tournaments (needs network_allowed and B01_START on the ledger row)
   loop        armed passes every poll_minutes, for as long as it runs; nobody needs to touch it
   testing     one armed pass on the unscored bot testing area (needs B01_TEST on the ledger row)
+  status      counts only from the private log (passes, answered, failed, deferred, open claims, calls today);
+              never a forecast or question text; no network
 
 No human in the loop: once armed, the bot reads, forecasts and submits by itself. The log is for the record only.
 """
@@ -98,6 +100,11 @@ def validate(post, items, body, cfg, leaks=None):
     return True
 
 
+def msg(x):
+    """Exception or status text, safe to write anywhere: every held token removed."""
+    return metaculus.redact_held(str(x))
+
+
 def close_time(q):
     return questions.parse_time(q.get("actual_close_time") or q.get("scheduled_close_time"))
 
@@ -125,7 +132,7 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
         try:
             rows = client.open_posts(slug)
         except metaculus.ApiError as exc:
-            log.add(kind="list_failed", pass_id=pass_id, target=slug, status=str(exc.status))
+            log.add(kind="list_failed", pass_id=pass_id, target=slug, status=msg(exc.status))
             counts["list_failed"] = counts.get("list_failed", 0) + 1
             continue
         for p in rows:
@@ -144,10 +151,10 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
         try:
             ts = questions.tasks(p, start)
         except questions.Skip as exc:
-            outcome(p["id"], f"skipped:{exc}", target=slug)
+            outcome(p["id"], f"skipped:{msg(exc)}", target=slug)
             continue
         except questions.NotReady as exc:
-            outcome(p["id"], f"not_ready:{exc}", target=slug)
+            outcome(p["id"], f"not_ready:{msg(exc)}", target=slug)
             continue
         if not ts:
             outcome(p["id"], "no_open_question", target=slug)
@@ -161,7 +168,7 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
         remote = client.my_forecasts(qids)
     except metaculus.ApiError as exc:
         for _, slug, p, _ in plan:                       # never submit without the guard
-            outcome(p["id"], "deferred_guard_unavailable", target=slug, http=str(exc.status))
+            outcome(p["id"], "deferred_guard_unavailable", target=slug, http=msg(exc.status))
         log.add(kind="pass_end", pass_id=pass_id, counts=counts)
         return counts
 
@@ -177,8 +184,14 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
                     status="claim_not_on_site")
             ix["open_claims"].pop(cid)
         else:                                            # an id omitted, or mixed: cannot tell; the claim stays open
-            log.add(kind="settle", pass_id=pass_id, post_id=c["post_id"], question_ids=ids, status="claim_cannot_check")
+            day = start.strftime("%Y-%m-%d")
+            made = questions.parse_time(c.get("made_utc")) or start
+            if start - made <= timedelta(hours=24) or day not in ix["cannot_check_days"].get(cid, set()):
+                log.add(kind="settle", pass_id=pass_id, post_id=c["post_id"], question_ids=ids, open_claim_id=cid,
+                        day=day, age_hours=round((start - made).total_seconds() / 3600, 1),
+                        status="claim_cannot_check")
     held = {i for c in ix["open_claims"].values() for i in c["question_ids"]}
+    pass_calls = 0
 
     for _, slug, p, ts in plan:
         pid = p["id"]
@@ -201,6 +214,16 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
         if closes - now_p < timedelta(minutes=cfg["min_minutes_left"]):
             outcome(pid, "no_time", target=slug)
             continue
+        planned = models.planned_calls(cfg, len(pending))
+        day = now_p.strftime("%Y-%m-%d")
+        if (pass_calls + planned > cfg["max_model_calls_per_pass"]
+                or ix["calls_by_day"].get(day, 0) + planned > cfg["max_model_calls_per_day"]):
+            outcome(pid, "deferred_call_cap", target=slug, planned_calls=planned, pass_calls=pass_calls,
+                    day_calls=ix["calls_by_day"].get(day, 0))
+            continue
+        log.add(kind="calls", pass_id=pass_id, post_id=pid, day=day, n=planned)   # counted before the calls are made
+        pass_calls += planned
+        ix["calls_by_day"][day] = ix["calls_by_day"].get(day, 0) + planned
         log.add(kind="attempt", pass_id=pass_id, post_id=pid, target=slug)
         ix["attempts"][pid] = ix["attempts"].get(pid, 0) + 1
         q0, ctx0 = pending[0]
@@ -208,7 +231,7 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
         try:
             brief, rstat, results = models.forecast_post(caller, cfg, questions.packet(p, q0, ctx0, now_p), jobs)
         except models.OverBudget:
-            outcome(pid, "failed_budget", target=slug, budget_s=cfg["question_budget_s"])
+            outcome(pid, "failed_budget", target=slug, budget_s=models.post_budget(cfg, len(pending)))
             continue
         items, records, failed, no_dist = [], [], [], []
         for q, beliefs, recs in results:
@@ -233,7 +256,7 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
         try:
             validate(p, items, body, cfg, leaks)
         except (settings.Refuse, cdf.CdfError) as exc:
-            outcome(pid, "failed_build", target=slug, reason=str(exc), runs=run_log)
+            outcome(pid, "failed_build", target=slug, reason=msg(exc), runs=run_log)
             continue
         qids_p = [q["id"] for q, _ in items]
         hashes = {q["id"]: state.text_hash(q, ctx) for q, ctx in pending}
@@ -245,6 +268,7 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
             continue
         cid = f"{pass_id}-{pid}"
         log.add(kind="claim", pass_id=pass_id, claim_id=cid, post_id=pid, question_ids=qids_p, text_sha256=hashes,
+                made_utc=now_p.isoformat(),
                 forecasts=body["forecasts"], comment_sha256=hashlib.sha256(text.encode()).hexdigest())
         try:
             status = client.submit(body)
@@ -252,7 +276,7 @@ def run_pass(client, caller, log, cfg, targets, now=None, dry=False, out=None, c
             if exc.status in (400, 403, 405):           # rejected; the endpoint saves nothing on rejection
                 outcome(pid, f"failed_http_{exc.status}", target=slug, claim_id=cid, question_ids=qids_p)
             else:                                       # unknown outcome: the claim stays open for the next pass
-                outcome(pid, "unknown_outcome", target=slug, http=str(exc.status), question_ids=qids_p)
+                outcome(pid, "unknown_outcome", target=slug, http=msg(exc.status), question_ids=qids_p)
                 held.update(qids_p)
             continue
         outcome(pid, "submitted", target=slug, claim_id=cid, question_ids=qids_p, http=status, runs=run_log,
@@ -298,27 +322,42 @@ def armed_pass(cfg, mode, caller=None):
         return run_pass(client, caller or models.sdk_call, log, cfg, targets)
 
 
-def loop(cfg, caller=None, sleep=time.sleep, clock=lambda: datetime.now(UTC), one_pass=None, passes=None):
-    """Passes every poll_minutes until stopped. A changed build or setting (settings.Refuse) stops it: that would be a
-    new attempt. Anything else (no token, a refused client, an HTTP failure, a crash inside a pass) is recorded and
-    the loop goes on to the next pass, so it needs nobody."""
+MAX_BAD_PASSES = 4
+
+
+def loop(cfg, caller=None, sleep=time.sleep, clock=lambda: datetime.now(UTC), one_pass=None, passes=None,
+         err=sys.stderr):
+    """Passes every poll_minutes until stopped, needing nobody.
+    Stops (returns 2, with a `loop` row if one can be written and a line on stderr either way) when:
+    - a changed build or setting is found (settings.Refuse): that would be a new attempt;
+    - the private log is corrupt (a line that is not JSON): the duplicate guard cannot be trusted;
+    - MAX_BAD_PASSES passes in a row end in an unhandled exception or an OSError on the log.
+    Goes on to the next pass after: no token or a refused client (metaculus.Refuse), an HTTP failure (ApiError), or
+    another pass holding the lock (state.Busy). Every error text passes through redact_held."""
     one_pass = one_pass or (lambda: armed_pass(cfg, "tournament", caller))
-    period, n = cfg["poll_minutes"] * 60, 0
+    period, n, bad = cfg["poll_minutes"] * 60, 0, 0
     while passes is None or n < passes:
         n += 1
         row = {"pass_utc": clock().isoformat()}
         try:
             row["counts"] = one_pass()
+            bad = 0
         except settings.Refuse as exc:
-            row["stopped"] = str(exc)
+            row["stopped"] = msg(exc)
+        except json.JSONDecodeError:
+            row["stopped"] = "corrupt private log: a line is not JSON"
+        except (metaculus.Refuse, metaculus.ApiError, state.Busy) as exc:
+            row["error"] = f"{type(exc).__name__}: {msg(exc)}"
+        except Exception as exc:                       # unhandled, or an OSError on the log: counted
+            bad += 1
+            row["error"] = type(exc).__name__
+            row["bad_in_a_row"] = bad
+            if bad >= MAX_BAD_PASSES:
+                row["stopped"] = f"{bad} passes in a row ended in an unhandled error"
+        if "stopped" in row:
+            print(json.dumps({"stopped": row["stopped"]}), file=err, flush=True)
             record_error(cfg, row)
             return 2
-        except (metaculus.Refuse, metaculus.ApiError) as exc:
-            row["error"] = f"{type(exc).__name__}: {exc}"
-        except RuntimeError as exc:                    # another pass holds the lock, or a crash inside the pass
-            row["error"] = f"RuntimeError: {metaculus.redact(exc)}"
-        except Exception as exc:                       # recorded by type only; never stop for one bad pass
-            row["error"] = type(exc).__name__
         if "error" in row:
             record_error(cfg, row)
         print(json.dumps(row), flush=True)
@@ -335,6 +374,39 @@ def record_error(cfg, row):
         log.add(kind="loop", **row)
     except OSError:
         pass
+
+
+# ------------------------------------------------------------------ status: counts only
+FAILED_PREFIXES = ("failed", "no_valid_distribution", "gave_up")
+
+
+def status(cfg, mode="tournament", now=None):
+    """Counts from the private log, for the lead's hourly wake. Never a forecast, question text, comment or reason:
+    only counts, day totals, claim ages and the last pass time."""
+    now = now or datetime.now(UTC)
+    log = log_for(cfg, mode)
+    rows = log.rows() if log.path.exists() else []
+    ix = state.index(rows)
+    out = {"mode": mode, "passes": 0, "answered_questions": len(ix["submitted"]), "outcomes_failed": 0,
+           "outcomes_deferred": 0, "open_claims": len(ix["open_claims"]),
+           "open_claim_age_hours": sorted(round((now - (questions.parse_time(c.get("made_utc")) or now))
+                                                .total_seconds() / 3600, 1) for c in ix["open_claims"].values()),
+           "calls_today": ix["calls_by_day"].get(now.strftime("%Y-%m-%d"), 0),
+           "call_caps": [cfg["max_model_calls_per_pass"], cfg["max_model_calls_per_day"]],
+           "loop_errors": 0, "loop_stopped": False, "last_pass_utc": None}
+    for r in rows:
+        k, st = r.get("kind"), str(r.get("status", ""))
+        if k == "pass_start":
+            out["passes"] += 1
+            out["last_pass_utc"] = r.get("pass_id")
+        elif k == "outcome" and st.startswith(FAILED_PREFIXES):
+            out["outcomes_failed"] += 1
+        elif k == "outcome" and st.startswith("deferred"):
+            out["outcomes_deferred"] += 1
+        elif k == "loop":
+            out["loop_errors"] += "error" in r
+            out["loop_stopped"] = out["loop_stopped"] or "stopped" in r
+    return out
 
 
 # ------------------------------------------------------------------ dry run and selfcheck
@@ -475,32 +547,32 @@ def selfcheck(cfg):
             settings.required(cfg)
             checks["settings"] = "ok"
         except settings.Refuse as exc:
-            checks["settings"] = f"refused: {exc}"
+            checks["settings"] = f"refused: {msg(exc)}"
         try:
             arm(cfg, "tournament")
             checks["arm_tournament"] = "WOULD RUN"
         except settings.Refuse as exc:
-            checks["arm_tournament"] = f"refused: {exc}"
+            checks["arm_tournament"] = f"refused: {msg(exc)}"
         try:
             arm(cfg | {"network_allowed": True}, "tournament")
             checks["arm_with_network_allowed"] = "WOULD RUN"
         except settings.Refuse as exc:
-            checks["arm_with_network_allowed"] = f"refused: {exc}"
+            checks["arm_with_network_allowed"] = f"refused: {msg(exc)}"
         try:
             metaculus.Client(cfg | {"network_allowed": True}, armed=False)
             checks["client_unarmed"] = "WOULD RUN"
         except metaculus.Refuse as exc:
-            checks["client_unarmed"] = f"refused: {exc}"
+            checks["client_unarmed"] = f"refused: {msg(exc)}"
         try:
             metaculus.Client(cfg | {"network_allowed": True}, armed=True, environ={})
             checks["client_without_token"] = "WOULD RUN"
         except metaculus.Refuse as exc:
-            checks["client_without_token"] = f"refused: {exc}"
+            checks["client_without_token"] = f"refused: {msg(exc)}"
         try:
             settings.require_key(cfg["ledger_row"], cfg["start_key"], "0" * 40)
             checks["ledger_key"] = "WOULD RUN"
         except settings.Refuse as exc:
-            checks["ledger_key"] = f"refused: {exc}"
+            checks["ledger_key"] = f"refused: {msg(exc)}"
         checks["connection_attempts"] = guard.tries
     ok = (checks["settings"] == "ok" and checks["connection_attempts"] == 0
           and all(str(checks[k]).startswith("refused") for k in
@@ -510,7 +582,7 @@ def selfcheck(cfg):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=("selfcheck", "dry-run", "pass", "loop", "testing"))
+    ap.add_argument("command", choices=("selfcheck", "dry-run", "pass", "loop", "testing", "status"))
     ap.add_argument("--live-models", action="store_true", help="dry-run only: real model calls on made-up questions")
     args = ap.parse_args(argv)
     cfg = settings.load()
@@ -525,13 +597,16 @@ def main(argv=None):
                 summary["saved_to"] = save_summary(cfg, summary)
             print(json.dumps({"would_submit": out, "summary": summary}, indent=1))
             return 0
+        if args.command == "status":
+            print(json.dumps(status(cfg), sort_keys=True))
+            return 0
         if args.command == "loop":
             return loop(cfg)
         counts = armed_pass(cfg, "tournament" if args.command == "pass" else "testing")
         print(json.dumps({"counts": counts}))
         return 0
     except (settings.Refuse, metaculus.Refuse) as exc:
-        print(json.dumps({"refused": str(exc)}))
+        print(json.dumps({"refused": msg(exc)}))
         return 2
 
 

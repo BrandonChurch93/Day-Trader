@@ -1,5 +1,6 @@
 """Plan B01 forecast bot on made-up questions, a fake model and fake Metaculus pages. No network, no model, no key."""
 import copy
+import io
 import json
 import socket
 import urllib.error
@@ -944,3 +945,169 @@ def test_crash_after_claim_before_outcome(tmp_path):                         # t
     ix = state.index(log.rows())
     assert ix["open_claims"] == {} and 910001 in ix["submitted"] and len(pages.sent) == 1
     assert [r["status"] for r in log.rows() if r["kind"] == "settle"] == ["submitted_confirmed_later"]
+
+
+# ------------------------------------------------------------------ re-check of dd70ab8: five small items
+def test_call_cap_per_pass_defers_the_rest(tmp_path):                        # re-check 1
+    pages, log = Pages(bot.SAMPLES), state.Log(tmp_path)
+    do_pass(pages, log, cfg=CFG | {"max_model_calls_per_pass": 12})
+    got = outcomes(log)
+    assert list(got.values()).count("submitted") == 2 and list(got.values()).count("deferred_call_cap") == 3
+    rows = log.rows()
+    assert sum(r["n"] for r in rows if r["kind"] == "calls") == 12
+    deferred = {p for p, s in got.items() if s == "deferred_call_cap"}
+    assert not any(r["kind"] == "attempt" and r["post_id"] in deferred for r in rows)    # not counted as a try
+    do_pass(pages, log, now=NOW + timedelta(minutes=15), cfg=CFG | {"max_model_calls_per_pass": 12})
+    assert len(pages.sent) == 4                                                 # tried again next pass
+
+
+def test_call_cap_per_day_is_counted_from_the_log(tmp_path):                 # re-check 1
+    log = state.Log(tmp_path)
+    log.ensure()
+    log.add(kind="calls", pass_id="earlier", post_id=1, day=NOW.strftime("%Y-%m-%d"),
+            n=CFG["max_model_calls_per_day"] - 5)
+    pages = Pages(bot.SAMPLES[:1])
+    do_pass(pages, log)
+    assert pages.sent == [] and outcomes(log) == {900001: "deferred_call_cap"}
+    do_pass(pages, log, now=NOW + timedelta(days=1))                            # next day
+    assert len(pages.sent) == 1
+    assert state.index(log.rows())["calls_by_day"][(NOW + timedelta(days=1)).strftime("%Y-%m-%d")] == 6
+
+
+def test_call_caps_are_in_the_config_and_checked():                          # re-check 1
+    assert {"max_model_calls_per_pass", "max_model_calls_per_day"} <= set(settings.KEYS)
+    assert models.planned_calls(CFG, 1) <= CFG["max_model_calls_per_pass"] <= CFG["max_model_calls_per_day"]
+    with pytest.raises(settings.Refuse):
+        settings.required(CFG | {"max_model_calls_per_pass": 3})
+    with pytest.raises(settings.Refuse):
+        settings.required(CFG | {"max_model_calls_per_day": CFG["max_model_calls_per_pass"] - 1})
+
+
+def loop_with(tmp_path, seq):
+    cfg = CFG | {"private_dir": str(tmp_path / "bot")}
+    it = iter(seq)
+
+    def one():
+        e = next(it)
+        if isinstance(e, BaseException):
+            raise e
+        return e
+    err, sleeps = io.StringIO(), []
+    rc = bot.loop(cfg, sleep=sleeps.append, clock=lambda: NOW, one_pass=one, err=err)
+    return rc, err.getvalue(), state.Log(cfg["private_dir"]), sleeps
+
+
+def test_loop_stops_on_a_corrupt_log(tmp_path):                              # re-check 2
+    rc, err, log, sleeps = loop_with(tmp_path, [{"x": 1}, json.JSONDecodeError("bad", "{", 0), {"x": 2}])
+    assert rc == 2 and len(sleeps) == 1 and "corrupt" in err
+    assert [r["stopped"] for r in log.rows() if "stopped" in r] == ["corrupt private log: a line is not JSON"]
+
+
+def test_loop_stops_after_four_bad_passes_in_a_row(tmp_path):                # re-check 2
+    seq = [KeyError("a"), OSError("disk"), {"ok": 1}, KeyError("b"), OSError("log"), ValueError("c"),
+           PermissionError("d"), {"never": 1}]
+    rc, err, log, sleeps = loop_with(tmp_path, seq)
+    assert rc == 2 and len(sleeps) == 6 and "4 passes in a row" in err
+    rows = log.rows()
+    assert [r.get("bad_in_a_row") for r in rows] == [1, 2, 1, 2, 3, 4] and "stopped" in rows[-1]
+
+
+def test_loop_stop_line_reaches_stderr_when_the_log_cannot_be_written(tmp_path):   # re-check 2
+    blocker = tmp_path / "file"
+    blocker.write_text("")
+    cfg = CFG | {"private_dir": str(blocker / "bot")}                          # a folder under a file: OSError
+    err = io.StringIO()
+    rc = bot.loop(cfg, sleep=lambda s: None, clock=lambda: NOW,
+                  one_pass=lambda: (_ for _ in ()).throw(OSError("log")), err=err)
+    assert rc == 2 and "4 passes in a row" in err.getvalue()
+
+
+def test_lock_busy_is_not_a_bad_pass(tmp_path):                              # re-check 2
+    seq = [state.Busy("lock")] * 6 + [settings.Refuse("the build changed")]
+    rc, err, log, sleeps = loop_with(tmp_path, seq)
+    assert len(sleeps) == 6 and not any("bad_in_a_row" in r for r in log.rows())
+
+
+BARE = "zq" + "9Xk2Lm7Pw4Rt8Vb3Nc6Hd1Jf" * 2                                   # no "Token " before it
+
+
+def test_redact_held_removes_a_bare_held_token():                            # re-check 3
+    metaculus.take_token(CFG, environ={CFG["token_env"]: BARE})
+    assert metaculus.redact(f"oops {BARE}") == f"oops {BARE}"                   # the old filter misses it
+    assert BARE not in metaculus.redact_held(f"oops {BARE} and Token {TOKEN}")
+    assert TOKEN not in metaculus.redact_held(f"Token {TOKEN}")
+
+
+def test_bare_token_in_exception_text_is_never_logged(tmp_path, capsys):      # re-check 3
+    metaculus.take_token(CFG, environ={CFG["token_env"]: BARE})
+    cfg = CFG | {"private_dir": str(tmp_path / "bot")}
+    seq = [metaculus.ApiError(503, f"GET {BARE}"), metaculus.Refuse(BARE), KeyError(BARE),
+           settings.Refuse(f"changed {BARE}")]
+    rc, err, log, _ = loop_with(tmp_path, seq)
+    assert rc == 2 and BARE not in err and BARE not in capsys.readouterr().out
+    assert BARE not in log.path.read_text()
+
+    async def leak(kind, model, prompt, schema, timeout, max_tokens):
+        raise ValueError(f"model said {BARE}")
+    pages, plog = Pages(bot.SAMPLES[:1]), state.Log(tmp_path / "p")
+    do_pass(pages, plog, caller=leak)
+    text = plog.path.read_text()
+    assert BARE not in text
+    plog.add(kind="note", text=BARE)                                            # the log itself filters too
+    assert BARE not in plog.path.read_text()
+
+
+def test_group_runs_are_capped_at_six_in_flight(tmp_path):                   # re-check 4
+    live, peak = [0], [0]
+
+    async def count(kind, model, prompt, schema, timeout, max_tokens):
+        live[0] += 1
+        peak[0] = max(peak[0], live[0])
+        await asyncio.sleep(0.01)
+        live[0] -= 1
+        return await bot.fake_caller(kind, model, prompt, schema, timeout, max_tokens)
+    pages, log = Pages(bot.SAMPLES[4:5]), state.Log(tmp_path)                # a group: 1 + 5 x 2 calls
+    do_pass(pages, log, caller=count)
+    assert len(pages.sent) == 1 and peak[0] == models.IN_FLIGHT == 6
+
+
+def test_post_budget_grows_with_waves():                                     # re-check 4
+    b, r = CFG["question_budget_s"], CFG["run_timeout_s"]
+    assert models.post_budget(CFG, 1) == b                                      # 5 runs: one wave
+    assert models.post_budget(CFG, 2) == b + r                                  # 10 runs: two waves
+    assert models.post_budget(CFG, 6) == b + 4 * r                              # 30 runs: five waves
+
+
+def test_cannot_check_claim_writes_one_row_per_day_after_24_hours(tmp_path):  # re-check 5
+    pages, log = Pages(bot.SAMPLES[:1], fail={"submit": 502}), state.Log(tmp_path)
+    do_pass(pages, log)
+    pages.fail = {}
+    pages.my_forecasts = lambda qids: {}
+    times = [NOW + timedelta(minutes=15), NOW + timedelta(minutes=30), NOW + timedelta(hours=25),
+             NOW + timedelta(hours=25, minutes=15), NOW + timedelta(hours=26), NOW + timedelta(hours=49),
+             NOW + timedelta(hours=49, minutes=15)]
+    for t in times:
+        do_pass(pages, log, now=t)
+    rows = [r for r in log.rows() if r.get("status") == "claim_cannot_check"]
+    assert len(rows) == 4 and [r["day"] for r in rows][-2:] == ["2027-03-02", "2027-03-03"]
+    assert len(state.index(log.rows())["open_claims"]) == 1 and pages.sent == []
+
+
+def test_status_prints_counts_only(tmp_path, capsys, monkeypatch):           # re-check 5
+    cfg = CFG | {"private_dir": str(tmp_path / "bot")}
+    assert bot.status(cfg, now=NOW)["passes"] == 0                              # no log yet: zeros
+    log = bot.log_for(cfg, "tournament")
+    log.ensure()
+    do_pass(Pages(bot.SAMPLES[1:]), log, cfg=cfg)                               # 3 x 6 + 11 calls
+    do_pass(Pages(bot.SAMPLES[:1], fail={"submit": 502}), log, now=NOW + timedelta(minutes=15), cfg=cfg)
+    s = bot.status(cfg, now=NOW + timedelta(hours=2))
+    assert s["passes"] == 2 and s["answered_questions"] == 5 and s["calls_today"] == 35
+    assert s["open_claims"] == 1 and s["open_claim_age_hours"] == [1.8]
+    assert set(s) == {"mode", "passes", "answered_questions", "outcomes_failed", "outcomes_deferred", "open_claims",
+                      "open_claim_age_hours", "calls_today", "call_caps", "loop_errors", "loop_stopped",
+                      "last_pass_utc"}
+    monkeypatch.setattr(settings, "load", lambda: cfg)
+    assert bot.main(["status"]) == 0
+    out = capsys.readouterr().out
+    assert "Made-up" not in out and "continuous_cdf" not in out and "probability" not in out
+    assert all(isinstance(v, (int, bool, str, list, type(None))) for v in json.loads(out).values())
