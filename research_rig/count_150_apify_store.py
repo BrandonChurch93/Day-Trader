@@ -95,6 +95,16 @@ def report():
         },
     }
     out["all_marks_met"] = all(v[2] for v in out["marks"].values())
+    # Added after the run, description only, no mark attached.
+    per_pub = Counter(r["user"] for r in paid)
+    big = [v for v in per_pub.values() if v >= 100]
+    out["added_after_run"] = {
+        "paid_actors_per_publisher_median": statistics.median(per_pub.values()),
+        "paid_actors_per_publisher_max": max(per_pub.values()),
+        "publishers_with_100_or_more_paid_actors": len(big), "paid_actors_they_hold": sum(big),
+        "paid_share_with_at_most_1_user_30d": round(sum(r["u30"] <= 1 for r in paid) / n, 4),
+        "paid_share_with_no_review": round(sum(r["reviews"] == 0 for r in paid) / n, 4),
+    }
     print(json.dumps(out, indent=1))
 
 
