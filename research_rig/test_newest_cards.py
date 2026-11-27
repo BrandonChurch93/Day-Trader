@@ -154,7 +154,7 @@ def test_running_now_strip(monkeypatch):
     state = {r[0]: r[2] for r in rows}
     assert all(state[n] == "Stopped 2026-11-26 4:47 PM MT on data terms" for n in ("114", "131", "132", "133"))
     assert all(state[n] == "Running since 2026-11-26 5:39 PM MT" for n in ("135", "136"))
-    assert state["137"] == "Stopped 2026-11-26 7:00 PM MT" and state["139"] == "Registered 2026-11-26 7:09 PM MT, not started"
+    assert state["137"] == "Stopped 2026-11-26 7:00 PM MT" and state["139"] == NC.row_state(NC.queue_step("139")) and state["139"].startswith(("Registered 2026-11-26 7:09 PM MT", "Running since "))
     assert NC.row_state("Registered 2026-11-26 4:55 PM MT. Builder assigned.") == "Registered 2026-11-26 4:55 PM MT, not started"
     assert state["-"] == "Paused 2026-11-26 5:03 PM MT"
     assert NC.row_state("HOLD since 2026-11-26 4:54 PM MT after week 8") == "On hold since 2026-11-26 4:54 PM MT"
@@ -388,27 +388,90 @@ def test_m133_card_refuses_when_rows_disagree(monkeypatch, where):
         NC.m133_card("GH/")
 
 
-def test_m134_card_registered_then_running(monkeypatch):
+def ledger_status(monkeypatch, row, status):
+    """Replace the status cell of one ledger row, whatever it says now."""
+    text = NC.read(NC.LEDGER)
+    lines = [("|".join(l.split("|")[:-2] + [f" {status} ", ""]) if l.startswith(f"| {row} |") else l) for l in text.splitlines()]
+    real = NC.read
+    monkeypatch.setattr(NC, "read", lambda path: "\n".join(lines) if path == NC.LEDGER else real(path))
+
+
+M134_REGISTERED = ("Registered 2026-11-26 7:09 PM MT, before any quote. Builder is repairing the Measurement 133 code; then tests, independent audit, start.",
+                   "REGISTERED 2026-11-26 7:09 PM MT by the lead agent, before any quote and before any code change. Still to come: build, tests, audit, start.")
+M134_RUNNING = ("Running since 2026-11-27 9:08 AM MT (first hourly wake 10:08 AM MT) from a frozen build. Read once at the end.",
+                "REGISTERED 2026-11-26 7:09 PM MT by the lead agent. Audit CLEAR. START GO (lead agent, 2026-11-27 9:00 AM MT): `M134_START=abc1234`.")
+
+
+def m134_rows(monkeypatch, state):
+    step, status = state
+    queue_with(monkeypatch, "139", step)
+    ledger_status(monkeypatch, "234", status)
+
+
+def test_m134_card_registered(monkeypatch):
+    m134_rows(monkeypatch, M134_REGISTERED)
     c = NC.m134_card("GH/")
     assert c["verdict"] == "Registered, not started" and c["tone"] == "info" and c["numbers"] == []
     assert "Registered 2026-11-26 7:09 PM MT" in c["summary"] and "8 minutes after the hour" in c["summary"]
     assert "$25 and $250 on each of 20 coins" in c["summary"] and "720 hourly wakes" in c["summary"]
-    assert c["links"][0] == ["Trial ledger", "GH/" + NC.LEDGER] or c["links"][0][0] == "Measurement 134 plan"
-    queue_with(monkeypatch, "139", "Running since 2026-11-27 9:08 AM MT (first hourly wake 10:08 AM MT). Read once at the end.")
-    with pytest.raises(ValueError, match="no longer says running"):
-        NC.m134_card("GH/")
-    ledger_with(monkeypatch, "234", "then a start value for the frozen build on this row.",
-                "then a start value for the frozen build on this row. Audit CLEAR. START GO (lead agent, 2026-11-27 9:00 AM MT): `M134_START=abc1234`.")
+    assert c["summary"].endswith("No result exists yet, so no figure is shown.")
+
+
+def test_m134_card_running(monkeypatch):
+    m134_rows(monkeypatch, M134_RUNNING)
     c = NC.m134_card("GH/")
-    assert c["verdict"] == "Running, no result yet" and c["numbers"] == []
-    assert "Running since 2026-11-27 9:08 AM MT; first hourly wake 10:08 AM MT" in c["summary"]
-    assert c["links"][0][0] in ("Trial ledger", "Measurement 134 plan")
+    assert c["verdict"] == "Running, no result yet" and c["tone"] == "info" and c["numbers"] == []
+    assert "Running since 2026-11-27 9:08 AM MT; first hourly wake 10:08 AM MT" in c["summary"] and "Read once at the end." in c["summary"]
+    assert not re.search(r"\bbp\b|%|profit of", c["summary"])
 
 
-def test_m134_links_the_one_202_plan_when_it_exists(monkeypatch):
+@pytest.mark.parametrize("step, status", [
+    (M134_RUNNING[0], M134_REGISTERED[1]),                                   # queue says running, ledger has no start go
+    (M134_RUNNING[0], M134_RUNNING[1].replace("M134_START", "M133_START")),  # start go for another measurement
+    (M134_RUNNING[0], M134_RUNNING[1].replace("CLEAR", "NOT YET")),          # no audit CLEAR
+    (M134_REGISTERED[0], M134_RUNNING[1]),                                   # ledger has started, queue still registered
+    ("Paused for a rebuild.", M134_REGISTERED[1]),
+])
+def test_m134_card_refuses_rows_that_disagree(monkeypatch, step, status):
+    m134_rows(monkeypatch, (step, status))
+    with pytest.raises(ValueError, match="Measurement 134 card"):
+        NC.m134_card("GH/")
+
+
+def test_m134_card_from_the_live_rows():
+    step = NC.queue_step("139")
+    c = NC.m134_card("GH/")
+    assert c["numbers"] == [] and c["tone"] == "info"
+    if step.startswith("Running since "):
+        assert c["verdict"] == "Running, no result yet" and NC.row_state(step) in c["summary"]
+    else:
+        assert c["verdict"] == "Registered, not started"
+
+
+def research_listing(monkeypatch, keep_202, extra=()):
     real = NC.os.listdir
-    monkeypatch.setattr(NC.os, "listdir", lambda d: real(d) + ["202_measurement_134_binance_us_cost.md"] if d.endswith("docs/research") else real(d))
-    assert NC.m134_card("GH/")["links"][0] == ["Measurement 134 plan", "GH/docs/research/202_measurement_134_binance_us_cost.md"]
-    monkeypatch.setattr(NC.os, "listdir", lambda d: real(d) + ["202_a.md", "202_b.md"] if d.endswith("docs/research") else real(d))
+    def listing(d):
+        names = real(d)
+        if d.endswith("docs/research"):
+            names = [n for n in names if keep_202 or not n.startswith("202_")] + list(extra)
+        return names
+    monkeypatch.setattr(NC.os, "listdir", listing)
+
+
+def test_m134_links_the_ledger_until_a_202_plan_exists(monkeypatch):
+    research_listing(monkeypatch, keep_202=False)
+    assert NC.m134_card("GH/")["links"][0] == ["Trial ledger", "GH/" + NC.LEDGER]
+
+
+def test_m134_links_the_one_202_plan(monkeypatch):
+    research_listing(monkeypatch, keep_202=False, extra=["202_measurement_134_plan.md"])
+    assert NC.m134_card("GH/")["links"][0] == ["Measurement 134 plan", "GH/docs/research/202_measurement_134_plan.md"]
+    research_listing(monkeypatch, keep_202=False, extra=["202_a.md", "202_b.md"])
     with pytest.raises(ValueError, match="more than one"):
         NC.m134_card("GH/")
+
+
+def test_m134_links_the_real_plan_when_it_is_there():
+    plans = [n for n in os.listdir(os.path.join(NC.ROOT, "docs/research")) if n.startswith("202_") and n.endswith(".md")]
+    link = NC.m134_card("GH/")["links"][0]
+    assert link == (["Measurement 134 plan", "GH/docs/research/" + plans[0]] if plans else ["Trial ledger", "GH/" + NC.LEDGER])
