@@ -728,15 +728,15 @@ Working papers.
 | `practice/traders/E14_washout_rebound_binance_us.md` | Ledger 233 forward washout rule, timing, shown lines and separate read permissions | DRAFT |
 | `practice/forward_e14.py`, `practice/test_forward_e14.py` | E14 recorder and invented-data checks | CURRENT |
 | `practice/forward/E14_log.json` | E14 public counts and status only | RECORD |
-| `practice/traders/E15_live_desk.md` | Card E15, the live desk: cards W, F and S, scout, rule and random lines, window, fills, marks, stops and operation (lead's rulings of 2026-11-27); not registered until the lead writes its ledger row | DRAFT |
-| `practice/desk_e15.py`, `practice/test_desk_e15.py` | E15 desk (start, loop, alive, publish) with direct SDK scout calls outside the shared gate, and its made-up data checks (fake clock, pages and model; needs pytest) | CURRENT |
+| `practice/traders/E15_live_desk.md` | Card E15, the first build of the live desk (ledger 237): started and closed on 2026-11-27 with nothing read, because its scout calls could not get through; rebuilt as E17 | RECORD |
+| `practice/desk_e15.py`, `practice/test_desk_e15.py` | E15 desk (closed; not to be run again) with direct SDK scout calls outside the shared gate, and its made-up data checks (fake clock, pages and model; needs pytest) | RECORD |
 | `practice/forward/E15_log.json` | E15 public counts and status only, written by `desk_e15.py publish` | RECORD |
 | `practice/desk_e15_cards/E15W.json`, `practice/desk_e15_cards/E15F.json`, `practice/desk_e15_cards/E15S.json` | E15 gate cards read only by `practice/desk_e15.py` through `practice/gate.py`; kept out of `practice/criteria` so trader.py never reads them | DRAFT |
-| `practice/traders/E17_live_desk.md` | Ledger 242, E15 rebuilt with a private scout handoff and startup checks; independent audit and start approval required | DRAFT |
+| `practice/traders/E17_live_desk.md` | Ledger 242, the live desk: E15 rebuilt with a private scout handoff and startup checks; audited CLEAR and started 2026-11-27; the file is pinned by the running card and must not be edited | CURRENT |
 | `practice/desk_e17.py`, `practice/test_desk_e17.py` | E17 desk with made-up market and model tests, including the scout handoff | CURRENT |
 | `practice/scout_runner_e17.py`, `practice/scout_spool_e17.py` | E17 live command runner and private request and reply files; no credentials are stored or handed off | CURRENT |
 | `practice/forward/E17_log.json` | E17 public counts and status only, written by `desk_e17.py publish` | RECORD |
-| `practice/desk_e17_cards/E17W.json`, `practice/desk_e17_cards/E17F.json`, `practice/desk_e17_cards/E17S.json` | E17 copies of the frozen E15 gate cards; read only by the E17 desk | DRAFT |
+| `practice/desk_e17_cards/E17W.json`, `practice/desk_e17_cards/E17F.json`, `practice/desk_e17_cards/E17S.json` | E17 copies of the frozen E15 gate cards; read only by the E17 desk; pinned by the running card | CURRENT |
 | `practice/measure_133.py`, `practice/test_measure_133.py` | Measurement 133 recorder and invented-data checks | CURRENT |
 | `practice/venue_binance_us.py`, `practice/test_venue_binance_us.py` | Shared Binance.US transport, gate, custody and approval helpers; invented HTTP tests | CURRENT |
 | `practice/forward/M133_log.json` | Measurement 133 public count and aggregate status | RECORD |

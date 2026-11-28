@@ -72,7 +72,7 @@
   "scout_ignored_replies": 0,
   "scout_no_runner": 0,
   "scout_status": {},
-  "status": "NOT_STARTED",
+  "status": "STARTED",
   "stop": null,
   "void_reasons": {},
   "wake_counts": {}

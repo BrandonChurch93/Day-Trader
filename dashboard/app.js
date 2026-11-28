@@ -501,16 +501,17 @@
     }).join('');
   }
 
-  // ---------- live desk, card E15 (fields written by practice/desk_e15.py publish; local only) ----------
+  // ---------- live desk, card E17 (fields written by practice/desk_e17.py publish; local only) ----------
   function renderDesk(d) {
-    var k = d.desk_e15;
+    var k = d.desk_e17;
     if (!k) { $('desk-body').innerHTML = '<p class="meta">The live desk has not been published yet.</p>'; return; }
     function mt(s) { return s ? mtFromUtc(s) : '-'; }
     function pct(x) { return isNum(x) ? (x * 100).toFixed(2).replace('-', '\u2212') + '%' : '-'; }
     function kv(o) { return Object.keys(o || {}).map(function (x) { return esc(x) + ' ' + esc(o[x]); }).join(', ') || 'none'; }
     var h = '<p><strong>' + esc(k.status) + '</strong>' + (k.stop ? ', stopped: ' + esc(k.stop.reason) : '') +
       '. Gate: ' + esc(k.gate) + '. Last wake ' + esc(mt(k.last_wake_utc)) + ', next ' + esc(mt(k.next_wake_utc)) +
-      '. Scout calls ' + esc(k.scout_calls) + ' (' + kv(k.scout_status) + ').</p>' +
+      '. Scout calls ' + esc(k.scout_calls) + ' (' + kv(k.scout_status) + ')' +
+      (isNum(k.scout_no_runner) ? '. Scout turns skipped because no runner was there: ' + esc(k.scout_no_runner) : '') + '.</p>' +
       '<p class="meta">Each wake is named by its hour. The desk does the work 20 to 25 minutes past that hour, so a wake shown as 6:00 PM ran at about 6:20 PM.</p>';
     ['W', 'F'].forEach(function (c) {
       var x = k[c] || {};

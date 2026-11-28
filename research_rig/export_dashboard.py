@@ -449,11 +449,11 @@ def practice():
         return json.loads(subprocess.run(["git", "show", "FETCH_HEAD:records/summary.json"], cwd=root, check=True, capture_output=True, timeout=60).stdout)
     except Exception as e:
         print("practice records not read:", type(e).__name__); return None
-# ------------------------------------------------------------------ live desk E15: private fields written by practice/desk_e15.py publish (data.json is git-ignored)
-DESK_E15 = "/home/user/workspace/rig/data/desk_e15/dashboard.json"
-def desk_e15():
+# ------------------------------------------------------------------ live desk E17 (E15 rebuilt, ledger 242): private fields written by practice/desk_e17.py publish (data.json is git-ignored)
+DESK_E17 = "/home/user/workspace/rig/data/desk_e17/dashboard.json"
+def desk_e17():
     try:
-        return json.load(open(DESK_E15, encoding="utf-8"))
+        return json.load(open(DESK_E17, encoding="utf-8"))
     except (OSError, ValueError):
         return None
 def timemachine():
@@ -543,7 +543,7 @@ out = dict(
                    why=f"Pretend trades on old prices, in the {len(S)} comparisons below. Not real money.")],
     headline=[("No real trade has been made. " + (f"The practice account has sent {pr_n} pretend-money order" + ("" if pr_n == 1 else "s") + "." if pr_n else "The practice desk is running and has sent no order yet.")) if pr_on
               else "No real or practice trade has been made."],
-    practice=PR, practice_live_url=PRACTICE_LIVE, practice_pause=PR_PAUSE, desk_e15=desk_e15(),
+    practice=PR, practice_live_url=PRACTICE_LIVE, practice_pause=PR_PAUSE, desk_e17=desk_e17(),
     timemachine=timemachine(), tm_hold=tm_hold(open(STATUS, encoding="utf-8").read()),
     believed=findings, scoreboard=research_scoreboard,
     status_rows=status_rows(), status_link=GH + "docs/STATUS.md",
