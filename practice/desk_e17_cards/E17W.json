@@ -1,0 +1,55 @@
+{
+ "id": "E17W",
+ "status": "DESK_E17",
+ "registered": false,
+ "tradable": false,
+ "title": "Card E17 W, washout pick. Checks recomputed by practice/gate.py from the desk's own closed hourly candles. Desk card, run by practice/desk_e17.py only; not read by trader.py.",
+ "trader": "E17W",
+ "ledger_row": null,
+ "market": {
+  "kind": "crypto",
+  "symbols": [
+   "AAVE/USD",
+   "ADA/USD",
+   "BCH/USD",
+   "BTC/USD",
+   "ETH/USD",
+   "HBAR/USD",
+   "LINK/USD",
+   "LTC/USD",
+   "SHIB/USD",
+   "XLM/USD",
+   "XRP/USD"
+  ]
+ },
+ "candidate": {
+  "events": [
+   "washout"
+  ],
+  "max_age_minutes": "practice_e17_max_age_minutes"
+ },
+ "timeframe": "1Hour",
+ "entry": [
+  {
+   "check": "enough_bars",
+   "bars": "practice_e17_w_min_bars"
+  },
+  {
+   "check": "fell_at_least",
+   "lookback_bars": "practice_e17_w_lookback_bars",
+   "min_fall": "practice_e17_w_min_fall"
+  }
+ ],
+ "size": {
+  "rule": "fixed_usd",
+  "usd": "practice_e17_size_usd"
+ },
+ "exit": {
+  "hold_minutes": "practice_e17_w_hold_minutes"
+ },
+ "costs": {
+  "fee_bps_per_side": "practice_e17_fee_bps_per_side",
+  "slippage_bps_per_side": "practice_e17_slippage_bps_per_side"
+ },
+ "pick_life_minutes": "practice_e17_pick_life_minutes"
+}
