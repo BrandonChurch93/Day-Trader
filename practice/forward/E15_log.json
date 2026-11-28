@@ -1,0 +1,78 @@
+{
+  "candle_error_counts": {},
+  "card": "E15",
+  "cards": {
+    "F": {
+      "closed_by_line": {
+        "random": 0,
+        "rule": 0,
+        "scout": 0
+      },
+      "closed_pairs": {
+        "scout-rule": 0
+      },
+      "entries_by_line_and_status": {},
+      "judging_count": 150,
+      "open_by_line": {
+        "random": 0,
+        "rule": 0,
+        "scout": 0
+      },
+      "signals": 0,
+      "void_filters": 0
+    },
+    "S": {
+      "closed_by_line": {
+        "random": 0,
+        "scout_second": 0,
+        "scout_small": 0
+      },
+      "closed_pairs": {
+        "scout_second-random": 0,
+        "scout_small-random": 0
+      },
+      "entries_by_line_and_status": {},
+      "judging_count": 240,
+      "open_by_line": {
+        "random": 0,
+        "scout_second": 0,
+        "scout_small": 0
+      },
+      "signals": 0,
+      "void_filters": 0
+    },
+    "W": {
+      "closed_by_line": {
+        "random": 0,
+        "rule": 0,
+        "scout": 0
+      },
+      "closed_pairs": {
+        "scout-rule": 0
+      },
+      "entries_by_line_and_status": {},
+      "judging_count": 60,
+      "open_by_line": {
+        "random": 0,
+        "rule": 0,
+        "scout": 0
+      },
+      "signals": 0,
+      "void_filters": 0
+    }
+  },
+  "claimed_unresolved_wakes": 0,
+  "failed_in_first_calls": {
+    "failed": 0,
+    "limit": 5,
+    "of": 0
+  },
+  "scout_calls": 0,
+  "scout_status": {},
+  "status": "STARTED",
+  "stop": null,
+  "void_reasons": {},
+  "wake_counts": {
+    "wake": 1
+  }
+}

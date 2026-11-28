@@ -153,7 +153,7 @@ def test_running_now_strip(monkeypatch):
     assert ["9b", "The earnings release reader.", None] in rows
     state = {r[0]: r[2] for r in rows}
     assert all(state[n] == "Stopped 2026-11-26 4:47 PM MT on data terms" for n in ("114", "131", "132", "133"))
-    assert all(state[n] == "Running since 2026-11-26 5:39 PM MT" for n in ("135", "136"))
+    assert state["135"] == "Running since 2026-11-26 5:39 PM MT" and state["136"] == "Stopped 2026-11-27 5:00 PM MT"
     assert state["137"] == "Stopped 2026-11-26 7:00 PM MT" and state["139"] == NC.row_state(NC.queue_step("139")) and state["139"].startswith(("Registered 2026-11-26 7:09 PM MT", "Running since "))
     assert NC.row_state("Registered 2026-11-26 4:55 PM MT. Builder assigned.") == "Registered 2026-11-26 4:55 PM MT, not started"
     assert state["-"] == "Paused 2026-11-26 5:03 PM MT"
@@ -272,8 +272,7 @@ def test_e10_refuses_a_log_of_another_shape(tmp_path, change):
         NC.e10_card("GH/", path)
 
 
-RUNNING = {"e12": ("135", "230", "Judged at 150 trades or 2027-11-30."),
-           "e13": ("136", "231", "Read once, a year after the first wake.")}
+RUNNING = {"e12": ("135", "230", "Judged at 150 trades or 2027-11-30.")}
 
 
 def test_running_cards_from_the_real_queue_and_ledger():
@@ -290,7 +289,6 @@ def test_running_cards_from_the_real_queue_and_ledger():
         assert c["links"][1] == ["Queue row", "GH/docs/QUEUE.md#running-now"]
         assert os.path.exists(os.path.join(NC.ROOT, c["links"][0][1][3:]))
     assert "at a pretend $250 a trade" in got["e12"]["summary"]
-    assert "first daily wake 2026-11-27 5:00 PM MT" in got["e13"]["summary"]
 
 
 def ledger_with(monkeypatch, row, old, new):
@@ -324,6 +322,27 @@ def test_running_cards_refuse_when_the_read_rule_changes(monkeypatch, id_):
     queue_with(monkeypatch, qrow, NC.queue_step(qrow).replace(read_rule, "Read whenever."))
     with pytest.raises(ValueError):
         getattr(NC, id_ + "_card")("GH/")
+
+
+def test_e13_stopped_card_reads_queue_and_ledger():
+    c = NC.e13_card("GH/")
+    assert c["title"] == "E13: stopped at its first wake" and c["verdict"] == "Stopped, closed unstarted" and c["tone"] == "unknown"
+    assert c["numbers"] == [] and "columns" not in c and "bars" not in c
+    assert "2026-11-27 5:00 PM MT" in c["summary"] and "1,095,062 bytes" in c["summary"] and "1,048,576 bytes" in c["summary"]
+    assert "Nothing was recorded" in c["summary"] and c["summary"].endswith("It is rebuilt as card E16 (queue 152).")
+    assert "row 136" in c["basis"] and "row 231" in c["basis"]
+    assert not re.search(r"\bbp\b|%|profit|\$", c["summary"])
+    assert os.path.exists(os.path.join(NC.ROOT, c["links"][0][1][3:]))
+
+
+@pytest.mark.parametrize("where", ["queue", "ledger"])
+def test_e13_card_refuses_when_rows_disagree(monkeypatch, where):
+    if where == "queue":
+        queue_with(monkeypatch, "136", NC.queue_step("136").replace("STOPPED", "Running since"))
+    else:
+        ledger_with(monkeypatch, "231", "CLOSED UNSTARTED", "RUNNING")
+    with pytest.raises(ValueError, match="E13 card"):
+        NC.e13_card("GH/")
 
 
 # ---- Plan 76 result card and E14, from the public summary and the queue and ledger rows

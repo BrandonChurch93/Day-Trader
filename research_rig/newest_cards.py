@@ -256,8 +256,9 @@ def stopped_on_terms(row, card_name):
         raise ValueError(f"{card_name} card: queue row {row} no longer starts with STOPPED on data terms and a replacement")
     when, new, new_row = m.groups()
     reg = queue_step(new_row)
-    if not reg.startswith(("Registered ", "Running since ")) or "Binance.US data only" not in dict((c[0], c[1]) for c in queue_rows())[new_row]:
-        raise ValueError(f"{card_name} card: replacement {new} (queue {new_row}) is not a registered or running Binance.US-only row")
+    # A replacement that later stopped itself (E13, closed unstarted at its first wake) has its own card saying so.
+    if not reg.startswith(("Registered ", "Running since ", "STOPPED ")) or "Binance.US data only" not in dict((c[0], c[1]) for c in queue_rows())[new_row]:
+        raise ValueError(f"{card_name} card: replacement {new} (queue {new_row}) is not a registered, running or stopped Binance.US-only row")
     return when, new
 
 
@@ -351,7 +352,7 @@ def e10_card(gh, log_path=None):
                          f"reaches a {legs[0]}, {legs[1]} or {legs[2]} day high, sell when the close drops under a stop that only moves up. "
                          + stop_sentence(when, new)))
 
-# ------------------------------------------------------------------ E12, E13 and Measurement 133: running, no result yet
+# ------------------------------------------------------------------ E12 running, no result yet; E13 and Measurement 133 stopped
 LEDGER = "research_rig/TRIAL_LEDGER.md"
 RUNNING_RE = re.compile(r"^Running since (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) \(first (hourly|daily) wake ([^)]*?)\)")
 
@@ -405,20 +406,28 @@ def e12_card(gh):
                         read_rule=m[0], link=one_file("practice/traders", "E12_"))
 
 
+E13_STOP_RE = re.compile(r"^STOPPED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) at its first wake; closed unstarted "
+                         r"\(ledger 231\)\. Replaced by card (E\d+), row (\d+)\.")
+
+
 def e13_card(gh):
-    led = " ".join(ledger_row("231"))
-    card = read(E10_CARD)
-    coins = re.search(r"Read the (\d+) Plan 70 coins", card)[1]
-    legs = re.search(r"Use the Plan 75 primary book for decisions: (\d+)-, (\d+)- and (\d+)-day legs", card).groups()
-    size = re.search(r"pretend (\$\d[\d,]*) with the (\$\d[\d,]*) line shown", led)
-    if not size or "score not before 365 days after the first wake" not in led:
-        raise ValueError("E13 card: the size or the scoring rule is no longer stated in ledger row 231")
-    return running_card(gh, id_="e13", name="E13", queue_row="136", ledger_n="231", start_key="E13_START",
-                        what=(f"The Plan 75 trend rule rebuilt on Binance.US data only, with pretend money: buy one of up to {coins} "
-                              f"large coins when its daily close reaches a {legs[0]}, {legs[1]} or {legs[2]} day high, sell when the "
-                              f"close drops under a stop that only moves up, at a pretend {size[1]}. It measures the real spread, "
-                              f"whether orders are placeable at that size, and after a year the profit line as a record."),
-                        read_rule="Read once, a year after the first wake.", link=one_file("practice/traders", "E13_"))
+    """E13, stopped at its first wake and closed unstarted. Every state word is read from queue row 136 and ledger
+    row 231; the export stops if they disagree. The two byte counts are the only figures; no price, no result."""
+    m = E13_STOP_RE.match(queue_step("136"))
+    status = ledger_row("231")[-1]
+    size = re.search(r"reply was ([\d,]+) bytes", status)
+    limit = re.search(r"limit of ([\d,]+) bytes", status)
+    if not (m and size and limit and "CLOSED UNSTARTED" in status
+            and "No coin list, candle, book, decision or price was recorded" in status
+            and f"Replaced by card {m[2]} (row " in status):
+        raise ValueError("E13 card: queue row 136 and ledger row 231 no longer agree that it stopped unstarted at its first wake")
+    return dict(id="e13", title="E13: stopped at its first wake", date=None, verdict="Stopped, closed unstarted", tone="unknown",
+                numbers=[], links=[["E13 plan", gh + one_file("practice/traders", "E13_")], ["Queue row", gh + QUEUE + "#running-now"]],
+                basis="STATED in the queue page, row 136, and the trial ledger, row 231. Pretend money, no account at any venue.",
+                summary=(f"At its first daily wake, {m[1]}, the venue's pair list reply was {size[1]} bytes and the card's own limit "
+                         f"was {limit[1]} bytes. The card refused the reply and, by its own rule that the coin list is fixed at the "
+                         f"first wake or never, stopped for good. Nothing was recorded, so there is nothing to judge. "
+                         f"It is rebuilt as card {m[2]} (queue {m[3]})."))
 
 
 M133_STOP_RE = re.compile(r"^STOPPED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) on a build fault at its second wake; closed unread "
