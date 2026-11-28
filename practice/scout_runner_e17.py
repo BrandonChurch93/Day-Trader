@@ -52,24 +52,27 @@ async def sdk_call(req):
             "model_reported": str(getattr(resp, "model", "") or "")}
 
 
-async def finish(folder, req, claim, clock, caller):
+async def finish(folder, req, build, clock, caller):
     rid = req["request_id"]
     started = time.monotonic()
+    deadline = spool.utc(req["deadline"])
+
+    async def call_before_deadline():
+        # The scheduled task can start later than the wait was set up.
+        return await caller(req) if clock() < deadline else {"status": "reply_late"}
+
     try:
-        budget = min(req["timeout_s"], (spool.utc(req["deadline"]) - clock()).total_seconds())
-        result = (await asyncio.wait_for(caller(req), budget) if budget > 0
-                  else {"status": "call_timeout"})
+        budget = min(req["timeout_s"], (deadline - clock()).total_seconds())
+        result = (await asyncio.wait_for(call_before_deadline(), budget) if budget > 0
+                  else {"status": "reply_late"})
     except TimeoutError:
         result = {"status": "call_timeout"}
     except Exception as exc:
         result = {"status": "call_error", "error": type(exc).__name__, "service_status": rpc_status(exc)}
-    reply = spool.reply_envelope(req, claim["build"], result) | {"secs": round(time.monotonic() - started, 2)}
+    reply = spool.reply_envelope(req, build, result) | {"secs": round(time.monotonic() - started, 2)}
     if spool.reply_result(reply, req) is None:
         reply["result"] = {"status": "call_error", "error": "InvalidRunnerResult", "service_status": "UNKNOWN"}
-    with folder.fence():
-        saved, _, _ = spool.inspect_claim(folder, rid, req["sha256"], req["claim_by"], claim["build"])
-        if saved == claim:
-            folder.write(spool.filename("reply", rid), reply)
+    folder.write(spool.filename("reply", rid), reply, swept_ok=True)
 
 
 async def serve(until, *, build, path=None, clock=spool.now_utc, sleep=asyncio.sleep, caller=None):
@@ -79,9 +82,8 @@ async def serve(until, *, build, path=None, clock=spool.now_utc, sleep=asyncio.s
         heartbeat_at = None
 
         def heartbeat(phase):
-            with folder.fence():
-                folder.write("heartbeat.json", {"made_utc": clock().isoformat(), "until": until.isoformat(),
-                                                "phase": phase, "ignored_requests": len(ignored), "build": build})
+            folder.write("heartbeat.json", {"made_utc": clock().isoformat(), "until": until.isoformat(),
+                                           "phase": phase, "ignored_requests": len(ignored), "build": build}, swept_ok=True)
 
         while clock() < until:
             if heartbeat_at is None or (clock() - heartbeat_at).total_seconds() >= 2:
@@ -97,10 +99,9 @@ async def serve(until, *, build, path=None, clock=spool.now_utc, sleep=asyncio.s
                 if not spool.valid_request(req, rid, clock()) or req["build"] != build:
                     ignored.add(name)
                     continue
-                claim = folder.claim(req, build, clock, until)
-                if claim is None:
+                if not folder.take(req, build, clock, until):
                     continue
-                pending.add(asyncio.create_task(finish(folder, req, claim, clock, caller)))
+                pending.add(asyncio.create_task(finish(folder, req, build, clock, caller)))
             complete = {task for task in pending if task.done()}
             pending.difference_update(complete)
             for task in complete:

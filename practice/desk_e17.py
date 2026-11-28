@@ -484,8 +484,7 @@ def check_scouts(cfg, *, build, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
     results, ids, ignored = handoff(jobs, timeout, cfg, clock, sleep, monotonic, transport,
                                     deadline=deadline, build=build)
     try:
-        rejected = [rid for model, rid in zip(jobs, ids) if results[model].get("status") == "scout_no_runner"]
-        ignored += spool.cleanup(ids, rejected=rejected)
+        ignored += spool.cleanup(ids)
     except (spool.Refuse, OSError):
         raise bx.Refuse("scout runner cleanup refused") from None
     if diagnostics is not None:
@@ -795,7 +794,7 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, transport, tim
                     def request_written(key, req):
                         fields = {k: v for k, v in call_rows[key].items() if k != "packet"}
                         bx.append(path, rows, kind="scout_request", wake=stamp, request_id=req["request_id"],
-                                  request_sha256=req["sha256"], claim_by=req["claim_by"], **fields)
+                                  request_sha256=req["sha256"], **fields)
 
                     def claimed(key):
                         bx.append(path, rows, kind="scout_call", wake=stamp, made_utc=bx.precise_utc(clock()),
@@ -874,7 +873,7 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, transport, tim
               scout_results=scout_results, scout_ignored_replies=ignored_replies,
               signals=signals, exits=exits, books=books, pre_books=pre_books)
     visit = rows[-1]
-    ignored = clean_requests(rows, stamp, scout_results)
+    ignored = clean_requests(rows, stamp)
     if ignored:
         bx.append(path, rows, kind="scout_discard", wake=stamp, scout_ignored_replies=ignored)
     if terminal is not None:
@@ -904,12 +903,10 @@ def exit_final(cfg, card, attempt, wake):
     return attempt >= cfg["exit_retry_wakes"] or wake >= last_exit(cfg, card)
 
 
-def clean_requests(rows, stamp, results=None):
+def clean_requests(rows, stamp):
     requests = [r for r in rows if r["kind"] == "scout_request" and r["wake"] == stamp]
-    rejected = [r["request_id"] for r in requests
-                if (results or {}).get(r["call_id"], {}).get("status") == "scout_no_runner"]
     try:
-        return spool.cleanup([r["request_id"] for r in requests], rejected=rejected)
+        return spool.cleanup([r["request_id"] for r in requests])
     except FileNotFoundError:
         return 0  # the folder and all the files are already gone
     except (spool.Refuse, OSError):
@@ -920,30 +917,25 @@ def count_interrupted_claims(path, rows, stamp):
     seen = {r["call_id"] for r in rows if r["kind"] == "scout_call" and r["wake"] == stamp}
     pending = [r for r in rows if r["kind"] == "scout_request" and r["wake"] == stamp and r["call_id"] not in seen]
     if not pending:
-        return 0
-    ignored = 0
+        return
     try:
         with spool.private() as folder:
             for row in pending:
                 rid = row["request_id"]
                 folder.transfer(rid, "withdrawn")
-                build = rows[0]["freeze"]
-                claim, taken, _ = spool.inspect_claim(folder, rid, row["request_sha256"], row["claim_by"], build)
-                if claim is not None:
+                if folder.exists(spool.filename("taken", rid)):
                     fields = {k: row[k] for k in ("call_id", "card", "line", "model", "prompt_sha256", "packet_sha256")}
                     bx.append(path, rows, kind="scout_call", wake=stamp, recovered=True, **fields)
-                else:
-                    ignored += int(taken) + int(spool.peek(folder, spool.filename("reply", rid))[1])
     except FileNotFoundError:
         pass
     except (spool.Refuse, OSError):
         raise bx.Refuse("scout runner cleanup refused") from None
-    return ignored
 
 
 def void_wake(path, rows, wake, reason, ix, cfg, swept=0):
     stamp = bx.iso(wake)
-    ignored = count_interrupted_claims(path, rows, stamp) if reason == "interrupted_wake" else 0
+    if reason == "interrupted_wake":
+        count_interrupted_claims(path, rows, stamp)
     exits = []
     for (card, line), tickets in sorted(ix["open"].items()):
         for t in tickets:
@@ -952,9 +944,10 @@ def void_wake(path, rows, wake, reason, ix, cfg, swept=0):
                 exits.append({"status": reason, "coin": t["coin"], "card": card, "line": line, "entry_wake": t["wake"],
                               "attempt": attempt, "final": wake > last_exit(cfg, card) or exit_final(cfg, card, attempt, wake),
                               "exit_wake": stamp})
-    bx.append(path, rows, kind="void", wake=stamp, reason=reason, exits=exits,
-              scout_ignored_replies=ignored, scout_swept=swept)
-    clean_requests(rows, stamp)
+    bx.append(path, rows, kind="void", wake=stamp, reason=reason, exits=exits, scout_swept=swept)
+    ignored = clean_requests(rows, stamp)
+    if ignored:
+        bx.append(path, rows, kind="scout_discard", wake=stamp, scout_ignored_replies=ignored)
 
 
 def all_done(ix, cfg, wake):

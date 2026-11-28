@@ -5,7 +5,7 @@ import os
 import shutil
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from pathlib import Path
 from threading import Barrier, Event, get_ident
 from types import SimpleNamespace
@@ -186,8 +186,8 @@ def runner_on_poll(folder, clock, caller, build=BUILD):
     return sleep
 
 
-def make_request(spec, deadline, timeout=10, claim_by=None):
-    return spool.request(spec, deadline, timeout, claim_by or deadline, BUILD)
+def make_request(spec, deadline, timeout=10, take_until=None):
+    return spool.request(spec, deadline, timeout, take_until or deadline, BUILD)
 
 
 def exchange_at(jobs, timeout, grace, clock, sleep, mono, **kwargs):
@@ -196,7 +196,7 @@ def exchange_at(jobs, timeout, grace, clock, sleep, mono, **kwargs):
 
 
 def take(folder, req, clock, *, build=BUILD):
-    return folder.claim(req, build, clock, spool.utc(req["deadline"]))
+    return folder.take(req, build, clock, spool.utc(req["deadline"]))
 
 
 def test_spool_batch_round_trip_is_concurrent_and_hashes_exact_wire(tmp_path):
@@ -218,22 +218,7 @@ def test_spool_batch_round_trip_is_concurrent_and_hashes_exact_wire(tmp_path):
     assert all(r["user_text"] == json.dumps(pkt, sort_keys=True) and r["reply_schema"] == d.SCHEMA for r in seen)
     assert all(spool.valid_request(r, r["request_id"], clock()) for r in seen)
     spool.cleanup(ids, folder)
-    assert {p.name for p in folder.iterdir()} == {".reply.lock", "heartbeat.json"}
-
-
-@pytest.mark.parametrize("winner", ["claim", "withdrawn"])
-def test_claim_withdraw_share_one_atomic_source_even_with_two_runners(tmp_path, winner):
-    req = make_request(d.scout_fields(SMALL, None, None, 64), T0 + timedelta(seconds=10))
-    rid = req["request_id"]
-    with spool.private(tmp_path / "spool", create=True) as folder:
-        folder.write(spool.filename("request", rid), req)
-        if winner == "claim":
-            assert take(folder, req, Clock(T0))
-        else:
-            assert folder.transfer(rid, winner)
-        assert not take(folder, req, Clock(T0))
-        assert not folder.transfer(rid, "withdrawn")
-        assert folder.read(spool.filename("taken" if winner == "claim" else winner, rid)) == req
+    assert {p.name for p in folder.iterdir()} == {"heartbeat.json"}
 
 
 def test_no_runner_voids_the_pair_without_counting_a_failed_call(lab, tmp_path, monkeypatch):
@@ -248,7 +233,7 @@ def test_no_runner_voids_the_pair_without_counting_a_failed_call(lab, tmp_path, 
     assert d.paired(ix, "W", ("scout", "rule")) == []
     assert d.failed_calls(ix, 20) == (0, 0)
     assert d.counts(r, lab[1])["scout_no_runner"] == 1
-    assert set(x.name for x in folder.iterdir()) == {".reply.lock"}
+    assert not list(folder.iterdir())
 
 
 def test_runner_refusal_is_counted_without_message_in_rows_public_or_streams(lab, tmp_path, monkeypatch, capsys):
@@ -370,26 +355,21 @@ def test_spool_refuses_open_directory_and_nonprivate_or_symlink_files(tmp_path):
         pytest.fail("symlink directory accepted")
 
 
-def test_claimed_request_without_timely_reply_counts_as_timeout(tmp_path):
-    path, clock = tmp_path / "spool", Clock(T0)
-    observed = []
-    req = None
+def test_runner_dies_after_take_and_counts_as_timeout(lab):
+    clock, dead = at(1), []
 
-    def sleep(s):
-        nonlocal req
-        clock.sleep(s)
-        with spool.private(path) as folder:
-            if req is None:
+    def die_after_take(seconds):
+        clock.sleep(seconds)
+        if not dead:
+            with spool.private() as folder:
                 name, = [n for n in folder.names() if n.startswith("request-")]
-                req = folder.read(name)
-                assert take(folder, req, clock)
-            if clock.mono() >= 1:
-                folder.write(spool.filename("reply", req["request_id"]), spool.reply_envelope(req, BUILD, fake_completion()))
+                assert take(folder, folder.read(name), clock)
+            dead.append(True)
 
-    got, ids, ignored = exchange_at({"s": d.scout_fields(SMALL, None, None, 64)}, 1, 0.5, clock, sleep,
-                                       clock.mono, before_call=observed.append, path=path)
-    assert got == {"s": {"status": "call_timeout"}} and observed == ["s"] and ignored == 0
-    spool.cleanup(ids, path)
+    wake = d.record(Pages(clock, last={"ETH": "94"}), lab[0], clock, die_after_take, clock.mono)
+    result, = wake["scout_results"].values()
+    assert dead and result == {"status": "call_timeout"}
+    assert d.failed_calls(d.state(rows(lab), lab[1]), 20) == (1, 1)
 
 
 def test_interrupted_wake_accounts_for_claimed_request_and_cleans_files(lab, tmp_path, monkeypatch):
@@ -407,7 +387,7 @@ def test_interrupted_wake_accounts_for_claimed_request_and_cleans_files(lab, tmp
         rs = bx.read_log(path)
         bx.append(path, rs, kind="claim", wake=stamp)
         bx.append(path, rs, kind="scout_request", wake=stamp, request_id=rid, request_sha256=req["sha256"],
-                  claim_by=req["claim_by"], call_id="invented", card="W", line="scout", model=SMALL,
+                  call_id="invented", card="W", line="scout", model=SMALL,
                   prompt_sha256="p", packet_sha256="q")
     d.record(Pages(clock), lab[0], clock, clock.sleep, clock.mono)
     saved = rows(lab)
@@ -417,40 +397,7 @@ def test_interrupted_wake_accounts_for_claimed_request_and_cleans_files(lab, tmp
     assert not list(folder.glob("*.json"))
 
 
-@pytest.mark.parametrize("claimed_at", [19.999999, 20, 21])
-def test_absolute_claim_edge_is_checked_even_when_desk_polls_late(tmp_path, claimed_at):
-    path, clock = tmp_path / "spool", Clock(T0)
-    observed = []
-
-    def after_stall(_seconds):
-        clock.sleep(claimed_at)
-        with spool.private(path) as folder:
-            name, = [n for n in folder.names() if n.startswith("request-")]
-            req = folder.read(name)
-            rid = req["request_id"]
-            assert spool.utc(req["claim_by"]) == T0 + timedelta(seconds=20)
-            claim = take(folder, req, clock)
-            if claimed_at >= 20:
-                assert claim is None
-                # Simulate a stale or noncompliant runner leaving a late claim and reply.
-                folder.write(spool.filename("claim", rid), spool.claim_record(req, BUILD, clock()))
-                assert folder.transfer(rid, "taken")
-            else:
-                assert claim["claimed_utc"] == clock().isoformat()
-            folder.write(spool.filename("reply", rid), spool.reply_envelope(req, BUILD, fake_completion()))
-        clock.sleep(21 - claimed_at)
-
-    spec = {"s": d.scout_fields(SMALL, None, None, 64)}
-    got, ids, ignored = exchange_at(spec, 30, 20, clock, after_stall, clock.mono,
-                                   before_call=observed.append, path=path)
-    if claimed_at < 20:
-        assert got["s"]["end_turn"] and observed == ["s"] and ignored == 0
-    else:
-        assert got == {"s": {"status": "scout_no_runner"}} and not observed and ignored == 2
-    spool.cleanup(ids, path)
-
-
-def test_rename_that_stalls_past_claim_deadline_never_calls(tmp_path, monkeypatch):
+def test_prechecked_take_after_twenty_seconds_wins_if_desk_polls_late(tmp_path, monkeypatch):
     path, clock = tmp_path / "spool", Clock(T0)
     transfer = spool.Folder.transfer
 
@@ -461,68 +408,119 @@ def test_rename_that_stalls_past_claim_deadline_never_calls(tmp_path, monkeypatc
         return transfer(folder, rid, dest)
     monkeypatch.setattr(spool.Folder, "transfer", stalled_rename)
 
-    async def no_call(_):
-        pytest.fail("a late rename must not start a call")
+    calls = []
+    async def call(_):
+        calls.append(clock())
+        return fake_completion()
 
     def delayed_runner(_):
         clock.sleep(19.9)
         asyncio.run(runner.serve(T0 + timedelta(seconds=21.2), build=BUILD, path=path, clock=clock,
-                                 sleep=lambda s: advance(clock, s), caller=no_call))
+                                 sleep=lambda s: advance(clock, s), caller=call))
 
     jobs = {"s": d.scout_fields(SMALL, None, None, 64)}
-    got, ids, ignored = exchange_at(jobs, 30, 20, clock, delayed_runner, clock.mono, path=path)
-    rid, = ids
-    with spool.private(path) as folder:
-        claim = folder.read(spool.filename("claim", rid))
-        assert claim["claimed_utc"] == (T0 + timedelta(seconds=21)).isoformat()
-        assert claim["late"] is True and spool.filename("reply", rid) not in folder.names()
-    assert got == {"s": {"status": "scout_no_runner"}} and ignored == 1
+    counted = []
+    got, _, ignored = exchange_at(jobs, 30, 20, clock, delayed_runner, clock.mono, path=path, before_call=counted.append)
+    assert calls[0] >= T0 + timedelta(seconds=21)
+    assert got["s"]["end_turn"] and counted == ["s"] and ignored == 0
 
 
-@pytest.mark.parametrize("pending", [False, True])
-def test_held_runner_lock_cannot_delay_no_runner_decision(tmp_path, pending):
+def test_runner_refuses_to_try_take_at_twenty_seconds(tmp_path):
     path, clock = tmp_path / "spool", Clock(T0)
-    with ExitStack() as held:
-        locked = False
+    req = make_request(d.scout_fields(SMALL, None, None, 64), T0 + timedelta(seconds=120),
+                       take_until=T0 + timedelta(seconds=20))
+    rid = req["request_id"]
+    with spool.private(path, create=True) as folder:
+        folder.write(spool.filename("request", rid), req)
+        clock.sleep(20)
+        assert not take(folder, req, clock)
+        assert folder.exists(spool.filename("request", rid))
 
-        def obstruct(seconds):
-            nonlocal locked
+
+def test_desk_withdraws_on_first_poll_at_or_after_twenty_seconds(tmp_path, monkeypatch):
+    path, clock = tmp_path / "spool", Clock(T0)
+    transfer, attempted = spool.Folder.transfer, []
+
+    def observe(folder, rid, dest):
+        if dest == "withdrawn":
+            attempted.append(clock())
+        return transfer(folder, rid, dest)
+    monkeypatch.setattr(spool.Folder, "transfer", observe)
+
+    jobs = {"s": d.scout_fields(SMALL, None, None, 64)}
+    got, _, ignored = exchange_at(jobs, 120, 20, clock, lambda _: clock.sleep(21), clock.mono, path=path)
+    assert attempted == [T0 + timedelta(seconds=21)]
+    assert got == {"s": {"status": "scout_no_runner"}} and ignored == 0
+
+
+@pytest.mark.parametrize("on_time", [True, False])
+def test_taken_runner_stalls_past_twenty_two_then_calls_and_is_counted(lab, monkeypatch, on_time):
+    clock, took, resume = at(1), Event(), Event()
+    transfer = spool.Folder.transfer
+    calls = []
+
+    def stalled_transfer(folder, rid, dest):
+        won = transfer(folder, rid, dest)
+        if dest == "taken" and won:
+            took.set()
+            assert resume.wait(timeout=10)
+        return won
+    monkeypatch.setattr(spool.Folder, "transfer", stalled_transfer)
+
+    async def call(req):
+        calls.append(clock())
+        if not on_time:
+            clock.sleep((spool.utc(req["deadline"]) - clock()).total_seconds())
+        return fake_completion()
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = None
+        resume_at = None
+
+        def sleep(seconds):
+            nonlocal future, resume_at
+            if future is None:
+                until = clock() + timedelta(seconds=1)
+                resume_at = clock() + timedelta(seconds=23)
+                future = pool.submit(lambda: asyncio.run(runner.serve(until, build=BUILD, clock=clock, caller=call)))
+                assert took.wait(timeout=5)
             clock.sleep(seconds)
-            if not locked and clock() == T0 + timedelta(seconds=20):
-                folder = held.enter_context(spool.private(path))
-                held.enter_context(folder.fence())
-                locked = True
-                if pending:
-                    name, = [n for n in folder.names() if n.startswith("request-")]
-                    assert folder.transfer(folder.read(name)["request_id"], "taken")
+            if not resume.is_set() and clock() >= resume_at:
+                resume.set()
+                future.result(timeout=5)
+        try:
+            wake = d.record(Pages(clock, last={"ETH": "94"}), lab[0], clock, sleep, clock.mono)
+            assert resume.is_set() and len(calls) == 1 and calls[0] >= resume_at
+        finally:
+            resume.set()
 
-        jobs = {"s": d.scout_fields(SMALL, None, None, 64)}
-        got, ids, ignored = exchange_at(jobs, 120, 20, clock, obstruct, clock.mono, path=path)
-        assert locked and got == {"s": {"status": "scout_no_runner"}}
-        assert clock() == T0 + timedelta(seconds=22 if pending else 20)
-        assert ignored == int(pending)
-        with spool.private(path) as folder:
-            want = "taken" if pending else "withdrawn"
-            assert spool.filename(want, ids[0]) in folder.names()
-        # Cleanup must also return without waiting for the runner.
-        assert spool.cleanup(ids, path) == 0
+    result, = wake["scout_results"].values()
+    assert result["status"] == ("ok" if on_time else "call_timeout")
+    assert d.failed_calls(d.state(rows(lab), lab[1]), 20) == (int(not on_time), 1)
+    assert wake["scout_ignored_replies"] == int(not on_time)
 
 
-def test_claim_first_seen_after_hard_bound_is_ignored(tmp_path):
-    path, clock = tmp_path / "spool", Clock(T0)
+def test_taken_runner_past_reply_deadline_writes_late_without_call(tmp_path, monkeypatch):
+    clock = Clock(T0)
+    req = make_request(d.scout_fields(SMALL, None, None, 64), T0 + timedelta(seconds=1))
+    rid = req["request_id"]
+    transfer = spool.Folder.transfer
 
-    def delayed_poll(_):
-        clock.sleep(19.9)
-        with spool.private(path) as folder:
-            name, = [n for n in folder.names() if n.startswith("request-")]
-            req = folder.read(name)
-            assert take(folder, req, clock)
-            clock.sleep(2.2)
-            folder.write(spool.filename("reply", req["request_id"]), spool.reply_envelope(req, BUILD, fake_completion()))
+    def delay_return(folder, rid, dest):
+        won = transfer(folder, rid, dest)
+        if won and dest == "taken":
+            clock.sleep(1)
+        return won
+    monkeypatch.setattr(spool.Folder, "transfer", delay_return)
 
-    jobs = {"s": d.scout_fields(SMALL, None, None, 64)}
-    got, _, ignored = exchange_at(jobs, 120, 20, clock, delayed_poll, clock.mono, path=path)
-    assert got == {"s": {"status": "scout_no_runner"}} and ignored == 2
+    async def no_call(_):
+        pytest.fail("must not call after the reply deadline")
+
+    with spool.private(create=True) as folder:
+        folder.write(spool.filename("request", rid), req)
+        asyncio.run(runner.serve(T0 + timedelta(seconds=1), build=BUILD, clock=clock, caller=no_call))
+        assert folder.exists(spool.filename("taken", rid))
+        assert folder.read(spool.filename("reply", rid))["result"] == {"status": "reply_late"}
 
 
 def test_late_reply_after_no_runner_is_counted_without_changing_the_wake(lab):
@@ -546,7 +544,8 @@ def test_late_reply_after_no_runner_is_counted_without_changing_the_wake(lab):
     assert not list(spool.DEFAULT.glob("reply-*.json"))
 
 
-def test_two_live_runners_only_one_gets_the_request(tmp_path, monkeypatch):
+@pytest.mark.parametrize("withdraw", [False, True])
+def test_two_live_runners_and_desk_share_one_atomic_move(tmp_path, monkeypatch, withdraw):
     path, clock = tmp_path / "spool", spool.now_utc
     req = make_request(d.scout_fields(SMALL, None, None, 64), clock() + timedelta(seconds=10))
     rid = req["request_id"]
@@ -554,15 +553,17 @@ def test_two_live_runners_only_one_gets_the_request(tmp_path, monkeypatch):
     with spool.private(path, create=True) as folder:
         folder.write(spool.filename("request", rid), req)
 
-    barrier = Barrier(2)
-    claim = spool.Folder.claim
+    barrier, desk_done = Barrier(3 if withdraw else 2), Event()
+    take_request = spool.Folder.take
 
     def race(self, *args):
-        # Both runners saw the same request before either claims it.
+        # Both runners saw the same request before either takes it.
         barrier.wait(timeout=5)
-        return claim(self, *args)
+        if withdraw:
+            assert desk_done.wait(timeout=5)
+        return take_request(self, *args)
 
-    monkeypatch.setattr(spool.Folder, "claim", race)
+    monkeypatch.setattr(spool.Folder, "take", race)
 
     async def call(_):
         timeline.append("call")
@@ -574,13 +575,26 @@ def test_two_live_runners_only_one_gets_the_request(tmp_path, monkeypatch):
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(serve) for _ in range(2)]
+        if withdraw:
+            barrier.wait(timeout=5)
+            try:
+                with spool.private(path) as folder:
+                    assert folder.transfer(rid, "withdrawn")
+                    assert not folder.transfer(rid, "withdrawn")
+            finally:
+                desk_done.set()
         for future in futures:
-            future.result()
-    assert timeline == ["call"]
+            future.result(timeout=5)
+    assert timeline == ([] if withdraw else ["call"])
     with spool.private(path) as f:
-        assert f.read(spool.filename("taken", rid)) == req
-        assert f.read(spool.filename("claim", rid))["build"] == BUILD
-        assert f.read(spool.filename("reply", rid))["build"] == BUILD
+        assert f.read(spool.filename("withdrawn" if withdraw else "taken", rid)) == req
+        assert not f.exists(spool.filename("request", rid))
+        if withdraw:
+            assert not f.exists(spool.filename("taken", rid))
+            assert not f.exists(spool.filename("reply", rid))
+        else:
+            assert not f.transfer(rid, "withdrawn")
+            assert f.read(spool.filename("reply", rid))["build"] == BUILD
 
 
 @pytest.mark.parametrize("interrupted", [False, True])
@@ -641,7 +655,7 @@ def seed_stale_scout_files():
     req = make_request(d.scout_fields(SMALL, None, None, 64), T0 + timedelta(seconds=10))
     rid = req["request_id"]
     with spool.private(create=True) as f:
-        for kind in ("request", "claim", "reply"):
+        for kind in ("request", "taken", "reply"):
             f.write(spool.filename(kind, rid), req)
         f.write("heartbeat.json", {"phase": "stopped"})
     return rid
@@ -654,6 +668,52 @@ def test_wake_sweeps_killed_start_files_and_counts_them(lab):
     assert out["kind"] == "wake" and d.counts(rows(lab), lab[1])["scout_ignored_replies"] == 3
     assert not list(spool.DEFAULT.glob(f"*-{old}.json"))
     assert (spool.DEFAULT / "heartbeat.json").exists()
+
+
+def test_next_wake_sweeps_and_prices_due_exits_while_runner_never_finishes_write(lab, monkeypatch):
+    entry_clock = at(1)
+    pages = Pages(entry_clock, last={"ETH": "94"})
+    assert run(lab, pages, entry_clock, Scout(pages, entry_clock))["kind"] == "wake"
+    clock, writing, release = at(25), Event(), Event()
+    runner_clock = Clock(clock())
+    req = make_request(d.scout_fields(SMALL, None, None, 64), clock() + timedelta(seconds=30))
+    rid = req["request_id"]
+    with spool.private() as folder:
+        folder.write(spool.filename("taken", rid), req)
+
+    rename = spool.Folder.rename
+    temps = []
+
+    def frozen_write(folder, src, dst):
+        if dst == spool.filename("reply", rid):
+            temps.append(src)
+            writing.set()
+            release.wait()
+        return rename(folder, src, dst)
+    monkeypatch.setattr(spool.Folder, "rename", frozen_write)
+
+    async def call(_):
+        return fake_completion()
+
+    def publish():
+        with spool.private() as folder:
+            asyncio.run(runner.finish(folder, req, BUILD, runner_clock, call))
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        writer = pool.submit(publish)
+        try:
+            assert writing.wait(timeout=5)
+            assert (spool.DEFAULT / temps[0]).exists()
+            desk = pool.submit(d.record, Pages(clock), lab[0], clock, clock.sleep, clock.mono)
+            wake = desk.result(timeout=10)
+            assert not writer.done() and not release.is_set()
+            assert wake["kind"] == "wake" and any(e["status"] == "ok" for e in wake["exits"])
+            assert d.counts(rows(lab), lab[1])["scout_ignored_replies"] == 2
+            assert not (spool.DEFAULT / temps[0]).exists()
+            assert not (spool.DEFAULT / spool.filename("taken", rid)).exists()
+        finally:
+            release.set()
+        writer.result(timeout=5)  # A swept temporary file cannot crash the runner.
 
 
 def test_absolute_reply_deadline_does_not_rebase_after_stall(lab):
@@ -939,8 +999,7 @@ def test_start_resuming_at_open_wake_cannot_sweep_its_files(literal_start, monke
             resume.set()
 
 
-@pytest.mark.parametrize("foreign_claim", [False, True])
-def test_trading_rejects_foreign_build_claim_or_reply(lab, foreign_claim):
+def test_trading_rejects_foreign_build_reply_but_counts_the_taken_call(lab):
     clock, dispatched = at(1), []
 
     def fake_runner(seconds):
@@ -952,18 +1011,14 @@ def test_trading_rejects_foreign_build_claim_or_reply(lab, foreign_claim):
             req = folder.read(name)
             rid = req["request_id"]
             foreign = "b" * 40
-            if foreign_claim:
-                folder.write(spool.filename("claim", rid), spool.claim_record(req, foreign, clock()))
-                assert folder.transfer(rid, "taken")
-            else:
-                assert take(folder, req, clock)
+            assert take(folder, req, clock)
             folder.write(spool.filename("reply", rid), spool.reply_envelope(req, foreign, fake_completion()))
             dispatched.append(rid)
     out = d.record(Pages(clock, last={"ETH": "94"}), lab[0], clock, fake_runner, clock.mono)
     result, = out["scout_results"].values()
-    assert result["status"] == ("scout_no_runner" if foreign_claim else "call_timeout")
-    assert out["scout_ignored_replies"] == (2 if foreign_claim else 1)
-    assert d.failed_calls(d.state(rows(lab), lab[1]), 20) == ((0, 0) if foreign_claim else (1, 1))
+    assert result["status"] == "call_timeout"
+    assert out["scout_ignored_replies"] == 1
+    assert d.failed_calls(d.state(rows(lab), lab[1]), 20) == (1, 1)
 
 
 def rows(lab):
