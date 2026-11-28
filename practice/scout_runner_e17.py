@@ -67,7 +67,7 @@ async def finish(folder, req, claim, clock, caller):
     if spool.reply_result(reply, req) is None:
         reply["result"] = {"status": "call_error", "error": "InvalidRunnerResult", "service_status": "UNKNOWN"}
     with folder.fence():
-        saved, _ = spool.inspect_claim(folder, rid, req["sha256"], req["claim_by"], claim["build"])
+        saved, _, _ = spool.inspect_claim(folder, rid, req["sha256"], req["claim_by"], claim["build"])
         if saved == claim:
             folder.write(spool.filename("reply", rid), reply)
 

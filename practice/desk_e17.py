@@ -34,6 +34,7 @@ import subprocess
 import sys
 import time
 from collections import Counter, defaultdict
+from contextlib import ExitStack, contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from hashlib import sha256
@@ -215,8 +216,32 @@ def sweep_requests(keep=()):
         raise bx.Refuse("scout runner storage refused") from None
 
 
+@contextmanager
+def scout_owner():
+    with ExitStack() as stack:
+        try:
+            stack.enter_context(spool.desk_owner())
+        except BlockingIOError:
+            raise bx.Refuse("E17 scout spool is in use") from None
+        except (spool.Refuse, OSError):
+            raise bx.Refuse("scout runner storage refused") from None
+        yield
+
+
+def refuse_started(off):
+    if os.path.lexists(off):
+        with bx.locked(Path(off)) as path:
+            bx.need(not bx.read_log(path), "already started")
+
+
 def start(now, off=OFF, auth=AUTH, *, gate_obj=None, clock=bx.now_utc, check_transport=None):
     os.environ.pop("PPLX_LLM_API_KEY", None)
+    with scout_owner():
+        return start_owned(off, auth, gate_obj, clock, check_transport)
+
+
+def start_owned(off, auth, gate_obj, clock, check_transport):
+    refuse_started(off)
     cfg = settings()
     required(cfg)
     commit = checked_build()
@@ -226,6 +251,7 @@ def start(now, off=OFF, auth=AUTH, *, gate_obj=None, clock=bx.now_utc, check_tra
     if generation:
         e14.require_go(cfg["ledger_row"], "E17_START", commit, generation=generation)
     bx.need(not os.path.lexists(Path(auth) / f"E17_START-{commit}.json"), "this E17_START key was already used")
+    refuse_started(off)
     swept = sweep_requests()
     diagnostics = {}
     checks = check_scouts(cfg, build=commit, clock=clock, transport=check_transport, diagnostics=diagnostics)
@@ -457,12 +483,13 @@ def check_scouts(cfg, *, build, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
     deadline = clock() + timedelta(seconds=timeout)
     results, ids, ignored = handoff(jobs, timeout, cfg, clock, sleep, monotonic, transport,
                                     deadline=deadline, build=build)
-    if diagnostics is not None:
-        diagnostics["ignored"] = ignored
     try:
-        spool.cleanup(ids)
+        rejected = [rid for model, rid in zip(jobs, ids) if results[model].get("status") == "scout_no_runner"]
+        ignored += spool.cleanup(ids, rejected=rejected)
     except (spool.Refuse, OSError):
         raise bx.Refuse("scout runner cleanup refused") from None
+    if diagnostics is not None:
+        diagnostics["ignored"] = ignored
     statuses = {}
     for model, res in results.items():
         if not res.get("end_turn"):
@@ -846,11 +873,14 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, transport, tim
               filters={k: {x: y for x, y in v.items() if x != "scan_costs"} for k, v in filt.items()},
               scout_results=scout_results, scout_ignored_replies=ignored_replies,
               signals=signals, exits=exits, books=books, pre_books=pre_books)
-    clean_requests(rows, stamp)
+    visit = rows[-1]
+    ignored = clean_requests(rows, stamp, scout_results)
+    if ignored:
+        bx.append(path, rows, kind="scout_discard", wake=stamp, scout_ignored_replies=ignored)
     if terminal is not None:
         raise Stop(terminal.reason, getattr(terminal, "status", None),
                    getattr(terminal, "detail", None))
-    return rows[-1]
+    return visit
 
 
 def stop(path, rows, reason, clock, wake=None, status=None, detail=None):
@@ -874,11 +904,14 @@ def exit_final(cfg, card, attempt, wake):
     return attempt >= cfg["exit_retry_wakes"] or wake >= last_exit(cfg, card)
 
 
-def clean_requests(rows, stamp):
+def clean_requests(rows, stamp, results=None):
+    requests = [r for r in rows if r["kind"] == "scout_request" and r["wake"] == stamp]
+    rejected = [r["request_id"] for r in requests
+                if (results or {}).get(r["call_id"], {}).get("status") == "scout_no_runner"]
     try:
-        spool.cleanup([r["request_id"] for r in rows if r["kind"] == "scout_request" and r["wake"] == stamp])
+        return spool.cleanup([r["request_id"] for r in requests], rejected=rejected)
     except FileNotFoundError:
-        pass  # the folder and all the files are already gone
+        return 0  # the folder and all the files are already gone
     except (spool.Refuse, OSError):
         raise bx.Refuse("scout runner cleanup refused") from None
 
@@ -891,17 +924,16 @@ def count_interrupted_claims(path, rows, stamp):
     ignored = 0
     try:
         with spool.private() as folder:
-            with folder.fence():
-                for row in pending:
-                    rid = row["request_id"]
-                    folder.transfer(rid, "withdrawn")
-                    build = rows[0]["freeze"]
-                    claim, taken = spool.inspect_claim(folder, rid, row["request_sha256"], row["claim_by"], build)
-                    if claim is not None:
-                        fields = {k: row[k] for k in ("call_id", "card", "line", "model", "prompt_sha256", "packet_sha256")}
-                        bx.append(path, rows, kind="scout_call", wake=stamp, recovered=True, **fields)
-                    else:
-                        ignored += int(taken) + int(spool.peek(folder, spool.filename("reply", rid))[1])
+            for row in pending:
+                rid = row["request_id"]
+                folder.transfer(rid, "withdrawn")
+                build = rows[0]["freeze"]
+                claim, taken, _ = spool.inspect_claim(folder, rid, row["request_sha256"], row["claim_by"], build)
+                if claim is not None:
+                    fields = {k: row[k] for k in ("call_id", "card", "line", "model", "prompt_sha256", "packet_sha256")}
+                    bx.append(path, rows, kind="scout_call", wake=stamp, recovered=True, **fields)
+                else:
+                    ignored += int(taken) + int(spool.peek(folder, spool.filename("reply", rid))[1])
     except FileNotFoundError:
         pass
     except (spool.Refuse, OSError):
@@ -933,7 +965,7 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
     cfg = settings()
     required(cfg)
     gcfg = gate.settings()
-    with bx.locked(Path(off)) as path:
+    with scout_owner(), bx.locked(Path(off)) as path:
         rows = bx.read_log(path, recover=True, clock=clock)
         h = header(rows, cfg, gcfg)
         if any(r["kind"] == "stop" for r in rows):
