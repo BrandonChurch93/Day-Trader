@@ -7,16 +7,27 @@ import time
 
 if __package__:
     from . import scout_spool_e17 as spool
+    from . import desk_e17 as desk
 else:
     import scout_spool_e17 as spool
+    import desk_e17 as desk
 
 
 def rpc_status(exc):
-    try:
-        name = exc.code().name
-        return name if type(name) is str and name in spool.SERVICE_CODES else None
-    except Exception:
-        return None
+    todo, seen = [(exc, 0)], set()
+    while todo:
+        current, depth = todo.pop(0)
+        if current is None or depth >= 8 or id(current) in seen:
+            continue
+        seen.add(id(current))
+        try:
+            name = current.code().name
+            if type(name) is str and name in spool.SERVICE_CODES:
+                return name
+        except Exception:
+            pass
+        todo.extend(((current.__cause__, depth + 1), (current.__context__, depth + 1)))
+    return "UNKNOWN"
 
 
 async def sdk_call(req):
@@ -41,7 +52,7 @@ async def sdk_call(req):
             "model_reported": str(getattr(resp, "model", "") or "")}
 
 
-async def finish(folder, req, clock, caller):
+async def finish(folder, req, claim, clock, caller):
     rid = req["request_id"]
     started = time.monotonic()
     try:
@@ -52,25 +63,25 @@ async def finish(folder, req, clock, caller):
         result = {"status": "call_timeout"}
     except Exception as exc:
         result = {"status": "call_error", "error": type(exc).__name__, "service_status": rpc_status(exc)}
-    reply = {"request_id": rid, "request_sha256": req["sha256"], "result": result,
-             "secs": round(time.monotonic() - started, 2)}
+    reply = spool.reply_envelope(req, claim["build"], result) | {"secs": round(time.monotonic() - started, 2)}
     if spool.reply_result(reply, req) is None:
-        reply["result"] = {"status": "call_error", "error": "InvalidRunnerResult", "service_status": None}
+        reply["result"] = {"status": "call_error", "error": "InvalidRunnerResult", "service_status": "UNKNOWN"}
     with folder.fence():
-        claim, _ = spool.peek(folder, spool.filename("claim", rid))
-        if claim == req:
+        saved, _ = spool.inspect_claim(folder, rid, req["sha256"], req["claim_by"], claim["build"])
+        if saved == claim:
             folder.write(spool.filename("reply", rid), reply)
 
 
-async def serve(until, *, path=None, clock=spool.now_utc, sleep=asyncio.sleep, caller=None):
+async def serve(until, *, build, path=None, clock=spool.now_utc, sleep=asyncio.sleep, caller=None):
     caller = caller or sdk_call
     pending, ignored = set(), set()
     with spool.private(path, create=True) as folder:
         heartbeat_at = None
 
         def heartbeat(phase):
-            folder.write("heartbeat.json", {"made_utc": clock().isoformat(), "until": until.isoformat(),
-                                            "phase": phase, "ignored_requests": len(ignored)})
+            with folder.fence():
+                folder.write("heartbeat.json", {"made_utc": clock().isoformat(), "until": until.isoformat(),
+                                                "phase": phase, "ignored_requests": len(ignored), "build": build})
 
         while clock() < until:
             if heartbeat_at is None or (clock() - heartbeat_at).total_seconds() >= 2:
@@ -83,16 +94,13 @@ async def serve(until, *, path=None, clock=spool.now_utc, sleep=asyncio.sleep, c
                 req, exists = spool.peek(folder, name)
                 if not exists:
                     continue
-                if not spool.valid_request(req, rid, clock()):
+                if not spool.valid_request(req, rid, clock()) or req["build"] != build:
                     ignored.add(name)
                     continue
-                if clock() >= until or not folder.transfer(rid, "claim"):
+                claim = folder.claim(req, build, clock, until)
+                if claim is None:
                     continue
-                claimed, _ = spool.peek(folder, spool.filename("claim", rid))
-                if claimed != req:
-                    ignored.add(name)
-                    continue
-                pending.add(asyncio.create_task(finish(folder, req, clock, caller)))
+                pending.add(asyncio.create_task(finish(folder, req, claim, clock, caller)))
             complete = {task for task in pending if task.done()}
             pending.difference_update(complete)
             for task in complete:
@@ -116,8 +124,12 @@ def main():
         parser.error("--until must be an ISO UTC timestamp")
     prior = os.umask(0o077)
     try:
-        asyncio.run(serve(until))
+        build = desk.checked_build()
+        asyncio.run(serve(until, build=build))
         return 0
+    except desk.bx.Refuse:
+        print("REFUSED scout runner build", file=sys.stderr)
+        return 2
     except (spool.Refuse, OSError, ValueError):
         print("REFUSED scout runner storage", file=sys.stderr)
         return 2

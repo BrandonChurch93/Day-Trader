@@ -30,6 +30,7 @@ import fcntl
 import json
 import math
 import os
+import subprocess
 import sys
 import time
 from collections import Counter, defaultdict
@@ -149,16 +150,27 @@ def frozen(cfg, gcfg=None):
             "source_sha256": {p: bx.digest((ROOT / p).read_bytes()) for p in PINNED if p != "config/thresholds.yaml"}}
 
 
+def literal_build_git(*args, binary=False):
+    # The runner has a live SDK session. Pass Git only what it needs.
+    env = {"PATH": os.environ.get("PATH", os.defpath), "LC_ALL": "C", "GIT_CONFIG_NOSYSTEM": "1",
+           "GIT_CONFIG_GLOBAL": os.devnull, "GIT_NO_REPLACE_OBJECTS": "1"}
+    try:
+        return subprocess.check_output(("git", "--no-replace-objects", "-c", "core.fsmonitor=false", *args),
+                                       cwd=ROOT, env=env, text=not binary, stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.CalledProcessError):
+        raise bx.Refuse("cannot read literal build") from None
+
+
 def checked_build():
-    tracks = e14.literal_git("ls-files", "-v", "-z", "--", *PINNED).split("\0")
+    tracks = literal_build_git("ls-files", "-v", "-z", "--", *PINNED).split("\0")
     bx.need({r[2:] for r in tracks if r.startswith("H ")} == set(PINNED)
-            and not e14.literal_git("status", "--porcelain", "--untracked-files=no", "--", *PINNED),
+            and not literal_build_git("status", "--porcelain", "--untracked-files=no", "--", *PINNED),
             "frozen inputs not tracked and clean")
-    commit = e14.literal_git("rev-parse", "--verify", "HEAD^{commit}").strip()
+    commit = literal_build_git("rev-parse", "--verify", "HEAD^{commit}").strip()
     for path in PINNED:
-        bx.need(e14.literal_git("show", f"{commit}:{path}", binary=True) == (ROOT / path).read_bytes(),
+        bx.need(literal_build_git("show", f"{commit}:{path}", binary=True) == (ROOT / path).read_bytes(),
                 "frozen input differs from literal build")
-    bx.need(e14.literal_git("rev-parse", f"{commit}:{SHARED}").strip() == GATE_BLOB,
+    bx.need(literal_build_git("rev-parse", f"{commit}:{SHARED}").strip() == GATE_BLOB,
             "shared gate differs from audited version")
     return commit
 
@@ -182,21 +194,56 @@ def first_wake(now, cfg):
     return first
 
 
+def start_gate(gate_obj, expected=None):
+    """Check and snapshot the gate together, including a change to its cooldown."""
+    try:
+        gate_obj = gate_obj if gate_obj is not None else bx.Gate()
+        with gate_obj.mutex() as directory:
+            gate_obj.check_storage_fault(directory)
+            gate_obj.check_inflight(directory)
+            gate_obj.check_stop(directory)
+            cooldown = gate_obj.not_before(directory)
+            return gate_obj.current_generation(directory, expected, initialize=expected is None), cooldown
+    except bx.Failure as exc:
+        raise bx.Refuse(exc.reason) from None
+
+
+def sweep_requests(keep=()):
+    try:
+        return spool.sweep(keep)
+    except (spool.Refuse, OSError):
+        raise bx.Refuse("scout runner storage refused") from None
+
+
 def start(now, off=OFF, auth=AUTH, *, gate_obj=None, clock=bx.now_utc, check_transport=None):
     os.environ.pop("PPLX_LLM_API_KEY", None)
     cfg = settings()
     required(cfg)
     commit = checked_build()
+    inputs = frozen(cfg)
     e14.require_go(cfg["ledger_row"], "E17_START", commit)
-    generation = bx.check_start(gate_obj)
+    generation, cooldown = start_gate(gate_obj)
     if generation:
         e14.require_go(cfg["ledger_row"], "E17_START", commit, generation=generation)
-    checks = check_scouts(cfg, clock=clock, transport=check_transport)
+    bx.need(not os.path.lexists(Path(auth) / f"E17_START-{commit}.json"), "this E17_START key was already used")
+    swept = sweep_requests()
+    diagnostics = {}
+    checks = check_scouts(cfg, build=commit, clock=clock, transport=check_transport, diagnostics=diagnostics)
+    ignored = swept + diagnostics["ignored"]
     bx.need(all(status == "OK" for status in checks.values()),
-            "scout checks refused: " + ", ".join(f"{model}:{status}" for model, status in checks.items() if status != "OK"))
-    first = first_wake(now, cfg)
+            "scout checks refused: " + ", ".join(f"{model}:{status}" for model, status in checks.items() if status != "OK")
+            + f"; ignored scout files: {ignored}")
     auth = bx.checked_dir(Path(auth), create=True)
     receipt = auth / f"E17_START-{commit}.json"
+    latest = settings()
+    required(latest)
+    bx.need(checked_build() == commit and frozen(latest) == inputs, "frozen inputs changed during scout checks")
+    e14.require_go(cfg["ledger_row"], "E17_START", commit)
+    bx.need(start_gate(gate_obj, generation) == (generation, cooldown), "gate state changed during scout checks")
+    if generation:
+        e14.require_go(cfg["ledger_row"], "E17_START", commit, generation=generation)
+    now = clock()
+    first = first_wake(now, cfg)
     try:
         fd = os.open(receipt, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
     except FileExistsError:
@@ -211,8 +258,8 @@ def start(now, off=OFF, auth=AUTH, *, gate_obj=None, clock=bx.now_utc, check_tra
         bx.need(not rows, "already started")
         bx.write_anchor(path, bx.anchor_state(rows))
         bx.append(path, rows, kind="header", freeze=commit, venue_generation=generation, first=bx.iso(first),
-                  frozen=frozen(cfg))
-    return {"first_wake": bx.iso(first), "freeze": commit, "venue_generation": generation}
+                  frozen=inputs, scout_start_ignored=ignored)
+    return {"first_wake": bx.iso(first), "freeze": commit, "venue_generation": generation, "scout_start_ignored": ignored}
 
 
 # ------------------------------------------------------------------ candles and the three filters
@@ -402,10 +449,16 @@ def run_scouts(jobs, transport, timeout, cfg, clock, sleep, monotonic, **callbac
     return results, ignored
 
 
-def check_scouts(cfg, *, clock=bx.now_utc, sleep=time.sleep, monotonic=time.monotonic, transport=None):
+def check_scouts(cfg, *, build, clock=bx.now_utc, sleep=time.sleep, monotonic=time.monotonic,
+                 transport=None, diagnostics=None):
     jobs = {m: scout_fields(m, None, None, cfg["runner_check_max_tokens"]) for m in
             (cfg["small_model"], cfg["second_model"])}
-    results, ids, _ = handoff(jobs, cfg["scout_timeout_s"], cfg, clock, sleep, monotonic, transport)
+    timeout = cfg["scout_timeout_s"]
+    deadline = clock() + timedelta(seconds=timeout)
+    results, ids, ignored = handoff(jobs, timeout, cfg, clock, sleep, monotonic, transport,
+                                    deadline=deadline, build=build)
+    if diagnostics is not None:
+        diagnostics["ignored"] = ignored
     try:
         spool.cleanup(ids)
     except (spool.Refuse, OSError):
@@ -707,6 +760,7 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, transport, tim
                 now, _ = timing.sample()
                 left = (until - now).total_seconds() - cfg["entry_reserve_s"]
                 budget = min(cfg["scout_timeout_s"], left)
+                deadline = min(until - timedelta(seconds=cfg["entry_reserve_s"]), now + timedelta(seconds=cfg["scout_timeout_s"]))
                 if budget < cfg["scout_min_s"]:
                     # no model is called, so no scout_call row is written and nothing counts toward the repair stop
                     scout_results = {j[0]: {"status": "no_time"} for j in jobs}
@@ -714,7 +768,7 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, transport, tim
                     def request_written(key, req):
                         fields = {k: v for k, v in call_rows[key].items() if k != "packet"}
                         bx.append(path, rows, kind="scout_request", wake=stamp, request_id=req["request_id"],
-                                  request_sha256=req["sha256"], **fields)
+                                  request_sha256=req["sha256"], claim_by=req["claim_by"], **fields)
 
                     def claimed(key):
                         bx.append(path, rows, kind="scout_call", wake=stamp, made_utc=bx.precise_utc(clock()),
@@ -722,7 +776,7 @@ def capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, transport, tim
 
                     scout_results, ignored_replies = run_scouts(
                         jobs, transport, budget, cfg, lambda: timing.sample()[0], sleep, timing.monotonic,
-                        before_request=request_written, before_call=claimed)
+                        deadline=deadline, build=rows[0]["freeze"], before_request=request_written, before_call=claimed)
                 timing.sample()
             # 5 and 6. choices for every line, then the gate (nothing new after a gate stop)
             now = clock()
@@ -833,33 +887,31 @@ def count_interrupted_claims(path, rows, stamp):
     seen = {r["call_id"] for r in rows if r["kind"] == "scout_call" and r["wake"] == stamp}
     pending = [r for r in rows if r["kind"] == "scout_request" and r["wake"] == stamp and r["call_id"] not in seen]
     if not pending:
-        return
+        return 0
+    ignored = 0
     try:
         with spool.private() as folder:
-            for row in pending:
-                rid = row["request_id"]
-                if folder.transfer(rid, "withdrawn"):
-                    continue
-                claim, _ = spool.peek(folder, spool.filename("claim", rid))
-                if type(claim) is not dict or claim.get("request_id") != rid:
-                    continue
-                try:
-                    claim_hash = spool.digest({k: v for k, v in claim.items() if k != "sha256"})
-                except ValueError:
-                    continue
-                if claim_hash == claim.get("sha256") == row["request_sha256"]:
-                    fields = {k: row[k] for k in ("call_id", "card", "line", "model", "prompt_sha256", "packet_sha256")}
-                    bx.append(path, rows, kind="scout_call", wake=stamp, recovered=True, **fields)
+            with folder.fence():
+                for row in pending:
+                    rid = row["request_id"]
+                    folder.transfer(rid, "withdrawn")
+                    build = rows[0]["freeze"]
+                    claim, taken = spool.inspect_claim(folder, rid, row["request_sha256"], row["claim_by"], build)
+                    if claim is not None:
+                        fields = {k: row[k] for k in ("call_id", "card", "line", "model", "prompt_sha256", "packet_sha256")}
+                        bx.append(path, rows, kind="scout_call", wake=stamp, recovered=True, **fields)
+                    else:
+                        ignored += int(taken) + int(spool.peek(folder, spool.filename("reply", rid))[1])
     except FileNotFoundError:
         pass
     except (spool.Refuse, OSError):
         raise bx.Refuse("scout runner cleanup refused") from None
+    return ignored
 
 
-def void_wake(path, rows, wake, reason, ix, cfg):
+def void_wake(path, rows, wake, reason, ix, cfg, swept=0):
     stamp = bx.iso(wake)
-    if reason == "interrupted_wake":
-        count_interrupted_claims(path, rows, stamp)
+    ignored = count_interrupted_claims(path, rows, stamp) if reason == "interrupted_wake" else 0
     exits = []
     for (card, line), tickets in sorted(ix["open"].items()):
         for t in tickets:
@@ -868,7 +920,8 @@ def void_wake(path, rows, wake, reason, ix, cfg):
                 exits.append({"status": reason, "coin": t["coin"], "card": card, "line": line, "entry_wake": t["wake"],
                               "attempt": attempt, "final": wake > last_exit(cfg, card) or exit_final(cfg, card, attempt, wake),
                               "exit_wake": stamp})
-    bx.append(path, rows, kind="void", wake=stamp, reason=reason, exits=exits)
+    bx.append(path, rows, kind="void", wake=stamp, reason=reason, exits=exits,
+              scout_ignored_replies=ignored, scout_swept=swept)
     clean_requests(rows, stamp)
 
 
@@ -886,8 +939,6 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
         if any(r["kind"] == "stop" for r in rows):
             return {"kind": "stopped"}
         ix = state(rows, cfg)
-        if ix["visits"]:
-            clean_requests(rows, max(ix["visits"]))
         bad, _ = failed_calls(ix, cfg["repair_window_calls"])
         if not (ix["claims"] - ix["visits"]) and bad > cfg["repair_max_failed"]:
             return stop(path, rows, "scout_repair", clock)
@@ -904,7 +955,8 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
             opens, until = at(wake, cfg["window_open_s"]), at(wake, cfg["book_cutoff_s"])
             started = stamp in ix["claims"]
             if started or now >= until:
-                void_wake(path, rows, wake, "interrupted_wake" if started else "missed_wake", ix, cfg)
+                swept = sweep_requests(r["request_id"] for r in rows if r["kind"] == "scout_request" and r["wake"] == stamp)
+                void_wake(path, rows, wake, "interrupted_wake" if started else "missed_wake", ix, cfg, swept)
                 ix = state(rows, cfg)
                 if failed_calls(ix, cfg["repair_window_calls"])[0] > cfg["repair_max_failed"]:
                     return stop(path, rows, "scout_repair", clock, wake)
@@ -913,8 +965,12 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
             if now < opens:
                 return {"kind": "nothing due"}
             e14.require_go(cfg["ledger_row"], "E17_START", h["freeze"])
+            swept = sweep_requests(r["request_id"] for r in rows if r["kind"] == "scout_request" and r["wake"] == stamp)
             claim_time, _ = timing.sample()
             if claim_time >= until:
+                void_wake(path, rows, wake, "missed_wake", ix, cfg, swept)
+                ix = state(rows, cfg)
+                wake += bx.HOUR
                 continue
             pages = pages if pages is not None else bx.PublicPages(
                 clock=clock, sleep=sleep, monotonic=monotonic,
@@ -928,7 +984,7 @@ def record(pages=None, off=OFF, clock=bx.now_utc, sleep=time.sleep, monotonic=ti
                 generation = h.get("venue_generation")
                 bx.need(type(generation) is int and generation >= 0, "invalid shared gate generation")
                 pages.generation = generation
-            bx.append(path, rows, kind="claim", wake=stamp, made_utc=bx.precise_utc(claim_time))
+            bx.append(path, rows, kind="claim", wake=stamp, made_utc=bx.precise_utc(claim_time), scout_swept=swept)
             try:
                 out = capture(path, rows, pages, wake, ix, cfg, gcfg, clock, sleep, transport, timing)
             except Stop as exc:
@@ -1007,7 +1063,8 @@ def counts(rows, cfg):
             "candle_error_counts": dict(Counter(x for r in visits for x in r.get("candle_errors", {}).values())),
             "scout_calls": len(ix["calls"]), "scout_status": dict(statuses),
             "scout_no_runner": no_runner, "scout_error_status": dict(service),
-            "scout_ignored_replies": sum(r.get("scout_ignored_replies", 0) for r in visits),
+            "scout_ignored_replies": sum(r.get("scout_ignored_replies", 0) + r.get("scout_swept", 0)
+                                         + r.get("scout_start_ignored", 0) for r in rows),
             "failed_in_first_calls": {"failed": bad, "of": n, "limit": cfg["repair_max_failed"]},
             "cards": per}
 

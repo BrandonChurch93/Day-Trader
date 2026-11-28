@@ -30,6 +30,7 @@ STATED. Pretend money, forward in real time, Binance.US public data only. There 
 - Missed or interrupted wakes are void and never fetched later.
 - Frozen inputs are the `forward_e17` block, its fee row, the shared gate custody block `binance_us_gate`, every `practice_e17_*` gate setting and the pick limits, the prompts and the pinned source files. They are checked before each wake against the values the wake uses, and again after it. A change stops the desk.
 - Accepted limit (lead's waiver, same as E14 and Measurement 134): a wall-clock step back between the last guarded time check and the transport's own clock read could send a request early. Its reply is discarded. The host needs synchronized UTC.
+- Stated timing limit: when no scout runner is there, the desk waits up to 20 seconds before it gives up. The rule-only and random lines can get their entry books up to 20 seconds later than with a runner present. Every line that chose the same coin still uses the same book. No line sees a later book than another for that coin. This changes timing, not what a line can see before it chooses.
 
 ## The three cards
 
@@ -70,10 +71,10 @@ Card S, scout scan.
 
 ## Scouts
 
-- The desk writes one request per scout line to `/home/user/workspace/rig/data/desk_e17_scout`. A separate live command runs `practice/scout_runner_e17.py` and makes the structured SDK call with no tools or retries. The runner uses its own live session. The folder and files are private; each reply must match the request id and hash.
+- The desk writes one request per scout line to `/home/user/workspace/rig/data/desk_e17_scout`. A separate live command runs `practice/scout_runner_e17.py` and makes the structured SDK call with no tools or retries. The runner uses its own live session and checks its pinned files against its checked-out build. The folder and files are private. A claim and reply must match the request id, request hash and desk build.
 - Cards W and F call only when their filter finds qualifiers. Card S calls at each scan with qualifiers.
 - Each call is capped at `scout_timeout_s` and `scout_max_tokens`. It is cut shorter when the window needs `entry_reserve_s` for entry books, and skipped when less than `scout_min_s` is left. A skipped call is not a call: it is recorded as `scout_no_time`, voids that pair, and does not count toward the repair stop.
-- Claim and withdrawal rename the same request, so only one can win. A request still unclaimed after `runner_claim_s` is withdrawn and recorded as `scout_no_runner`. It voids the pair and does not count toward the repair stop. A claimed request that fails or has no timely reply still counts. The log keeps only the error class and short service status for call errors, not the error message. Wrong replies are ignored and counted, and handoff files are removed after recording the wake.
+- Claim and withdrawal rename the same request, so only one can win. A valid claim has a recorded time strictly before its claim deadline. Without one, the desk records `scout_no_runner`, voids the pair and does not count a call toward the repair stop. Timely claims count in the desk's dispatch order, even if the runner took them in another order or the desk had to recover an unfinished wake. A claimed request that fails or has no timely reply still counts. The log keeps the error class and short service status, or `UNKNOWN`, but never the error message. Wrong replies are ignored and counted. The desk sweeps and counts old handoff files at start and at the start of each wake, and removes its own handoff files after recording the wake.
 - `finish_reason` must be end of turn. The reply has exactly `choice` (a qualifier or `pass`), `tags` (from the fixed list in the code) and `facts` (1 to 1,000 characters). Anything else is a failed reply.
 - The scout sees only the packet: returns, volume ratios, 24 relative closes and volumes for the qualifiers, and book summaries. All of it comes from closed candles before the wake and books in this window. It sees no news text and no rule or random choice.
 - Small model: `gpt5_mini`. MEASURED for E15 on 2026-11-27 with the same prompt, schema and packet code, on five made-up packets (cards W, F, S, W, S):
@@ -121,7 +122,7 @@ Rules for every card:
 
 ## Operation
 
-- `start` needs an independent CLEAR audit and `E17_START=<frozen build hash>` on the ledger row in committed local main. Above gate generation zero, it also needs `E17_START_GENERATION=<n>`. Start only after E15 has ended and a runner is active. Both scout models must return finished replies to small checks before the desk writes a receipt or starts.
+- `start` needs an independent CLEAR audit and `E17_START=<frozen build hash>` on the ledger row in committed local main. Above gate generation zero, it also needs `E17_START_GENERATION=<n>`. Start only after E15 has ended and a runner is active. Both models must return valid replies to small checks. After they answer, the desk checks the frozen build, committed approval and shared gate again, then chooses the first wake from the current time. It writes no receipt if any check fails.
 - The live helper runs `python3 -B practice/scout_runner_e17.py --until <UTC-time>` from the frozen checkout. For each wake, the planned command starts about 18 minutes and 30 seconds past the hour and accepts requests until 25 minutes and 30 seconds past. It then finishes in-flight calls and exits. Both `start` and `loop` drop the desk's inherited model credential.
 - `start` writes a once-only receipt under `/home/user/workspace/rig/data/desk_e17_authorizations`, so the same key cannot start a second run. Only the lead runs `start`.
 - Then `python3 practice/desk_e17.py loop` from the frozen tree.

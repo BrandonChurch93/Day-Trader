@@ -2,7 +2,11 @@
 import asyncio
 import json
 import os
+import shutil
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 from types import SimpleNamespace
 from datetime import datetime, timedelta, timezone
 
@@ -15,6 +19,7 @@ import scout_spool_e17 as spool
 import venue_binance_us as bx
 
 SMALL = "gpt5_mini"
+BUILD = "a" * 40
 T0 = datetime(2027, 1, 4, 0, 0, tzinfo=timezone.utc)   # a Monday, 00:00 UTC: a card S scan hour
 
 
@@ -100,11 +105,17 @@ class Scout:
             {"choice": choice, "tags": ["broad_fall"], "facts": "The packet shows a fall."}), "usage": {}}
 
 
+@pytest.fixture(autouse=True)
+def private_test_spool(tmp_path, monkeypatch):
+    monkeypatch.setattr(spool, "CUSTODY", tmp_path)
+    monkeypatch.setattr(spool, "DEFAULT", tmp_path / "spool")
+
+
 @pytest.fixture
 def lab(tmp_path, monkeypatch):
     monkeypatch.setattr(bx, "private_roots", lambda: (tmp_path,))
     monkeypatch.setattr(e14, "require_go", lambda *a, **k: None)
-    monkeypatch.setattr(bx, "check_start", lambda *a, **k: pytest.fail("live gate forbidden"))
+    monkeypatch.setattr(d, "start_gate", lambda *a, **k: pytest.fail("live gate forbidden"))
     real = d.settings
 
     def cfg():
@@ -119,7 +130,7 @@ def lab(tmp_path, monkeypatch):
     with bx.locked(p) as path:
         rows = []
         bx.write_anchor(path, bx.anchor_state(rows))
-        bx.append(path, rows, kind="header", first=bx.iso(T0), venue_generation=0, freeze="<test>", frozen=d.frozen(cfg()))
+        bx.append(path, rows, kind="header", first=bx.iso(T0), venue_generation=0, freeze=BUILD, frozen=d.frozen(cfg()))
     return p, cfg()
 
 
@@ -129,7 +140,7 @@ def run(lab, pages, clock, scout):
 
 def fake_transport(scout):
     """Keep the E15 fake model tests at E17's new handoff boundary."""
-    def exchange(jobs, timeout, *_args, before_call=None, before_request=None):
+    def exchange(jobs, timeout, *_args, before_call=None, **_kwargs):
         async def one(key, req):
             try:
                 card = next(c for c in d.CARDS if req["system_text"] == d.COMMON + " " + d.CARD_TEXT[c])
@@ -160,7 +171,7 @@ async def advance(clock, seconds):
     await asyncio.sleep(0)
 
 
-def runner_on_poll(folder, clock, caller):
+def runner_on_poll(folder, clock, caller, build=BUILD):
     """Run an actual claim/SDK handoff with a fake model whenever the desk first waits."""
     ran = False
 
@@ -168,10 +179,23 @@ def runner_on_poll(folder, clock, caller):
         nonlocal ran
         if not ran:
             ran = True
-            asyncio.run(runner.serve(clock() + timedelta(seconds=0.2), path=folder, clock=clock,
+            asyncio.run(runner.serve(clock() + timedelta(seconds=0.2), build=build, path=folder, clock=clock,
                                      sleep=lambda s: advance(clock, s), caller=caller))
         clock.sleep(seconds)
     return sleep
+
+
+def make_request(spec, deadline, timeout=10, claim_by=None):
+    return spool.request(spec, deadline, timeout, claim_by or deadline, BUILD)
+
+
+def exchange_at(jobs, timeout, grace, clock, sleep, mono, **kwargs):
+    deadline = clock() + timedelta(seconds=timeout)
+    return spool.exchange(jobs, timeout, grace, clock, sleep, mono, deadline=deadline, build=BUILD, **kwargs)
+
+
+def take(folder, req, clock, *, build=BUILD):
+    return folder.claim(req, build, clock, spool.utc(req["deadline"]))
 
 
 def test_spool_batch_round_trip_is_concurrent_and_hashes_exact_wire(tmp_path):
@@ -186,7 +210,7 @@ def test_spool_batch_round_trip_is_concurrent_and_hashes_exact_wire(tmp_path):
             await asyncio.sleep(0)
         return fake_completion()
 
-    result, ids, ignored = spool.exchange(jobs, 10, 4, clock, runner_on_poll(folder, clock, call), clock.mono,
+    result, ids, ignored = exchange_at(jobs, 10, 4, clock, runner_on_poll(folder, clock, call), clock.mono,
                                          path=folder, before_call=claims.append)
     assert set(claims) == set(jobs) and ignored == 0
     assert all(r["end_turn"] for r in result.values())
@@ -198,14 +222,17 @@ def test_spool_batch_round_trip_is_concurrent_and_hashes_exact_wire(tmp_path):
 
 @pytest.mark.parametrize("winner", ["claim", "withdrawn"])
 def test_claim_withdraw_share_one_atomic_source_even_with_two_runners(tmp_path, winner):
-    req = spool.request(d.scout_fields(SMALL, None, None, 64), T0 + timedelta(seconds=10), 10)
+    req = make_request(d.scout_fields(SMALL, None, None, 64), T0 + timedelta(seconds=10))
     rid = req["request_id"]
     with spool.private(tmp_path / "spool", create=True) as folder:
         folder.write(spool.filename("request", rid), req)
-        assert folder.transfer(rid, winner)
-        assert not folder.transfer(rid, "claim")
+        if winner == "claim":
+            assert take(folder, req, Clock(T0))
+        else:
+            assert folder.transfer(rid, winner)
+        assert not take(folder, req, Clock(T0))
         assert not folder.transfer(rid, "withdrawn")
-        assert folder.read(spool.filename(winner, rid)) == req
+        assert folder.read(spool.filename("taken" if winner == "claim" else winner, rid)) == req
 
 
 def test_no_runner_voids_the_pair_without_counting_a_failed_call(lab, tmp_path, monkeypatch):
@@ -234,18 +261,22 @@ def test_runner_refusal_is_counted_without_message_in_rows_public_or_streams(lab
             return SimpleNamespace(name="UNAUTHENTICATED")
 
     async def call(_):
-        raise FakeRpcError(marker)
+        try:
+            raise FakeRpcError(marker)
+        except FakeRpcError as exc:
+            raise RuntimeError(marker) from exc
 
     out = d.record(Pages(clock, last={"BTC": "90"}), lab[0], clock, runner_on_poll(folder, clock, call), clock.mono)
     result, = out["scout_results"].values()
     assert {k: v for k, v in result.items() if k != "secs"} == {
-        "status": "call_error", "error": "FakeRpcError", "service_status": "UNAUTHENTICATED"}
+        "status": "call_error", "error": "RuntimeError", "service_status": "UNAUTHENTICATED"}
     assert result["secs"] >= 0
     assert d.failed_calls(d.state(rows(lab), lab[1]), 20) == (1, 1)
     target = tmp_path / "public.json"
     assert d.publish(lab[0], target, clock())["scout_error_status"] == {"UNAUTHENTICATED": 1}
     captured = capsys.readouterr()
     assert marker not in json.dumps(rows(lab)) + target.read_text() + captured.out + captured.err
+    assert runner.rpc_status(RuntimeError(marker)) == "UNKNOWN"
 
 
 def test_ignores_wrong_id_or_hash_and_accepts_only_matching_claimed_reply(tmp_path):
@@ -257,19 +288,21 @@ def test_ignores_wrong_id_or_hash_and_accepts_only_matching_claimed_reply(tmp_pa
             if not phases:
                 name, = [n for n in folder.names() if n.startswith("request-")]
                 req = folder.read(name)
-                folder.transfer(req["request_id"], "claim")
+                assert take(folder, req, clock)
                 phases.append(req)
                 folder.write(spool.filename("reply", "a" * 32), {"request_id": "a" * 32})
             else:
                 req = phases[0]
             rid = req["request_id"]
             phase = len(phases)
-            folder.write(spool.filename("reply", rid), {"request_id": "f" * 32 if phase == 1 else rid,
-                         "request_sha256": "0" * 64 if phase == 2 else req["sha256"], "result": fake_completion()})
+            reply = spool.reply_envelope(req, BUILD, fake_completion())
+            reply["request_id"] = "f" * 32 if phase == 1 else rid
+            reply["request_sha256"] = "0" * 64 if phase == 2 else req["sha256"]
+            folder.write(spool.filename("reply", rid), reply)
             phases.append(phase)
         clock.sleep(s)
 
-    got, ids, ignored = spool.exchange({"s": d.scout_fields(SMALL, None, None, 64)}, 3, 1, clock, sleep,
+    got, ids, ignored = exchange_at({"s": d.scout_fields(SMALL, None, None, 64)}, 3, 1, clock, sleep,
                                        clock.mono, path=path)
     assert got["s"]["end_turn"] and ignored == 3
     spool.cleanup(ids, path)
@@ -278,10 +311,10 @@ def test_ignores_wrong_id_or_hash_and_accepts_only_matching_claimed_reply(tmp_pa
 def test_runner_ignores_deadline_and_bad_hash_and_drains_without_new_claim(tmp_path):
     path, clock = tmp_path / "spool", Clock(T0)
     spec = d.scout_fields(SMALL, None, None, 64)
-    expired = spool.request(spec, clock(), 3)
-    invalid = spool.request(spec, clock() + timedelta(seconds=10), 3) | {"sha256": "0" * 64}
-    first = spool.request(spec, clock() + timedelta(seconds=10), 3)
-    next_ = spool.request(spec, clock() + timedelta(seconds=10), 3)
+    expired = make_request(spec, clock(), 3)
+    invalid = make_request(spec, clock() + timedelta(seconds=10), 3) | {"sha256": "0" * 64}
+    first = make_request(spec, clock() + timedelta(seconds=10), 3)
+    next_ = make_request(spec, clock() + timedelta(seconds=10), 3)
     calls = []
 
     with spool.private(path, create=True) as folder:
@@ -304,7 +337,7 @@ def test_runner_ignores_deadline_and_bad_hash_and_drains_without_new_claim(tmp_p
             release.set()
             await asyncio.sleep(0)
 
-        await runner.serve(clock() + timedelta(seconds=0.5), path=path, clock=clock, sleep=sleep, caller=call)
+        await runner.serve(clock() + timedelta(seconds=0.5), build=BUILD, path=path, clock=clock, sleep=sleep, caller=call)
 
     asyncio.run(scenario())
     assert calls == [first["request_id"]]
@@ -348,12 +381,11 @@ def test_claimed_request_without_timely_reply_counts_as_timeout(tmp_path):
             if req is None:
                 name, = [n for n in folder.names() if n.startswith("request-")]
                 req = folder.read(name)
-                folder.transfer(req["request_id"], "claim")
+                assert take(folder, req, clock)
             if clock.mono() >= 1:
-                folder.write(spool.filename("reply", req["request_id"]), {"request_id": req["request_id"],
-                             "request_sha256": req["sha256"], "result": fake_completion()})
+                folder.write(spool.filename("reply", req["request_id"]), spool.reply_envelope(req, BUILD, fake_completion()))
 
-    got, ids, ignored = spool.exchange({"s": d.scout_fields(SMALL, None, None, 64)}, 1, 0.5, clock, sleep,
+    got, ids, ignored = exchange_at({"s": d.scout_fields(SMALL, None, None, 64)}, 1, 0.5, clock, sleep,
                                        clock.mono, before_call=observed.append, path=path)
     assert got == {"s": {"status": "call_timeout"}} and observed == ["s"] and ignored == 0
     spool.cleanup(ids, path)
@@ -364,17 +396,18 @@ def test_interrupted_wake_accounts_for_claimed_request_and_cleans_files(lab, tmp
     monkeypatch.setattr(spool, "DEFAULT", folder)
     clock = at(0)
     # Crash after the runner's rename but before the desk's next poll.
-    req = spool.request(d.scout_fields(SMALL, None, None, 64), clock() + timedelta(seconds=10), 10)
+    req = make_request(d.scout_fields(SMALL, None, None, 64), clock() + timedelta(seconds=10))
     rid = req["request_id"]
     with spool.private(create=True) as f:
         f.write(spool.filename("request", rid), req)
-        assert f.transfer(rid, "claim")
+        assert take(f, req, clock)
     stamp = bx.iso(T0)
     with bx.locked(lab[0]) as path:
         rs = bx.read_log(path)
         bx.append(path, rs, kind="claim", wake=stamp)
         bx.append(path, rs, kind="scout_request", wake=stamp, request_id=rid, request_sha256=req["sha256"],
-                  call_id="invented", card="W", line="scout", model=SMALL, prompt_sha256="p", packet_sha256="q")
+                  claim_by=req["claim_by"], call_id="invented", card="W", line="scout", model=SMALL,
+                  prompt_sha256="p", packet_sha256="q")
     d.record(Pages(clock), lab[0], clock, clock.sleep, clock.mono)
     saved = rows(lab)
     assert [r["kind"] for r in saved[-2:]] == ["scout_call", "void"]
@@ -383,20 +416,182 @@ def test_interrupted_wake_accounts_for_claimed_request_and_cleans_files(lab, tmp
     assert not list(folder.glob("*.json"))
 
 
+@pytest.mark.parametrize("claimed_at", [19.999999, 20, 21])
+def test_absolute_claim_edge_is_checked_even_when_desk_polls_late(tmp_path, claimed_at):
+    path, clock = tmp_path / "spool", Clock(T0)
+    observed = []
+
+    def after_stall(_seconds):
+        clock.sleep(claimed_at)
+        with spool.private(path) as folder:
+            name, = [n for n in folder.names() if n.startswith("request-")]
+            req = folder.read(name)
+            rid = req["request_id"]
+            assert spool.utc(req["claim_by"]) == T0 + timedelta(seconds=20)
+            claim = take(folder, req, clock)
+            if claimed_at >= 20:
+                assert claim is None
+                # Simulate a stale or noncompliant runner leaving a late claim and reply.
+                folder.write(spool.filename("claim", rid), spool.claim_record(req, BUILD, clock()))
+                assert folder.transfer(rid, "taken")
+            else:
+                assert claim["claimed_utc"] == clock().isoformat()
+            folder.write(spool.filename("reply", rid), spool.reply_envelope(req, BUILD, fake_completion()))
+        clock.sleep(21 - claimed_at)
+
+    spec = {"s": d.scout_fields(SMALL, None, None, 64)}
+    got, ids, ignored = exchange_at(spec, 30, 20, clock, after_stall, clock.mono,
+                                   before_call=observed.append, path=path)
+    if claimed_at < 20:
+        assert got["s"]["end_turn"] and observed == ["s"] and ignored == 0
+    else:
+        assert got == {"s": {"status": "scout_no_runner"}} and not observed and ignored == 2
+    spool.cleanup(ids, path)
+
+
+def test_two_live_runners_only_one_gets_the_request(tmp_path, monkeypatch):
+    path, clock = tmp_path / "spool", spool.now_utc
+    req = make_request(d.scout_fields(SMALL, None, None, 64), clock() + timedelta(seconds=10))
+    rid = req["request_id"]
+    timeline = []
+    with spool.private(path, create=True) as folder:
+        folder.write(spool.filename("request", rid), req)
+
+    barrier = Barrier(2)
+    claim = spool.Folder.claim
+
+    def race(self, *args):
+        # Both runners saw the same request before either claims it.
+        barrier.wait(timeout=5)
+        return claim(self, *args)
+
+    monkeypatch.setattr(spool.Folder, "claim", race)
+
+    async def call(_):
+        timeline.append("call")
+        return fake_completion()
+
+    until = clock() + timedelta(seconds=1)
+    def serve():
+        asyncio.run(runner.serve(until, build=BUILD, path=path, clock=clock, caller=call))
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(serve) for _ in range(2)]
+        for future in futures:
+            future.result()
+    assert timeline == ["call"]
+    with spool.private(path) as f:
+        assert f.read(spool.filename("taken", rid)) == req
+        assert f.read(spool.filename("claim", rid))["build"] == BUILD
+        assert f.read(spool.filename("reply", rid))["build"] == BUILD
+
+
+@pytest.mark.parametrize("interrupted", [False, True])
+def test_twentieth_call_is_first_dispatched_not_first_claimed(lab, interrupted):
+    clock, prior = at(0), bx.iso(T0 - bx.HOUR)
+    old = {f"old{i}": {"status": "call_error" if i < 5 else "ok"} for i in range(19)}
+    with bx.locked(lab[0]) as path:
+        rs = bx.read_log(path)
+        for cid in old:
+            bx.append(path, rs, kind="scout_call", wake=prior, call_id=cid)
+        bx.append(path, rs, kind="wake", wake=prior, scout_results=old)
+    taken = []
+
+    def reverse_claims(seconds):
+        clock.sleep(seconds)
+        with spool.private() as folder:
+            if len(taken) == 2:
+                return
+            req = next(folder.read(name) for name in folder.names() if name.startswith("request-")
+                       and folder.read(name)["model"] == ("claude_sonnet_5_5" if not taken else SMALL))
+            assert take(folder, req, clock)
+            took_b = not taken
+            taken.append(req["model"])
+            reply = (fake_completion() if took_b else
+                     {"status": "call_error", "error": "FakeError", "service_status": "UNKNOWN"})
+            folder.write(spool.filename("reply", req["request_id"]), spool.reply_envelope(req, BUILD, reply))
+            if interrupted and not took_b:
+                raise KeyboardInterrupt
+
+    if interrupted:
+        with pytest.raises(KeyboardInterrupt):
+            d.record(Pages(clock), lab[0], clock, reverse_claims, clock.mono)
+        assert len(d.state(rows(lab), lab[1])["calls"]) == 19
+        out = d.record(Pages(clock), lab[0], clock, clock.sleep, clock.mono)
+    else:
+        out = d.record(Pages(clock), lab[0], clock, reverse_claims, clock.mono)
+    assert taken == ["claude_sonnet_5_5", SMALL]
+    assert out["reason"] == "scout_repair"
+    saved = rows(lab)
+    assert [r["model"] for r in saved if r["kind"] == "scout_call" and r["wake"] == bx.iso(T0)] == [SMALL, taken[0]]
+    assert d.failed_calls(d.state(saved, lab[1]), 20) == (6, 20)
+
+
+def test_spool_refuses_symlink_ancestor_and_git_work_tree(tmp_path):
+    outside = tmp_path / "real"
+    outside.mkdir()
+    alias = tmp_path / "alias"
+    alias.symlink_to(outside, target_is_directory=True)
+    with pytest.raises((OSError, spool.Refuse)), spool.private(alias / "spool", create=True):
+        pytest.fail("symlink ancestor accepted")
+    assert not (outside / "spool").exists()
+    (outside / ".git").mkdir()
+    with pytest.raises(spool.Refuse, match="git work tree"), spool.private(outside / "spool", create=True):
+        pytest.fail("git work tree accepted")
+
+
+def seed_stale_scout_files():
+    req = make_request(d.scout_fields(SMALL, None, None, 64), T0 + timedelta(seconds=10))
+    rid = req["request_id"]
+    with spool.private(create=True) as f:
+        for kind in ("request", "claim", "reply"):
+            f.write(spool.filename(kind, rid), req)
+        f.write("heartbeat.json", {"phase": "stopped"})
+    return rid
+
+
+def test_wake_sweeps_killed_start_files_and_counts_them(lab):
+    old = seed_stale_scout_files()
+    clock = at(0)
+    out = run(lab, Pages(clock), clock, Scout(Pages(clock), clock))
+    assert out["kind"] == "wake" and d.counts(rows(lab), lab[1])["scout_ignored_replies"] == 3
+    assert not list(spool.DEFAULT.glob(f"*-{old}.json"))
+    assert (spool.DEFAULT / "heartbeat.json").exists()
+
+
+def test_absolute_reply_deadline_does_not_rebase_after_stall(lab):
+    clock = at(1, 1350)
+    reserve = T0 + timedelta(hours=1, seconds=1430)
+    seen = []
+
+    def stall(jobs, cap, grace, wall, sleep, mono, *, before_request, deadline, **kwargs):
+        assert deadline == reserve
+        clock.sleep((deadline - clock()).total_seconds() - 1)
+        def record(key, req):
+            seen.append(spool.utc(req["deadline"]))
+            before_request(key, req)
+        res = spool.exchange(jobs, cap, grace, wall, sleep, mono, deadline=deadline, before_request=record, **kwargs)
+        assert clock() == reserve
+        return res
+
+    out = d.record(Pages(clock, last={"ETH": "94"}), lab[0], clock, clock.sleep, clock.mono, stall)
+    assert seen == [reserve] and out["signals"]["W"]["entries"]["scout"]["status"] == "scout_no_runner"
+
+
 def test_start_checks_both_scouts_before_receipt_and_loop_drops_environment(lab, tmp_path, monkeypatch):
     folder, auth, data = tmp_path / "spool", tmp_path / "receipts", tmp_path / "new-desk"
     monkeypatch.setattr(spool, "DEFAULT", folder)
-    monkeypatch.setattr(d, "checked_build", lambda: "a" * 40)
-    monkeypatch.setattr(bx, "check_start", lambda *a: 0)
+    monkeypatch.setattr(d, "checked_build", lambda: BUILD)
+    monkeypatch.setattr(d, "start_gate", lambda *a: (0, None))
     clock = Clock(T0)
     env_key = "PPLX_LLM_API_KEY"
 
-    def no_runner(jobs, cap, grace, *_args):
+    def no_runner(jobs, cap, grace, *_args, **kwargs):
         assert env_key not in os.environ
-        return spool.exchange(jobs, cap, grace, clock, clock.sleep, clock.mono)
+        return spool.exchange(jobs, cap, grace, clock, clock.sleep, clock.mono, **kwargs)
 
     def backend(fail):
-        def exchange(jobs, *_args):
+        def exchange(jobs, *_args, **_kwargs):
             assert env_key not in os.environ
             assert set(jobs) == set(d.models(lab[1]).values())
             assert all(job["system_text"] == d.CHECK_SYSTEM and job["user_text"] == d.CHECK_USER for job in jobs.values())
@@ -431,6 +626,146 @@ def test_start_checks_both_scouts_before_receipt_and_loop_drops_environment(lab,
     assert Path(d.__file__).read_text().count(f'os.environ.pop("{env_key}", None)') == 2
     assert Path(d.__file__).read_text().count(env_key) == 2
     assert env_key not in Path(runner.__file__).read_text() + Path(spool.__file__).read_text()
+
+
+@pytest.fixture
+def literal_start(tmp_path, monkeypatch):
+    """Use real literal build, ledger parser, gate, and journal checks with no real approval."""
+    checkout = tmp_path / "build"
+    checkout.mkdir()
+    for name in d.PINNED:
+        (checkout / name).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(d.ROOT / name, checkout / name)
+    author = {"GIT_AUTHOR_NAME": "Brandon Church", "GIT_AUTHOR_EMAIL": "modernsoftworks@gmail.com",
+              "GIT_COMMITTER_NAME": "Brandon Church", "GIT_COMMITTER_EMAIL": "modernsoftworks@gmail.com"}
+    env = {"PATH": os.environ.get("PATH", os.defpath), "GIT_CONFIG_NOSYSTEM": "1",
+           "GIT_CONFIG_GLOBAL": os.devnull} | author
+    def git(*args):
+        return subprocess.check_output(["git", "-c", "core.hooksPath=/dev/null", *args], cwd=checkout,
+                                       env=env, stderr=subprocess.DEVNULL, text=True).strip()
+    git("init", "--quiet")
+    git("add", ".")
+    git("-c", "commit.gpgsign=false", "commit", "-qm", "Scratch audit fixture",
+        "-m", "Co-authored-by: Perplexity <noreply@perplexity.ai>")
+    build = git("rev-parse", "HEAD")
+    monkeypatch.setattr(e14, "ROOT", checkout)
+    monkeypatch.setattr(d, "ROOT", checkout)
+    monkeypatch.setattr(bx, "private_roots", lambda: (tmp_path,))
+    literal_git = e14.literal_git
+    approval = {"build": build, "generation": None}
+    def memory_ledger(*args, **kwargs):
+        if args == ("show", f"{bx.APPROVAL_REF}:{bx.LEDGER}"):
+            # The parser sees one synthetic approval in memory only. Do not write a go key.
+            key = "E17_START"
+            fields = [(key, approval["build"]), (key + "_GENERATION", approval["generation"])]
+            return "| 242 | " + " ".join("=".join((k, str(v))) for k, v in fields if v is not None) + " |"
+        return literal_git(*args, **kwargs)
+    monkeypatch.setattr(e14, "literal_git", memory_ledger)
+    clock = Clock(T0)
+    gate_obj = bx.Gate(tmp_path / "gate" / "cooldown.json", clock=clock)
+    return SimpleNamespace(clock=clock, build=build, checkout=checkout, approval=approval, gate=gate_obj,
+                           data=tmp_path / "desk", auth=tmp_path / "receipts")
+
+
+def synthetic_checks(jobs, *_args, **_kwargs):
+    return {model: fake_completion('{"check":"OK"}') for model in jobs}, [], 0
+
+
+def start_in(lab, transport=synthetic_checks):
+    return d.start(lab.clock(), lab.data, lab.auth, gate_obj=lab.gate, clock=lab.clock, check_transport=transport)
+
+
+@pytest.mark.parametrize("changed", ["pin", "generation", "approval", "cooldown"])
+def test_start_rechecks_guards_after_pending_scout_checks(literal_start, changed):
+    x = literal_start
+
+    def checks(jobs, *_args, **_kwargs):
+        if changed == "pin":
+            path = x.checkout / d.CARD
+            path.write_text(path.read_text() + "\nAn edit made while the checks are pending.\n")
+        elif changed == "generation":
+            x.gate.write(x.gate.cooldown_path.parent / bx.GENERATION, {"generation": 1})
+        elif changed == "approval":
+            x.approval["build"] = None
+        else:
+            x.gate.write(x.gate.cooldown_path, {"not_before_utc": bx.precise_utc(x.clock() + timedelta(seconds=30))})
+        return synthetic_checks(jobs)
+    with pytest.raises(bx.Refuse, match={"pin": "frozen inputs", "generation": "generation",
+                                       "approval": "committed ledger", "cooldown": "gate state"}[changed]):
+        start_in(x, checks)
+    assert not x.data.exists() and not list(x.auth.glob("*.json"))
+
+
+def test_start_generation_key_once_only_and_post_check_time(literal_start):
+    x = literal_start
+    assert x.gate.check_start() == 0
+    x.gate.write(x.gate.cooldown_path.parent / bx.GENERATION, {"generation": 3})
+    for missing_or_wrong in (None, 2):
+        x.approval["generation"] = missing_or_wrong
+        with pytest.raises(bx.Refuse, match="E17_START_GENERATION"):
+            start_in(x, lambda *_a, **_k: pytest.fail("should refuse before scout checks"))
+        assert not x.auth.exists()
+    x.approval["generation"] = 3
+    stale = seed_stale_scout_files()
+    x.clock.sleep(1199)
+
+    def checked(jobs, *_args, **_kwargs):
+        assert not list(spool.DEFAULT.glob(f"*-{stale}.json"))
+        x.clock.sleep(2)
+        return synthetic_checks(jobs)
+
+    out = start_in(x, checked)
+    assert out["first_wake"] == bx.iso(T0 + bx.HOUR) and out["scout_start_ignored"] == 3
+    receipt, = list(x.auth.glob("*.json"))
+    assert json.loads(receipt.read_text())["made_utc"] == bx.precise_utc(x.clock())
+    with bx.locked(x.data) as path:
+        saved = bx.read_log(path)
+    assert saved[0]["venue_generation"] == 3 and d.counts(saved, d.settings())["scout_ignored_replies"] == 3
+    with pytest.raises(bx.Refuse, match="already used"):
+        start_in(x, lambda *_a, **_k: pytest.fail("used approval must not dispatch checks"))
+    assert list(x.auth.glob("*.json")) == [receipt]
+
+
+def test_foreign_build_cannot_start_through_real_runner(literal_start):
+    x = literal_start
+
+    async def should_not_call(_):
+        pytest.fail("foreign runner must not make a matching call")
+
+    def exchange(jobs, cap, grace, *_args, **kwargs):
+        return spool.exchange(jobs, cap, grace, x.clock,
+                              runner_on_poll(spool.DEFAULT, x.clock, should_not_call, build="b" * 40),
+                              x.clock.mono, **kwargs)
+    with pytest.raises(bx.Refuse, match="scout_no_runner|SCOUT_NO_RUNNER"):
+        start_in(x, exchange)
+    assert not x.auth.exists() and not x.data.exists()
+
+
+@pytest.mark.parametrize("foreign_claim", [False, True])
+def test_trading_rejects_foreign_build_claim_or_reply(lab, foreign_claim):
+    clock, dispatched = at(1), []
+
+    def fake_runner(seconds):
+        clock.sleep(seconds)
+        if dispatched:
+            return
+        with spool.private() as folder:
+            name, = [n for n in folder.names() if n.startswith("request-")]
+            req = folder.read(name)
+            rid = req["request_id"]
+            foreign = "b" * 40
+            if foreign_claim:
+                folder.write(spool.filename("claim", rid), spool.claim_record(req, foreign, clock()))
+                assert folder.transfer(rid, "taken")
+            else:
+                assert take(folder, req, clock)
+            folder.write(spool.filename("reply", rid), spool.reply_envelope(req, foreign, fake_completion()))
+            dispatched.append(rid)
+    out = d.record(Pages(clock, last={"ETH": "94"}), lab[0], clock, fake_runner, clock.mono)
+    result, = out["scout_results"].values()
+    assert result["status"] == ("scout_no_runner" if foreign_claim else "call_timeout")
+    assert out["scout_ignored_replies"] == (2 if foreign_claim else 1)
+    assert d.failed_calls(d.state(rows(lab), lab[1]), 20) == ((0, 0) if foreign_claim else (1, 1))
 
 
 def rows(lab):
@@ -822,7 +1157,7 @@ def test_exit_retry_capped_at_last_exit_wake(tmp_path, monkeypatch):
     with bx.locked(p) as path:
         r = []
         bx.write_anchor(path, bx.anchor_state(r))
-        bx.append(path, r, kind="header", first=bx.iso(T0), venue_generation=0, freeze="<test>", frozen=d.frozen(short()))
+        bx.append(path, r, kind="header", first=bx.iso(T0), venue_generation=0, freeze=BUILD, frozen=d.frozen(short()))
     lab = (p, short())
     clock = at(1)
     pages = Pages(clock, last={"ETH": "94"})
