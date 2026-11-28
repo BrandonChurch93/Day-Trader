@@ -1,0 +1,34 @@
+{
+  "book_unavailable_coin_wakes": 0,
+  "candle_page_refusals": 0,
+  "card": "E16",
+  "cooldown_void_follow_coin_slots": 0,
+  "cooldown_void_wakes": 0,
+  "displayed_half_spread": {"median_bp": null, "n": 0, "p90_bp": null},
+  "follow_observations": 0,
+  "interrupted_wakes": 0,
+  "late_wakes": 0,
+  "lines": {
+    "main": {
+      "all_in_cost_by_side": {"buy": {"median_bp": null, "n": 0, "p90_bp": null}, "sell": {"median_bp": null, "n": 0, "p90_bp": null}},
+      "attempt_flags": {"book_late": 0, "book_missing": 0, "insufficient_depth": 0, "minimum_unknown": 0, "over_maximum": 0, "pair_unavailable": 0, "under_minimum": 0, "unplaceable_after_cash_scaling": 0, "void_buy": 0},
+      "attempts": 0,
+      "fills": 0,
+      "queued_sell_coin_wakes": 0
+    },
+    "shown": {
+      "all_in_cost_by_side": {"buy": {"median_bp": null, "n": 0, "p90_bp": null}, "sell": {"median_bp": null, "n": 0, "p90_bp": null}},
+      "attempt_flags": {"book_late": 0, "book_missing": 0, "insufficient_depth": 0, "minimum_unknown": 0, "over_maximum": 0, "pair_unavailable": 0, "under_minimum": 0, "unplaceable_after_cash_scaling": 0, "void_buy": 0},
+      "attempts": 0,
+      "fills": 0,
+      "queued_sell_coin_wakes": 0
+    }
+  },
+  "missed_wakes": 0,
+  "not_ready_coin_wakes": 0,
+  "other_gate_void_wakes": 0,
+  "roster_count": null,
+  "status": "REGISTERED",
+  "unavailable_wakes": 0,
+  "wakes": 0
+}

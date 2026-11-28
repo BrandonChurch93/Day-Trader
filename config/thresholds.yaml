@@ -1441,6 +1441,19 @@ forward_e13:
   note: Ledger 231. Reuse the E10 timing and bankroll keys, its frozen Plan 75 rule key and the separate Binance.US fee key. One USD venue, no keys or orders; audit and committed start authorization before collection.
   source: practice/traders/E13_coin_trend_ratchet_binance_us.md
 
+forward_e16:
+  value:
+    ledger_row: 241
+    prior_ref: forward_e13
+    directory_max_bytes: 8388608
+    busy_ref: forward_e14
+    busy_poll_s: 0.25
+    private_dir: /home/user/workspace/rig/data/forward_e16
+    authorization_dir: /home/user/workspace/rig/data/forward_e16_authorizations
+  status: STATED
+  note: Ledger 241. E13 rebuilt with the frozen Plan 75 roster, a larger pair directory cap and the E14 shared gate wait. Separate committed start and score approvals.
+  source: practice/traders/E16_coin_trend_ratchet_binance_us.md
+
 replay_75_plan:
   value:
     repeat: ["2020-01-01", "2024-01-01"]
