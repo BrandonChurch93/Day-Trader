@@ -133,6 +133,11 @@ def clock_at(text):
     return datetime.fromisoformat(text)
 
 
+def check_not_early(stamp, not_before):
+    if not_before is not None and stamp < not_before:
+        raise bx.Failure('clock_before_window')
+
+
 def blob(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False)
 
@@ -365,6 +370,7 @@ class BinanceUS:
     def __init__(self, f, gate=None, clock=now_utc, generation=0, sleep=None):
         self.f, self.last = f, -math.inf
         self.gate, self.clock, self.deadline = venue_gate(gate, clock), clock, None
+        self.not_before = None
         self.generation = generation
         self.sleep = sleep if sleep is not None else time.sleep
         self.retry_delay_s = 0.
@@ -382,6 +388,7 @@ class BinanceUS:
     def send_slot(self):
         """A busy lock can retry only before its context has granted permission to send."""
         begun, monotonic = self.clock(), time.monotonic()
+        check_not_early(begun, self.not_before)
         wait = self.f['busy_wait_s']
 
         def retry_deadline(now):
@@ -393,6 +400,7 @@ class BinanceUS:
             deadline = self.deadline
             if busy:
                 now = self.clock()
+                check_not_early(now, self.not_before)
                 deadline = retry_deadline(now)
                 if now >= deadline:
                     raise bx.Failure('shared_gate_busy')
@@ -436,6 +444,7 @@ class BinanceUS:
             no_status = False
             retry, retry_at, wait_until, attempted = None, None, None, None
             status, body_error, outcome = None, None, 'INTERRUPTED'
+            received_early = False
             try:
                 with self.send_slot():
                     self.last = time.monotonic()
@@ -466,24 +475,33 @@ class BinanceUS:
                     try:
                         with bx.wall_budget(timeout, timeout < self.f['timeout_s']):
                             attempted = self.clock()
+                            if self.not_before is not None and attempted < self.not_before:
+                                self.gate.cancel_unsent()
+                                check_not_early(attempted, self.not_before)
                             inp = self.opener.open(req, timeout=timeout)
                             replied = True
                             try:
+                                if self.not_before is not None:
+                                    received_early = self.clock() < self.not_before
                                 status = getattr(inp, 'status', None)
                                 if status is None and callable(getattr(inp, 'getcode', None)):
                                     status = inp.getcode()
                                 if status == 429:
                                     headers = getattr(inp, 'headers', None)
                                     retry_after = headers.get('Retry-After') if headers is not None else None
-                                if status is None or (type(status) is int and 200 <= status < 300):
+                                if not received_early and (status is None or (type(status) is int and 200 <= status < 300)):
                                     data = inp.read(max_bytes + 1)
                             finally:
+                                if self.not_before is not None:
+                                    received_early |= self.clock() < self.not_before
                                 inp.close()
                     except Exception as exc:
                         if replied:
                             body_error = exc
                         elif isinstance(exc, error.HTTPError):
                             status = exc.code
+                            if self.not_before is not None:
+                                received_early = self.clock() < self.not_before
                             with suppress(Exception):
                                 retry_after = exc.headers.get('Retry-After') if exc.headers is not None else None
                             with suppress(Exception):
@@ -497,6 +515,8 @@ class BinanceUS:
                         self.gate.http_error(status, retry_after)
                         raise PublicStatus(status)
                     self.gate.reply_received()
+                    if received_early:
+                        raise bx.Failure('clock_before_window')
                     if status is not None and type(status) is not int:
                         raise Refuse('invalid public HTTP status')
                     if body_error is not None:
@@ -513,6 +533,9 @@ class BinanceUS:
                 return value
             except bx.Cooldown as exc:
                 outcome = 'NO_HTTP_STATUS' if no_status else f'HTTP_{status}' if status else 'SHARED_COOLDOWN'
+                if received_early:
+                    outcome = 'CLOCK_BEFORE_WINDOW'
+                    raise bx.Failure('clock_before_window') from None
                 if not no_status or self.deadline is None or exc.not_before >= self.deadline or attempt + 1 >= self.f['request_attempts']:
                     raise
                 prior_no_status_at, wait_until = attempted, exc.not_before
@@ -530,6 +553,9 @@ class BinanceUS:
                 outcome = f'HTTP_{exc.code}'
                 if 300 <= exc.code < 400:
                     raise Blocked('public endpoint redirected') from None
+                if received_early:
+                    outcome = 'CLOCK_BEFORE_WINDOW'
+                    raise bx.Failure('clock_before_window') from None
                 if not 500 <= exc.code < 600:
                     raise PageRefused(outcome, 'public request refused') from None
                 last_page_failure = outcome
@@ -900,14 +926,17 @@ def page(fetch, failures, key, *args):
         return None
 
 
-def snapshots(venue, coins, wake, clock, deadline):
+def snapshots(venue, coins, wake, clock, deadline, not_before=None):
     result, failed = {}, {}
     for coin in coins:
-        if clock() >= deadline:
+        dispatch = clock()
+        check_not_early(dispatch, not_before)
+        if dispatch >= deadline:
             failed[coin] = 'WINDOW_ELAPSED'
             continue
         book = page(venue.book, failed, coin)
         received = clock()
+        check_not_early(received, not_before)
         if book and wake <= received < deadline:
             result[coin] = book | {'received': iso(received), 'timely': True,
                                    'retry_delay_s': getattr(venue, 'retry_delay_s', 0.)}
@@ -919,8 +948,12 @@ def snapshots(venue, coins, wake, clock, deadline):
 def capture(fd, log, wake, observed, venue, clock, f, rule, fees, closing, deadline):
     before = [row for row in log if row['kind'] == 'wake']
     roster = list(frozen(f['rule_source_sha256']).NAMES)
+    not_before = wake + timedelta(seconds=f['wake_delay_s'])
+    check_not_early(clock(), not_before)
     pairs = venue.products(roster)
-    if clock() >= deadline:
+    received = clock()
+    check_not_early(received, not_before)
+    if received >= deadline:
         raise bx.Failure('wake_window_elapsed')
     since = (clock_at(before[-1]['wake']) if before else
              wake - timedelta(days=warmup_days(rule)))
@@ -934,11 +967,15 @@ def capture(fd, log, wake, observed, venue, clock, f, rule, fees, closing, deadl
             continue
         cursor = since
         while cursor < wake:
-            if clock() >= deadline:
+            dispatch = clock()
+            check_not_early(dispatch, not_before)
+            if dispatch >= deadline:
                 raise bx.Failure('wake_window_elapsed')
             until = min(wake, cursor + timedelta(days=f['candle_page_days']))
             bars = page(venue.candles, row['candle_failures'], coin, cursor, until)
-            if clock() >= deadline:
+            received = clock()
+            check_not_early(received, not_before)
+            if received >= deadline:
                 raise bx.Failure('wake_window_elapsed')
             if bars is not None:
                 row['candles'].setdefault(coin, {}).update(bars)
@@ -956,7 +993,7 @@ def capture(fd, log, wake, observed, venue, clock, f, rule, fees, closing, deadl
                                         roster=roster, order_coins=order_coins, candle_sha256=digest(row['candles'])))
         row['intent'] = decision['intent']
         row['decision_sha256'] = decision['sha256']
-        row['depth'], row['depth_failures'] = snapshots(venue, order_coins, wake, clock, deadline)
+        row['depth'], row['depth_failures'] = snapshots(venue, order_coins, wake, clock, deadline, not_before)
         row['late'] = any(reason == 'WINDOW_ELAPSED' for reason in row['depth_failures'].values())
         row['books'], follow = {}, set()
         for label in f['bankroll_usd']:
@@ -1029,6 +1066,8 @@ def record(now, venue=None, folder=None, clock=now_utc, sleep=time.sleep):
             frozen(f['rule_source_sha256'])
             append(fd, rows, dict(kind='claim', wake=iso(wake), claimed=iso(clock())))
             try:
+                if isinstance(venue, BinanceUS):
+                    venue.not_before = wake + timedelta(seconds=f['wake_delay_s'])
                 with retry_journal(venue, fd, rows, wake, 'CLOSE' if wake == end else 'PRIMARY'):
                     row = capture(fd, rows, wake, now, venue, clock, f, rule, fees, closing=wake == end, deadline=deadline)
             except (Blocked, bx.Blocked, bx.GateTerminal, bx.Refuse) as exc:
@@ -1036,6 +1075,9 @@ def record(now, venue=None, folder=None, clock=now_utc, sleep=time.sleep):
                 raise Blocked(str(exc)) from None
             except (Refuse, bx.Failure, OSError, ValueError, TypeError, KeyError) as exc:
                 return append(fd, rows, dict(kind='void', wake=iso(wake), reason=wake_reason(exc)))
+            finally:
+                if isinstance(venue, BinanceUS):
+                    venue.not_before = None
             row = append(fd, rows, row)
         for offset in f['quote_offsets_s']:
             if not row.get('follow'):

@@ -338,6 +338,80 @@ class Tests(unittest.TestCase):
             send.assert_called_once()
         self.assertEqual(e.alive(self.folder)['unavailable_wakes'], 3)
 
+    def test_primary_window_rechecks_dispatch_and_receipt_with_real_gate(self):
+        opening = self.f['wake_delay_s']
+        closing = self.f['quote_offsets_s'][-1]
+        for case in ('early_send', 'early_receipt', 'at_open', 'at_close'):
+            with self.subTest(case=case):
+                self.folder = self.temp / case
+                self.start()
+                clock = FakeClock(T, closing if case == 'at_close' else opening)
+                gate = self.gate(clock)
+                venue = e.BinanceUS(self.f, gate, clock, sleep=clock.sleep)
+                real_attempt = gate.attempt
+                sent = []
+
+                @contextmanager
+                def attempt(deadline, *, generation):
+                    with real_attempt(deadline, generation=generation) as locked:
+                        if case == 'early_send':
+                            clock.sleep(-1)
+                        yield locked
+
+                def reply(*_, **__):
+                    sent.append(clock())
+                    if case == 'early_receipt':
+                        clock.sleep(-1)
+                    return io.BytesIO(b'{"symbols":[]}')
+
+                with patch.object(gate, 'attempt', side_effect=attempt), patch.object(venue.opener, 'open', side_effect=reply):
+                    row = e.record(clock(), venue, self.folder, clock, clock.sleep)
+
+                expected_sends = [T + timedelta(seconds=opening)] if case in ('early_receipt', 'at_open') else []
+                self.assertEqual(sent, expected_sends)
+                if case == 'at_open':
+                    self.assertEqual(row['kind'], 'wake')
+                else:
+                    self.assertEqual((row['kind'], row['reason']),
+                                     ('void', 'LATE_WAKE' if case == 'at_close' else 'CLOCK_BEFORE_WINDOW'))
+                    self.assertFalse({'candles', 'depth', 'intent'} & row.keys())
+                self.assertFalse((self.temp / 'shared' / 'inflight.json').exists())
+                self.assertIsNone(venue.not_before)
+
+    def test_early_candle_and_primary_book_bodies_cannot_feed_the_wake(self):
+        endpoints = ('/api/v3/exchangeInfo', '/api/v3/klines', '/api/v3/depth')
+        for ending in (1, 2):
+            with self.subTest(endpoint=endpoints[ending]):
+                self.folder = self.temp / f'early-{ending}'
+                self.start()
+                clock = FakeClock(T)
+                venue = e.BinanceUS(self.f, self.gate(clock), clock, sleep=lambda _: None)
+                calls = []
+
+                class EarlyBody(io.BytesIO):
+                    def read(self, size):
+                        clock.sleep(-1)
+                        return super().read(size)
+
+                def reply(req, **_):
+                    path = urlsplit(req.full_url).path
+                    calls.append(path)
+                    if path == endpoints[0]:
+                        body = {'symbols': [pair() | {'symbol': 'BTCUSD', 'baseAsset': 'BTC', 'quoteAsset': 'USD'}]}
+                    else:
+                        body = [] if path == endpoints[1] else BOOK
+                    stream = EarlyBody if path == endpoints[ending] else io.BytesIO
+                    return stream(json.dumps(body).encode())
+
+                with patch.object(venue.opener, 'open', side_effect=reply):
+                    row = e.record(clock(), venue, self.folder, clock, clock.sleep)
+                self.assertEqual(calls, list(endpoints[:ending + 1]))
+                self.assertEqual((row['kind'], row['reason']), ('void', 'CLOCK_BEFORE_WINDOW'))
+                kinds = [r['kind'] for r in self.rows()]
+                self.assertNotIn('wake', kinds)
+                self.assertNotIn('follow', kinds)
+                self.assertFalse({'candles', 'depth', 'books'} & row.keys())
+
     def test_shared_gate_busy_retries_only_unsent_within_both_bounds(self):
         def exercise(fail_until, window, after_send=False):
             clock = FakeClock(T)
