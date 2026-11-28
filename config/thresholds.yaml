@@ -1431,6 +1431,129 @@ practice_e15_s_hold_minutes:
   note: Card E15 S. 24-hour hold, time exit only.
   source: practice/desk_e15_cards/E15S.json
 
+forward_e17:
+  value:
+    ledger_row: 242
+    fee_ref: forward_e10_binance_us
+    not_before_utc: "2026-11-28T06:00:00Z"
+    window_open_s: 1200
+    book_cutoff_s: 1490
+    window_close_s: 1500
+    busy_wait_s: 20
+    candle_hours: 48
+    size_usd: 250
+    seed: 20261127
+    small_model: gpt5_mini
+    second_model: claude_sonnet_5_5
+    scout_timeout_s: 120
+    scout_min_s: 10
+    scout_max_tokens: 8000
+    runner_claim_s: 20
+    runner_check_max_tokens: 256
+    entry_reserve_s: 60
+    exit_retry_wakes: 24
+    repair_window_calls: 20
+    repair_max_failed: 5
+    t_mark: 2.0
+    trim_best: 2
+    cards:
+      W: {coins: [AAVE, ADA, BCH, BTC, ETH, HBAR, LINK, LTC, SHIB, XLM, XRP], fall: 0.05, hold_hours: 24, max_open: 1, judging_count: 60, judging_floor: 30, last_wake_utc: "2028-11-30T23:00:00Z"}
+      F: {lag: 2, threshold: 0.015, multiple: 2.0, hold_hours: 2, max_open: 1, judging_count: 150, judging_floor: 60, last_wake_utc: "2028-11-30T23:00:00Z"}
+      S: {scan_hours: [0, 4, 8, 12, 16, 20], cost_limit_bp: 25, hold_hours: 24, max_open: 6, judging_count: 240, judging_floor: 120, last_wake_utc: "2027-03-31T20:00:00Z"}
+  status: STATED
+  note: Ledger row 242. Keeps E15's frozen trading settings. Private scout request handoff, limited claim wait, and a short runner check of each scout before startup receipts.
+  source: practice/traders/E17_live_desk.md
+
+practice_e17_max_age_minutes:
+  value: 30
+  status: STATED
+  note: Card E17. How old the closed hour behind a desk candidate may be when the gate reads it (window ends 25 minutes after the hour).
+  source: practice/desk_e17_cards/E17W.json
+
+practice_e17_pick_life_minutes:
+  value: 10
+  status: STATED
+  note: Card E17. Life of the gate's pick record; the desk fills from its own post-decision book in the same window.
+  source: practice/desk_e17_cards/E17W.json
+
+practice_e17_size_usd:
+  value: 250
+  status: STATED
+  note: Card E17. Flat pretend dollars per ticket on every line.
+  source: practice/traders/E17_live_desk.md
+
+practice_e17_fee_bps_per_side:
+  value: 2
+  status: STATED
+  note: Card E17. Binance.US taker fee as forward_e10_binance_us (BNB 1 bp is applied by the desk itself).
+  source: https://www.binance.us/fees
+
+practice_e17_slippage_bps_per_side:
+  value: 0
+  status: STATED
+  note: Card E17. Zero because the desk walks a fresh book instead of assuming slippage.
+  source: practice/traders/E17_live_desk.md
+
+practice_e17_w_min_bars:
+  value: 2
+  status: STATED
+  note: Card E17 W. Two closed hourly bars, the prior close and the last close.
+  source: practice/desk_e17_cards/E17W.json
+
+practice_e17_w_lookback_bars:
+  value: 1
+  status: STATED
+  note: Card E17 W. The fall is measured over one closed hour.
+  source: practice/desk_e17_cards/E17W.json
+
+practice_e17_w_min_fall:
+  value: 0.05
+  status: STATED
+  note: Card E17 W. At least 5% below the prior hourly close, as E14 and Plan 76.
+  source: practice/desk_e17_cards/E17W.json
+
+practice_e17_w_hold_minutes:
+  value: 1440
+  status: STATED
+  note: Card E17 W. 24-hour hold, time exit only.
+  source: practice/desk_e17_cards/E17W.json
+
+practice_e17_f_min_bars:
+  value: 3
+  status: STATED
+  note: Card E17 F. Three closed hourly bars for the two-hour move.
+  source: practice/desk_e17_cards/E17F.json
+
+practice_e17_f_lookback_bars:
+  value: 2
+  status: STATED
+  note: Card E17 F. The two-hour lag of rule 70-102.
+  source: practice/desk_e17_cards/E17F.json
+
+practice_e17_f_min_fall:
+  value: 0.0295
+  status: STATED
+  note: Card E17 F. A necessary floor the gate can check per coin. Any 70-102 qualifier fell more than 1 - exp(-0.03), about 2.955%, over two hours. The BTC condition and the relative check are recomputed by the desk from the same candles.
+  source: practice/desk_e17_cards/E17F.json
+
+practice_e17_f_hold_minutes:
+  value: 120
+  status: STATED
+  note: Card E17 F. 2-hour hold, time exit only.
+  source: practice/desk_e17_cards/E17F.json
+
+practice_e17_s_min_bars:
+  value: 24
+  status: STATED
+  note: Card E17 S. A qualifier needs 24 closed hourly bars. The walked-cost limit is checked by the desk from its own book.
+  source: practice/desk_e17_cards/E17S.json
+
+practice_e17_s_hold_minutes:
+  value: 1440
+  status: STATED
+  note: Card E17 S. 24-hour hold, time exit only.
+  source: practice/desk_e17_cards/E17S.json
+
 forward_e13:
   value:
     operations_ref: forward_e10
