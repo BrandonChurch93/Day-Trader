@@ -412,6 +412,45 @@ class Tests(unittest.TestCase):
                 self.assertNotIn('follow', kinds)
                 self.assertFalse({'candles', 'depth', 'books'} & row.keys())
 
+    def test_primary_wire_suppresses_each_endpoint_at_final_deadline_sample(self):
+        endpoints = ('/api/v3/exchangeInfo', '/api/v3/klines', '/api/v3/depth')
+        cutoff = self.f['quote_offsets_s'][-1]
+        for ending, endpoint in enumerate(endpoints):
+            with self.subTest(endpoint=endpoint):
+                self.folder = self.temp / f'deadline-{ending}'
+                self.start()
+                clock = FakeClock(T, cutoff - 1)
+                gate = self.gate(clock)
+                venue = e.BinanceUS(self.f, gate, clock, sleep=lambda _: None)
+                calls = []
+                real_budget = e.bx.wall_budget
+                stepped = []
+
+                @contextmanager
+                def budget(seconds, window_limited):
+                    with real_budget(seconds, window_limited):
+                        if len(calls) == ending:
+                            stepped.append(clock())
+                            clock.sleep(1)
+                        yield
+
+                def reply(req, **_):
+                    path = urlsplit(req.full_url).path
+                    calls.append(path)
+                    if path == endpoints[0]:
+                        body = {'symbols': [pair() | {'symbol': 'BTCUSD', 'baseAsset': 'BTC', 'quoteAsset': 'USD'}]}
+                    else:
+                        body = [] if path == endpoints[1] else BOOK
+                    return io.BytesIO(json.dumps(body).encode())
+
+                with patch.object(e.bx, 'wall_budget', side_effect=budget), patch.object(venue.opener, 'open', side_effect=reply):
+                    row = e.record(clock(), venue, self.folder, clock, clock.sleep)
+                self.assertEqual(stepped, [T + timedelta(seconds=cutoff - 1)])
+                self.assertEqual(clock(), T + timedelta(seconds=cutoff))
+                self.assertEqual(calls, list(endpoints[:ending]))
+                self.assertEqual((row['kind'], row['reason']), ('void', 'WAKE_WINDOW_ELAPSED'))
+                self.assertFalse((self.temp / 'shared' / 'inflight.json').exists())
+
     def test_shared_gate_busy_retries_only_unsent_within_both_bounds(self):
         def exercise(fail_until, window, after_send=False):
             clock = FakeClock(T)

@@ -478,6 +478,10 @@ class BinanceUS:
                             if self.not_before is not None and attempted < self.not_before:
                                 self.gate.cancel_unsent()
                                 check_not_early(attempted, self.not_before)
+                            if self.deadline is not None and attempted >= self.deadline:
+                                self.gate.cancel_unsent()
+                                outcome = 'NOT_SENT_WINDOW_ELAPSED'
+                                raise bx.Failure('wake_window_elapsed')
                             inp = self.opener.open(req, timeout=timeout)
                             replied = True
                             try:
