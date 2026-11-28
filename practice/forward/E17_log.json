@@ -75,5 +75,7 @@
   "status": "STARTED",
   "stop": null,
   "void_reasons": {},
-  "wake_counts": {}
+  "wake_counts": {
+    "wake": 1
+  }
 }
