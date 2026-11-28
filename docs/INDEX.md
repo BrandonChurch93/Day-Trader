@@ -715,14 +715,11 @@ Working papers.
 | `practice/forward_e11.py`, `practice/test_forward_e11.py` | E11 forward recorder, E09 signal reuse, depth walking and bounded resting-bid evidence, anchored private log, and invented-data tests | CURRENT |
 | `practice/forward/E11_log.json` | E11 public counts, book clocks and cost aggregates only, no prices or profit; not started | RECORD |
 | `practice/traders/E13_coin_trend_ratchet_binance_us.md` | Ledger 231, the frozen Plan 75 daily rule on Binance.US USD and pretend depth-walk fills; closed unstarted at its first wake, replaced by E16 (ledger 241) | RECORD |
-| `practice/forward_e13.py`, `practice/test_forward_e13.py` | E13 logger, frozen rule extraction, private hash chain and invented candle and depth tests | CURRENT |
-| `practice/forward/E13_log.json` | E13 public counts; the card stopped unstarted at its first wake on 2026-11-27 and is closed (ledger 231) | RECORD |
-| `practice/traders/E13_coin_trend_ratchet_binance_us.md` | Ledger 231, the frozen Plan 75 daily rule on Binance.US USD; closed unstarted | RECORD |
 | `practice/forward_e13.py`, `practice/test_forward_e13.py` | Frozen logger and invented candle and depth tests for E13, closed unstarted | RECORD |
-| `practice/forward/E13_log.json` | E13 public counts file; card closed unstarted on ledger 231 | RECORD |
-| `practice/traders/E16_coin_trend_ratchet_binance_us.md` | Ledger 241, E13 rebuilt with the fixed Plan 75 roster; audit and start approval required | DRAFT |
+| `practice/forward/E13_log.json` | E13 public counts; the card stopped unstarted at its first wake on 2026-11-27 and is closed (ledger 231) | RECORD |
+| `practice/traders/E16_coin_trend_ratchet_binance_us.md` | Ledger 241, E13 rebuilt with the fixed Plan 75 roster; audited CLEAR and started 2026-11-27; the file is pinned by the running card and must not be edited | CURRENT |
 | `practice/forward_e16.py`, `practice/test_forward_e16.py` | E16 logger, frozen rule extraction, private hash chain and invented candle, depth, wake and gate tests | CURRENT |
-| `practice/forward/E16_log.json` | E16 public aggregate counts and cost statistics only; not started | RECORD |
+| `practice/forward/E16_log.json` | E16 public aggregate counts and cost statistics only | RECORD |
 | `practice/measure_132.py`, `practice/test_measure_132.py` | Measurement 132 forward-only taker cost logger, private hash-chained observations, and network-free made-up book checks | CURRENT |
 | `practice/forward/M132_log.json` | Measurement 132 public state; once published, counts and pooled costs only, no prices or returns. Not started | RECORD |
 | `practice/traders/E12_dip_buy_binance_us.md` | Ledger 230 forward dip-buy rules on Binance.US USD candles and books | DRAFT |
