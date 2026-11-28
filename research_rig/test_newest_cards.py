@@ -248,7 +248,7 @@ def test_e10_card_is_stopped_and_shows_wakes_only(tmp_path):
         assert c["numbers"] == [["Wakes recorded before the stop", wakes]] and "columns" not in c
         assert not re.search(r"bp|cost|spread|fill|order|\$", json.dumps(c), re.I)
         assert [l[0] for l in c["links"]] == ["E10 card", "Log counts"]
-    assert [x["id"] for x in NC.cards("GH/")][-7:] == ["e09", "e10", "e12", "e13", "m133", "m134", "e14"]
+    assert [x["id"] for x in NC.cards("GH/")][-8:] == ["e09", "e10", "e12", "e13", "e16", "m133", "m134", "e14"]
     assert "Standing chore" not in open(NC.__file__).read()
 
 
@@ -272,7 +272,9 @@ def test_e10_refuses_a_log_of_another_shape(tmp_path, change):
         NC.e10_card("GH/", path)
 
 
-RUNNING = {"e12": ("135", "230", "Judged at 150 trades or 2027-11-30.")}
+RUNNING = {"e12": ("135", "230", "Judged at 150 trades or 2027-11-30."),
+           "e16": ("152", "241", "Read once, a year after the first recorded wake.")}
+SINCE = {"e12": "Running since 2026-11-26 5:39 PM MT", "e16": "Running since 2026-11-27 6:35 PM MT; first daily wake 2026-11-28 5:00 PM MT"}
 
 
 def test_running_cards_from_the_real_queue_and_ledger():
@@ -281,7 +283,7 @@ def test_running_cards_from_the_real_queue_and_ledger():
         c = got[id_]
         assert c["verdict"] == "Running, no result yet" and c["tone"] == "info"
         assert c["numbers"] == [] and "columns" not in c and "bars" not in c
-        assert "Running since 2026-11-26 5:39 PM MT" in c["summary"] and read_rule in c["summary"]
+        assert SINCE[id_] in c["summary"] and read_rule in c["summary"]
         assert c["summary"].endswith("No result exists yet, so no figure is shown.")
         assert f"row {qrow}" in c["basis"] and f"row {lrow}" in c["basis"]
         assert "Binance.US data only" in c["summary"] or "on Binance.US" in c["summary"]

@@ -406,6 +406,17 @@ def e12_card(gh):
                         read_rule=m[0], link=one_file("practice/traders", "E12_"))
 
 
+def e16_card(gh):
+    led = " ".join(ledger_row("241"))
+    if "Everything fixed on row 231 for E13 carries over unchanged" not in led or "The coin list is fixed by this row" not in led:
+        raise ValueError("E16 card: ledger row 241 no longer states what carries over from E13 and that the coin list is fixed")
+    return running_card(gh, id_="e16", name="E16", queue_row="152", ledger_n="241", start_key="E16_START",
+                        what=("Card E13 rebuilt after it stopped at its first wake: the Plan 75 trend rule on Binance.US data only, "
+                              "with pretend money. The coin list is fixed in advance, so one bad wake is a void day and no longer "
+                              "ends the card."),
+                        read_rule="Read once, a year after the first recorded wake.", link=one_file("practice/traders", "E16_"))
+
+
 E13_STOP_RE = re.compile(r"^STOPPED (\d{4}-\d{2}-\d{2} \d{1,2}:\d{2} [AP]M MT) at its first wake; closed unstarted "
                          r"\(ledger 231\)\. Replaced by card (E\d+), row (\d+)\.")
 
@@ -622,5 +633,5 @@ def running_now():
     return [[c[0], first_sentence(c[1]), row_state(c[-1]) if len(c) >= 3 else None] for c in queue_rows()]
 
 def cards(gh):
-    return [plan76_card(gh), plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh), e12_card(gh), e13_card(gh),
+    return [plan76_card(gh), plan75_card(gh), sweep_card(gh), plan73_card(gh), e09_card(gh), e10_card(gh), e12_card(gh), e13_card(gh), e16_card(gh),
             m133_card(gh), m134_card(gh), e14_card(gh)]
