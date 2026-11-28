@@ -31,14 +31,18 @@
         "scout_second-random": 0,
         "scout_small-random": 0
       },
-      "entries_by_line_and_status": {},
+      "entries_by_line_and_status": {
+        "random:ok": 1,
+        "scout_second:ok": 1,
+        "scout_small:ok": 1
+      },
       "judging_count": 240,
       "open_by_line": {
-        "random": 0,
-        "scout_second": 0,
-        "scout_small": 0
+        "random": 1,
+        "scout_second": 1,
+        "scout_small": 1
       },
-      "signals": 0,
+      "signals": 1,
       "void_filters": 0
     },
     "W": {
@@ -65,17 +69,19 @@
   "failed_in_first_calls": {
     "failed": 0,
     "limit": 5,
-    "of": 0
+    "of": 2
   },
-  "scout_calls": 0,
+  "scout_calls": 2,
   "scout_error_status": {},
   "scout_ignored_replies": 0,
   "scout_no_runner": 0,
-  "scout_status": {},
+  "scout_status": {
+    "ok": 2
+  },
   "status": "STARTED",
   "stop": null,
   "void_reasons": {},
   "wake_counts": {
-    "wake": 1
+    "wake": 3
   }
 }
