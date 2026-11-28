@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-28 01:38 UTC
+Last updated: 2026-11-28 05:08 UTC
 
 What has been tested and what happened. Read it after `AGENTS.md`. If another page disagrees with this one about a result, this page stands. What gets tested next is in `docs/QUEUE.md`. Words and test names are in `docs/GLOSSARY.md`.
 
@@ -15,6 +15,7 @@ What has been tested and what happened. Read it after `AGENTS.md`. If another pa
 
 Newest first. See [the scorecard](research/95_where_we_stand_after_32_tests.md) for the full scored list.
 
+- 2026-11-27 10:08 PM MT, card E15 (the live desk, ledger 237): the first open scan ran at 9:20 PM MT and both model scout calls failed. MEASURED: the random line took its pretend entry; 2 scout calls, 2 call errors. Cause MEASURED with one diagnostic call each way: the model credential a long-running job inherits at launch stops working later (the service answers that the session token is invalid or expired), while a live agent command's credential works. This is plumbing, not a result about the scouts: no scout reply was ever received. The build is not changed or restarted; under the card's own rule a repaired build is a new attempt, registered as card E17 (ledger 242, queue 153) with the fix written before any code. No profit figure was read.
 - 2026-11-27 6:35 PM MT, card E16 started (queue 152, ledger 241): card E13 rebuilt, the Plan 75 trend rule on Binance.US data with pretend money. The independent audit returned NOT CLEAR twice, each on one clock edge at the open or close of the trading window; both were fixed and re-tested, then CLEAR at build `eb4ba19`. The coin list is fixed on the ledger, so a bad wake is a void day and can no longer end the card. First daily wake 2026-11-28 5:00 PM MT; read once, a year after the first recorded wake. No result.
 - 2026-11-27 6:25 PM MT, card E15 started (queue 141, ledger 237): the live pretend-money desk on Binance.US where cheap model scouts propose and plain code decides, fills and exits, each scout line beside a rule-only line and a random line on the same books. MEASURED after the first window: one wake recorded, no stop, no error, no scout call yet because nothing qualified. No result; it is judged only at the trade counts fixed on the ledger (card W 60, card F 150, card S 240 closed pairs). The planned pause of E12 and E14 (4:50 to 5:15 PM MT) ran as written: one void wake each, both loops back and recording.
 - 2026-11-27 6:12 PM MT, card E13 closed unstarted (queue 136, ledger 231): MEASURED, at its first daily wake the Binance.US pair list reply was 1,095,062 bytes against the card's own limit of 1,048,576 bytes; the card refused it and, by its own first-wake rule, stopped for good. Nothing was recorded and nothing is judged. Rebuilt as card E16 (queue 152, ledger 241) with the limit raised, the coin list fixed on the ledger so that no single wake can end the card, and a named cause on every refusal; the first independent audit found one more thing to fix before a start.

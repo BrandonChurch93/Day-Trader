@@ -31,14 +31,18 @@
         "scout_second-random": 0,
         "scout_small-random": 0
       },
-      "entries_by_line_and_status": {},
+      "entries_by_line_and_status": {
+        "random:ok": 1,
+        "scout_second:scout_failed": 1,
+        "scout_small:scout_failed": 1
+      },
       "judging_count": 240,
       "open_by_line": {
-        "random": 0,
+        "random": 1,
         "scout_second": 0,
         "scout_small": 0
       },
-      "signals": 0,
+      "signals": 1,
       "void_filters": 0
     },
     "W": {
@@ -63,16 +67,18 @@
   },
   "claimed_unresolved_wakes": 0,
   "failed_in_first_calls": {
-    "failed": 0,
+    "failed": 2,
     "limit": 5,
-    "of": 0
+    "of": 2
   },
-  "scout_calls": 0,
-  "scout_status": {},
+  "scout_calls": 2,
+  "scout_status": {
+    "call_error": 2
+  },
   "status": "STARTED",
   "stop": null,
   "void_reasons": {},
   "wake_counts": {
-    "wake": 2
+    "wake": 4
   }
 }
